@@ -4,26 +4,26 @@
 
 AI Model | Total Score | Status 
 :--------|------------:|:-------
-[`anthropic/claude-sonnet-4.5`](#anthropic-claude-sonnet-4.5) | 100 | 🟢
-[`openai/gpt-4.1`](#openai-gpt-4.1) | 100 | 🟢
-[`openai/gpt-4.1-mini`](#openai-gpt-4.1-mini) | 100 | 🟢
-[`openai/gpt-5`](#openai-gpt-5) | 82.5 | 🟢
-[`openai/gpt-5-mini`](#openai-gpt-5-mini) | 82.5 | 🟢
-[`qwen/qwen3-next-80b-a3b-instruct`](#qwen-qwen3-next-80b-a3b-instruct) | 82.5 | 🟢
-[`deepseek/deepseek-v3.1-terminus`](#deepseek-deepseek-v3.1-terminus) | 47.5 | 🟡
-[`mistralai/codestral-2508`](#mistralai-codestral-2508) | 47.5 | 🟡
-[`moonshotai/kimi-k2-0905`](#moonshotai-kimi-k2-0905) | 47.5 | 🟡
-[`anthropic/claude-haiku-4.5`](#anthropic-claude-haiku-4.5) | 42.5 | 🟡
-[`meta-llama/llama-4-maverick`](#meta-llama-llama-4-maverick) | 30 | 🟡
-[`mistralai/devstral-medium`](#mistralai-devstral-medium) | 30 | ❌
-[`x-ai/grok-code-fast-1`](#x-ai-grok-code-fast-1) | 30 | ❌
-[`deepseek/deepseek-v3.2-exp`](#deepseek-deepseek-v3.2-exp) | 25 | ❌
-[`qwen/qwen3-235b-a22b-2507`](#qwen-qwen3-235b-a22b-2507) | 25 | ❌
-[`qwen/qwen3-30b-a3b-instruct-2507`](#qwen-qwen3-30b-a3b-instruct-2507) | 12.5 | ❌
-[`qwen/qwen3-coder`](#qwen-qwen3-coder) | 10 | ❌
-[`meta-llama/llama-3.3-70b-instruct`](#meta-llama-llama-3.3-70b-instruct) | 7.5 | ❌
-[`meta-llama/llama-4-scout`](#meta-llama-llama-4-scout) | 5 | ❌
-[`z-ai/glm-4.6`](#z-ai-glm-4.6) | 2.5 | ❌
+[`anthropic/claude-sonnet-4.5`](#anthropicclaude-sonnet-4.5) | 100 | 🟢
+[`openai/gpt-4.1`](#openaigpt-4.1) | 100 | 🟢
+[`openai/gpt-4.1-mini`](#openaigpt-4.1-mini) | 100 | 🟢
+[`openai/gpt-5`](#openaigpt-5) | 82.5 | 🟢
+[`openai/gpt-5-mini`](#openaigpt-5-mini) | 82.5 | 🟢
+[`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 82.5 | 🟢
+[`deepseek/deepseek-v3.1-terminus`](#deepseekdeepseek-v3.1-terminus) | 47.5 | 🟡
+[`mistralai/codestral-2508`](#mistralaicodestral-2508) | 47.5 | 🟡
+[`moonshotai/kimi-k2-0905`](#moonshotaikimi-k2-0905) | 47.5 | 🟡
+[`anthropic/claude-haiku-4.5`](#anthropicclaude-haiku-4.5) | 42.5 | 🟡
+[`meta-llama/llama-4-maverick`](#meta-llamallama-4-maverick) | 30 | 🟡
+[`mistralai/devstral-medium`](#mistralaidevstral-medium) | 30 | ❌
+[`x-ai/grok-code-fast-1`](#x-aigrok-code-fast-1) | 30 | ❌
+[`deepseek/deepseek-v3.2-exp`](#deepseekdeepseek-v3.2-exp) | 25 | ❌
+[`qwen/qwen3-235b-a22b-2507`](#qwenqwen3-235b-a22b-2507) | 25 | ❌
+[`qwen/qwen3-30b-a3b-instruct-2507`](#qwenqwen3-30b-a3b-instruct-2507) | 12.5 | ❌
+[`qwen/qwen3-coder`](#qwenqwen3-coder) | 10 | ❌
+[`meta-llama/llama-3.3-70b-instruct`](#meta-llamallama-3.3-70b-instruct) | 7.5 | ❌
+[`meta-llama/llama-4-scout`](#meta-llamallama-4-scout) | 5 | ❌
+[`z-ai/glm-4.6`](#z-aiglm-4.6) | 2.5 | ❌
 
 ## `anthropic/claude-sonnet-4.5`
 
