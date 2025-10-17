@@ -1,0 +1,295 @@
+/// Tracks user views of discussion board posts for engagement analytics and
+/// content performance measurement. Records each view event with timestamp
+/// and user context for detailed analysis of post popularity and user
+/// behavior patterns. {@link discussion_board_posts.id} {@link
+/// discussion_board_members.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_post_views {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Viewed post's identifier. {@link discussion_board_posts.id}
+  discussion_board_post_id String
+  
+  /// Viewing user's identifier. {@link discussion_board_members.id}
+  discussion_board_member_id String?
+  
+  /// Timestamp when the post was viewed by the user.
+  viewed_at DateTime
+  
+  /// IP address of the user for geographic and security analysis.
+  ip_address String?
+  
+  /// Browser or client information for device and platform analysis.
+  user_agent String?
+  
+  /// User session identifier for tracking view patterns within sessions.
+  session_id String?
+  
+  /// Duration in seconds that the user spent viewing the post content.
+  view_duration Int?
+  
+  /// Percentage of post content that was viewed (0-100).
+  scroll_depth Int?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_post_id, discussion_board_member_id, viewed_at], map: "discussion_board_post_views_discussion_board_post_id_d_d062fdfd")
+  @@index([discussion_board_post_id, viewed_at], map: "discussion_board_post_views_discussion_board_post_id_v_764cebb3")
+  @@index([discussion_board_member_id, viewed_at], map: "discussion_board_post_views_discussion_board_member_id_2fe95323")
+  @@index([viewed_at])
+}
+
+/// Records user interactions with comments including reads, replies, and
+/// engagement metrics. Tracks comment-level engagement for understanding
+/// discussion participation and comment quality. {@link
+/// discussion_board_comments.id} {@link discussion_board_members.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_engagements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Engaged comment's identifier. {@link discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// Engaging user's identifier. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Type of engagement: read, reply, like, flag, or other interaction.
+  engagement_type String
+  
+  /// Timestamp when the engagement occurred.
+  engaged_at DateTime
+  
+  /// Quantitative value associated with the engagement (e.g., reply depth,
+  /// like strength).
+  engagement_value Int?
+  
+  /// Reference to parent engagement for threaded interactions.
+  parent_engagement_id String?
+  
+  /// JSON metadata containing additional engagement context and details.
+  metadata String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_comment_id, discussion_board_member_id, engagement_type, engaged_at], map: "discussion_board_comment_engagements_discussion_board__04e582b0")
+  @@index([discussion_board_comment_id, engaged_at], map: "discussion_board_comment_engagements_discussion_board__458180a6")
+  @@index([discussion_board_member_id, engaged_at], map: "discussion_board_comment_engagements_discussion_board__97a1bd41")
+  @@index([engagement_type, engaged_at], map: "discussion_board_comment_engagements_engagement_type_e_b05ca588")
+}
+
+/// Stores user reactions to posts and comments including likes, dislikes,
+/// and custom reaction types. Captures emotional responses and sentiment
+/// towards content for community feedback analysis. {@link
+/// discussion_board_posts.id} {@link discussion_board_comments.id} {@link
+/// discussion_board_members.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_reactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reacted post's identifier (nullable if reaction is to comment). {@link
+  /// discussion_board_posts.id}
+  discussion_board_post_id String?
+  
+  /// Reacted comment's identifier (nullable if reaction is to post). {@link
+  /// discussion_board_comments.id}
+  discussion_board_comment_id String?
+  
+  /// Reacting user's identifier. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Type of reaction: like, dislike, helpful, agree, disagree, or custom
+  /// reaction.
+  reaction_type String
+  
+  /// Intensity or weight of the reaction (e.g., 1 for like, -1 for dislike).
+  reaction_value Int
+  
+  /// Timestamp when the reaction was recorded.
+  reacted_at DateTime
+  
+  /// Optional context or reason for the reaction provided by the user.
+  reaction_context String?
+  
+  /// Whether the reaction was made anonymously (if supported by platform).
+  is_anonymous Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts? @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_post_id, discussion_board_comment_id, discussion_board_member_id, reaction_type], map: "discussion_board_user_reactions_discussion_board_post__f93658c0")
+  @@index([discussion_board_post_id, reacted_at], map: "discussion_board_user_reactions_discussion_board_post__f9ca2c86")
+  @@index([discussion_board_comment_id, reacted_at], map: "discussion_board_user_reactions_discussion_board_comme_775a8714")
+  @@index([discussion_board_member_id, reacted_at], map: "discussion_board_user_reactions_discussion_board_membe_2cf70dd4")
+  @@index([reaction_type, reacted_at])
+}
+
+/// Tracks content sharing activities across different platforms and
+/// channels. Records sharing events for viral content analysis and referral
+/// tracking. {@link discussion_board_posts.id} {@link
+/// discussion_board_members.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_shares {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shared post's identifier. {@link discussion_board_posts.id}
+  discussion_board_post_id String
+  
+  /// Sharing user's identifier. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Platform where content was shared: email, twitter, facebook, linkedin,
+  /// etc.
+  share_platform String
+  
+  /// Method of sharing: direct_share, embed, link, or platform_specific method.
+  share_method String
+  
+  /// Timestamp when the content was shared.
+  shared_at DateTime
+  
+  /// URL generated for the shared content (if applicable).
+  share_url String?
+  
+  /// Number of recipients or audience size for the share.
+  share_recipients Int?
+  
+  /// Additional metadata about the share event in JSON format.
+  share_metadata String?
+  
+  /// Referral code or tracking parameter associated with the share.
+  referral_code String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_post_id, discussion_board_member_id, share_platform, shared_at], map: "discussion_board_content_shares_discussion_board_post__07a2684a")
+  @@index([discussion_board_post_id, shared_at], map: "discussion_board_content_shares_discussion_board_post__18ac2111")
+  @@index([discussion_board_member_id, shared_at], map: "discussion_board_content_shares_discussion_board_membe_7c83466d")
+  @@index([share_platform, shared_at])
+}
+
+/// Records user bookmarking activities for saving posts and comments for
+/// later reference. Tracks content saving behavior for personalization and
+/// content discovery. {@link discussion_board_posts.id} {@link
+/// discussion_board_comments.id} {@link discussion_board_members.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_bookmarks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Bookmarked post's identifier (nullable if bookmark is for comment).
+  /// {@link discussion_board_posts.id}
+  discussion_board_post_id String?
+  
+  /// Bookmarked comment's identifier (nullable if bookmark is for post).
+  /// {@link discussion_board_comments.id}
+  discussion_board_comment_id String?
+  
+  /// Bookmarking user's identifier. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Timestamp when the content was bookmarked.
+  bookmarked_at DateTime
+  
+  /// Optional folder or category name for organizing bookmarks.
+  folder_name String?
+  
+  /// User notes or comments about why the content was bookmarked.
+  notes String?
+  
+  /// Whether the bookmark is private (not visible to others).
+  is_private Boolean
+  
+  /// Timestamp when the bookmarked content was last accessed.
+  last_accessed DateTime?
+  
+  /// Number of times the bookmarked content has been accessed.
+  access_count Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts? @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_post_id, discussion_board_comment_id, discussion_board_member_id], map: "discussion_board_bookmarks_discussion_board_post_id_di_0b43884d")
+  @@index([discussion_board_post_id, bookmarked_at], map: "discussion_board_bookmarks_discussion_board_post_id_bo_9cc207ee")
+  @@index([discussion_board_comment_id, bookmarked_at], map: "discussion_board_bookmarks_discussion_board_comment_id_71ee9641")
+  @@index([discussion_board_member_id, bookmarked_at], map: "discussion_board_bookmarks_discussion_board_member_id__9a984ff4")
+  @@index([folder_name, bookmarked_at])
+}

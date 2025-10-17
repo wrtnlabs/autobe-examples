@@ -1,0 +1,125 @@
+/// Admin dashboard overview to monitor platform operations, presenting key
+/// performance indicators (KPIs), summaries of orders, users, and system
+/// status. Supports filters by time and operational category for
+/// administrators' quick insights and management actions.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_dashboard {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name identifier for the specific admin dashboard instance or view.
+  dashboard_name String
+  
+  /// Optional textual description providing details about the dashboard
+  /// purpose or scope.
+  description String?
+  
+  /// Timestamp when the dashboard record was created.
+  created_at DateTime
+  
+  /// Timestamp when the dashboard record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the dashboard record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([dashboard_name])
+  @@index([created_at, updated_at])
+}
+
+/// Audit logs capturing immutable historical records of administrative
+/// actions, system events, and user activities for compliance and
+/// troubleshooting. Logs reference relevant administrators and affected
+/// entities to provide traceability.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referencing administrator responsible for the action. {@link
+  /// shopping_mall_admins.id}
+  admin_id String?
+  
+  /// Referencing the entity affected by the action, could be order, product,
+  /// user etc. {@link shopping_mall_orders.id} or other relevant entities
+  entity_id String?
+  
+  /// Description of the action performed.
+  action String
+  
+  /// Timestamp when the action was performed.
+  timestamp DateTime
+  
+  /// Optional additional information or metadata about the action.
+  details String?
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  entity shopping_mall_orders? @relation(fields: [entity_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id])
+  @@index([entity_id])
+  
+  @@index([timestamp])
+}
+
+/// Reports generated for administrative insight and operational analytics
+/// including sales data, user activity summaries, and inventory status.
+/// Reports can reference temporal ranges and filtered entities for targeted
+/// analysis.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who generated the report. {@link shopping_mall_admins.id}
+  generated_by_admin_id String?
+  
+  /// Unique name for the report configuration or instance.
+  report_name String
+  
+  /// Type of report (e.g., sales_summary, user_activity).
+  report_type String
+  
+  /// URI for accessing the report content or file.
+  content_uri String?
+  
+  /// Timestamp when the report record was created.
+  created_at DateTime
+  
+  /// Timestamp when the report record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the report record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  generatedByAdmin shopping_mall_admins? @relation(fields: [generated_by_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([generated_by_admin_id])
+  
+  @@unique([report_name])
+  @@index([created_at, updated_at])
+}

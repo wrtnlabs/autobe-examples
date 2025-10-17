@@ -1,0 +1,105 @@
+/// Customer product reviews including star ratings and text comments for
+/// verified purchases. Links to buyers ({@link shopping_platform_buyers.id})
+/// and order items to ensure authenticity and prevent duplicate reviews.
+/// Supports moderation features for inappropriate content.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Buyer who submitted this review ({@link shopping_platform_buyers.id}).
+  shopping_platform_buyer_id String
+  
+  /// Order item being reviewed ({@link shopping_platform_order_items.id}).
+  /// Ensures only purchased products can be reviewed.
+  shopping_platform_order_item_id String
+  
+  /// Review title summarizing the experience.
+  title String
+  
+  /// Star rating from 1 to 5.
+  rating Int
+  
+  /// Detail review text explaining the rating.
+  comment String?
+  
+  /// Whether this review is from a verified purchase.
+  is_verified Boolean
+  
+  /// Number of users who found this review helpful.
+  helpful_count Int
+  
+  /// Moderation status: pending, approved, rejected, or hidden.
+  moderation_status String
+  
+  /// Review creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for review removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  buyer shopping_platform_buyers @relation(fields: [shopping_platform_buyer_id], references: [id], onDelete: Cascade)
+  orderItem shopping_platform_order_items @relation(fields: [shopping_platform_order_item_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_review_images shopping_platform_review_images[]
+  
+  @@index([shopping_platform_order_item_id])
+  
+  @@unique([shopping_platform_buyer_id, shopping_platform_order_item_id], map: "shopping_platform_reviews_shopping_platform_buyer_id_s_5c0eac81")
+  @@index([shopping_platform_buyer_id, created_at], map: "shopping_platform_reviews_shopping_platform_buyer_id_c_4ba0c1fc")
+  @@index([moderation_status, created_at])
+  @@index([rating, created_at])
+}
+
+/// Images uploaded with product reviews for visual feedback. Directly
+/// associated with reviews ({@link shopping_platform_reviews.id}) to support
+/// rich review content. Supports multiple images per review.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_review_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review this image belongs to ({@link shopping_platform_reviews.id}).
+  shopping_platform_review_id String
+  
+  /// URL to the uploaded review image.
+  image_url String
+  
+  /// Alternative text describing the image for accessibility.
+  alt_text String?
+  
+  /// Display order of images in the review.
+  sequence_order Int
+  
+  /// Image upload timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for image removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_platform_reviews @relation(fields: [shopping_platform_review_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_platform_review_id, sequence_order], map: "shopping_platform_review_images_shopping_platform_revi_dc82711f")
+}

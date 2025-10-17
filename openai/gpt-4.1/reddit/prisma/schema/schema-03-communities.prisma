@@ -1,0 +1,332 @@
+/// Represents a top-level community/hub on the platform. Core entity holding
+/// community metadata (name, description, status, images) and organizational
+/// settings; foundation for posts, subscriptions, moderation, and content
+/// workflows. Linked to members (creator) and supports soft deletion and
+/// configuration changes. Subject to moderator and admin workflows.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The creator's {@link community_platform_members.id}. Community founder
+  /// and initial moderator.
+  creator_member_id String
+  
+  /// Unique community identifier (display and URL). Case-insensitive. 3-100
+  /// characters.
+  name String
+  
+  /// Community's display title. 3-100 characters, shown in listings/headers.
+  title String
+  
+  /// Detailed community description. 10-10000 characters. Markdown allowed.
+  description String?
+  
+  /// URL-safe slug, unique. Used for pretty URLs and direct linking.
+  slug String
+  
+  /// Current status (e.g., active, private, banned, archived). Drives
+  /// accessibility and moderation.
+  status String
+  
+  /// Community creation timestamp.
+  created_at DateTime
+  
+  /// Last updated timestamp (settings/title/images/status changes, etc.).
+  updated_at DateTime
+  
+  /// Time of soft deletion (archival); null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  creatorMember community_platform_members @relation(fields: [creator_member_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderators community_platform_moderators[]
+  community_platform_community_rules community_platform_community_rules[]
+  community_platform_community_banners community_platform_community_banners[]
+  community_platform_community_images community_platform_community_images[]
+  community_platform_community_status_changes community_platform_community_status_changes[]
+  community_platform_community_moderator_assignments community_platform_community_moderator_assignments[]
+  community_platform_posts community_platform_posts[]
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_subscription_logs community_platform_subscription_logs[]
+  community_platform_moderation_queues community_platform_moderation_queues[]
+  community_platform_ban_histories community_platform_ban_histories[]
+  community_platform_karma_ledgers community_platform_karma_ledgers[]
+  community_platform_karma_penalties community_platform_karma_penalties[]
+  community_platform_karma_history community_platform_karma_history[]
+  community_platform_karma_thresholds community_platform_karma_thresholds[]
+  community_platform_karma_awards community_platform_karma_awards[]
+  
+  @@index([creator_member_id])
+  
+  @@unique([name])
+  @@unique([slug])
+  @@index([status])
+}
+
+/// Community-specific rules document. Defines posting, commenting,
+/// moderation, and content policies per community. Supports versioning
+/// (updated on edit) and enforces customized community governance (e.g.,
+/// prohibited topics, formatting, moderation logic). Managed by
+/// moderators/admins. Each rule set belongs to one community.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated community's {@link community_platform_communities.id}.
+  community_id String
+  
+  /// The full text/rich content of community rules (Markdown supported), up to
+  /// 50000 characters.
+  body String
+  
+  /// Incrementing version number (used for audits; increments on rule update).
+  version Int
+  
+  /// Time of official rule publication; for versioning/audit.
+  published_at DateTime
+  
+  /// Time when rules entry was created.
+  created_at DateTime
+  
+  /// Most recent time of rules update/edit.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, version])
+  @@index([community_id])
+}
+
+/// Represents header/banner images or hero graphics for communities. Used
+/// for visual branding/identity. Each image is associated with one community
+/// and references a platform-wide file upload entry (in another table).
+/// Supports versioning and soft delete for branding changes/audit.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_banners {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community this banner belongs to {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Pointer to the actual file record {@link
+  /// community_platform_file_uploads.id}.
+  file_upload_id String
+  
+  /// Order/index for banners used in rotation/multiple banners ordering; small
+  /// integer.
+  order Int?
+  
+  /// Alternative text for accessibility. 0-250 chars.
+  alt_text String?
+  
+  /// Indicates if this banner is currently displayed. Allows disabling instead
+  /// of deleting.
+  active Boolean
+  
+  /// Time when banner was created/uploaded.
+  created_at DateTime
+  
+  /// Most recent update to banner details.
+  updated_at DateTime
+  
+  /// Soft-deleted time (allowing image rotation without data loss). Null if
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  fileUpload community_platform_file_uploads @relation(fields: [file_upload_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_id])
+  @@index([file_upload_id])
+}
+
+/// Contains general community images for branding, context, and other
+/// non-banner visuals: e.g., icon, background images. Linked to file uploads
+/// (for storage management) and to their respective community. Soft delete
+/// supported for image cleanup/rotation. Managed per-community by
+/// moderators/admins.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community to which this image belongs {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Pointer to uploaded file {@link community_platform_file_uploads.id}.
+  file_upload_id String
+  
+  /// Type of image (icon, background, etc.). For easy filtering.
+  image_type String
+  
+  /// Order/priority for multiple community images of same type (if needed).
+  order Int?
+  
+  /// Accessibility alt text. 0-250 chars.
+  alt_text String?
+  
+  /// Whether this image is currently displayed for the community.
+  active Boolean
+  
+  /// Time of image upload/record creation.
+  created_at DateTime
+  
+  /// Last update to image or metadata.
+  updated_at DateTime
+  
+  /// Archive/soft delete time. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  fileUpload community_platform_file_uploads @relation(fields: [file_upload_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, image_type, order], map: "community_platform_community_images_community_id_image_53ad2cd6")
+  @@index([community_id])
+  @@index([file_upload_id])
+}
+
+/// Snapshot/audit log of every status change (e.g., active, suspended,
+/// banned, private, archived) for each community. Each row records a
+/// transition event, who performed the change, the reason (admin/moderator
+/// action, rule violation, etc.), and timestamps. Enables time-travel
+/// visibility and business process audits; critical for compliance.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_status_changes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Affected community {@link community_platform_communities.id}.
+  community_id String
+  
+  /// The responsible moderator/admin who took action {@link
+  /// community_platform_admins.id} or {@link
+  /// community_platform_moderators.id}.
+  performed_by_id String
+  
+  /// Prior status before event (e.g., active, suspended, private, etc.).
+  previous_status String
+  
+  /// Resulting status after the change.
+  new_status String
+  
+  /// Freeform or coded reason for change (policy, moderation event, violation,
+  /// etc.).
+  change_reason String?
+  
+  /// Additional info/comments for moderation/audit.
+  notes String?
+  
+  /// Timestamp when status change was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  performedBy community_platform_admins @relation(fields: [performed_by_id], references: [id], onDelete: Cascade)
+  
+  @@index([performed_by_id], map: "community_platform_community_status_changes_performed__22039d7a")
+  
+  @@index([community_id])
+  @@index([created_at])
+}
+
+/// Assignment of platform members as moderators to specific communities.
+/// Each record represents the assignment relation, including start/end
+/// times, roles (e.g., owner/founder, full moderator, prose-only) and reason
+/// (in case of removals, resignations, etc.). Enables tracking of current
+/// and past moderator staff per community, key for compliance and
+/// permissions logic. Not a user table: reference is to
+/// community_platform_members.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderator_assignments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community for which moderation is assigned {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Assigned member {@link community_platform_members.id}.
+  member_id String
+  
+  /// Moderator role (owner, moderator, trial_mod, etc.). Defines permissions
+  /// and hierarchy.
+  role String
+  
+  /// Admin/moderator who assigned this moderator. For audit (+permission
+  /// review).
+  assigned_by_id String
+  
+  /// Assignment start time.
+  start_at DateTime
+  
+  /// If assignment ends (removal, resignation), time here. Null if active.
+  end_at DateTime?
+  
+  /// Reason or note for assignment/removal. Short text.
+  note String?
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// When assignment record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, member_id, role, start_at], map: "community_platform_community_moderator_assignments_com_069c692b")
+  @@index([community_id], map: "community_platform_community_moderator_assignments_com_bf78471e")
+  @@index([member_id], map: "community_platform_community_moderator_assignments_mem_3eb1311b")
+}

@@ -1,0 +1,380 @@
+/// Guest user accounts for unauthenticated platform access. Guests have
+/// limited capabilities and can browse public content without registration.
+/// These accounts serve as temporary identities for users exploring the
+/// platform before committing to full registration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique session identifier for guest tracking.
+  session_token String
+  
+  /// IP address for geographic and security tracking.
+  ip_address String
+  
+  /// Browser and device information for session management.
+  user_agent String?
+  
+  /// Timestamp of last guest activity for session cleanup.
+  last_active_at DateTime
+  
+  /// Timestamp when guest session was created.
+  created_at DateTime
+  
+  /// Timestamp when guest session was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when guest session was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_token])
+  @@index([last_active_at])
+  @@index([ip_address])
+}
+
+/// Registered member accounts with full platform access. Members can create
+/// content, participate in communities, vote, and engage in discussions.
+/// This table represents the core user base of the platform with complete
+/// authentication and profile management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for member identification. Must be 3-20 characters with
+  /// alphanumeric and underscores only.
+  username String
+  
+  /// Verified email address for communication and account recovery.
+  email String
+  
+  /// Hashed password for secure authentication using bcrypt.
+  password_hash String
+  
+  /// Optional display name different from username for user preference.
+  display_name String?
+  
+  /// URL to profile picture for user identity.
+  profile_picture_url String?
+  
+  /// User biography or description up to 500 characters.
+  bio String?
+  
+  /// Current account status: active, suspended, pending_verification, or
+  /// deactivated.
+  account_status String
+  
+  /// Total karma points accumulated from post and comment interactions.
+  karma Int
+  
+  /// Timestamp when email address was verified.
+  email_verified_at DateTime?
+  
+  /// Timestamp of last successful login.
+  last_login_at DateTime?
+  
+  /// Timestamp when member account was created.
+  created_at DateTime
+  
+  /// Timestamp when member account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when member account was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_moderators reddit_community_moderators?
+  reddit_community_admins reddit_community_admins?
+  reddit_community_sessions reddit_community_sessions[]
+  reddit_community_authentication_logs reddit_community_authentication_logs[]
+  reddit_community_memberships reddit_community_memberships[]
+  reddit_community_moderator_assignments reddit_community_moderator_assignments[]
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_post_revisions reddit_community_post_revisions[]
+  reddit_community_votes reddit_community_votes[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_karma_records_of_user_id reddit_community_karma_records[] @relation("reddit_community_karma_records_of_user_id")
+  reddit_community_karma_records_of_voting_user_id reddit_community_karma_records[] @relation("reddit_community_karma_records_of_voting_user_id")
+  reddit_community_user_reactions reddit_community_user_reactions[]
+  reddit_community_saved_content reddit_community_saved_content[]
+  reddit_community_feeds reddit_community_feeds[]
+  reddit_community_user_preferences reddit_community_user_preferences?
+  reddit_community_recommendations reddit_community_recommendations[]
+  reddit_community_reports reddit_community_reports[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  reddit_community_ban_records reddit_community_ban_records[]
+  reddit_community_appeals reddit_community_appeals[]
+  reddit_community_user_activities reddit_community_user_activities[]
+  reddit_community_engagement_metrics reddit_community_engagement_metrics[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([account_status])
+  @@index([karma])
+  @@index([last_login_at])
+  @@index([created_at])
+}
+
+/// Community moderator accounts with elevated permissions for content
+/// management. Moderators are responsible for enforcing community
+/// guidelines, managing reported content, and maintaining community quality
+/// standards.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the base member account. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Moderator permission level: junior, senior, or lead moderator.
+  moderator_level String
+  
+  /// Number of communities currently moderated by this user.
+  communities_moderated_count Int
+  
+  /// Total days of moderation experience across all communities.
+  moderation_experience Int
+  
+  /// JSON string containing special moderation permissions and capabilities.
+  special_permissions String?
+  
+  /// Timestamp of last moderation training or certification.
+  last_moderation_training_at DateTime?
+  
+  /// Timestamp when user first became a moderator.
+  moderator_since DateTime
+  
+  /// Timestamp when moderator record was created.
+  created_at DateTime
+  
+  /// Timestamp when moderator record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when moderator record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_reports reddit_community_reports[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  reddit_community_content_flags reddit_community_content_flags[]
+  reddit_community_guidelines reddit_community_guidelines[]
+  reddit_community_ban_records reddit_community_ban_records[]
+  reddit_community_appeals reddit_community_appeals[]
+  
+  @@unique([reddit_community_member_id])
+  
+  @@index([moderator_level])
+  @@index([moderator_since])
+  @@index([last_moderation_training_at])
+}
+
+/// Platform administrator accounts with system-wide management capabilities.
+/// Administrators have ultimate authority over platform operations, user
+/// management, and system configuration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the base member account. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Administrator permission level: support, content, system, or super_admin.
+  admin_level String
+  
+  /// JSON string defining system areas the admin can access and manage.
+  access_scope String
+  
+  /// Security clearance level for sensitive operations and data access.
+  security_clearance String
+  
+  /// Whether two-factor authentication is required for admin access.
+  two_factor_enabled Boolean
+  
+  /// Timestamp of last security review and access audit.
+  last_security_review_at DateTime?
+  
+  /// Timestamp when user first became an administrator.
+  admin_since DateTime
+  
+  /// Timestamp when admin record was created.
+  created_at DateTime
+  
+  /// Timestamp when admin record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when admin record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_member_id])
+  
+  @@index([admin_level])
+  @@index([admin_since])
+  @@index([last_security_review_at])
+}
+
+/// User authentication sessions for tracking active logins and security.
+/// Each session represents an authenticated user connection with device
+/// information, location data, and security context for comprehensive access
+/// management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account for this session. {@link
+  /// reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Unique JWT session token for authentication.
+  session_token String
+  
+  /// Refresh token for session renewal without re-authentication.
+  refresh_token String
+  
+  /// IP address for geographic and security tracking.
+  ip_address String
+  
+  /// Browser and device information for session context.
+  user_agent String
+  
+  /// Type of device: mobile, tablet, desktop, or unknown.
+  device_type String
+  
+  /// Geographic location information derived from IP address.
+  location_data String?
+  
+  /// Timestamp when session token expires.
+  expires_at DateTime
+  
+  /// Timestamp when refresh token expires.
+  refresh_expires_at DateTime
+  
+  /// Timestamp of last activity within this session.
+  last_activity_at DateTime
+  
+  /// Whether the session is currently active and valid.
+  is_active Boolean
+  
+  /// JSON string containing security flags and risk assessments.
+  security_flags String?
+  
+  /// Timestamp when session was created.
+  created_at DateTime
+  
+  /// Timestamp when session was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([session_token])
+  @@unique([refresh_token])
+  @@index([reddit_community_member_id])
+  @@index([expires_at])
+  @@index([last_activity_at])
+  @@index([is_active])
+  @@index([device_type])
+}
+
+/// Comprehensive authentication event logging for security auditing and
+/// anomaly detection. Each log entry records authentication attempts,
+/// successes, failures, and security-related events across all user roles.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_authentication_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account involved in authentication event. {@link
+  /// reddit_community_members.id}.
+  reddit_community_member_id String?
+  
+  /// Type of authentication event: login, logout, failed_login,
+  /// password_change, etc.
+  event_type String
+  
+  /// Precise timestamp when the authentication event occurred.
+  event_timestamp DateTime
+  
+  /// IP address from which the authentication attempt originated.
+  ip_address String
+  
+  /// Browser and device information for the authentication attempt.
+  user_agent String?
+  
+  /// Whether the authentication event was successful.
+  success Boolean
+  
+  /// Reason for authentication failure, if applicable.
+  failure_reason String?
+  
+  /// Assessed security risk level: low, medium, high, or critical.
+  security_risk_level String
+  
+  /// JSON string containing additional context and metadata for the event.
+  additional_context String?
+  
+  /// Timestamp when log entry was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members? @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_community_member_id], map: "reddit_community_authentication_logs_reddit_community__fcf775ed")
+  
+  @@index([event_type])
+  @@index([event_timestamp])
+  @@index([success])
+  @@index([security_risk_level])
+  @@index([ip_address])
+}

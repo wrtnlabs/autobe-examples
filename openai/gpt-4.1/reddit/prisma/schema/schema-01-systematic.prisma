@@ -1,0 +1,183 @@
+/// System-level configuration key-value pairs. Stores feature flags,
+/// threshold values, system-wide toggles, or settings for the platform.
+/// Critical for runtime configuration without code deployment. Used by
+/// platform services for feature switches or limits. Managed by admins only.
+/// No direct user data or relationships.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_system_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the configuration setting (e.g., 'max_post_length',
+  /// 'enable_new_feature').
+  key String
+  
+  /// Configurable value for the setting (string-encoded; can represent JSON,
+  /// int, bool, etc.).
+  value String
+  
+  /// Explanation of the configuration key's purpose.
+  description String?
+  
+  /// Timestamp when this config was created.
+  created_at DateTime
+  
+  /// Timestamp when this config was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([created_at])
+}
+
+/// System audit trail capturing all significant platform events and actions.
+/// Stores who did what, when, and what data was involved. Records admin
+/// actions, config changes, moderation events, user privilege escalations,
+/// and other critical events for compliance and forensic review.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The type of actor involved (e.g., 'member', 'moderator', 'admin',
+  /// 'system_job').
+  actor_type String
+  
+  /// UUID of the actor who performed the action (matches member, moderator,
+  /// admin, or '00000000-0000-0000-0000-000000000000' for system jobs).
+  actor_id String
+  
+  /// High-level action performed (e.g., 'create', 'update', 'delete',
+  /// 'config_change', 'user_ban', 'login', 'moderation_action').
+  action_type String
+  
+  /// Name of the table affected by the action.
+  target_table String
+  
+  /// UUID of the affected entity (row) in the target table.
+  target_id String?
+  
+  /// Structured (JSON/text) details about the event for audit/replay.
+  details String?
+  
+  /// Timestamp when this audit log was written.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([actor_id, created_at])
+  @@index([action_type, created_at])
+  @@index([target_table, target_id])
+}
+
+/// List of banned (forbidden) words or phrases. Used by moderation and
+/// filtering to prevent prohibited content submissions. Managed by admins
+/// via moderation flows. May include system-wide and per-community words
+/// (future extension).
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_banned_words {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Word or phrase that is prohibited platform-wide.
+  word String
+  
+  /// Explanation for why this word/phrase is banned.
+  reason String?
+  
+  /// Whether this banned word is currently enforced.
+  active Boolean
+  
+  /// Timestamp when this word was added to the ban list.
+  created_at DateTime
+  
+  /// Timestamp when this word entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking a soft deletion from the ban list (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([word])
+}
+
+/// Platform-wide reference for all files uploaded via the platform. Tracks
+/// uploaded images, documents, or other assets used by posts, profiles,
+/// communities, or moderation. Links to the uploaded_by_member via foreign
+/// key. Records original filename, storage path/URL, mime type, file size,
+/// and status. Does NOT store file blobs directly.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_file_uploads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Uploader's {@link community_platform_members.id}. The member who uploaded
+  /// this file.
+  uploaded_by_member_id String
+  
+  /// Original filename as submitted by user.
+  original_filename String
+  
+  /// Unique storage reference (e.g., S3 key, GCS path, etc.) for this file.
+  storage_key String
+  
+  /// File's MIME type (e.g., 'image/png').
+  mime_type String
+  
+  /// Size of the file in bytes.
+  file_size_bytes Int
+  
+  /// Public or signed URL for retrieving this file.
+  url String
+  
+  /// Current status: 'active', 'deleted', 'archived', etc.
+  status String
+  
+  /// Timestamp when the file was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when file metadata was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if file is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  uploadedByMember community_platform_members @relation(fields: [uploaded_by_member_id], references: [id], onDelete: Cascade)
+  
+  community_platform_community_banners community_platform_community_banners[]
+  community_platform_community_images community_platform_community_images[]
+  community_platform_post_images community_platform_post_images[]
+  
+  @@unique([storage_key])
+  @@unique([url])
+  @@index([created_at])
+  @@index([uploaded_by_member_id])
+}

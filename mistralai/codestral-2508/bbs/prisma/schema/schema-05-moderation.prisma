@@ -1,0 +1,97 @@
+/// Table for storing reports of inappropriate content in the
+/// economic/political discussion board. This table captures user reports of
+/// content violations, including the reason for reporting and the status of
+/// the report. It establishes relationships with user tables and content
+/// tables to maintain a complete record of reported content.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who submitted the report. {@link
+  /// economic_political_discussion_board_member.id}
+  economic_political_discussion_board_member_id String
+  
+  /// The thread that was reported. {@link
+  /// economic_political_discussion_board_threads.id}
+  economic_political_discussion_board_thread_id String?
+  
+  /// The comment that was reported. {@link
+  /// economic_political_discussion_board_comments.id}
+  economic_political_discussion_board_comment_id String?
+  
+  /// The reason for the report.
+  reason String
+  
+  /// Additional details about the report.
+  description String?
+  
+  /// The current status of the report (e.g., pending, reviewed, resolved).
+  status String
+  
+  /// The timestamp when the report was created.
+  created_at DateTime
+  
+  /// The timestamp when the report was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member economic_political_discussion_board_member @relation(fields: [economic_political_discussion_board_member_id], references: [id], onDelete: Cascade)
+  thread economic_political_discussion_board_threads? @relation(fields: [economic_political_discussion_board_thread_id], references: [id], onDelete: Cascade)
+  comment economic_political_discussion_board_comments? @relation(fields: [economic_political_discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  economic_political_discussion_board_moderation_snapshots economic_political_discussion_board_moderation_snapshots[]
+  
+  @@index([economic_political_discussion_board_member_id], map: "economic_political_discussion_board_reports_economic_p_eb0dca25")
+  @@index([economic_political_discussion_board_thread_id], map: "economic_political_discussion_board_reports_economic_p_27ea9c49")
+  @@index([economic_political_discussion_board_comment_id], map: "economic_political_discussion_board_reports_economic_p_b91055d9")
+}
+
+/// Table for storing snapshots of moderation actions taken on reported
+/// content. This table captures the details of moderation actions, including
+/// the action taken, the reason, and the moderator who took the action. It
+/// establishes relationships with user tables and content tables to maintain
+/// a complete audit trail of moderation actions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_moderation_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The report that was moderated. {@link
+  /// economic_political_discussion_board_reports.id}
+  economic_political_discussion_board_report_id String
+  
+  /// The moderator who took the action. {@link
+  /// economic_political_discussion_board_moderator.id}
+  economic_political_discussion_board_moderator_id String
+  
+  /// The action taken by the moderator (e.g., delete, warn, ban).
+  action String
+  
+  /// The reason for the moderation action.
+  reason String
+  
+  /// The timestamp when the moderation action was taken.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report economic_political_discussion_board_reports @relation(fields: [economic_political_discussion_board_report_id], references: [id], onDelete: Cascade)
+  moderator economic_political_discussion_board_moderator @relation(fields: [economic_political_discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([economic_political_discussion_board_report_id], map: "economic_political_discussion_board_moderation_snapsho_4117ede1")
+  @@index([economic_political_discussion_board_moderator_id], map: "economic_political_discussion_board_moderation_snapsho_85166e65")
+}

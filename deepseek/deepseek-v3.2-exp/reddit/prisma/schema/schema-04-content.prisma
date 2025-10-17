@@ -1,0 +1,451 @@
+/// Main posts table containing core post information and relationships.
+/// Posts are the primary content entities that users create within
+/// communities. Each post can be of different types (text, link, image) and
+/// supports voting, commenting, and ranking functionality. {@link
+/// reddit_clone_users.id} {@link reddit_clone_communities.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who created the post. {@link reddit_clone_users.id}
+  author_id String
+  
+  /// Community where the post is published. {@link reddit_clone_communities.id}
+  community_id String
+  
+  /// Original post if this is a cross-post. {@link reddit_clone_posts.id}
+  parent_post_id String?
+  
+  /// Post title displayed to users. Limited to 300 characters for display
+  /// purposes.
+  title String
+  
+  /// Type of post: text, link, or image. Determines which content table
+  /// contains the actual content.
+  post_type String
+  
+  /// Post status: published, draft, removed, or archived. Controls visibility
+  /// and moderation state.
+  status String
+  
+  /// Flag indicating Not Safe For Work content. Controls content filtering and
+  /// warnings.
+  is_nsfw Boolean
+  
+  /// Flag indicating spoiler content. Controls content visibility with
+  /// warnings.
+  is_spoiler Boolean
+  
+  /// Whether comments are locked on this post. Prevents further discussion
+  /// when enabled.
+  is_locked Boolean
+  
+  /// Whether post is pinned in its community. Featured posts appear at the top
+  /// of community feeds.
+  is_pinned Boolean
+  
+  /// Original Content flag. Indicates user-created original content vs shared
+  /// content.
+  is_oc Boolean
+  
+  /// Timestamp when the post was created. Used for sorting and archival
+  /// purposes.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated. Tracks edits and modifications.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted. Allows for content recovery and
+  /// moderation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author reddit_clone_users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  parentPost reddit_clone_posts? @relation("recursive", fields: [parent_post_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_clone_posts[] @relation("recursive")
+  reddit_clone_post_contents reddit_clone_post_contents?
+  reddit_clone_post_metadata reddit_clone_post_metadata?
+  reddit_clone_comments reddit_clone_comments[]
+  reddit_clone_content_media reddit_clone_content_media[]
+  reddit_clone_post_votes reddit_clone_post_votes[]
+  reddit_clone_ranking_scores reddit_clone_ranking_scores[]
+  reddit_clone_user_feeds reddit_clone_user_feeds[]
+  reddit_clone_content_reports reddit_clone_content_reports[]
+  reddit_clone_moderation_actions reddit_clone_moderation_actions[]
+  reddit_clone_user_activity reddit_clone_user_activity[]
+  
+  @@index([parent_post_id])
+  
+  @@unique([author_id, title, created_at])
+  @@index([community_id, created_at])
+  @@index([author_id, created_at])
+  @@index([post_type, created_at])
+  @@index([status, created_at])
+  @@index([is_nsfw])
+  @@index([is_pinned, community_id])
+}
+
+/// Polymorphic content storage for different post types. Separates content
+/// from post metadata to support multiple content formats efficiently. Text
+/// posts store markdown content, link posts store URLs, and image posts
+/// reference media files. {@link reddit_clone_posts.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_contents {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this content belongs to. {@link reddit_clone_posts.id}
+  post_id String
+  
+  /// Type of content: text, link, or image. Determines which content field is
+  /// populated.
+  content_type String
+  
+  /// Markdown-formatted text content for text posts. Supports rich formatting
+  /// and links.
+  text_content String?
+  
+  /// URL for link posts. Must be valid HTTP/HTTPS URL format.
+  link_url String?
+  
+  /// Title extracted from or provided for link posts. Used for link previews.
+  link_title String?
+  
+  /// Description extracted from or provided for link posts. Used for link
+  /// previews.
+  link_description String?
+  
+  /// Timestamp when the content was created. Tracks content creation timeline.
+  created_at DateTime
+  
+  /// Timestamp when the content was last updated. Tracks edits and
+  /// modifications.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_clone_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  
+  @@index([content_type])
+  @@index([post_id])
+}
+
+/// Analytical metadata for posts used in ranking algorithms and performance
+/// tracking. Contains vote counts, view statistics, and engagement metrics
+/// that drive content discovery and sorting algorithms. {@link
+/// reddit_clone_posts.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this metadata belongs to. {@link reddit_clone_posts.id}
+  post_id String
+  
+  /// Total number of upvotes received. Used in ranking algorithms and user
+  /// karma calculation.
+  upvote_count Int
+  
+  /// Total number of downvotes received. Used in ranking algorithms and user
+  /// karma calculation.
+  downvote_count Int
+  
+  /// Total number of comments on the post. Indicates engagement level for
+  /// ranking.
+  comment_count Int
+  
+  /// Total number of views the post has received. Measures content reach and
+  /// popularity.
+  view_count Int
+  
+  /// Total number of times the post has been shared. Measures viral potential
+  /// and reach.
+  share_count Int
+  
+  /// Total number of times users have saved the post. Indicates content value
+  /// and utility.
+  save_count Int
+  
+  /// Calculated hot score for ranking algorithm. Combines votes, comments, and
+  /// time decay.
+  hot_score Float
+  
+  /// Calculated controversy score for controversial sorting. Measures vote
+  /// polarization.
+  controversy_score Float
+  
+  /// Timestamp of last engagement activity (vote, comment, view). Used for
+  /// ranking freshness.
+  last_activity_at DateTime
+  
+  /// Timestamp when metadata record was created. Tracks metadata lifecycle.
+  created_at DateTime
+  
+  /// Timestamp when metadata was last updated. Ensures data freshness for
+  /// ranking.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_clone_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  
+  @@index([hot_score])
+  @@index([controversy_score])
+  @@index([upvote_count, downvote_count])
+  @@index([last_activity_at])
+}
+
+/// User comments on posts with support for nested threading. Comments are
+/// primary entities that require independent management for search,
+/// moderation, and user activity tracking. Each comment can have parent
+/// comments for threaded discussions. {@link reddit_clone_posts.id} {@link
+/// reddit_clone_users.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this comment belongs to. {@link reddit_clone_posts.id}
+  post_id String
+  
+  /// User who created the comment. {@link reddit_clone_users.id}
+  author_id String
+  
+  /// Parent comment for nested threading. Null for top-level comments. {@link
+  /// reddit_clone_comments.id}
+  parent_comment_id String?
+  
+  /// Markdown-formatted comment text. Supports rich formatting, links, and
+  /// code blocks.
+  content String
+  
+  /// Nesting depth of comment in thread. 0 for top-level, increments for each
+  /// reply level.
+  depth Int
+  
+  /// Comment status: published, removed, or archived. Controls visibility and
+  /// moderation.
+  status String
+  
+  /// Flag indicating if comment has been edited. Shows edit indicator to users.
+  is_edited Boolean
+  
+  /// Timestamp when comment was last edited. Tracks modification history.
+  edited_at DateTime?
+  
+  /// Timestamp when comment was created. Used for sorting and archival
+  /// purposes.
+  created_at DateTime
+  
+  /// Timestamp when comment was last updated. Tracks edits and modifications.
+  updated_at DateTime
+  
+  /// Timestamp when comment was soft-deleted. Allows for content recovery and
+  /// moderation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_clone_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  author reddit_clone_users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  parentComment reddit_clone_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_clone_comments[] @relation("recursive")
+  reddit_clone_comment_threads_of_comment_id reddit_clone_comment_threads? @relation("reddit_clone_comment_threads_of_comment_id")
+  reddit_clone_comment_threads_of_root_comment_id reddit_clone_comment_threads[] @relation("reddit_clone_comment_threads_of_root_comment_id")
+  reddit_clone_content_media reddit_clone_content_media[]
+  reddit_clone_comment_votes reddit_clone_comment_votes[]
+  reddit_clone_ranking_scores reddit_clone_ranking_scores[]
+  reddit_clone_content_reports reddit_clone_content_reports[]
+  reddit_clone_moderation_actions reddit_clone_moderation_actions[]
+  reddit_clone_user_activity reddit_clone_user_activity[]
+  
+  @@index([post_id, created_at])
+  @@index([author_id, created_at])
+  @@index([parent_comment_id, depth])
+  @@index([status, created_at])
+  @@index([depth])
+}
+
+/// Hierarchical structure for organizing nested comments efficiently.
+/// Maintains thread relationships and enables efficient querying of comment
+/// trees. Supports up to 10 levels of nesting for organized discussions
+/// while maintaining performance. {@link reddit_clone_comments.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_comment_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment that this thread record belongs to. {@link
+  /// reddit_clone_comments.id}
+  comment_id String
+  
+  /// Top-level comment that starts this thread. {@link
+  /// reddit_clone_comments.id}
+  root_comment_id String?
+  
+  /// Parent thread in the hierarchy. Null for top-level threads. {@link
+  /// reddit_clone_comment_threads.id}
+  parent_thread_id String?
+  
+  /// Materialized path for efficient hierarchical queries. Uses ltree-like
+  /// structure for performance.
+  thread_path String
+  
+  /// Depth of this thread in the hierarchy. Used for performance optimization
+  /// and display limits.
+  thread_depth Int
+  
+  /// Number of direct child comments in this thread. Used for efficient thread
+  /// management.
+  child_count Int
+  
+  /// Total number of descendants in this thread subtree. Used for performance
+  /// optimization.
+  descendant_count Int
+  
+  /// Timestamp when thread record was created. Tracks thread lifecycle.
+  created_at DateTime
+  
+  /// Timestamp when thread record was last updated. Ensures data freshness for
+  /// queries.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment reddit_clone_comments @relation("reddit_clone_comment_threads_of_comment_id", fields: [comment_id], references: [id], onDelete: Cascade)
+  rootComment reddit_clone_comments? @relation("reddit_clone_comment_threads_of_root_comment_id", fields: [root_comment_id], references: [id], onDelete: Cascade)
+  parentThread reddit_clone_comment_threads? @relation("recursive", fields: [parent_thread_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_clone_comment_threads[] @relation("recursive")
+  
+  @@unique([comment_id])
+  @@index([root_comment_id])
+  @@index([parent_thread_id])
+  @@index([thread_path])
+  @@index([thread_depth])
+  @@index([child_count])
+}
+
+/// Media attachments for posts and comments supporting images and other file
+/// types. Provides centralized media management with proper storage
+/// references, metadata, and access controls. Supports multiple media types
+/// with validation and optimization. {@link reddit_clone_posts.id} {@link
+/// reddit_clone_comments.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_content_media {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this media belongs to. Null if attached to comment. {@link
+  /// reddit_clone_posts.id}
+  post_id String?
+  
+  /// Comment that this media belongs to. Null if attached to post. {@link
+  /// reddit_clone_comments.id}
+  comment_id String?
+  
+  /// Type of media: image, video, gif, or document. Determines rendering and
+  /// processing.
+  media_type String
+  
+  /// Original filename of uploaded media. Preserved for user reference and
+  /// downloads.
+  file_name String
+  
+  /// Size of media file in bytes. Used for storage management and upload
+  /// limits.
+  file_size Int
+  
+  /// MIME type of media file. Ensures proper content-type handling and
+  /// security.
+  mime_type String
+  
+  /// URL to media file in storage service. References optimized versions and
+  /// CDN.
+  storage_url String
+  
+  /// URL to thumbnail version of media. Used for previews and performance
+  /// optimization.
+  thumbnail_url String?
+  
+  /// Width of media in pixels for images/videos. Used for responsive rendering.
+  width Int?
+  
+  /// Height of media in pixels for images/videos. Used for responsive
+  /// rendering.
+  height Int?
+  
+  /// Duration in seconds for video/audio media. Used for player controls and
+  /// UI.
+  duration Int?
+  
+  /// Accessibility description of media content. Required for screen readers
+  /// and SEO.
+  alt_text String?
+  
+  /// User-provided caption for media. Provides context and additional
+  /// information.
+  caption String?
+  
+  /// Timestamp when media was uploaded. Tracks media lifecycle and storage
+  /// management.
+  created_at DateTime
+  
+  /// Timestamp when media metadata was last updated. Ensures data accuracy.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_clone_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment reddit_clone_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([post_id])
+  @@index([comment_id])
+  @@index([media_type])
+  @@index([created_at])
+}

@@ -1,0 +1,93 @@
+/// User accounts for the Todo application. This table stores the core
+/// identity and authentication information for users who interact with the
+/// system. Users are the primary actors in the application, responsible for
+/// creating and managing their tasks.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address used for authentication and communication. Must be
+  /// unique across the system.
+  email String
+  
+  /// BCrypt hash of the user's password for secure authentication. Never store
+  /// plain text passwords.
+  password_hash String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was deleted (soft delete). NULL if
+  /// account is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_refresh_tokens todo_refresh_tokens[]
+  todo_user_profiles todo_user_profiles?
+  todo_tasks todo_tasks[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// User profile information for the Todo application. This table stores
+/// personal information about users that extends their basic account data.
+/// Profile data is subsidiary to the user account and is managed through the
+/// user entity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account reference. {@link todo_users.id}.
+  todo_user_id String
+  
+  /// Display name for the user. Unique across the system and used for
+  /// personalization.
+  username String
+  
+  /// User's full name for display purposes.
+  full_name String?
+  
+  /// URL to the user's avatar image.
+  avatar_url String?
+  
+  /// Short biography or description of the user.
+  bio String?
+  
+  /// Timestamp when the profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the profile was deleted (soft delete). NULL if profile is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_user_id])
+  
+  @@unique([username])
+  @@index([todo_user_id, created_at])
+}

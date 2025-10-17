@@ -1,0 +1,98 @@
+/// Represents articles in the shopping mall. This table stores information
+/// about articles that are displayed in the shopping mall. The articles can
+/// be categorized and have various attributes such as title, content, and
+/// status. The table also includes temporal fields for tracking creation,
+/// updates, and deletion times.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged channel's {@link shopping_channels.id}.
+  shopping_channel_id String
+  
+  /// Belonged section's {@link shopping_sections.id}.
+  shopping_section_id String
+  
+  /// Article code.
+  code String
+  
+  /// Article title.
+  title String
+  
+  /// Article content.
+  content String
+  
+  /// Article status.
+  status String
+  
+  /// When the article was created.
+  created_at DateTime
+  
+  /// When the article was last updated.
+  updated_at DateTime
+  
+  /// When the article was deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_channels @relation(fields: [shopping_channel_id], references: [id], onDelete: Cascade)
+  section shopping_sections @relation(fields: [shopping_section_id], references: [id], onDelete: Cascade)
+  
+  shopping_article_comments shopping_article_comments[]
+  
+  @@index([shopping_section_id])
+  
+  @@unique([code])
+  @@index([shopping_channel_id, shopping_section_id])
+}
+
+/// Represents comments on articles in the shopping mall. This table stores
+/// information about comments made on articles. Each comment is associated
+/// with a specific article and a user. The table includes temporal fields
+/// for tracking creation, updates, and deletion times.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_article_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged article's {@link shopping_articles.id}.
+  shopping_article_id String
+  
+  /// Belonged member's {@link shopping_mall_member.id}.
+  shopping_mall_member_id String
+  
+  /// Comment content.
+  content String
+  
+  /// When the comment was created.
+  created_at DateTime
+  
+  /// When the comment was last updated.
+  updated_at DateTime
+  
+  /// When the comment was deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article shopping_articles @relation(fields: [shopping_article_id], references: [id], onDelete: Cascade)
+  member shopping_mall_member @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_member_id])
+  
+  @@index([shopping_article_id])
+}

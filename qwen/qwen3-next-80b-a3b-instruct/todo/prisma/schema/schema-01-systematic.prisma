@@ -1,0 +1,67 @@
+/// Primary user entity that owns all todo list tasks. This is a single-user
+/// system where each user has a unique identifier but no authentication is
+/// required. The system assumes the user is the person accessing the
+/// application from their device.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_task todo_list_task[]
+  
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Task entity representing individual items in the todo list. Each task
+/// belongs to a single user and has a title, completion status, and creation
+/// timestamp.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_task {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belongs to the user who owns this task. {@link todo_list_user.id}.
+  todo_list_user_id String
+  
+  /// The text content of the task. Limited to 500 characters.
+  title String
+  
+  /// Whether the task has been marked as completed. Default value is false.
+  completed Boolean
+  
+  /// Timestamp when the task was created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_user @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+  @@index([todo_list_user_id, completed])
+  @@index([completed])
+  @@index([created_at])
+}

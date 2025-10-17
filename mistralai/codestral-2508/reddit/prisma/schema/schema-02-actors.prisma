@@ -1,0 +1,151 @@
+/// Guest users who can view public content but cannot interact with the
+/// platform. This table represents unauthenticated users who have limited
+/// access to the community platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated user profile. {@link reddit_like_community_user_profiles.id}
+  reddit_like_community_user_profile_id String?
+  
+  /// When the guest record was created.
+  created_at DateTime
+  
+  /// When the guest record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_like_community_user_profiles? @relation(fields: [reddit_like_community_user_profile_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_community_user_profile_id], map: "reddit_like_community_guest_reddit_like_community_user_85424734")
+  
+  @@index([reddit_like_community_user_profile_id], map: "reddit_like_community_guest_reddit_like_community_user_681c029c")
+}
+
+/// Authenticated users who can create posts, comment, vote, and subscribe to
+/// communities. This table represents regular members of the community
+/// platform with full interaction capabilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_member {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated user profile. {@link reddit_like_community_user_profiles.id}
+  reddit_like_community_user_profile_id String
+  
+  /// Current karma score of the member.
+  karma_score Int
+  
+  /// When the member account was created.
+  created_at DateTime
+  
+  /// When the member account was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_like_community_user_profiles @relation(fields: [reddit_like_community_user_profile_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_community_subscriptions reddit_like_community_subscriptions[]
+  reddit_like_community_posts reddit_like_community_posts[]
+  reddit_like_community_comments reddit_like_community_comments[]
+  reddit_like_community_post_votes reddit_like_community_post_votes[]
+  reddit_like_community_comment_votes reddit_like_community_comment_votes[]
+  reddit_like_community_karma reddit_like_community_karma[]
+  reddit_like_community_content_reports reddit_like_community_content_reports[]
+  reddit_like_community_authentication_tokens reddit_like_community_authentication_tokens[]
+  
+  @@unique([reddit_like_community_user_profile_id], map: "reddit_like_community_member_reddit_like_community_use_bff2cf40")
+  
+  @@index([reddit_like_community_user_profile_id], map: "reddit_like_community_member_reddit_like_community_use_a75d7241")
+}
+
+/// Community managers who can manage posts, comments, and enforce community
+/// rules. This table represents users with elevated privileges for specific
+/// communities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_moderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated user profile. {@link reddit_like_community_user_profiles.id}
+  reddit_like_community_user_profile_id String
+  
+  /// Community this moderator manages. {@link
+  /// reddit_like_community_communities.id}
+  reddit_like_community_community_id String
+  
+  /// JSON string representing moderator permissions.
+  permissions String
+  
+  /// When the moderator role was created.
+  created_at DateTime
+  
+  /// When the moderator role was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_like_community_user_profiles @relation(fields: [reddit_like_community_user_profile_id], references: [id], onDelete: Cascade)
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_community_user_profile_id], map: "reddit_like_community_moderator_reddit_like_community__571a7d72")
+  
+  @@index([reddit_like_community_user_profile_id], map: "reddit_like_community_moderator_reddit_like_community__4676a4f9")
+  @@index([reddit_like_community_community_id], map: "reddit_like_community_moderator_reddit_like_community__322b1e6f")
+}
+
+/// Platform administrators with full access to manage the platform,
+/// including user accounts and community settings. This table represents
+/// users with the highest level of privileges on the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated user profile. {@link reddit_like_community_user_profiles.id}
+  reddit_like_community_user_profile_id String
+  
+  /// Whether this admin has super admin privileges.
+  super_admin Boolean
+  
+  /// When the admin account was created.
+  created_at DateTime
+  
+  /// When the admin account was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_like_community_user_profiles @relation(fields: [reddit_like_community_user_profile_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_community_user_profile_id], map: "reddit_like_community_admin_reddit_like_community_user_534657df")
+  
+  @@index([reddit_like_community_user_profile_id], map: "reddit_like_community_admin_reddit_like_community_user_1400e5fa")
+}

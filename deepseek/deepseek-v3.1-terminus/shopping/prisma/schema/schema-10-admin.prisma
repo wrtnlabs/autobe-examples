@@ -1,0 +1,282 @@
+/// Comprehensive logging of all administrative actions and system events.
+/// Maintains audit trail for compliance, security monitoring, and
+/// troubleshooting. Each log entry captures user actions, system events, and
+/// contextual data for complete oversight. {@link
+/// shopping_mall_administrators.id}
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the action. {@link
+  /// shopping_mall_administrators.id}
+  admin_id String?
+  
+  /// Type of administrative action performed (e.g., user_management,
+  /// system_config, security_change).
+  action_type String
+  
+  /// Detailed description of the action performed and context.
+  description String
+  
+  /// IP address from which the action was performed for security tracking.
+  ip_address String
+  
+  /// User agent string of the client browser/device for forensic analysis.
+  user_agent String?
+  
+  /// Type of resource affected by the action (e.g., user, product, order,
+  /// system).
+  resource_type String
+  
+  /// Identifier of the affected resource (flexible format for different entity
+  /// types).
+  resource_id String?
+  
+  /// Status of the action (success, failed, pending, error).
+  status String
+  
+  /// Error message or stack trace if the action failed.
+  error_details String?
+  
+  /// Timestamp when the log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the log entry was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+  @@index([action_type, created_at])
+  @@index([resource_type, resource_id])
+  @@index([status, created_at])
+  @@index([created_at])
+}
+
+/// System-wide audit records for compliance, security, and operational
+/// oversight. Captures significant system events, configuration changes, and
+/// security incidents. Provides comprehensive audit trail for regulatory
+/// requirements. {@link shopping_mall_administrators.id}
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_audits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who initiated the audit or system change. {@link
+  /// shopping_mall_administrators.id}
+  initiated_by String?
+  
+  /// Administrator who approved the audit or change if required. {@link
+  /// shopping_mall_administrators.id}
+  approved_by String?
+  
+  /// Type of audit or system event (security_breach, config_change,
+  /// compliance_check).
+  audit_type String
+  
+  /// Severity level of the audit event (critical, high, medium, low, info).
+  severity_level String
+  
+  /// Detailed description of the audit event and its impact.
+  description String
+  
+  /// Comma-separated list of system components affected by the event.
+  affected_components String
+  
+  /// JSON representation of the system state before the change.
+  pre_change_state String?
+  
+  /// JSON representation of the system state after the change.
+  post_change_state String?
+  
+  /// Current status of the audit review (pending, in_review, completed,
+  /// escalated).
+  review_status String
+  
+  /// Details of how the audit event was resolved or mitigated.
+  resolution_details String?
+  
+  /// Relevant compliance standard (GDPR, PCI_DSS, HIPAA, etc.).
+  compliance_standard String?
+  
+  /// Timestamp when the audit record was created.
+  created_at DateTime
+  
+  /// Timestamp when the audit record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the audit was reviewed by appropriate personnel.
+  reviewed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  initiator shopping_mall_administrators? @relation("shopping_mall_system_audits_of_initiated_by", fields: [initiated_by], references: [id], onDelete: Cascade)
+  approver shopping_mall_administrators? @relation("shopping_mall_system_audits_of_approved_by", fields: [approved_by], references: [id], onDelete: Cascade)
+  
+  @@index([approved_by])
+  
+  @@index([audit_type, created_at])
+  @@index([severity_level, created_at])
+  @@index([review_status, created_at])
+  @@index([compliance_standard, created_at])
+  @@index([created_at])
+  @@index([initiated_by, created_at])
+}
+
+/// Comprehensive performance monitoring and analytics data. Tracks platform
+/// performance, user engagement, and business metrics for operational
+/// insights and capacity planning.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_performance_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the performance metric being tracked (e.g., response_time,
+  /// conversion_rate).
+  metric_name String
+  
+  /// Category of the metric (system_performance, business_kpi,
+  /// user_engagement).
+  metric_category String
+  
+  /// Numerical value of the metric measurement.
+  metric_value Float
+  
+  /// Unit of measurement for the metric value (ms, percent, count, etc.).
+  metric_unit String
+  
+  /// Time interval for the measurement (minute, hour, day, week, month).
+  measurement_interval String
+  
+  /// Minimum acceptable threshold for this metric.
+  threshold_min Float?
+  
+  /// Maximum acceptable threshold for this metric.
+  threshold_max Float?
+  
+  /// Status based on thresholds (normal, warning, critical).
+  status String
+  
+  /// System component being measured (api_gateway, database,
+  /// payment_processor).
+  component String?
+  
+  /// Source of the metric data (system_monitoring, analytics, manual_entry).
+  data_source String
+  
+  /// Start timestamp of the measurement period.
+  measurement_period_start DateTime
+  
+  /// End timestamp of the measurement period.
+  measurement_period_end DateTime
+  
+  /// Timestamp when the metric record was created.
+  created_at DateTime
+  
+  /// Timestamp when the metric record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([metric_name, measurement_period_start, measurement_period_end], map: "shopping_mall_performance_metrics_metric_name_measurem_86fba806")
+  @@index([metric_category, measurement_period_start], map: "shopping_mall_performance_metrics_metric_category_meas_28b09130")
+  @@index([status, measurement_period_start], map: "shopping_mall_performance_metrics_status_measurement_p_8cd0d489")
+  @@index([component, measurement_period_start], map: "shopping_mall_performance_metrics_component_measuremen_74a0ee98")
+  @@index([measurement_period_start])
+  @@index([metric_name, measurement_period_start], map: "shopping_mall_performance_metrics_metric_name_measurem_ead8244a")
+}
+
+/// Centralized security configuration and policy management. Controls
+/// platform-wide security settings, authentication requirements, and access
+/// policies. Maintains version history for audit compliance.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_security_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who last modified the security settings. {@link
+  /// shopping_mall_administrators.id}
+  last_modified_by String?
+  
+  /// Unique identifier for the security setting configuration.
+  setting_name String
+  
+  /// Category of security setting (authentication, authorization, encryption,
+  /// monitoring).
+  setting_category String
+  
+  /// Current value of the security setting (JSON format for complex
+  /// configurations).
+  setting_value String
+  
+  /// Human-readable description of the security setting and its purpose.
+  setting_description String
+  
+  /// Data type of the setting value (boolean, integer, string, json, array).
+  data_type String
+  
+  /// Whether this security setting is currently active and enforced.
+  is_enabled Boolean
+  
+  /// Version number of the security setting configuration.
+  version Int
+  
+  /// Reason for the most recent change to this security setting.
+  change_reason String?
+  
+  /// Timestamp when these settings become effective.
+  effective_from DateTime
+  
+  /// Timestamp when these settings expire (null for indefinite).
+  effective_until DateTime?
+  
+  /// Whether changes to this setting require additional approval.
+  requires_approval Boolean
+  
+  /// Current approval status for pending changes (pending, approved, rejected).
+  approval_status String?
+  
+  /// Timestamp when the security setting was created.
+  created_at DateTime
+  
+  /// Timestamp when the security setting was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  modifier shopping_mall_administrators? @relation(fields: [last_modified_by], references: [id], onDelete: Cascade)
+  
+  @@unique([setting_name, version])
+  @@index([setting_category, is_enabled])
+  @@index([is_enabled, effective_from])
+  @@index([requires_approval, approval_status], map: "shopping_mall_security_settings_requires_approval_appr_4dd13559")
+  @@index([effective_from])
+  @@index([last_modified_by, updated_at])
+}

@@ -1,0 +1,163 @@
+/// Core user-generated posts within a community. Each record represents a
+/// single post authored by a user and belongs to exactly one community.
+/// Supports three content types (TEXT, LINK, IMAGE) via {type}. Business
+/// lifecycle fields capture labels (nsfw, spoiler), visibility state
+/// (Active/Locked/Archived/RemovedByModeration/RemovedByAdmin/DeletedByAuthor/PendingReview/LegalHold),
+/// and control points (locked_at, archived_at). Edit transparency fields
+/// (edited_at, edit_count) support visible "edited" indicators and audit
+/// traces. Author is {@link community_platform_users}. Community is {@link
+/// community_platform_communities}.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author user's {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Target community's {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Human-readable headline of the post. Business rule: 1–300 characters;
+  /// trimmed of surrounding whitespace.
+  title String
+  
+  /// Post content type. Application enforces one of: TEXT | LINK | IMAGE.
+  type String
+  
+  /// Body text for TEXT posts. Optional and ignored for non-TEXT types by
+  /// application rules.
+  body String?
+  
+  /// Destination URL for LINK posts (http/https). Optional and ignored for
+  /// non-LINK types by application rules.
+  link_url String?
+  
+  /// Image URI for IMAGE posts (JPEG/PNG/GIF). Optional and ignored for
+  /// non-IMAGE types by application rules.
+  image_url String?
+  
+  /// Whether the post is marked Not Safe For Work. Enforced in visibility and
+  /// previews per policy and user preferences.
+  nsfw Boolean
+  
+  /// Whether the post contains spoiler content. Controls preview shielding.
+  spoiler Boolean
+  
+  /// Business visibility state of the post. Expected values include: Active,
+  /// Locked, Archived, RemovedByModeration, RemovedByAdmin, DeletedByAuthor,
+  /// PendingReview, LegalHold. Used to drive eligibility in feeds and
+  /// interactions.
+  visibility_state String?
+  
+  /// Timestamp when the post was locked (no new comments and vote changes).
+  /// Null when unlocked.
+  locked_at DateTime?
+  
+  /// Timestamp when the post was archived (read-only). Null when not archived.
+  archived_at DateTime?
+  
+  /// Timestamp of the last edit by the author. Used for "edited" indicator
+  /// timing.
+  edited_at DateTime?
+  
+  /// Number of times the post content/metadata has been edited by the author.
+  edit_count Int
+  
+  /// Creation timestamp (UTC). Used for New sorting and audit trails.
+  created_at DateTime
+  
+  /// Last update timestamp (UTC). Updated on content edits or state changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the post is considered soft-deleted
+  /// and excluded from standard queries.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_comments community_platform_comments[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_reports community_platform_reports[]
+  
+  @@index([community_platform_community_id, created_at], map: "community_platform_posts_community_platform_community__4df12ea5")
+  @@index([community_platform_user_id, created_at], map: "community_platform_posts_community_platform_user_id_cr_897aa442")
+  @@index([community_platform_community_id, link_url, created_at], map: "community_platform_posts_community_platform_community__8e3eb5de")
+}
+
+/// User comments attached to posts with support for nested replies via
+/// optional parent reference. Each comment belongs to exactly one post
+/// {@link community_platform_posts} and has exactly one author {@link
+/// community_platform_users}. Thread-level locking and edit transparency
+/// fields support business rules and audit visibility. Parent-child
+/// self-relationship preserves children on parent removal through onDelete:
+/// SetNull.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Author user's {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Optional parent comment's {@link community_platform_comments.id} for
+  /// nested replies. Null for top-level comments.
+  parent_id String?
+  
+  /// Comment text content. Business rule: 1–10,000 characters; normalized
+  /// whitespace; no empty-only text.
+  body String
+  
+  /// Timestamp when this comment thread node was locked. Prevents new replies
+  /// beneath this node when set.
+  locked_at DateTime?
+  
+  /// Timestamp of the last author edit. Used for "edited" indicator timing.
+  edited_at DateTime?
+  
+  /// Number of times this comment was edited by the author.
+  edit_count Int
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC). Updated on content edits or state changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the comment is considered soft-deleted
+  /// and excluded from standard queries.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  author community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_reports community_platform_reports[]
+  
+  @@index([community_platform_post_id, parent_id, created_at], map: "community_platform_comments_community_platform_post_id_292b46ad")
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  @@index([parent_id, created_at])
+  @@index([community_platform_user_id, created_at], map: "community_platform_comments_community_platform_user_id_d682cb89")
+}

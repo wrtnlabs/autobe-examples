@@ -1,0 +1,164 @@
+/// Shopping carts represent active or transient collections of SKUs that
+/// customers intend to purchase. Each cart is tied to a customer (if logged
+/// in) or can optionally belong to a guest session. Carts maintain creation
+/// and update timestamps to support session persistence and caching. This
+/// primary table enables independent CRUD operations for user shopping
+/// carts.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Optional session identifier for guests to track carts without login.
+  session_id String?
+  
+  /// Timestamp when this cart was created.
+  created_at DateTime
+  
+  /// Timestamp when this cart was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  
+  @@unique([shopping_mall_customer_id])
+  @@index([created_at, updated_at])
+}
+
+/// Cart items represent individual SKU units added by customers into their
+/// shopping carts. Each item belongs to a specific shopping cart and points
+/// directly to a SKU variant. This subsidiary table supports detailed cart
+/// composition and enables dynamic cart item management.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Contained shopping cart's {@link shopping_mall_shopping_carts.id}
+  shopping_mall_shopping_cart_id String
+  
+  /// Referenced SKU variant's {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Quantity of SKU units added to the cart.
+  quantity Int
+  
+  /// Timestamp when this cart item was created.
+  created_at DateTime
+  
+  /// Timestamp when this cart item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shoppingCart shopping_mall_shopping_carts @relation(fields: [shopping_mall_shopping_cart_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_sku_id])
+  
+  @@unique([shopping_mall_shopping_cart_id, shopping_mall_sku_id], map: "shopping_mall_cart_items_shopping_mall_shopping_cart_i_c1deb4c5")
+  @@index([shopping_mall_shopping_cart_id, created_at], map: "shopping_mall_cart_items_shopping_mall_shopping_cart_i_46780e56")
+}
+
+/// Wishlists store saved products for customers who wish to consider
+/// purchasing them later. Each wishlist belongs to exactly one customer and
+/// tracks creation and update timestamps. This primary table enables
+/// independent CRUD operations for wishlists and supports user convenience
+/// features.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Timestamp when this wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when this wishlist was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_mall_customer_id])
+  @@index([created_at, updated_at])
+}
+
+/// Wishlist items represent individual SKUs added by customers to their
+/// wishlists. Each item belongs to a single wishlist and points to a SKU
+/// variant. This subsidiary table supports detailed wishlist contents and
+/// user convenience features.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Contained wishlist's {@link shopping_mall_wishlists.id}
+  shopping_mall_wishlist_id String
+  
+  /// Referenced SKU variant's {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Timestamp when this wishlist item was created.
+  created_at DateTime
+  
+  /// Timestamp when this wishlist item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_sku_id])
+  
+  @@unique([shopping_mall_wishlist_id, shopping_mall_sku_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_745f462f")
+  @@index([shopping_mall_wishlist_id, created_at], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_57e5e679")
+}

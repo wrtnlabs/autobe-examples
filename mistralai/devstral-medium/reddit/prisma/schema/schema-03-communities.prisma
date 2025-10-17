@@ -1,0 +1,88 @@
+/// Core community entity representing subreddit-like communities where users
+/// can post content, subscribe, and interact. This table stores all
+/// community metadata and serves as the central hub for community
+/// operations.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who created this community. {@link reddit_clone_member.id}.
+  creator_id String
+  
+  /// Unique name of the community (e.g., 'programming', 'gaming').
+  name String
+  
+  /// Detailed description of the community's purpose and topics.
+  description String?
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  /// Flag indicating if the community contains adult content.
+  is_nsfw Boolean
+  
+  /// Current number of subscribers to this community.
+  member_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  creator reddit_clone_member @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_moderator reddit_clone_moderator[]
+  reddit_clone_community_subscriptions reddit_clone_community_subscriptions[]
+  reddit_clone_posts reddit_clone_posts[]
+  
+  @@unique([name])
+  @@index([creator_id])
+  @@index([created_at])
+}
+
+/// Junction table representing the many-to-many relationship between users
+/// and communities. Tracks which users are subscribed to which communities
+/// and manages subscription metadata.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who is subscribed to the community. {@link
+  /// reddit_clone_member.id}.
+  user_id String
+  
+  /// The community being subscribed to. {@link reddit_clone_communities.id}.
+  community_id String
+  
+  /// Timestamp when the user subscribed to the community.
+  subscribed_at DateTime
+  
+  /// Flag indicating if the user has muted notifications from this community.
+  is_muted Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, community_id])
+  @@index([user_id, subscribed_at])
+  @@index([community_id, subscribed_at], map: "reddit_clone_community_subscriptions_community_id_subs_918c51ed")
+}

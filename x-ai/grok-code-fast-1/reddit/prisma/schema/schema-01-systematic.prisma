@@ -1,0 +1,54 @@
+/// Core community entities that organize content and user interactions
+/// within the platform. Communities serve as containers for posts, comments,
+/// and subscriptions, with each having unique names and requiring moderator
+/// approval for creation.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique community identifier consisting of alphanumeric characters and
+  /// underscores, maximum 21 characters.
+  code String
+  
+  /// Display name of the community shown to users, maximum 100 characters.
+  name String
+  
+  /// Detailed description of the community's purpose and rules, maximum 500
+  /// characters.
+  description String
+  
+  /// Current status of the community (pending, active, suspended, archived).
+  /// Default is pending until moderator approval.
+  status String
+  
+  /// Business workflow status for community management (e.g., pending_review,
+  /// approved, featured).
+  business_status String
+  
+  /// Timestamp when the community was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for communities that have been removed but retained
+  /// for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_moderators community_platform_moderators[]
+  community_platform_posts community_platform_posts[]
+  community_platform_subscriptions community_platform_subscriptions[]
+  
+  @@unique([code])
+  @@index([status])
+  @@index([created_at])
+}

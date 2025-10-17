@@ -1,0 +1,42 @@
+/// Replies to economic/political forum posts. Each reply is automatically
+/// published without moderation, forms a threaded relationship with a parent
+/// post, and has constrained content length for concise responses. Archived
+/// for read-performance optimization without user authentication.
+///
+/// @namespace Replies
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent economic board post that this reply answers.
+  /// {@link economic_board_posts.id}.
+  economic_board_post_id String
+  
+  /// Reference to the anonymous guest who submitted this reply. {@link
+  /// economic_board_guest.id}.
+  economic_board_guest_id String
+  
+  /// The text content of the reply. Must be between 5 and 1,000 characters as
+  /// per business rules.
+  content String
+  
+  /// Timestamp when the reply was submitted in ISO 8601 format (UTC).
+  created_at DateTime
+  
+  /// Timestamp when the reply was last modified. Initially set to created_at.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post economic_board_posts @relation(fields: [economic_board_post_id], references: [id], onDelete: Cascade)
+  guest economic_board_guest @relation(fields: [economic_board_guest_id], references: [id], onDelete: Cascade)
+  
+  @@index([economic_board_post_id, created_at])
+  @@index([created_at])
+  @@index([economic_board_guest_id])
+}

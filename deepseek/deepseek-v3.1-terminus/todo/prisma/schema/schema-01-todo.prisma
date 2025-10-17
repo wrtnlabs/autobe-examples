@@ -1,0 +1,45 @@
+/// Core Todo entity representing individual todo items in the minimal todo
+/// application. Stores basic todo information including text content,
+/// completion status, and timestamps for tracking creation and updates. As
+/// the primary business entity, this table supports all basic CRUD
+/// operations for todo management. Enhanced with soft delete support and
+/// improved indexing for better performance.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model minimal_todo_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Text content of the todo item. Contains the actual task description that
+  /// users manage. Should be validated for length (1-500 characters) at the
+  /// application level.
+  content String
+  
+  /// Completion status indicating whether the todo item has been marked as
+  /// done. False means incomplete/pending, true means completed.
+  completed Boolean
+  
+  /// Timestamp when the todo item was originally created. Automatically set
+  /// when the todo is first saved. Used for chronological ordering of todos.
+  created_at DateTime
+  
+  /// Timestamp when the todo item was last modified. Updated automatically
+  /// whenever any field changes. Used for tracking recent activity.
+  updated_at DateTime
+  
+  /// Timestamp when the todo item was soft deleted. Null indicates the todo is
+  /// active, non-null indicates deletion. Supports the confirmation-based
+  /// deletion workflow required by business rules.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+  @@index([completed, created_at])
+  @@index([updated_at])
+}

@@ -1,0 +1,250 @@
+/// Product catalog entry owned by a seller. Contains product-level metadata
+/// used on product listing and detail pages. Related entities: {@\link
+/// shopping_mall_skus} for variant-level data and {@\link
+/// shopping_mall_product_categories} for category membership. Business
+/// constraints: seller-level code uniqueness enforced by (seller_id, code).
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning seller. {@link shopping_mall_seller.id}.
+  seller_id String
+  
+  /// Business identifier/code scoped to seller (unique per seller).
+  code String
+  
+  /// Human-facing product title used in listings and search.
+  name String
+  
+  /// Short description used in listing cards.
+  short_description String?
+  
+  /// Full product description (HTML or markdown may be stored as text).
+  description String?
+  
+  /// Primary product image URI for listing thumbnail.
+  primary_image_uri String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_categories shopping_mall_product_categories[]
+  shopping_mall_skus shopping_mall_skus[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  
+  @@unique([seller_id, code])
+  @@index([seller_id, created_at])
+}
+
+/// SKU (Stock Keeping Unit) representing a specific variant of a product
+/// (color, size, option). Updated to include explicit search indexing
+/// guidance for attributes and to document migration to JSONB for
+/// attributes. Retains global sku_code uniqueness; attributes remain stored
+/// as string until JSON/JsonB migration is performed.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_skus {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product. {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Unique SKU code for external lookups (e.g., barcode, merchant SKU).
+  /// Remains unique globally unless business changes to seller-scoped
+  /// uniqueness.
+  sku_code String
+  
+  /// Optional short name for the SKU variant (e.g., "T-Shirt — Red / M").
+  title String?
+  
+  /// JSON-encoded attribute map (e.g., {"color":"red","size":"M"}). Stored as
+  /// text for portability in the short term; plan to migrate to native
+  /// JSON/JSONB and create GIN jsonb_path_ops indexes on keys used for
+  /// filtering.
+  attributes_json String
+  
+  /// Current price for this SKU in platform currency.
+  price Float
+  
+  /// ISO currency code (e.g., "USD", "KRW").
+  currency String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_events shopping_mall_inventory_events[]
+  shopping_mall_inventory shopping_mall_inventory[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@unique([sku_code])
+  @@index([product_id, price])
+  @@index([product_id, sku_code])
+}
+
+/// Per-SKU inventory snapshot and operational counters. Added guidance to
+/// support low-stock queries and recommended DB-level CHECK constraints for
+/// non-negative inventory counts. Keeps sku_id unique to ensure one
+/// inventory row per SKU.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged SKU. {@link shopping_mall_skus.id}.
+  sku_id String
+  
+  /// Reference to last processed inventory event for auditing. {@link
+  /// shopping_mall_inventory_events.id}.
+  last_event_id String?
+  
+  /// Quantity available for sale (non-negative). Application and DB-level
+  /// CHECK constraints recommended to enforce >= 0.
+  available_quantity Int
+  
+  /// Quantity currently reserved for carts/orders (non-negative).
+  reserved_quantity Int
+  
+  /// Optional warehouse/location code.
+  location String?
+  
+  /// Suggested threshold to trigger restock alerts.
+  reorder_threshold Int?
+  
+  /// Last inventory reconciliation or check timestamp.
+  last_checked_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [sku_id], references: [id], onDelete: Cascade)
+  lastInventoryEvent shopping_mall_inventory_events? @relation(fields: [last_event_id], references: [id], onDelete: Cascade)
+  
+  @@index([last_event_id])
+  
+  @@unique([sku_id])
+  @@index([sku_id, updated_at])
+  @@index([reorder_threshold, available_quantity], map: "shopping_mall_inventory_reorder_threshold_available_qu_96795164")
+}
+
+/// Product/SKU reviews submitted by customers. Added unique constraint to
+/// enforce at-most-one review per product per author. Retains moderation
+/// flags, verified_purchase, and GIN on body for search.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reviewed product. {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Optional referenced SKU for SKU-level reviews. {@link
+  /// shopping_mall_skus.id}.
+  sku_id String?
+  
+  /// Review author as a customer. {@link shopping_mall_customer.id}.
+  author_id String
+  
+  /// Optional admin who moderated or removed the review. {@link
+  /// shopping_mall_admin.id}.
+  moderator_admin_id String?
+  
+  /// Numeric rating (e.g., 1-5).
+  rating Int
+  
+  /// Optional short title for the review.
+  title String?
+  
+  /// Long-form review text.
+  body String?
+  
+  /// JSON array of photo URIs attached to the review.
+  photos_json String?
+  
+  /// Whether purchase was verified (true/false).
+  verified_purchase Boolean
+  
+  /// Whether review is moderated/hidden from public view.
+  moderated Boolean
+  
+  /// Optional reason code or free-text for moderation decisions.
+  moderation_reason String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus? @relation(fields: [sku_id], references: [id], onDelete: Cascade)
+  author shopping_mall_customer @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  moderator shopping_mall_admin? @relation(fields: [moderator_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([sku_id])
+  @@index([moderator_admin_id])
+  
+  @@unique([product_id, author_id])
+  @@index([product_id, created_at])
+  @@index([author_id, created_at])
+}

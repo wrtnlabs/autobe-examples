@@ -1,0 +1,28 @@
+/// Main entity representing individual todo items. Each task has a unique
+/// identifier, a title for user identification, a boolean status to track
+/// completion, and a timestamp for when it was created. This model serves as
+/// the primary business entity for task management, supporting all core
+/// operations including creation, completion, and persistence across
+/// sessions.
+///
+/// @namespace Tasks
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Task title as entered by the user. Represents the primary identifier of
+  /// the task in the user interface.
+  title String
+  
+  /// Current completion status of the task. Indicates whether the task has
+  /// been completed by the user.
+  completed Boolean
+  
+  /// Timestamp when the task was created. Used for sorting tasks by creation
+  /// order and provides audit trail for task management.
+  created_at DateTime
+}

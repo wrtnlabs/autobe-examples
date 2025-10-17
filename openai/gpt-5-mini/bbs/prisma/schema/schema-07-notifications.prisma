@@ -1,0 +1,139 @@
+/// User-facing notification events. Each record represents a single
+/// notification targeted to a registered user (recipient). Notifications are
+/// append-only events by business practice with soft-delete support. Records
+/// contain a small, flexible JSON payload (stored as string) for extensible
+/// delivery payloads (mentions, replies, moderation actions, system
+/// messages). Key relations: recipient ({@link
+/// econ_political_forum_registereduser.id}), optional actor ({@link
+/// econ_political_forum_registereduser.id}) who triggered the notification,
+/// and optional references to related domain entities (thread, post,
+/// moderation_case) stored as UUIDs for cross-component linkage. Optimized
+/// for fast per-recipient reads and supports marking notifications as read,
+/// delivery timestamps, and light audit fields.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Recipient registered user's {@link
+  /// econ_political_forum_registereduser.id}.
+  registereduser_id String
+  
+  /// Optional actor (triggering user) {@link
+  /// econ_political_forum_registereduser.id}. Nullable when system-generated.
+  actor_registereduser_id String?
+  
+  /// Notification type code (e.g., 'mention', 'reply', 'moderation', 'system').
+  type String
+  
+  /// Short human-readable title for the notification. Optional; used in UI
+  /// summaries.
+  title String?
+  
+  /// Optional short message body or plain-text excerpt for display in lists.
+  body String?
+  
+  /// Flexible JSON payload (serialized as string) containing structured
+  /// delivery data (links to thread/post ids, excerpt, metadata).
+  payload String
+  
+  /// Whether the recipient has marked this notification as read.
+  is_read Boolean
+  
+  /// When the notification was delivered to the user (for push/email).
+  /// Nullable if not yet delivered or for in-app only events.
+  delivered_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When set, notification is treated as removed from
+  /// normal listings but retained for audit.
+  deleted_at DateTime?
+  
+  /// Optional related thread id (referencing {@link
+  /// econ_political_forum_threads.id}) stored as UUID for linkage. Nullable to
+  /// avoid hard FK to other component in this schema file.
+  related_thread_id String?
+  
+  /// Optional related post id (referencing {@link
+  /// econ_political_forum_posts.id}) stored as UUID for linkage.
+  related_post_id String?
+  
+  /// Optional related moderation case id (referencing {@link
+  /// econ_political_forum_moderation_cases.id}) stored as UUID for linkage.
+  related_moderation_case_id String?
+  
+  //----
+  // RELATIONS
+  //----
+  recipient econ_political_forum_registereduser @relation("econ_political_forum_notifications_of_registereduser_id", fields: [registereduser_id], references: [id], onDelete: Cascade)
+  actor econ_political_forum_registereduser? @relation("econ_political_forum_notifications_of_actor_registereduser_id", fields: [actor_registereduser_id], references: [id], onDelete: Cascade)
+  
+  @@index([registereduser_id, created_at], map: "econ_political_forum_notifications_registereduser_id_c_abd4eae4")
+  @@index([registereduser_id, is_read, created_at], map: "econ_political_forum_notifications_registereduser_id_i_23265539")
+  @@index([actor_registereduser_id])
+  @@index([related_thread_id, created_at], map: "econ_political_forum_notifications_related_thread_id_c_7489bc35")
+  @@index([related_post_id, created_at], map: "econ_political_forum_notifications_related_post_id_cre_972d1a97")
+  @@index([related_moderation_case_id, created_at], map: "econ_political_forum_notifications_related_moderation__e7cd00cc")
+}
+
+/// Per-user notification delivery preferences. One row per registered user
+/// controls channel-level toggles (in-app, email, push) and a flexible JSON
+/// string for per-notification-type overrides. Designed to be small and
+/// infrequently updated; referenced when enqueuing or delivering
+/// notifications. Links to registered users via a one-to-one foreign key
+/// constraint.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged registered user's {@link
+  /// econ_political_forum_registereduser.id}. One-to-one relationship enforced
+  /// with a unique constraint.
+  registereduser_id String
+  
+  /// Whether in-app notifications are enabled for the user.
+  in_app Boolean
+  
+  /// Whether email notifications are enabled for the user.
+  email Boolean
+  
+  /// Whether push notifications are enabled for the user.
+  push Boolean
+  
+  /// Optional JSON-serialized per-type preference overrides (e.g.,
+  /// {"mentions": {"email": false}}) stored as string for portability.
+  preferences_payload String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for preference records.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_political_forum_registereduser @relation(fields: [registereduser_id], references: [id], onDelete: Cascade)
+  
+  @@unique([registereduser_id], map: "econ_political_forum_notification_preferences_register_5a1ee7ea")
+  @@index([registereduser_id, updated_at], map: "econ_political_forum_notification_preferences_register_cfce4dba")
+}

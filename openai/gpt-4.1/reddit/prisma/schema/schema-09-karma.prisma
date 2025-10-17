@@ -1,0 +1,265 @@
+/// Holds the current karma state for each member, aggregated across the
+/// platform and per community. Supports enforcement of permission checks and
+/// karma-based feature gating. Links to {@link community_platform_members}
+/// and optionally to {@link community_platform_communities}.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_ledgers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Referenced community's {@link community_platform_communities.id}.
+  /// Nullable for system-wide karma.
+  community_platform_community_id String?
+  
+  /// The current karma value for the member (can be negative).
+  current_karma Int
+  
+  /// Business reason for feature lockout (if karma gating applies). Nullable
+  /// when no lock.
+  feature_lock_reason String?
+  
+  /// Last time the ledger was updated.
+  updated_at DateTime
+  
+  /// Ledger creation timestamp.
+  created_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_member_id, community_platform_community_id], map: "community_platform_karma_ledgers_community_platform_me_928cb1d4")
+  @@index([community_platform_member_id], map: "community_platform_karma_ledgers_community_platform_me_e3ce1a57")
+  @@index([community_platform_community_id], map: "community_platform_karma_ledgers_community_platform_co_9a759376")
+}
+
+/// Tracks penalties (reductions, suspensions) assigned to members for rule
+/// violations or moderation actions. Supports moderation/business workflows
+/// for temporary or permanent penalty assignment. Connects to {@link
+/// community_platform_members}, {@link community_platform_communities}, with
+/// reason and penalty period.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_penalties {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Penalized member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Targeted community's {@link community_platform_communities.id}. Nullable
+  /// for global penalty.
+  community_platform_community_id String?
+  
+  /// Type of penalty (e.g. 'deduction', 'suspension').
+  penalty_type String
+  
+  /// Numeric value for penalty (negative for deduction, duration if
+  /// suspension).
+  penalty_value Int
+  
+  /// Detailed human-readable reason for penalty.
+  penalty_reason String
+  
+  /// Current penalty status (active, expired, revoked).
+  penalty_status String
+  
+  /// The time penalty was applied.
+  applied_at DateTime
+  
+  /// Nullable. Penalty expiration timestamp.
+  expires_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_community_id], map: "community_platform_karma_penalties_community_platform__864a36e5")
+  
+  @@index([community_platform_member_id], map: "community_platform_karma_penalties_community_platform__4b70a386")
+  @@index([penalty_status])
+}
+
+/// Transactional append-only history of karma changes (positive or negative)
+/// for audit, traceability, and point-attribution. Records every
+/// karma-affecting event, such as post votes, commentary, moderation
+/// actions. Links to relevant member, community, post or comment, and event
+/// type.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member affected by the karma event. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Nullable. Scoping to community if relevant. {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String?
+  
+  /// Nullable. Related post if karma event comes from a post. {@link
+  /// community_platform_posts.id}.
+  community_platform_post_id String?
+  
+  /// Nullable. Related comment if karma event comes from a comment. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String?
+  
+  /// Type of karma event (e.g. 'upvote', 'downvote', 'moderation_penalty',
+  /// 'admin_adjustment').
+  event_type String
+  
+  /// Signed integer delta of karma (positive or negative).
+  change_amount Int
+  
+  /// Short context or source for the event (e.g. 'voting', 'system',
+  /// 'moderation').
+  event_context String
+  
+  /// Timestamp for when the karma change was registered.
+  event_time DateTime
+  
+  /// Record creation timestamp (usually same as event_time).
+  created_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_post_id], map: "community_platform_karma_history_community_platform_po_a4a21b92")
+  @@index([community_platform_comment_id], map: "community_platform_karma_history_community_platform_co_c6765431")
+  
+  @@index([community_platform_member_id], map: "community_platform_karma_history_community_platform_me_c24b8d7f")
+  @@index([community_platform_community_id], map: "community_platform_karma_history_community_platform_co_8d578955")
+  @@index([event_type])
+  @@index([event_time])
+}
+
+/// Holds platform or community-specific karma thresholds with business
+/// meaning, such as points needed to unlock features, or penalties to lock
+/// features. Links to communities (nullable for platform-wide threshold).
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_thresholds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Nullable. Community to which threshold applies. {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String?
+  
+  /// Business type/key for the threshold (e.g. 'post_creation',
+  /// 'comment_voting', 'subscription_unlock').
+  threshold_type String
+  
+  /// Required karma value for this threshold.
+  threshold_value Int
+  
+  /// Reason for gating associated with this threshold (human-readable,
+  /// optional).
+  feature_lock_reason String?
+  
+  /// Row creation timestamp.
+  created_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_community_id, threshold_type], map: "community_platform_karma_thresholds_community_platform_94b26b8e")
+}
+
+/// Tracks historical awards or badges given to members as a result of their
+/// karma-accrued achievements. Each row is a single award event, not the
+/// display badge (which is managed in a profile component). Links to member,
+/// community (optional), award type, and event time for full traceability.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_awards {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who received the award. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Nullable. Community in which the award was accrued (for
+  /// community-specific badges). {@link community_platform_communities.id}.
+  community_platform_community_id String?
+  
+  /// Type or key of the award (e.g. 'gold', 'founder', 'legendary').
+  award_type String
+  
+  /// Short human-readable description of why the award was granted.
+  award_reason String?
+  
+  /// Time when the award was granted.
+  event_time DateTime
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_profile_badges community_platform_profile_badges[]
+  
+  @@index([community_platform_community_id], map: "community_platform_karma_awards_community_platform_com_cfe9c870")
+  
+  @@index([community_platform_member_id], map: "community_platform_karma_awards_community_platform_mem_06a094ff")
+  @@index([award_type])
+}

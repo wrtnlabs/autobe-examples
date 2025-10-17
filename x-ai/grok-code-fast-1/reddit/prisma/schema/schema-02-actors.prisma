@@ -1,0 +1,87 @@
+/// Registered members who participate in the community platform, posting
+/// content, voting, and engaging with discussions. Members can customize
+/// their profiles and subscribe to communities of interest. Each member has
+/// a unique email and nickname for identification and communication.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address for account registration and notifications.
+  email String
+  
+  /// Hashed password for secure authentication.
+  password_hash String
+  
+  /// Unique username displayed throughout the platform.
+  nickname String
+  
+  /// Optional user biography or description.
+  bio String?
+  
+  /// Optional avatar image URL for user profiles.
+  avatar_uri String?
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp of last profile modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for deactivated accounts.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_moderators community_platform_moderators[]
+  community_platform_posts community_platform_posts[]
+  community_platform_comments community_platform_comments[]
+  community_platform_votes community_platform_votes[]
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_reports community_platform_reports[]
+  
+  @@unique([email])
+  @@unique([nickname])
+  @@index([created_at])
+}
+
+/// Junction table linking members to communities where they serve as
+/// moderators. Moderators can approve content, remove inappropriate posts,
+/// manage user behavior, and enforce community rules in their assigned
+/// communities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member assigned as moderator for this community.
+  community_platform_member_id String
+  
+  /// Community this member moderates.
+  community_platform_community_id String
+  
+  /// Timestamp when the moderator role was assigned.
+  assigned_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_reports community_platform_reports[]
+  
+  @@unique([community_platform_member_id, community_platform_community_id], map: "community_platform_moderators_community_platform_membe_d68dc93a")
+  @@index([community_platform_community_id], map: "community_platform_moderators_community_platform_commu_65018e17")
+}

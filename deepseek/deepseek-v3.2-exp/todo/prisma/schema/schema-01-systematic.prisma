@@ -1,0 +1,38 @@
+/// System-level configuration settings for the Todo application. Stores
+/// key-value pairs for application configuration, feature flags, and system
+/// metadata that can be referenced by other components. {@link
+/// todo_app_users} {@link todo_app_admins} {@link todo_app_todos}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier. Used to reference specific
+  /// configuration settings throughout the application.
+  key String
+  
+  /// Configuration value stored as string. Can represent various data types
+  /// including boolean flags, numeric values, or JSON configuration objects.
+  value String
+  
+  /// Human-readable description explaining the purpose and usage of this
+  /// configuration setting.
+  description String?
+  
+  /// Timestamp when this configuration was first created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([created_at])
+}

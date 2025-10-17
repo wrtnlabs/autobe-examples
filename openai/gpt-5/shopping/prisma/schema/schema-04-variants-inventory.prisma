@@ -1,0 +1,595 @@
+/// Master catalog of variant option types (e.g., Color, Size) that define
+/// selectable dimensions for products and SKUs. Managed by operations and
+/// reused across many products. Related option values live in {@link
+/// shopping_mall_option_values}. Products select which types apply via
+/// {@link shopping_mall_product_options}.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_option_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Business identifier code for the option type (e.g., "color", "size").
+  /// Must be unique platform-wide.
+  code String
+  
+  /// Human-readable name of the option type (e.g., "Color").
+  name String
+  
+  /// Optional description or guidance for this option type.
+  description String?
+  
+  /// Display ordering priority for UI presentation; lower numbers appear first.
+  sort_order Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the record is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_option_values shopping_mall_option_values[]
+  shopping_mall_product_options shopping_mall_product_options[]
+  shopping_mall_sku_option_values shopping_mall_sku_option_values[]
+  
+  @@unique([code])
+  @@index([sort_order, created_at])
+}
+
+/// Concrete values under an option type (e.g., for {@link
+/// shopping_mall_option_types} Color → Red, Blue). Each value belongs to
+/// exactly one type and may include presentation hints (e.g., hex_color).
+/// Used to define valid variant combinations for SKUs.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_option_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged option type's {@link shopping_mall_option_types.id}
+  shopping_mall_option_type_id String
+  
+  /// Business identifier within the parent type (e.g., "red", "xl"). Unique
+  /// per option type.
+  code String
+  
+  /// Display value for this option (e.g., "Red", "XL").
+  value String
+  
+  /// Optional hex color string (e.g., #FF0000) used for color swatches.
+  hex_color String?
+  
+  /// Display ordering priority within the type; lower numbers appear first.
+  sort_order Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  optionType shopping_mall_option_types @relation(fields: [shopping_mall_option_type_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sku_option_values shopping_mall_sku_option_values[]
+  
+  @@unique([shopping_mall_option_type_id, code], map: "shopping_mall_option_values_shopping_mall_option_type__41d9c8eb")
+  @@index([shopping_mall_option_type_id, sort_order], map: "shopping_mall_option_values_shopping_mall_option_type__8867e875")
+}
+
+/// Declares which option types apply to a specific product. This enables
+/// valid variant dimensions for that product, preserving variant integrity.
+/// Supports ordering and whether the type is required for SKU resolution.
+/// References {@link shopping_mall_products} and {@link
+/// shopping_mall_option_types}. Adds a unique constraint on (product_id,
+/// display_order) to prevent duplicate ordering positions per product.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target product's {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Applied option type's {@link shopping_mall_option_types.id}
+  shopping_mall_option_type_id String
+  
+  /// Whether this option type is required for the product's SKU resolution.
+  required Boolean
+  
+  /// Display ordering priority for the option types on the product page.
+  display_order Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the mapping is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  optionType shopping_mall_option_types @relation(fields: [shopping_mall_option_type_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_id, shopping_mall_option_type_id], map: "shopping_mall_product_options_shopping_mall_product_id_243b3468")
+  @@unique([shopping_mall_product_id, display_order], map: "shopping_mall_product_options_shopping_mall_product_id_e3dc0b52")
+  @@index([shopping_mall_option_type_id])
+}
+
+/// Stock Keeping Units (SKUs) representing specific purchasable variants of
+/// a product. Each SKU belongs to a {@link shopping_mall_products} item and
+/// is resolved via its associated {@link shopping_mall_sku_option_values}.
+/// Contains sellable status and base price information. Uniqueness of the
+/// variant combination for a product is enforced via an
+/// application-generated combination_key. This version removes the
+/// unnecessary trigram GIN index on sku_code to reduce write and storage
+/// overhead while keeping the unique constraint.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_skus {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product's {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Platform-wide unique SKU code used internally and in integrations.
+  sku_code String
+  
+  /// Seller-provided SKU code (optional), visible to seller roles and staff.
+  seller_sku_code String?
+  
+  /// Business status of the SKU (e.g., active, out_of_stock, backorder,
+  /// preorder, discontinued).
+  status String
+  
+  /// Base unit price for this SKU in the configured currency.
+  base_price Float
+  
+  /// ISO currency code for pricing (e.g., USD, KRW).
+  currency String
+  
+  /// Optional barcode/GTIN for this SKU.
+  barcode String?
+  
+  /// Optional weight for shipping calculations.
+  weight Float?
+  
+  /// Optional package length for shipping calculations.
+  length Float?
+  
+  /// Optional package width for shipping calculations.
+  width Float?
+  
+  /// Optional package height for shipping calculations.
+  height Float?
+  
+  /// Canonical, application-generated key representing the combination of
+  /// option values for this SKU within its product (e.g., sorted list of
+  /// option value identifiers). Ensures a single SKU per unique combination.
+  combination_key String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the SKU is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sku_option_values shopping_mall_sku_option_values[]
+  shopping_mall_inventory_records shopping_mall_inventory_records[]
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_inventory_allocations shopping_mall_inventory_allocations[]
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  shopping_mall_promotion_rules shopping_mall_promotion_rules[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_rating_aggregates shopping_mall_rating_aggregates[]
+  
+  @@unique([sku_code])
+  @@unique([shopping_mall_product_id, combination_key])
+  @@index([shopping_mall_product_id, status])
+  @@index([shopping_mall_product_id, created_at])
+}
+
+/// Junction mapping between {@link shopping_mall_skus} and {@link
+/// shopping_mall_option_values} that defines the concrete variant
+/// combination for a SKU. This version adds {@link
+/// shopping_mall_option_types} linkage to enforce one value per option type
+/// per SKU at the database level. It keeps the original uniqueness on
+/// (sku_id, option_value_id) and adds a new uniqueness on (sku_id,
+/// option_type_id) to prevent multiple values of the same type for a single
+/// SKU.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_option_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related SKU's {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Assigned option value's {@link shopping_mall_option_values.id}
+  shopping_mall_option_value_id String
+  
+  /// Option type that the assigned value belongs to. Enforces one value per
+  /// type per SKU. Target model's {@link shopping_mall_option_types.id}
+  shopping_mall_option_type_id String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if mapping is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  optionValue shopping_mall_option_values @relation(fields: [shopping_mall_option_value_id], references: [id], onDelete: Cascade)
+  optionType shopping_mall_option_types @relation(fields: [shopping_mall_option_type_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_sku_id, shopping_mall_option_value_id], map: "shopping_mall_sku_option_values_shopping_mall_sku_id_s_0c4c29f7")
+  @@unique([shopping_mall_sku_id, shopping_mall_option_type_id], map: "shopping_mall_sku_option_values_shopping_mall_sku_id_s_0ab37b6e")
+  @@index([shopping_mall_sku_id, created_at], map: "shopping_mall_sku_option_values_shopping_mall_sku_id_c_27f3572e")
+  @@index([shopping_mall_option_value_id], map: "shopping_mall_sku_option_values_shopping_mall_option_v_faaaf1ea")
+  @@index([shopping_mall_option_type_id], map: "shopping_mall_sku_option_values_shopping_mall_option_t_469d0eec")
+}
+
+/// Inventory locations (e.g., warehouses, stores, drop-ship nodes) that hold
+/// stock for sellers/stores. Each location belongs to a {@link
+/// shopping_mall_stores} entity and contains basic identity and activation
+/// fields. Inventory is recorded via {@link
+/// shopping_mall_inventory_records}.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_locations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning store's {@link shopping_mall_stores.id}
+  shopping_mall_store_id String
+  
+  /// Store-scoped unique code identifying the location.
+  code String
+  
+  /// Human-readable name of the location (e.g., "Seoul WH-A").
+  name String
+  
+  /// Optional address or free-form location note.
+  address String?
+  
+  /// Optional region/country code used for logistics constraints.
+  region String?
+  
+  /// Whether this location is active and eligible for allocation.
+  active Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the location is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  store shopping_mall_stores @relation(fields: [shopping_mall_store_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_records shopping_mall_inventory_records[]
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_inventory_allocations shopping_mall_inventory_allocations[]
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  
+  @@unique([shopping_mall_store_id, code], map: "shopping_mall_inventory_locations_shopping_mall_store__c2860039")
+  @@index([shopping_mall_store_id, active], map: "shopping_mall_inventory_locations_shopping_mall_store__a6c34bd8")
+}
+
+/// Baseline inventory records capturing per-SKU per-location on-hand
+/// quantities and policy thresholds. Does not store derived
+/// available-to-sell; ATS is computed from records, reservations, and
+/// allocations. References {@link shopping_mall_skus} and {@link
+/// shopping_mall_inventory_locations}.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Tracked SKU's {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Inventory location's {@link shopping_mall_inventory_locations.id}
+  shopping_mall_inventory_location_id String
+  
+  /// Physical on-hand quantity at the location (non-negative).
+  on_hand Int
+  
+  /// Units currently non-sellable (damaged, QA hold, etc.), excluded from ATS.
+  non_sellable Int
+  
+  /// Threshold at or below which Low Stock warnings are raised.
+  safety_stock_threshold Int
+  
+  /// Optional point at which replenishment should be triggered.
+  reorder_point Int?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the record is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  location shopping_mall_inventory_locations @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_sku_id, shopping_mall_inventory_location_id], map: "shopping_mall_inventory_records_shopping_mall_sku_id_s_f9d9ba9b")
+  @@index([shopping_mall_inventory_location_id, shopping_mall_sku_id], map: "shopping_mall_inventory_records_shopping_mall_inventor_8582b1b4")
+  @@index([shopping_mall_sku_id, created_at], map: "shopping_mall_inventory_records_shopping_mall_sku_id_c_2e7f07fe")
+}
+
+/// Temporary inventory holds created during checkout or payment
+/// authorization to prevent oversell. Reservations may be linked to a cart,
+/// user, and/or order and optionally to a preferred location. Expire
+/// automatically per policy. See {@link shopping_mall_inventory_allocations}
+/// for committed quantities after order confirmation.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_reservations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reserved SKU's {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Preferred or tentative location's {@link
+  /// shopping_mall_inventory_locations.id} (optional).
+  shopping_mall_inventory_location_id String?
+  
+  /// Origin cart's {@link shopping_mall_carts.id} when reservation is created
+  /// from a cart/checkout session.
+  shopping_mall_cart_id String?
+  
+  /// Linked order's {@link shopping_mall_orders.id} if created during
+  /// payment/confirmation.
+  shopping_mall_order_id String?
+  
+  /// Actor user's {@link shopping_mall_users.id} creating the reservation
+  /// (customer or system-assigned).
+  shopping_mall_user_id String?
+  
+  /// Idempotency and tracking token for this reservation. Unique platform-wide.
+  reservation_token String
+  
+  /// Reserved quantity for the SKU (positive integer).
+  quantity Int
+  
+  /// Lifecycle status (e.g., active, extended, consumed, released, expired).
+  status String
+  
+  /// Timestamp when the reservation was created.
+  reserved_at DateTime
+  
+  /// Expiry timestamp for the reservation per policy.
+  reservation_expires_at DateTime
+  
+  /// Timestamp when the reservation was released/expired; null while active.
+  released_at DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the reservation record is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  location shopping_mall_inventory_locations? @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  cart shopping_mall_carts? @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  user shopping_mall_users? @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_inventory_location_id], map: "shopping_mall_inventory_reservations_shopping_mall_inv_2d40fb6e")
+  @@index([shopping_mall_cart_id])
+  @@index([shopping_mall_user_id])
+  
+  @@unique([reservation_token])
+  @@index([shopping_mall_sku_id, reservation_expires_at], map: "shopping_mall_inventory_reservations_shopping_mall_sku_ea102928")
+  @@index([shopping_mall_order_id, shopping_mall_sku_id], map: "shopping_mall_inventory_reservations_shopping_mall_ord_7ef24c47")
+}
+
+/// Committed quantities that deduct from available inventory after order
+/// confirmation. Each allocation ties a SKU, a location, and an {@link
+/// shopping_mall_order_items} line. Used to reconcile captures and
+/// fulfillment. Complements {@link shopping_mall_inventory_reservations}.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_allocations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Allocated SKU's {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Inventory location's {@link shopping_mall_inventory_locations.id} from
+  /// which stock is allocated.
+  shopping_mall_inventory_location_id String
+  
+  /// Fulfilled order line's {@link shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// Unique reference key for idempotent allocation operations.
+  allocation_reference String
+  
+  /// Allocated quantity for the order line.
+  quantity Int
+  
+  /// Timestamp when the allocation was created.
+  allocated_at DateTime
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the record is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  location shopping_mall_inventory_locations @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_item_allocations shopping_mall_order_item_allocations[]
+  
+  @@index([shopping_mall_inventory_location_id], map: "shopping_mall_inventory_allocations_shopping_mall_inve_4236abcb")
+  
+  @@unique([allocation_reference])
+  @@index([shopping_mall_order_item_id, allocated_at], map: "shopping_mall_inventory_allocations_shopping_mall_orde_881a5c32")
+  @@index([shopping_mall_sku_id, shopping_mall_inventory_location_id], map: "shopping_mall_inventory_allocations_shopping_mall_sku__31d1b8e2")
+}
+
+/// Audit and control records capturing manual or system-driven inventory
+/// changes (delta-based) for a SKU at a location. Records actor, reason, and
+/// timing. Supports reconciliation, cycle counts, and compliance. References
+/// {@link shopping_mall_users} where applicable.
+///
+/// @namespace Variants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_adjustments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Adjusted SKU's {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Location's {@link shopping_mall_inventory_locations.id} where the
+  /// adjustment applies.
+  shopping_mall_inventory_location_id String
+  
+  /// Actor user's {@link shopping_mall_users.id} who performed/triggered the
+  /// adjustment.
+  adjusted_by_user_id String?
+  
+  /// Optional external/system reference for idempotency and reconciliation.
+  adjustment_reference String?
+  
+  /// Signed quantity change applied to on-hand (positive or negative).
+  delta Int
+  
+  /// Categorized business reason (e.g., sale, return, correction, damage,
+  /// receive).
+  reason_category String
+  
+  /// Optional free-text note giving more context for the adjustment.
+  reason_note String?
+  
+  /// Timestamp when the adjustment took effect.
+  adjusted_at DateTime
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the record is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  location shopping_mall_inventory_locations @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  adjustedBy shopping_mall_users? @relation(fields: [adjusted_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_inventory_location_id], map: "shopping_mall_inventory_adjustments_shopping_mall_inve_14f6ca69")
+  
+  @@unique([adjustment_reference])
+  @@index([shopping_mall_sku_id, shopping_mall_inventory_location_id, adjusted_at], map: "shopping_mall_inventory_adjustments_shopping_mall_sku__63e5a357")
+  @@index([adjusted_by_user_id, adjusted_at], map: "shopping_mall_inventory_adjustments_adjusted_by_user_i_a94aecde")
+}

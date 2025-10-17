@@ -1,0 +1,156 @@
+/// Stores reports made by guests or members against posts, comments, or
+/// members. Tracks reporter identity, reported content references, report
+/// category, description, timestamps, and current report status to support
+/// moderation workflows.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting guest user {@link reddit_community_guests.id}.
+  reporter_guest_id String?
+  
+  /// Reporting member user {@link reddit_community_members.id}.
+  reporter_member_id String?
+  
+  /// Reported post {@link reddit_community_posts.id}.
+  reported_post_id String?
+  
+  /// Reported comment {@link reddit_community_comments.id}.
+  reported_comment_id String?
+  
+  /// Reported member user {@link reddit_community_members.id}.
+  reported_member_id String?
+  
+  /// Current status of the report {@link reddit_community_report_statuses.id}.
+  status_id String
+  
+  /// Category of the report such as spam, abuse, or other violation.
+  category String
+  
+  /// Detailed optional description provided by the reporter.
+  description String?
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to the report.
+  updated_at DateTime
+  
+  /// Timestamp if the report is soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporterGuest reddit_community_guests? @relation(fields: [reporter_guest_id], references: [id], onDelete: Cascade)
+  reporterMember reddit_community_members? @relation("reddit_community_reports_of_reporter_member_id", fields: [reporter_member_id], references: [id], onDelete: Cascade)
+  reportedPost reddit_community_posts? @relation(fields: [reported_post_id], references: [id], onDelete: Cascade)
+  reportedComment reddit_community_comments? @relation(fields: [reported_comment_id], references: [id], onDelete: Cascade)
+  reportedMember reddit_community_members? @relation("reddit_community_reports_of_reported_member_id", fields: [reported_member_id], references: [id], onDelete: Cascade)
+  status reddit_community_report_statuses @relation(fields: [status_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_report_actions reddit_community_report_actions[]
+  
+  @@index([reporter_guest_id])
+  @@index([reporter_member_id])
+  @@index([reported_post_id])
+  @@index([reported_comment_id])
+  @@index([reported_member_id])
+  
+  @@index([status_id, created_at])
+}
+
+/// Represents moderation actions taken in response to reports. Links actions
+/// to specific reports and moderators or admins performing the actions.
+/// Records action types, optional notes, timestamps for tracking moderation
+/// activities and auditing.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_report_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Linked report {@link reddit_community_reports.id}.
+  report_id String
+  
+  /// Moderator member who performed the action {@link
+  /// reddit_community_members.id}.
+  moderator_member_id String
+  
+  /// Admin member who performed the action {@link reddit_community_admins.id}.
+  admin_member_id String?
+  
+  /// Type of moderation action taken, e.g., warning, deletion, suspension.
+  action_type String
+  
+  /// Optional detailed notes regarding the action.
+  notes String?
+  
+  /// Timestamp when the action was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to the action.
+  updated_at DateTime
+  
+  /// Timestamp if the action is soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  report reddit_community_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  moderatorMember reddit_community_members @relation(fields: [moderator_member_id], references: [id], onDelete: Cascade)
+  adminMember reddit_community_admins? @relation(fields: [admin_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_member_id])
+  @@index([admin_member_id])
+  
+  @@index([report_id, created_at])
+}
+
+/// Lookup table for possible statuses of reports, such as pending, reviewed,
+/// action taken, or dismissed. Supports status-based filtering and lifecycle
+/// tracking of reports.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_report_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the report status, e.g., pending, reviewed, action taken.
+  name String
+  
+  /// Detailed description about the status meaning and usage.
+  description String?
+  
+  /// Timestamp when the status record was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to the status record.
+  updated_at DateTime
+  
+  /// Timestamp if the status record is soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_reports reddit_community_reports[]
+  
+  @@unique([name])
+  @@index([created_at])
+}

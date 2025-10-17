@@ -1,0 +1,191 @@
+/// Customer reviews for products, linked to both the customer who submitted
+/// it and the product being reviewed. This model captures the core feedback
+/// mechanism of the platform. Verified purchase status is enforced through
+/// linkage to the order system. All reviews are immutable after creation,
+/// but can be flagged for moderation.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who submitted this review. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// The specific product variant (SKU) that the review is about. {@link
+  /// shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// The star rating given by the customer, on a scale of 1 to 5. Must be a
+  /// whole number.
+  rating Int
+  
+  /// The title or headline of the review, summarizing the experience in a few
+  /// words.
+  title String
+  
+  /// The full written review content provided by the customer. Can be a
+  /// detailed description of their experience.
+  body String
+  
+  /// The timestamp when the customer submitted the review. This is
+  /// automatically set upon creation.
+  submitted_at DateTime
+  
+  /// Indicates whether the review is from a customer who actually purchased
+  /// this specific SKU. Set to true only if a matching, completed order exists
+  /// in the order system.
+  verified_purchase Boolean
+  
+  /// Indicates if this review has been flagged for moderation by the system or
+  /// by other users. Triggered by content filters or user reports.
+  is_flagged Boolean?
+  
+  /// Indicates if the review is hidden from public view, either due to pending
+  /// moderation, admin action, or a violation of content guidelines.
+  is_hidden Boolean?
+  
+  /// The timestamp when the review was last edited, up to 14 days after its
+  /// initial submission.
+  updated_at DateTime?
+  
+  /// The timestamp when the review was soft-deleted by an administrator. A
+  /// soft delete allows for audit traceability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_responses shopping_mall_review_responses?
+  shopping_mall_review_flags shopping_mall_review_flags[]
+  
+  @@unique([shopping_mall_customer_id, shopping_mall_product_sku_id], map: "shopping_mall_reviews_shopping_mall_customer_id_shoppi_61c0f501")
+  @@index([shopping_mall_product_sku_id, submitted_at], map: "shopping_mall_reviews_shopping_mall_product_sku_id_sub_1ebf403d")
+  @@index([shopping_mall_customer_id, submitted_at], map: "shopping_mall_reviews_shopping_mall_customer_id_submit_f67e77c5")
+  @@index([is_flagged])
+  @@index([is_hidden])
+}
+
+/// Public responses from sellers to customer reviews. These responses are
+/// posted to provide feedback, clarification, or customer service on the
+/// product review. Each response is linked to a single review and cannot
+/// exist without one. Seller responses are considered part of the public
+/// product page dialogue.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The review this response is replying to. {@link
+  /// shopping_mall_reviews.id}. This relationship is required and the review
+  /// must be visible (not hidden).
+  shopping_mall_review_id String
+  
+  /// The seller who authored this response. {@link shopping_mall_sellers.id}.
+  /// This links the response directly to the seller's product.
+  shopping_mall_seller_id String
+  
+  /// The text content of the seller's reply to the customer review. Limited to
+  /// 500 characters to encourage concise and professional communication.
+  body String
+  
+  /// The timestamp when this seller response was published. This is
+  /// automatically set upon creation.
+  created_at DateTime
+  
+  /// The timestamp when this seller response was last edited. Includes
+  /// versioning of replies.
+  updated_at DateTime?
+  
+  /// The timestamp when this response was removed. This occurs automatically
+  /// if its associated review is hidden or deleted by an admin.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id])
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_review_responses_shopping_mall_seller_id_e422490f")
+}
+
+/// System records for badges, reports, or flags on reviews. When a review is
+/// flagged by a user or by automated content filters, this table logs the
+/// event. Any interaction that triggers a moderation action (user report,
+/// system flag) is stored here for audit trail purposes.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The review that has been flagged or reported. {@link
+  /// shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// The customer who flagged or reported this review. {@link
+  /// shopping_mall_customers.id}. This field is null if the flag was created
+  /// by the system's automated filter.
+  shopping_mall_customer_id String?
+  
+  /// The admin who manually applied this flag, typically after review. {@link
+  /// shopping_mall_administrators.id}. This is null for automated flags.
+  shopping_mall_administrator_id String?
+  
+  /// The categorization of the flag. Must be one of: 'customer_report',
+  /// 'system_flag', 'admin_flag'. This defines how the flag was created.
+  type String
+  
+  /// The specific reason provided for the flag. For user reports, this is the
+  /// selection from a predefined list (spam, profanity, etc.). For system
+  /// flags, this is the matching filter rule name. For admin flags, this is
+  /// the discretion of the admin.
+  reason String
+  
+  /// The timestamp when the flag was created and logged in the system.
+  created_at DateTime
+  
+  /// The timestamp when the flag was acted upon (review hidden or unflagged)
+  /// by an admin. Null if unresolved.
+  resolved_at DateTime?
+  
+  /// Indicates whether the flagged review has been reviewed and acted upon by
+  /// an admin. True when resolved_at is set.
+  is_resolved Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  reporter shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_administrator_id])
+  
+  @@unique([shopping_mall_review_id, shopping_mall_customer_id, type], map: "shopping_mall_review_flags_shopping_mall_review_id_sho_8029c072")
+  @@index([shopping_mall_review_id])
+  @@index([is_resolved])
+  @@index([type])
+  @@index([created_at])
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_review_flags_shopping_mall_customer_id_c_92be6e20")
+  @@index([resolved_at])
+}

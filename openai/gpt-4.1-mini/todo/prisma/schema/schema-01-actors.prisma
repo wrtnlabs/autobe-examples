@@ -1,0 +1,105 @@
+/// Guest role information for unauthenticated users with limited read-only
+/// access. Represents basic guest identity records for access control and
+/// session tracking. Does not require a password or email, but includes
+/// timestamps and soft delete support.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Guest user's display nickname or pseudonym.
+  nickname String
+  
+  /// Timestamp when the guest record was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest record was soft deleted (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([nickname])
+  @@index([created_at, updated_at])
+}
+
+/// Authenticated users of the Todo list application. Stores user credentials
+/// including unique email and hashed password for login. Maintains
+/// timestamps and soft delete timestamp for account lifecycle management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for user login and communication.
+  email String
+  
+  /// Password hash for secure authentication.
+  password_hash String
+  
+  /// Timestamp when the user record was created.
+  created_at DateTime
+  
+  /// Timestamp when the user record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user record was soft deleted (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_tasks todo_list_tasks[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// System administrators with full permissions to manage users and system
+/// settings. Includes unique email and password hashing for secure access.
+/// Timestamps record lifecycle events and soft delete for account
+/// deactivation.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for admin login.
+  email String
+  
+  /// Password hash for secure authentication of administrators.
+  password_hash String
+  
+  /// Timestamp when the admin record was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the admin record was soft deleted (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([email])
+  @@index([created_at])
+}

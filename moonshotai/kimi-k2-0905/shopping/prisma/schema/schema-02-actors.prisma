@@ -1,0 +1,543 @@
+/// Customer accounts representing registered users who can browse products,
+/// manage shopping carts, place orders, write reviews, and maintain multiple
+/// shipping addresses. Customers have complete e-commerce lifecycle access
+/// including wishlist management and personalized recommendations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related {@link shopping_mall_user_profiles.id} containing comprehensive
+  /// customer profile information.
+  user_profile_id String
+  
+  /// Customer's default shipping address for checkout convenience.
+  shipping_address_id String?
+  
+  /// Customer's default billing address for payment processing.
+  billing_address_id String?
+  
+  /// Customer email address used for authentication and communication. Must be
+  /// unique across the platform.
+  email String
+  
+  /// Timestamp of email verification completion for security confirmation.
+  email_verified_at DateTime?
+  
+  /// Customer display name visible to other users and in communications.
+  nickname String
+  
+  /// Customer phone number for order notifications, delivery coordination, and
+  /// account verification.
+  phone String?
+  
+  /// Timestamp of phone verification completion for secure communication.
+  phone_verified_at DateTime?
+  
+  /// Bcrypt-hashed password for secure authentication supporting complex
+  /// password requirements.
+  password_hash String
+  
+  /// Account verification status indicating email confirmation, phone
+  /// verification, and identity validation progress.
+  verification_status String
+  
+  /// Timestamp of customer's most recent platform login used for activity
+  /// tracking and session management.
+  last_login_at DateTime?
+  
+  /// Customer account operational status: active, suspended, closed.
+  account_status String
+  
+  /// Account creation timestamp for customer lifecycle tracking and business
+  /// analytics.
+  created_at DateTime
+  
+  /// Last account modification timestamp tracking profile changes and business
+  /// information updates.
+  updated_at DateTime
+  
+  /// Account soft deletion timestamp enabling customer recovery while
+  /// maintaining data integrity for order history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile shopping_mall_user_profiles @relation("shopping_mall_customers_of_user_profile_id", fields: [user_profile_id], references: [id], onDelete: Cascade)
+  shippingAddress shopping_mall_user_profiles? @relation("shopping_mall_customers_of_shipping_address_id", fields: [shipping_address_id], references: [id], onDelete: Cascade)
+  billingAddress shopping_mall_user_profiles? @relation("shopping_mall_customers_of_billing_address_id", fields: [billing_address_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_user_sessions shopping_mall_user_sessions[]
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_customer_coupons shopping_mall_customer_coupons[]
+  shopping_mall_customer_coins shopping_mall_customer_coins[]
+  shopping_mall_earnings_history shopping_mall_earnings_history[]
+  shopping_mall_coin_redemptions shopping_mall_coin_redemptions[]
+  shopping_mall_customer_inquiries shopping_mall_customer_inquiries[]
+  shopping_mall_support_tickets shopping_mall_support_tickets[]
+  shopping_mall_favorites shopping_mall_favorites[]
+  shopping_mall_customer_preferences shopping_mall_customer_preferences?
+  shopping_mall_recently_viewed shopping_mall_recently_viewed[]
+  shopping_mall_followed_sellers shopping_mall_followed_sellers[]
+  
+  @@index([shipping_address_id])
+  @@index([billing_address_id])
+  
+  @@unique([email])
+  @@unique([user_profile_id])
+  @@index([phone])
+  @@index([verification_status])
+  @@index([last_login_at])
+  @@index([created_at])
+  @@index([account_status])
+}
+
+/// Seller accounts representing businesses and vendors who can manage
+/// product catalogs, track inventory, process orders, and operate their own
+/// digital storefronts within the marketplace ecosystem.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related {@link shopping_mall_user_profiles.id} containing comprehensive
+  /// seller profile information.
+  user_profile_id String
+  
+  /// Business email address for seller authentication and professional
+  /// communication.
+  business_email String
+  
+  /// Official business name registered with appropriate authorities for
+  /// marketplace verification.
+  business_name String
+  
+  /// Bcrypt-hashed password providing secure access to seller dashboard and
+  /// business operations.
+  password_hash String
+  
+  /// Government-issued tax identification number for business verification and
+  /// compliance reporting.
+  tax_id String
+  
+  /// Primary business contact phone for customer service and payment
+  /// processing communication.
+  business_phone String?
+  
+  /// Business verification status tracking through document validation,
+  /// license confirmation, and banking verification.
+  verification_status String
+  
+  /// Seller account operational status controlling marketplace visibility and
+  /// selling privileges.
+  account_status String
+  
+  /// Business active status determining storefront visibility and order
+  /// processing capabilities.
+  is_active Boolean
+  
+  /// Seller registration date for business relationship tracking and
+  /// marketplace growth analytics.
+  join_date DateTime
+  
+  /// Most recent seller dashboard access timestamp for activity monitoring and
+  /// security auditing.
+  last_login_at DateTime?
+  
+  /// Seller account creation timestamp for business analytics and regulatory
+  /// compliance.
+  created_at DateTime
+  
+  /// Last business information update tracking changes for compliance and
+  /// audit purposes.
+  updated_at DateTime
+  
+  /// Business account suspension timestamp enabling recovery analysis while
+  /// maintaining transaction history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile shopping_mall_user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_invoices shopping_mall_invoices[]
+  shopping_mall_shipping_tracking shopping_mall_shipping_tracking[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_seller_coupons shopping_mall_seller_coupons[]
+  shopping_mall_earnings_history shopping_mall_earnings_history[]
+  shopping_mall_rewards shopping_mall_rewards[]
+  shopping_mall_customer_inquiries shopping_mall_customer_inquiries[]
+  shopping_mall_support_tickets shopping_mall_support_tickets[]
+  shopping_mall_followed_sellers shopping_mall_followed_sellers[]
+  
+  @@unique([user_profile_id])
+  
+  @@unique([business_email])
+  @@unique([tax_id])
+  @@index([verification_status])
+  @@index([account_status])
+  @@index([join_date])
+}
+
+/// Administrator accounts with platform oversight capabilities including
+/// user management, content moderation, financial monitoring, system
+/// configuration, and comprehensive reporting access for marketplace
+/// operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related {@link shopping_mall_user_profiles.id} containing comprehensive
+  /// administrator profile information.
+  user_profile_id String
+  
+  /// Administrator email address for secure login and administrative
+  /// notifications.
+  email String
+  
+  /// Bcrypt-hashed password with enhanced security requirements for
+  /// administrative account protection.
+  password_hash String
+  
+  /// Administrative role designation determining system access permissions and
+  /// operational responsibilities.
+  admin_role String
+  
+  /// Organizational department assignment for role-based access control and
+  /// internal communication routing.
+  department String?
+  
+  /// Granular permission configuration defining specific administrative
+  /// capabilities and data access restrictions.
+  permissions String
+  
+  /// Super administrator privileges enabling unrestricted platform access and
+  /// critical configuration changes.
+  is_super_admin Boolean
+  
+  /// Administrator account active status controlling platform management
+  /// capabilities and sensitive operation access.
+  is_active Boolean
+  
+  /// Last administrative dashboard access timestamp for security monitoring
+  /// and activity auditing.
+  last_login_at DateTime?
+  
+  /// Administrator account creation timestamp for organizational tracking and
+  /// security audit purposes.
+  created_at DateTime
+  
+  /// Last administrative permission update timestamp tracking access changes
+  /// for security compliance.
+  updated_at DateTime
+  
+  /// Administrator account deactivation timestamp maintaining audit trail
+  /// while disabling management access.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile shopping_mall_user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_seller_coupons shopping_mall_seller_coupons[]
+  shopping_mall_support_tickets shopping_mall_support_tickets[]
+  shopping_mall_faqs shopping_mall_faqs[]
+  shopping_mall_help_articles shopping_mall_help_articles[]
+  shopping_mall_blog_posts shopping_mall_blog_posts[]
+  shopping_mall_content_pages shopping_mall_content_pages[]
+  shopping_mall_banners shopping_mall_banners[]
+  shopping_mall_newsletter_content shopping_mall_newsletter_content[]
+  shopping_mall_editorial_calendar_of_administrator_id shopping_mall_editorial_calendar[] @relation("shopping_mall_editorial_calendar_of_administrator_id")
+  shopping_mall_editorial_calendar_of_assigned_to_id shopping_mall_editorial_calendar[] @relation("shopping_mall_editorial_calendar_of_assigned_to_id")
+  
+  @@unique([user_profile_id])
+  
+  @@unique([email])
+  @@index([admin_role])
+  @@index([is_super_admin])
+}
+
+/// Guest user tracking for temporary shopping experiences enabling product
+/// browsing, cart management, and anonymous session persistence while
+/// maintaining privacy and data minimization standards for unregistered
+/// platform visitors.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related {@link shopping_mall_user_profiles.id} containing temporary guest
+  /// profile information.
+  user_profile_id String
+  
+  /// Temporary session identifier for guest user tracking and cart persistence
+  /// across page visits.
+  session_id String
+  
+  /// Visitor IP address for session management and basic geographic analysis
+  /// while respecting privacy regulations.
+  ip_address String
+  
+  /// Browser user agent information enabling session management and device
+  /// recognition for guest experience optimization.
+  user_agent String?
+  
+  /// Guest session expiration timestamp enabling automatic cleanup while
+  /// preserving user data during authorized periods.
+  expires_at DateTime
+  
+  /// Guest session active status for cart operations and temporary feature
+  /// access control.
+  is_active Boolean
+  
+  /// Most recent guest interaction timestamp for session lifetime management
+  /// and data cleanup scheduling.
+  last_activity_at DateTime?
+  
+  /// Guest session creation timestamp for anonymous shopping analytics and
+  /// session duration tracking.
+  created_at DateTime
+  
+  /// Last guest interaction tracking for session renewal and activity
+  /// monitoring during anonymous browsing.
+  updated_at DateTime
+  
+  /// Guest session cleanup timestamp enabling data minimization while
+  /// maintaining privacy compliance standards.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile shopping_mall_user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_carts shopping_mall_carts[]
+  
+  @@unique([user_profile_id])
+  
+  @@unique([session_id])
+  @@index([ip_address])
+  @@index([is_active])
+  @@index([expires_at])
+}
+
+/// User authentication session management tracking login sessions across
+/// devices and browsers with comprehensive security monitoring, access
+/// control, and automatic session cleanup for enhanced platform security and
+/// user experience management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related customer's {@link shopping_mall_customers.id} when session
+  /// belongs to a registered customer.
+  shopping_mall_customer_id String?
+  
+  /// Secure session token for authentication validation and API access
+  /// authorization while maintaining security standards.
+  session_token String
+  
+  /// JWT refresh token enabling extended session duration without repeated
+  /// authentication challenges.
+  refresh_token String?
+  
+  /// Device and browser information for session identification across multiple
+  /// access points and security monitoring.
+  device_info String?
+  
+  /// Session IP address for security monitoring and geolocation tracking while
+  /// respecting user privacy requirements.
+  ip_address String
+  
+  /// Browser user agent providing device and platform information for session
+  /// management and analytics.
+  user_agent String?
+  
+  /// Session active status controlling authentication validity and user access
+  /// authorization throughout platform operations.
+  is_active Boolean
+  
+  /// Session expiration timestamp enforcing security policies and automatic
+  /// logout protocols for user protection.
+  expires_at DateTime
+  
+  /// Most recent platform interaction timestamp tracking user engagement and
+  /// session lifecycle management.
+  last_activity_at DateTime?
+  
+  /// Initial session creation tracking authentication events and activity
+  /// analysis across platform modules.
+  login_at DateTime
+  
+  /// Session creation timestamp for session analytics and security monitoring
+  /// across authentication events.
+  created_at DateTime
+  
+  /// Last session activity tracking for session renewal calculations and
+  /// automatic expiration management.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([session_token])
+  @@index([expires_at])
+  @@index([last_activity_at])
+  @@index([shopping_mall_customer_id])
+}
+
+/// Comprehensive user profile information serving as the central repository
+/// for all user types enabling detailed profile management, comprehensive
+/// personal information, social features platform-wide across the
+/// marketplace.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User first name for personalized communication and profile identification
+  /// throughout the marketplace platform.
+  first_name String
+  
+  /// User last name enabling complete profile identification and
+  /// personalization across customer service and communication.
+  last_name String
+  
+  /// Public display name visible to other users for communication and social
+  /// interaction within platform guidelines.
+  display_name String
+  
+  /// User biography description supporting personal profile customization and
+  /// social engagement features.
+  bio String?
+  
+  /// Profile photo URL for user identification and social features within
+  /// platform content guidelines and privacy standards.
+  avatar_url String?
+  
+  /// User date of birth for age verification, personalized recommendations,
+  /// and demographic analytics while respecting privacy.
+  date_of_birth DateTime?
+  
+  /// User gender identification for personalized experiences and demographic
+  /// analytics with complete privacy protection.
+  gender String?
+  
+  /// Preferred interface language for localized experience and communication
+  /// preferences supporting international users.
+  language_preference String
+  
+  /// User timezone preference for date/time display and notification
+  /// scheduling consistent with personal preferences.
+  timezone String
+  
+  /// Primary address information for shipping, billing, and location-based
+  /// service personalization while maintaining privacy.
+  address_line1 String?
+  
+  /// Secondary address information such as apartment number or suite detail
+  /// for complete address specification.
+  address_line2 String?
+  
+  /// City location information for geographic services, shipping optimization,
+  /// and regional customization features.
+  city String?
+  
+  /// State or province information for address validation, tax calculations,
+  /// and regional compliance requirements.
+  state String?
+  
+  /// Postal code for address verification, shipping calculations, and
+  /// geographic service optimization.
+  postal_code String?
+  
+  /// Country identification for international shipping, compliance
+  /// requirements, and regional service configuration.
+  country String?
+  
+  /// Primary contact phone number for customer service, order notifications,
+  /// and platform communication while maintaining privacy.
+  phone String?
+  
+  /// Profile verification status confirming identity validation and completion
+  /// requirements for platform trust building.
+  is_verified Boolean
+  
+  /// Profile active status controlling visibility and platform access while
+  /// maintaining data integrity for historical purposes.
+  is_active Boolean
+  
+  /// Profile creation timestamp for identity management and user lifecycle
+  /// analytics across platform operations.
+  created_at DateTime
+  
+  /// Last profile modification timestamp for change tracking and audit trail
+  /// maintenance across user activities.
+  updated_at DateTime
+  
+  /// Profile deletion timestamp enabling data minimization while maintaining
+  /// compliance requirements for record retention.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_customers_of_user_profile_id shopping_mall_customers? @relation("shopping_mall_customers_of_user_profile_id")
+  shopping_mall_customers_of_shipping_address_id shopping_mall_customers[] @relation("shopping_mall_customers_of_shipping_address_id")
+  shopping_mall_customers_of_billing_address_id shopping_mall_customers[] @relation("shopping_mall_customers_of_billing_address_id")
+  shopping_mall_sellers shopping_mall_sellers?
+  shopping_mall_administrators shopping_mall_administrators?
+  shopping_mall_guests shopping_mall_guests?
+  shopping_mall_orders_of_shipping_address_id shopping_mall_orders[] @relation("shopping_mall_orders_of_shipping_address_id")
+  shopping_mall_orders_of_billing_address_id shopping_mall_orders[] @relation("shopping_mall_orders_of_billing_address_id")
+  
+  @@index([city, state, country])
+}

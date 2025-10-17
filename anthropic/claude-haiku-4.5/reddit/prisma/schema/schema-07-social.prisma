@@ -1,0 +1,145 @@
+/// User follow relationships enabling social networking and user discovery.
+/// Records which users follow other users in an unidirectional manner.
+/// Central to building social graphs, follow suggestions, and user
+/// recommendations. Users can follow any other member and unfollow at any
+/// time. Follow relationships are independent of community subscriptions and
+/// represent direct social interest rather than community membership.
+///
+/// @namespace Social
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_follows {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who is following. References {@link community_platform_users.id}.
+  follower_id String
+  
+  /// The user being followed. References {@link community_platform_users.id}.
+  following_id String
+  
+  /// Timestamp when the follow relationship was created (ISO 8601 UTC).
+  created_at DateTime
+  
+  /// Status of the follow relationship: 'active' (normal follow), 'blocked'
+  /// (follower is blocked by following user), or 'inactive' (following user
+  /// account suspended/deleted). Determines if follow is functionally active.
+  relationship_status String
+  
+  //----
+  // RELATIONS
+  //----
+  follower community_platform_users @relation("community_platform_user_follows_of_follower_id", fields: [follower_id], references: [id], onDelete: Cascade)
+  following community_platform_users @relation("community_platform_user_follows_of_following_id", fields: [following_id], references: [id], onDelete: Cascade)
+  
+  @@unique([follower_id, following_id])
+  @@index([follower_id, created_at])
+  @@index([following_id, created_at])
+  @@index([relationship_status])
+}
+
+/// User block relationships preventing interactions between users. When a
+/// user blocks another user, the blocked user cannot view the blocker's
+/// profile, activity, send direct messages, or interact with the blocker's
+/// content. Blocks are unidirectional - user A can block user B without
+/// affecting user B's ability to follow or interact unless user B separately
+/// blocks user A. Critical for user safety, privacy protection, and
+/// harassment prevention. Independent of community membership or follow
+/// relationships.
+///
+/// @namespace Social
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_blocks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who initiated the block. References {@link
+  /// community_platform_users.id}.
+  blocker_id String
+  
+  /// The user being blocked. References {@link community_platform_users.id}.
+  blocked_id String
+  
+  /// Timestamp when the block was created (ISO 8601 UTC).
+  created_at DateTime
+  
+  /// Optional reason for the block provided by blocker (max 500 characters).
+  /// Can be null if no reason specified.
+  reason String?
+  
+  /// Whether the block is currently active. When false, indicates block was
+  /// removed (unblock). Used for soft delete pattern to preserve block history
+  /// for audit purposes.
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  blocker community_platform_users @relation("community_platform_user_blocks_of_blocker_id", fields: [blocker_id], references: [id], onDelete: Cascade)
+  blocked community_platform_users @relation("community_platform_user_blocks_of_blocked_id", fields: [blocked_id], references: [id], onDelete: Cascade)
+  
+  @@unique([blocker_id, blocked_id])
+  @@index([blocker_id, created_at])
+  @@index([blocked_id, created_at])
+  @@index([is_active])
+}
+
+/// Records of user mentions (@username tags) in posts and comments. When a
+/// user mentions another user using @username format in post or comment
+/// content, this table tracks the mention relationship. Used for generating
+/// mention notifications, tracking mention patterns, and maintaining mention
+/// history. Supports the mention system enabling user tagging and user
+/// discovery. Each mention is linked to the specific post or comment where
+/// it occurred.
+///
+/// @namespace Social
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_mentions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user being mentioned with @ symbol. References {@link
+  /// community_platform_users.id}.
+  mentioned_user_id String
+  
+  /// The user who created the mention by writing @username. References {@link
+  /// community_platform_users.id}.
+  mentioning_user_id String
+  
+  /// UUID of the post or comment containing the mention. References either
+  /// community_platform_posts.id or community_platform_comments.id depending
+  /// on content_type.
+  content_id String
+  
+  /// Type of content containing the mention: 'post' (mention in post) or
+  /// 'comment' (mention in comment). Determines which content table to
+  /// reference.
+  content_type String
+  
+  /// Timestamp when the mention was created (ISO 8601 UTC). Used for sorting
+  /// and filtering mention history.
+  created_at DateTime
+  
+  /// Whether a notification was sent to the mentioned user for this mention.
+  /// Tracks notification delivery status and prevents duplicate notifications.
+  notification_sent Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  mentionedUser community_platform_users @relation("community_platform_mentions_of_mentioned_user_id", fields: [mentioned_user_id], references: [id], onDelete: Cascade)
+  mentioningUser community_platform_users @relation("community_platform_mentions_of_mentioning_user_id", fields: [mentioning_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([mentioned_user_id, created_at])
+  @@index([mentioning_user_id, created_at])
+  @@index([content_id, content_type])
+  @@index([notification_sent])
+}

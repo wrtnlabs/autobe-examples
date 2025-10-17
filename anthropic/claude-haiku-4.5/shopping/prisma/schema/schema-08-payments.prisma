@@ -1,0 +1,761 @@
+/// Main payment records for customer orders. Stores complete payment
+/// information including payment method, amount, status, and order
+/// reference. Serves as the primary transaction record for all customer
+/// payments processed through the platform. Links each payment to a specific
+/// order and customer for financial tracking and reconciliation.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer making the payment. References {@link shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// Payment method used for this payment. References {@link
+  /// shopping_mall_payment_methods.id}.
+  shopping_mall_payment_method_id String
+  
+  /// Amount charged to customer in smallest currency unit (e.g., cents for
+  /// USD). Must match order total exactly with no variance.
+  amount Float
+  
+  /// ISO 4217 currency code for payment (e.g., USD, EUR, GBP). Must match
+  /// order currency code.
+  currency_code String
+  
+  /// Current payment status: PENDING (awaiting processing), COMPLETED
+  /// (successfully charged), FAILED (declined or error), REFUNDED (money
+  /// returned), DISPUTED (chargeback filed). Status transitions are: PENDING →
+  /// COMPLETED|FAILED, COMPLETED → REFUNDED|DISPUTED.
+  payment_status String
+  
+  /// Type of payment method: CREDIT_CARD (Visa, Mastercard, etc.), DEBIT_CARD,
+  /// DIGITAL_WALLET (Apple Pay, Google Pay), BANK_TRANSFER. Snapshot of method
+  /// type at time of payment.
+  payment_method_type String
+  
+  /// Settlement status with payment processor: NOT_SETTLED (awaiting batch
+  /// settlement), SETTLED (funds received by merchant), DISPUTED (funds held
+  /// due to chargeback), CHARGEDBACK (customer won dispute). Tracks fund
+  /// availability.
+  settlement_status String
+  
+  /// Payment processor error code if payment failed. Examples:
+  /// INSUFFICIENT_FUNDS, CARD_EXPIRED, FRAUD_DETECTED, NETWORK_ERROR. Null for
+  /// successful payments.
+  error_code String?
+  
+  /// Human-readable error message from payment gateway if payment failed. For
+  /// customer communication and troubleshooting.
+  error_message String?
+  
+  /// Unique idempotency key to prevent duplicate charge attempts. Combines
+  /// order ID, customer ID, and timestamp. Used to detect and reject duplicate
+  /// payment submissions.
+  idempotency_key String?
+  
+  /// Number of payment processing attempts made for this order. Starts at 1.
+  /// Incremented on automatic retry. Helps identify problematic payments
+  /// requiring manual review.
+  attempts Int
+  
+  /// Timestamp when payment record was created (payment initiated by customer).
+  created_at DateTime
+  
+  /// Timestamp of last payment status update.
+  updated_at DateTime
+  
+  /// Timestamp when payment was successfully completed or finally failed. Null
+  /// until payment reaches terminal state.
+  completed_at DateTime?
+  
+  /// Timestamp when payment settlement was confirmed by payment processor.
+  /// Null until funds are actually received.
+  settled_at DateTime?
+  
+  /// Soft delete timestamp. Null for active records. Set when payment is
+  /// archived (no longer needed for active operations).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_orders shopping_mall_orders?
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  shopping_mall_payment_gateway_records shopping_mall_payment_gateway_records[]
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  shopping_mall_payment_disputes shopping_mall_payment_disputes[]
+  
+  @@unique([idempotency_key])
+  @@index([shopping_mall_payment_method_id])
+  @@index([payment_status])
+  @@index([settlement_status])
+  @@index([created_at])
+  @@index([shopping_mall_customer_id, created_at])
+}
+
+/// Individual transaction records for each payment processing attempt.
+/// Multiple transactions can exist per payment if retry logic is triggered.
+/// Each transaction captures complete request/response details with payment
+/// gateway including authorization codes, processor references, and all
+/// transaction metadata. Supports payment reconciliation and transaction
+/// tracking.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to parent payment record. Links this transaction to {@link
+  /// shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// Reference to payment gateway record with external processor details.
+  /// Links to {@link shopping_mall_payment_gateway_records.id}.
+  shopping_mall_payment_gateway_record_id String?
+  
+  /// Sequence number of this transaction attempt (1 for first attempt, 2 for
+  /// first retry, etc.). Helps identify transaction history and retry
+  /// attempts.
+  transaction_sequence Int
+  
+  /// Type of transaction: AUTHORIZATION (card authorization), CAPTURE (fund
+  /// capture), REFUND (refund processing), VOID (cancellation). Tracks
+  /// transaction purpose.
+  transaction_type String
+  
+  /// Amount involved in this specific transaction in smallest currency unit.
+  /// May differ from parent payment amount if partial transaction.
+  amount Float
+  
+  /// Transaction status: SUBMITTED (sent to gateway), PROCESSING (gateway
+  /// processing), APPROVED (gateway approved), DECLINED (gateway declined),
+  /// ERROR (technical error), TIMEOUT (no response received within timeout
+  /// period).
+  transaction_status String
+  
+  /// Code returned by payment gateway (e.g., 00 for approval, 05 for
+  /// declined). Specific to payment processor used.
+  gateway_response_code String?
+  
+  /// Message returned by payment gateway describing transaction result. May be
+  /// error description or success confirmation.
+  gateway_response_message String?
+  
+  /// Authorization code from payment processor for approved transactions. Used
+  /// for settlement and reconciliation. Null for declined/error transactions.
+  authorization_code String?
+  
+  /// Unique transaction identifier assigned by payment processor. Used for
+  /// dispute investigation and transaction lookup with payment provider.
+  processor_transaction_id String?
+  
+  /// Address Verification System result code from processor. Examples: M
+  /// (match), N (no match), U (unavailable). Used for fraud detection.
+  avs_result_code String?
+  
+  /// CVV verification result code from processor. M (match), N (no match), U
+  /// (unavailable). Used for fraud detection.
+  cvv_result_code String?
+  
+  /// Customer's IP address when payment was submitted. Used for fraud
+  /// detection and geographic verification.
+  request_ip_address String?
+  
+  /// Timestamp when transaction was submitted to payment gateway.
+  created_at DateTime
+  
+  /// Timestamp when response was received from payment gateway. Null if no
+  /// response (timeout).
+  response_received_at DateTime?
+  
+  /// Time in milliseconds from submission to response received. Null if
+  /// timeout. Used for performance monitoring.
+  processing_duration_ms Int?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  gatewayRecord shopping_mall_payment_gateway_records? @relation(fields: [shopping_mall_payment_gateway_record_id], references: [id], onDelete: Cascade)
+  
+  @@unique([processor_transaction_id])
+  @@index([shopping_mall_payment_id])
+  @@index([shopping_mall_payment_gateway_record_id], map: "shopping_mall_payment_transactions_shopping_mall_payme_c6f2634c")
+  @@index([transaction_status])
+  @@index([created_at])
+}
+
+/// Secure storage of payment method information including tokenized card
+/// data, digital wallet references, and bank account details. Implements
+/// PCI-DSS compliance by storing only card tokens (never full card numbers),
+/// last 4 digits, card brand, and issuer information. Supports multiple
+/// payment method types: credit cards, debit cards, digital wallets, and
+/// bank transfers. Each payment method is tied to a customer for future
+/// reference and recurring payments.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this payment method. References {@link
+  /// shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// Type of payment method: CREDIT_CARD, DEBIT_CARD, DIGITAL_WALLET (Apple
+  /// Pay, Google Pay), BANK_TRANSFER. Determines which fields are populated.
+  payment_method_type String
+  
+  /// Tokenized card data from payment gateway. PCI-compliant - replaces full
+  /// card number. Never contains full 16-digit card number. Null for bank
+  /// transfer methods.
+  card_token String?
+  
+  /// Last 4 digits of card number for customer reference and verification
+  /// (e.g., 4242). Used for displaying card in UI. Null for non-card methods.
+  card_last_four String?
+  
+  /// Card brand/network: VISA, MASTERCARD, AMEX, DISCOVER, DINERS, JCB, etc.
+  /// Null for non-card methods. Used for displaying payment option.
+  card_brand String?
+  
+  /// Issuing bank or financial institution name (e.g., Bank of America,
+  /// Chase). Optional for customer reference. Null if not available.
+  card_issuer String?
+  
+  /// Card expiration month (1-12). Must be validated at each payment attempt.
+  /// Null for non-card methods.
+  card_expiration_month Int?
+  
+  /// Card expiration year (e.g., 2025). Used to validate card hasn't expired.
+  /// Null for non-card methods.
+  card_expiration_year Int?
+  
+  /// Name on the card as it appears. Used for validation. Null for non-card
+  /// methods.
+  cardholder_name String?
+  
+  /// Digital wallet provider name: APPLE_PAY, GOOGLE_PAY, PAYPAL, etc. Null
+  /// for card/bank methods.
+  wallet_provider String?
+  
+  /// Token received from digital wallet provider. Used for payment processing.
+  /// Null for non-wallet methods.
+  wallet_token String?
+  
+  /// Tokenized bank account from gateway for bank transfers. PCI-compliant
+  /// alternative to storing full account numbers. Null for non-bank methods.
+  bank_account_token String?
+  
+  /// Last 4 digits of bank account number for customer reference. Null for
+  /// non-bank methods.
+  bank_account_last_four String?
+  
+  /// Last 4 digits of routing number for bank transfers. For customer
+  /// reference only. Null for non-bank methods.
+  bank_routing_number_last_four String?
+  
+  /// Bank name associated with bank transfer method. Null for non-bank methods.
+  bank_name String?
+  
+  /// Whether this is customer's default payment method. Used for checkout
+  /// default selection. Only one method per customer should have
+  /// is_default=true.
+  is_default Boolean
+  
+  /// Whether this payment method is currently active and available for use.
+  /// Set to false if customer reports the method as invalid or compromised.
+  is_active Boolean
+  
+  /// Count of consecutive failed payment attempts using this method. Reset to
+  /// 0 on successful payment. Incremented on failures. Helps identify
+  /// problematic payment methods.
+  failed_attempts Int
+  
+  /// Timestamp of last successful payment using this method. Null if never
+  /// successfully used. Used to identify stale/forgotten payment methods.
+  last_used_at DateTime?
+  
+  /// Timestamp when payment method was added to customer's account.
+  created_at DateTime
+  
+  /// Timestamp when payment method details were last updated (e.g., card
+  /// reactivated).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Set when customer removes payment method.
+  /// Preserves payment history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payments shopping_mall_payments[]
+  
+  @@unique([card_token])
+  @@unique([wallet_token])
+  @@unique([bank_account_token])
+  @@index([shopping_mall_customer_id])
+  @@index([payment_method_type])
+  @@index([is_active])
+  @@index([last_used_at])
+}
+
+/// Records of all requests sent to and responses received from external
+/// payment gateway providers (e.g., Stripe, PayPal). Captures complete
+/// request/response payloads for troubleshooting, reconciliation, and audit
+/// purposes. Implements PCI compliance by not storing sensitive card data.
+/// Enables investigation of gateway issues and payment discrepancies. Each
+/// record represents one complete interaction with payment provider.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_gateway_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to payment record for this gateway interaction. Links to {@link
+  /// shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// Name of payment gateway provider: STRIPE, PAYPAL, SQUARE, AUTHORIZE_NET,
+  /// etc. Identifies which processor this record is for.
+  gateway_provider String
+  
+  /// API version of payment gateway used for this request (e.g., v1, v2).
+  /// Helps track compatibility issues across gateway versions.
+  gateway_api_version String?
+  
+  /// Unique request identifier generated by platform for request tracking.
+  /// Used to correlate requests across systems.
+  request_id String
+  
+  /// Request ID assigned by payment gateway provider. May be null if request
+  /// never reached gateway (network error).
+  gateway_request_id String?
+  
+  /// Type of gateway request: AUTHORIZATION, CAPTURE, REFUND, VOID, INQUIRY,
+  /// CHARGEBACK_INQUIRY. Determines request payload structure.
+  request_type String
+  
+  /// Complete JSON request payload sent to payment gateway. IMPORTANT:
+  /// Sensitive data (full card numbers, CVV) must be masked or not included.
+  /// Format: sanitized JSON string.
+  request_payload String
+  
+  /// Complete JSON response payload received from payment gateway. Contains
+  /// transaction result, error codes, authorization codes, processor
+  /// references. Format: JSON string.
+  response_payload String?
+  
+  /// HTTP status code from gateway: 200 (success), 400 (bad request), 401
+  /// (unauthorized), 500 (server error). Helps identify gateway communication
+  /// issues.
+  response_status_code Int?
+  
+  /// Whether response was successfully received from gateway. False indicates
+  /// timeout or network failure. True means HTTP response received (may still
+  /// indicate transaction decline).
+  response_received Boolean
+  
+  /// Timestamp when request was submitted to payment gateway.
+  created_at DateTime
+  
+  /// Timestamp when response was received from gateway. Null if request timed
+  /// out or never reached gateway.
+  response_received_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  
+  @@unique([request_id])
+  @@unique([gateway_request_id])
+  @@index([shopping_mall_payment_id], map: "shopping_mall_payment_gateway_records_shopping_mall_pa_f80bf875")
+  @@index([gateway_provider])
+  @@index([request_type])
+  @@index([created_at])
+}
+
+/// Records of refund requests and refund processing for customer orders.
+/// Tracks complete refund lifecycle from request submission through refund
+/// completion. Supports full refunds (entire order amount) and partial
+/// refunds (specific line items). Records refund approvals, denials,
+/// reversals, and completion status. Links to original payment for reversal
+/// operations. Enables tracking of refund status including estimated arrival
+/// date for customer communication.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to original payment being refunded. Links to {@link
+  /// shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// Reference to the order for which refund is being processed. Links to
+  /// {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Admin user who requested or approved the refund (if admin-initiated).
+  /// References {@link shopping_mall_admin.id}. Null if customer-initiated
+  /// refund.
+  requested_by_admin_id String?
+  
+  /// Amount to be refunded in smallest currency unit. May be less than
+  /// original payment amount for partial refunds.
+  refund_amount Float
+  
+  /// Original payment amount for reference. Used to validate partial vs full
+  /// refund.
+  original_payment_amount Float
+  
+  /// Current refund status: REQUESTED (awaiting approval), APPROVED (admin
+  /// approved, awaiting processing), PROCESSING (refund submitted to gateway),
+  /// COMPLETED (refund successfully processed), FAILED (refund attempt
+  /// failed), REVERSED (refund was reversed/cancelled). Status progression:
+  /// REQUESTED → APPROVED → PROCESSING → COMPLETED|FAILED.
+  refund_status String
+  
+  /// Reason for refund: CUSTOMER_REQUEST, PRODUCT_DEFECTIVE,
+  /// PRODUCT_NOT_AS_DESCRIBED, WRONG_ITEM_SHIPPED, DAMAGED_IN_TRANSIT,
+  /// DUPLICATE_CHARGE, FRAUD, PAYMENT_ERROR, SELLER_FRAUD, ORDER_CANCELLED,
+  /// RETURN_RECEIVED. Used for analytics and dispute handling.
+  refund_reason String
+  
+  /// How refund will be issued: ORIGINAL_METHOD (back to original card/payment
+  /// method), STORE_CREDIT (account credit), WALLET (digital wallet).
+  /// ORIGINAL_METHOD is default if payment method supports reversal.
+  refund_method String
+  
+  /// Whether this is full refund of entire order (true) or partial refund of
+  /// specific items (false). Affects eligibility checks and processing.
+  is_full_refund Boolean
+  
+  /// For partial refunds, JSON array of order item IDs being refunded. Format:
+  /// ["item_id_1", "item_id_2"]. Empty array for full refund. Used to
+  /// calculate proportional tax and shipping.
+  affected_order_items String?
+  
+  /// Admin or system notes about the refund request. May include reason
+  /// clarifications, dispute details, or special handling instructions.
+  notes String?
+  
+  /// Refund transaction ID assigned by payment gateway after processing. Used
+  /// for tracking with payment provider and reconciliation.
+  gateway_refund_id String?
+  
+  /// Timestamp when refund was requested (by customer or admin).
+  requested_at DateTime
+  
+  /// Timestamp when refund was approved by admin or automatically approved
+  /// based on policy. Null until approval occurs.
+  approved_at DateTime?
+  
+  /// Timestamp when refund processing began (submitted to payment gateway).
+  /// Null until processing starts.
+  processing_started_at DateTime?
+  
+  /// Timestamp when refund was completed successfully. Funds have been
+  /// returned to customer. Null until completion.
+  completed_at DateTime?
+  
+  /// Estimated date refund will appear in customer's account. Typically 3-7
+  /// business days for card refunds. Used for customer communication.
+  estimated_completion_date DateTime?
+  
+  /// Timestamp when refund record was created in system.
+  created_at DateTime
+  
+  /// Timestamp when refund record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  requestedByAdmin shopping_mall_admin? @relation(fields: [requested_by_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([requested_by_admin_id])
+  
+  @@unique([gateway_refund_id])
+  @@index([shopping_mall_payment_id])
+  @@index([shopping_mall_order_id])
+  @@index([refund_status])
+  @@index([requested_at])
+  @@index([completed_at])
+}
+
+/// Records of payment disputes and chargebacks filed by customers or payment
+/// processors. Tracks dispute lifecycle from initial filing through
+/// investigation and final resolution. Supports multiple dispute types:
+/// chargeback (card processor initiated), payment complaint (customer
+/// initiated), fraud claim (security concern). Records all evidence,
+/// communications, and resolution details. Links to payment and includes
+/// admin investigation tracking for fair resolution of payment conflicts.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_disputes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to payment under dispute. Links to {@link
+  /// shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// Reference to order associated with disputed payment. Links to {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Admin assigned to investigate this dispute. References {@link
+  /// shopping_mall_admin.id}. Null if dispute not yet assigned.
+  investigating_admin_id String?
+  
+  /// Type of dispute: CHARGEBACK (card processor), FRAUD_CLAIM (security
+  /// concern), CUSTOMER_COMPLAINT (customer filed), PAYMENT_ERROR
+  /// (system/gateway error). Determines investigation approach.
+  dispute_type String
+  
+  /// Current dispute status: OPEN (filed, awaiting investigation),
+  /// INVESTIGATING (admin reviewing evidence), PENDING_RESOLUTION (awaiting
+  /// final decision), RESOLVED (decision made - customer wins, merchant wins,
+  /// or partial), APPEALING (one party appealed). Progression: OPEN →
+  /// INVESTIGATING → PENDING_RESOLUTION → RESOLVED|APPEALING.
+  dispute_status String
+  
+  /// Amount in dispute in smallest currency unit. May be less than full
+  /// payment amount.
+  dispute_amount Float
+  
+  /// Customer's description of the dispute issue. Null for chargebacks
+  /// initiated by card processor. User complaint text for investigation.
+  customer_complaint String?
+  
+  /// Chargeback code from card processor (e.g., 4855, 1040, etc.). Null for
+  /// non-chargeback disputes. Used to understand processor's reason category.
+  processor_chargeback_code String?
+  
+  /// Human-readable reason provided by processor for the chargeback. Examples:
+  /// 'Fraudulent Transaction', 'Product Not Received', 'Unauthorized'. Null
+  /// for non-chargeback disputes.
+  processor_chargeback_reason String?
+  
+  /// Admin's investigation notes including findings, evidence reviewed, and
+  /// reasoning. Updated as investigation progresses.
+  investigation_notes String?
+  
+  /// Final resolution decision: CUSTOMER_WINS (refund issued), MERCHANT_WINS
+  /// (dispute rejected), PARTIAL (compromise reached). Null until dispute
+  /// resolved.
+  resolution_decision String?
+  
+  /// Detailed explanation of resolution decision for both parties. Explains
+  /// findings and reasoning for outcome.
+  resolution_reason String?
+  
+  /// JSON array of evidence URLs provided by customer or on their behalf.
+  /// Examples: ["https://evidence1.pdf", "https://evidence2.jpg"]. Used for
+  /// investigation.
+  evidence_customer_provided String?
+  
+  /// JSON array of evidence URLs provided by merchant/admin. Examples:
+  /// delivery confirmation, customer communication, etc.
+  evidence_merchant_provided String?
+  
+  /// Whether dispute has been appealed by either party. If true, should create
+  /// appeal workflow.
+  is_appealed Boolean
+  
+  /// Timestamp when dispute was filed (by customer, processor, or system).
+  filed_at DateTime
+  
+  /// Timestamp when investigation began (admin assigned). Null until
+  /// investigation starts.
+  investigation_started_at DateTime?
+  
+  /// Processor deadline for merchant to respond to chargeback (typically 7-10
+  /// days from filing). Critical for compliance with payment processor
+  /// requirements.
+  deadline_for_response DateTime?
+  
+  /// Timestamp when dispute was resolved with final decision. Null until
+  /// resolution occurs.
+  resolved_at DateTime?
+  
+  /// Timestamp when dispute record was created in system.
+  created_at DateTime
+  
+  /// Timestamp when dispute record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  investigatingAdmin shopping_mall_admin? @relation(fields: [investigating_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([investigating_admin_id])
+  
+  @@index([shopping_mall_payment_id])
+  @@index([shopping_mall_order_id])
+  @@index([dispute_status])
+  @@index([dispute_type])
+  @@index([filed_at])
+  @@index([deadline_for_response])
+}
+
+/// Records of batch payment reconciliation processes comparing platform
+/// transaction records against payment processor settlement reports. Tracks
+/// daily/weekly/monthly reconciliation cycles identifying discrepancies,
+/// missing transactions, and settlement confirmations. Enables
+/// identification and investigation of payment anomalies and ensures all
+/// payments are properly accounted for. Stores reconciliation results and
+/// any identified issues requiring manual intervention.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_reconciliation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin user responsible for initiating or managing this reconciliation.
+  /// References {@link shopping_mall_admin.id}. Null if reconciliation is
+  /// automated.
+  reconciliation_admin_id String?
+  
+  /// Type of reconciliation: DAILY (end of day), WEEKLY (weekly summary),
+  /// MONTHLY (monthly close), ON_DEMAND (manual ad-hoc). Determines
+  /// reconciliation scope and frequency.
+  reconciliation_type String
+  
+  /// Start timestamp for transactions included in reconciliation period.
+  /// Inclusive.
+  reconciliation_period_start DateTime
+  
+  /// End timestamp for transactions included in reconciliation period.
+  /// Inclusive.
+  reconciliation_period_end DateTime
+  
+  /// Status of reconciliation: PENDING (in progress), COMPLETED (successfully
+  /// reconciled), DISCREPANCIES_FOUND (mismatches identified),
+  /// REQUIRES_INVESTIGATION (manual review needed), RESOLVED (issues
+  /// resolved). Indicates reconciliation outcome.
+  reconciliation_status String
+  
+  /// Count of transactions recorded in platform during reconciliation period.
+  platform_transaction_count Int
+  
+  /// Total value of all transactions recorded in platform during
+  /// reconciliation period (smallest currency unit).
+  platform_transaction_total Float
+  
+  /// Count of transactions reported by payment processor for reconciliation
+  /// period.
+  processor_transaction_count Int
+  
+  /// Total value of transactions reported by payment processor for
+  /// reconciliation period (smallest currency unit).
+  processor_transaction_total Float
+  
+  /// Count of transactions that matched between platform and processor records.
+  matched_transaction_count Int
+  
+  /// Count of transactions in platform records but missing from processor
+  /// report. May indicate settlement lag or processing issues.
+  unmatched_in_platform Int
+  
+  /// Count of transactions in processor report but missing from platform
+  /// records. May indicate late transaction creation or system errors.
+  unmatched_in_processor Int
+  
+  /// Total dollar amount of discrepancies found (smallest currency unit).
+  /// Absolute value of platform total vs processor total difference.
+  total_discrepancy_amount Float
+  
+  /// JSON structure describing identified discrepancies:
+  /// {unmatched_transaction_ids: [...], amount_differences: [{transaction_id,
+  /// platform_amount, processor_amount}]}. Null if no discrepancies.
+  discrepancy_details String?
+  
+  /// Name of payment processor being reconciled: STRIPE, PAYPAL, SQUARE,
+  /// AUTHORIZE_NET, etc. Identifies which processor's report this
+  /// reconciliation covers.
+  processor_gateway String
+  
+  /// Settlement batch ID from processor for this reconciliation. Used to match
+  /// against processor records. Null if not provided.
+  processor_settlement_batch_id String?
+  
+  /// Whether this reconciliation requires admin investigation. Set to true if
+  /// discrepancies exceed threshold or errors detected.
+  investigation_required Boolean
+  
+  /// Admin notes about investigation findings and actions taken to resolve
+  /// discrepancies.
+  investigation_notes String?
+  
+  /// Timestamp when reconciliation process was created/initiated.
+  created_at DateTime
+  
+  /// Timestamp when reconciliation process completed. Null if reconciliation
+  /// still in progress.
+  completed_at DateTime?
+  
+  /// Timestamp when reconciliation record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reconciliationAdmin shopping_mall_admin? @relation(fields: [reconciliation_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([reconciliation_admin_id], map: "shopping_mall_payment_reconciliation_reconciliation_ad_570ebf7b")
+  
+  @@unique([processor_settlement_batch_id], map: "shopping_mall_payment_reconciliation_processor_settlem_a65c7dd3")
+  @@index([reconciliation_type])
+  @@index([reconciliation_status])
+  @@index([reconciliation_period_start], map: "shopping_mall_payment_reconciliation_reconciliation_pe_8ffaba42")
+  @@index([reconciliation_period_end], map: "shopping_mall_payment_reconciliation_reconciliation_pe_b4a9a163")
+  @@index([processor_gateway])
+  @@index([created_at])
+  @@index([investigation_required])
+}

@@ -1,0 +1,119 @@
+/// Represents user-created posts in the Reddit-like community platform.
+/// Posts are the primary content entities that users create, edit, and
+/// manage. Each post belongs to a community and has an author. Posts can be
+/// text, links, or images and support voting functionality.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The author who created the post. {@link reddit_clone_member.id}.
+  author_id String
+  
+  /// The community where the post was created. {@link
+  /// reddit_clone_communities.id}.
+  community_id String
+  
+  /// The title of the post.
+  title String
+  
+  /// The content of the post.
+  content String
+  
+  /// The type of content (text, link, image).
+  content_type String
+  
+  /// When the post was created.
+  created_at DateTime
+  
+  /// When the post was last updated.
+  updated_at DateTime
+  
+  /// Whether the post is locked (no new comments allowed).
+  is_locked Boolean
+  
+  /// Whether the post contains NSFW (Not Safe For Work) content.
+  is_nsfw Boolean
+  
+  /// The number of upvotes the post has received.
+  upvote_count Int
+  
+  /// The number of downvotes the post has received.
+  downvote_count Int
+  
+  /// The number of comments on the post.
+  comment_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  author reddit_clone_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_comments reddit_clone_comments[]
+  reddit_clone_post_votes reddit_clone_post_votes[]
+  
+  @@index([created_at])
+  @@index([author_id, created_at])
+  @@index([community_id, created_at])
+}
+
+/// Represents user comments on posts in the Reddit-like community platform.
+/// Comments are primary content entities that users create, edit, and
+/// manage. Each comment belongs to a post and has an author. Comments
+/// support nested replies and voting functionality.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this comment belongs to. {@link reddit_clone_posts.id}.
+  post_id String
+  
+  /// The author who created the comment. {@link reddit_clone_member.id}.
+  author_id String
+  
+  /// The parent comment ID for nested replies (null for top-level comments).
+  /// {@link reddit_clone_comments.id}.
+  parent_comment_id String?
+  
+  /// The content of the comment.
+  content String
+  
+  /// When the comment was created.
+  created_at DateTime
+  
+  /// When the comment was last updated.
+  updated_at DateTime
+  
+  /// The number of upvotes the comment has received.
+  upvote_count Int
+  
+  /// The number of downvotes the comment has received.
+  downvote_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_clone_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  author reddit_clone_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  parent reddit_clone_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_clone_comments[] @relation("recursive")
+  reddit_clone_comment_votes reddit_clone_comment_votes[]
+  
+  @@index([author_id])
+  
+  @@index([post_id, created_at])
+  @@index([parent_comment_id])
+}

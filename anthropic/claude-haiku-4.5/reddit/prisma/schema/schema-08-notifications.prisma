@@ -1,0 +1,295 @@
+/// Core notification records capturing all notification events sent to
+/// users. Tracks what notification was sent, why it was sent, who triggered
+/// it, and its status. Each record represents a single notification instance
+/// delivered to a specific user.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// User who receives this notification. Foreign key to {@link
+  /// community_platform_users.id}
+  recipient_id String
+  
+  /// User who triggered this notification (who took the action causing
+  /// notification). Foreign key to {@link community_platform_users.id}.
+  /// Nullable for system-generated notifications.
+  trigger_user_id String?
+  
+  /// Type of notification (reply, mention, follow, moderator_action,
+  /// milestone, community_post, upvote). Enum values: reply, mention, follow,
+  /// moderator_action, milestone, community_post, upvote. Classifies the
+  /// notification for filtering and display.
+  notification_type String
+  
+  /// ID of the content (post, comment, or user) that this notification relates
+  /// to. Used with related_content_type to identify specific content
+  /// triggering notification. Nullable for system notifications.
+  related_content_id String?
+  
+  /// Type of related content (post, comment, user). Enum values: post,
+  /// comment, user. Indicates what type of resource related_content_id
+  /// references. Nullable if no specific content referenced.
+  related_content_type String?
+  
+  /// Display text for the notification (max 200 characters). Short message
+  /// summarizing the notification event. Example: 'You received a new reply to
+  /// your post' or '[User] mentioned you in a comment'
+  notification_message String
+  
+  /// JSON object storing additional context for different notification types.
+  /// Can include: content preview (first 100 chars), rule violated (for
+  /// moderator actions), ban duration (for suspensions), moderator note.
+  /// Stored as JSON string for database compatibility.
+  notification_data String?
+  
+  /// Whether recipient has read this notification. True if read, false if
+  /// unread. Defaults to false. Updated when user views notification.
+  read_status Boolean
+  
+  /// Timestamp when notification was created (ISO 8601 UTC). System-managed,
+  /// never updated. Used for chronological ordering and pagination.
+  created_at DateTime
+  
+  /// Timestamp when notification was marked as read by recipient (ISO 8601
+  /// UTC). Nullable if notification not yet read. Set to current timestamp
+  /// when user views notification.
+  read_at DateTime?
+  
+  /// Timestamp when notification was deleted by user (ISO 8601 UTC). Nullable
+  /// if notification not deleted. Uses soft delete pattern - notification
+  /// preserved in database for audit trail but excluded from user-facing
+  /// queries.
+  deleted_at DateTime?
+  
+  /// Whether this notification has been soft-deleted by the user. True if
+  /// deleted, false if active. Used for filtering out deleted notifications
+  /// from queries. Defaults to false.
+  is_deleted Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  recipient community_platform_users @relation("community_platform_notifications_of_recipient_id", fields: [recipient_id], references: [id], onDelete: Cascade)
+  triggerUser community_platform_users? @relation("community_platform_notifications_of_trigger_user_id", fields: [trigger_user_id], references: [id], onDelete: Cascade)
+  
+  community_platform_notification_delivery_logs community_platform_notification_delivery_logs[]
+  
+  @@index([recipient_id, created_at])
+  @@index([recipient_id, read_status])
+  @@index([notification_type])
+  @@index([related_content_id, related_content_type], map: "community_platform_notifications_related_content_id_re_03513c44")
+  @@index([trigger_user_id])
+  @@index([created_at])
+}
+
+/// User-specific notification settings controlling what types of
+/// notifications are sent and how they are delivered. One preferences record
+/// per user managing their complete notification configuration including
+/// toggles, delivery methods, quiet hours, and per-community settings.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// User who owns these notification preferences. Foreign key to {@link
+  /// community_platform_users.id}. One preferences record per user with unique
+  /// constraint.
+  user_id String
+  
+  /// Whether user receives notifications for replies to their posts and
+  /// comments. Default: true. When disabled, no reply notifications are sent.
+  reply_notifications_enabled Boolean
+  
+  /// Whether user receives notifications when mentioned with @username.
+  /// Default: true. When disabled, mentions do not trigger notifications.
+  mention_notifications_enabled Boolean
+  
+  /// Whether user receives notifications when someone follows them. Default:
+  /// false. When disabled, follow actions are silent.
+  follow_notifications_enabled Boolean
+  
+  /// Whether user receives notifications about moderator actions (post
+  /// removal, warnings, suspensions). Default: true. Critical for user
+  /// awareness of violations.
+  moderator_action_notifications_enabled Boolean
+  
+  /// Whether user receives notifications for new posts in subscribed
+  /// communities. Default: false. When enabled, users get notified about new
+  /// posts they care about.
+  community_post_notifications_enabled Boolean
+  
+  /// Whether user receives notifications when their posts/comments receive
+  /// upvotes. Default: false. Milestone notifications (10, 100, 1000 upvotes)
+  /// sent separately.
+  upvote_notifications_enabled Boolean
+  
+  /// Whether user receives achievement notifications for milestones (1000
+  /// karma, 10000 karma, etc.). Default: false. Motivational notifications
+  /// about achievements.
+  milestone_notifications_enabled Boolean
+  
+  /// Primary delivery method for notifications (in_app, email, web_push). Enum
+  /// values: in_app (notifications appear in platform inbox), email (sent via
+  /// email), web_push (browser push notifications). In-app is always available
+  /// and cannot be disabled.
+  delivery_method String
+  
+  /// Whether email notifications are enabled as delivery method. Default:
+  /// false. Independent toggle for email delivery.
+  email_delivery_enabled Boolean
+  
+  /// Whether web push notifications are enabled. Default: false. Requires
+  /// browser permission. Independent toggle for push delivery.
+  web_push_delivery_enabled Boolean
+  
+  /// How often notifications are batched for delivery (instant, hourly_digest,
+  /// daily_digest, none). Enum values: instant (immediate), hourly_digest
+  /// (batched hourly), daily_digest (batched daily), none (no notifications
+  /// except critical). Affects when notifications are actually delivered.
+  notification_frequency String
+  
+  /// Whether quiet hours are active. When true, notifications are suppressed
+  /// during quiet_hours_start to quiet_hours_end times. Default: false.
+  /// Respects user's requested silent periods.
+  quiet_hours_enabled Boolean
+  
+  /// Start time for quiet hours in HH:MM 24-hour format (e.g., '22:00' for 10
+  /// PM). Notifications not sent after this time. Nullable if quiet hours
+  /// disabled.
+  quiet_hours_start String?
+  
+  /// End time for quiet hours in HH:MM 24-hour format (e.g., '08:00' for 8
+  /// AM). Notifications resume after this time. Nullable if quiet hours
+  /// disabled. Can wrap midnight (e.g., 22:00 to 08:00).
+  quiet_hours_end String?
+  
+  /// User's timezone (e.g., 'America/New_York', 'Europe/London',
+  /// 'Asia/Tokyo'). Used for calculating quiet hours and digest send times in
+  /// user's local timezone. Defaults to UTC if not set.
+  timezone String?
+  
+  /// Minimum upvotes required to trigger upvote notification (e.g., 10, 100,
+  /// 1000). Only notify after threshold reached. Reduces notification spam.
+  /// Default: 10 for standard thresholds.
+  upvote_threshold Int?
+  
+  /// JSON object storing per-community notification customization. Structure:
+  /// {community_id: {enabled: boolean, frequency: string}}. Allows disabling
+  /// notifications for specific communities while keeping them enabled
+  /// globally. Stored as JSON string.
+  per_community_settings String?
+  
+  /// Timestamp when preferences record was created (ISO 8601 UTC). Set when
+  /// user account created or first preferences configured.
+  created_at DateTime
+  
+  /// Timestamp when preferences were last updated (ISO 8601 UTC). Updated
+  /// whenever user changes any notification settings.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Audit trail of notification delivery attempts tracking when each
+/// notification was delivered, how it was delivered, and the status of
+/// delivery. Records each delivery attempt for every notification with
+/// method and status for debugging failed deliveries and retry logic.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_delivery_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Notification that was delivered. Foreign key to {@link
+  /// community_platform_notifications.id}. Multiple delivery log entries can
+  /// exist for same notification (retries).
+  notification_id String
+  
+  /// Method used to deliver this notification (in_app, email, web_push). Enum
+  /// values: in_app (added to notification inbox), email (sent via email
+  /// service), web_push (sent via push notification service). Shows which
+  /// channel was used.
+  delivery_method String
+  
+  /// Current status of delivery attempt (pending, delivered, failed, bounced).
+  /// Enum values: pending (queued, not yet delivered), delivered (successfully
+  /// delivered), failed (delivery failed, will retry), bounced (email bounced,
+  /// won't retry). Tracks delivery state.
+  delivery_status String
+  
+  /// Retry attempt number (1 = first attempt, 2 = first retry, etc.). Tracks
+  /// which attempt this is for the same notification. Used for exponential
+  /// backoff retry logic.
+  attempt_number Int
+  
+  /// Timestamp when this delivery attempt was made (ISO 8601 UTC). Used for
+  /// tracking when retry should occur and for display in audit logs.
+  attempted_at DateTime
+  
+  /// Timestamp when notification was successfully delivered (ISO 8601 UTC).
+  /// Nullable if delivery failed or still pending. Shows confirmation of
+  /// successful delivery.
+  delivered_at DateTime?
+  
+  /// Error message if delivery failed (max 500 characters). Contains reason
+  /// for failure (email bounced, service unavailable, invalid token, etc.).
+  /// Nullable if delivery succeeded.
+  error_message String?
+  
+  /// Number of retry attempts made or planned. Used for exponential backoff
+  /// (retry 1s, 2s, 4s, etc.). Maximum 3 retries before giving up. Tracks
+  /// total retry history.
+  retry_count Int
+  
+  /// Scheduled timestamp for next retry attempt (ISO 8601 UTC). Null if no
+  /// retry planned. Used by background job to determine when to retry.
+  next_retry_at DateTime?
+  
+  /// External service used for delivery (e.g., 'sendgrid' for email,
+  /// 'firebase' for push, 'internal' for in-app). Helps track which provider
+  /// handled delivery and debug provider-specific issues.
+  delivery_provider String?
+  
+  /// Raw response from delivery provider for debugging (max 1000 characters).
+  /// Contains provider's status message or error details. Useful for
+  /// investigating failures with provider.
+  provider_response String?
+  
+  /// Timestamp when delivery log entry was created (ISO 8601 UTC). Records
+  /// when attempt was logged. Used for audit trail ordering.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  notification community_platform_notifications @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+  
+  @@index([notification_id], map: "community_platform_notification_delivery_logs_notifica_a939a9e3")
+  @@index([delivery_status], map: "community_platform_notification_delivery_logs_delivery_f1f7cf41")
+  @@index([attempted_at])
+  @@index([delivery_method], map: "community_platform_notification_delivery_logs_delivery_f53625f1")
+  @@index([next_retry_at])
+  @@index([created_at])
+}

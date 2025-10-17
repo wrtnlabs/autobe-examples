@@ -1,0 +1,229 @@
+/// Individual tracking of user activities across the platform including
+/// posts, comments, votes, and community interactions used for analytics,
+/// personalization, and reputation calculation while maintaining historical
+/// audit trails
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_activities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User profile associated with activity
+  user_profile_id String
+  
+  /// Type of activity: post_creation, comment_creation, vote, subscription,
+  /// profile_update, login, logout
+  activity_type String
+  
+  /// Client information from user agent
+  user_agent String?
+  
+  /// IP address of the user for security tracking
+  ip_address String
+  
+  /// Duration of activity in seconds
+  activity_duration_seconds Int?
+  
+  /// Whether activity completed successfully
+  is_completed Boolean
+  
+  /// Karma change associated with this activity
+  karma_delta Int
+  
+  /// Platform-wide reputation score calculated from this activity
+  platform_reputation_score Float
+  
+  /// UUID of current session
+  session_id String?
+  
+  /// Optional community ID where activity occurred
+  community_id String?
+  
+  /// Optional post ID where activity occurred
+  post_id String?
+  
+  /// Optional comment ID where activity occurred
+  comment_id String?
+  
+  /// Related vote ID if activity involved voting
+  vote_id String?
+  
+  /// When the activity occurred
+  event_timestamp DateTime
+  
+  /// When this activity record was created
+  created_at DateTime
+  
+  /// Timestamp when activity was soft deleted
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_profile_id, event_timestamp], map: "reddit_community_user_activities_user_profile_id_event_529f9a92")
+  @@index([activity_type])
+  @@index([event_timestamp])
+  @@index([session_id])
+}
+
+/// Comprehensive privacy controls for user data visibility, sharing
+/// preferences, and access levels across the platform ecosystem with GDPR
+/// compliance
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_privacy_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User profile whose privacy is being controlled
+  user_profile_id String
+  
+  /// Profile visibility level: public, followers_only, or private
+  profile_visibility String
+  
+  /// Whether to display karma scores publicly
+  show_karma Boolean
+  
+  /// Who can view profile information
+  profile_view_permission String
+  
+  /// Whether to show activity history publicly
+  show_activities Boolean
+  
+  /// Whether other users can follow this profile
+  allow_followers Boolean
+  
+  /// Whether profile appears in search results
+  search_visibility Boolean
+  
+  /// Email notification preferences
+  email_notifications Boolean
+  
+  /// Push notification preferences
+  push_notifications Boolean
+  
+  /// Browser notification preferences
+  browser_notifications Boolean
+  
+  /// Notification frequency: immediate, daily_digest, weekly_digest, none
+  notification_frequency String
+  
+  /// Who can send direct messages
+  message_privacy_level String
+  
+  /// Whether to accept contact from non-followers
+  contact_preferences String
+  
+  /// JSON array of blocked user IDs
+  blocked_users String?
+  
+  /// JSON array of blocked community IDs
+  blocked_communities String?
+  
+  /// Whether user can export their personal data
+  data_export_enabled Boolean
+  
+  /// Whether to display location information publicly
+  location_sharing Boolean
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  /// Timestamp when privacy settings were soft deleted
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_profile_id])
+  @@index([profile_visibility])
+  @@index([message_privacy_level], map: "reddit_community_user_privacy_settings_message_privacy_7053712d")
+}
+
+/// User customization preferences for profile appearance, themes, and
+/// personalization including color schemes, layout preferences, and display
+/// options
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_profile_customizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User profile whose settings are being customized
+  user_profile_id String
+  
+  /// Preferred theme: light, dark, or auto
+  theme_preference String
+  
+  /// Custom color scheme for profile elements as hex values
+  color_scheme String?
+  
+  /// Preferred font size: small, medium, or large
+  font_size String
+  
+  /// Content density preference: compact, normal, or comfortable
+  layout_density String
+  
+  /// Whether to highlight usernames in community posts
+  display_name_highlight Boolean
+  
+  /// Whether to display navigation breadcrumbs in profile
+  show_breadcrumbs Boolean
+  
+  /// Whether to display account creation date prominently
+  show_join_date Boolean
+  
+  /// Whether to show total comment count on profile
+  show_comment_count Boolean
+  
+  /// Whether to display detailed karma breakdown on profile
+  show_karma_breakdown Boolean
+  
+  /// JSON array of profile sections to show/hide by default
+  sections_visibility String?
+  
+  /// Whether to prioritize personalized feed suggestions
+  priority_feed_suggestions Boolean
+  
+  /// Whether to show community badges on profile
+  show_community_badges Boolean
+  
+  /// Whether to automatically mark notifications as read
+  auto_mark_read Boolean
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  /// Timestamp when customization was soft deleted
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_profile_id])
+  @@index([theme_preference])
+}

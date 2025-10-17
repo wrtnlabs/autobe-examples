@@ -1,0 +1,121 @@
+/// Customer information, but not a person but a **connection** basis. This
+/// is the main entity for customer identity management. Contains
+/// authentication credentials and basic profile information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's email address. Used for login and communication.
+  email String
+  
+  /// Securely hashed password for authentication.
+  password_hash String
+  
+  /// Customer's full name.
+  name String
+  
+  /// Customer's phone number.
+  phone String?
+  
+  /// Customer's primary address.
+  address String?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_product_reviews shopping_product_reviews[]
+  shopping_orders shopping_orders[]
+  shopping_shopping_carts shopping_shopping_carts[]
+  shopping_payments shopping_payments[]
+  
+  @@unique([email])
+  @@index([phone])
+}
+
+/// Seller information for marketplace vendors. Contains authentication
+/// credentials and business profile information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's email address. Used for login and communication.
+  email String
+  
+  /// Securely hashed password for authentication.
+  password_hash String
+  
+  /// Seller's business name.
+  business_name String
+  
+  /// Primary contact person's name.
+  contact_name String
+  
+  /// Seller's phone number.
+  phone String?
+  
+  /// Seller's business address.
+  address String?
+  
+  /// Seller's tax identification number.
+  tax_id String?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_seller_products shopping_seller_products[]
+  shopping_seller_orders shopping_seller_orders[]
+  
+  @@unique([email])
+  @@unique([tax_id])
+  @@index([phone])
+}
+
+/// Administrator information for platform management. Contains
+/// authentication credentials and admin profile information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin's email address. Used for login and communication.
+  email String
+  
+  /// Securely hashed password for authentication.
+  password_hash String
+  
+  /// Admin's full name.
+  name String
+  
+  /// Admin's phone number.
+  phone String?
+  
+  /// Admin's role or permission level.
+  role String
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_review_moderation shopping_review_moderation[]
+  shopping_admin_actions shopping_admin_actions[]
+  shopping_admin_logs shopping_admin_logs[]
+  
+  @@unique([email])
+  @@index([role])
+}

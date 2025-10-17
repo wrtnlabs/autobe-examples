@@ -1,0 +1,105 @@
+/// Discussion Board Posts representing user-generated discussion topics
+/// within economic or political categories. Each post is authored by a
+/// member and belongs to one category. Posts contain validated title and
+/// body content with timestamps and status fields for moderation and
+/// lifecycle management. Indexed for efficient searching and browsing with
+/// full-text search support on title and body content. Related to
+/// discussion_board_categories and discussion_board_members for category and
+/// owner relationships.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged category's discussion_board_categories.id.
+  category_id String
+  
+  /// Authoring member's discussion_board_members.id.
+  member_id String
+  
+  /// Post title between 5 and 100 characters, validated content.
+  title String
+  
+  /// Post body content up to 5000 characters, validated and profanity-checked.
+  body String
+  
+  /// Status of the post indicating moderation or visibility state.
+  post_status String
+  
+  /// Timestamp when the post was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft deleted; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_replies discussion_board_replies[]
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  
+  @@unique([category_id, title])
+  @@index([member_id, created_at])
+}
+
+/// Replies to discussion board posts authored by members. Each reply is
+/// attached to a single post and contains validated textual content. Replies
+/// have status fields for moderation, timestamps for auditing, and support
+/// efficient retrieval and filtering. Linked to posts and members with
+/// referential integrity and indexed for performance on common queries
+/// including full-text search on content.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Replied post's discussion_board_posts.id.
+  post_id String
+  
+  /// Authoring member's discussion_board_members.id.
+  member_id String
+  
+  /// Reply content between 5 and 1000 characters, validated and
+  /// profanity-checked.
+  content String
+  
+  /// Status of the reply indicating moderation or visibility state.
+  reply_status String
+  
+  /// Timestamp when the reply was created.
+  created_at DateTime
+  
+  /// Timestamp when the reply was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the reply was soft deleted; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  
+  @@index([member_id])
+  
+  @@index([post_id, created_at])
+}

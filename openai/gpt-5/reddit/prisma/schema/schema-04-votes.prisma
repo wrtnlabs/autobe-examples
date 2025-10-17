@@ -1,0 +1,94 @@
+/// User votes on posts. Each record represents a single user’s upvote or
+/// downvote on a specific post. Enforces exactly one vote per (user, post)
+/// via a composite unique index. Supports temporal analytics and soft
+/// deletion for retractions. References {@link community_platform_users} as
+/// voter and {@link community_platform_posts} as target.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter user's {@link community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Target post's {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Vote value where -1 indicates downvote and +1 indicates upvote. Only -1
+  /// or +1 are valid.
+  value Int
+  
+  /// Timestamp when the vote record was created.
+  created_at DateTime
+  
+  /// Timestamp when the vote record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when the vote is retracted or removed. Null when
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id, community_platform_post_id], map: "community_platform_post_votes_community_platform_user__694703a3")
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_votes_community_platform_post__80871491")
+  @@index([community_platform_user_id, created_at], map: "community_platform_post_votes_community_platform_user__00277ed4")
+  @@index([community_platform_post_id, deleted_at], map: "community_platform_post_votes_community_platform_post__851773d1")
+}
+
+/// User votes on comments. Each record represents a single user’s upvote or
+/// downvote on a specific comment. Enforces exactly one vote per (user,
+/// comment) via a composite unique index. Supports temporal analytics and
+/// soft deletion for retractions. References {@link
+/// community_platform_users} as voter and {@link
+/// community_platform_comments} as target.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter user's {@link community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Target comment's {@link community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// Vote value where -1 indicates downvote and +1 indicates upvote. Only -1
+  /// or +1 are valid.
+  value Int
+  
+  /// Timestamp when the vote record was created.
+  created_at DateTime
+  
+  /// Timestamp when the vote record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when the vote is retracted or removed. Null when
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id, community_platform_comment_id], map: "community_platform_comment_votes_community_platform_us_29662574")
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_votes_community_platform_co_68a9b5f7")
+  @@index([community_platform_user_id, created_at], map: "community_platform_comment_votes_community_platform_us_f33e6829")
+  @@index([community_platform_comment_id, deleted_at], map: "community_platform_comment_votes_community_platform_co_402c7b76")
+}

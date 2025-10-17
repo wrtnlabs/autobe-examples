@@ -1,0 +1,52 @@
+/// User profile information including karma score and personal details.
+/// Central to the platform as it connects users to their activities and
+/// communities.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for the user.
+  username String
+  
+  /// User's email address for notifications.
+  email String
+  
+  /// Hashed password for user authentication.
+  password_hash String
+  
+  /// URL to the user's profile picture.
+  profile_picture String?
+  
+  /// User's personal biography.
+  bio String?
+  
+  /// User's karma score based on voting activity.
+  karma_score Int
+  
+  /// Timestamp when the user profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the user profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user profile was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_guest reddit_like_community_guest?
+  reddit_like_community_member reddit_like_community_member?
+  reddit_like_community_moderator reddit_like_community_moderator?
+  reddit_like_community_admin reddit_like_community_admin?
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([karma_score])
+}

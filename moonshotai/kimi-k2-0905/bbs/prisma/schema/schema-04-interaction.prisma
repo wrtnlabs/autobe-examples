@@ -1,0 +1,313 @@
+/// Voting system for political discussion content where users rate posts and
+/// replies, with quality-based scoring that influences content visibility
+/// and author reputation. Handles vote creation, modification, and
+/// retraction with fraud detection capabilities.
+///
+/// @namespace Interaction
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The voter's user ID - can reference members, moderators, or admins for
+  /// proper user tracking
+  voter_user_id String
+  
+  /// The post being voted on (exclusive with reply votes)
+  political_discussion_board_post_id String?
+  
+  /// The reply being voted on (exclusive with post votes)
+  political_discussion_board_reply_id String?
+  
+  /// Type of vote: upvote, downvote, neutral vote for quality control
+  vote_type String
+  
+  /// Numerical vote value (1 for upvote, -1 for downvote, 0 for neutral)
+  vote_value Int
+  
+  /// Current status of the vote: active, retracted, flagged, or system_removed
+  /// for lifecycle management
+  business_status String
+  
+  /// When this vote was cast
+  created_at DateTime
+  
+  /// Last modification timestamp for vote changes
+  updated_at DateTime
+  
+  /// Soft delete timestamp for vote withdrawal
+  deleted_at DateTime?
+  
+  /// IP address for vote fraud detection and duplicate prevention
+  ip_address String
+  
+  /// Browser user agent for additional fraud detection
+  user_agent String?
+  
+  //----
+  // RELATIONS
+  //----
+  voter political_discussion_board_member @relation(fields: [voter_user_id], references: [id], onDelete: Cascade)
+  targetPost political_discussion_board_posts? @relation(fields: [political_discussion_board_post_id], references: [id], onDelete: Cascade)
+  targetReply political_discussion_board_replies? @relation(fields: [political_discussion_board_reply_id], references: [id], onDelete: Cascade)
+  
+  @@unique([voter_user_id, political_discussion_board_post_id], map: "political_discussion_board_votes_voter_user_id_politic_394629e3")
+  @@unique([voter_user_id, political_discussion_board_reply_id], map: "political_discussion_board_votes_voter_user_id_politic_3736c398")
+  @@index([voter_user_id, created_at])
+  @@index([voter_user_id, vote_type, business_status], map: "political_discussion_board_votes_voter_user_id_vote_ty_56283786")
+  @@index([political_discussion_board_post_id, vote_value, business_status], map: "political_discussion_board_votes_political_discussion__732bf2fb")
+  @@index([political_discussion_board_reply_id, vote_value, business_status], map: "political_discussion_board_votes_political_discussion__5f149eea")
+  @@index([created_at, vote_type, business_status], map: "political_discussion_board_votes_created_at_vote_type__b001feaa")
+}
+
+/// User search history tracking for analytics, personalization, and privacy
+/// management while enabling search result optimization. Tracks search
+/// queries, filters, and user engagement with results for improving search
+/// algorithms.
+///
+/// @namespace Interaction
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_search_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who performed the search for proper user tracking
+  political_discussion_board_member_id String
+  
+  /// The actual search terms entered by the user
+  search_query String
+  
+  /// Normalized version of search for aggregation and analytics
+  normalized_query String
+  
+  /// Comma-separated list of category filters applied
+  filter_categories String?
+  
+  /// Start date for date range filter if applied
+  filter_date_from DateTime?
+  
+  /// End date for date range filter if applied
+  filter_date_to DateTime?
+  
+  /// Author filter if applied (username or profile_id)
+  filter_author String?
+  
+  /// Business status: active, filtered, flagged for search activity lifecycle
+  /// management
+  business_status String
+  
+  /// Number of search results returned
+  results_count Int
+  
+  /// Number of results the user clicked on
+  results_clicked Int
+  
+  /// When the search was performed
+  search_timestamp DateTime
+  
+  /// Session identifier for grouping related searches
+  session_id String?
+  
+  /// IP address for privacy compliance and abuse detection
+  ip_address String
+  
+  //----
+  // RELATIONS
+  //----
+  searcher political_discussion_board_member @relation(fields: [political_discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([political_discussion_board_member_id, search_timestamp], map: "political_discussion_board_search_history_political_di_1a37f6aa")
+  @@index([normalized_query, search_timestamp], map: "political_discussion_board_search_history_normalized_q_7de02568")
+  @@index([search_timestamp, business_status, results_count], map: "political_discussion_board_search_history_search_times_bdf1879d")
+  @@index([filter_categories, search_timestamp], map: "political_discussion_board_search_history_filter_categ_a74e3b05")
+}
+
+/// Email notification system for user interactions, content updates, and
+/// community activities with customizable preferences and delivery tracking
+///
+/// @namespace Interaction
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Recipient of the notification {@link
+  /// political_discussion_board_user_profiles.id}
+  political_discussion_board_user_profiles_id String
+  
+  /// User who triggered the notification (null for system notifications)
+  sender_user_id String?
+  
+  /// Related post for content notifications {@link
+  /// political_discussion_board_posts.id}
+  related_post_id String?
+  
+  /// Related reply for discussion notifications {@link
+  /// political_discussion_board_replies.id}
+  related_reply_id String?
+  
+  /// Type: new_reply, mention, vote, follow, subscription_digest, newsletter
+  notification_type String
+  
+  /// Email subject line for the notification
+  subject String
+  
+  /// HTML content of the notification email
+  content_html String
+  
+  /// Plain text version of the notification email
+  content_text String
+  
+  /// Priority level: urgent, normal, low, digest
+  priority String
+  
+  /// When the notification was created
+  created_at DateTime
+  
+  /// When to send the notification (for batch processing)
+  scheduled_for DateTime?
+  
+  /// When the notification was actually sent
+  sent_at DateTime?
+  
+  /// Email delivery status: pending, sent, failed, bounced, suppressed
+  email_status String
+  
+  /// Whether the user has marked this notification as read
+  is_read Boolean
+  
+  /// Number of times user clicked links in the notification
+  click_through_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  recipient political_discussion_board_user_profiles @relation("political_discussion_board_notifications_of_political__93e206b7", fields: [political_discussion_board_user_profiles_id], references: [id], onDelete: Cascade)
+  sender political_discussion_board_user_profiles? @relation("political_discussion_board_notifications_of_sender_user_id", fields: [sender_user_id], references: [id], onDelete: Cascade)
+  relatedPost political_discussion_board_posts? @relation(fields: [related_post_id], references: [id], onDelete: Cascade)
+  relatedReply political_discussion_board_replies? @relation(fields: [related_reply_id], references: [id], onDelete: Cascade)
+  
+  @@index([sender_user_id])
+  @@index([related_post_id])
+  @@index([related_reply_id])
+  
+  @@index([political_discussion_board_user_profiles_id, sent_at, is_read], map: "political_discussion_board_notifications_political_dis_e680c7a9")
+  @@index([scheduled_for, email_status, priority], map: "political_discussion_board_notifications_scheduled_for_c6d5b9d6")
+  @@index([created_at, notification_type, priority], map: "political_discussion_board_notifications_created_at_no_45d04d74")
+}
+
+/// Social following system allowing users to follow other users for content
+/// discovery and activity notifications
+///
+/// @namespace Interaction
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_user_follows {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user being followed {@link
+  /// political_discussion_board_user_profiles.id}
+  political_discussion_board_user_profiles_id String
+  
+  /// The user doing the following {@link
+  /// political_discussion_board_user_profiles.id}
+  political_discussion_board_user_profiles_id_follower String
+  
+  /// Type of follow: general, content_only, urgent_notifications
+  follow_type String
+  
+  /// When the follow relationship was established
+  created_at DateTime
+  
+  /// Whether both users follow each other back
+  mutual_follow Boolean
+  
+  /// Whether follower wants notifications about followed user's new content
+  notifications_enabled Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  followedUser political_discussion_board_user_profiles @relation("political_discussion_board_user_follows_of_political_d_6b685a8f", fields: [political_discussion_board_user_profiles_id], references: [id], onDelete: Cascade)
+  followerUser political_discussion_board_user_profiles @relation("political_discussion_board_user_follows_of_political_d_c41b293d", fields: [political_discussion_board_user_profiles_id_follower], references: [id], onDelete: Cascade)
+  
+  @@unique([political_discussion_board_user_profiles_id, political_discussion_board_user_profiles_id_follower], map: "political_discussion_board_user_follows_political_disc_33df4309")
+  @@index([political_discussion_board_user_profiles_id, mutual_follow], map: "political_discussion_board_user_follows_political_disc_570f64f3")
+  @@index([political_discussion_board_user_profiles_id_follower, notifications_enabled], map: "political_discussion_board_user_follows_political_disc_995ca3ea")
+  @@index([follow_type, created_at], map: "political_discussion_board_user_follows_follow_type_cr_be26fe8b")
+}
+
+/// Content bookmarking system for users to save and organize interesting
+/// discussions and posts for later reference
+///
+/// @namespace Interaction
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_bookmarks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who bookmarked the content {@link
+  /// political_discussion_board_user_profiles.id}
+  political_discussion_board_user_profiles_id String
+  
+  /// Bookmarked post (exclusive with reply bookmarks)
+  political_discussion_board_posts_id String?
+  
+  /// Bookmarked reply (exclusive with post bookmarks)
+  political_discussion_board_replies_id String?
+  
+  /// Custom title users can set for personal organization
+  bookmark_title String?
+  
+  /// Optional note about why this was bookmarked
+  bookmark_description String?
+  
+  /// User-defined category for organizing bookmarks
+  bookmark_category String?
+  
+  /// When the bookmark was created
+  created_at DateTime
+  
+  /// When the bookmark was last modified
+  updated_at DateTime
+  
+  /// Whether this is marked as a favorite bookmark
+  is_favorite Boolean
+  
+  /// How many times the user has accessed this bookmark
+  access_count Int
+  
+  /// When the user last accessed this bookmark
+  last_accessed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user political_discussion_board_user_profiles @relation(fields: [political_discussion_board_user_profiles_id], references: [id], onDelete: Cascade)
+  bookmarkedPost political_discussion_board_posts? @relation(fields: [political_discussion_board_posts_id], references: [id], onDelete: Cascade)
+  bookmarkedReply political_discussion_board_replies? @relation(fields: [political_discussion_board_replies_id], references: [id], onDelete: Cascade)
+  
+  @@index([political_discussion_board_posts_id], map: "political_discussion_board_bookmarks_political_discuss_d4d745da")
+  @@index([political_discussion_board_replies_id], map: "political_discussion_board_bookmarks_political_discuss_086f65a3")
+  
+  @@unique([political_discussion_board_user_profiles_id, political_discussion_board_posts_id], map: "political_discussion_board_bookmarks_political_discuss_c5a66a35")
+  @@unique([political_discussion_board_user_profiles_id, political_discussion_board_replies_id], map: "political_discussion_board_bookmarks_political_discuss_c7471849")
+  @@index([political_discussion_board_user_profiles_id, bookmark_category], map: "political_discussion_board_bookmarks_political_discuss_d397d521")
+  @@index([is_favorite, last_accessed_at], map: "political_discussion_board_bookmarks_is_favorite_last__deb7f982")
+  @@index([created_at, access_count], map: "political_discussion_board_bookmarks_created_at_access_93434f82")
+}

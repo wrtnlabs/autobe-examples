@@ -1,0 +1,242 @@
+/// Primary user accounts for communityPortal. Stores authentication and
+/// profile data referenced by role tables and content entities. Key
+/// relationships: referenced by {@\link community_portal_members.id},
+/// {@\link community_portal_moderators.id}, {@\link
+/// community_portal_admins.id}, and content tables (posts, comments, votes)
+/// in other components. Use soft-delete (deleted_at) in practice; primary
+/// operations should prefer soft-delete to preserve audit trails.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique login handle used for authentication and public identity.
+  username String
+  
+  /// Primary email address for the account. Must be unique. Used for
+  /// verification and notifications.
+  email String
+  
+  /// Password hash using secure algorithm (never store plain passwords).
+  password_hash String
+  
+  /// Optional human-friendly display name shown in the UI.
+  display_name String?
+  
+  /// Optional profile biography text. Indexed for text search (GIN) to support
+  /// fuzzy matching.
+  bio String?
+  
+  /// Optional avatar image URI for the user profile.
+  avatar_uri String?
+  
+  /// Aggregated user karma score used for reputation and gating. Stored as
+  /// integer; authoritative calculation may be driven by vote events in other
+  /// components.
+  karma Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp for the user record.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When set, the user is considered deleted/archived
+  /// for business logic while preserving audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_portal_communities community_portal_communities[]
+  community_portal_guests community_portal_guests?
+  community_portal_members community_portal_members?
+  community_portal_moderators_of_user_id community_portal_moderators[] @relation("community_portal_moderators_of_user_id")
+  community_portal_moderators_of_appointed_by_user_id community_portal_moderators[] @relation("community_portal_moderators_of_appointed_by_user_id")
+  community_portal_admins community_portal_admins?
+  community_portal_posts community_portal_posts[]
+  community_portal_comments community_portal_comments[]
+  community_portal_votes community_portal_votes[]
+  community_portal_subscriptions community_portal_subscriptions[]
+  community_portal_reports community_portal_reports[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+  @@index([karma, updated_at])
+}
+
+/// Subsidiary table capturing guest-specific metadata linked to a primary
+/// user account. Guests are lightweight accounts with limited privileges;
+/// this table exists to track guest enrollment or ephemeral metadata without
+/// polluting the main user record.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@\link community_portal_users.id}.
+  user_id String
+  
+  /// Optional short-lived token or metadata for guest sessions or invitations.
+  guest_token String?
+  
+  /// When the guest record was created.
+  created_at DateTime
+  
+  /// Optional expiration timestamp for guest status or token.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_portal_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([created_at])
+}
+
+/// Subsidiary table for member-specific attributes tied to a primary user
+/// account. Holds membership metadata such as verification and suspension
+/// state and membership start date. One-to-one with community_portal_users
+/// to support member-only attributes without bloating the core user table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@\link community_portal_users.id}.
+  user_id String
+  
+  /// Timestamp when the user became a member (verified).
+  member_since DateTime
+  
+  /// Whether the member's email has been verified.
+  is_email_verified Boolean
+  
+  /// Flag indicating whether the member account is suspended (platform action).
+  is_suspended Boolean
+  
+  /// Record creation timestamp for membership record.
+  created_at DateTime
+  
+  /// Last update timestamp for membership record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_portal_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([member_since, is_suspended])
+}
+
+/// Moderator assignments with robust auditability. Each appointment
+/// references the moderator user and the appointing user. The model
+/// preserves timestamps and activation flags. Appointing actor is a foreign
+/// key to community_portal_users to ensure referential integrity and easier
+/// audit queries. Community reference is nullable to support global
+/// moderators.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's user reference. {@link community_portal_users.id}.
+  user_id String
+  
+  /// Assigned community's {@link community_portal_communities.id}. Nullable to
+  /// allow global moderators without single-community assignment.
+  community_id String?
+  
+  /// Appointing user's {@link community_portal_users.id}. Nullable when
+  /// appointed by system or for legacy/backfill records.
+  appointed_by_user_id String?
+  
+  /// Timestamp when the moderator appointment was made.
+  appointed_at DateTime
+  
+  /// Whether the moderator assignment is currently active.
+  is_active Boolean
+  
+  /// Record creation timestamp for the moderator assignment.
+  created_at DateTime
+  
+  /// Last update timestamp for the moderator assignment.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_portal_users @relation("community_portal_moderators_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  community community_portal_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  appointedByUser community_portal_users? @relation("community_portal_moderators_of_appointed_by_user_id", fields: [appointed_by_user_id], references: [id], onDelete: Cascade)
+  
+  community_portal_reports_of_assigned_moderator_id community_portal_reports[] @relation("community_portal_reports_of_assigned_moderator_id")
+  community_portal_reports_of_closed_by_moderator_id community_portal_reports[] @relation("community_portal_reports_of_closed_by_moderator_id")
+  
+  @@unique([user_id, community_id])
+  @@index([community_id, is_active])
+  @@index([user_id, appointed_at])
+  @@index([appointed_by_user_id, appointed_at], map: "community_portal_moderators_appointed_by_user_id_appoi_0ff5b43f")
+}
+
+/// Subsidiary table for platform admin accounts and admin-scoped metadata.
+/// One-to-one with the primary user record. Stores admin level and
+/// activation flag for elevated privileges; admin actions should always be
+/// audited in external audit logs.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@\link community_portal_users.id}.
+  user_id String
+  
+  /// Admin level or role string (e.g., 'super', 'moderator_coordinator').
+  /// Defines scope of privileges; exact semantics are platform-defined.
+  admin_level String
+  
+  /// Whether the admin account is active and may perform admin actions.
+  is_active Boolean
+  
+  /// Timestamp when admin role was granted.
+  created_at DateTime
+  
+  /// Last updated timestamp for admin record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_portal_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([admin_level, is_active])
+}

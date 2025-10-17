@@ -1,0 +1,315 @@
+/// User-submitted reports for inappropriate content requiring moderation.
+/// Users can report topics, comments, or other content that violates
+/// community guidelines. Each report triggers a moderation workflow and is
+/// tracked for accountability and compliance requirements. {@link
+/// discussion_board_members.id} {@link discussion_board_topics.id} {@link
+/// discussion_board_comments.id}
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the report. {@link discussion_board_members.id}
+  reporter_id String
+  
+  /// Reported topic if applicable. {@link discussion_board_topics.id}
+  reported_topic_id String?
+  
+  /// Reported comment if applicable. {@link discussion_board_comments.id}
+  reported_comment_id String?
+  
+  /// Type of violation being reported (spam, harassment, inappropriate, etc.).
+  report_type String
+  
+  /// Detailed description of the reported violation provided by the user.
+  description String
+  
+  /// Priority level of the report (low, medium, high, critical).
+  priority String
+  
+  /// JSON array of URLs to supporting evidence or screenshots.
+  evidence_urls String?
+  
+  /// Current status of the report (pending, under_review, resolved, dismissed).
+  status String
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter discussion_board_members @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  reportedTopic discussion_board_topics? @relation(fields: [reported_topic_id], references: [id], onDelete: Cascade)
+  reportedComment discussion_board_comments? @relation(fields: [reported_comment_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  
+  @@index([reporter_id])
+  
+  @@index([reported_topic_id])
+  @@index([reported_comment_id])
+  @@index([status, created_at])
+}
+
+/// Actions taken by moderators in response to content reports. Each action
+/// represents a decision made by a moderator regarding reported content,
+/// including removal, warnings, or approvals.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link discussion_board_moderators.id}
+  moderator_id String
+  
+  /// Content report that triggered this action. {@link
+  /// discussion_board_content_reports.id}
+  content_report_id String
+  
+  /// Target topic if action applies to a topic. {@link
+  /// discussion_board_topics.id}
+  target_topic_id String?
+  
+  /// Target comment if action applies to a comment. {@link
+  /// discussion_board_comments.id}
+  target_comment_id String?
+  
+  /// Type of moderation action taken (remove_content, warn_user,
+  /// approve_content, etc.).
+  action_type String
+  
+  /// Detailed explanation of the action taken and reasoning.
+  action_details String
+  
+  /// Severity level of the action (minor, moderate, severe).
+  severity String
+  
+  /// Duration in days for temporary actions like suspensions.
+  duration_days Int?
+  
+  /// Whether this action can be appealed by the affected user.
+  is_appealable Boolean
+  
+  /// Timestamp when the moderation action was performed.
+  created_at DateTime
+  
+  /// Timestamp when the moderation action was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderation action was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  contentReport discussion_board_content_reports @relation(fields: [content_report_id], references: [id], onDelete: Cascade)
+  targetTopic discussion_board_topics? @relation(fields: [target_topic_id], references: [id], onDelete: Cascade)
+  targetComment discussion_board_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_violation_records discussion_board_violation_records[]
+  discussion_board_appeals discussion_board_appeals[]
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  
+  @@index([target_topic_id])
+  @@index([target_comment_id])
+  
+  @@index([moderator_id, created_at])
+  @@index([content_report_id])
+  @@index([action_type, created_at])
+}
+
+/// Historical records of user violations and moderation actions. This table
+/// serves as an audit trail for user behavior and moderation decisions,
+/// helping identify repeat offenders and track moderation patterns.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_violation_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who committed the violation. {@link discussion_board_members.id}
+  user_id String
+  
+  /// Moderation action that created this violation record. {@link
+  /// discussion_board_moderation_actions.id}
+  moderation_action_id String
+  
+  /// Type of violation committed (spam, harassment, hate_speech, etc.).
+  violation_type String
+  
+  /// Detailed description of the violation and context.
+  violation_description String
+  
+  /// Violation points assigned to the user's account.
+  points_assigned Int
+  
+  /// Whether this violation record is currently active and affecting user
+  /// status.
+  is_active Boolean
+  
+  /// Timestamp when the violation record expires and no longer affects user
+  /// status.
+  expires_at DateTime?
+  
+  /// Timestamp when the violation record was created.
+  created_at DateTime
+  
+  /// Timestamp when the violation record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the violation record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  moderationAction discussion_board_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderation_action_id])
+  
+  @@index([user_id, created_at])
+  @@index([violation_type, is_active])
+  @@index([expires_at, is_active])
+}
+
+/// User appeals against moderation actions. Users can appeal moderation
+/// decisions they believe are unfair or incorrect, providing an opportunity
+/// for review and potential reversal.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the appeal. {@link discussion_board_members.id}
+  user_id String
+  
+  /// Moderation action being appealed. {@link
+  /// discussion_board_moderation_actions.id}
+  moderation_action_id String
+  
+  /// Moderator who reviewed the appeal. {@link discussion_board_moderators.id}
+  reviewer_id String?
+  
+  /// Detailed reason provided by the user for the appeal.
+  appeal_reason String
+  
+  /// Current status of the appeal (pending, under_review, approved, denied).
+  status String
+  
+  /// Notes from the moderator who reviewed the appeal.
+  review_notes String?
+  
+  /// Timestamp when the appeal was reviewed by a moderator.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the appeal was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the appeal was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the appeal was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  moderationAction discussion_board_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  reviewer discussion_board_moderators? @relation(fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([moderation_action_id])
+  @@index([user_id, created_at])
+  @@index([status, created_at])
+  @@index([reviewer_id, reviewed_at])
+}
+
+/// Comprehensive audit trail of all moderation activities. This log captures
+/// every moderation action taken on the platform, providing complete
+/// transparency and accountability for moderation decisions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link discussion_board_moderators.id}
+  moderator_id String
+  
+  /// Content report that triggered the action if applicable. {@link
+  /// discussion_board_content_reports.id}
+  content_report_id String?
+  
+  /// Moderation action performed if applicable. {@link
+  /// discussion_board_moderation_actions.id}
+  moderation_action_id String?
+  
+  /// Type of moderation activity logged (action_taken, report_reviewed,
+  /// appeal_processed, etc.).
+  log_type String
+  
+  /// Detailed description of the moderation activity.
+  description String
+  
+  /// Type of entity targeted by the moderation (topic, comment, user, etc.).
+  target_entity_type String
+  
+  /// ID of the targeted entity (topic ID, comment ID, user ID, etc.).
+  target_entity_id String
+  
+  /// IP address from which the moderation action was performed.
+  ip_address String?
+  
+  /// User agent string of the moderator's browser/device.
+  user_agent String?
+  
+  /// Timestamp when the moderation log entry was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  contentReport discussion_board_content_reports? @relation(fields: [content_report_id], references: [id], onDelete: Cascade)
+  moderationAction discussion_board_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  
+  @@index([content_report_id])
+  @@index([moderation_action_id])
+  
+  @@index([moderator_id, created_at])
+  @@index([log_type, created_at])
+  @@index([target_entity_type, target_entity_id], map: "discussion_board_moderation_logs_target_entity_type_ta_eb025f71")
+}

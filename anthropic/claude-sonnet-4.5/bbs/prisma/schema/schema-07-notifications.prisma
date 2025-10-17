@@ -1,0 +1,299 @@
+/// Stores individual notification records delivered to users for various
+/// platform events including replies, mentions, votes, moderation actions,
+/// and system announcements. Each notification represents a discrete event
+/// that users can view, mark as read, and interact with through the
+/// notification center. Notifications support both in-app and email delivery
+/// channels with separate tracking for each. Uses explicit foreign keys
+/// instead of polymorphic pattern to ensure referential integrity with
+/// discussion topics, replies, moderation actions, and triggering users
+/// (members, moderators, administrators).
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Recipient user who receives this notification. {@link
+  /// discussion_board_members.id}
+  user_id String
+  
+  /// Member whose action triggered this notification (e.g., posted reply, cast
+  /// vote). Null for moderator/admin actions or system notifications. {@link
+  /// discussion_board_members.id}
+  triggering_member_id String?
+  
+  /// Moderator whose action triggered this notification (e.g., moderation
+  /// action). Null for member/admin actions. {@link
+  /// discussion_board_moderators.id}
+  triggering_moderator_id String?
+  
+  /// Administrator whose action triggered this notification (e.g., system
+  /// announcement, admin moderation). Null for member/moderator actions.
+  /// {@link discussion_board_administrators.id}
+  triggering_administrator_id String?
+  
+  /// Discussion topic related to this notification (for reply_to_topic,
+  /// topic-related events). Null if notification not topic-related. {@link
+  /// discussion_board_topics.id}
+  related_topic_id String?
+  
+  /// Discussion reply related to this notification (for reply_to_comment,
+  /// reply-related events). Null if notification not reply-related. {@link
+  /// discussion_board_replies.id}
+  related_reply_id String?
+  
+  /// Moderation action related to this notification (for moderation_action
+  /// type notifications). Null for non-moderation notifications. {@link
+  /// discussion_board_moderation_actions.id}
+  related_moderation_action_id String?
+  
+  /// Type of notification: reply_to_topic, reply_to_comment, mention,
+  /// vote_milestone, moderation_action, system_announcement,
+  /// watched_topic_update, welcome
+  notification_type String
+  
+  /// Notification headline displayed to user (e.g., 'New reply to your topic',
+  /// 'You were mentioned')
+  title String
+  
+  /// Notification content preview or detailed message (first 200 characters of
+  /// reply, moderation reason, etc.)
+  message String
+  
+  /// Deep link URL to the relevant content (topic, reply, profile, etc.). Null
+  /// for notifications without specific target content.
+  link_url String?
+  
+  /// Whether user has marked this notification as read (clicked or explicitly
+  /// marked read)
+  is_read Boolean
+  
+  /// Whether user has seen this notification in the notification center
+  /// (viewed but not necessarily read)
+  is_seen Boolean
+  
+  /// Whether this notification was delivered through in-app notification center
+  delivered_in_app Boolean
+  
+  /// Whether this notification was delivered via email to user's registered
+  /// address
+  delivered_via_email Boolean
+  
+  /// Timestamp when email notification was successfully sent. Null if email
+  /// not sent or delivery failed.
+  email_sent_at DateTime?
+  
+  /// Email delivery status: queued, sent, failed, bounced. Null if email
+  /// delivery not attempted.
+  email_delivery_status String?
+  
+  /// Reason for email delivery failure if status is failed or bounced. Null
+  /// for successful deliveries.
+  email_failure_reason String?
+  
+  /// Number of email delivery retry attempts. Incremented on each retry,
+  /// maximum 3 retries per requirements.
+  email_retry_count Int
+  
+  /// Timestamp when user marked notification as read. Null if unread.
+  read_at DateTime?
+  
+  /// Timestamp when notification was created and queued for delivery
+  created_at DateTime
+  
+  /// Timestamp when notification record was last updated (status changes, read
+  /// status, etc.)
+  updated_at DateTime
+  
+  /// Soft delete timestamp for user-deleted notifications. Supports 90-day
+  /// retention window before permanent cleanup. Null for active notifications.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  recipient discussion_board_members @relation("discussion_board_notifications_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  triggeringMember discussion_board_members? @relation("discussion_board_notifications_of_triggering_member_id", fields: [triggering_member_id], references: [id], onDelete: Cascade)
+  triggeringModerator discussion_board_moderators? @relation(fields: [triggering_moderator_id], references: [id], onDelete: Cascade)
+  triggeringAdministrator discussion_board_administrators? @relation(fields: [triggering_administrator_id], references: [id], onDelete: Cascade)
+  relatedTopic discussion_board_topics? @relation(fields: [related_topic_id], references: [id], onDelete: Cascade)
+  relatedReply discussion_board_replies? @relation(fields: [related_reply_id], references: [id], onDelete: Cascade)
+  relatedModerationAction discussion_board_moderation_actions? @relation(fields: [related_moderation_action_id], references: [id], onDelete: Cascade)
+  
+  @@index([triggering_member_id])
+  @@index([triggering_moderator_id])
+  @@index([triggering_administrator_id])
+  @@index([related_topic_id])
+  @@index([related_reply_id])
+  @@index([related_moderation_action_id], map: "discussion_board_notifications_related_moderation_acti_a39bbe12")
+  
+  @@index([user_id, created_at])
+  @@index([user_id, is_read])
+  @@index([user_id, notification_type])
+  @@index([notification_type, created_at])
+  @@index([created_at])
+}
+
+/// Stores user notification preferences controlling which events trigger
+/// notifications and through which channels (in-app, email). Supports
+/// granular per-event-type configuration, digest modes (hourly, daily,
+/// weekly), and quiet hours settings. Each user has exactly one preference
+/// record with default values applied at registration.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns these notification preferences. {@link
+  /// discussion_board_members.id}
+  user_id String
+  
+  /// Enable in-app notifications when someone replies to user's topic
+  reply_to_topic_in_app Boolean
+  
+  /// Enable email notifications when someone replies to user's topic
+  reply_to_topic_email Boolean
+  
+  /// Enable in-app notifications when someone replies to user's comment
+  reply_to_comment_in_app Boolean
+  
+  /// Enable email notifications when someone replies to user's comment
+  reply_to_comment_email Boolean
+  
+  /// Enable in-app notifications when user is mentioned with @username
+  mention_in_app Boolean
+  
+  /// Enable email notifications when user is mentioned with @username
+  mention_email Boolean
+  
+  /// Enable in-app notifications when user's content reaches vote milestones
+  /// (10, 25, 50, 100, etc.)
+  vote_milestone_in_app Boolean
+  
+  /// Enable email notifications when user's content reaches vote milestones
+  vote_milestone_email Boolean
+  
+  /// Enable in-app notifications for moderation actions affecting user
+  /// (warnings, suspensions, content removal)
+  moderation_action_in_app Boolean
+  
+  /// Enable email notifications for moderation actions affecting user
+  moderation_action_email Boolean
+  
+  /// Enable in-app notifications for updates to topics user is watching
+  watched_topic_in_app Boolean
+  
+  /// Enable email notifications for updates to topics user is watching
+  watched_topic_email Boolean
+  
+  /// Enable in-app notifications for system-wide announcements from
+  /// administrators
+  system_announcement_in_app Boolean
+  
+  /// Enable email notifications for system-wide announcements
+  system_announcement_email Boolean
+  
+  /// Email notification batching frequency: realtime (immediate), hourly,
+  /// daily, weekly
+  digest_frequency String
+  
+  /// Whether quiet hours are active (suppress email notifications during
+  /// specified hours)
+  quiet_hours_enabled Boolean
+  
+  /// Quiet hours start time in HH:mm format (24-hour). Null if quiet hours
+  /// disabled.
+  quiet_hours_start String?
+  
+  /// Quiet hours end time in HH:mm format (24-hour). Null if quiet hours
+  /// disabled.
+  quiet_hours_end String?
+  
+  /// User's timezone for digest scheduling and quiet hours calculation (IANA
+  /// timezone identifier)
+  timezone String
+  
+  /// Timestamp when preference record was created (typically at user
+  /// registration)
+  created_at DateTime
+  
+  /// Timestamp when preferences were last modified by user
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+}
+
+/// Tracks batched and digest notifications to optimize delivery and prevent
+/// duplicate notifications. System creates batch records for
+/// hourly/daily/weekly digests and for similar notifications occurring
+/// within batching windows. Batch records track which individual
+/// notifications are included, delivery status, and scheduling information.
+/// Uses JSONB for efficient storage and querying of notification ID arrays.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_notification_batches {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User receiving this batched notification delivery. {@link
+  /// discussion_board_members.id}
+  user_id String
+  
+  /// Type of batch: hourly_digest, daily_digest, weekly_digest,
+  /// batched_replies, batched_mentions, batched_watched_topic
+  batch_type String
+  
+  /// JSONB array of notification UUIDs included in this batch. Stored as JSONB
+  /// for efficient querying and indexing. Example: ["uuid1", "uuid2", "uuid3"]
+  notification_ids String
+  
+  /// Total number of individual notifications combined in this batch
+  notification_count Int
+  
+  /// Timestamp when batch notification was successfully delivered. Null if
+  /// pending or failed.
+  sent_at DateTime?
+  
+  /// Timestamp when batch is scheduled for delivery (considering user
+  /// preferences, quiet hours, digest frequency)
+  scheduled_for DateTime
+  
+  /// Batch delivery status: pending (not yet sent), sent (successfully
+  /// delivered), failed (delivery failed after retries)
+  status String
+  
+  /// Timestamp when batch record was created
+  created_at DateTime
+  
+  /// Timestamp when batch record was last updated (status changes, delivery
+  /// attempts)
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, scheduled_for])
+  @@index([user_id, batch_type, status], map: "discussion_board_notification_batches_user_id_batch_ty_91b01160")
+  @@index([status, scheduled_for])
+  @@index([created_at])
+}

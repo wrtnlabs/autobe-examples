@@ -1,0 +1,489 @@
+/// Content reporting system for community safety. Users submit reports when
+/// they encounter content violating platform policies or community rules.
+/// Reports track reporter identity, reported content (post/comment), reason,
+/// and moderation status throughout the review workflow.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the report. {@link community_platform_users.id}
+  reporter_id String
+  
+  /// ID of post or comment being reported. Can reference either posts or
+  /// comments table depending on content_type field.
+  reported_content_id String
+  
+  /// Community where reported content exists. {@link
+  /// community_platform_communities.id}
+  community_id String?
+  
+  /// Type of content being reported: 'post' or 'comment'
+  content_type String
+  
+  /// Primary reason for reporting: spam, harassment, misinformation,
+  /// hate_speech, violence, sexual_content, illegal_activity, ip_violation,
+  /// community_rule, other
+  report_reason String
+  
+  /// Optional detailed explanation from reporter about why content is being
+  /// reported (max 1000 characters)
+  reporter_details String?
+  
+  /// Current status of report: submitted, in_review, escalated, action_taken,
+  /// dismissed, closed. Tracks report lifecycle.
+  report_status String
+  
+  /// Report severity classification: critical (CSAM, threats), high (hate
+  /// speech, harassment), medium (spam, violations), low (borderline cases).
+  /// Determines review priority.
+  severity_level String
+  
+  /// Notes from moderator during review process about assessment, decision
+  /// reasoning, or context considerations
+  moderator_notes String?
+  
+  /// Whether an appeal has been submitted for this report decision
+  appeal_submitted Boolean
+  
+  /// When report was submitted (UTC timestamp)
+  created_at DateTime
+  
+  /// When moderator first claimed report for review
+  first_review_at DateTime?
+  
+  /// When report received final resolution (action taken or dismissed)
+  resolved_at DateTime?
+  
+  /// When report was closed with final status
+  closed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter community_platform_users @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  reportedContent community_platform_posts @relation(fields: [reported_content_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_moderation_audit_log community_platform_moderation_audit_log[]
+  
+  @@index([reporter_id, created_at])
+  @@index([reported_content_id, content_type])
+  @@index([community_id, report_status])
+  @@index([report_status, created_at])
+  @@index([severity_level, report_status])
+}
+
+/// Records of all moderation actions taken by moderators and administrators.
+/// Tracks what action was taken (remove content, warn user, suspend, ban),
+/// by whom, when, and the reason. Enables audit trail and appeals process.
+/// Actions are reviewed to ensure consistency and prevent abuse.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Report that triggered this action. {@link community_platform_reports.id}
+  report_id String?
+  
+  /// User who performed the moderation action. {@link
+  /// community_platform_users.id}
+  moderator_id String
+  
+  /// User affected by moderation action (content creator, warned user, banned
+  /// user). {@link community_platform_users.id}
+  affected_user_id String
+  
+  /// Community where action was taken. {@link
+  /// community_platform_communities.id}
+  community_id String?
+  
+  /// ID of post or comment that was actioned (removed, warned, etc.).
+  /// References post or comment depending on content_type.
+  content_id String?
+  
+  /// Type of moderation action taken: remove_content, warn_user, suspend_user,
+  /// ban_user, lock_thread, pin_post, add_warning_label, restore_content
+  action_type String
+  
+  /// Type of content actioned: 'post', 'comment', or 'user' (for account-level
+  /// actions)
+  content_type String
+  
+  /// Why action was taken: specific policy or rule violated. Examples: 'spam',
+  /// 'harassment', 'misinformation', 'hate_speech'
+  action_reason String
+  
+  /// Additional context about the action: removal reason for removed content,
+  /// warning text for warnings, suspension duration in hours for suspensions
+  action_details String?
+  
+  /// Internal moderator notes documenting decision reasoning and any
+  /// mitigating circumstances considered
+  moderator_notes String?
+  
+  /// For temporary suspensions: hours until user can post again. NULL for
+  /// permanent bans or non-suspension actions.
+  suspension_duration_hours Int?
+  
+  /// Current status of action: active, reversed, expired (for time-limited
+  /// actions). Tracks whether action is still in effect.
+  action_status String
+  
+  /// When moderation action was taken (UTC timestamp)
+  created_at DateTime
+  
+  /// When time-limited action expires (for temporary suspensions). NULL for
+  /// permanent actions.
+  expires_at DateTime?
+  
+  /// When action was reversed or overturned (due to appeal or admin review).
+  /// NULL if action never reversed.
+  reversed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  moderator community_platform_users @relation("community_platform_moderation_actions_of_moderator_id", fields: [moderator_id], references: [id], onDelete: Cascade)
+  affectedUser community_platform_users @relation("community_platform_moderation_actions_of_affected_user_id", fields: [affected_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  
+  community_platform_content_removals community_platform_content_removals?
+  community_platform_moderation_appeals community_platform_moderation_appeals[]
+  community_platform_moderation_audit_log community_platform_moderation_audit_log[]
+  
+  @@index([report_id])
+  @@index([moderator_id, created_at], map: "community_platform_moderation_actions_moderator_id_cre_ff3d76df")
+  @@index([affected_user_id, action_type], map: "community_platform_moderation_actions_affected_user_id_3b91c26e")
+  @@index([community_id, action_type], map: "community_platform_moderation_actions_community_id_act_aefd7d59")
+  @@index([action_status, created_at], map: "community_platform_moderation_actions_action_status_cr_f47c91d9")
+  @@index([content_id, content_type], map: "community_platform_moderation_actions_content_id_conte_abcb2cbf")
+}
+
+/// Details of removed content (posts and comments). Stores original content
+/// that was removed by moderators, reason for removal, removing moderator,
+/// and restoration capability. Enables audit trail, appeals process, and
+/// content recovery if removal was in error.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_content_removals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated moderation action that caused removal. {@link
+  /// community_platform_moderation_actions.id}
+  moderation_action_id String
+  
+  /// ID of removed post or comment. References either posts or comments table
+  /// depending on content_type.
+  content_id String
+  
+  /// Community containing removed content. {@link
+  /// community_platform_communities.id}
+  community_id String?
+  
+  /// Moderator who removed the content. {@link community_platform_users.id}
+  moderator_id String
+  
+  /// Type of removed content: 'post' or 'comment'
+  content_type String
+  
+  /// Full original text of removed content (preserved for audit and potential
+  /// restoration)
+  original_content String
+  
+  /// Why content was removed: policy violation category (spam, harassment,
+  /// misinformation, hate_speech, etc.)
+  removal_reason String
+  
+  /// Detailed explanation from moderator about why removal was necessary and
+  /// policy cited
+  removal_notes String?
+  
+  /// Current status: removed (hidden from public), restored (made visible
+  /// again), or permanently_deleted (hard delete after appeal period)
+  removal_status String
+  
+  /// Whether content author has appealed this removal decision
+  is_appealed Boolean
+  
+  /// When content was removed (UTC timestamp)
+  created_at DateTime
+  
+  /// When content was restored (if appealed and removal was overturned). NULL
+  /// if never restored.
+  restored_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction community_platform_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  moderator community_platform_users @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_appeals community_platform_moderation_appeals[]
+  
+  @@unique([moderation_action_id])
+  @@index([content_id, content_type])
+  @@index([moderator_id, created_at])
+  @@index([community_id, removal_status], map: "community_platform_content_removals_community_id_remov_522a2e0c")
+  @@index([removal_status, created_at], map: "community_platform_content_removals_removal_status_cre_bd088cdb")
+}
+
+/// Official warnings issued to users for policy violations. Tracks warnings
+/// progressively: accumulation of warnings can lead to temporary
+/// restrictions, suspensions, or permanent bans. Warnings age out after 6
+/// months unless new violations occur. Enables progressive discipline and
+/// user behavior tracking.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_warnings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who received the warning. {@link community_platform_users.id}
+  user_id String
+  
+  /// Moderator who issued the warning. {@link community_platform_users.id}
+  moderator_id String
+  
+  /// Community where violation occurred (for community-specific warnings).
+  /// NULL for platform-wide warnings. {@link
+  /// community_platform_communities.id}
+  community_id String?
+  
+  /// Post or comment that prompted the warning. References either posts or
+  /// comments depending on content_type.
+  related_content_id String?
+  
+  /// Type of content that prompted warning: 'post', 'comment', or 'user' (for
+  /// account-level behavior)
+  content_type String?
+  
+  /// Reason for warning: policy or rule violated. Examples: 'spam',
+  /// 'harassment', 'misinformation', 'community_rule_violation'
+  violation_reason String
+  
+  /// Detailed explanation of what policy was violated and why warning was
+  /// issued
+  warning_text String
+  
+  /// Whether warning applies to: 'community' (single community only) or
+  /// 'platform' (entire platform)
+  warning_scope String
+  
+  /// Whether warning is currently active. Warnings age out after 6 months (set
+  /// to false) unless additional violations occur.
+  is_active Boolean
+  
+  /// Whether user has submitted an appeal of this warning
+  appeal_submitted Boolean
+  
+  /// When warning was issued (UTC timestamp)
+  created_at DateTime
+  
+  /// When warning expires (ages out after 6 months). After this date, warning
+  /// is considered inactive for discipline purposes.
+  expires_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation("community_platform_user_warnings_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  moderator community_platform_users @relation("community_platform_user_warnings_of_moderator_id", fields: [moderator_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [related_content_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_appeals community_platform_moderation_appeals[]
+  
+  @@index([related_content_id])
+  
+  @@index([user_id, created_at])
+  @@index([moderator_id, created_at])
+  @@index([user_id, is_active])
+  @@index([community_id, user_id])
+  @@index([warning_scope, created_at])
+}
+
+/// Appeals submitted by users to contest moderation decisions (removed
+/// content, warnings, suspensions, bans). Tracks appeal submission, evidence
+/// provided, reviewer decision, and outcome. Enables fair review process and
+/// reversal of incorrect moderation actions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User appealing the decision. {@link community_platform_users.id}
+  appellant_id String
+  
+  /// Moderation action being appealed. {@link
+  /// community_platform_moderation_actions.id}
+  original_action_id String?
+  
+  /// User warning being appealed. {@link community_platform_user_warnings.id}
+  original_warning_id String?
+  
+  /// Content removal being appealed. {@link
+  /// community_platform_content_removals.id}
+  original_removal_id String?
+  
+  /// Moderator or admin who reviewed the appeal (different from original
+  /// moderator). {@link community_platform_users.id}
+  appeal_reviewer_id String?
+  
+  /// Reason for appeal: moderator_error, policy_misinterpretation,
+  /// insufficient_context, new_evidence, unfair_bias, other
+  appeal_grounds String
+  
+  /// Appellant's detailed explanation of why decision should be overturned
+  /// (max 1000 characters)
+  appeal_explanation String
+  
+  /// New evidence or documentation provided by appellant to support appeal
+  /// (URLs, context, clarifications)
+  appeal_evidence String?
+  
+  /// Current status of appeal: submitted (awaiting review), under_review,
+  /// accepted (decision reversed), denied (decision upheld), closed
+  appeal_status String
+  
+  /// Decision on appeal: accepted (reverse original action), denied (uphold
+  /// original action), or null if not yet reviewed
+  appeal_decision String?
+  
+  /// Explanation from appeal reviewer about why appeal was accepted or denied
+  appeal_decision_reason String?
+  
+  /// When appeal was submitted (UTC timestamp)
+  created_at DateTime
+  
+  /// When appeal was reviewed and decision made. NULL if not yet reviewed.
+  reviewed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  appellant community_platform_users @relation("community_platform_moderation_appeals_of_appellant_id", fields: [appellant_id], references: [id], onDelete: Cascade)
+  originalAction community_platform_moderation_actions? @relation(fields: [original_action_id], references: [id], onDelete: Cascade)
+  originalWarning community_platform_user_warnings? @relation(fields: [original_warning_id], references: [id], onDelete: Cascade)
+  originalRemoval community_platform_content_removals? @relation(fields: [original_removal_id], references: [id], onDelete: Cascade)
+  reviewedBy community_platform_users? @relation("community_platform_moderation_appeals_of_appeal_reviewer_id", fields: [appeal_reviewer_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_audit_log community_platform_moderation_audit_log[]
+  
+  @@index([original_warning_id])
+  @@index([original_removal_id])
+  
+  @@index([appellant_id, created_at], map: "community_platform_moderation_appeals_appellant_id_cre_358f3473")
+  @@index([appeal_reviewer_id, reviewed_at], map: "community_platform_moderation_appeals_appeal_reviewer__a6dd3c13")
+  @@index([original_action_id])
+  @@index([appeal_status, created_at], map: "community_platform_moderation_appeals_appeal_status_cr_9253ecfb")
+  @@index([appeal_decision, reviewed_at], map: "community_platform_moderation_appeals_appeal_decision__a9b8a439")
+}
+
+/// Complete immutable audit log of all moderation system activities for
+/// accountability and transparency. Tracks every action, decision, appeal,
+/// status change with timestamps and actor. Enables pattern detection,
+/// moderator performance review, and policy enforcement verification.
+/// Critical for legal compliance and dispute resolution.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_audit_log {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the logged action (moderator, admin, or system).
+  /// {@link community_platform_users.id}
+  actor_id String?
+  
+  /// Report involved in this log entry (if applicable). {@link
+  /// community_platform_reports.id}
+  report_id String?
+  
+  /// Moderation action involved in this log entry (if applicable). {@link
+  /// community_platform_moderation_actions.id}
+  moderation_action_id String?
+  
+  /// Appeal involved in this log entry (if applicable). {@link
+  /// community_platform_moderation_appeals.id}
+  appeal_id String?
+  
+  /// Type of moderation event: report_submitted, report_claimed, action_taken,
+  /// appeal_submitted, appeal_reviewed, content_restored, warning_issued,
+  /// user_suspended, etc.
+  event_type String
+  
+  /// Type of entity involved: report, action, warning, appeal, user, content
+  entity_type String
+  
+  /// ID of primary entity involved in this event
+  entity_id String
+  
+  /// Human-readable description of what happened: 'Report #123 submitted by
+  /// user', 'Moderator removed post #456', etc.
+  action_description String
+  
+  /// Status of entity before this action (for state changes)
+  status_before String?
+  
+  /// Status of entity after this action (for state changes)
+  status_after String?
+  
+  /// Additional context stored as JSON: {moderator_id, content_id, reason,
+  /// duration, etc}
+  metadata String?
+  
+  /// IP address of user performing action (for audit trail security)
+  ip_address String?
+  
+  /// When event was logged (UTC timestamp, immutable)
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  actor community_platform_users? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  report community_platform_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  moderationAction community_platform_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  appeal community_platform_moderation_appeals? @relation(fields: [appeal_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_id, created_at])
+  @@index([report_id, event_type], map: "community_platform_moderation_audit_log_report_id_even_10720403")
+  @@index([moderation_action_id], map: "community_platform_moderation_audit_log_moderation_act_8cbab840")
+  @@index([appeal_id])
+  @@index([entity_type, entity_id, created_at], map: "community_platform_moderation_audit_log_entity_type_en_ad955cde")
+  @@index([event_type, created_at], map: "community_platform_moderation_audit_log_event_type_cre_6e77324d")
+  @@index([created_at])
+}

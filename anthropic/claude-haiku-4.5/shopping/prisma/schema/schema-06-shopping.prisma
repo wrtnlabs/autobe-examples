@@ -1,0 +1,253 @@
+/// Customer shopping carts representing temporary collections of items
+/// prepared for purchase. Each authenticated customer has at most one active
+/// cart at any given time. Carts track items the customer intends to buy in
+/// current session, with status lifecycle (active, abandoned,
+/// converted_to_order). Carts persist across sessions enabling interrupted
+/// shopping experiences. Related to {@link shopping_mall_customer.id}.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this shopping cart. Reference to {@link
+  /// shopping_mall_customer.id}.
+  customer_id String
+  
+  /// Cart status lifecycle: 'active' (current shopping), 'abandoned' (inactive
+  /// 30+ days), 'converted_to_order' (checkout completed). Tracks cart state
+  /// for recovery campaigns and analytics.
+  status String
+  
+  /// Denormalized count of items in cart (updated on item addition/removal)
+  /// for quick dashboard display without joins. Should match sum of quantities
+  /// in shopping_cart_items.
+  total_items Int
+  
+  /// Denormalized subtotal of all items (price × quantity per item, summed).
+  /// Calculated from cart items but cached here for performance. In seller's
+  /// currency.
+  subtotal_amount Float
+  
+  /// Estimated tax based on current delivery address and product types.
+  /// Recalculated when address changes or items added. Null if no address
+  /// selected yet.
+  estimated_tax Float?
+  
+  /// Estimated shipping cost based on destination address and selected
+  /// shipping method. Null if address or method not yet selected.
+  estimated_shipping Float?
+  
+  /// Applied promotional code if customer entered discount code. Null if no
+  /// promo applied. Used to validate discount applicability.
+  promo_code String?
+  
+  /// Discount amount from applied promo code or store credits. In seller's
+  /// currency. Zero if no discount.
+  discount_amount Float
+  
+  /// Timestamp when cart was created. ISO 8601 format, UTC timezone.
+  created_at DateTime
+  
+  /// Timestamp when cart was last modified (item added/removed/quantity
+  /// changed). ISO 8601 format, UTC timezone.
+  updated_at DateTime
+  
+  /// Timestamp when cart was marked as abandoned. Null while cart is active.
+  /// Used for recovery campaign targeting.
+  abandoned_at DateTime?
+  
+  /// If cart was converted to order, stores the resulting order ID for
+  /// reference. Null for active/abandoned carts. Enables tracking cart→order
+  /// conversion.
+  converted_to_order_id String?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_shopping_cart_items shopping_mall_shopping_cart_items[]
+  
+  @@index([status])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([customer_id, status])
+}
+
+/// Individual items within a shopping cart. Each cart item represents one
+/// product variant (SKU) at a specific quantity with price snapshot. Items
+/// store prices at addition time to prevent price-change surprises during
+/// shopping. Multiple cart items can reference same SKU from different
+/// customers. Related to {@link shopping_mall_shopping_carts.id} and {@link
+/// shopping_mall_product_variants.id}.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shopping_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shopping cart this item belongs to. Reference to {@link
+  /// shopping_mall_shopping_carts.id}.
+  shopping_cart_id String
+  
+  /// Product variant (SKU) being added to cart. Reference to {@link
+  /// shopping_mall_product_variants.id}.
+  product_variant_id String
+  
+  /// Number of units of this SKU in the cart. Must be positive integer (1-999
+  /// per business rules). Customer can adjust this value.
+  quantity Int
+  
+  /// Price of one unit at time item was added to cart. Captured for historical
+  /// accuracy - prevents price increase surprises. In seller's currency.
+  unit_price_snapshot Float
+  
+  /// Total for this line item (unit_price_snapshot × quantity). Calculated at
+  /// addition, may differ from current price if product price changed.
+  line_total Float
+  
+  /// Timestamp when item was added to cart. ISO 8601 format, UTC timezone.
+  created_at DateTime
+  
+  /// Timestamp when item details were last modified (quantity changed). ISO
+  /// 8601 format, UTC timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shoppingCart shopping_mall_shopping_carts @relation(fields: [shopping_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([product_variant_id])
+  @@index([shopping_cart_id, product_variant_id], map: "shopping_mall_shopping_cart_items_shopping_cart_id_pro_da5570cf")
+  @@index([created_at])
+}
+
+/// Customer wishlists for saving products to review later. Each customer can
+/// create multiple wishlists (e.g., 'Birthday Gift Ideas', 'Home Decor',
+/// 'Tech Wishlist'). Wishlists persist indefinitely enabling long-term
+/// shopping plans and price tracking. Unlike carts, wishlists don't convert
+/// to orders but rather customers add items from wishlist to cart. Related
+/// to {@link shopping_mall_customer.id}.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this wishlist. Reference to {@link
+  /// shopping_mall_customer.id}.
+  customer_id String
+  
+  /// Display name for wishlist provided by customer. Examples: 'Birthday
+  /// Ideas', 'Home Decor', 'Tech Gadgets'. Max 100 characters.
+  name String
+  
+  /// Optional description of wishlist purpose. Max 500 characters. Helps
+  /// customer remember what this wishlist is for.
+  description String?
+  
+  /// Whether this wishlist is publicly shareable with others or private to
+  /// customer only. True = shareable link generated, false = private.
+  is_public Boolean
+  
+  /// Denormalized count of items in wishlist for quick display. Should match
+  /// count in wishlist_items table.
+  total_items Int
+  
+  /// Denormalized sum of current prices of all items in wishlist. Used to show
+  /// customer total value of saved items.
+  total_value Float
+  
+  /// Timestamp when wishlist was created. ISO 8601 format, UTC timezone.
+  created_at DateTime
+  
+  /// Timestamp when wishlist was last modified (item added/removed). ISO 8601
+  /// format, UTC timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@index([is_public])
+  @@index([created_at])
+  @@index([customer_id, created_at])
+}
+
+/// Individual items saved in a wishlist. Each wishlist item represents one
+/// product variant (SKU) customer wants to track. Unlike cart items,
+/// wishlist items don't have quantity (one per item - customer can add to
+/// cart with desired quantity later). Stores price history to track if item
+/// is on sale. Related to {@link shopping_mall_wishlists.id} and {@link
+/// shopping_mall_product_variants.id}.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Wishlist this item belongs to. Reference to {@link
+  /// shopping_mall_wishlists.id}.
+  wishlist_id String
+  
+  /// Product variant (SKU) saved in wishlist. Reference to {@link
+  /// shopping_mall_product_variants.id}.
+  product_variant_id String
+  
+  /// Price of product when customer added it to wishlist. Stored to track
+  /// price changes - enables 'item on sale' notifications. In seller's
+  /// currency.
+  price_when_added Float
+  
+  /// Wishlist item priority: 'low', 'medium', 'high'. Allows customer to mark
+  /// must-have items. Helps with gift registry use cases.
+  priority String
+  
+  /// Personal notes customer can add about why they saved this item. Max 500
+  /// characters. Examples: 'Color preference: Blue', 'Size: Large'.
+  customer_notes String?
+  
+  /// Whether customer has already been notified about a price drop on this
+  /// item. Prevents duplicate notifications.
+  price_drop_notified Boolean
+  
+  /// Timestamp when item was added to wishlist. ISO 8601 format, UTC timezone.
+  created_at DateTime
+  
+  /// Timestamp when wishlist item was last modified (notes changed, priority
+  /// changed). ISO 8601 format, UTC timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [wishlist_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([product_variant_id])
+  @@index([wishlist_id, product_variant_id])
+  @@index([priority])
+  @@index([created_at])
+}

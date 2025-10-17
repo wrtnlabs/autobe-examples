@@ -1,0 +1,84 @@
+/// Represents user comments on discussion threads in the economic/political
+/// discussion board. Each comment is associated with a specific thread and
+/// member, and maintains a complete history of changes through related
+/// snapshots.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The thread this comment belongs to. {@link
+  /// economic_political_discussion_board_threads.id}.
+  economic_political_discussion_board_thread_id String
+  
+  /// The member who created this comment. {@link
+  /// economic_political_discussion_board_member.id}.
+  economic_political_discussion_board_member_id String
+  
+  /// The text content of the comment.
+  content String
+  
+  /// When the comment was created.
+  created_at DateTime
+  
+  /// When the comment was last updated.
+  updated_at DateTime
+  
+  /// When the comment was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  thread economic_political_discussion_board_threads @relation(fields: [economic_political_discussion_board_thread_id], references: [id], onDelete: Cascade)
+  member economic_political_discussion_board_member @relation(fields: [economic_political_discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  economic_political_discussion_board_comment_snapshots economic_political_discussion_board_comment_snapshots[]
+  economic_political_discussion_board_reports economic_political_discussion_board_reports[]
+  
+  @@index([economic_political_discussion_board_member_id], map: "economic_political_discussion_board_comments_economic__8ec5f8f2")
+  
+  @@index([economic_political_discussion_board_thread_id, created_at], map: "economic_political_discussion_board_comments_economic__ba86dd00")
+}
+
+/// Historical snapshots of economic_political_discussion_board_comments for
+/// audit trails and change tracking. Each snapshot captures the complete
+/// state of a comment at a specific point in time.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment this snapshot belongs to. {@link
+  /// economic_political_discussion_board_comments.id}.
+  economic_political_discussion_board_comment_id String
+  
+  /// The text content of the comment at this snapshot.
+  content String
+  
+  /// When this snapshot was created.
+  created_at DateTime
+  
+  /// When the comment was last updated at this snapshot.
+  updated_at DateTime
+  
+  /// When the comment was deleted at this snapshot (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment economic_political_discussion_board_comments @relation(fields: [economic_political_discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([economic_political_discussion_board_comment_id, created_at], map: "economic_political_discussion_board_comment_snapshots__baa43092")
+}

@@ -1,0 +1,39 @@
+/// Stores authentication tokens for secure user access to the platform. Each
+/// token is associated with a specific user and has an expiration time to
+/// ensure security. The table supports token management and validation for
+/// authentication processes.
+///
+/// @namespace Authentication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_authentication_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member associated with this authentication token. {@link
+  /// reddit_like_community_member.id}
+  reddit_like_community_member_id String
+  
+  /// The authentication token value used for secure access.
+  token String
+  
+  /// The expiration time of the authentication token.
+  expires_at DateTime
+  
+  /// The creation time of the authentication token.
+  created_at DateTime
+  
+  /// The last update time of the authentication token.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_like_community_member @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  @@index([reddit_like_community_member_id], map: "reddit_like_community_authentication_tokens_reddit_lik_382b3480")
+  @@index([expires_at])
+}

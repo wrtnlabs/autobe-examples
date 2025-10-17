@@ -1,0 +1,370 @@
+/// Primary table for storing customer product reviews with verification and
+/// moderation capabilities. This table captures the core review information
+/// submitted by customers who have actually purchased products, ensuring
+/// authenticity and preventing fake reviews. Reviews include star ratings,
+/// titles, content, and purchase verification to build trust with
+/// prospective buyers.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product being reviewed. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Reference to the customer who submitted the review. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Star rating from 1-5 for the product.
+  rating Int
+  
+  /// Review title (minimum 10 characters).
+  title String
+  
+  /// Review content (minimum 50 characters, maximum 5000).
+  content String
+  
+  /// Timestamp when the review was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the review was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_ratings shopping_mall_review_ratings[]
+  shopping_mall_review_votes shopping_mall_review_votes[]
+  shopping_mall_review_media shopping_mall_review_media[]
+  shopping_mall_review_moderation shopping_mall_review_moderation?
+  shopping_mall_seller_responses shopping_mall_seller_responses?
+  shopping_mall_review_notifications shopping_mall_review_notifications[]
+  
+  @@unique([shopping_mall_product_id, shopping_mall_customer_id], map: "shopping_mall_reviews_shopping_mall_product_id_shoppin_9076c2e1")
+  @@index([shopping_mall_product_id, created_at])
+  @@index([shopping_mall_customer_id])
+}
+
+/// Subsidiary table for storing detailed attribute ratings within a review.
+/// This table supports rich rating feedback by allowing customers to rate
+/// specific product attributes such as quality, value, and shipping speed.
+/// Each attribute rating is linked to a parent review and the specific
+/// product attribute being rated.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent review. {<@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Reference to the product attribute being rated. {<@link
+  /// shopping_mall_product_attributes.id}.
+  shopping_mall_product_attribute_id String
+  
+  /// Rating for the specific product attribute (1-5).
+  attribute_rating Int
+  
+  /// Timestamp when the attribute rating was created.
+  created_at DateTime
+  
+  /// Timestamp when the attribute rating was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  productAttribute shopping_mall_product_attributes @relation(fields: [shopping_mall_product_attribute_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id, shopping_mall_product_attribute_id], map: "shopping_mall_review_ratings_shopping_mall_review_id_s_ab27379e")
+  @@index([shopping_mall_review_id])
+  @@index([shopping_mall_product_attribute_id], map: "shopping_mall_review_ratings_shopping_mall_product_att_199ced6e")
+  @@index([attribute_rating])
+}
+
+/// Subsidiary table for storing helpfulness votes on reviews. This table
+/// enables customers to vote on whether a review was helpful in their
+/// purchase decision, providing social validation and helping surface the
+/// most useful feedback. Votes are recorded with their type (helpful or not
+/// helpful) and timestamp.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the review being voted on. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Reference to the customer casting the vote. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Type of vote: 'helpful' or 'not_helpful'.
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id, shopping_mall_customer_id], map: "shopping_mall_review_votes_shopping_mall_review_id_sho_8d6e07a3")
+  @@index([shopping_mall_review_id, vote_type], map: "shopping_mall_review_votes_shopping_mall_review_id_vot_a2037bbb")
+  @@index([shopping_mall_customer_id])
+}
+
+/// Subsidiary table for storing media files (photos, videos) uploaded with
+/// reviews. This table supports rich, multimedia reviews by allowing
+/// customers to share their product experiences visually. Each media entry
+/// includes the file type, URL, thumbnail, sort order, and optimization
+/// status for efficient web display.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_media {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent review. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Type of media: 'image' or 'video'.
+  media_type String
+  
+  /// URL to the media file.
+  media_url String
+  
+  /// URL to the thumbnail version of the media.
+  media_thumbnail String
+  
+  /// Order in which media should be displayed.
+  sort_order Int
+  
+  /// Whether the media has been optimized for web display.
+  is_optimized Boolean
+  
+  /// Timestamp when the media was uploaded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id, sort_order], map: "shopping_mall_review_media_shopping_mall_review_id_sor_8225bda4")
+  @@index([shopping_mall_review_id, media_type], map: "shopping_mall_review_media_shopping_mall_review_id_med_0206d435")
+}
+
+/// Primary table for managing the review moderation workflow. This table
+/// tracks the complete moderation process from review submission to final
+/// decision, including automated content analysis results, human moderator
+/// assignments, and decision timestamps. It enables comprehensive oversight
+/// of review quality and policy compliance.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_moderation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the review being moderated. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Reference to the administrator moderating the review. {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_moderator_id String?
+  
+  /// Reference to the customer who reported the review (if applicable). {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_reporter_id String?
+  
+  /// Timestamp when the review was submitted.
+  submission_date DateTime
+  
+  /// Results from automated content analysis algorithms.
+  automated_analysis String
+  
+  /// Whether the review requires human moderator evaluation.
+  requires_human_review Boolean
+  
+  /// Timestamp when human moderation was completed.
+  moderation_date DateTime?
+  
+  /// Timestamp when the moderation record was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderation record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  moderator shopping_mall_administrators? @relation(fields: [shopping_mall_moderator_id], references: [id], onDelete: Cascade)
+  reporter shopping_mall_customers? @relation(fields: [shopping_mall_reporter_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_status shopping_mall_review_status[]
+  
+  @@index([shopping_mall_reporter_id])
+  
+  @@unique([shopping_mall_review_id])
+  @@index([requires_human_review, submission_date], map: "shopping_mall_review_moderation_requires_human_review__1e5ff79f")
+  @@index([shopping_mall_moderator_id])
+}
+
+/// Subsidiary table for tracking the status lifecycle of reviews through the
+/// moderation process. This table maintains a complete audit trail of status
+/// changes, showing the progression from draft to final publication or
+/// rejection. Each status change is recorded with a timestamp for compliance
+/// and accountability.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_status {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the moderation record. {<@link
+  /// shopping_mall_review_moderation.id}.
+  shopping_mall_review_moderation_id String
+  
+  /// Current status: 'draft', 'submitted', 'under_review', 'approved',
+  /// 'rejected', 'archived'.
+  status String
+  
+  /// Timestamp when this status was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reviewModeration shopping_mall_review_moderation @relation(fields: [shopping_mall_review_moderation_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_moderation_id, status, created_at], map: "shopping_mall_review_status_shopping_mall_review_moder_83fdc174")
+  @@index([shopping_mall_review_moderation_id, created_at], map: "shopping_mall_review_status_shopping_mall_review_moder_e1c17aa0")
+  @@index([status])
+}
+
+/// Subsidiary table for storing seller responses to customer reviews. This
+/// table enables sellers to publicly respond to feedback, acknowledge
+/// customer experiences, and provide clarifications. Responses are linked to
+/// specific reviews and sellers, with moderation requirements to ensure
+/// compliance with platform guidelines.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the review being responded to. {@link
+  /// shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Reference to the responding seller. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Seller's response to the customer review.
+  response_text String
+  
+  /// Whether the seller response has passed moderator review.
+  is_moderated Boolean
+  
+  /// Timestamp when the response was created.
+  created_at DateTime
+  
+  /// Timestamp when the response was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id])
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_responses_shopping_mall_seller_id_f5680b43")
+  @@index([is_moderated])
+}
+
+/// Subsidiary table for managing notifications related to review activities.
+/// This table tracks all automated and manual notifications sent to users
+/// regarding their reviews, including submission confirmations, moderation
+/// decisions, and seller responses. Each notification record includes the
+/// recipient, type, and delivery status.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the associated review. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Reference to the user receiving the notification. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_recipient_id String
+  
+  /// Type of notification: 'submission_confirmation', 'approval', 'rejection',
+  /// 'moderator_request', 'seller_response', etc.
+  notification_type String
+  
+  /// Whether the notification has been successfully delivered.
+  is_delivered Boolean
+  
+  /// Whether the recipient has viewed the notification.
+  is_read Boolean
+  
+  /// Timestamp when the notification was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  recipient shopping_mall_customers @relation(fields: [shopping_mall_recipient_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id, shopping_mall_recipient_id, notification_type, created_at], map: "shopping_mall_review_notifications_shopping_mall_revie_5840e79c")
+  @@index([shopping_mall_recipient_id, created_at], map: "shopping_mall_review_notifications_shopping_mall_recip_7302e170")
+  @@index([notification_type, is_delivered], map: "shopping_mall_review_notifications_notification_type_i_776e8ef7")
+}

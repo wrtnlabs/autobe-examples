@@ -1,0 +1,49 @@
+/// Authentication and identity table for all application users. Holds
+/// essential user credentials, identification, and minimal auditing
+/// information. Used for user registration, login, and ownership association
+/// with {@link todo_list_todos} (in other component). Each user record is
+/// uniquely identified by email and manages its own password. Deletion or
+/// modification of user accounts is audited via timestamps. Email uniqueness
+/// enforces single identity. No advanced roles exist; this is the only actor
+/// type in the system. No PII beyond minimal required for authentication is
+/// stored. This table does not directly reference any business data tables,
+/// but is referenced by them for ownership.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique user email address for identification and login. Must be unique;
+  /// serves as user identity within the service.
+  email String
+  
+  /// Secure hash of the user password (never stores plaintext password). Used
+  /// for login verification only. Application must enforce proper hashing
+  /// algorithms.
+  password_hash String
+  
+  /// Timestamp when the user account was created (registration time). Used for
+  /// auditing and account lifecycle tracking.
+  created_at DateTime
+  
+  /// Timestamp of most recent profile or credential update for auditing and
+  /// compliance.
+  updated_at DateTime
+  
+  /// Timestamp of the user's most recent successful login. Used for security,
+  /// analytics, and notification of suspicious activity.
+  last_login DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_todos todo_list_todos[]
+  
+  @@unique([email])
+  @@index([created_at])
+}

@@ -1,0 +1,274 @@
+/// Primary Todo items for the minimal Todo app. Stores raw task data for
+/// quick capture and lifecycle management (active, completed, deleted). Each
+/// todo is owned by a user (owner) to ensure data isolation. Temporal fields
+/// support audit and soft-delete semantics. Related snapshots are captured
+/// in {@\link todo_app_todo_snapshots.id}.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user. {@\link todo_app_user.id}.
+  user_id String
+  
+  /// Short task title. Required business field used for display and quick
+  /// capture.
+  title String
+  
+  /// Optional longer description or notes for the todo item.
+  description String?
+  
+  /// Whether the todo is completed. Used for filtering and UI state.
+  is_completed Boolean
+  
+  /// Timestamp when the todo was marked completed. Null if not completed.
+  completed_at DateTime?
+  
+  /// Optional manual ordering position used by client for custom sort orders.
+  position Int?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null when item is active or completed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  todo_app_todo_snapshots todo_app_todo_snapshots[]
+  
+  @@index([user_id, created_at])
+  @@index([is_completed])
+}
+
+/// Snapshot history for todos. Captures point-in-time copies of a todo item
+/// for audit and historical queries. Each snapshot references the source
+/// {@\link todo_app_todos.id} and records snapshot_at when the snapshot was
+/// taken.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced todo item. {@\link todo_app_todos.id}.
+  todo_app_todo_id String
+  
+  /// Snapshot of todo.title at snapshot time.
+  title String
+  
+  /// Snapshot of todo.description at snapshot time.
+  description String?
+  
+  /// Snapshot of completion flag at snapshot time.
+  is_completed Boolean
+  
+  /// Snapshot of completed_at (if set on source).
+  completed_at DateTime?
+  
+  /// Snapshot of position for ordering.
+  position Int?
+  
+  /// Original created_at from source todo at snapshot time.
+  created_at DateTime
+  
+  /// Original updated_at from source todo at snapshot time.
+  updated_at DateTime
+  
+  /// Original deleted_at from source todo at snapshot time.
+  deleted_at DateTime?
+  
+  /// Timestamp when this snapshot was created.
+  snapshot_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todo_id, snapshot_at])
+}
+
+/// Append-only audit records for administrative and system actions. Records
+/// actor (admin or system), action type, target resource, optional reason,
+/// and timestamp for forensic and compliance purposes. Actor references are
+/// nullable to preserve system-initiated events. Foreign-key delete behavior
+/// must not cascade to preserve audit history.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_audit_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Acting admin's {@\link todo_app_admin.id}. Nullable for system actions.
+  admin_id String?
+  
+  /// Referenced user affected by the action. {@\link todo_app_user.id}.
+  /// Nullable when not applicable.
+  user_id String?
+  
+  /// Role of the actor performing the action (e.g., 'admin','system').
+  actor_role String
+  
+  /// Type of action performed (e.g., 'suspend_user','restore_todo','purge').
+  action_type String
+  
+  /// Logical resource type affected by the action (e.g., 'todo','user').
+  target_resource String
+  
+  /// Optional identifier of the target resource (e.g., todo id) for quick
+  /// lookup.
+  target_id String?
+  
+  /// Optional reason provided by the actor for the action.
+  reason String?
+  
+  /// Timestamp when the audit record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_app_admin? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  user todo_app_user? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id])
+  @@index([user_id])
+  
+  @@index([target_resource, target_id])
+  @@index([created_at])
+}
+
+/// Lightweight record for unauthenticated or ephemeral visitors. Kept
+/// minimal per component guidance; useful for analytics or short-term
+/// session tracking. Managed as a subsidiary support table.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional visitor-provided email address (nullable).
+  email String?
+  
+  /// Record creation timestamp for the guest entry.
+  created_at DateTime
+  
+  /// Last observed activity for the guest (nullable).
+  last_active_at DateTime?
+  
+  /// Optional status for administrative housekeeping (e.g.,
+  /// 'active','bounced').
+  status String?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+}
+
+/// User accounts for the application. Users are independently managed
+/// business entities (registration, authentication, profile). This model is
+/// intentionally included but todos do not require a mandatory user relation
+/// in this MVP shape.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Primary email for the user account. Used for login and communication.
+  email String
+  
+  /// Optional display name for the user.
+  display_name String?
+  
+  /// Password hash for authentication (nullable if external auth used).
+  password_hash String?
+  
+  /// Account lifecycle status (e.g., 'active','suspended').
+  account_status String
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for the account.
+  updated_at DateTime
+  
+  /// Last activity timestamp (nullable).
+  last_active_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_todos todo_app_todos[]
+  todo_app_audit_records todo_app_audit_records[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Administrative accounts with elevated privileges used for support and
+/// maintenance. Admin actions are audited in {@\link
+/// todo_app_audit_records.id}. This model is primary since admins require
+/// independent management and auditability.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin account email used for login and notifications.
+  email String
+  
+  /// Password hash for admin authentication (nullable if external SSO used).
+  password_hash String?
+  
+  /// Flag indicating super-admin privileges.
+  is_super Boolean
+  
+  /// Admin account creation timestamp.
+  created_at DateTime
+  
+  /// Last activity timestamp for the admin (nullable).
+  last_active_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_audit_records todo_app_audit_records[]
+  
+  @@unique([email])
+  @@index([created_at])
+}

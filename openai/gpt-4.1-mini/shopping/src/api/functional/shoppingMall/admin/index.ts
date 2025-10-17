@@ -1,0 +1,12 @@
+export * as shoppingMall from "./shoppingMall/index";
+export * as guests from "./guests/index";
+export * as customers from "./customers/index";
+export * as sellers from "./sellers/index";
+export * as admins from "./admins/index";
+export * as products from "./products/index";
+export * as inventory from "./inventory/index";
+export * as orders from "./orders/index";
+export * as productReviews from "./productReviews/index";
+export * as adminDashboard from "./adminDashboard/index";
+export * as auditLogs from "./auditLogs/index";
+export * as reports from "./reports/index";

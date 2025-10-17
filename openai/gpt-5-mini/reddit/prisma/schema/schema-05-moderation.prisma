@@ -1,0 +1,107 @@
+/// Moderation reports for communityPortal. Records user-submitted reports
+/// about posts, comments, or community-level issues. Designed to be an
+/// auditable, appendable evidence record: reports must survive deletion of
+/// related content or actors. This revised model enforces nullable FKs for
+/// audit preservation, documents status semantics, and includes indexing
+/// improvements to support moderator inbox and urgent-queue queries.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting user's {@link community_portal_users.id}. Nullable for
+  /// anonymous reports. Set NULL on referenced user deletion to preserve
+  /// audit.
+  reporter_user_id String?
+  
+  /// Related community {@link community_portal_communities.id}. Nullable when
+  /// the report targets a cross-community item. Set NULL on community deletion
+  /// to preserve report history.
+  community_id String?
+  
+  /// Target post {@link community_portal_posts.id}. Nullable when the report
+  /// targets a comment or community-level issue. Set NULL on post deletion to
+  /// preserve the report record as evidence.
+  post_id String?
+  
+  /// Target comment {@link community_portal_comments.id}. Nullable when the
+  /// report targets a post or community-level issue. Set NULL on comment
+  /// deletion to preserve the report record as evidence.
+  comment_id String?
+  
+  /// Assigned moderator responsible for initial triage {@link
+  /// community_portal_moderators.id}. Nullable until assignment. Set NULL if
+  /// moderator account/assignment is removed to maintain report availability.
+  assigned_moderator_id String?
+  
+  /// Moderator who closed or resolved the report {@link
+  /// community_portal_moderators.id}. Nullable until the report is closed. Set
+  /// NULL on moderator deletion to preserve audit trail referencing a
+  /// historical ID.
+  closed_by_moderator_id String?
+  
+  /// Controlled reason code for the report (e.g., 'spam', 'harassment',
+  /// 'hate', 'illegal', 'other'). Application SHOULD enforce a controlled
+  /// vocabulary; consider DB CHECK or enum in a later migration.
+  reason_code String
+  
+  /// Optional free-text details provided by the reporter to explain the reason
+  /// for the report. Useful for moderation context and fuzzy search.
+  reason_text String?
+  
+  /// Report lifecycle state. Allowed values (application-level): 'OPEN',
+  /// 'IN_REVIEW', 'REQUIRES_ACTION', 'DISMISSED', 'CLOSED'. Document these
+  /// values and enforce in application logic; consider DB enum/CHECK in
+  /// migration.
+  status String
+  
+  /// Whether the reporter flagged this report as urgent and it requires
+  /// prioritized handling.
+  is_urgent Boolean
+  
+  /// Severity level for triage (e.g., 'low', 'medium', 'high'). Use alongside
+  /// is_urgent for prioritization. Application MUST enforce allowed values.
+  severity String?
+  
+  /// Optional contact email captured at report submission for follow-up or
+  /// anonymous contact. Recommend limiting length (e.g., 254) and validating
+  /// format at application layer.
+  reporter_contact_email String?
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp when a moderator first reviewed the report.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the report was resolved/closed.
+  closed_at DateTime?
+  
+  /// Optional moderator notes describing the resolution or actions taken.
+  /// Auditable text; consider GIN indexing if search is supported.
+  resolution_notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter community_portal_users? @relation(fields: [reporter_user_id], references: [id], onDelete: Cascade)
+  community community_portal_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_portal_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_portal_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  assignedModerator community_portal_moderators? @relation("community_portal_reports_of_assigned_moderator_id", fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  closedByModerator community_portal_moderators? @relation("community_portal_reports_of_closed_by_moderator_id", fields: [closed_by_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([status, created_at])
+  @@index([community_id, created_at])
+  @@index([post_id, created_at])
+  @@index([comment_id, created_at])
+  @@index([reporter_user_id, created_at])
+  @@index([is_urgent, status, created_at])
+  @@index([assigned_moderator_id, status, created_at], map: "community_portal_reports_assigned_moderator_id_status__774bd522")
+  @@index([closed_by_moderator_id, closed_at])
+}

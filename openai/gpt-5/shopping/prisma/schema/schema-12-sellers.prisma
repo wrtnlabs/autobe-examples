@@ -1,0 +1,365 @@
+/// Merchant entity representing a seller account on the marketplace. Tied to
+/// a platform user for authentication/ownership via {@link
+/// shopping_mall_users}. Holds business profile, operational state, and
+/// localization preferences. Serves as the parent for {@link
+/// shopping_mall_stores}, {@link shopping_mall_seller_addresses}, {@link
+/// shopping_mall_seller_payout_accounts}, and {@link
+/// shopping_mall_seller_verifications}.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning platform user’s {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Unique business identifier for the seller (human-friendly code or
+  /// reference).
+  seller_code String
+  
+  /// Public-facing seller or business display name.
+  display_name String
+  
+  /// Primary contact email for the seller’s business operations and
+  /// notifications.
+  contact_email String?
+  
+  /// Primary contact phone for the seller’s business operations.
+  contact_phone String?
+  
+  /// Lifecycle state of the seller. Examples: draft, pending_verification,
+  /// active, suspended, terminated.
+  state String
+  
+  /// Preferred locale code for the seller workspace (e.g., en-US, ko-KR).
+  default_locale String?
+  
+  /// Record creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC). Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  owner shopping_mall_users @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_promotion_rules shopping_mall_promotion_rules[]
+  shopping_mall_promotion_applications shopping_mall_promotion_applications[]
+  shopping_mall_seller_replies shopping_mall_seller_replies[]
+  shopping_mall_stores shopping_mall_stores[]
+  shopping_mall_seller_verifications shopping_mall_seller_verifications[]
+  shopping_mall_seller_addresses shopping_mall_seller_addresses[]
+  shopping_mall_seller_payout_accounts shopping_mall_seller_payout_accounts[]
+  shopping_mall_seller_ledgers shopping_mall_seller_ledgers[]
+  shopping_mall_payouts shopping_mall_payouts[]
+  shopping_mall_reserves shopping_mall_reserves[]
+  shopping_mall_fees shopping_mall_fees[]
+  shopping_mall_chargebacks shopping_mall_chargebacks[]
+  
+  @@unique([seller_code])
+  @@unique([shopping_mall_user_id])
+  @@index([state, created_at])
+  @@index([display_name, created_at])
+}
+
+/// Storefronts owned by sellers. Each store contains catalog, branding, and
+/// customer service settings. Primary category and product management occur
+/// under stores owned by {@link shopping_mall_sellers}.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_stores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning seller’s {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique business code/reference for the store.
+  store_code String
+  
+  /// Public store name displayed to buyers.
+  name String
+  
+  /// Canonical URL slug for the store. Must be unique across platform.
+  slug String
+  
+  /// Store description or about text.
+  description String?
+  
+  /// Store lifecycle status. Examples: draft, active, hidden, suspended,
+  /// terminated.
+  status String
+  
+  /// Customer support email for the store.
+  support_email String?
+  
+  /// Customer support phone for the store.
+  support_phone String?
+  
+  /// Public logo URI for the store brand.
+  logo_uri String?
+  
+  /// Public banner/hero image URI for the store.
+  banner_uri String?
+  
+  /// Business operating timezone identifier (e.g., Asia/Seoul).
+  timezone String?
+  
+  /// Record creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC). Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_inventory_locations shopping_mall_inventory_locations[]
+  shopping_mall_seller_orders shopping_mall_seller_orders[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_seller_addresses shopping_mall_seller_addresses[]
+  
+  @@unique([slug])
+  @@unique([store_code])
+  @@unique([shopping_mall_seller_id, name])
+  @@index([shopping_mall_seller_id, created_at])
+  @@index([status, created_at])
+}
+
+/// KYC/KYB verification cases for sellers. Each record captures a submission
+/// and review outcome with timestamps for audit. Owned by {@link
+/// shopping_mall_sellers} and optionally reviewed by a staff user via {@link
+/// shopping_mall_users}.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target seller’s {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Reviewer staff user’s {@link shopping_mall_users.id}. Optional until
+  /// decision is made.
+  approved_by_user_id String?
+  
+  /// Unique verification case reference for traceability and external
+  /// correspondence.
+  case_reference String
+  
+  /// Verification state. Examples: draft, pending, action_required, approved,
+  /// rejected, suspended.
+  state String
+  
+  /// Submission timestamp (UTC) when the case was filed.
+  submitted_at DateTime
+  
+  /// Timestamp (UTC) when a decision was recorded.
+  reviewed_at DateTime?
+  
+  /// Reason text for action required/approval/rejection. Business-context
+  /// notes only (no PII).
+  reason String?
+  
+  /// Declared verification scope or level (e.g., basic, enhanced).
+  kyc_level String?
+  
+  /// URI referencing uploaded document bundle in storage.
+  documents_uri String?
+  
+  /// Optional expiration or recertification due date (UTC).
+  expires_at DateTime?
+  
+  /// Record creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC). Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  reviewer shopping_mall_users? @relation(fields: [approved_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([case_reference])
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_verifications_shopping_mall_selle_6f8167e3")
+  @@index([state, created_at])
+  @@index([approved_by_user_id, reviewed_at], map: "shopping_mall_seller_verifications_approved_by_user_id_b1dc8031")
+}
+
+/// Addresses associated with a seller and optionally a specific store. Used
+/// for legal, pickup/return, or warehouse purposes. Supports multiple
+/// addresses per type and one or more defaults managed by business logic.
+/// Parent: {@link shopping_mall_sellers}. Optional link to {@link
+/// shopping_mall_stores} for store-level return addresses.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning seller’s {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Optional associated store’s {@link shopping_mall_stores.id} for
+  /// return/pickup contexts.
+  shopping_mall_store_id String?
+  
+  /// Type of address. Examples: legal, pickup, return, warehouse.
+  address_type String
+  
+  /// Human-friendly label for identifying the address (e.g., HQ, Warehouse A).
+  label String?
+  
+  /// Recipient or business name for delivery and legal correspondence.
+  recipient String
+  
+  /// Contact phone number for this address.
+  phone String
+  
+  /// ISO country code (e.g., KR, US).
+  country_code String
+  
+  /// Administrative region/state/province where applicable.
+  region String?
+  
+  /// City/locality name.
+  city String
+  
+  /// Postal/ZIP code when applicable for the country.
+  postal_code String?
+  
+  /// Primary street address line.
+  address_line1 String
+  
+  /// Secondary address line (apartment, suite, etc.).
+  address_line2 String?
+  
+  /// Whether this address is marked as the default for its type and scope.
+  /// Enforced by business logic.
+  is_default Boolean
+  
+  /// Record creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC). Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  store shopping_mall_stores? @relation(fields: [shopping_mall_store_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_store_id, address_type], map: "shopping_mall_seller_addresses_shopping_mall_store_id__2d024398")
+  @@index([country_code, region])
+  @@index([shopping_mall_seller_id, address_type, is_default], map: "shopping_mall_seller_addresses_shopping_mall_seller_id_2968bd89")
+}
+
+/// Financial payout configurations for sellers. Contains masked account
+/// identifiers, status, and verification timestamps. Owned by {@link
+/// shopping_mall_sellers}. Used by finance operations and payouts
+/// reconciliation.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_payout_accounts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning seller’s {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique external reference or token for this payout account (e.g., PSP
+  /// reference).
+  external_reference String
+  
+  /// Payout account status. Examples: draft, pending_verification, verified,
+  /// rejected, suspended.
+  status String
+  
+  /// Legal account holder name as provided to the payout provider.
+  account_holder_name String
+  
+  /// Bank or provider name where applicable.
+  bank_name String?
+  
+  /// Masked account number (no raw PAN or full account numbers stored).
+  account_number_masked String
+  
+  /// Masked routing/branch number where applicable.
+  routing_number_masked String?
+  
+  /// Country code for the payout account (e.g., KR, US).
+  country_code String
+  
+  /// ISO currency code for disbursements (e.g., KRW, USD).
+  currency String
+  
+  /// Whether this is the seller’s primary payout account. Uniqueness per
+  /// seller is governed by business logic.
+  primary Boolean
+  
+  /// Timestamp (UTC) when the payout account was verified.
+  verified_at DateTime?
+  
+  /// Record creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC). Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payouts shopping_mall_payouts[]
+  
+  @@unique([external_reference])
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_payout_accounts_shopping_mall_sel_b5ae1fb7")
+  @@index([status, created_at])
+  @@index([country_code, currency, status], map: "shopping_mall_seller_payout_accounts_country_code_curr_9d3c296e")
+  @@index([shopping_mall_seller_id, primary], map: "shopping_mall_seller_payout_accounts_shopping_mall_sel_3c5ab8ef")
+}

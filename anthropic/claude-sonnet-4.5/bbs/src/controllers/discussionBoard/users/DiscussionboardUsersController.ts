@@ -1,0 +1,187 @@
+import { Controller } from "@nestjs/common";
+import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
+import typia, { tags } from "typia";
+import { getDiscussionBoardUsersUserId } from "../../../providers/getDiscussionBoardUsersUserId";
+import { patchDiscussionBoardUsers } from "../../../providers/patchDiscussionBoardUsers";
+
+import { IDiscussionBoardMember } from "../../../api/structures/IDiscussionBoardMember";
+import { IPageIDiscussionBoardMember } from "../../../api/structures/IPageIDiscussionBoardMember";
+
+@Controller("/discussionBoard/users")
+export class DiscussionboardUsersController {
+  /**
+   * Retrieve privacy-filtered profile information for a specific discussion
+   * board member.
+   *
+   * Retrieve comprehensive profile information for a single discussion board
+   * member identified by their unique UUID. This operation accesses the
+   * discussion_board_members table and returns privacy-controlled user profile
+   * data including username, display name, bio, avatar URL, location, website,
+   * account status, email verification status, profile and activity visibility
+   * settings, and activity timestamps (last login, last activity). The response
+   * also includes related reputation statistics and contribution counts when
+   * available.
+   *
+   * **CRITICAL SECURITY REQUIREMENT**: The response DTO MUST explicitly exclude
+   * the following sensitive fields from the discussion_board_members schema:
+   * `email` (authentication credential and PII), `password_hash`
+   * (authentication secret), and any other internal security fields. These
+   * fields must NEVER be exposed through this public API endpoint regardless of
+   * privacy settings.
+   *
+   * The member user system represents registered, authenticated participants
+   * who form the core user base of the discussion board. Members can create
+   * topics, post replies, vote on content, customize profiles, and manage
+   * preferences. This endpoint provides the data necessary to display user
+   * profile pages, show author information on discussion posts, and support
+   * user discovery and networking features.
+   *
+   * Privacy considerations are critical for this operation. The
+   * discussion_board_members table includes profile_visibility and
+   * activity_visibility fields that control what information is exposed. The
+   * operation applies the following privacy rules based on the Prisma schema:
+   *
+   * - If profile_visibility is 'public', all non-sensitive profile information is
+   *   returned to any requester including unauthenticated guests
+   * - If profile_visibility is 'members_only', profile information is returned
+   *   only to authenticated members, moderators, and administrators
+   * - If profile_visibility is 'private', only the profile owner (matching userId
+   *   to authenticated user) can view full profile details; others see minimal
+   *   public information (username and role badge only)
+   * - Email addresses are NEVER returned in the response regardless of privacy
+   *   settings, as they are sensitive authentication credentials
+   * - Password hashes are NEVER returned under any circumstances
+   * - Activity statistics respect the activity_visibility field independently
+   *   from profile visibility
+   *
+   * The operation validates that the userId parameter is a valid UUID format
+   * and that the member exists in the database. If the member is not found, has
+   * been soft-deleted (deleted_at is not null), or the requesting user lacks
+   * permission due to privacy settings, the API returns an appropriate error
+   * response.
+   *
+   * This endpoint integrates with the authentication system to determine the
+   * requesting user's role and identity for privacy enforcement.
+   * Unauthenticated requests (guests) receive only publicly visible data.
+   * Authenticated members see data according to privacy settings. Moderators
+   * and administrators may have elevated visibility for moderation and user
+   * management purposes, though email addresses and password hashes remain
+   * strictly protected.
+   *
+   * The response includes account_status field from the schema which indicates
+   * whether the account is active, pending_verification, suspended, banned, or
+   * deactivated. This field helps explain why certain users may not be creating
+   * new content. The email_verified boolean indicates whether the user has
+   * completed email verification, which affects their posting privileges.
+   *
+   * Activity timestamps (last_login_at and last_activity_at) provide engagement
+   * indicators. The created_at field shows account age, which is often
+   * displayed as 'Member since [date]' on profile pages. These temporal fields
+   * help users assess contributor credibility and activity levels.
+   *
+   * @param connection
+   * @param userId Unique identifier of the target member user to retrieve
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":userId")
+  public async at(
+    @TypedParam("userId")
+    userId: string & tags.Format<"uuid">,
+  ): Promise<IDiscussionBoardMember.IPublic> {
+    try {
+      return await getDiscussionBoardUsersUserId({
+        userId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search and retrieve a filtered, paginated list of discussion board members.
+   *
+   * Retrieve a filtered and paginated list of discussion board members from the
+   * system. This operation provides advanced search capabilities for finding
+   * members based on multiple criteria including partial username matching,
+   * display name searching, account status filtering, registration date ranges,
+   * last activity timestamps, reputation score ranges, and email verification
+   * status.
+   *
+   * The operation supports comprehensive pagination with configurable page
+   * sizes and sorting options. Results can be sorted by registration date, last
+   * login timestamp, last activity timestamp, username alphabetically,
+   * reputation score, or other relevant member attributes in ascending or
+   * descending order.
+   *
+   * Security considerations include appropriate filtering of sensitive member
+   * information based on the requesting user's authorization level. While this
+   * endpoint is public to support member discovery features, sensitive fields
+   * are strictly excluded from response payloads for privacy protection.
+   *
+   * CRITICAL PRIVACY PROTECTION: Email addresses, while supported as search
+   * filter criteria (email verification status filtering), are NEVER included
+   * in the response payload under any circumstances. The ISummary response type
+   * explicitly excludes the email field, password_hash, and all other private
+   * information to comply with privacy requirements and data protection
+   * regulations. Only public profile fields (username, display_name, bio,
+   * avatar_url, location, website, account_status, email_verified boolean flag,
+   * reputation score, registration date, last activity date) are included in
+   * search results. Full member details including email addresses are only
+   * accessible through authenticated single-member retrieval endpoints with
+   * appropriate ownership or administrative authorization.
+   *
+   * This operation integrates with the discussion_board_members table as
+   * defined in the Prisma schema, incorporating all available member fields and
+   * relationships including reputation scores from the
+   * discussion_board_user_reputation table and engagement statistics. The
+   * response includes member summary information optimized for list displays
+   * with essential fields for member identification and basic profile
+   * information while strictly protecting private data.
+   *
+   * The search functionality supports the platform's community discovery
+   * features, allowing users to find other members with shared interests in
+   * economic and political topics, identify active contributors, explore the
+   * community, and discover quality content creators. The public nature of this
+   * endpoint encourages community exploration while maintaining strict privacy
+   * boundaries.
+   *
+   * Rate limiting is enforced according to the platform's business rules to
+   * prevent abuse of the search functionality. Guest users are limited to 20
+   * searches per hour, while authenticated members have higher limits (100
+   * searches per hour). Search queries are validated for length (1-200
+   * characters) and sanitized to prevent injection attacks. Excessive search
+   * activity triggers temporary restrictions.
+   *
+   * The operation returns paginated results with 25 members per page by
+   * default, configurable through request parameters up to a maximum of 100
+   * members per page. Each member record in the response includes only public
+   * profile information: username, display name (if set), bio excerpt, account
+   * creation date, reputation score, account status, email verification status
+   * (boolean), role indicators, avatar URL, location, and website for display
+   * purposes. Private information including email addresses, password hashes,
+   * IP addresses, and detailed activity logs are completely excluded from all
+   * response payloads.
+   *
+   * @param connection
+   * @param body Search criteria and pagination parameters for member filtering
+   *   including username/display name keywords, account status filters, email
+   *   verification status, reputation ranges, date ranges, and sorting
+   *   preferences
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @TypedBody()
+    body: IDiscussionBoardMember.IRequest,
+  ): Promise<IPageIDiscussionBoardMember.ISummary> {
+    try {
+      return await patchDiscussionBoardUsers({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

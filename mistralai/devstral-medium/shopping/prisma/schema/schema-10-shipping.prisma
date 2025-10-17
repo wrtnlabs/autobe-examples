@@ -1,0 +1,130 @@
+/// Shipping methods available for order fulfillment. Contains information
+/// about different shipping options, their costs, and delivery time
+/// estimates.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_shipping_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the shipping method (e.g., Standard, Express, Overnight).
+  name String
+  
+  /// Detailed description of the shipping method.
+  description String?
+  
+  /// Base cost of the shipping method.
+  cost Float
+  
+  /// Estimated number of days for delivery.
+  estimated_delivery_days Int
+  
+  /// Timestamp when the shipping method was created.
+  created_at DateTime
+  
+  /// Timestamp when the shipping method was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_shipping_tracking shopping_shipping_tracking[]
+  
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Shipping carriers that handle order deliveries. Contains information
+/// about different shipping companies and their services.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_shipping_carriers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the shipping carrier (e.g., UPS, FedEx, DHL).
+  name String
+  
+  /// Detailed description of the shipping carrier.
+  description String?
+  
+  /// URL template for tracking shipments with this carrier.
+  tracking_url_template String?
+  
+  /// Timestamp when the shipping carrier was created.
+  created_at DateTime
+  
+  /// Timestamp when the shipping carrier was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_shipping_tracking shopping_shipping_tracking[]
+  
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Tracking information for shipped orders. Contains details about shipment
+/// status, tracking numbers, and carrier information.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_shipping_tracking {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order being tracked. {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// The carrier handling the shipment. {@link shopping_shipping_carriers.id}.
+  shopping_shipping_carrier_id String
+  
+  /// The shipping method used for this shipment. {@link
+  /// shopping_shipping_methods.id}.
+  shopping_shipping_method_id String
+  
+  /// Tracking number provided by the carrier.
+  tracking_number String
+  
+  /// Current status of the shipment (e.g., Processing, Shipped, Delivered).
+  status String
+  
+  /// Estimated delivery date for the shipment.
+  estimated_delivery_date DateTime?
+  
+  /// Actual delivery date when the shipment was delivered.
+  actual_delivery_date DateTime?
+  
+  /// Timestamp when the tracking information was created.
+  created_at DateTime
+  
+  /// Timestamp when the tracking information was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  carrier shopping_shipping_carriers @relation(fields: [shopping_shipping_carrier_id], references: [id], onDelete: Cascade)
+  method shopping_shipping_methods @relation(fields: [shopping_shipping_method_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_id])
+  @@index([shopping_shipping_carrier_id])
+  @@index([shopping_shipping_method_id])
+  
+  @@unique([tracking_number])
+  @@index([created_at])
+}

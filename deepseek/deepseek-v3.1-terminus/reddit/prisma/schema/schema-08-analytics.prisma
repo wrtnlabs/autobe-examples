@@ -1,0 +1,364 @@
+/// Tracks detailed user activity patterns across all platform interactions.
+/// Captures individual user actions including posting, voting, commenting,
+/// and browsing behavior for comprehensive engagement analysis. This table
+/// serves as the foundation for user behavior analytics and personalization
+/// engines. {@link reddit_community_members.id}.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_activities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user whose activity is being tracked. {@link
+  /// reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// The post involved in the activity, if applicable. {@link
+  /// reddit_community_posts.id}.
+  reddit_community_post_id String?
+  
+  /// The comment involved in the activity, if applicable. {@link
+  /// reddit_community_comments.id}.
+  reddit_community_comment_id String?
+  
+  /// The community where the activity occurred. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String?
+  
+  /// Type of user activity being tracked (view, vote, comment, post, etc.).
+  activity_type String
+  
+  /// Unique identifier for the user session during this activity.
+  session_id String
+  
+  /// Type of device used for the activity (desktop, mobile, tablet).
+  device_type String
+  
+  /// Duration of the interaction in seconds.
+  interaction_duration Int?
+  
+  /// Amount of content consumed during the activity.
+  content_consumed Int?
+  
+  /// Calculated engagement score for this activity.
+  engagement_score Float?
+  
+  /// Exact timestamp when the activity occurred.
+  activity_timestamp DateTime
+  
+  /// When this activity record was created.
+  created_at DateTime
+  
+  /// When this activity record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts? @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments? @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities? @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_community_post_id])
+  @@index([reddit_community_comment_id], map: "reddit_community_user_activities_reddit_community_comm_dffe796d")
+  
+  @@index([reddit_community_member_id, activity_timestamp], map: "reddit_community_user_activities_reddit_community_memb_33fb1727")
+  @@index([activity_type, activity_timestamp], map: "reddit_community_user_activities_activity_type_activit_215bd079")
+  @@index([reddit_community_community_id, activity_timestamp], map: "reddit_community_user_activities_reddit_community_comm_a73cc904")
+}
+
+/// Aggregated engagement metrics for communities, posts, and users. Provides
+/// summarized view of user interactions, voting patterns, and content
+/// performance for trend analysis and community health monitoring. {@link
+/// reddit_community_communities.id}.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_engagement_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community these metrics belong to. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String?
+  
+  /// The post these metrics belong to, if specific to a post. {@link
+  /// reddit_community_posts.id}.
+  reddit_community_post_id String?
+  
+  /// The user these metrics belong to, if specific to a user. {@link
+  /// reddit_community_members.id}.
+  reddit_community_member_id String?
+  
+  /// Time period for these metrics (hourly, daily, weekly, monthly).
+  metric_period String
+  
+  /// Start timestamp of the metric period.
+  period_start DateTime
+  
+  /// End timestamp of the metric period.
+  period_end DateTime
+  
+  /// Total number of posts created during the period.
+  total_posts Int
+  
+  /// Total number of comments created during the period.
+  total_comments Int
+  
+  /// Total number of votes cast during the period.
+  total_votes Int
+  
+  /// Number of unique active users during the period.
+  active_users Int
+  
+  /// Overall engagement rate as percentage.
+  engagement_rate Float
+  
+  /// Average session duration in minutes.
+  avg_session_duration Float
+  
+  /// Percentage of users who left after single interaction.
+  bounce_rate Float
+  
+  /// When this metric record was created.
+  created_at DateTime
+  
+  /// When this metric record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities? @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts? @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  member reddit_community_members? @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_community_post_id], map: "reddit_community_engagement_metrics_reddit_community_p_9350c825")
+  @@index([reddit_community_member_id], map: "reddit_community_engagement_metrics_reddit_community_m_1042d802")
+  
+  @@unique([reddit_community_community_id, metric_period, period_start], map: "reddit_community_engagement_metrics_reddit_community_c_f2126be3")
+  @@index([period_start, period_end])
+  @@index([metric_period, period_start], map: "reddit_community_engagement_metrics_metric_period_peri_76b6ba99")
+}
+
+/// System performance and user experience metrics tracking. Captures
+/// platform response times, error rates, and infrastructure performance for
+/// monitoring and optimization purposes. Supports capacity planning and
+/// performance troubleshooting.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_performance_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when the performance metric was recorded.
+  log_timestamp DateTime
+  
+  /// Type of performance metric being measured.
+  metric_type String
+  
+  /// API endpoint or service being measured.
+  endpoint String?
+  
+  /// Response time in milliseconds.
+  response_time Float
+  
+  /// Error rate as percentage for this metric.
+  error_rate Float
+  
+  /// Number of concurrent users at measurement time.
+  concurrent_users Int
+  
+  /// CPU utilization percentage.
+  cpu_utilization Float
+  
+  /// Memory usage in megabytes.
+  memory_usage Float
+  
+  /// Average database query time in milliseconds.
+  database_query_time Float
+  
+  /// Cache hit rate percentage.
+  cache_hit_rate Float
+  
+  /// Requests per second throughput.
+  throughput Int
+  
+  /// System uptime percentage for the period.
+  uptime_percentage Float
+  
+  /// When this performance log was created.
+  created_at DateTime
+  
+  /// When this performance log was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([log_timestamp, metric_type])
+  @@index([endpoint, log_timestamp])
+}
+
+/// Business intelligence and revenue tracking metrics. Captures platform
+/// growth, monetization performance, user acquisition costs, and business
+/// health indicators for strategic decision making. {@link
+/// reddit_community_communities.id}.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_business_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community these business metrics belong to. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String?
+  
+  /// Date for which these business metrics are calculated.
+  metric_date DateTime
+  
+  /// Reporting period (daily, weekly, monthly, quarterly).
+  reporting_period String
+  
+  /// Total revenue generated during the period.
+  revenue_total Float
+  
+  /// Revenue from advertising sources.
+  revenue_advertising Float
+  
+  /// Revenue from premium subscriptions.
+  revenue_subscriptions Float
+  
+  /// Number of new users acquired during the period.
+  new_users Int
+  
+  /// Average cost per user acquisition.
+  user_acquisition_cost Float
+  
+  /// User retention rate as percentage.
+  user_retention_rate Float
+  
+  /// Average revenue per active user.
+  avg_revenue_per_user Float
+  
+  /// User churn rate percentage.
+  churn_rate Float
+  
+  /// Total number of communities on platform.
+  total_communities Int
+  
+  /// Number of communities with active content.
+  active_communities Int
+  
+  /// Percentage growth in content volume.
+  content_growth_rate Float
+  
+  /// Percentage growth in user engagement.
+  engagement_growth Float
+  
+  /// When this business metric was created.
+  created_at DateTime
+  
+  /// When this business metric was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities? @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_community_community_id], map: "reddit_community_business_metrics_reddit_community_com_41f2542b")
+  
+  @@unique([metric_date, reporting_period, reddit_community_community_id], map: "reddit_community_business_metrics_metric_date_reportin_c3aa55d0")
+  @@index([metric_date, reporting_period], map: "reddit_community_business_metrics_metric_date_reportin_93c21950")
+  @@index([reporting_period, metric_date], map: "reddit_community_business_metrics_reporting_period_met_57c8371c")
+}
+
+/// Demographic and behavioral audience analysis data. Provides insights into
+/// user demographics, geographic distribution, device usage patterns, and
+/// audience segmentation for targeted content and marketing strategies.
+/// {@link reddit_community_communities.id}.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_audience_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community this audience analysis belongs to. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String?
+  
+  /// Time period for this audience analysis.
+  analysis_period String
+  
+  /// Start of the analysis period.
+  period_start DateTime
+  
+  /// End of the analysis period.
+  period_end DateTime
+  
+  /// Total audience size during the period.
+  total_audience Int
+  
+  /// JSON string representing age group distribution.
+  age_distribution String
+  
+  /// JSON string representing gender distribution.
+  gender_distribution String
+  
+  /// JSON string representing geographic distribution by country/region.
+  geographic_distribution String
+  
+  /// JSON string representing device usage distribution.
+  device_usage String
+  
+  /// JSON string representing content type preferences.
+  content_preferences String
+  
+  /// JSON string representing user activity time patterns.
+  activity_patterns String
+  
+  /// JSON string representing audience segmentation results.
+  segmentation_data String
+  
+  /// Average number of sessions per user.
+  avg_session_frequency Float
+  
+  /// Average content consumption per user.
+  content_consumption_rate Float
+  
+  /// When this audience analysis was created.
+  created_at DateTime
+  
+  /// When this audience analysis was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities? @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_community_id, analysis_period, period_start], map: "reddit_community_audience_analytics_reddit_community_c_7003f6ec")
+  @@index([period_start, period_end])
+  @@index([analysis_period, period_start], map: "reddit_community_audience_analytics_analysis_period_pe_3a1947cc")
+}

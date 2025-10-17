@@ -1,0 +1,98 @@
+/// Vote records for the communityPortal. Stores individual user votes on
+/// posts or comments. IMPORTANT: enforce DB-level constraints to guarantee a
+/// vote targets exactly one entity (post XOR comment) and to enforce one
+/// active vote per (user,target) using partial unique indexes. Because
+/// Prisma PSL does not support partial indexes or CHECK constraints
+/// natively, implement the CHECK constraint and partial unique indexes via a
+/// raw SQL migration. Also prefer soft-delete semantics for parent entities
+/// to preserve vote audit.
+///
+/// @namespace Interactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter's {@link community_portal_users.id}.
+  user_id String
+  
+  /// Target post {@link community_portal_posts.id}. Nullable — a vote targets
+  /// either a post OR a comment. Enforce XOR at DB level.
+  post_id String?
+  
+  /// Target comment {@link community_portal_comments.id}. Nullable — a vote
+  /// targets either a comment OR a post. Enforce XOR at DB level.
+  comment_id String?
+  
+  /// Vote value: +1 for upvote, -1 for downvote.
+  value Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last updated timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_portal_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post community_portal_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_portal_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, post_id])
+  @@unique([user_id, comment_id])
+  @@index([post_id, created_at])
+  @@index([comment_id, created_at])
+  @@index([user_id, created_at])
+}
+
+/// Subscription records linking users to communities. Represents a user's
+/// subscription to a community so it can be included in personalized feeds
+/// and notifications. Each subscription references the subscriber ({@\link
+/// community_portal_users.id}) and the community ({@\link
+/// community_portal_communities.id}). Enforces uniqueness on (user_id,
+/// community_id) to prevent duplicate subscriptions. Includes timestamps and
+/// deleted_at for soft-delete/revocation auditing. Indexes support lookup by
+/// user and by community.
+///
+/// @namespace Interactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscriber's {@\link community_portal_users.id}.
+  user_id String
+  
+  /// Subscribed community {@\link community_portal_communities.id}.
+  community_id String
+  
+  /// Subscription creation timestamp.
+  created_at DateTime
+  
+  /// Subscription last updated timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for revoked subscriptions.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_portal_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community community_portal_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, community_id])
+  @@index([user_id, created_at])
+  @@index([community_id, created_at])
+}

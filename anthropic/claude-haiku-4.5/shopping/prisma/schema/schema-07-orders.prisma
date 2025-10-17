@@ -1,0 +1,409 @@
+/// Main order records capturing complete customer purchases with
+/// transactional context. Each order represents a committed transaction from
+/// a customer containing one or more items from potentially multiple
+/// sellers. Orders maintain immutable pricing snapshots and track complete
+/// lifecycle from creation through fulfillment or cancellation. Central hub
+/// linking customers to their purchases with complete billing and shipping
+/// information.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owned customer's {@link shopping_mall_customer.id}
+  shopping_mall_customer_id String
+  
+  /// Associated payment transaction's {@link shopping_mall_payments.id}
+  shopping_mall_payment_id String?
+  
+  /// Human-readable order number in format ORD-YYYYMMDD-XXXXXX for customer
+  /// reference. Unique identifier visible to customer.
+  order_number String
+  
+  /// Current order lifecycle status: PENDING (awaiting payment), CONFIRMED
+  /// (payment received), PROCESSING (seller preparing), SHIPPED (handed to
+  /// carrier), DELIVERED (received by customer), COMPLETED (order finalized),
+  /// CANCELLED (cancelled), RETURNED (return processed). Immutable status
+  /// history maintained in order_status_history table.
+  order_status String
+  
+  /// Payment status: PENDING (awaiting payment processing), COMPLETED (payment
+  /// received and captured), FAILED (payment declined/failed), REFUNDED
+  /// (refund issued). Tracks payment lifecycle independent of order status.
+  payment_status String
+  
+  /// Shipping/fulfillment status: NOT_SHIPPED (not yet sent), IN_TRANSIT (with
+  /// carrier), DELIVERED (confirmed delivery), EXCEPTION (delivery issue).
+  /// Updated from shipment tracking.
+  shipping_status String
+  
+  /// Calculated sum of all order items (unit_price × quantity for each item).
+  /// Excludes taxes and shipping. Snapshot value at order time.
+  subtotal Float
+  
+  /// Calculated tax amount based on delivery address jurisdiction and
+  /// applicable tax rate. Immutable snapshot at order confirmation time.
+  tax_amount Float
+  
+  /// Tax rate percentage applied to this order (e.g., 0.08 for 8%). Stored for
+  /// historical accuracy and audit purposes.
+  tax_rate Float
+  
+  /// Selected shipping method cost. Calculated based on destination, weight,
+  /// and shipping method selected by customer. Immutable after confirmation.
+  shipping_cost Float
+  
+  /// Selected shipping method name: Standard (5-7 days), Express (2-3 days),
+  /// Overnight (1 day), Same-Day (same day for local), Economy (7-14 days).
+  /// Determines delivery timeline and cost.
+  shipping_method String
+  
+  /// Total discount amount applied from promotional codes or platform
+  /// promotions. Snapshot value at order confirmation. Stored for financial
+  /// reporting and audit.
+  discount_amount Float
+  
+  /// Final order total: subtotal + tax + shipping - discount. This is the
+  /// amount charged to customer. Immutable after payment confirmation for
+  /// billing accuracy.
+  total_amount Float
+  
+  /// Complete delivery address in JSON format captured at order time: {street,
+  /// city, state, zip, country, recipient_name, phone}. Immutable snapshot
+  /// ensures historical accuracy if customer changes address later.
+  delivery_address String
+  
+  /// Complete billing address in JSON format captured at order time. May
+  /// differ from delivery address. Used for payment processing and
+  /// verification.
+  billing_address String
+  
+  /// Customer email address at time of order (snapshot). Ensures confirmation
+  /// emails can be sent even if customer updates email later.
+  customer_email String
+  
+  /// Customer phone number at time of order (snapshot). Used for shipping
+  /// coordination if needed.
+  customer_phone String?
+  
+  /// Internal platform notes about order for admin/support. Limited to 500
+  /// characters. Examples: special handling, customer service issues,
+  /// fulfillment notes.
+  order_notes String?
+  
+  /// Order creation timestamp in ISO 8601 UTC. Marks when customer initiated
+  /// checkout and order was created in PENDING status.
+  created_at DateTime
+  
+  /// Last modification timestamp. Updated when order status changes, payment
+  /// confirmed, or administrative updates occur.
+  updated_at DateTime
+  
+  /// Timestamp when payment was successfully confirmed and order transitioned
+  /// to CONFIRMED status. Null until payment completes.
+  confirmed_at DateTime?
+  
+  /// Timestamp when order was cancelled. Null for non-cancelled orders. Set
+  /// when order transitions to CANCELLED status.
+  cancelled_at DateTime?
+  
+  /// Refund status if applicable: NO_REFUND (no refund needed), PENDING
+  /// (refund requested but not processed), PROCESSING (refund in progress),
+  /// COMPLETED (refund issued), REJECTED (refund denied). Tracks refund
+  /// lifecycle separate from order status.
+  refund_status String
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  payment shopping_mall_payments? @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_transactions shopping_mall_inventory_transactions[]
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_order_notes shopping_mall_order_notes[]
+  shopping_mall_order_timestamps shopping_mall_order_timestamps?
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  shopping_mall_payment_disputes shopping_mall_payment_disputes[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_return_requests shopping_mall_return_requests[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_commission_calculations shopping_mall_commission_calculations[]
+  
+  @@unique([shopping_mall_payment_id])
+  
+  @@unique([order_number])
+  @@index([payment_status])
+  @@index([created_at])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([order_status, created_at])
+}
+
+/// Line items within orders representing individual products with quantities
+/// and pricing. Each order contains one or more items which may be from
+/// different sellers. Items capture immutable price snapshots at order time
+/// ensuring billing accuracy. Items are managed exclusively through parent
+/// order operations and represent the detailed product composition of each
+/// purchase.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// SKU variant's {@link shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Seller owning this product's {@link shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Product name snapshot at order time. Captured immutably so order displays
+  /// original product name even if seller updates name later.
+  product_name String
+  
+  /// Variant details JSON snapshot: {color, size, material, other_options}.
+  /// Documents exact variant customer ordered (e.g., 'Blue, Size M, Cotton').
+  variant_details String
+  
+  /// Price per unit at time of order (immutable snapshot). This is the price
+  /// charged, not affected by any later price changes by seller.
+  unit_price Float
+  
+  /// Number of units ordered for this line item. Positive integer between 1
+  /// and 999.
+  quantity Int
+  
+  /// Line item total: unit_price × quantity (immutable). Pre-calculated and
+  /// stored for quick access and audit trail.
+  line_total Float
+  
+  /// Individual item fulfillment status within order: PENDING (awaiting
+  /// fulfillment), PROCESSING (seller preparing), SHIPPED (shipped), DELIVERED
+  /// (received), CANCELLED (item cancelled), RETURNED (returned by customer).
+  /// Enables per-item tracking in multi-seller orders.
+  item_status String
+  
+  /// Line item creation timestamp. Same as parent order creation time (set
+  /// when order is created).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_shipment_items shopping_mall_shipment_items[]
+  shopping_mall_return_items shopping_mall_return_items[]
+  
+  @@index([shopping_mall_product_variant_id])
+  @@index([shopping_mall_seller_id])
+  @@index([shopping_mall_order_id, item_status], map: "shopping_mall_order_items_shopping_mall_order_id_item__805dfd37")
+}
+
+/// Audit trail capturing every order status transition with complete
+/// metadata for compliance and troubleshooting. Each record documents when
+/// and why order status changed, who made the change, and supporting notes.
+/// Implements snapshot pattern for historical accuracy - append-only records
+/// never modified after creation. Essential for dispute resolution, SLA
+/// tracking, and operational auditing.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_status_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order being tracked's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Previous order status before this transition (e.g., PENDING, CONFIRMED,
+  /// PROCESSING). Documents the state being transitioned from.
+  status_from String
+  
+  /// New order status after this transition (e.g., CONFIRMED, PROCESSING,
+  /// SHIPPED). Documents the new state being entered.
+  status_to String
+  
+  /// Identifier of who triggered the status change: admin_user_id, seller_id,
+  /// system, customer. Tracks origin of status change for audit.
+  changed_by String
+  
+  /// Type of entity making the change: ADMIN, SELLER, SYSTEM, CUSTOMER. Helps
+  /// identify source of change for auditing.
+  changed_by_type String
+  
+  /// Explanation for the status change. Examples: 'Payment received', 'Seller
+  /// accepted order', 'Customer cancelled', 'Delivery confirmed'. Limited to
+  /// 500 characters.
+  reason String?
+  
+  /// Internal admin notes about this status change. Used for documenting
+  /// special circumstances or operational decisions. Limited to 1000
+  /// characters.
+  admin_notes String?
+  
+  /// IP address of the entity making the change. Used for security audit
+  /// trail. Can be null for system-generated changes.
+  ip_address String?
+  
+  /// User agent/device info for the entity making the change. Helps track
+  /// which system/device initiated change.
+  user_agent String?
+  
+  /// Timestamp when status transition occurred. Records exact moment of change
+  /// for audit trail.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_at])
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_status_history_shopping_mall_order_e30a1d11")
+}
+
+/// Flexible note system for operational and administrative communication
+/// about orders. Captures notes from sellers, customers, and admins with
+/// visibility controls determining who can see each note. Enables tracking
+/// of special requests, fulfillment issues, customer service interactions,
+/// and internal coordination. Notes are append-only (not edited after
+/// creation) for audit trail integrity.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_notes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated order's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Type of note: INTERNAL_ADMIN (admin-only internal notes),
+  /// CUSTOMER_VISIBLE (customer can see on order), SELLER_NOTE
+  /// (seller-to-admin communication), CUSTOMER_REQUEST (customer-provided
+  /// special requests). Determines visibility and context.
+  note_type String
+  
+  /// Note text content. Maximum 5000 characters. Examples: special delivery
+  /// instructions, customer service issues, fulfillment coordination,
+  /// operational notes.
+  content String
+  
+  /// Identifier of who created the note: admin_id, seller_id, customer_id, or
+  /// 'system'. Tracks origin for audit.
+  created_by String
+  
+  /// Type of creator: ADMIN, SELLER, CUSTOMER, SYSTEM. Indicates role of
+  /// person/system creating the note.
+  created_by_type String
+  
+  /// Who can view this note: ADMIN_ONLY (admin and support staff), SELLER_ONLY
+  /// (seller and admin), CUSTOMER_VISIBLE (customer, seller, and admin),
+  /// INTERNAL (all internal parties). Controls access per business rules.
+  visibility_scope String
+  
+  /// Note creation timestamp. Immutable - notes have permanent creation time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([created_at])
+  @@index([note_type])
+}
+
+/// Complete lifecycle timestamps for order tracking and SLA management.
+/// Captures all significant temporal events in order progression from
+/// creation through fulfillment or cancellation. Separates timestamp
+/// concerns from main orders table for clarity and enables efficient
+/// timeline queries. All timestamps stored in UTC ISO 8601 format.
+/// Implements 1:1 relationship with shopping_mall_orders enabling optional
+/// addition without polluting main table.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_timestamps {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Corresponding order's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Order creation timestamp. When order was first placed in PENDING status.
+  /// Marks start of order lifecycle.
+  created_at DateTime
+  
+  /// Payment confirmation timestamp. When payment was successfully processed
+  /// and order transitioned to CONFIRMED status. Null until payment completes.
+  confirmed_at DateTime?
+  
+  /// Fulfillment start timestamp. When seller marked order as PROCESSING and
+  /// began preparing items. Null until seller begins fulfillment.
+  processing_started_at DateTime?
+  
+  /// Shipment timestamp. When seller provided tracking number and order
+  /// transitioned to SHIPPED status. Marks handoff to carrier.
+  shipped_at DateTime?
+  
+  /// Delivery confirmation timestamp. When carrier confirmed delivery and
+  /// order transitioned to DELIVERED status. Marks customer receipt.
+  delivered_at DateTime?
+  
+  /// Order completion timestamp. When order transitioned to COMPLETED status,
+  /// typically 7 days after delivery when return window closes. Marks end of
+  /// active order lifecycle.
+  completed_at DateTime?
+  
+  /// Cancellation timestamp. When order was cancelled and transitioned to
+  /// CANCELLED status. Null for non-cancelled orders.
+  cancelled_at DateTime?
+  
+  /// Refund completion timestamp. When refund was successfully processed and
+  /// paid to customer. Null if no refund occurred.
+  refunded_at DateTime?
+  
+  /// Last status update timestamp. Most recent timestamp when any order event
+  /// occurred. Used for identifying recently active orders.
+  last_updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  @@index([created_at])
+  @@index([delivered_at])
+  @@index([last_updated_at])
+}

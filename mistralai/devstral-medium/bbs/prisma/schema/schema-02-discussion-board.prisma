@@ -1,0 +1,204 @@
+/// Discussion threads created by users on the discussion board. Contains the
+/// main content and metadata for each discussion topic.
+///
+/// @namespace DiscussionBoard
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_discussions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who created the discussion. {@link discussion_board_members.id}.
+  member_id String
+  
+  /// Category this discussion belongs to. {@link
+  /// discussion_board_categories.id}.
+  category_id String
+  
+  /// Title of the discussion thread.
+  title String
+  
+  /// Main content of the discussion.
+  content String
+  
+  /// Status of the discussion (active, pending, deleted, etc.).
+  status String
+  
+  /// When the discussion was created.
+  created_at DateTime
+  
+  /// When the discussion was last updated.
+  updated_at DateTime
+  
+  /// When the discussion was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  category discussion_board_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_flags discussion_board_flags[]
+  discussion_board_discussion_tags discussion_board_discussion_tags[]
+  discussion_board_email_notifications discussion_board_email_notifications[]
+  discussion_board_in_app_notifications discussion_board_in_app_notifications[]
+  
+  @@index([member_id])
+  @@index([category_id])
+  @@index([created_at])
+}
+
+/// Comments on discussion threads. Supports nested replies through
+/// parent_comment_id.
+///
+/// @namespace DiscussionBoard
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Discussion this comment belongs to. {@link
+  /// discussion_board_discussions.id}.
+  discussion_id String
+  
+  /// Member who created the comment. {@link discussion_board_members.id}.
+  member_id String
+  
+  /// Parent comment for nested replies (self-reference). {@link
+  /// discussion_board_comments.id}.
+  parent_comment_id String?
+  
+  /// Content of the comment.
+  content String
+  
+  /// Status of the comment (active, pending, deleted, etc.).
+  status String
+  
+  /// When the comment was created.
+  created_at DateTime
+  
+  /// When the comment was last updated.
+  updated_at DateTime
+  
+  /// When the comment was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion discussion_board_discussions @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  parent discussion_board_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_comments[] @relation("recursive")
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_flags discussion_board_flags[]
+  discussion_board_email_notifications discussion_board_email_notifications[]
+  discussion_board_in_app_notifications discussion_board_in_app_notifications[]
+  
+  @@index([discussion_id])
+  @@index([member_id])
+  @@index([parent_comment_id])
+  @@index([created_at])
+}
+
+/// Votes on discussions and comments. Tracks upvotes and downvotes.
+///
+/// @namespace DiscussionBoard
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Discussion being voted on. {@link discussion_board_discussions.id}.
+  discussion_id String?
+  
+  /// Comment being voted on. {@link discussion_board_comments.id}.
+  comment_id String?
+  
+  /// Member who cast the vote. {@link discussion_board_members.id}.
+  member_id String
+  
+  /// Type of vote: 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// When the vote was cast.
+  created_at DateTime
+  
+  /// When the vote was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  discussion discussion_board_discussions? @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_id, member_id])
+  @@unique([comment_id, member_id])
+  @@index([discussion_id])
+  @@index([comment_id])
+  @@index([member_id])
+  @@index([created_at])
+  @@index([vote_type])
+}
+
+/// Flags for inappropriate content on discussions and comments.
+///
+/// @namespace DiscussionBoard
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Discussion being flagged. {@link discussion_board_discussions.id}.
+  discussion_id String?
+  
+  /// Comment being flagged. {@link discussion_board_comments.id}.
+  comment_id String?
+  
+  /// Member who flagged the content. {@link discussion_board_members.id}.
+  member_id String
+  
+  /// Reason for flagging the content.
+  reason String
+  
+  /// Status of the flag (pending, reviewed, etc.).
+  status String
+  
+  /// When the content was flagged.
+  created_at DateTime
+  
+  /// When the flag was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  discussion discussion_board_discussions? @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_id, member_id])
+  @@unique([comment_id, member_id])
+  @@index([discussion_id])
+  @@index([comment_id])
+  @@index([member_id])
+  @@index([created_at])
+  @@index([reason])
+}

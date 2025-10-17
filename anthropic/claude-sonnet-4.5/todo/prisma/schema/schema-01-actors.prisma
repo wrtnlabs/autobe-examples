@@ -1,0 +1,102 @@
+/// User accounts for the Todo list application. Represents authenticated
+/// users who can create and manage their personal todo items. Each user
+/// account stores authentication credentials and profile information. Users
+/// are the foundation of the application - they must register and
+/// authenticate before accessing any todo management features. This table
+/// implements soft delete to support account closure while maintaining
+/// referential integrity with existing todos.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for authentication and identification. Must be
+  /// unique across all users. Used as the primary login credential. Normalized
+  /// to lowercase for case-insensitive comparison. Maximum 255 characters as
+  /// per validation requirements.
+  email String
+  
+  /// Securely hashed user password using bcrypt with minimum cost factor of
+  /// 10. Never stored in plain text. Used for authentication verification
+  /// during login. The hash is generated from passwords that meet minimum
+  /// security requirements: at least 8 characters, containing letters and
+  /// numbers.
+  password_hash String
+  
+  /// Timestamp when the user account was created. Immutable after creation.
+  /// Used for account age tracking and audit purposes.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the user account. Updated
+  /// automatically whenever email or password is changed. Used for tracking
+  /// account activity and changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, indicates the user account has been
+  /// deleted but data is retained temporarily. Null for active accounts.
+  /// Supports account deletion with grace period as per data management
+  /// requirements.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_refresh_tokens todo_list_refresh_tokens[]
+  todo_list_todos todo_list_todos[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// JWT refresh tokens for maintaining user sessions. Supports token-based
+/// authentication system with automatic session renewal. Each token belongs
+/// to a specific user and has a defined expiration period (30 days as per
+/// authentication requirements). Tokens can be revoked when users log out or
+/// change passwords. This table enables stateless JWT authentication while
+/// providing server-side token validation and revocation capabilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_refresh_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner of this refresh token. References the user account this token
+  /// authenticates. {@link todo_list_users.id}.
+  todo_list_user_id String
+  
+  /// Securely hashed refresh token value. The actual token is hashed before
+  /// storage for security. Used to validate refresh token requests when users
+  /// need new access tokens.
+  token_hash String
+  
+  /// Token expiration timestamp. Set to 30 days from issuance as per
+  /// authentication requirements. After this time, the token becomes invalid
+  /// and user must log in again.
+  expires_at DateTime
+  
+  /// Timestamp when the refresh token was issued. Used for token age tracking
+  /// and audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when the token was revoked. Null for active tokens. Set when
+  /// user logs out, changes password, or explicitly revokes the token. Revoked
+  /// tokens cannot be used even if not yet expired.
+  revoked_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, expires_at])
+  @@index([expires_at])
+}

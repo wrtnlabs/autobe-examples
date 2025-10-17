@@ -1,0 +1,121 @@
+/// Registry of unauthenticated visitor actors for the Minimal Todo List
+/// service. Represents anonymous users that may interact with public entry
+/// points before authentication. These entries are standalone within the
+/// Actors domain and are not linked to business entities in this minimal
+/// scope. Useful for optional auditing or policy analysis; typically not
+/// user-managed directly. No authentication credentials are stored here.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_guest_visitors {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creation timestamp for this guest visitor actor record.
+  created_at DateTime
+  
+  /// Last update timestamp for this record, refreshed on any modification.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to mark this actor as logically removed or
+  /// deactivated. Null means active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Actor records for authenticated members of the Minimal Todo List service.
+/// Represents owners of personal Todos. Includes authentication fields for
+/// password-based login and a unique email identifier. Emails should be
+/// normalized to lowercase at the application layer; for DB-level
+/// case-insensitive uniqueness, consider a functional unique index on
+/// lower(email) via migration. Passwords are never stored in plaintext;
+/// store only strong password hashes (Argon2id/Bcrypt).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todo_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member’s login identifier (email). Must be unique across members.
+  /// Normalize to lowercase at application layer; business policy may require
+  /// case-insensitive uniqueness.
+  email String
+  
+  /// Hashed password for authentication (e.g., Argon2id/Bcrypt). Plaintext
+  /// passwords must never be stored.
+  password_hash String
+  
+  /// Creation timestamp for this member actor record.
+  created_at DateTime
+  
+  /// Last update timestamp for this record, refreshed on any modification.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to mark this actor as logically removed or
+  /// deactivated. Null means active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_todos todo_list_todos[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Actor records for administrative users responsible for service-level
+/// settings and policy oversight. Requires authentication via unique email
+/// and password_hash. Emails should be normalized to lowercase at the
+/// application layer; for DB-level case-insensitive uniqueness consider
+/// functional unique index on lower(email) via migration. No routine access
+/// to private Todos is implied; access is policy-gated and audited.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_system_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator’s login identifier (email). Must be unique across admins.
+  /// Normalize to lowercase at application layer; business policy may require
+  /// case-insensitive uniqueness.
+  email String
+  
+  /// Hashed password for authentication (e.g., Argon2id/Bcrypt). Plaintext
+  /// passwords must never be stored.
+  password_hash String
+  
+  /// Creation timestamp for this system admin actor record.
+  created_at DateTime
+  
+  /// Last update timestamp for this record, refreshed on any modification.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to mark this actor as logically removed or
+  /// deactivated. Null means active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([email])
+  @@index([created_at])
+  @@index([deleted_at])
+}

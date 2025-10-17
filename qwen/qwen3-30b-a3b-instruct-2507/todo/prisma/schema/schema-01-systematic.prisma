@@ -1,0 +1,33 @@
+/// System configuration entity that defines foundational application
+/// settings and behavior for the todo list application. This table stores
+/// critical system parameters that control the application's operation and
+/// user experience. Users directly manage these configurations through the
+/// interface.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Configuration title that describes the purpose of this setting.
+  /// Represents the human-readable identifier for the configuration.
+  title String
+  
+  /// Indicates whether the configuration is active or pending. True means the
+  /// configuration is complete and enabled, false means it's inactive or in
+  /// draft state.
+  completed Boolean
+  
+  /// Timestamp when this configuration was created. Used for audit trails and
+  /// chronological ordering.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+}

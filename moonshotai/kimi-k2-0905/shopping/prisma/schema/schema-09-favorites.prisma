@@ -1,0 +1,199 @@
+/// Customer's favorite products for quick access and personalized shopping
+/// experience. Enables customers to save frequently purchased or desired
+/// items for easy reordering and wishlist management across the multi-vendor
+/// marketplace.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id} who saved the favorite item
+  shopping_customer_id String
+  
+  /// Product item's {@link shopping_mall_products.id} that was favorited
+  shopping_product_id String
+  
+  /// Optional note or reminder about why this item was favorited
+  note String?
+  
+  /// Timestamp when the item was added to favorites
+  created_at DateTime
+  
+  /// Last modification timestamp for the favorite record
+  updated_at DateTime
+  
+  /// Soft deletion timestamp - favorites can be removed and potentially
+  /// restored
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_product_id])
+  
+  @@unique([shopping_customer_id, shopping_product_id], map: "shopping_mall_favorites_shopping_customer_id_shopping__c67b38aa")
+  @@index([created_at])
+  @@index([deleted_at])
+  @@index([shopping_customer_id, updated_at])
+}
+
+/// Customer-specific preferences and settings for personalized platform
+/// experience. Contains user customization options, notification
+/// preferences, privacy settings, and interface preferences that enhance the
+/// shopping experience across the multi-vendor marketplace.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id} who owns these preferences
+  shopping_customer_id String
+  
+  /// Whether to receive promotional email notifications
+  email_notifications Boolean
+  
+  /// Whether to receive SMS/text notifications for orders and shipping
+  sms_notifications Boolean
+  
+  /// Whether to receive notifications when favorited items drop in price
+  price_drop_alerts Boolean
+  
+  /// Whether to receive notifications when out-of-stock items become available
+  back_in_stock_alerts Boolean
+  
+  /// Whether the customer's wishlist is publicly shareable via URL
+  wishlist_sharing Boolean
+  
+  /// Whether to enable personalized product recommendations based on browsing
+  /// history
+  personalized_recommendations Boolean
+  
+  /// Customer's preferred interface language (e.g., 'en-US', 'ko-KR')
+  language_preference String?
+  
+  /// Customer's preferred currency for price display (e.g., 'USD', 'KRW')
+  currency_preference String?
+  
+  /// Customer's preferred timezone for timestamp display
+  timezone_preference String?
+  
+  /// Timestamp when the preferences were first established
+  created_at DateTime
+  
+  /// Last modification timestamp for preferences
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_customer_id])
+  
+  @@index([shopping_customer_id])
+  @@index([email_notifications, sms_notifications], map: "shopping_mall_customer_preferences_email_notifications_0d761103")
+}
+
+/// Customer's recently viewed products for browsing history tracking and
+/// personalized recommendations. Supports the shopping experience by
+/// enabling customers to quickly return to previously browsed items and
+/// provides data for recommendation algorithms.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_recently_viewed {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id} who viewed the product
+  shopping_customer_id String
+  
+  /// Product item's {@link shopping_mall_products.id} that was viewed
+  shopping_product_id String
+  
+  /// Number of times this product was viewed by the customer
+  view_count Int
+  
+  /// Timestamp of the most recent viewing session
+  last_viewed_at DateTime
+  
+  /// Timestamp when the product was first viewed
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_product_id])
+  
+  @@unique([shopping_customer_id, shopping_product_id], map: "shopping_mall_recently_viewed_shopping_customer_id_sho_70f76cda")
+  @@index([last_viewed_at])
+  @@index([shopping_customer_id, last_viewed_at], map: "shopping_mall_recently_viewed_shopping_customer_id_las_7fc33550")
+}
+
+/// Customer's followed sellers for brand loyalty and new product
+/// notifications. Enables customers to receive updates about new products,
+/// promotions, and seller activities while providing sellers with follower
+/// analytics for marketing insights in the multi-vendor marketplace.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_followed_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id} who follows the seller
+  shopping_customer_id String
+  
+  /// Seller's {@link shopping_mall_sellers.id} who is being followed
+  shopping_seller_id String
+  
+  /// Timestamp when the seller was initially followed
+  followed_at DateTime
+  
+  /// Preferred notification frequency: 'immediate', 'daily_digest',
+  /// 'weekly_digest', 'none'
+  notification_frequency String
+  
+  /// Timestamp when the follow relationship was established
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_seller_id])
+  
+  @@unique([shopping_customer_id, shopping_seller_id], map: "shopping_mall_followed_sellers_shopping_customer_id_sh_1a9c62ff")
+  @@index([followed_at])
+  @@index([shopping_customer_id, notification_frequency], map: "shopping_mall_followed_sellers_shopping_customer_id_no_be872826")
+}

@@ -1,0 +1,487 @@
+/// Comprehensive security event logs capturing all security-relevant
+/// activities including authentication attempts, permission changes,
+/// suspicious activities, and security incidents. These immutable logs form
+/// the foundation of security auditing and forensic investigation
+/// capabilities. Tracks event type, actor, target resource, severity level,
+/// and full context for each security event.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_security_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who triggered the security event, if applicable. References
+  /// {@link discussion_board_users.id}.
+  discussion_board_user_id String?
+  
+  /// Type of security event: LOGIN_ATTEMPT, LOGIN_SUCCESS, LOGIN_FAILURE,
+  /// PASSWORD_CHANGE, PASSWORD_RESET, ACCOUNT_LOCKOUT, PERMISSION_GRANT,
+  /// PERMISSION_REVOKE, ROLE_CHANGE, CONTENT_ACCESS, CONTENT_REMOVE,
+  /// USER_WARN, USER_SUSPEND, USER_BAN, ANOMALY_DETECTED, BRUTE_FORCE_ATTEMPT,
+  /// TOKEN_REFRESH, SESSION_CREATE, SESSION_TERMINATE, MFA_ENABLE,
+  /// MFA_DISABLE, CERTIFICATE_UPDATED, API_KEY_ROTATED, DATA_BREACH_DETECTED,
+  /// SUSPICIOUS_ACTIVITY.
+  event_type String
+  
+  /// Severity classification: CRITICAL (immediate action required), HIGH
+  /// (urgent attention needed), MEDIUM (investigation recommended), LOW
+  /// (informational). Guides incident response prioritization.
+  severity_level String
+  
+  /// Detailed human-readable description of the security event explaining what
+  /// occurred and why it matters. Up to 1000 characters providing full context
+  /// for investigators.
+  event_description String
+  
+  /// Type of actor performing action: USER (authenticated user), SYSTEM
+  /// (automated system process), ADMINISTRATOR (admin override),
+  /// UNAUTHENTICATED (guest or failed auth), EXTERNAL_SERVICE (integration
+  /// failure).
+  actor_type String
+  
+  /// IP address from which the security event originated. Null for
+  /// system-generated events. Used for geographic analysis and pattern
+  /// detection.
+  actor_ip_address String?
+  
+  /// Browser/client user agent string from the request. Helps identify device
+  /// type, browser version, and operating system. Null for non-HTTP events.
+  actor_user_agent String?
+  
+  /// Type of resource being accessed or modified: USER_ACCOUNT, USER_PROFILE,
+  /// DISCUSSION, COMMENT, PERMISSION, ROLE, CONTENT, DATABASE, SYSTEM_CONFIG,
+  /// CREDENTIAL, SESSION, TOKEN.
+  target_resource_type String
+  
+  /// UUID of the specific resource being accessed or modified. Null if event
+  /// doesn't target specific resource (e.g., system-wide configuration
+  /// change).
+  target_resource_id String?
+  
+  /// Result of the security event: SUCCESS, FAILURE, BLOCKED, PENDING_REVIEW,
+  /// ERROR. Indicates whether the event succeeded or was intercepted by
+  /// security controls.
+  action_result String
+  
+  /// JSON-formatted additional context data relevant to the security event.
+  /// May include before/after values, query parameters, error codes,
+  /// suspicious patterns detected, or forensic details. Stored as JSON string
+  /// for flexibility.
+  additional_metadata String?
+  
+  /// Country of origin derived from IP address geolocation. Used for anomaly
+  /// detection (impossible travel patterns, unusual geographic access).
+  geolocation_country String?
+  
+  /// City of origin derived from IP address geolocation. Used for anomaly
+  /// detection and geographic analysis of security events.
+  geolocation_city String?
+  
+  /// Timestamp when security event occurred, recorded at server in UTC.
+  /// Precise to millisecond for sequencing and incident reconstruction.
+  created_at DateTime
+  
+  /// Date after which this security log may be deleted per retention policy.
+  /// Calculated based on event severity and regulatory requirements (typically
+  /// 1-3 years). Alerts admins before expiration.
+  retained_until DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users? @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_security_logs_discussion_board_user_i_58eba61c")
+  @@index([event_type, created_at])
+  @@index([severity_level, created_at])
+  @@index([actor_ip_address, created_at])
+  @@index([target_resource_type, target_resource_id], map: "discussion_board_security_logs_target_resource_type_ta_dd2625f8")
+  @@index([created_at])
+  @@index([action_result])
+}
+
+/// Detailed audit trail for all system modifications and administrative
+/// actions including content changes, user management, moderation decisions,
+/// and system configuration updates. Maintains immutable record of who
+/// changed what, when, and why. Supports compliance requirements (GDPR,
+/// audit trails) and facilitates forensic investigation of system state
+/// changes. Captures before/after values for complete change tracking.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who performed the action being audited. References {@link
+  /// discussion_board_users.id}. Null for system-generated actions.
+  discussion_board_user_id String?
+  
+  /// Category of action being audited: CREATE (new resource created), UPDATE
+  /// (resource modified), DELETE (resource removed), RESTORE (deleted resource
+  /// recovered), APPROVE (content/action approved), REJECT (content/action
+  /// rejected), EXPORT (data exported), IMPORT (data imported), CONFIGURATION
+  /// (system config changed), PERMISSION (permissions modified).
+  action_type String
+  
+  /// Type of entity affected by action: USER, DISCUSSION, COMMENT, CATEGORY,
+  /// CONTENT_FLAG, MODERATION_ACTION, USER_WARNING, SUSPENSION, BAN, APPEAL,
+  /// ROLE, PERMISSION, CONFIGURATION, SYSTEM_SETTING, GUIDELINE.
+  entity_type String
+  
+  /// UUID of the specific entity being modified. Null for system-wide actions
+  /// not tied to specific resource.
+  entity_id String?
+  
+  /// Complete state/value of entity before the change (JSON-formatted for
+  /// complex objects). Null for CREATE actions. Maximum 5000 characters,
+  /// truncated if necessary. Enables comparison and rollback analysis.
+  before_value String?
+  
+  /// Complete state/value of entity after the change (JSON-formatted for
+  /// complex objects). Null for DELETE actions unless entity was restored.
+  /// Enables change verification and compliance reporting.
+  after_value String?
+  
+  /// Explanation or justification for the action. May be policy violation
+  /// explanation, appeal decision, or administrative reason. Maximum 500
+  /// characters. Required for sensitive actions (bans, data deletion).
+  change_reason String?
+  
+  /// IP address from which action was performed. Null for system-generated
+  /// actions. Used for geographic audit trail and anomaly detection.
+  ip_address String?
+  
+  /// Browser/client user agent string. Helps identify device and browser used
+  /// for action. Null for non-HTTP actions.
+  user_agent String?
+  
+  /// Status of the audited action: COMPLETED (action finished successfully),
+  /// PENDING (awaiting processing), FAILED (action failed to complete),
+  /// REJECTED (action was blocked by controls). Used for tracking action
+  /// outcomes.
+  status String
+  
+  /// Security/compliance risk classification for this action: LOW (routine
+  /// action), MEDIUM (requires review), HIGH (sensitive action), CRITICAL
+  /// (high-impact action). Guides incident investigation prioritization.
+  risk_assessment String
+  
+  /// Timestamp when action occurred, recorded at server in UTC. Essential for
+  /// sequential reconstruction of events and compliance reporting.
+  created_at DateTime
+  
+  /// Date after which this audit log may be deleted per data retention policy.
+  /// Typically 2-3 years depending on regulatory requirements. System alerts
+  /// administrators before expiration.
+  retention_expires_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users? @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_audit_logs_discussion_board_user_id_c_52d34f3e")
+  @@index([action_type, entity_type, created_at], map: "discussion_board_audit_logs_action_type_entity_type_cr_60a9b00d")
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+  @@index([risk_assessment, created_at])
+  @@index([status])
+}
+
+/// Tracks all authentication attempts (successful and failed) for security
+/// monitoring and brute force detection. Records login history with IP
+/// addresses, geolocation, device information, and results. Used to detect
+/// account takeover attempts, impossible travel patterns, and suspicious
+/// access patterns. Supports account lockout policies and fraud prevention
+/// mechanisms. Maintains complete audit trail of who accessed what accounts
+/// from where.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_login_attempts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user account targeted by the login attempt. References {@link
+  /// discussion_board_users.id}. Null if attempt used invalid email (user not
+  /// found).
+  discussion_board_user_id String?
+  
+  /// Email address used in login attempt. Captures what email user tried (may
+  /// be typo, invalid, or compromised). Used for detecting brute force against
+  /// specific accounts or email enumeration attacks.
+  email_attempted String
+  
+  /// Outcome of login attempt: SUCCESS (credentials valid, user logged in),
+  /// FAILURE_INVALID_CREDENTIALS (wrong password), FAILURE_USER_NOT_FOUND
+  /// (email not registered), FAILURE_ACCOUNT_LOCKED (too many recent failed
+  /// attempts), FAILURE_ACCOUNT_DISABLED (user suspended/banned),
+  /// FAILURE_EMAIL_UNVERIFIED (email not yet verified).
+  attempt_result String
+  
+  /// IP address from which login attempt originated. Essential for geographic
+  /// anomaly detection, impossible travel patterns, and brute force source
+  /// identification. Null if captured from proxy/VPN.
+  ip_address String?
+  
+  /// Country derived from IP geolocation. Used for detecting impossible travel
+  /// (e.g., New York then Tokyo in 10 minutes) and unusual geographic
+  /// patterns.
+  geolocation_country String?
+  
+  /// City derived from IP geolocation. Provides geographic context for access
+  /// pattern analysis and anomaly detection.
+  geolocation_city String?
+  
+  /// Browser/client user agent string from HTTP request. Used to identify
+  /// device type, browser, OS, and detect logins from unexpected devices
+  /// (e.g., previously used Android phone, now using Windows).
+  user_agent String?
+  
+  /// Hash of device characteristics (browser type, OS, screen resolution,
+  /// plugins, etc.). Helps identify logins from new devices or spoofed
+  /// devices. Null for non-HTTP logins.
+  device_fingerprint String?
+  
+  /// Cumulative count of failed login attempts from this IP address in the
+  /// past 15 minutes. Used to trigger account lockout policies and rate
+  /// limiting. Reset when successful login occurs.
+  failed_attempt_count Int
+  
+  /// Flag indicating if login attempt triggered anomaly detection. True if:
+  /// impossible travel, new device, unusual time, multiple geographic logins
+  /// simultaneously, etc. Guides manual investigation.
+  is_suspicious Boolean
+  
+  /// If is_suspicious is true, explains why anomaly detected:
+  /// IMPOSSIBLE_TRAVEL, NEW_DEVICE, UNUSUAL_TIME, CONCURRENT_SESSIONS,
+  /// HIGH_RISK_COUNTRY, BRUTE_FORCE_PATTERN, etc.
+  anomaly_reason String?
+  
+  /// Timestamp when login attempt occurred, recorded at server in UTC.
+  /// Millisecond precision for sequencing of rapid attempts and detecting
+  /// bursts.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users? @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_login_attempts_discussion_board_user__50e750aa")
+  @@index([email_attempted, created_at])
+  @@index([ip_address, created_at])
+  @@index([attempt_result, created_at])
+  @@index([is_suspicious, created_at])
+  @@index([created_at])
+}
+
+/// Audit trail for all permission and role modifications in the system.
+/// Tracks every grant, revoke, or modification of user permissions, role
+/// assignments, and administrative privileges. Records who made the change,
+/// what changed, from what to what, when, and why. Critical for compliance
+/// (GDPR, SOC 2, audit requirements), privilege escalation detection, and
+/// understanding current permission state at any point in time. Enables
+/// rollback analysis and permission history queries.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_permission_changes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user whose permissions were modified. References {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// The administrator or system user who made the permission change.
+  /// References {@link discussion_board_users.id}. Null for system-generated
+  /// permission changes.
+  modified_by_user_id String?
+  
+  /// Type of permission change: ROLE_GRANT (user assigned to role),
+  /// ROLE_REVOKE (user removed from role), PERMISSION_GRANT (specific
+  /// permission granted), PERMISSION_REVOKE (specific permission removed),
+  /// CATEGORY_ASSIGNMENT (moderator assigned to category), CATEGORY_REMOVAL
+  /// (moderator removed from category).
+  change_type String
+  
+  /// User's role before the change (GUEST, MEMBER, MODERATOR, ADMINISTRATOR).
+  /// Null for permission-level changes that don't affect role.
+  role_before String?
+  
+  /// User's role after the change. Null if user role didn't change (only
+  /// specific permissions modified).
+  role_after String?
+  
+  /// Name of specific permission being granted/revoked, if applicable.
+  /// Examples: CREATE_DISCUSSION, POST_COMMENT, VOTE, MODERATE_CONTENT,
+  /// MANAGE_USERS, SYSTEM_ADMIN. Null for role-level changes.
+  permission_name String?
+  
+  /// Type of resource permission applies to: GLOBAL (system-wide), CATEGORY
+  /// (specific discussion category), USER (specific user management). Used for
+  /// scoped permissions.
+  resource_type String
+  
+  /// UUID of specific resource (e.g., category_id for category-scoped
+  /// moderators). Null for system-wide permissions.
+  resource_id String?
+  
+  /// Explanation for why permission was changed: PROMOTION (user earned
+  /// moderator status), VIOLATION (permissions revoked due to violations),
+  /// PROBATION (temporary restrictions), ADMINISTRATIVE (admin override),
+  /// ROLE_CHANGE (automatic from role change).
+  change_reason String
+  
+  /// Whether this permission change required approval (e.g., promoting to
+  /// administrator). Tracks if approval was obtained and when.
+  approval_required Boolean
+  
+  /// If approval was required, ID of approver (typically more senior admin).
+  /// Null if not required or not yet approved.
+  approval_by_user_id String?
+  
+  /// Date/time when permission change became effective. May be future-dated
+  /// for scheduled permission changes. Null means immediately effective.
+  effective_from DateTime?
+  
+  /// Date/time when temporary permission expires (e.g., temporary moderation
+  /// probation). Null for permanent permission changes. System automatically
+  /// revokes on expiration.
+  expires_at DateTime?
+  
+  /// IP address of administrator who made the change. Null for
+  /// system-generated changes. Used for anomaly detection (admin accessing
+  /// from unusual location).
+  ip_address String?
+  
+  /// Timestamp when permission change was recorded, in UTC. Enables
+  /// chronological reconstruction of permission history.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation("discussion_board_permission_changes_of_discussion_board_user_id", fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  modifiedByUser discussion_board_users? @relation("discussion_board_permission_changes_of_modified_by_user_id", fields: [modified_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_permission_changes_discussion_board_u_026bf10d")
+  @@index([modified_by_user_id, created_at], map: "discussion_board_permission_changes_modified_by_user_i_a6e0015c")
+  @@index([change_type, created_at])
+  @@index([role_before, role_after])
+  @@index([resource_type, resource_id], map: "discussion_board_permission_changes_resource_type_reso_35641b46")
+  @@index([created_at])
+}
+
+/// Tracks all access to sensitive user data by administrators and system
+/// processes. Records who accessed what personal information, when, from
+/// where, and why. Critical for privacy compliance (GDPR right of access,
+/// audit requirements) and detecting unauthorized data access or insider
+/// threats. Monitors administrator access to user emails, profile data,
+/// activity history, and other PII. Enables detection of data theft or
+/// privacy violations by insiders.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_data_access_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator or system user accessing the sensitive data. References
+  /// {@link discussion_board_users.id}. Null for automated system access.
+  accessing_user_id String?
+  
+  /// The user whose data is being accessed. References {@link
+  /// discussion_board_users.id}. Null if accessing system-level data not tied
+  /// to specific user.
+  subject_user_id String?
+  
+  /// Nature of data access: VIEW (read-only access to data), EXPORT (data
+  /// exported/downloaded), MODIFY (data changed), DELETE (data deleted),
+  /// RESTORE (deleted data recovered). Indicates what action was performed on
+  /// sensitive data.
+  access_type String
+  
+  /// Category of sensitive data accessed: EMAIL_ADDRESS (user's email),
+  /// PASSWORD_HASH (login credentials), IP_HISTORY (login IPs and locations),
+  /// PROFILE_DATA (personal profile info), ACTIVITY_LOG (user's post/comment
+  /// history), DISCUSSION_CONTENT (user's discussions and comments),
+  /// VOTING_HISTORY (user's votes), SETTINGS (user preferences and config).
+  data_category String
+  
+  /// Specific data elements accessed: which fields from user profile, which
+  /// discussions viewed, which settings accessed, etc. Maximum 500 characters.
+  /// Used to precisely track what information was accessed.
+  data_description String?
+  
+  /// Stated reason for accessing sensitive data: CUSTOMER_SUPPORT (helping
+  /// user), INVESTIGATION (security investigation), COMPLIANCE (regulatory
+  /// requirement), ABUSE_PREVENTION (blocking spam), INCIDENT_RESPONSE
+  /// (responding to security incident), ADMINISTRATIVE (routine admin task).
+  reason_for_access String
+  
+  /// Whether this access was approved: APPROVED (authorized), PENDING_APPROVAL
+  /// (requested but not yet approved), DENIED (request denied), EMERGENCY
+  /// (accessed under emergency conditions).
+  approval_status String
+  
+  /// Approximate volume of sensitive data accessed: number of records viewed,
+  /// size of export in bytes, count of items. Helps detect unusual bulk access
+  /// patterns.
+  data_volume Int
+  
+  /// IP address from which sensitive data was accessed. Null for
+  /// system-generated access. Used for anomaly detection (admin accessing from
+  /// unusual location).
+  ip_address String?
+  
+  /// Browser/client information used to access sensitive data. Helps identify
+  /// expected vs. unexpected access methods (e.g., script vs. web browser).
+  user_agent String?
+  
+  /// Whether access was flagged for unusual patterns: bulk export of PII,
+  /// after-hours access, access from high-risk country, authorized user
+  /// accessing unusual data categories, etc. Triggers review.
+  is_flagged Boolean
+  
+  /// If is_flagged is true, reason flagged: BULK_EXPORT, UNUSUAL_CATEGORY,
+  /// AFTER_HOURS, UNAUTHORIZED_USER, MULTIPLE_USERS, HIGH_VOLUME,
+  /// SUSPICIOUS_PATTERN.
+  flag_reason String?
+  
+  /// Timestamp when sensitive data access occurred, recorded in UTC. Critical
+  /// for detecting insider threats, data theft, and establishing timeline of
+  /// privacy violations.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  accessingUser discussion_board_users? @relation("discussion_board_data_access_logs_of_accessing_user_id", fields: [accessing_user_id], references: [id], onDelete: Cascade)
+  subjectUser discussion_board_users? @relation("discussion_board_data_access_logs_of_subject_user_id", fields: [subject_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([accessing_user_id, created_at], map: "discussion_board_data_access_logs_accessing_user_id_cr_6b998a79")
+  @@index([subject_user_id, created_at], map: "discussion_board_data_access_logs_subject_user_id_crea_f984aa73")
+  @@index([data_category, created_at])
+  @@index([is_flagged, created_at])
+  @@index([access_type, created_at])
+  @@index([created_at])
+}

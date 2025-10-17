@@ -1,0 +1,137 @@
+/// Guest users who have not registered or logged in. They can view public
+/// discussions and have limited functionality. This table stores basic
+/// information about unauthenticated users who may later register to become
+/// members.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address for potential registration. Nullable as guests may not
+  /// provide email.
+  email String?
+  
+  /// Guest's name if provided.
+  name String?
+  
+  /// Guest's nickname if provided.
+  nickname String?
+  
+  /// Timestamp when the guest record was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_members discussion_board_members[]
+  discussion_board_rate_limits discussion_board_rate_limits[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Registered users who have logged in. Members can create discussions,
+/// comment, vote, and follow other users. This table stores authentication
+/// information and user profiles.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the guest record if this member was previously a guest.
+  /// {@link discussion_board_guests.id}.
+  guest_id String?
+  
+  /// Member's email address for authentication. Must be unique.
+  email String
+  
+  /// Hashed password for authentication. Never stored in plain text.
+  password_hash String
+  
+  /// Member's unique username. Must be unique across the system.
+  username String
+  
+  /// Member's real name if provided.
+  name String?
+  
+  /// Member's display nickname.
+  nickname String?
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  guest discussion_board_guests? @relation(fields: [guest_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderators discussion_board_moderators?
+  discussion_board_discussions discussion_board_discussions[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_flags discussion_board_flags[]
+  discussion_board_email_notifications discussion_board_email_notifications[]
+  discussion_board_in_app_notifications discussion_board_in_app_notifications[]
+  discussion_board_data_protection discussion_board_data_protection[]
+  discussion_board_privacy_settings discussion_board_privacy_settings[]
+  discussion_board_rate_limits discussion_board_rate_limits[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+  @@index([guest_id])
+}
+
+/// Users with elevated permissions to manage content and enforce community
+/// guidelines. Moderators can delete inappropriate content, manage reports,
+/// and ban users. This table stores moderator-specific information and
+/// references the member account.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account that has moderator privileges. {@link
+  /// discussion_board_members.id}.
+  member_id String
+  
+  /// JSON string representing moderator permissions and capabilities.
+  permissions String?
+  
+  /// Timestamp when the moderator privileges were granted.
+  created_at DateTime
+  
+  /// Timestamp when the moderator privileges were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id])
+  
+  @@index([created_at])
+  @@index([member_id])
+}

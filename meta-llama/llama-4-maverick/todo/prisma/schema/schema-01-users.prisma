@@ -1,0 +1,31 @@
+/// Table storing user information for authentication and management
+///
+/// @namespace Users
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username chosen by the user for login
+  username String
+  
+  /// Hashed password for secure authentication
+  password_hash String
+  
+  /// Timestamp when the user account was created
+  created_at DateTime
+  
+  /// Timestamp when the user information was last updated
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_todo_items todo_list_todo_items[]
+  
+  @@unique([username])
+  @@index([created_at])
+}

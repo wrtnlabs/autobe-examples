@@ -1,0 +1,312 @@
+/// Aggregate sales data for analytical reporting and business insights. This
+/// table contains pre-computed metrics derived from order and payment data
+/// to support executive dashboards and financial reporting. It is populated
+/// by batch processes and never updated by user actions. All data is
+/// aggregated by day, product category, seller, and region to enable
+/// performance analysis.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sales_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product in shopping_mall_products. {@link
+  /// shopping_mall_products.id}.
+  product_id String
+  
+  /// Reference to the category in shopping_mall_categories. {@link
+  /// shopping_mall_categories.id}.
+  category_id String
+  
+  /// Reference to the seller in shopping_mall_sellers. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Reference to the customer in shopping_mall_customers. {@link
+  /// shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Reference to the region from system configuration. {@link
+  /// shopping_mall_system_configs.id}.
+  region_id String
+  
+  /// The date for which these sales metrics are aggregated, stored in
+  /// Asia/Seoul timezone.
+  date DateTime
+  
+  /// Total sales amount (before fees) for all orders on this date, in USD.
+  total_sales Float
+  
+  /// Total number of completed orders on this date.
+  total_orders Int
+  
+  /// Average order value across all orders on this date, calculated as
+  /// total_sales / total_orders.
+  average_order_value Float
+  
+  /// Total number of individual product units sold across all orders on this
+  /// date.
+  total_items_sold Int
+  
+  /// Total platform revenue (after 8% transaction fee deduction) from sales on
+  /// this date, in USD.
+  total_revenue Float
+  
+  /// Total payment gateway fees paid by the platform for transactions on this
+  /// date, in USD (2.9% + $0.30 per transaction).
+  total_payment_fees Float
+  
+  /// Total refund amount processed for orders on this date, in USD.
+  refund_amount Float
+  
+  /// Rate of refunds as percentage of total sales for this date (refund_amount
+  /// / total_sales * 100).
+  refund_rate Float
+  
+  /// Total number of reviews submitted for products on this date.
+  review_count Int
+  
+  /// Average rating score from all reviews submitted for products on this date.
+  review_rating_average Float
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  region shopping_mall_system_configs @relation(fields: [region_id], references: [id], onDelete: Cascade)
+  
+  @@unique([date, product_id, seller_id, region_id], map: "shopping_mall_sales_analytics_date_product_id_seller_i_2fbeacb8")
+  @@index([date])
+  @@index([category_id, date])
+  @@index([seller_id, date])
+  @@index([region_id, date])
+  @@index([product_id, date])
+  @@index([customer_id, date])
+}
+
+/// Detailed earnings tracking for each seller, calculated from order
+/// transactions and fees. This ledger records all earnings adjustments
+/// including sales, platform fees, payments, refunds, and bonuses. It
+/// enables real-time financial tracking for sellers and is updated by
+/// transactional events as they occur. All amounts are in USD.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_earnings_ledger {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller who earned this income. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Reference to the originating order that generated this earnings entry.
+  /// {@link shopping_mall_orders.id}.
+  order_id String?
+  
+  /// Reference to the refund request if this entry is a refund adjustment.
+  /// {@link shopping_mall_refund_requests.id}.
+  refund_request_id String?
+  
+  /// The date and time when the earning was recorded (in Asia/Seoul timezone).
+  transaction_date DateTime
+  
+  /// Type of earnings transaction: 'SALE', 'PLATFORM_FEE', 'REFUND', 'BONUS',
+  /// 'WITHDRAWAL'.
+  transaction_type String
+  
+  /// The monetary amount in USD for this transaction. Positive for earnings,
+  /// negative for deductions.
+  amount Float
+  
+  /// JSON string containing breakdown of fees applied: e.g., {"platform_fee":
+  /// 5.6, "payment_gateway_fee": 1.2}
+  fee_breakdown String?
+  
+  /// The seller's running balance in USD after this transaction is applied.
+  balance_after_transaction Float
+  
+  /// Human-readable description of the transaction for audit and
+  /// reconciliation (e.g., 'Sale of Product XYZ - Order ORD-20250101-00123').
+  description String
+  
+  /// Status of this earnings entry: 'PENDING', 'APPROVED', 'REJECTED',
+  /// 'SUPERSEDED'.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  refundRequest shopping_mall_refund_requests? @relation(fields: [refund_request_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payouts_of_earnings_ledger_start_id shopping_mall_payouts[] @relation("shopping_mall_payouts_of_earnings_ledger_start_id")
+  shopping_mall_payouts_of_earnings_ledger_end_id shopping_mall_payouts[] @relation("shopping_mall_payouts_of_earnings_ledger_end_id")
+  
+  @@unique([order_id])
+  @@unique([refund_request_id])
+  @@index([seller_id, transaction_date])
+  @@index([transaction_date])
+  @@index([transaction_type, seller_id])
+  @@index([status, seller_id])
+  @@index([balance_after_transaction])
+}
+
+/// Record of scheduled and processed payouts to sellers. Tracks all payouts
+/// made by the platform to sellers' bank accounts. Payouts are calculated
+/// and executed weekly, aggregating earnings from the previous week and
+/// applying any business rules such as minimum thresholds or pending
+/// disputes.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payouts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller receiving this payout. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Reference to the earliest earnings ledger entry included in this payout
+  /// period. {@link shopping_mall_earnings_ledger.id}.
+  earnings_ledger_start_id String
+  
+  /// Reference to the latest earnings ledger entry included in this payout
+  /// period. {@link shopping_mall_earnings_ledger.id}.
+  earnings_ledger_end_id String
+  
+  /// The start of the weekly payout cycle for which this payout was generated,
+  /// stored in Asia/Seoul timezone.
+  payout_cycle DateTime
+  
+  /// The date this payout was processed and transferred to the seller's bank
+  /// account.
+  payout_date DateTime?
+  
+  /// Total net payout amount to seller after all deductions (platform fee,
+  /// pending disputes), in USD.
+  amount Float
+  
+  /// Gross total earnings from the accounting period before any deductions, in
+  /// USD.
+  total_earnings Float
+  
+  /// Total platform fee deducted from total earnings during this cycle (15% of
+  /// net revenue), in USD.
+  platform_fee_total Float
+  
+  /// Amount withheld due to open disputes or pending refund requests, in USD.
+  dispute_hold_amount Float
+  
+  /// Current status of payout: 'INITIATED', 'PROCESSING', 'COMPLETED',
+  /// 'FAILED', 'CANCELLED'.
+  transaction_status String
+  
+  /// Unique identifier from the bank or payment processor for the transaction,
+  /// if available.
+  bank_transaction_id String?
+  
+  /// The payment method used for this payout (e.g., 'ACH', 'Wire Transfer',
+  /// 'PayPal').
+  payment_method String
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  earningsLedgerStart shopping_mall_earnings_ledger @relation("shopping_mall_payouts_of_earnings_ledger_start_id", fields: [earnings_ledger_start_id], references: [id], onDelete: Cascade)
+  earningsLedgerEnd shopping_mall_earnings_ledger @relation("shopping_mall_payouts_of_earnings_ledger_end_id", fields: [earnings_ledger_end_id], references: [id], onDelete: Cascade)
+  
+  @@index([earnings_ledger_start_id])
+  @@index([earnings_ledger_end_id])
+  
+  @@unique([payout_cycle, seller_id])
+  @@unique([bank_transaction_id])
+  @@index([seller_id, payout_cycle])
+  @@index([payout_date])
+  @@index([transaction_status, seller_id])
+  @@index([payout_cycle])
+}
+
+/// High-level aggregated summaries to support executive dashboards and
+/// monthly reports. This table contains key performance indicators (KPIs)
+/// calculated daily from the sales analytics and earnings ledger tables. It
+/// enables fast dashboard loading by avoiding complex joins and aggregations
+/// directly on transactional data.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reporting_summaries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The date for which these summary metrics are calculated and reported, in
+  /// Asia/Seoul timezone.
+  reported_date DateTime
+  
+  /// Total number of active users (customers + sellers) with logins in the
+  /// last 7 days on this date.
+  total_active_users Int
+  
+  /// Total number of completed orders processed as of this date.
+  total_transactions Int
+  
+  /// Total value of all completed orders before any fees or refunds, in USD.
+  gross_merchandise_value Float
+  
+  /// Total platform revenue after transaction fee (8%) deduction, in USD.
+  net_revenue Float
+  
+  /// Total number of approved sellers on the platform as of this date.
+  seller_count Int
+  
+  /// Total number of products listed across all sellers as of this date.
+  product_count Int
+  
+  /// Average order value across all transactions, calculated daily as
+  /// gross_merchandise_value / total_transactions.
+  avg_order_value Float
+  
+  /// Percentage of transactions refunded as of this date (calculated from
+  /// refund amount / gross_merchandise_value).
+  refund_rate Float
+  
+  /// Percentage of completed orders that have received a verified review as of
+  /// this date.
+  customer_review_rate Float
+  
+  /// Percentage of sellers who made at least one sale in the past 60 days,
+  /// calculated daily.
+  seller_retention_rate Float
+  
+  /// Percentage of active sellers subscribed to Premium Store tier as of this
+  /// date.
+  premium_seller_percentage Float
+  
+  /// Total number of reported fraud incidents involving users or sellers as of
+  /// this date.
+  fraud_report_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([reported_date])
+}

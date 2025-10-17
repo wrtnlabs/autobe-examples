@@ -1,0 +1,65 @@
+/// Core economic and political discussion posts, each associated with a
+/// topic and subject to moderation lifecycle.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Topic that this post belongs to. {@link economic_board_topics.id}.
+  economic_board_topics_id String
+  
+  /// Timestamp when the post was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the post was last edited.
+  updated_at DateTime
+  
+  /// Moderation status of the post: 'pending', 'published', 'rejected', or
+  /// 'deleted'.
+  status String
+  
+  /// Brief title or subject line of the post (max 120 characters).
+  subject String
+  
+  /// Full text content of the post (max 5,000 characters).
+  content String
+  
+  /// Number of direct replies to this post.
+  reply_count Int
+  
+  /// Whether this post has been edited after initial submission.
+  edited Boolean
+  
+  /// Timestamp of last edit. Null if never edited.
+  edited_at DateTime?
+  
+  /// System-generated anonymous identifier derived from IP and timestamp for
+  /// guest posts.
+  author_hash String?
+  
+  /// ID of admin who last modified status (approve/reject/delete).
+  admin_id String?
+  
+  /// Reason provided by admin for rejection or deletion. Null if not
+  /// rejected/deleted.
+  moderation_reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  topic economic_board_topics @relation(fields: [economic_board_topics_id], references: [id], onDelete: Cascade)
+  
+  economic_board_replies economic_board_replies[]
+  
+  @@index([economic_board_topics_id])
+  
+  @@unique([admin_id, created_at])
+  @@unique([author_hash, created_at])
+  @@index([status, economic_board_topics_id])
+  @@index([created_at])
+}

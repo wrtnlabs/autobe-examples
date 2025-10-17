@@ -1,0 +1,45 @@
+/// Tracks reported content within the community platform for moderation and
+/// review. This table captures details about reported posts, comments, and
+/// other content, including the reporter, the content being reported, and
+/// the reason for the report. It serves as the central repository for
+/// content moderation activities and provides the necessary information for
+/// moderators to take appropriate actions.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who reported the content. {@link reddit_like_community_member.id}
+  reporter_id String
+  
+  /// The content being reported. {@link reddit_like_community_posts.id} or
+  /// {@link reddit_like_community_comments.id}
+  content_id String
+  
+  /// The reason provided by the reporter for reporting the content.
+  report_reason String
+  
+  /// The current status of the report (e.g., pending, reviewed, resolved).
+  report_status String
+  
+  /// The timestamp when the report was created.
+  created_at DateTime
+  
+  /// The timestamp when the report was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reporter reddit_like_community_member @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  content reddit_like_community_posts @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  
+  @@index([reporter_id])
+  @@index([content_id])
+  @@index([report_status])
+}

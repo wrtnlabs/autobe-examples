@@ -1,0 +1,89 @@
+/// Record of votes cast by members on posts within communities. Each vote is
+/// linked to the member who cast it and the specific post voted upon.
+/// Ensures one active vote per member per post, supporting upvotes and
+/// downvotes. Includes temporal fields for creation, update, and soft
+/// deletion to allow vote tracking and audit trailing.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link reddit_community_members.id}.
+  member_id String
+  
+  /// Voted post's {@link reddit_community_posts.id}.
+  post_id String
+  
+  /// Value of the vote: +1 for upvote, -1 for downvote, 0 for vote removed.
+  vote_value Int
+  
+  /// Timestamp when the vote was created.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of the vote.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@index([post_id])
+  
+  @@unique([member_id, post_id])
+  @@index([created_at])
+}
+
+/// Record of votes cast by members on comments within communities. Each vote
+/// is linked to the member who cast it and the specific comment voted upon.
+/// Ensures one active vote per member per comment, supporting upvotes and
+/// downvotes. Temporal fields for creation, update, and soft deletion ensure
+/// vote tracking and audit trailing capabilities.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link reddit_community_members.id}.
+  member_id String
+  
+  /// Voted comment's {@link reddit_community_comments.id}.
+  comment_id String
+  
+  /// Value of the vote: +1 for upvote, -1 for downvote, 0 for vote removed.
+  vote_value Int
+  
+  /// Timestamp when the vote was created.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of the vote.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([comment_id])
+  
+  @@unique([member_id, comment_id])
+  @@index([created_at])
+}

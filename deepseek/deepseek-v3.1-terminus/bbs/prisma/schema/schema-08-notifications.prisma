@@ -1,0 +1,264 @@
+/// Stores reusable notification templates for different notification types
+/// and scenarios. Templates define the message format, content structure,
+/// and delivery channels for various system notifications including post
+/// replies, comment mentions, moderation actions, and system announcements.
+/// Templates support localization and personalization tokens for dynamic
+/// content insertion.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_notification_templates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier name for the notification template (e.g.,
+  /// 'post_reply_notification', 'comment_mention_alert').
+  template_name String
+  
+  /// Category of notification template (e.g., 'email', 'push', 'in_app',
+  /// 'system').
+  template_type String
+  
+  /// Template for notification subject line with variable placeholders.
+  subject_template String?
+  
+  /// Template for notification body content with variable placeholders.
+  content_template String
+  
+  /// JSON configuration for template variables, formatting rules, and delivery
+  /// settings.
+  metadata String?
+  
+  /// Template status indicating if it's active, inactive, or archived.
+  status String
+  
+  /// Timestamp when the template was created.
+  created_at DateTime
+  
+  /// Timestamp when the template was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the template was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_user_notifications discussion_board_user_notifications[]
+  
+  @@unique([template_name])
+  @@index([template_type, status], map: "discussion_board_notification_templates_template_type__73d6c240")
+  @@index([created_at])
+}
+
+/// Core table for managing user notifications and alerts. Stores individual
+/// notification instances created for users based on system events, user
+/// interactions, and content updates. Supports multiple notification
+/// channels and tracks user engagement with notifications.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user who receives the notification. {@link
+  /// discussion_board_members.id}.
+  user_id String
+  
+  /// Reference to the notification template used. {@link
+  /// discussion_board_notification_templates.id}.
+  template_id String
+  
+  /// Optional reference to related post content. {@link
+  /// discussion_board_posts.id}.
+  related_post_id String?
+  
+  /// Optional reference to related comment content. {@link
+  /// discussion_board_comments.id}.
+  related_comment_id String?
+  
+  /// Type of notification (e.g., 'reply', 'mention', 'moderation', 'system').
+  notification_type String
+  
+  /// Notification title with resolved template variables.
+  title String
+  
+  /// Notification content with resolved template variables.
+  content String
+  
+  /// Current status of the notification (pending, sent, read, dismissed).
+  status String
+  
+  /// Priority level for notification delivery (low, normal, high, urgent).
+  priority String
+  
+  /// Timestamp when the notification should be delivered.
+  scheduled_at DateTime?
+  
+  /// Timestamp when the notification expires and should be auto-dismissed.
+  expires_at DateTime?
+  
+  /// Additional JSON data for notification context and processing.
+  metadata String?
+  
+  /// Timestamp when the notification was created.
+  created_at DateTime
+  
+  /// Timestamp when the notification was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the notification was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  template discussion_board_notification_templates @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  relatedPost discussion_board_posts? @relation(fields: [related_post_id], references: [id], onDelete: Cascade)
+  relatedComment discussion_board_comments? @relation(fields: [related_comment_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_notification_deliveries discussion_board_notification_deliveries[]
+  
+  @@index([template_id])
+  @@index([related_post_id])
+  @@index([related_comment_id])
+  
+  @@index([user_id, status])
+  @@index([notification_type, created_at], map: "discussion_board_user_notifications_notification_type__4224a142")
+  @@index([scheduled_at])
+  @@index([expires_at])
+}
+
+/// Tracks delivery attempts and status for notifications across different
+/// channels. Provides audit trail for notification delivery performance,
+/// failure analysis, and delivery confirmation. Historical tracking of all
+/// delivery attempts for compliance and debugging purposes.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_notification_deliveries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the notification being delivered. {@link
+  /// discussion_board_user_notifications.id}.
+  notification_id String
+  
+  /// Channel used for delivery attempt (email, push, in_app, sms).
+  delivery_channel String
+  
+  /// Status of the delivery attempt (pending, sent, delivered, failed,
+  /// bounced).
+  delivery_status String
+  
+  /// Number of delivery attempts made for this notification.
+  attempt_count Int
+  
+  /// Timestamp of the most recent delivery attempt.
+  last_attempt_at DateTime?
+  
+  /// Timestamp when delivery was successfully confirmed.
+  delivered_at DateTime?
+  
+  /// Reason for delivery failure if applicable.
+  failure_reason String?
+  
+  /// Additional delivery metadata and performance metrics.
+  metadata String?
+  
+  /// Timestamp when the delivery record was created.
+  created_at DateTime
+  
+  /// Timestamp when the delivery record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  notification discussion_board_user_notifications @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+  
+  @@index([notification_id, delivery_channel], map: "discussion_board_notification_deliveries_notification__79323314")
+  @@index([delivery_status, created_at], map: "discussion_board_notification_deliveries_delivery_stat_6cd6dfdd")
+  @@index([last_attempt_at])
+}
+
+/// Stores user preferences for notification settings and delivery options.
+/// Controls when and how users receive notifications based on their personal
+/// preferences, notification frequency, and channel preferences. Supports
+/// granular control over different notification types.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user whose preferences are stored. {@link
+  /// discussion_board_members.id}.
+  user_id String
+  
+  /// Whether the user wants to receive email notifications.
+  email_notifications Boolean
+  
+  /// Whether the user wants to receive push notifications.
+  push_notifications Boolean
+  
+  /// Whether the user wants to receive in-app notifications.
+  in_app_notifications Boolean
+  
+  /// Whether to receive notifications for post replies.
+  receive_reply_notifications Boolean
+  
+  /// Whether to receive notifications for mentions in comments.
+  receive_mention_notifications Boolean
+  
+  /// Whether to receive notifications for moderation actions.
+  receive_moderation_notifications Boolean
+  
+  /// Whether to receive system announcements and updates.
+  receive_system_notifications Boolean
+  
+  /// Preferred frequency for notifications (immediate, daily_digest,
+  /// weekly_summary).
+  notification_frequency String
+  
+  /// Start time for quiet hours when notifications are suppressed (HH:MM
+  /// format).
+  quiet_hours_start String?
+  
+  /// End time for quiet hours when notifications are suppressed (HH:MM format).
+  quiet_hours_end String?
+  
+  /// Indicates who last updated the preferences (user, system, admin).
+  last_updated_by String
+  
+  /// Timestamp when the preferences were created.
+  created_at DateTime
+  
+  /// Timestamp when the preferences were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  
+  @@index([user_id])
+  @@index([notification_frequency])
+}

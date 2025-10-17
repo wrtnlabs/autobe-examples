@@ -1,0 +1,286 @@
+/// Stores platform-wide product categories that organize the shopping mall's
+/// inventory structure with hierarchical relationships. These categories
+/// provide the organizational framework for products and enhance product
+/// discovery.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional parent category for hierarchical organization. {@link
+  /// shopping_mall_categories.id}.
+  parent_id String?
+  
+  /// Administrator who created this category. {@link
+  /// shopping_mall_administrators.id}.
+  creator_admin_id String?
+  
+  /// Category name that identifies this product category in the shopping mall.
+  name String
+  
+  /// Detailed description explaining the purpose and scope of this product
+  /// category.
+  description String?
+  
+  /// URL-friendly version of the category name used in product navigation.
+  slug String
+  
+  /// Integer value determining the display order of this category in
+  /// navigation.
+  display_order Int
+  
+  /// Flag indicating whether this category is currently visible to customers.
+  is_active Boolean
+  
+  /// Timestamp when this category was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this category was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  creator shopping_mall_administrators? @relation(fields: [creator_admin_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_category_hierarchy_of_ancestor_id shopping_mall_category_hierarchy[] @relation("shopping_mall_category_hierarchy_of_ancestor_id")
+  shopping_mall_category_hierarchy_of_descendant_id shopping_mall_category_hierarchy[] @relation("shopping_mall_category_hierarchy_of_descendant_id")
+  
+  @@index([creator_admin_id])
+  
+  @@unique([slug])
+  @@unique([name])
+  @@index([is_active, display_order])
+  @@index([parent_id])
+}
+
+/// Represents the hierarchical relationships between shopping mall
+/// categories, enabling multi-level category structures. This table supports
+/// category nesting and tree-like organizational patterns.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_category_hierarchy {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The ancestor category in the hierarchy relationship. {@link
+  /// shopping_mall_categories.id}.
+  ancestor_id String
+  
+  /// The descendant category in the hierarchy relationship. {@link
+  /// shopping_mall_categories.id}.
+  descendant_id String
+  
+  /// Administrator who established this hierarchical relationship. {@link
+  /// shopping_mall_administrators.id}.
+  relation_creator_id String?
+  
+  /// The level of separation between ancestor and descendant categories in the
+  /// hierarchy.
+  depth Int
+  
+  /// Timestamp when this hierarchical relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when this hierarchical relationship was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  ancestor shopping_mall_categories @relation("shopping_mall_category_hierarchy_of_ancestor_id", fields: [ancestor_id], references: [id], onDelete: Cascade)
+  descendant shopping_mall_categories @relation("shopping_mall_category_hierarchy_of_descendant_id", fields: [descendant_id], references: [id], onDelete: Cascade)
+  creator shopping_mall_administrators? @relation(fields: [relation_creator_id], references: [id], onDelete: Cascade)
+  
+  @@index([relation_creator_id])
+  
+  @@unique([ancestor_id, descendant_id])
+  @@index([ancestor_id])
+  @@index([descendant_id])
+  @@index([depth])
+}
+
+/// Stores configurable platform-wide settings for the shopping mall
+/// e-commerce system. These settings control global platform behavior,
+/// policies, and operational parameters.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_platform_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who last modified these platform settings. {@link
+  /// shopping_mall_administrators.id}.
+  updated_by_admin_id String?
+  
+  /// Unique key identifying the specific platform setting (e.g., 'site_name',
+  /// 'currency', 'tax_rate').
+  setting_key String
+  
+  /// Current value of the platform setting, stored as text to accommodate
+  /// various data types.
+  setting_value String
+  
+  /// Data type of the setting value (string, integer, decimal, boolean, json).
+  setting_type String
+  
+  /// Grouping category for the setting (e.g., 'general', 'payment',
+  /// 'shipping', 'display').
+  category String
+  
+  /// Description explaining the purpose and impact of this setting.
+  description String
+  
+  /// Flag indicating whether this setting value is encrypted at rest.
+  is_encrypted Boolean
+  
+  /// Current status of the setting (active, inactive, deprecated).
+  status String
+  
+  /// Timestamp when this setting was first created.
+  created_at DateTime
+  
+  /// Timestamp when this setting was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  updatedBy shopping_mall_administrators? @relation(fields: [updated_by_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([updated_by_admin_id])
+  
+  @@unique([setting_key])
+  @@index([category, status])
+  @@index([setting_type])
+}
+
+/// Records popular and frequently searched terms within the shopping mall
+/// platform, supporting search optimization, autocomplete features, and
+/// trend analysis.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_search_terms {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator associated with analyzing search trends. {@link
+  /// shopping_mall_administrators.id}.
+  trend_analyzer_admin_id String?
+  
+  /// The actual search query entered by users in the shopping mall platform.
+  search_term String
+  
+  /// Number of times this search term has been used by platform users.
+  search_count Int
+  
+  /// Timestamp when this search term was most recently used.
+  last_searched_at DateTime
+  
+  /// Timestamp when this search term was first recorded by the system.
+  first_searched_at DateTime
+  
+  /// Flag indicating whether this search term is blocked from results.
+  is_blocked Boolean
+  
+  /// Timestamp when this search term was first recorded in the system.
+  created_at DateTime
+  
+  /// Timestamp when this search term record was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  trendAnalyst shopping_mall_administrators? @relation(fields: [trend_analyzer_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([trend_analyzer_admin_id])
+  
+  @@unique([search_term])
+  @@index([search_count])
+  @@index([last_searched_at])
+  @@index([is_blocked])
+}
+
+/// Contains the official policies and terms of service that govern the
+/// shopping mall platform, providing legal compliance and user guidelines.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_site_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who approved this policy version. {@link
+  /// shopping_mall_administrators.id}.
+  approved_by_admin_id String?
+  
+  /// Administrator who made the last update to this policy. {@link
+  /// shopping_mall_administrators.id}.
+  last_updated_by_admin_id String?
+  
+  /// Name of the site policy (e.g., 'Privacy Policy', 'Terms of Service').
+  policy_name String
+  
+  /// Unique key identifying the policy type for system references.
+  policy_key String
+  
+  /// Full text content of the policy document in HTML format.
+  content String
+  
+  /// Semantic version number for this policy iteration.
+  version String
+  
+  /// Date when this policy version becomes effective.
+  effective_date DateTime
+  
+  /// Current status of the policy (draft, approved, deprecated).
+  status String
+  
+  /// Flag indicating if users must explicitly consent to this policy.
+  requires_user_consent Boolean
+  
+  /// Timestamp when this policy was created.
+  created_at DateTime
+  
+  /// Timestamp when this policy was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this policy was soft-deleted (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  approvedBy shopping_mall_administrators? @relation("shopping_mall_site_policies_of_approved_by_admin_id", fields: [approved_by_admin_id], references: [id], onDelete: Cascade)
+  lastUpdatedBy shopping_mall_administrators? @relation("shopping_mall_site_policies_of_last_updated_by_admin_id", fields: [last_updated_by_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([approved_by_admin_id])
+  @@index([last_updated_by_admin_id])
+  
+  @@unique([policy_key, version])
+  @@index([policy_key, status, effective_date], map: "shopping_mall_site_policies_policy_key_status_effectiv_6fe4d145")
+  @@index([requires_user_consent])
+}

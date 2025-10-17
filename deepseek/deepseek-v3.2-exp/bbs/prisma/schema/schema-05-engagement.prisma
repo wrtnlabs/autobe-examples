@@ -1,0 +1,247 @@
+/// Tracks user votes on discussion content (topics and comments). Supports
+/// upvotes and downvotes to measure content quality and user engagement.
+/// Each vote represents a user's opinion on specific content items. {@link
+/// discussion_board_members.id} {@link discussion_board_topics.id} {@link
+/// discussion_board_comments.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who cast the vote. {@link discussion_board_members.id}
+  member_id String
+  
+  /// Topic being voted on, if applicable. {@link discussion_board_topics.id}
+  topic_id String?
+  
+  /// Comment being voted on, if applicable. {@link
+  /// discussion_board_comments.id}
+  comment_id String?
+  
+  /// Type of vote cast by the user. 'upvote' increases content score,
+  /// 'downvote' decreases content score.
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  topic discussion_board_topics? @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([topic_id])
+  @@index([comment_id])
+  
+  @@unique([member_id, topic_id])
+  @@unique([member_id, comment_id])
+  @@index([vote_type])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Tracks user following relationships. Users can follow other users to see
+/// their content in personalized feeds and receive notifications about their
+/// activity. {@link discussion_board_members.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_follows {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who is following another user. {@link discussion_board_members.id}
+  follower_id String
+  
+  /// Member who is being followed. {@link discussion_board_members.id}
+  following_id String
+  
+  /// Timestamp when the follow relationship was established.
+  created_at DateTime
+  
+  /// Timestamp when the follow relationship was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the follow relationship was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  follower discussion_board_members @relation("discussion_board_user_follows_of_follower_id", fields: [follower_id], references: [id], onDelete: Cascade)
+  following discussion_board_members @relation("discussion_board_user_follows_of_following_id", fields: [following_id], references: [id], onDelete: Cascade)
+  
+  @@index([following_id])
+  
+  @@unique([follower_id, following_id])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Tracks user bookmarks for saving interesting content. Users can bookmark
+/// topics and comments for later reference, creating a personalized
+/// collection of saved content. {@link discussion_board_members.id} {@link
+/// discussion_board_topics.id} {@link discussion_board_comments.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_bookmarks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who created the bookmark. {@link discussion_board_members.id}
+  member_id String
+  
+  /// Bookmarked topic, if applicable. {@link discussion_board_topics.id}
+  topic_id String?
+  
+  /// Bookmarked comment, if applicable. {@link discussion_board_comments.id}
+  comment_id String?
+  
+  /// Optional user notes about the bookmark for personal reference.
+  notes String?
+  
+  /// Timestamp when the bookmark was created.
+  created_at DateTime
+  
+  /// Timestamp when the bookmark was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the bookmark was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  topic discussion_board_topics? @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([topic_id])
+  @@index([comment_id])
+  
+  @@unique([member_id, topic_id])
+  @@unique([member_id, comment_id])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Tracks user reputation scores with detailed breakdown. Reputation is
+/// earned through quality contributions, upvotes, and community engagement.
+/// Scores influence user privileges and content visibility. {@link
+/// discussion_board_members.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_reputation_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member whose reputation score is being tracked. {@link
+  /// discussion_board_members.id}
+  member_id String
+  
+  /// Total reputation score accumulated by the user from all sources.
+  total_score Int
+  
+  /// Reputation earned from creating high-quality content (topics and
+  /// comments).
+  contribution_score Int
+  
+  /// Reputation earned from community engagement (voting, following, etc.).
+  engagement_score Int
+  
+  /// Reputation earned from positive moderation actions and helpful reports.
+  moderation_score Int
+  
+  /// Timestamp when the reputation record was created.
+  created_at DateTime
+  
+  /// Timestamp when the reputation score was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the reputation record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id])
+  
+  @@index([total_score])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Tracks user achievements and badges earned through platform
+/// participation. Achievements recognize user milestones, quality
+/// contributions, and community engagement. {@link
+/// discussion_board_members.id}
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_achievements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who earned the achievement. {@link discussion_board_members.id}
+  member_id String
+  
+  /// Type of achievement earned by the user (e.g., 'first_post',
+  /// 'helpful_contributor', 'community_leader').
+  achievement_type String
+  
+  /// Level or tier of the achievement (e.g., 'bronze', 'silver', 'gold').
+  achievement_level String
+  
+  /// Timestamp when the achievement was earned by the user.
+  earned_at DateTime
+  
+  /// Timestamp when the achievement record was created.
+  created_at DateTime
+  
+  /// Timestamp when the achievement record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the achievement record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id, achievement_type], map: "discussion_board_user_achievements_member_id_achieveme_94a958c0")
+  @@index([achievement_type])
+  @@index([achievement_level])
+  @@index([earned_at])
+  @@index([created_at])
+  @@index([deleted_at])
+}

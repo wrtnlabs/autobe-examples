@@ -1,0 +1,341 @@
+/// Discussion categories that organize posts by topic area including fiscal
+/// policy, international trade, and regulatory developments.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who created this category {@link
+  /// political_discussion_board_admin.id}
+  created_by_admin_id String
+  
+  /// Administrator who last updated this category {@link
+  /// political_discussion_board_admin.id}
+  updated_by_admin_id String?
+  
+  /// Category name describing the topic area for discussions
+  name String
+  
+  /// Detailed explanation of what discussions belong in this category
+  description String
+  
+  /// Hex color code for visual distinction in the interface
+  color_code String?
+  
+  /// Numerical order for displaying categories in menus
+  sort_order Int
+  
+  /// Whether this category is available for new posts
+  is_active Boolean
+  
+  /// Category creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for category removal
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  createdByAdmin political_discussion_board_admin @relation("political_discussion_board_categories_of_created_by_admin_id", fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  updatedByAdmin political_discussion_board_admin? @relation("political_discussion_board_categories_of_updated_by_admin_id", fields: [updated_by_admin_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_posts political_discussion_board_posts[]
+  
+  @@unique([name])
+  @@index([sort_order])
+  @@index([is_active])
+  @@index([created_at])
+  @@index([created_by_admin_id])
+  @@index([updated_by_admin_id])
+}
+
+/// Tags for flexible topic classification that complement categories. Tags
+/// allow granular topic labeling and cross-categorization of political and
+/// economic discussions, enabling users to find content by specific issues,
+/// people, or themes.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Tag name for topic classification like "inflation" or "healthcare"
+  name String
+  
+  /// Explanation of what content this tag should be applied to
+  description String
+  
+  /// Hex color code for visual tag styling
+  color_code String?
+  
+  /// Number of posts currently using this tag
+  usage_count Int
+  
+  /// Whether new posts can use this tag
+  is_active Boolean
+  
+  /// Tag creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  political_discussion_board_post_tags political_discussion_board_post_tags[]
+  
+  @@unique([name])
+  @@index([is_active])
+  @@index([usage_count])
+  @@index([created_at])
+}
+
+/// Main discussion posts that form the core content of the platform. Posts
+/// represent individual topics of political and economic discourse,
+/// containing user-generated content and serving as the foundation for
+/// threaded reply conversations. Users create posts to start discussions on
+/// specific policies, issues, or questions.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's {@link political_discussion_board_categories.id}
+  political_discussion_board_category_id String
+  
+  /// Member who created this post {@link political_discussion_board_member.id}
+  political_discussion_board_member_id String
+  
+  /// Post title that appears in discussion listings and search results
+  title String
+  
+  /// Main post content with full discussion starter text and supporting
+  /// arguments
+  content String
+  
+  /// Post status: draft, published, locked, or archived
+  status String
+  
+  /// Number of times this post has been viewed by community members
+  view_count Int
+  
+  /// Whether this post is pinned to the top of category listings
+  is_pinned Boolean
+  
+  /// Whether new replies are allowed on this post
+  allow_replies Boolean
+  
+  /// Post creation timestamp for auditing and sorting
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for post removal while preserving audit trail
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category political_discussion_board_categories @relation(fields: [political_discussion_board_category_id], references: [id], onDelete: Cascade)
+  author political_discussion_board_member @relation(fields: [political_discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_audit_log political_discussion_board_audit_log[]
+  political_discussion_board_replies political_discussion_board_replies[]
+  political_discussion_board_post_tags political_discussion_board_post_tags[]
+  political_discussion_board_content_snapshots political_discussion_board_content_snapshots[]
+  political_discussion_board_votes political_discussion_board_votes[]
+  political_discussion_board_notifications political_discussion_board_notifications[]
+  political_discussion_board_bookmarks political_discussion_board_bookmarks[]
+  political_discussion_board_attachments political_discussion_board_attachments[]
+  
+  @@index([political_discussion_board_category_id, created_at], map: "political_discussion_board_posts_political_discussion__ae7f5125")
+  @@index([political_discussion_board_member_id, created_at], map: "political_discussion_board_posts_political_discussion__45932c4a")
+  @@index([status])
+  @@index([created_at])
+  @@index([is_pinned])
+  @@index([view_count])
+}
+
+/// Threaded replies that form discussion conversations under posts. Replies
+/// enable nested conversations about political and economic topics, allowing
+/// users to respond to specific points, ask questions, and engage in
+/// meaningful dialogue while maintaining conversation thread structure.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's {@link political_discussion_board_posts.id}
+  political_discussion_board_post_id String
+  
+  /// Member who created this reply {@link political_discussion_board_member.id}
+  political_discussion_board_member_id String
+  
+  /// Target model's {@link political_discussion_board_replies.id} for reply
+  /// threading
+  parent_reply_id String?
+  
+  /// Reply content that responds to the post or parent reply
+  content String
+  
+  /// Thread depth level (0 for direct post replies, max 4)
+  depth_level Int
+  
+  /// Display order within the same parent reply level
+  sort_order Int
+  
+  /// Whether this reply is marked as the accepted or most helpful answer
+  is_accepted Boolean
+  
+  /// Reply creation timestamp for conversation ordering
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for reply removal while preserving conversation
+  /// structure
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post political_discussion_board_posts @relation(fields: [political_discussion_board_post_id], references: [id], onDelete: Cascade)
+  author political_discussion_board_member @relation(fields: [political_discussion_board_member_id], references: [id], onDelete: Cascade)
+  parentReply political_discussion_board_replies? @relation("recursive", fields: [parent_reply_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_audit_log political_discussion_board_audit_log[]
+  recursive political_discussion_board_replies[] @relation("recursive")
+  political_discussion_board_content_snapshots political_discussion_board_content_snapshots[]
+  political_discussion_board_votes political_discussion_board_votes[]
+  political_discussion_board_notifications political_discussion_board_notifications[]
+  political_discussion_board_bookmarks political_discussion_board_bookmarks[]
+  political_discussion_board_attachments political_discussion_board_attachments[]
+  
+  @@unique([political_discussion_board_post_id, parent_reply_id, sort_order], map: "political_discussion_board_replies_political_discussio_9b4d710c")
+  @@index([political_discussion_board_post_id, created_at], map: "political_discussion_board_replies_political_discussio_1556fe65")
+  @@index([political_discussion_board_member_id, created_at], map: "political_discussion_board_replies_political_discussio_cb752c12")
+  @@index([parent_reply_id])
+  @@index([depth_level])
+  @@index([is_accepted])
+  @@index([created_at])
+}
+
+/// Junction table enabling many-to-many relationships between posts and
+/// tags. This allows flexible topic classification where posts can have
+/// multiple tags and tags can be applied to multiple posts, providing rich
+/// content discovery and filtering capabilities for political and economic
+/// discussions.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_post_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's {@link political_discussion_board_posts.id}
+  political_discussion_board_post_id String
+  
+  /// Target model's {@link political_discussion_board_tags.id}
+  political_discussion_board_tag_id String
+  
+  /// When this tag assignment was created
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post political_discussion_board_posts @relation(fields: [political_discussion_board_post_id], references: [id], onDelete: Cascade)
+  tag political_discussion_board_tags @relation(fields: [political_discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  @@unique([political_discussion_board_post_id, political_discussion_board_tag_id], map: "political_discussion_board_post_tags_political_discuss_9699b46e")
+  @@index([political_discussion_board_tag_id], map: "political_discussion_board_post_tags_political_discuss_6aae5ba9")
+  @@index([created_at])
+}
+
+/// Historical snapshots capturing content states over time for audit trails
+/// and content recovery. Snapshots preserve the original state of posts and
+/// replies when edited, providing immutable historical records essential for
+/// content moderation and transparency in political and economic
+/// discussions.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_content_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's {@link political_discussion_board_posts.id} if this is a
+  /// post snapshot
+  political_discussion_board_post_id String?
+  
+  /// Target model's {@link political_discussion_board_replies.id} if this is a
+  /// reply snapshot
+  political_discussion_board_reply_id String?
+  
+  /// Whether this is a post or reply snapshot
+  content_type String
+  
+  /// The title content at time of snapshot
+  original_title String?
+  
+  /// The content body at time of snapshot
+  original_content String
+  
+  /// Reason for edit or additional context
+  author_notes String?
+  
+  /// Sequential version number for this content
+  version_number Int
+  
+  /// When this snapshot was created
+  snapshot_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post political_discussion_board_posts? @relation(fields: [political_discussion_board_post_id], references: [id], onDelete: Cascade)
+  reply political_discussion_board_replies? @relation(fields: [political_discussion_board_reply_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_attachments political_discussion_board_attachments[]
+  
+  @@unique([political_discussion_board_post_id, version_number], map: "political_discussion_board_content_snapshots_political_dbbe2c17")
+  @@unique([political_discussion_board_reply_id, version_number], map: "political_discussion_board_content_snapshots_political_15fbb0eb")
+  @@index([content_type])
+  @@index([version_number])
+  @@index([snapshot_at])
+}

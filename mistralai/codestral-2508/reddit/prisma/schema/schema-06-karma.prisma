@@ -1,0 +1,35 @@
+/// Tracks user karma scores across the platform. This model represents the
+/// core business entity for user reputation management, allowing users to
+/// view and understand their standing within communities. It serves as a
+/// reference point for other tables and requires comprehensive API
+/// operations for user interaction.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member's {@link reddit_like_community_member.id}.
+  reddit_like_community_member_id String
+  
+  /// Current karma score of the user.
+  score Int
+  
+  /// Timestamp when the karma record was created.
+  created_at DateTime
+  
+  /// Timestamp when the karma record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_like_community_member @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_community_member_id])
+  @@index([score])
+}

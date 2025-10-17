@@ -1,0 +1,124 @@
+/// Stores data protection settings for users in the discussion board.
+/// Contains security-related preferences and configurations to protect user
+/// data. References {@link discussion_board_members.id} for user-specific
+/// settings.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_data_protection {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns these data protection settings. {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Whether to encrypt communications with this user.
+  encrypt_communications Boolean
+  
+  /// Number of days to retain user data before deletion.
+  data_retention_days Int
+  
+  /// Whether user allows data sharing with third parties.
+  share_data_with_third_parties Boolean
+  
+  /// When this data protection setting was created.
+  created_at DateTime
+  
+  /// When this data protection setting was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_member_id])
+}
+
+/// Stores privacy settings for users in the discussion board. Contains user
+/// preferences for profile visibility and content sharing. References {@link
+/// discussion_board_members.id} for user-specific settings.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_privacy_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns these privacy settings. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Whether user profile is visible to public.
+  profile_visible_to_public Boolean
+  
+  /// Whether to show email address to followers.
+  show_email_to_followers Boolean
+  
+  /// Whether to allow mentions by other users.
+  allow_mentions Boolean
+  
+  /// When this privacy setting was created.
+  created_at DateTime
+  
+  /// When this privacy setting was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_member_id], map: "discussion_board_privacy_settings_discussion_board_mem_fd8e21b3")
+}
+
+/// Stores rate limiting configurations for users and guests. Contains
+/// settings to prevent abuse of the discussion board system. References
+/// {@link discussion_board_members.id} for user-specific limits and {@link
+/// discussion_board_guests.id} for guest-specific limits.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_rate_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who this rate limit applies to. {@link discussion_board_members.id}.
+  discussion_board_member_id String?
+  
+  /// Guest who this rate limit applies to. {@link discussion_board_guests.id}.
+  discussion_board_guest_id String?
+  
+  /// Maximum number of posts allowed per hour.
+  max_posts_per_hour Int
+  
+  /// Maximum number of comments allowed per minute.
+  max_comments_per_minute Int
+  
+  /// Maximum number of votes allowed per day.
+  max_votes_per_day Int
+  
+  /// When this rate limit configuration was created.
+  created_at DateTime
+  
+  /// When this rate limit configuration was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  guest discussion_board_guests? @relation(fields: [discussion_board_guest_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_member_id])
+  @@index([discussion_board_guest_id])
+}

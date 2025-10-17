@@ -1,0 +1,247 @@
+/// Guest user representation for unauthenticated session tracking. Guests
+/// are temporary visitors to the application without authentication who can
+/// access public pages (registration, login). This entity tracks guest
+/// session information for the duration of their visit without requiring
+/// persistent credential storage. Guest sessions have defined expiration
+/// times and are cleaned up after inactivity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_guestuser {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique session identifier for tracking guest session across requests.
+  /// Must be cryptographically random and unique.
+  session_id String
+  
+  /// IP address of the guest user for basic tracking and security purposes
+  /// (optional). Used to detect suspicious access patterns.
+  ip_address String?
+  
+  /// Browser user agent string identifying the guest's browser and device
+  /// type. Used for device detection and bot prevention.
+  user_agent String?
+  
+  /// Timestamp when guest session was created, recorded in UTC timezone. Marks
+  /// the beginning of guest access.
+  created_at DateTime
+  
+  /// Timestamp of last guest activity, used to track session idle time for
+  /// timeout management. Updated on each request.
+  last_activity_at DateTime
+  
+  /// Timestamp when guest session expires, allowing cleanup of stale sessions.
+  /// Set to 24 hours after creation or last activity.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_id])
+  @@index([created_at])
+  @@index([last_activity_at])
+  @@index([expired_at])
+}
+
+/// Authenticated user account representing registered users who have
+/// successfully logged in and verified their email. These are the primary
+/// user personas managing personal todo lists. Each authenticated user has
+/// email and password-based credentials with full access to CRUD operations
+/// on their own todos, while being restricted from accessing other users'
+/// data. Users can maintain todo ownership and data isolation enforced
+/// through database relationships.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_authenticateduser {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User email address used for authentication and identification. Must be
+  /// unique across the system, following RFC 5321 standard format. Used as the
+  /// primary login identifier.
+  email String
+  
+  /// Securely hashed password using bcrypt or Argon2 algorithm with unique
+  /// salt (minimum 10 rounds for bcrypt). Never stored or transmitted in
+  /// plaintext. Minimum 60 characters to ensure valid hash format.
+  password_hash String
+  
+  /// User's first name for profile display and personalization (optional). Not
+  /// required for account functionality.
+  first_name String?
+  
+  /// User's last name for profile display and personalization (optional). Not
+  /// required for account functionality.
+  last_name String?
+  
+  /// User account status: 'active' for normal operation allowing login and all
+  /// operations, 'inactive' for disabled accounts preventing login, 'locked'
+  /// for temporarily locked accounts due to multiple failed login attempts.
+  status String
+  
+  /// Boolean flag indicating whether user email address has been verified
+  /// through confirmation link. Defaults to false at registration. Users
+  /// cannot fully activate account until this is true.
+  email_verified Boolean
+  
+  /// Timestamp when user completed email verification process, enabling full
+  /// account functionality. Null until verification is completed. Used for
+  /// compliance audit trails.
+  email_verified_at DateTime?
+  
+  /// Timestamp of user's most recent successful login for activity tracking
+  /// and security monitoring. Null if user has never successfully logged in.
+  /// Updated on each successful authentication.
+  last_login_at DateTime?
+  
+  /// Timestamp of last password change for security audit trail and password
+  /// expiration policies. Null if password never changed since registration.
+  /// Updated whenever user changes password.
+  password_changed_at DateTime?
+  
+  /// Count of consecutive failed login attempts. Reset to zero on successful
+  /// login. Used to trigger account lockout at 5 attempts within 15 minutes.
+  failed_login_attempts Int
+  
+  /// Timestamp until which the account is locked due to multiple failed login
+  /// attempts. Account unlocks automatically after this time. Null if account
+  /// is not currently locked.
+  locked_until DateTime?
+  
+  /// Timestamp when user account was created during registration process,
+  /// recorded in UTC timezone. Immutable record of account creation time.
+  created_at DateTime
+  
+  /// Timestamp of last account modification (password change, profile update,
+  /// status change), automatically updated on changes. Used to track most
+  /// recent modification.
+  updated_at DateTime
+  
+  /// Timestamp when user requested account deletion (soft delete), supporting
+  /// 30-day recovery period before permanent removal. Null for active
+  /// accounts. Users can recover account within 30 days of deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_security_events todo_app_security_events[]
+  todo_app_audit_logs todo_app_audit_logs[]
+  todo_app_failed_login_attempts todo_app_failed_login_attempts[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([last_login_at])
+  @@index([locked_until])
+  @@index([deleted_at])
+  @@index([status, created_at])
+  @@index([email_verified, created_at])
+}
+
+/// Administrator user account representing system operators with elevated
+/// privileges for system management, monitoring, and administrative
+/// functions. Administrators have access to system status pages, logs, user
+/// management capabilities, and configuration settings. Unlike authenticated
+/// users, administrators are designated by admin_level field and can access
+/// system-wide information. Administrators also retain full todo management
+/// capabilities for their personal todos while being subject to same
+/// authorization constraints for other users' todos.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_administrator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator email address for authentication and identification. Must
+  /// be unique across the system, following RFC 5321 standard format.
+  email String
+  
+  /// Securely hashed password using bcrypt or Argon2 algorithm with unique
+  /// salt (minimum 10 rounds for bcrypt). Never stored or transmitted in
+  /// plaintext. Minimum 60 characters to ensure valid hash format.
+  password_hash String
+  
+  /// Administrator's first name for identification and communication. Optional
+  /// field for display purposes.
+  first_name String?
+  
+  /// Administrator's last name for identification and communication. Optional
+  /// field for display purposes.
+  last_name String?
+  
+  /// Integer 1-5 indicating scope of administrative privileges. Level 5
+  /// represents full system access with all administrative capabilities. Level
+  /// 1 represents minimal admin functions. Determines which admin endpoints
+  /// and functions are accessible.
+  admin_level Int
+  
+  /// Administrator account status: 'active' for normal operation, 'inactive'
+  /// for disabled administrator accounts, 'suspended' for temporarily
+  /// suspended admin access. Inactive/suspended administrators cannot access
+  /// admin endpoints.
+  status String
+  
+  /// Boolean flag indicating whether administrator email address has been
+  /// verified through confirmation link. Defaults to false. Admin cannot
+  /// access system until verified.
+  email_verified Boolean
+  
+  /// Timestamp when administrator completed email verification. Null until
+  /// verification is completed. Required for admin activation.
+  email_verified_at DateTime?
+  
+  /// Timestamp of administrator's most recent successful login for activity
+  /// tracking and security audit. Null if never logged in. Updated on each
+  /// successful authentication.
+  last_login_at DateTime?
+  
+  /// Timestamp of last password change for security audit and compliance with
+  /// password rotation policies. Null if password never changed. Updated
+  /// whenever administrator changes password.
+  password_changed_at DateTime?
+  
+  /// Count of consecutive failed login attempts. Reset on successful login.
+  /// Triggers account lockout at 5 attempts within 15 minutes.
+  failed_login_attempts Int
+  
+  /// Timestamp until which administrator account is locked due to failed login
+  /// attempts. Account unlocks automatically after this time. Null if account
+  /// not currently locked.
+  locked_until DateTime?
+  
+  /// Timestamp when administrator account was created, recorded in UTC
+  /// timezone. Immutable record of account creation.
+  created_at DateTime
+  
+  /// Timestamp of last administrator account modification, automatically
+  /// updated on changes. Used to track most recent modification.
+  updated_at DateTime
+  
+  /// Timestamp when administrator account was deleted (soft delete),
+  /// supporting recovery period before permanent removal. Null for active
+  /// accounts. Administrators can be recovered within recovery period.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([email])
+  @@index([email_verified])
+  @@index([last_login_at])
+  @@index([locked_until])
+  @@index([deleted_at])
+  @@index([status, created_at])
+  @@index([admin_level, created_at])
+}

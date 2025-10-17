@@ -1,0 +1,613 @@
+/// Guest users represent unauthenticated visitors to the platform. Guests
+/// can view public communities, posts, and comments but cannot interact
+/// through voting, posting, or commenting. This table tracks guest sessions
+/// for analytics and potential conversion to member accounts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique session identifier for tracking guest activity across visits. Used
+  /// for analytics and anonymous user behavior tracking.
+  session_identifier String
+  
+  /// IP address of the guest user for security monitoring and rate limiting
+  /// purposes.
+  ip_address String?
+  
+  /// Browser user agent string for device and browser analytics.
+  user_agent String?
+  
+  /// Timestamp of the guest's first visit to the platform.
+  first_visit_at DateTime
+  
+  /// Timestamp of the guest's most recent visit to the platform.
+  last_visit_at DateTime
+  
+  /// Timestamp when the guest session was first created.
+  created_at DateTime
+  
+  /// Timestamp when the guest session was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_identifier])
+  @@index([last_visit_at])
+}
+
+/// Member users are authenticated standard users with full participation
+/// rights. Members can create posts, write comments, vote on content,
+/// subscribe to communities, and earn karma. This is the core user type
+/// representing the majority of platform participants.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username chosen during registration. Must be 3-20 characters
+  /// containing only alphanumeric characters, underscores, and hyphens.
+  /// Displayed throughout the platform as the user's identity.
+  username String
+  
+  /// Unique email address for authentication and communication. Used for
+  /// login, verification, and notifications.
+  email String
+  
+  /// Securely hashed password using bcrypt, Argon2, or PBKDF2. Never stored in
+  /// plain text. Used for authentication.
+  password_hash String
+  
+  /// Whether the user has verified their email address. Some features may
+  /// require verified email status.
+  email_verified Boolean
+  
+  /// Optional user biography or description displayed on their profile page.
+  /// Limited to 200-500 characters.
+  profile_bio String?
+  
+  /// URL to the user's profile avatar image. Points to uploaded custom avatar
+  /// or default generated avatar.
+  avatar_url String?
+  
+  /// Timestamp when the member account was created. Displayed as account age
+  /// on profile.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the account was soft-deleted. Null if account is active.
+  /// Enables account recovery and data preservation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_communities reddit_like_communities[]
+  reddit_like_community_subscriptions reddit_like_community_subscriptions[]
+  reddit_like_posts reddit_like_posts[]
+  reddit_like_comments reddit_like_comments[]
+  reddit_like_post_votes reddit_like_post_votes[]
+  reddit_like_comment_votes reddit_like_comment_votes[]
+  reddit_like_user_karma reddit_like_user_karma?
+  reddit_like_karma_history reddit_like_karma_history[]
+  mv_reddit_like_karma_calculations mv_reddit_like_karma_calculations?
+  reddit_like_content_reports reddit_like_content_reports[]
+  reddit_like_community_bans reddit_like_community_bans[]
+  reddit_like_platform_suspensions reddit_like_platform_suspensions[]
+  reddit_like_moderation_appeals reddit_like_moderation_appeals[]
+  reddit_like_moderation_logs reddit_like_moderation_logs[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+  @@index([email_verified])
+}
+
+/// Moderator users are trusted community managers with elevated permissions
+/// within specific communities. Moderators can remove content, ban users
+/// from their communities, configure community settings, and enforce
+/// community rules. Moderator status is community-specific.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for the moderator account. Same constraints as member
+  /// usernames: 3-20 characters, alphanumeric with underscores and hyphens.
+  username String
+  
+  /// Unique email address for moderator authentication and communication. Used
+  /// for moderation notifications and alerts.
+  email String
+  
+  /// Securely hashed password for moderator authentication. Same security
+  /// standards as member passwords.
+  password_hash String
+  
+  /// Whether the moderator has verified their email address. Required for
+  /// moderator privileges.
+  email_verified Boolean
+  
+  /// Optional moderator biography displayed on their profile.
+  profile_bio String?
+  
+  /// URL to the moderator's profile avatar image.
+  avatar_url String?
+  
+  /// Timestamp when the moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator account was soft-deleted. Null if account is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_moderators_of_moderator_id reddit_like_community_moderators[] @relation("reddit_like_community_moderators_of_moderator_id")
+  reddit_like_community_moderators_of_assigned_by_moderator_id reddit_like_community_moderators[] @relation("reddit_like_community_moderators_of_assigned_by_moderator_id")
+  reddit_like_moderation_actions reddit_like_moderation_actions[]
+  reddit_like_community_bans reddit_like_community_bans[]
+  reddit_like_moderation_appeals reddit_like_moderation_appeals[]
+  reddit_like_moderation_logs reddit_like_moderation_logs[]
+  mv_reddit_like_moderator_activity_stats mv_reddit_like_moderator_activity_stats?
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+  @@index([email_verified])
+}
+
+/// Administrator users are platform-level managers with system-wide elevated
+/// permissions. Admins can manage all communities, handle appeals, suspend
+/// users from the entire platform, and configure platform-wide settings.
+/// This represents the highest authority level.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for the administrator account. Same constraints as other
+  /// user types.
+  username String
+  
+  /// Unique email address for administrator authentication and critical
+  /// platform notifications.
+  email String
+  
+  /// Securely hashed password for administrator authentication. Highest
+  /// security standards required.
+  password_hash String
+  
+  /// Whether the administrator has verified their email address. Required for
+  /// admin privileges.
+  email_verified Boolean
+  
+  /// Optional administrator biography displayed on their profile.
+  profile_bio String?
+  
+  /// URL to the administrator's profile avatar image.
+  avatar_url String?
+  
+  /// Whether this administrator has super admin privileges for critical
+  /// platform operations like managing other administrators.
+  super_admin Boolean
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was soft-deleted. Null if
+  /// account is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_moderation_actions reddit_like_moderation_actions[]
+  reddit_like_platform_suspensions reddit_like_platform_suspensions[]
+  reddit_like_moderation_appeals reddit_like_moderation_appeals[]
+  reddit_like_moderation_logs reddit_like_moderation_logs[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+  @@index([email_verified])
+}
+
+/// Authentication security metadata tracking failed login attempts, account
+/// locking, and login history for security monitoring. Supports rate
+/// limiting (max 5 failed attempts in 15 minutes triggers 30-minute lock)
+/// and suspicious activity detection. One credential record per user account
+/// for centralized auth security tracking.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_auth_credentials {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account these credentials belong to. {@link reddit_like_users.id}
+  reddit_like_user_id String
+  
+  /// Count of consecutive failed login attempts. Used for rate limiting and
+  /// account locking after 5 failed attempts within 15 minutes per
+  /// requirements.
+  failed_login_attempts Int
+  
+  /// Timestamp of most recent failed login attempt. Used to calculate rate
+  /// limiting windows and reset counters after timeout periods.
+  last_failed_login_at DateTime?
+  
+  /// Timestamp until which account is locked due to failed login attempts.
+  /// Null if not locked. Auto-unlocks after 30 minutes per requirements.
+  account_locked_until DateTime?
+  
+  /// Timestamp of most recent successful login. Used for security monitoring,
+  /// user activity tracking, and displaying last login on profile.
+  last_successful_login_at DateTime?
+  
+  /// IP address from most recent login attempt. Used for security monitoring,
+  /// suspicious activity detection, and geographic login patterns.
+  last_login_ip String?
+  
+  /// Timestamp when authentication credential record was created (typically
+  /// when user registered).
+  created_at DateTime
+  
+  /// Timestamp when authentication credential record was last updated (login
+  /// attempt, lock status change).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_users @relation(fields: [reddit_like_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_user_id])
+  @@index([account_locked_until])
+  @@index([last_successful_login_at])
+}
+
+/// Email verification tokens generated when users register or change email
+/// addresses. Manages verification workflow with unique time-limited links
+/// expiring after 24 hours per requirements. Supports both initial
+/// registration verification and email change verification workflows.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User requesting email verification. {@link reddit_like_users.id}
+  reddit_like_user_id String
+  
+  /// Email address being verified. For registration, matches user's current
+  /// email. For email changes, this is the new pending email awaiting
+  /// verification.
+  email String
+  
+  /// Unique cryptographically secure token included in verification link. Used
+  /// to validate verification request. Generated using secure random number
+  /// generation.
+  verification_token String
+  
+  /// Type of verification: 'registration' (initial account email verification)
+  /// or 'email_change' (verifying new email address). Determines workflow
+  /// after verification.
+  verification_type String
+  
+  /// Timestamp when verification token expires. Set to 24 hours after creation
+  /// per requirements. Expired tokens cannot be used.
+  expires_at DateTime
+  
+  /// Timestamp when email was successfully verified by clicking link. Null if
+  /// not yet verified. Marks verification completion.
+  verified_at DateTime?
+  
+  /// Timestamp when verification token was generated and email sent.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_users @relation(fields: [reddit_like_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([verification_token])
+  @@index([reddit_like_user_id, verified_at], map: "reddit_like_email_verifications_reddit_like_user_id_ve_07b41146")
+  @@index([expires_at])
+  @@index([email])
+}
+
+/// Password reset tokens generated when users request password recovery via
+/// forgot password workflow. Manages time-limited reset links expiring after
+/// 1 hour per requirements. Tracks token usage to prevent reuse and supports
+/// the complete password reset workflow including expiration and retry
+/// mechanisms.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User requesting password reset. {@link reddit_like_users.id}
+  reddit_like_user_id String
+  
+  /// Email address for which password reset was requested. Used to send reset
+  /// link and validate reset request matches account email.
+  email String
+  
+  /// Unique cryptographically secure token included in password reset link.
+  /// Used to validate reset request. Generated using secure random number
+  /// generation.
+  reset_token String
+  
+  /// Timestamp when reset token expires. Set to 1 hour after creation per
+  /// requirements. Expired tokens cannot be used for password reset.
+  expires_at DateTime
+  
+  /// Timestamp when password was successfully reset using this token. Null if
+  /// not yet used. Prevents token reuse - tokens can only be used once.
+  used_at DateTime?
+  
+  /// Timestamp when password reset token was generated and email sent.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_users @relation(fields: [reddit_like_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reset_token])
+  @@index([reddit_like_user_id, used_at])
+  @@index([expires_at])
+  @@index([email])
+}
+
+/// User sessions managing authentication state using JWT tokens. Each
+/// session contains access token (expires in 30 minutes) and refresh token
+/// (expires in 30 days) per requirements. Tracks active user authentication,
+/// enables token refresh without re-login, and monitors session activity for
+/// security. Sessions can be explicitly revoked on logout or invalidated on
+/// password changes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns this session. {@link reddit_like_users.id}
+  reddit_like_user_id String
+  
+  /// JWT access token used for authenticating API requests. Expires in 30
+  /// minutes per requirements. Contains user ID, username, and role in
+  /// payload.
+  access_token String
+  
+  /// JWT refresh token used to obtain new access tokens without re-login.
+  /// Expires in 30 days per requirements. Longer-lived than access token.
+  refresh_token String
+  
+  /// Timestamp when access token expires. Set to 30 minutes from token issue
+  /// time per requirements. After expiration, token cannot authenticate
+  /// requests.
+  access_token_expires_at DateTime
+  
+  /// Timestamp when refresh token expires. Set to 30 days from token issue
+  /// time per requirements. After expiration, user must re-login with
+  /// credentials.
+  refresh_token_expires_at DateTime
+  
+  /// IP address from which session was created. Used for security monitoring,
+  /// suspicious activity detection, and geographic login analysis.
+  ip_address String?
+  
+  /// Browser user agent string for session. Used for device tracking, security
+  /// monitoring, and identifying unusual login patterns.
+  user_agent String?
+  
+  /// Timestamp of most recent activity in this session. Updated on each
+  /// authenticated request. Used for session timeout and activity monitoring.
+  last_activity_at DateTime
+  
+  /// Timestamp when session was created (user logged in). Used for session
+  /// duration tracking.
+  created_at DateTime
+  
+  /// Timestamp when session was last updated (activity timestamp change).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when session was explicitly revoked (user logged
+  /// out or password changed). Null for active sessions. Follows platform
+  /// soft-delete pattern.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_users @relation(fields: [reddit_like_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([access_token])
+  @@unique([refresh_token])
+  @@index([reddit_like_user_id, deleted_at])
+  @@index([access_token_expires_at])
+  @@index([refresh_token_expires_at])
+  @@index([last_activity_at])
+}
+
+/// Unified user table representing all user types on the platform. Uses
+/// role-based access control with a single user entity supporting the
+/// four-tier hierarchy (guest, member, moderator, admin). This design
+/// ensures global username/email uniqueness, proper normalization, and
+/// simplified authentication. Users have profile information, karma scores,
+/// and privacy settings. Moderator and admin roles are granted through the
+/// role field, with community-specific moderator assignments tracked in
+/// reddit_like_community_moderators junction table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username chosen during registration. Must be 3-20 characters
+  /// containing only alphanumeric characters, underscores, and hyphens.
+  /// Displayed throughout the platform as the user's identity. Globally unique
+  /// across all user roles.
+  username String
+  
+  /// Unique email address for authentication and communication. Used for
+  /// login, verification, and notifications. Globally unique across all user
+  /// roles.
+  email String
+  
+  /// Securely hashed password using bcrypt, Argon2, or PBKDF2. Never stored in
+  /// plain text. Used for authentication. Null for guest users who haven't
+  /// registered.
+  password_hash String?
+  
+  /// User role determining permission level. Valid values: 'guest'
+  /// (unauthenticated visitor), 'member' (standard user), 'moderator'
+  /// (community manager), 'admin' (platform manager). Role can be elevated as
+  /// users gain privileges.
+  role String
+  
+  /// Whether the user has verified their email address. Some features require
+  /// verified email status. Always false for guest users.
+  email_verified Boolean
+  
+  /// Optional user biography or description displayed on their profile page.
+  /// Limited to 200-500 characters per requirements.
+  profile_bio String?
+  
+  /// URL to the user's profile avatar image. Points to uploaded custom avatar
+  /// or platform-generated default avatar based on username.
+  avatar_url String?
+  
+  /// Denormalized karma earned from votes on user's posts. Calculated as sum
+  /// of (upvotes - downvotes) across all posts. Can be negative. Updated in
+  /// real-time from voting activity. Default 0 for new users.
+  post_karma Int
+  
+  /// Denormalized karma earned from votes on user's comments. Calculated as
+  /// sum of (upvotes - downvotes) across all comments. Can be negative.
+  /// Updated in real-time from voting activity. Default 0 for new users.
+  comment_karma Int
+  
+  /// Privacy setting controlling whether karma scores are visible on public
+  /// profile. Per requirements, users can hide karma from display. Default
+  /// true (karma visible).
+  show_karma_publicly Boolean
+  
+  /// Profile visibility level per privacy requirements. Valid values: 'public'
+  /// (visible to all including guests), 'members_only' (authenticated users
+  /// only), 'private' (only self). Default 'public'.
+  profile_privacy String
+  
+  /// Privacy setting for community subscription list visibility. Per
+  /// requirements, users control subscription list privacy independently of
+  /// overall profile privacy. Default true (subscriptions visible).
+  show_subscriptions_publicly Boolean
+  
+  /// Whether this admin user has super admin privileges for critical platform
+  /// operations like managing other administrators. Only applicable when role
+  /// is 'admin'. Default false.
+  is_super_admin Boolean
+  
+  /// For guest users, tracks anonymous session for analytics. Null for
+  /// authenticated users. Used for guest conversion tracking and analytics.
+  session_identifier String?
+  
+  /// For guest users, stores IP address for security monitoring and rate
+  /// limiting. Null for authenticated users where IP is tracked in sessions
+  /// table.
+  ip_address String?
+  
+  /// For guest users, browser user agent string for device analytics. Null for
+  /// authenticated users where user agent is tracked in sessions table.
+  user_agent String?
+  
+  /// For guest users, timestamp of first platform visit. Null for
+  /// authenticated users. Used for guest conversion analysis.
+  first_visit_at DateTime?
+  
+  /// For guest users, timestamp of most recent visit. Null for authenticated
+  /// users. Used for guest engagement tracking.
+  last_visit_at DateTime?
+  
+  /// Timestamp when user account was created. For guests, when session
+  /// started. For members/moderators/admins, when they registered. Displayed
+  /// as account age on profiles.
+  created_at DateTime
+  
+  /// Timestamp when user account was last updated. Tracks profile changes,
+  /// role elevations, and setting modifications.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, account is deactivated but data
+  /// preserved for recovery and referential integrity. Null indicates active
+  /// account.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_auth_credentials reddit_like_auth_credentials?
+  reddit_like_email_verifications reddit_like_email_verifications[]
+  reddit_like_password_resets reddit_like_password_resets[]
+  reddit_like_sessions reddit_like_sessions[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@unique([session_identifier])
+  @@index([role, created_at])
+  @@index([email_verified])
+  @@index([post_karma, comment_karma])
+  @@index([last_visit_at])
+}

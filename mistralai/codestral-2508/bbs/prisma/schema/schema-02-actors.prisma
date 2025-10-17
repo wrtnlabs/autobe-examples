@@ -1,0 +1,129 @@
+/// Represents unauthenticated users who can only view public content.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when the guest record was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+}
+
+/// Represents authenticated users who can create and comment on discussion
+/// threads.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_member {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address of the member.
+  email String
+  
+  /// Hashed password for authentication.
+  password_hash String
+  
+  /// Username of the member.
+  username String
+  
+  /// Timestamp when the member record was created.
+  created_at DateTime
+  
+  /// Timestamp when the member record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  economic_political_discussion_board_comments economic_political_discussion_board_comments[]
+  economic_political_discussion_board_reports economic_political_discussion_board_reports[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Represents users with elevated permissions who can manage content and
+/// enforce community guidelines.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_moderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address of the moderator.
+  email String
+  
+  /// Hashed password for authentication.
+  password_hash String
+  
+  /// Username of the moderator.
+  username String
+  
+  /// Timestamp when the moderator record was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  economic_political_discussion_board_moderation_snapshots economic_political_discussion_board_moderation_snapshots[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Represents system administrators with full access to manage users,
+/// content, and system settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address of the admin.
+  email String
+  
+  /// Hashed password for authentication.
+  password_hash String
+  
+  /// Username of the admin.
+  username String
+  
+  /// Timestamp when the admin record was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([email])
+  @@index([created_at])
+}

@@ -1,0 +1,369 @@
+/// Registry of supported shipping carriers used for fulfillment and
+/// tracking. Managed by operations/admin staff and referenced by {@link
+/// shopping_mall_shipments}. Includes carrier code, human-readable name, and
+/// optional tracking URL template. This table enables validation and
+/// governance of carrier usage across the marketplace.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carriers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Business carrier code unique within the platform (e.g., UPS, FEDEX, DHL).
+  /// Used for integrations and display configuration.
+  code String
+  
+  /// Carrier display name shown to users and staff. Used for search and
+  /// selection.
+  name String
+  
+  /// Optional URL template for tracking links. May include placeholders like
+  /// {tracking_number}.
+  tracking_url_template String?
+  
+  /// Optional customer service phone number for the carrier.
+  phone String?
+  
+  /// Whether this carrier is enabled for use on the platform.
+  active Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the carrier is inactive and hidden
+  /// from new operations.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_return_shipments shopping_mall_return_shipments[]
+  
+  @@unique([code])
+  @@index([created_at])
+}
+
+/// Shipment entity representing a package or group of order items moving
+/// together under a carrier/tracking number. Belongs to an {@link
+/// shopping_mall_orders} record and optionally a {@link
+/// shopping_mall_stores} (fulfilling store). Tracks canonical lifecycle
+/// state, tracking identifiers, addresses snapshot, and time markers (label,
+/// pickup, delivery). Items are linked via {@link
+/// shopping_mall_shipment_items}; timeline via {@link
+/// shopping_mall_shipment_events}.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Optional fulfilling store's {@link shopping_mall_stores.id}.
+  shopping_mall_store_id String?
+  
+  /// Assigned carrier's {@link shopping_mall_carriers.id}. Nullable before
+  /// label creation.
+  shopping_mall_carrier_id String?
+  
+  /// Platform-generated human-readable shipment identifier unique within the
+  /// system.
+  shipment_number String
+  
+  /// Carrier-provided tracking number. Nullable before label creation.
+  tracking_number String?
+  
+  /// Direct tracking URL if available.
+  tracking_url String?
+  
+  /// Current canonical shipment status. Expected values include: Ready to
+  /// Ship, In Transit, Out for Delivery, Delivery Attempted, Delivered,
+  /// Exception, Return to Sender, Returned.
+  status String
+  
+  /// Ship-from contact name snapshot for the shipment label.
+  ship_from_name String?
+  
+  /// Ship-from phone snapshot for the shipment label.
+  ship_from_phone String?
+  
+  /// Ship-from address line 1 snapshot for the label.
+  ship_from_address_line1 String?
+  
+  /// Ship-from address line 2 snapshot for the label.
+  ship_from_address_line2 String?
+  
+  /// Ship-from city snapshot for the label.
+  ship_from_city String?
+  
+  /// Ship-from region/province/state snapshot for the label.
+  ship_from_region String?
+  
+  /// Ship-from postal code snapshot for the label.
+  ship_from_postal_code String?
+  
+  /// Ship-from country code snapshot (e.g., KR, US).
+  ship_from_country String?
+  
+  /// Ship-to contact name snapshot for the shipment label.
+  ship_to_name String?
+  
+  /// Ship-to phone snapshot for the shipment label.
+  ship_to_phone String?
+  
+  /// Ship-to address line 1 snapshot for the label.
+  ship_to_address_line1 String?
+  
+  /// Ship-to address line 2 snapshot for the label.
+  ship_to_address_line2 String?
+  
+  /// Ship-to city snapshot for the label.
+  ship_to_city String?
+  
+  /// Ship-to region/province/state snapshot for the label.
+  ship_to_region String?
+  
+  /// Ship-to postal code snapshot for the label.
+  ship_to_postal_code String?
+  
+  /// Ship-to country code snapshot (e.g., KR, US).
+  ship_to_country String?
+  
+  /// Timestamp when the shipping label was created (if applicable).
+  label_created_at DateTime?
+  
+  /// Timestamp when the carrier first scanned/picked up the package.
+  picked_up_at DateTime?
+  
+  /// Timestamp when Delivered was recorded.
+  delivered_at DateTime?
+  
+  /// Estimated delivery window start.
+  expected_delivery_start DateTime?
+  
+  /// Estimated delivery window end.
+  expected_delivery_end DateTime?
+  
+  /// Total weight of the shipment in kilograms, if known.
+  weight_kg Float?
+  
+  /// Number of packages for this shipment group.
+  package_count Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  store shopping_mall_stores? @relation(fields: [shopping_mall_store_id], references: [id], onDelete: Cascade)
+  carrier shopping_mall_carriers? @relation(fields: [shopping_mall_carrier_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_captures shopping_mall_payment_captures[]
+  shopping_mall_shipment_items shopping_mall_shipment_items[]
+  shopping_mall_shipment_events shopping_mall_shipment_events[]
+  shopping_mall_return_requests shopping_mall_return_requests[]
+  shopping_mall_support_cases shopping_mall_support_cases[]
+  
+  @@unique([shipment_number])
+  @@unique([shopping_mall_carrier_id, tracking_number], map: "shopping_mall_shipments_shopping_mall_carrier_id_track_61c86d44")
+  @@index([shopping_mall_order_id, created_at])
+  @@index([shopping_mall_store_id, created_at])
+  @@index([status, updated_at])
+  @@index([label_created_at])
+  @@index([delivered_at])
+}
+
+/// Shipment line items that specify how much of each order line is included
+/// in a shipment. This table links {@link shopping_mall_shipments} to {@link
+/// shopping_mall_order_items} and captures shipped quantities and optional
+/// weight for audit and reconciliation. Managed through shipment operations,
+/// not independently.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent shipment's {@link shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Referenced order item's {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Quantity of the order item included in this shipment line.
+  quantity Int
+  
+  /// Weight attributed to this shipment line in kilograms, if tracked.
+  weight_kg Float?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_shipment_id, shopping_mall_order_item_id], map: "shopping_mall_shipment_items_shopping_mall_shipment_id_99ee1951")
+  @@index([shopping_mall_shipment_id, created_at], map: "shopping_mall_shipment_items_shopping_mall_shipment_id_93177a7b")
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_shipment_items_shopping_mall_order_item__f8e95ca9")
+}
+
+/// Append-only canonical event timeline for shipments, used for customer
+/// updates, SLA tracking, and audit. Each record represents a mapped carrier
+/// event to a canonical state with timestamp and optional location. Events
+/// belong to {@link shopping_mall_shipments}. This table forms the immutable
+/// audit trail for delivery progress.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related shipment's {@link shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Canonical event name mapped from carrier raw event. Examples: Label
+  /// Created, Picked Up, In Transit, Arrived at Facility, Departed Facility,
+  /// Out for Delivery, Delivery Attempted, Delivered, Exception, Return
+  /// Initiated, Returned to Origin.
+  canonical_event String
+  
+  /// Timestamp when the event occurred at the carrier.
+  event_at DateTime
+  
+  /// Free-text location description from the carrier (city/facility).
+  location_description String?
+  
+  /// Latitude for the event location if available.
+  latitude Float?
+  
+  /// Longitude for the event location if available.
+  longitude Float?
+  
+  /// Raw carrier event code as received prior to canonicalization.
+  raw_event_code String?
+  
+  /// Raw carrier event description/message.
+  raw_event_description String?
+  
+  /// Source system identifier (e.g., carrier name or webhook name).
+  raw_event_source String?
+  
+  /// Whether this event should be shown on customer-facing timelines.
+  customer_visible Boolean
+  
+  /// Correlation identifier to deduplicate upstream messages for the same
+  /// event.
+  correlation_id String?
+  
+  /// Creation timestamp for the event record.
+  created_at DateTime
+  
+  /// Last update timestamp (events are typically immutable after insert).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_shipment_id, correlation_id], map: "shopping_mall_shipment_events_shopping_mall_shipment_i_f23bc4bc")
+  @@index([shopping_mall_shipment_id, event_at], map: "shopping_mall_shipment_events_shopping_mall_shipment_i_5c289846")
+  @@index([canonical_event, event_at])
+  @@index([shopping_mall_shipment_id, customer_visible, event_at], map: "shopping_mall_shipment_events_shopping_mall_shipment_i_05afcdb8")
+}
+
+/// Return shipping parcels associated with a {@link
+/// shopping_mall_return_requests}. Tracks carrier, tracking, and timeline
+/// states on the way back to the seller. Complements external
+/// shipment/carrier tables {@link shopping_mall_carriers} and is used for
+/// customer updates and warehouse receiving.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_return_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent return request's {@link shopping_mall_return_requests.id}
+  shopping_mall_return_request_id String
+  
+  /// Carrier handling this return parcel. {@link shopping_mall_carriers.id}
+  shopping_mall_carrier_id String?
+  
+  /// Carrier-provided tracking number for the return parcel.
+  tracking_number String
+  
+  /// Return parcel shipping state (e.g., label_created, picked_up, in_transit,
+  /// out_for_delivery, delivery_attempted, delivered, exception,
+  /// returned_to_origin).
+  status String
+  
+  /// Timestamp when the return parcel was shipped/picked up.
+  shipped_at DateTime?
+  
+  /// Timestamp when the return parcel was delivered to the seller/warehouse.
+  delivered_at DateTime?
+  
+  /// Timestamp when the seller/warehouse confirmed receipt in the system.
+  received_at DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  returnRequest shopping_mall_return_requests @relation(fields: [shopping_mall_return_request_id], references: [id], onDelete: Cascade)
+  carrier shopping_mall_carriers? @relation(fields: [shopping_mall_carrier_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_carrier_id, tracking_number], map: "shopping_mall_return_shipments_shopping_mall_carrier_i_7b43bcd1")
+  @@index([shopping_mall_return_request_id, created_at], map: "shopping_mall_return_shipments_shopping_mall_return_re_079f75c9")
+  @@index([status, created_at])
+}

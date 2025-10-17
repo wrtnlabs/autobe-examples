@@ -1,0 +1,186 @@
+/// Hierarchical category tree table for organizing all products,
+/// collections, and search facets. Supports multilingual category
+/// names/descriptions. Self-referencing for parent/child, root categories
+/// have null parent_id. Used platform-wide for all systems referencing
+/// categories (products, catalogs, navigation, admin tools). Enforces unique
+/// category names within a parent for each language. Fast text search and
+/// hierarchical queries supported. All changes trigger global cache
+/// invalidation. {@link shopping_mall_categories.id}.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional parent category's {@link shopping_mall_categories.id}. Root
+  /// categories have null parent_id.
+  parent_id String?
+  
+  /// Category name in Korean. Required for localization support. Unique within
+  /// parent category.
+  name_ko String
+  
+  /// Category name in English. Required for localization support. Unique
+  /// within parent category.
+  name_en String
+  
+  /// Category description in Korean. Optional for longer text or category
+  /// explanation.
+  description_ko String?
+  
+  /// Category description in English. Optional for longer text or category
+  /// explanation.
+  description_en String?
+  
+  /// Ordering index for display in navigation, 0-based. Allows admin sorting
+  /// of sibling categories.
+  display_order Int
+  
+  /// Whether the category is active/enabled across platform. Inactive disables
+  /// all subcategories and associated products.
+  is_active Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp (for cache invalidation, reindex triggers).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_product_categories shopping_mall_product_categories[]
+  
+  @@unique([parent_id, name_ko])
+  @@unique([parent_id, name_en])
+  @@index([parent_id, display_order])
+}
+
+/// System configuration key-value store for all dynamic runtime settings and
+/// feature toggles. Managed directly by platform admins via API or
+/// dashboard. Every config is uniquely identified by a (key, scope) pair,
+/// supports value typing for safe retrieval, and audit trails for changes.
+/// Used for feature flags, 3rd party credentials, rate limits, operational
+/// switches, and critical platform customizations. No cross-domain
+/// dependencies. {@link shopping_mall_system_configs.id}.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// System-wide unique config key (case-insensitive, e.g. 'enable_payments',
+  /// 'max_cart_size').
+  config_key String
+  
+  /// Config scope (e.g., 'global', 'payment', 'product', 'review').
+  /// Modularizes config space. Required for namespacing.
+  config_scope String
+  
+  /// Stored value type for this config (e.g., 'string', 'int', 'boolean',
+  /// 'json'). Used for proper dynamic retrieval.
+  value_type String
+  
+  /// String value for configs whose data type is string. Nullable for
+  /// non-string/configs.
+  string_value String?
+  
+  /// Int value for configs whose data type is integer. Nullable for
+  /// non-integer/configs.
+  int_value Int?
+  
+  /// Double value for configs whose data type is double (e.g. percentages,
+  /// rates). Nullable for non-double/configs.
+  double_value Float?
+  
+  /// Boolean value for configs whose data type is boolean or feature-toggle.
+  /// Nullable for non-boolean/configs.
+  boolean_value Boolean?
+  
+  /// JSON-encoded string for configs with structured data. Nullable for
+  /// non-json/configs.
+  json_value String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key, config_scope])
+  @@index([config_scope])
+}
+
+/// Global platform-wide settings. Used for static-but-editable metadata
+/// (site title, description, support info), branding, and legal policies.
+/// Not as dynamic as configs—edited via admin and rarely changed. Acts as
+/// reference for platform-wide UI/SEO/meta/branding, not for runtime
+/// toggles. Directly editable only by admins. No business or domain
+/// dependencies. {@link shopping_mall_platform_settings.id}.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_platform_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Platform/site title for Korean version.
+  site_title_ko String
+  
+  /// Platform/site title for English version.
+  site_title_en String
+  
+  /// Platform/site description for Korean version, used for SEO and UI.
+  site_description_ko String?
+  
+  /// Platform/site description for English version, used for SEO and UI.
+  site_description_en String?
+  
+  /// Customer support email address.
+  support_email String?
+  
+  /// Customer support phone number (for display in UI/policy).
+  support_phone String?
+  
+  /// Public URI to primary branding logo image file.
+  branding_logo_uri String?
+  
+  /// URI to privacy policy legal document (public).
+  privacy_policy_uri String?
+  
+  /// URI to terms of service legal document (public).
+  terms_of_service_uri String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null if not deleted.
+  deleted_at DateTime?
+}

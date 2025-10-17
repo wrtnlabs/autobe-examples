@@ -1,0 +1,265 @@
+/// Comprehensive security event log tracking authentication failures,
+/// unauthorized access attempts, permission violations, and suspicious
+/// system activities. Used for real-time security monitoring, threat
+/// detection, and regulatory compliance reporting. Each security event
+/// represents a potential security incident requiring monitoring or
+/// investigation. MODIFIED: Added explicit user_id UUID foreign key
+/// (nullable for system-level events), added user_role field for context,
+/// improved timestamp and event tracking for forensic capability.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_security_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the security event actor's {@link
+  /// todo_app_authenticateduser.id}. Nullable for system-level events that
+  /// occur without user context (e.g., pre-authentication security checks).
+  user_id String?
+  
+  /// Classification of the security event (e.g., 'AUTHENTICATION_FAILURE',
+  /// 'UNAUTHORIZED_ACCESS', 'PERMISSION_VIOLATION', 'RATE_LIMIT_EXCEEDED',
+  /// 'SUSPICIOUS_ACTIVITY', 'DATA_INTEGRITY_VIOLATION'). Enables filtering and
+  /// analysis of specific threat categories.
+  event_type String
+  
+  /// Severity classification of the event ('CRITICAL', 'HIGH', 'MEDIUM',
+  /// 'LOW'). Used to prioritize security incident response and determine
+  /// escalation requirements.
+  severity_level String
+  
+  /// Email address associated with the security event for display and
+  /// reporting purposes. Preserved separately from user_id to support
+  /// forensics even if user account is deleted.
+  user_email String?
+  
+  /// Origin of the security event (e.g., 'LOGIN_ENDPOINT', 'TODO_API',
+  /// 'ADMIN_PANEL', 'UNKNOWN'). Identifies which system component generated
+  /// the security alert.
+  event_source String
+  
+  /// Detailed description of the security event explaining what triggered the
+  /// alert. Examples: 'Failed login attempt with invalid credentials', 'User
+  /// attempted to access unauthorized resource', 'Rate limit exceeded for API
+  /// calls'.
+  event_description String
+  
+  /// IP address from which the security event originated if available. Used
+  /// for geographic analysis and detection of coordinated attacks from
+  /// specific sources.
+  ip_address String?
+  
+  /// Identifier of the resource or todo involved in the security event if
+  /// applicable (e.g., todo ID, API endpoint). Null for authentication-level
+  /// events.
+  resource_involved String?
+  
+  /// System response to the security event (e.g., 'ACCOUNT_LOCKED',
+  /// 'REQUEST_BLOCKED', 'THROTTLED', 'LOGGED_ONLY'). Documents what preventive
+  /// action was executed.
+  action_taken String?
+  
+  /// JSON-encoded additional context about the security event (e.g., failed
+  /// login attempt count, time since last successful login, geographic
+  /// information). Stored as JSON string for flexible schema.
+  metadata String?
+  
+  /// ISO 8601 UTC timestamp when the security event occurred and was recorded.
+  /// Used for chronological analysis and correlation with other events.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_authenticateduser? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([event_type, created_at])
+  @@index([severity_level, created_at])
+  @@index([user_id, created_at])
+  @@index([ip_address, created_at])
+  @@index([event_source])
+  @@index([severity_level, user_id, created_at])
+  @@index([event_type, severity_level, created_at], map: "todo_app_security_events_event_type_severity_level_cre_8c312091")
+}
+
+/// Complete audit trail for all todo operations (create, read, update,
+/// delete) and administrative actions. Provides comprehensive compliance
+/// documentation for GDPR, CCPA, and other regulatory requirements. Every
+/// operation on todos is recorded with complete context for forensic
+/// investigation and compliance reporting. MODIFIED: Added explicit actor_id
+/// UUID foreign key with actor_type discrimination field, improved entity
+/// relationship handling with constraint support.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the actor performing the action. For user actions,
+  /// references {@link todo_app_authenticateduser.id}. For admin actions,
+  /// references {@link todo_app_administrator.id}. For system actions, may be
+  /// null or system identifier.
+  actor_id String?
+  
+  /// Type of action performed ('CREATE', 'READ', 'UPDATE', 'DELETE',
+  /// 'COMPLETE_TOGGLE', 'EXPORT', 'ARCHIVE'). Categorizes what operation was
+  /// executed on a todo.
+  action_type String
+  
+  /// Type of entity affected by the audit action (e.g., 'TODO',
+  /// 'USER_ACCOUNT', 'ADMIN_SETTING', 'SYSTEM_SETTING'). Identifies what
+  /// object the action targeted.
+  entity_type String
+  
+  /// Unique identifier of the entity being audited (e.g., todo ID, user ID,
+  /// setting ID). Links the audit record to the specific object involved.
+  /// Combined with entity_type for polymorphic relationship validation.
+  entity_id String
+  
+  /// Type of actor performing the action ('authenticatedUser',
+  /// 'administrator', 'system'). Enables proper interpretation of actor_id and
+  /// supports role-based audit analysis.
+  actor_type String
+  
+  /// Previous value before the action (for UPDATE operations). Stored as JSON
+  /// or string representation for tracking what changed. Null for CREATE,
+  /// READ, DELETE operations.
+  old_value String?
+  
+  /// New value after the action (for UPDATE operations). Stored as JSON or
+  /// string representation showing what the entity became. Null for READ and
+  /// DELETE operations.
+  new_value String?
+  
+  /// Success status of the operation ('SUCCESS', 'FAILURE',
+  /// 'PARTIAL_SUCCESS'). Indicates whether the action completed as intended or
+  /// encountered errors.
+  operation_status String
+  
+  /// Description of why operation failed if status is FAILURE or
+  /// PARTIAL_SUCCESS. Null for successful operations. Documents the reason for
+  /// operation failure.
+  failure_reason String?
+  
+  /// IP address from which the action was initiated. Used for geographic and
+  /// security analysis of operation origins.
+  ip_address String?
+  
+  /// HTTP User-Agent string identifying the client/browser used for the
+  /// action. Useful for detecting automated tools or unusual client types.
+  user_agent String?
+  
+  /// Session identifier associated with the action if available. Helps
+  /// correlate multiple actions from the same session or suspicious session
+  /// patterns.
+  session_id String?
+  
+  /// Time in milliseconds for the operation to complete. Used for performance
+  /// analysis and detecting anomalously slow operations.
+  duration_ms Int?
+  
+  /// JSON-encoded additional context (e.g., browser details, device
+  /// fingerprint, request parameters). Provides flexibility for capturing
+  /// operation-specific details.
+  metadata String?
+  
+  /// ISO 8601 UTC timestamp when the audit log entry was created. Represents
+  /// when the audited action occurred, used for chronological analysis.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  actor todo_app_authenticateduser? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  @@index([entity_type, entity_id, created_at])
+  @@index([actor_id, created_at])
+  @@index([action_type, created_at])
+  @@index([operation_status, created_at])
+  @@index([actor_type, actor_id, created_at])
+  @@index([operation_status, actor_type, created_at])
+}
+
+/// Dedicated tracking of failed login attempts for security monitoring and
+/// account protection. Used to detect brute force attacks, implement account
+/// lockout mechanisms, and investigate unauthorized access attempts.
+/// Critical for both real-time threat detection and forensic security
+/// analysis. MODIFIED: Added explicit user_id UUID foreign key for proper
+/// referential integrity, maintains email history for forensics.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_failed_login_attempts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user account's {@link todo_app_authenticateduser.id} if
+  /// login attempt matched an existing account. Null if email address does not
+  /// exist in system, preserving forensics for non-existent account attacks.
+  user_id String?
+  
+  /// Email address used in the failed login attempt. May be invalid or
+  /// non-existent, but captures what the attacker tried to use. Preserved for
+  /// forensic analysis.
+  email_address String
+  
+  /// Reason for login failure ('INVALID_EMAIL', 'INVALID_PASSWORD',
+  /// 'ACCOUNT_LOCKED', 'ACCOUNT_DISABLED', 'INVALID_MFA'). Categorizes the
+  /// type of authentication failure.
+  failure_reason String
+  
+  /// IP address from which the login attempt originated. Used for geographic
+  /// analysis and detection of coordinated brute force attacks from specific
+  /// sources.
+  ip_address String?
+  
+  /// HTTP User-Agent string from the login attempt. Helps identify automated
+  /// attacks and unusual client types.
+  user_agent String?
+  
+  /// Sequential attempt number within the current time window (e.g., attempt 1
+  /// of 5 in last 15 minutes). Used to implement and track rate limiting.
+  attempt_number_in_window Int
+  
+  /// Current account lockout status ('LOCKED',
+  /// 'LOCKED_WITH_EMAIL_NOTIFICATION', 'LOCKOUT_TIMER_ACTIVE', null for not
+  /// locked). Documents any protective actions taken in response to failed
+  /// attempts.
+  lockout_status String?
+  
+  /// ISO 8601 UTC timestamp when the account lockout expires and login can be
+  /// retried. Null if account is not currently locked.
+  lockout_expires_at DateTime?
+  
+  /// JSON-encoded additional context (e.g., geolocation, device fingerprint,
+  /// referrer, request path). Provides forensic details for security
+  /// investigation.
+  metadata String?
+  
+  /// ISO 8601 UTC timestamp when the failed login attempt occurred. Used for
+  /// chronological analysis and rate limiting calculations.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_authenticateduser? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([email_address, created_at])
+  @@index([ip_address, created_at])
+  @@index([user_id, created_at])
+  @@index([failure_reason, created_at])
+  @@index([lockout_status])
+  @@index([ip_address, email_address, created_at], map: "todo_app_failed_login_attempts_ip_address_email_addres_06e2319f")
+}

@@ -1,0 +1,218 @@
+/// Ephemeral user entities representing site visitors in anonymous or
+/// no-login flows. Used for logging, tracking, or casual participation
+/// attribution. No authentication is possible. No identity persists beyond
+/// session unless upgraded to member. Not used for core operations or
+/// permissions. Minimal fields. Can link to cookies, IP logs, or anonymous
+/// session attributions for trace or moderation referencing. May reference
+/// profile for future upgrade paths. Not for direct API access. Stance:
+/// subsidiary.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Anonymous session or tracking key, for attribution or moderation
+  /// referencing. Opaque, session-tied. Not globally unique. Possibly device-
+  /// or IP-bound. Used for ephemeral tracking only.
+  session_key String
+  
+  /// Timestamp when guest record/session first established. For audit and
+  /// abuse tracking.
+  created_at DateTime
+  
+  /// Optional soft-deletion timestamp. Used for cleaning logs or honoring
+  /// privacy/erasure requests.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_key])
+}
+
+/// Registered and verified users of the platform. Core actor for all primary
+/// business flows: content creation, voting, commenting, subscribing, and
+/// reporting. Subject to authentication, rate limits, karma effects,
+/// ban/restriction logic, and auditing. Email must be unique. Stores
+/// password hash for authentication. Records verification state and basic
+/// lifecycle data. Stance: primary.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique user email for authentication, required to be unique per member.
+  /// Used for login and contact.
+  email String
+  
+  /// BCrypt or comparable hash of user's auth credential. NEVER store plain
+  /// text passwords.
+  password_hash String
+  
+  /// Whether email has been confirmed via platform verification flow. Cannot
+  /// post/comment/vote unless true.
+  email_verified Boolean
+  
+  /// Current member status: 'active', 'blocked', 'suspended', etc. Used for
+  /// permission enforcement and ban handling.
+  status String
+  
+  /// Timestamp when user account was registered.
+  created_at DateTime
+  
+  /// Last time account metadata was updated (profile or auth details).
+  updated_at DateTime
+  
+  /// Optional soft-deletion timestamp for ban/erasure or self-removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_file_uploads community_platform_file_uploads[]
+  community_platform_moderators community_platform_moderators?
+  community_platform_communities community_platform_communities[]
+  community_platform_community_moderator_assignments community_platform_community_moderator_assignments[]
+  community_platform_posts community_platform_posts[]
+  community_platform_comments community_platform_comments[]
+  community_platform_comment_edits community_platform_comment_edits[]
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_subscription_logs community_platform_subscription_logs[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_vote_logs community_platform_vote_logs[]
+  community_platform_profiles community_platform_profiles?
+  community_platform_reports community_platform_reports[]
+  community_platform_ban_histories community_platform_ban_histories[]
+  community_platform_escalation_logs community_platform_escalation_logs[]
+  community_platform_karma_ledgers community_platform_karma_ledgers[]
+  community_platform_karma_penalties community_platform_karma_penalties[]
+  community_platform_karma_history community_platform_karma_history[]
+  community_platform_karma_awards community_platform_karma_awards[]
+  
+  @@unique([email])
+  @@index([status])
+}
+
+/// Users assigned elevated moderation privileges within specific
+/// communities. May overlap with member but tracked distinctly for
+/// escalation, audit, and policy enforcement. Table tracks
+/// assignment/authentication context, scope, and status. Moderators can
+/// approve/reject content, manage bans, escalate reports. Each moderator is
+/// linked 1:1 with a member account. Email must be unique. Authentication
+/// required. Stance: primary.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related member entity acting as basis for authentication and core
+  /// participation. {@link community_platform_members.id}.
+  member_id String
+  
+  /// Moderation privileges apply to this specific community. Links to target
+  /// community for scope restriction. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Moderator account email (for authentication/notification). Must match
+  /// related member's email. Unique per moderator assignment.
+  email String
+  
+  /// BCrypt or comparable hash of moderator's login credential. Required for
+  /// separate authentication context. Never store plaintext passwords.
+  password_hash String
+  
+  /// Moderator account status: 'active', 'suspended', 'resigned', etc. Used
+  /// for permission enforcement and incident response.
+  status String
+  
+  /// Account creation/assignment time, for audit and incident tracking.
+  created_at DateTime
+  
+  /// Last update to assignment or moderator record.
+  updated_at DateTime
+  
+  /// Optional soft deletion time for end of assignment, resignation, or role
+  /// removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_queues community_platform_moderation_queues[]
+  
+  @@unique([email])
+  @@unique([member_id])
+  @@index([community_id])
+}
+
+/// Top-level platform administrators with ultimate permissions for system
+/// management, disaster recovery, and policy enforcement. Restricted access,
+/// highly audited. Distinct from regular members and moderators.
+/// Authentication required via email/password, with multi-factor support
+/// recommended. Account may be created via backoffice/admin tools. Stance:
+/// primary.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Platform admin email (for authentication). Must be unique among all
+  /// administrators and not reused across other actor tables.
+  email String
+  
+  /// Password hash for admin authentication (bcrypt or better). MFA or step-up
+  /// auth is recommended. Never store plaintext passwords.
+  password_hash String
+  
+  /// Indicates if this admin has unrestricted emergency/superuser permissions.
+  /// Used for separation of duty within administrators.
+  superuser Boolean
+  
+  /// Account status ('active', 'suspended', etc.) for admin. Affects access
+  /// and actionability.
+  status String
+  
+  /// Time admin account was created.
+  created_at DateTime
+  
+  /// Last metadata update to admin account.
+  updated_at DateTime
+  
+  /// Soft-deletion or account revocation time, if any.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_community_status_changes community_platform_community_status_changes[]
+  community_platform_ban_histories community_platform_ban_histories[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_escalation_logs community_platform_escalation_logs[]
+  
+  @@unique([email])
+}

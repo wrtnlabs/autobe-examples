@@ -1,0 +1,341 @@
+/// File attachment management system for user content including posts,
+/// replies, and user profiles. Handles file validation, storage management,
+/// and access control with support for multiple attachment types within size
+/// constraints.
+///
+/// @namespace Media
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who uploaded this attachment. References user who owns the
+  /// file attachment.
+  uploaded_by_id String
+  
+  /// Associated post when attachment belongs to a main discussion topic.
+  political_discussion_board_post_id String?
+  
+  /// Associated reply when attachment belongs to a comment or reply in
+  /// discussions.
+  political_discussion_board_reply_id String?
+  
+  /// Associated content snapshot when attachment is part of historical content
+  /// preservation.
+  political_discussion_board_content_snapshot_id String?
+  
+  /// Original filename provided by the user for attachment identification.
+  file_name String
+  
+  /// File size in bytes for storage tracking and quota management.
+  file_size Int
+  
+  /// MIME type for file format identification and browser handling.
+  mime_type String
+  
+  /// SHA256 hash for duplicate detection and integrity verification.
+  file_hash String
+  
+  /// Internal storage path or object key in cloud storage system.
+  storage_path String
+  
+  /// Number of times the attachment has been downloaded for analytics.
+  download_count Int
+  
+  /// Business processing status: pending, approved, rejected, processing for
+  /// approval workflows.
+  business_status String
+  
+  /// Whether the file has passed malware scanning security checks.
+  is_virus_scanned Boolean
+  
+  /// Malware scan status: clean, suspicious, infected, not_scanned for
+  /// security tracking.
+  scan_status String
+  
+  /// Timestamp when the attachment was first uploaded to the system.
+  created_at DateTime
+  
+  /// Timestamp when the attachment record was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for attachment removal while preserving referential
+  /// integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  uploadedBy political_discussion_board_member @relation(fields: [uploaded_by_id], references: [id], onDelete: Cascade)
+  post political_discussion_board_posts? @relation(fields: [political_discussion_board_post_id], references: [id], onDelete: Cascade)
+  reply political_discussion_board_replies? @relation(fields: [political_discussion_board_reply_id], references: [id], onDelete: Cascade)
+  contentSnapshot political_discussion_board_content_snapshots? @relation(fields: [political_discussion_board_content_snapshot_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_file_metadata political_discussion_board_file_metadata?
+  political_discussion_board_image_processing political_discussion_board_image_processing[]
+  political_discussion_board_content_delivery political_discussion_board_content_delivery[]
+  
+  @@index([political_discussion_board_post_id], map: "political_discussion_board_attachments_political_discu_7c472142")
+  @@index([political_discussion_board_reply_id], map: "political_discussion_board_attachments_political_discu_8eade453")
+  @@index([political_discussion_board_content_snapshot_id], map: "political_discussion_board_attachments_political_discu_208a90d5")
+  
+  @@unique([file_hash])
+  @@unique([storage_path])
+  @@index([uploaded_by_id, created_at], map: "political_discussion_board_attachments_uploaded_by_id__fb149ad0")
+  @@index([business_status, created_at], map: "political_discussion_board_attachments_business_status_e27ac44a")
+  @@index([mime_type, created_at])
+  @@index([scan_status, created_at], map: "political_discussion_board_attachments_scan_status_cre_ba564110")
+}
+
+/// Comprehensive metadata storage for all file types including EXIF data,
+/// technical specifications, and content analysis. Provides detailed
+/// technical information for search, categorization, and processing
+/// workflows.
+///
+/// @namespace Media
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_file_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The associated attachment this metadata describes. Links to parent file
+  /// object.
+  attachment_id String
+  
+  /// Image width in pixels for image attachments, null for other file types.
+  width Int?
+  
+  /// Image height in pixels for image attachments, null for other file types.
+  height Int?
+  
+  /// Media duration in seconds for audio/video files, null for other types.
+  duration Int?
+  
+  /// Audio/video bit rate in kilobits per second for quality assessment.
+  bit_rate Int?
+  
+  /// Video or audio codec used in media files for compatibility checking.
+  codec String?
+  
+  /// Color space information for images and videos for processing purposes.
+  color_space String?
+  
+  /// Camera manufacturer from EXIF data for photography uploads.
+  camera_make String?
+  
+  /// Specific camera model from EXIF data for detailed equipment info.
+  camera_model String?
+  
+  /// Focal length information from EXIF for photography context.
+  focal_length String?
+  
+  /// ISO speed rating from EXIF for photography analysis.
+  iso_speed Int?
+  
+  /// Original capture timestamp from EXIF or file creation date.
+  capture_date DateTime?
+  
+  /// GPS latitude from EXIF for location-based content tagging.
+  gps_latitude Float?
+  
+  /// GPS longitude from EXIF for location-based content tagging.
+  gps_longitude Float?
+  
+  /// User-provided description or automatically extracted text content.
+  description String?
+  
+  /// Comma-separated tags for content categorization and search optimization.
+  tags String?
+  
+  /// Detected language for text content in documents or image OCR results.
+  language String?
+  
+  /// Counted words in text-based documents for content analysis.
+  word_count Int?
+  
+  /// Total pages in document files for navigation and preview generation.
+  page_count Int?
+  
+  /// Whether document contains searchable text layer for indexing.
+  has_text_layer Boolean
+  
+  /// Confidence score for OCR text extraction accuracy percentage.
+  ocr_confidence Float?
+  
+  /// AI content analysis confidence for automated categorization.
+  ai_analysis_score Float?
+  
+  /// Timestamp when metadata was extracted and stored.
+  created_at DateTime
+  
+  /// Timestamp when metadata record was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attachment political_discussion_board_attachments @relation(fields: [attachment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([attachment_id])
+  @@index([width, height])
+  @@index([capture_date])
+  @@index([gps_latitude, gps_longitude], map: "political_discussion_board_file_metadata_gps_latitude__4c1a2606")
+  @@index([language, ai_analysis_score], map: "political_discussion_board_file_metadata_language_ai_a_d413282a")
+  @@index([has_text_layer, page_count], map: "political_discussion_board_file_metadata_has_text_laye_4522cb74")
+}
+
+/// Image processing workflow tracking for thumbnail generation, format
+/// conversion, and optimization. Manages processing pipeline for various
+/// image sizes and formats needed for web delivery.
+///
+/// @namespace Media
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_image_processing {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The attachment being processed for image transformations and
+  /// optimizations.
+  attachment_id String
+  
+  /// Current status: pending, processing, completed, failed for workflow
+  /// tracking.
+  processing_status String
+  
+  /// Original image file format before processing for version tracking.
+  original_format String
+  
+  /// JSON array of target formats: webp, avif, jpeg for multi-format delivery.
+  target_formats String
+  
+  /// Size variant being processed: original, large, medium, small, thumbnail.
+  size_variant String
+  
+  /// Target width in pixels for this specific processing variant.
+  width_pixels Int
+  
+  /// Target height in pixels for this specific processing variant.
+  height_pixels Int
+  
+  /// JPEG quality setting percentage for compression optimization.
+  quality_percentage Int
+  
+  /// Timestamp when processing began for performance monitoring.
+  processing_started_at DateTime?
+  
+  /// Timestamp when processing finished successfully.
+  processing_completed_at DateTime?
+  
+  /// Calculated processing time in seconds for workflow optimization.
+  processing_duration_seconds Int?
+  
+  /// Final processed file size in bytes for delivery optimization.
+  output_file_size Int?
+  
+  /// Error details if processing failed for debugging and retry logic.
+  error_message String?
+  
+  /// Number of processing attempts for resilience and monitoring.
+  retry_count Int
+  
+  /// Timestamp when this processing job was created.
+  created_at DateTime
+  
+  /// Timestamp when processing status or results were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attachment political_discussion_board_attachments @relation(fields: [attachment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([attachment_id, size_variant, target_formats], map: "political_discussion_board_image_processing_attachment_8947a87b")
+  @@index([attachment_id, processing_status], map: "political_discussion_board_image_processing_attachment_e205f0ce")
+  @@index([processing_started_at], map: "political_discussion_board_image_processing_processing_a9165b64")
+  @@index([processing_completed_at], map: "political_discussion_board_image_processing_processing_507ac0b3")
+  @@index([quality_percentage, width_pixels], map: "political_discussion_board_image_processing_quality_pe_a5278687")
+}
+
+/// Content delivery network optimization and geographic distribution
+/// tracking. Manages CDN endpoints, caching policies, and performance
+/// monitoring for global content delivery.
+///
+/// @namespace Media
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_content_delivery {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The content attachment being delivered through CDN infrastructure.
+  attachment_id String
+  
+  /// Content delivery network provider: cloudflare, fastly, akamai,
+  /// aws_cloudfront.
+  cdn_provider String
+  
+  /// Geographic edge location code for optimal content delivery routing.
+  edge_location String
+  
+  /// Current cache status: hit, miss, expired, invalidating for delivery
+  /// tracking.
+  cache_status String
+  
+  /// Configured cache duration in seconds for CDN optimization settings.
+  cache_duration_seconds Int
+  
+  /// Content encoding like gzip, br, deflate for optimal delivery compression.
+  content_encoding String?
+  
+  /// MIME type served by CDN may vary from original for optimization.
+  content_type String
+  
+  /// Measured response time in milliseconds for performance monitoring.
+  response_time_ms Int?
+  
+  /// Total bytes transferred including compression and encoding overhead.
+  transfer_bytes Int?
+  
+  /// Number of cache hits for this delivery endpoint and optimization.
+  hit_count Int
+  
+  /// Number of cache misses requiring origin server fetching.
+  miss_count Int
+  
+  /// Most recent access timestamp for cache lifecycle management.
+  last_accessed_at DateTime?
+  
+  /// Geographic region of accessing user for performance analytics.
+  user_region String?
+  
+  /// Network type: residential, mobile, enterprise for delivery optimization.
+  network_type String?
+  
+  /// Timestamp when this delivery configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when delivery metrics were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attachment political_discussion_board_attachments @relation(fields: [attachment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([attachment_id, cdn_provider, edge_location], map: "political_discussion_board_content_delivery_attachment_e12eb2ae")
+  @@index([edge_location, cache_status], map: "political_discussion_board_content_delivery_edge_locat_662535a0")
+  @@index([user_region, cache_status], map: "political_discussion_board_content_delivery_user_regio_f913925c")
+  @@index([last_accessed_at], map: "political_discussion_board_content_delivery_last_acces_054cb30a")
+  @@index([response_time_ms], map: "political_discussion_board_content_delivery_response_t_2c2c7922")
+}

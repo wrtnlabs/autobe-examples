@@ -1,0 +1,363 @@
+/// Core user identity and authentication entity for the platform. Stores
+/// login identifiers and credential hash, as well as account lifecycle,
+/// consent timestamps, and profile basics. Authors of posts and comments in
+/// other components reference this model. Key relationships: referenced by
+/// role assignment tables such as {@link community_platform_admin_users},
+/// {@link community_platform_community_moderators}, {@link
+/// community_platform_community_owners}, and profile/karma support via
+/// {@link community_platform_user_karmas}. Includes Terms/Privacy acceptance
+/// timestamps and optional marketing consent to satisfy compliance and audit
+/// requirements.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used as a primary login identifier. Case-insensitive
+  /// uniqueness should be enforced at database level (e.g., citext) in
+  /// addition to application checks.
+  email String
+  
+  /// Public handle for the user. Must be unique across the platform; used for
+  /// mentions and profile URLs. Prefer case-insensitive uniqueness at DB.
+  username String
+  
+  /// Non-reversible password hash for authentication. Plaintext passwords are
+  /// never stored.
+  password_hash String
+  
+  /// Optional display name presented in profiles. Can be changed by the user
+  /// within policy limits.
+  display_name String?
+  
+  /// Optional URI pointing to the user’s avatar image resource.
+  avatar_uri String?
+  
+  /// Whether the user has verified their email address. Non-verified users are
+  /// restricted from participation actions per business rules.
+  email_verified Boolean
+  
+  /// Current account state string (e.g., PendingVerification, Active, Locked,
+  /// Deactivated, PendingDeletion, Deleted, Banned). Used to gate
+  /// capabilities.
+  account_state String
+  
+  /// Timestamp when the user accepted the Terms of Service at registration or
+  /// re-consent. Required for compliance and auditing.
+  terms_accepted_at DateTime
+  
+  /// Timestamp when the user accepted the Privacy Policy at registration or
+  /// re-consent. Required for compliance and auditing.
+  privacy_accepted_at DateTime
+  
+  /// Whether the user explicitly opted in to marketing communications.
+  /// Defaults to false at the application level if no opt-in is offered.
+  marketing_opt_in Boolean
+  
+  /// Timestamp when marketing opt-in was granted. Null when not opted in.
+  marketing_opt_in_at DateTime?
+  
+  /// Timestamp of the most recent successful login for auditing and security
+  /// notifications.
+  last_login_at DateTime?
+  
+  /// Creation timestamp for the user record.
+  created_at DateTime
+  
+  /// Last update timestamp for the user record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, indicates the record is logically
+  /// deleted and should not appear in normal queries.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_user_karmas community_platform_user_karmas[]
+  community_platform_guest_users community_platform_guest_users[]
+  community_platform_member_users community_platform_member_users[]
+  community_platform_community_owners community_platform_community_owners[]
+  community_platform_community_moderators community_platform_community_moderators[]
+  community_platform_admin_users community_platform_admin_users[]
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_posts community_platform_posts[]
+  community_platform_comments community_platform_comments[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_reports community_platform_reports[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+}
+
+/// Per-user karma totals supporting ranking and reputation features. Holds
+/// aggregated integer values for post, comment, and total karma for a user.
+/// Sourced from votes on content; maintained by application logic.
+/// References {@link community_platform_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_karmas {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user’s {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Cumulative karma derived from votes on the user’s posts. May be negative.
+  post_karma Int
+  
+  /// Cumulative karma derived from votes on the user’s comments. May be
+  /// negative.
+  comment_karma Int
+  
+  /// Total karma (post + comment and other applicable sources) maintained by
+  /// the application.
+  total_karma Int
+  
+  /// Creation timestamp for this karma snapshot row.
+  created_at DateTime
+  
+  /// Last time karma values were updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for logical removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id])
+  @@index([community_platform_user_id, updated_at], map: "community_platform_user_karmas_community_platform_user_053f6330")
+}
+
+/// Marks users that currently hold the guest kind within system semantics.
+/// This supporting table records assignment lifecycle for auditability.
+/// References {@link community_platform_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guest_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user’s {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Timestamp when this guest designation became effective.
+  granted_at DateTime
+  
+  /// Optional timestamp when this guest designation ended.
+  revoked_at DateTime?
+  
+  /// Creation timestamp for this role assignment record.
+  created_at DateTime
+  
+  /// Last update timestamp for this role assignment.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this role assignment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id])
+  @@index([community_platform_user_id, granted_at], map: "community_platform_guest_users_community_platform_user_4edc15b1")
+}
+
+/// Marks users that hold the member role enabling participation (post,
+/// comment, vote, report) once eligibility is met. Tracks join lifecycle.
+/// References {@link community_platform_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member user’s {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Timestamp when member capabilities became effective for this user.
+  joined_at DateTime
+  
+  /// Optional member status string for business workflows (e.g., active,
+  /// restricted).
+  status String?
+  
+  /// Creation timestamp for this membership record.
+  created_at DateTime
+  
+  /// Last update timestamp for this membership record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this membership record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id])
+  @@index([community_platform_user_id, joined_at], map: "community_platform_member_users_community_platform_use_c5f88402")
+}
+
+/// Community ownership assignments. Tracks ownership history per community
+/// for governance, transfers, and audits. Single active owner should be
+/// enforced at the application layer or via a partial unique index on
+/// (community_id) where revoked_at IS NULL when supported. References {@link
+/// community_platform_users} and {@link community_platform_communities}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_owners {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user’s {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Owned community’s {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Timestamp when ownership became effective.
+  assigned_at DateTime
+  
+  /// Optional timestamp when ownership ended (e.g., after transfer). When
+  /// null, record is considered current.
+  revoked_at DateTime?
+  
+  /// Creation timestamp for this ownership record.
+  created_at DateTime
+  
+  /// Last update timestamp for this ownership record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this ownership record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_user_id, assigned_at], map: "community_platform_community_owners_community_platform_55dd0b8c")
+  @@index([community_platform_community_id, assigned_at], map: "community_platform_community_owners_community_platform_8dcdfeca")
+}
+
+/// Community moderator assignments per community with lifecycle tracking and
+/// optional tiering. Enables independent management and cross-community
+/// queries. References {@link community_platform_users} and {@link
+/// community_platform_communities}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator user’s {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Moderated community’s {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Timestamp when moderator privileges began.
+  granted_at DateTime
+  
+  /// Optional timestamp when moderator privileges ended.
+  revoked_at DateTime?
+  
+  /// Optional moderator tier or role label (e.g., junior, full).
+  tier String?
+  
+  /// Creation timestamp for this moderator assignment.
+  created_at DateTime
+  
+  /// Last update timestamp for this moderator assignment.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this moderator assignment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_community_id, community_platform_user_id], map: "community_platform_community_moderators_community_plat_b2183ff7")
+  @@index([community_platform_user_id, granted_at], map: "community_platform_community_moderators_community_plat_584716ac")
+  @@index([community_platform_community_id, granted_at], map: "community_platform_community_moderators_community_plat_47059b40")
+}
+
+/// Site-wide administrator role assignments for trust & safety and platform
+/// governance. Allows multiple grant/revoke cycles per user for historical
+/// auditability. Single active admin per user should be enforced at the
+/// application layer or via a partial unique index on (user_id) where
+/// revoked_at IS NULL when supported. References {@link
+/// community_platform_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admin_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin user’s {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Timestamp when admin privileges were granted.
+  granted_at DateTime
+  
+  /// Optional timestamp when admin privileges ended.
+  revoked_at DateTime?
+  
+  /// Creation timestamp for this admin assignment.
+  created_at DateTime
+  
+  /// Last update timestamp for this admin assignment.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this admin assignment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_user_id, granted_at], map: "community_platform_admin_users_community_platform_user_933a33e4")
+}

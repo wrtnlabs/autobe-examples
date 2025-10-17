@@ -1,0 +1,181 @@
+/// Main order table containing all order information. Represents customer
+/// orders with status tracking and payment information. This is the primary
+/// entity for order management.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed the order. {@link shopping_customers.id}.
+  shopping_customer_id String
+  
+  /// Unique order code for business identification.
+  order_code String
+  
+  /// Total order amount including all items and taxes.
+  total_amount Float
+  
+  /// Currency used for the order (e.g., USD, KRW).
+  currency String
+  
+  /// Current order status (e.g., pending, processing, shipped, delivered,
+  /// cancelled).
+  status String
+  
+  /// Payment method used for the order.
+  payment_method String
+  
+  /// Selected shipping method for the order.
+  shipping_method String
+  
+  /// Shipping address for the order.
+  shipping_address String
+  
+  /// Billing address for the order.
+  billing_address String
+  
+  /// Timestamp when the order was created.
+  created_at DateTime
+  
+  /// Timestamp when the order was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the order was soft deleted (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_order_items shopping_order_items[]
+  shopping_order_status shopping_order_status[]
+  shopping_order_history shopping_order_history[]
+  shopping_seller_orders shopping_seller_orders[]
+  shopping_payments shopping_payments[]
+  shopping_shipping_tracking shopping_shipping_tracking[]
+  
+  @@unique([order_code])
+  @@index([shopping_customer_id, created_at])
+  @@index([status, updated_at])
+}
+
+/// Order line items representing individual products in an order. Each item
+/// references a product variant and tracks quantity and price.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order this item belongs to. {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Product variant being ordered. {@link shopping_product_variants.id}.
+  shopping_product_variant_id String
+  
+  /// Number of units ordered.
+  quantity Int
+  
+  /// Price per unit at time of order.
+  unit_price Float
+  
+  /// Total price for this line item (quantity × unit_price).
+  total_price Float
+  
+  /// Timestamp when the order item was created.
+  created_at DateTime
+  
+  /// Timestamp when the order item was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  productVariant shopping_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_id, created_at])
+  @@index([shopping_product_variant_id, created_at])
+}
+
+/// Order status tracking table. Records all status changes for an order with
+/// timestamps.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_status {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order this status belongs to. {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Order status at this point in time.
+  status String
+  
+  /// Timestamp when this status was set.
+  changed_at DateTime
+  
+  /// User or system that changed the status.
+  changed_by String?
+  
+  /// Additional notes about the status change.
+  notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_id, changed_at])
+  @@index([status, changed_at])
+}
+
+/// Historical record of all order changes. Captures snapshots of order
+/// states for audit trails and change tracking.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order this history record belongs to. {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Action performed on the order (e.g., created, updated, cancelled).
+  action String
+  
+  /// Timestamp when this action occurred.
+  changed_at DateTime
+  
+  /// User or system that performed the action.
+  changed_by String?
+  
+  /// JSON object containing order state at time of action.
+  details String?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_id, changed_at])
+  @@index([action, changed_at])
+}

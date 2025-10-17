@@ -1,0 +1,289 @@
+/// Core platform configuration and settings management for the Reddit
+/// community platform. Manages system-wide parameters that affect all
+/// communities and users.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_platform_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the platform setting configuration key.
+  setting_key String
+  
+  /// The value or configuration data for this platform setting.
+  setting_value String
+  
+  /// The data type of this setting (string, number, boolean, json).
+  setting_type String
+  
+  /// Detailed description explaining the purpose and usage of this platform
+  /// setting.
+  description String?
+  
+  /// The functional category this setting belongs to (admin, moderation,
+  /// content, etc).
+  category String
+  
+  /// Whether this setting is visible to the public or only to administrators.
+  is_public Boolean
+  
+  /// Whether this setting can be modified through the admin interface.
+  is_editable Boolean
+  
+  /// The minimum acceptable numeric value for this setting if applicable.
+  min_value Float?
+  
+  /// The maximum acceptable numeric value for this setting if applicable.
+  max_value Float?
+  
+  /// The default value that should be used if no explicit value is set.
+  default_value String?
+  
+  /// JSON array containing validation rules for this setting's values.
+  validation_rules String?
+  
+  /// The timestamp when this platform setting was first created.
+  created_at DateTime
+  
+  /// The timestamp when this platform setting was last modified.
+  updated_at DateTime
+  
+  /// The timestamp when this platform setting was last updated by an admin
+  /// user.
+  updated_by DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([setting_key])
+  @@index([category])
+  @@index([is_public])
+  @@index([is_editable])
+  @@index([created_at])
+}
+
+/// Content categorization system for organizing posts and discussions into
+/// hierarchical topic classifications across communities.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_content_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Content category's {@link reddit_community_content_categories.parent_id}
+  /// for hierarchical categorization.
+  parent_id String?
+  
+  /// The display name of this content category used in user interfaces.
+  name String
+  
+  /// URL-friendly identifier for this category used in links and routing.
+  slug String
+  
+  /// Detailed description explaining the purpose and scope of this category.
+  description String?
+  
+  /// Whether this category is currently active and available for content
+  /// organization.
+  is_active Boolean
+  
+  /// The display order position for this category within its parent level.
+  sort_order Int
+  
+  /// Name of the icon asset to display for this category in the UI.
+  icon_name String?
+  
+  /// Hexadecimal color code for this category's visual styling.
+  color_hex String?
+  
+  /// Hierarchy level (0-5) indicating depth within category tree structure.
+  level Int
+  
+  /// Dot-separated path of this category within the complete hierarchy.
+  level_path String
+  
+  /// Timestamp when content category was first created.
+  created_at DateTime
+  
+  /// Timestamp when content category was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parent reddit_community_content_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_community_content_categories[] @relation("recursive")
+  reddit_community_communities reddit_community_communities[]
+  reddit_community_community_classifications reddit_community_community_classifications[]
+  
+  @@unique([slug])
+  @@unique([parent_id, name])
+  @@index([is_active])
+  @@index([sort_order])
+  @@index([level])
+  @@index([parent_id])
+}
+
+/// Standardized report reason definitions used across all communities for
+/// consistent content moderation and user reporting workflows.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_report_reasons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code identifier for this report reason used in APIs and logic.
+  reason_code String
+  
+  /// The display title shown to users when selecting report reasons.
+  title String
+  
+  /// Detailed explanation of when to use this report reason.
+  description String?
+  
+  /// The category this reason belongs to (spam, harassment, policy_violation,
+  /// etc).
+  category String
+  
+  /// Severity rating (1-5) used for priority sorting in moderation queues.
+  severity_level Int
+  
+  /// Whether this report reason is active and available for users.
+  is_active Boolean
+  
+  /// Whether content reported with this reason should be auto-hidden and
+  /// queued.
+  is_auto_approved Boolean
+  
+  /// Whether selecting this reason requires users to provide additional
+  /// context.
+  requires_explanation Boolean
+  
+  /// Minimum number of characters required for the explanation when required.
+  minimum_explanation_length Int?
+  
+  /// Number of reports before auto-escalating to admin review (null means no
+  /// auto escalation).
+  escalation_threshold Int?
+  
+  /// Help text shown to reporters guiding their submission for this reason.
+  help_text String?
+  
+  /// Sample content showing what this reason is appropriate for reporting.
+  example_text String?
+  
+  /// The position this reason should appear in when shown to users.
+  sort_order Int
+  
+  /// Timestamp when this report reason was created.
+  created_at DateTime
+  
+  /// Timestamp when this report reason was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([reason_code])
+  @@unique([category, title])
+  @@index([category])
+  @@index([severity_level])
+  @@index([is_active])
+  @@index([sort_order])
+  @@index([escalation_threshold])
+}
+
+/// Comprehensive audit trail logging system that tracks all significant
+/// platform activities, configuration changes, user actions, and system
+/// events for compliance and debugging purposes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's {@link reddit_community_members.id} who performed the audited
+  /// action.
+  performed_by_id String?
+  
+  /// User's {@link reddit_community_members.id} who was impacted by the
+  /// audited action.
+  impacted_user_id String?
+  
+  /// The type of action performed (create, update, delete, login, logout, ban).
+  action_type String
+  
+  /// The platform entity affected (user, community, post, comment, vote,
+  /// admin).
+  entity_type String
+  
+  /// The ID of the specific entity that was modified or affected.
+  entity_id String?
+  
+  /// Human-readable description of the specific action that was performed.
+  action_description String
+  
+  /// JSON string containing previous state of modified fields before change.
+  previous_values String?
+  
+  /// JSON string containing new state of modified fields after change.
+  new_values String?
+  
+  /// Severity level (1-5) for filtering and prioritizing audit entries.
+  severity_level Int
+  
+  /// IP address associated with the user action for security tracking.
+  ip_address String?
+  
+  /// User agent string from the browser or client application.
+  user_agent String?
+  
+  /// Session ID linking this audit entry to user authentication context.
+  session_id String?
+  
+  /// Whether the action completed (succeeded, failed, partially_completed).
+  action_status String
+  
+  /// If status is failed, contains the error details or failure reason.
+  error_message String?
+  
+  /// JSON metadata with additional context fields for specific audit types.
+  metadata String?
+  
+  /// The exact timestamp when this audit action was performed.
+  timestamp DateTime
+  
+  /// Audit log entry creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  performedBy reddit_community_members? @relation("reddit_community_audit_logs_of_performed_by_id", fields: [performed_by_id], references: [id], onDelete: Cascade)
+  impactedUser reddit_community_members? @relation("reddit_community_audit_logs_of_impacted_user_id", fields: [impacted_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([impacted_user_id])
+  
+  @@index([action_type])
+  @@index([entity_type, entity_id])
+  @@index([performed_by_id])
+  @@index([timestamp])
+  @@index([severity_level])
+}

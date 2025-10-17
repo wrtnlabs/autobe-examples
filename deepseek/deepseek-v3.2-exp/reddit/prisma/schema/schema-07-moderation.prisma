@@ -1,0 +1,348 @@
+/// Content reports submitted by users for moderation review. Users can
+/// report posts or comments that violate community guidelines or platform
+/// policies. Each report is categorized and tracked through the moderation
+/// workflow until resolution.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the report. {@link reddit_clone_users.id}
+  reporter_id String
+  
+  /// Moderator assigned to handle the report. {@link
+  /// reddit_clone_moderators.id}
+  moderator_id String?
+  
+  /// Reported post content. {@link reddit_clone_posts.id}
+  post_id String?
+  
+  /// Reported comment content. {@link reddit_clone_comments.id}
+  comment_id String?
+  
+  /// Category of the reported violation. {@link
+  /// reddit_clone_report_categories.id}
+  report_category_id String
+  
+  /// Detailed description of the reported violation provided by the reporter.
+  description String?
+  
+  /// Current status of the report: pending, under_review, resolved, dismissed.
+  status String
+  
+  /// Report priority level: low, medium, high, critical.
+  priority String
+  
+  /// Optional URL to supporting evidence or screenshots.
+  evidence_url String?
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was resolved.
+  resolved_at DateTime?
+  
+  /// Timestamp when the report was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter reddit_clone_users @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  moderator reddit_clone_moderators? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  post reddit_clone_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment reddit_clone_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  reportCategory reddit_clone_report_categories @relation(fields: [report_category_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_moderation_actions reddit_clone_moderation_actions[]
+  reddit_clone_moderation_logs reddit_clone_moderation_logs[]
+  
+  @@index([report_category_id])
+  
+  @@index([status, priority])
+  @@index([reporter_id, created_at])
+  @@index([moderator_id, status])
+  @@index([post_id, created_at])
+  @@index([comment_id, created_at])
+}
+
+/// Actions taken by moderators in response to content reports or community
+/// violations. This table tracks all moderation decisions and their
+/// outcomes.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link reddit_clone_moderators.id}
+  moderator_id String
+  
+  /// User who was the target of the moderation action. {@link
+  /// reddit_clone_users.id}
+  target_user_id String?
+  
+  /// Content report that triggered this action. {@link
+  /// reddit_clone_content_reports.id}
+  content_report_id String?
+  
+  /// Post that was moderated. {@link reddit_clone_posts.id}
+  post_id String?
+  
+  /// Comment that was moderated. {@link reddit_clone_comments.id}
+  comment_id String?
+  
+  /// Type of moderation action: remove_content, warn_user, temporary_ban,
+  /// permanent_ban, approve_content, dismiss_report.
+  action_type String
+  
+  /// Detailed explanation for the moderation action.
+  reason String
+  
+  /// Duration of temporary actions in hours. Null for permanent actions.
+  duration_hours Int?
+  
+  /// Whether the action has been appealed by the target user.
+  is_appealed Boolean
+  
+  /// Reason provided by user for appealing the action.
+  appeal_reason String?
+  
+  /// Status of the appeal: pending, approved, rejected.
+  appeal_status String?
+  
+  /// Moderator or admin who resolved the appeal.
+  appeal_resolved_by String?
+  
+  /// Timestamp when the moderation action was taken.
+  created_at DateTime
+  
+  /// Timestamp when the action was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the action was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator reddit_clone_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetUser reddit_clone_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  contentReport reddit_clone_content_reports? @relation(fields: [content_report_id], references: [id], onDelete: Cascade)
+  post reddit_clone_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment reddit_clone_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_moderation_logs reddit_clone_moderation_logs[]
+  
+  @@index([content_report_id])
+  @@index([post_id])
+  @@index([comment_id])
+  
+  @@index([moderator_id, created_at])
+  @@index([target_user_id, action_type])
+  @@index([action_type, created_at])
+  @@index([is_appealed, appeal_status])
+}
+
+/// User ban records for community or platform violations. Tracks ban
+/// duration, reason, and status for users who have been restricted from
+/// platform access.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who is banned. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Moderator who issued the ban. {@link reddit_clone_moderators.id}
+  moderator_id String
+  
+  /// Community where the ban applies. Null for platform-wide bans. {@link
+  /// reddit_clone_communities.id}
+  community_id String?
+  
+  /// Type of ban: temporary, permanent, shadow.
+  ban_type String
+  
+  /// Detailed reason for the ban.
+  reason String
+  
+  /// Duration of temporary ban in days. Null for permanent bans.
+  duration_days Int?
+  
+  /// Timestamp when the ban takes effect.
+  starts_at DateTime
+  
+  /// Timestamp when the ban expires. Null for permanent bans.
+  ends_at DateTime?
+  
+  /// Whether the ban is currently active.
+  is_active Boolean
+  
+  /// Whether the ban has been appealed.
+  is_appealed Boolean
+  
+  /// Reason provided by user for appealing the ban.
+  appeal_reason String?
+  
+  /// Status of the appeal: pending, approved, rejected.
+  appeal_status String?
+  
+  /// Timestamp when the ban was issued.
+  created_at DateTime
+  
+  /// Timestamp when the ban was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the ban was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  moderator reddit_clone_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id])
+  
+  @@index([user_id, is_active])
+  @@index([community_id, is_active])
+  @@index([ban_type, starts_at])
+  @@index([ends_at, is_active])
+  @@index([is_appealed, appeal_status])
+}
+
+/// Comprehensive audit log of all moderation activities. This snapshot table
+/// preserves historical moderation actions for transparency, accountability,
+/// and compliance purposes.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link reddit_clone_moderators.id}
+  moderator_id String
+  
+  /// User who was affected by the moderation action. {@link
+  /// reddit_clone_users.id}
+  target_user_id String?
+  
+  /// Content report that triggered the action. {@link
+  /// reddit_clone_content_reports.id}
+  content_report_id String?
+  
+  /// Moderation action that was logged. {@link
+  /// reddit_clone_moderation_actions.id}
+  moderation_action_id String?
+  
+  /// Type of moderation action performed.
+  action_type String
+  
+  /// Type of target: post, comment, user, community.
+  target_type String
+  
+  /// ID of the target entity (post_id, comment_id, user_id, etc.).
+  target_id String
+  
+  /// Reason for the moderation action.
+  reason String
+  
+  /// Additional details about the moderation action.
+  details String?
+  
+  /// IP address from which the action was performed.
+  ip_address String?
+  
+  /// User agent string of the moderator's browser.
+  user_agent String?
+  
+  /// Timestamp when the log entry was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator reddit_clone_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetUser reddit_clone_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  contentReport reddit_clone_content_reports? @relation(fields: [content_report_id], references: [id], onDelete: Cascade)
+  moderationAction reddit_clone_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  
+  @@index([content_report_id])
+  @@index([moderation_action_id])
+  
+  @@index([moderator_id, created_at])
+  @@index([target_user_id, created_at])
+  @@index([action_type, created_at])
+  @@index([target_type, target_id])
+}
+
+/// Standardized categories for content reporting. Provides consistent
+/// classification for user reports to streamline moderation workflows and
+/// reporting analytics.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_report_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the report category.
+  name String
+  
+  /// Detailed description of what constitutes this report category.
+  description String
+  
+  /// Severity level: low, medium, high, critical.
+  severity_level String
+  
+  /// Target response time in hours for this category.
+  response_time_hours Int
+  
+  /// Whether this report category is currently active.
+  is_active Boolean
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_clone_content_reports reddit_clone_content_reports[]
+  
+  @@unique([name])
+  @@index([severity_level])
+  @@index([is_active])
+}

@@ -1,0 +1,321 @@
+/// JWT token storage for authentication. Stores both access tokens and
+/// refresh tokens issued during login. Access tokens are short-lived (15
+/// minutes) for immediate API access, while refresh tokens are long-lived
+/// (30 days) for session continuation. Tokens are stored hashed (never
+/// plaintext) for security compliance. Tracks token status (active, revoked,
+/// expired) and associated session information.
+///
+/// @namespace Authentication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_auth_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to authenticated user (customer, seller, or admin). {@link
+  /// shopping_mall_customer.id}
+  shopping_mall_customer_id String
+  
+  /// Type of token: 'access' for short-lived API tokens (15 min) or 'refresh'
+  /// for long-lived session tokens (30 days). Determines token expiration and
+  /// usage rules.
+  token_type String
+  
+  /// Bcrypt-hashed token value for secure storage. Never store plaintext
+  /// tokens. Hash generated with 12 salt rounds. Original token returned to
+  /// client only at creation time.
+  token_hash String
+  
+  /// ISO 8601 timestamp when token was issued. Used to calculate token age and
+  /// enforce expiration. Immutable after creation.
+  issued_at DateTime
+  
+  /// ISO 8601 timestamp when token expires and becomes invalid. Access tokens
+  /// expire at issued_at + 15 minutes, refresh tokens at issued_at + 30 days.
+  expires_at DateTime
+  
+  /// ISO 8601 timestamp when token was revoked (if applicable). Null if token
+  /// has never been revoked. Tokens are revoked on logout or during security
+  /// incidents.
+  revoked_at DateTime?
+  
+  /// ISO 8601 timestamp when token was last used in an API request. Null if
+  /// token has never been used. Updated on each token usage for tracking
+  /// activity patterns.
+  last_used_at DateTime?
+  
+  /// Device fingerprint hash identifying the device/browser that requested the
+  /// token. Used to detect token usage from unexpected devices. Generated from
+  /// user agent and IP address.
+  device_id String
+  
+  /// IP address from which token was requested. Used for geolocation checks
+  /// and detecting unusual access patterns. Supports both IPv4 and IPv6
+  /// formats.
+  ip_address String
+  
+  /// Browser/device user agent string from token request. Used for device
+  /// fingerprinting and detecting browser changes. Maximum 500 characters.
+  user_agent String
+  
+  /// Current token status: 'active' (valid for use), 'revoked' (invalidated),
+  /// 'expired' (past expiration time). Tokens transition from active to
+  /// expired at expiration timestamp.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token_hash])
+  @@index([shopping_mall_customer_id, status])
+  @@index([expires_at])
+  @@index([issued_at])
+}
+
+/// Server-side session management tracking user authentication state across
+/// requests. Each active session represents a user logged in from a specific
+/// device/browser. Stores session metadata, device information, and tracks
+/// login/activity timestamps. Implements concurrent session limits (5 for
+/// regular users, 10 for admins) by terminating oldest sessions when limit
+/// exceeded.
+///
+/// @namespace Authentication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to authenticated user who owns this session (customer, seller,
+  /// or admin). {@link shopping_mall_customer.id}
+  shopping_mall_customer_id String
+  
+  /// Cryptographically secure session identifier (minimum 32 random
+  /// characters). Used to associate requests with this session. Unique
+  /// globally across all sessions.
+  session_token String
+  
+  /// ISO 8601 timestamp when session was created (user login time). Immutable
+  /// after creation. Used to calculate session age and enforce 90-day session
+  /// lifetime.
+  created_at DateTime
+  
+  /// ISO 8601 timestamp of most recent request using this session. Updated on
+  /// every API request. Used to detect inactive sessions and calculate idle
+  /// time.
+  last_activity_at DateTime
+  
+  /// ISO 8601 timestamp when session expires. Sessions expire 90 days after
+  /// creation regardless of activity. When expired, new login required.
+  expires_at DateTime
+  
+  /// Primary IP address from which session was initiated. Used for geolocation
+  /// tracking and detecting impossible travel patterns. May change during
+  /// mobile roaming.
+  ip_address String
+  
+  /// Browser/device user agent string at session creation. Used for device
+  /// fingerprinting and detecting suspicious agent changes. Maximum 500
+  /// characters.
+  user_agent String
+  
+  /// Cryptographic hash of device characteristics (user agent, browser, screen
+  /// resolution). Used to detect when same session is used from different
+  /// devices.
+  device_fingerprint String
+  
+  /// Parsed browser name from user agent (Chrome, Firefox, Safari, etc.). Used
+  /// for security analysis and user device identification.
+  browser_name String?
+  
+  /// Parsed operating system from user agent (Windows, macOS, iOS, Android,
+  /// Linux). Used for device type classification.
+  operating_system String?
+  
+  /// Device category: 'mobile', 'tablet', 'desktop'. Determined from user
+  /// agent parsing. Used for responsive experience and security
+  /// classification.
+  device_type String?
+  
+  /// Session status: 'active' (usable), 'suspended' (locked for
+  /// investigation), 'expired' (past expiration time), 'terminated' (user
+  /// logout). Determines whether session can be used.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_session_devices shopping_mall_session_devices[]
+  
+  @@unique([session_token])
+  @@index([shopping_mall_customer_id, status])
+  @@index([last_activity_at])
+  @@index([expires_at])
+  @@index([created_at])
+}
+
+/// Device tracking for multi-device session management. Records each unique
+/// device/browser combination a user logs in from. Used to enforce
+/// concurrent session limits (5 for users, 10 for admins), detect
+/// unauthorized devices, and improve security through device recognition.
+/// Links devices to sessions for holistic user authentication history.
+///
+/// @namespace Authentication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_session_devices {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to user who owns this device record. {@link
+  /// shopping_mall_customer.id}
+  shopping_mall_customer_id String
+  
+  /// Reference to the session associated with this device login. {@link
+  /// shopping_mall_sessions.id}
+  shopping_mall_session_id String?
+  
+  /// User-friendly device name set by user (e.g., 'My Laptop', 'iPhone 14
+  /// Pro', 'Office Desktop'). Optional custom name for easy device
+  /// identification. Maximum 100 characters.
+  device_name String?
+  
+  /// Cryptographic hash identifying this specific device/browser combination.
+  /// Generated from user agent, resolution, plugins, timezone, and other
+  /// characteristics.
+  device_fingerprint String
+  
+  /// Browser name parsed from user agent (Chrome, Firefox, Safari, Edge). Used
+  /// for device classification and user-friendly display.
+  browser_name String?
+  
+  /// Browser version number (e.g., '120.0.1234.567'). Used for security checks
+  /// and deprecation warnings for outdated browsers.
+  browser_version String?
+  
+  /// Operating system name (Windows, macOS, iOS, Android, Linux). Used for
+  /// device classification and compatibility tracking.
+  operating_system String?
+  
+  /// Operating system version (e.g., 'Windows 11', 'macOS 14.1'). Used for
+  /// security analysis and support decisions.
+  os_version String?
+  
+  /// Device category: 'mobile', 'tablet', 'desktop'. Determines responsive
+  /// behavior and interaction patterns.
+  device_type String?
+  
+  /// ISO 8601 timestamp of first login from this device. Used to identify new
+  /// devices and track device age.
+  first_login_at DateTime
+  
+  /// ISO 8601 timestamp of most recent login from this device. Updated on each
+  /// login from this device.
+  last_login_at DateTime
+  
+  /// Total number of times user has logged in from this device. Incremented on
+  /// each successful login. Used to identify frequently used devices.
+  login_count Int
+  
+  /// Most recent IP address used with this device. May change for mobile
+  /// devices due to roaming. Used for location tracking.
+  last_ip_address String?
+  
+  /// Device trust level: 'trusted' (recognized), 'new' (first use, may require
+  /// verification), 'suspicious' (flagged for unusual behavior). Used to
+  /// determine if extra verification needed.
+  trust_status String
+  
+  /// Whether device is currently active. True if device has been used within
+  /// last 30 days. False marks device as dormant.
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  session shopping_mall_sessions? @relation(fields: [shopping_mall_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_session_id])
+  
+  @@unique([device_fingerprint, shopping_mall_customer_id], map: "shopping_mall_session_devices_device_fingerprint_shopp_57799fd4")
+  @@index([shopping_mall_customer_id, is_active], map: "shopping_mall_session_devices_shopping_mall_customer_i_10c644e2")
+  @@index([last_login_at])
+  @@index([first_login_at])
+}
+
+/// Secure password reset token management for account recovery. Issues
+/// time-limited (1 hour) tokens that allow users to reset forgotten
+/// passwords. Tokens are one-time use only - invalidated after first use to
+/// prevent brute force attacks. Tracks token status, usage timestamps, and
+/// consumed status for security.
+///
+/// @namespace Authentication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_password_reset_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to user account requesting password reset. {@link
+  /// shopping_mall_customer.id}
+  shopping_mall_customer_id String
+  
+  /// Cryptographically secure reset token (minimum 32 random characters). Sent
+  /// to user's email. Must be provided to verify password reset request. Never
+  /// displayed to user after initial generation.
+  token String
+  
+  /// Bcrypt-hashed token value stored in database. Original token never stored
+  /// plaintext. Hash generated with 12 salt rounds for security.
+  token_hash String
+  
+  /// ISO 8601 timestamp when reset token was generated. Used to calculate
+  /// token age and enforce 1-hour expiration window.
+  created_at DateTime
+  
+  /// ISO 8601 timestamp when token expires and becomes unusable. Set to
+  /// created_at + 1 hour. More restrictive than access tokens (1 hour vs 15
+  /// minutes) for security.
+  expires_at DateTime
+  
+  /// ISO 8601 timestamp when token was successfully used to reset password.
+  /// Null if never used. Indicates token has been consumed.
+  used_at DateTime?
+  
+  /// IP address from which token was requested. Used for fraud detection and
+  /// tracking password reset requests. May differ from IP of actual password
+  /// reset.
+  ip_address String
+  
+  /// Browser/device user agent string from token request. Used for device
+  /// fingerprinting and detecting suspicious reset patterns.
+  user_agent String
+  
+  /// Token status: 'pending' (waiting for use), 'used' (successfully
+  /// redeemed), 'expired' (past expiration time). Tokens transition from
+  /// pending to used on successful password reset.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token_hash])
+  @@index([shopping_mall_customer_id, status], map: "shopping_mall_password_reset_tokens_shopping_mall_cust_b7a647a3")
+  @@index([expires_at])
+  @@index([created_at])
+}

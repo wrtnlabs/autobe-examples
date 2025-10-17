@@ -1,0 +1,168 @@
+/// Guests of the redditCommunity platform with minimal access and no
+/// authentication credentials, representing unauthenticated users. Guests
+/// can browse public content but cannot create posts or comment. This table
+/// stores guest session tracking and metadata for auditing.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Session identifier for tracking guest browsing sessions.
+  session_id String
+  
+  /// IP address of the guest user for security and logging.
+  ip_address String
+  
+  /// User agent string from the guest's browser or device.
+  user_agent String?
+  
+  /// Timestamp of guest creation.
+  created_at DateTime
+  
+  /// Timestamp of last guest data update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_reports reddit_community_reports[]
+  
+  @@unique([session_id])
+  @@index([ip_address, created_at])
+}
+
+/// Members are registered and authenticated users who can create content,
+/// vote, comment, and subscribe. This table includes authentication details
+/// such as unique email addresses and password hashes, along with timestamps
+/// for account lifecycle management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for login and communication.
+  email String
+  
+  /// Hashed password for secure authentication.
+  password_hash String
+  
+  /// Indicates whether the member has verified their email.
+  is_email_verified Boolean
+  
+  /// Timestamp of member creation.
+  created_at DateTime
+  
+  /// Timestamp of last member data update.
+  updated_at DateTime
+  
+  /// Timestamp indicating soft deletion (account deactivation).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_community_moderators reddit_community_community_moderators[]
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_post_votes reddit_community_post_votes[]
+  reddit_community_comment_votes reddit_community_comment_votes[]
+  reddit_community_user_karma reddit_community_user_karma?
+  reddit_community_community_subscriptions reddit_community_community_subscriptions[]
+  reddit_community_reports_of_reporter_member_id reddit_community_reports[] @relation("reddit_community_reports_of_reporter_member_id")
+  reddit_community_reports_of_reported_member_id reddit_community_reports[] @relation("reddit_community_reports_of_reported_member_id")
+  reddit_community_report_actions reddit_community_report_actions[]
+  reddit_community_user_profiles reddit_community_user_profiles?
+  
+  @@unique([email])
+  @@index([is_email_verified, created_at])
+}
+
+/// Community moderators are members assigned to manage and moderate specific
+/// communities. This table links members to communities, defining their
+/// moderator roles and permissions within those communities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged community member's {@link reddit_community_members.id}
+  member_id String
+  
+  /// Belonged community's {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Timestamp when member was assigned as moderator of the community.
+  assigned_at DateTime
+  
+  /// Timestamp of moderator record creation.
+  created_at DateTime
+  
+  /// Timestamp of last update to moderator record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id, community_id], map: "reddit_community_community_moderators_member_id_commun_e310efdf")
+  @@index([community_id, assigned_at], map: "reddit_community_community_moderators_community_id_ass_9bb55b04")
+}
+
+/// Admins are system-wide users with full administrative privileges across
+/// all communities and platform settings. This table stores admin user
+/// authentication data and role-specific metadata.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique admin email address used for login and communication.
+  email String
+  
+  /// Hashed password for secure authentication.
+  password_hash String
+  
+  /// Integer indicating the level of administrative privileges.
+  admin_level Int
+  
+  /// Timestamp of admin user creation.
+  created_at DateTime
+  
+  /// Timestamp of last admin user record update.
+  updated_at DateTime
+  
+  /// Timestamp indicating soft deletion (account deactivation).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_report_actions reddit_community_report_actions[]
+  
+  @@unique([email])
+  @@index([admin_level, created_at])
+}

@@ -1,0 +1,75 @@
+/// User preference management for favorite items. Represents a user's
+/// collection of favorite items across different products. {@link
+/// shopping_mall_member.id}
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link shopping_mall_member.id}
+  shopping_mall_member_id String
+  
+  /// Name of the favorite collection.
+  name String
+  
+  /// Description of the favorite collection.
+  description String?
+  
+  /// When the favorite collection was created.
+  created_at DateTime
+  
+  /// When the favorite collection was last updated.
+  updated_at DateTime
+  
+  /// When the favorite collection was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member shopping_mall_member @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  shopping_favorite_items shopping_favorite_items[]
+  
+  @@unique([shopping_mall_member_id, name])
+  @@index([created_at])
+}
+
+/// Favorite items within a user's favorite collection. Represents individual
+/// items that a user has marked as favorites within their collections.
+/// {@link shopping_favorites.id} {@link shopping_sale_units.id}
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_favorite_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged favorite collection's {@link shopping_favorites.id}
+  shopping_favorite_id String
+  
+  /// Belonged sale unit's {@link shopping_sale_units.id}
+  shopping_sale_unit_id String
+  
+  /// When the favorite item was added to the collection.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  favorite shopping_favorites @relation(fields: [shopping_favorite_id], references: [id], onDelete: Cascade)
+  saleUnit shopping_sale_units @relation(fields: [shopping_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_sale_unit_id])
+  
+  @@unique([shopping_favorite_id, shopping_sale_unit_id], map: "shopping_favorite_items_shopping_favorite_id_shopping__85380852")
+  @@index([created_at])
+}

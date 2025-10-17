@@ -1,0 +1,42 @@
+/// User identity and authentication information, but not a person but a
+/// **connection** basis. This entity represents users across the system,
+/// including their authentication details and basic profile information.
+/// Used for all user-related operations including login, profile management,
+/// and access control.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for login and notifications.
+  email String
+  
+  /// Securely hashed password for authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// User's current status (e.g., active, suspended, pending). Used for access
+  /// control and workflow.
+  status String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was soft-deleted. Null indicates active
+  /// account.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([email])
+  @@index([created_at])
+}

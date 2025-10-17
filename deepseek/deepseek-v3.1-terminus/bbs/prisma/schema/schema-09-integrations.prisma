@@ -1,0 +1,283 @@
+/// Configuration and management of OAuth 2.0 provider integrations for user
+/// authentication. Stores provider-specific settings, client credentials,
+/// and authentication endpoints for services like Google, Facebook, and
+/// Microsoft Azure AD. Supports JWT token management and secure credential
+/// storage with encryption.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_oauth_providers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the OAuth provider (e.g., 'google', 'facebook', 'microsoft').
+  provider_name String
+  
+  /// OAuth client ID provided by the service provider.
+  client_id String
+  
+  /// Encrypted OAuth client secret for secure authentication.
+  client_secret String
+  
+  /// OAuth 2.0 authorization endpoint URL.
+  authorization_endpoint String
+  
+  /// OAuth 2.0 token endpoint URL.
+  token_endpoint String
+  
+  /// OAuth 2.0 user information endpoint URL.
+  user_info_endpoint String?
+  
+  /// Requested OAuth scopes (e.g., 'openid email profile').
+  scope String
+  
+  /// Whether this OAuth provider configuration is currently active.
+  is_active Boolean
+  
+  /// Timestamp when the OAuth provider configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the OAuth provider configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the OAuth provider configuration was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_api_configurations discussion_board_api_configurations[]
+  
+  @@unique([provider_name])
+  @@index([is_active, created_at])
+  @@index([provider_name, is_active])
+}
+
+/// Management of external service integrations for content validation,
+/// notifications, and analytics. Configures service endpoints, rate limits,
+/// and health monitoring for third-party APIs like spam detection,
+/// fact-checking, and email services.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_external_services {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the external service (e.g., 'akismet', 'sendgrid',
+  /// 'google_analytics').
+  service_name String
+  
+  /// Type of external service (e.g., 'spam_detection', 'email_service',
+  /// 'analytics').
+  service_type String
+  
+  /// Base URL for the external service API endpoints.
+  base_url String
+  
+  /// Encrypted API key for authenticating with the external service.
+  api_key String?
+  
+  /// Maximum number of API calls allowed per minute.
+  rate_limit_per_minute Int
+  
+  /// Maximum number of API calls allowed per hour.
+  rate_limit_per_hour Int
+  
+  /// Request timeout in milliseconds for API calls.
+  timeout_ms Int
+  
+  /// Whether this external service configuration is currently active.
+  is_active Boolean
+  
+  /// Endpoint URL for service health monitoring.
+  health_check_endpoint String?
+  
+  /// Timestamp of the last successful health check.
+  last_health_check DateTime?
+  
+  /// Timestamp when the external service configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the external service configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the external service configuration was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_api_configurations discussion_board_api_configurations[]
+  discussion_board_integration_logs discussion_board_integration_logs[]
+  
+  @@unique([service_name])
+  @@index([service_type, is_active])
+  @@index([is_active, last_health_check], map: "discussion_board_external_services_is_active_last_heal_c038980c")
+  @@index([created_at])
+}
+
+/// Configuration management for API endpoints and integration settings.
+/// Defines authentication methods, request/response formats, and security
+/// settings for external API integrations. Supports webhook configurations
+/// and real-time data synchronization.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_api_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to OAuth provider for API authentication. {@link
+  /// discussion_board_oauth_providers.id}.
+  discussion_board_oauth_providers_id String?
+  
+  /// Reference to external service for API integration. {@link
+  /// discussion_board_external_services.id}.
+  discussion_board_external_services_id String
+  
+  /// Name of the API endpoint (e.g., 'content_validation',
+  /// 'user_notification').
+  endpoint_name String
+  
+  /// Full URL of the API endpoint.
+  endpoint_url String
+  
+  /// HTTP method for API calls (e.g., 'GET', 'POST', 'PUT').
+  http_method String
+  
+  /// Type of authentication required (e.g., 'api_key', 'oauth2',
+  /// 'bearer_token').
+  authentication_type String
+  
+  /// Expected request format (e.g., 'json', 'xml', 'form_data').
+  request_format String
+  
+  /// Expected response format (e.g., 'json', 'xml').
+  response_format String
+  
+  /// Whether this endpoint is configured as a webhook receiver.
+  is_webhook Boolean
+  
+  /// Encrypted webhook secret for securing incoming webhook requests.
+  webhook_secret String?
+  
+  /// Whether this API configuration is currently active.
+  is_active Boolean
+  
+  /// Number of retry attempts for failed API calls.
+  retry_count Int
+  
+  /// Delay in milliseconds between retry attempts.
+  retry_delay_ms Int
+  
+  /// Timestamp when the API configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the API configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the API configuration was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  oauthProvider discussion_board_oauth_providers? @relation(fields: [discussion_board_oauth_providers_id], references: [id], onDelete: Cascade)
+  externalService discussion_board_external_services @relation(fields: [discussion_board_external_services_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_integration_logs discussion_board_integration_logs[]
+  
+  @@index([discussion_board_oauth_providers_id], map: "discussion_board_api_configurations_discussion_board_o_70f2f0ba")
+  @@index([discussion_board_external_services_id], map: "discussion_board_api_configurations_discussion_board_e_14f0af8a")
+  
+  @@unique([endpoint_name, discussion_board_external_services_id], map: "discussion_board_api_configurations_endpoint_name_disc_b689a0a7")
+  @@index([authentication_type, is_active], map: "discussion_board_api_configurations_authentication_typ_4e91e7c5")
+  @@index([is_webhook, is_active])
+  @@index([created_at])
+}
+
+/// Comprehensive audit trail of all integration activities and API
+/// interactions. Logs request/response data, performance metrics, and error
+/// details for monitoring, debugging, and compliance purposes. Supports
+/// audit requirements and service health analysis.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_integration_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the external service involved in the integration activity.
+  /// {@link discussion_board_external_services.id}.
+  discussion_board_external_services_id String
+  
+  /// Reference to the specific API configuration used for the integration.
+  /// {@link discussion_board_api_configurations.id}.
+  discussion_board_api_configurations_id String
+  
+  /// Type of integration activity logged (e.g., 'api_call',
+  /// 'webhook_received', 'error').
+  log_type String
+  
+  /// HTTP method used for the API request.
+  request_method String?
+  
+  /// Full URL of the API request.
+  request_url String?
+  
+  /// Request headers in JSON format.
+  request_headers String?
+  
+  /// Request body content for POST/PUT requests.
+  request_body String?
+  
+  /// HTTP status code received from the API response.
+  response_status_code Int?
+  
+  /// Response headers in JSON format.
+  response_headers String?
+  
+  /// Response body content received from the API.
+  response_body String?
+  
+  /// Total response time in milliseconds for the API call.
+  response_time_ms Int?
+  
+  /// Error message if the integration activity failed.
+  error_message String?
+  
+  /// Full error stack trace for debugging purposes.
+  error_stack_trace String?
+  
+  /// Whether the integration activity was successful.
+  is_success Boolean
+  
+  /// Timestamp when the integration activity occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  externalService discussion_board_external_services @relation(fields: [discussion_board_external_services_id], references: [id], onDelete: Cascade)
+  apiConfiguration discussion_board_api_configurations @relation(fields: [discussion_board_api_configurations_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_api_configurations_id], map: "discussion_board_integration_logs_discussion_board_api_7333d348")
+  
+  @@index([log_type, created_at])
+  @@index([is_success, created_at])
+  @@index([discussion_board_external_services_id, created_at], map: "discussion_board_integration_logs_discussion_board_ext_e9c50618")
+  @@index([response_status_code, created_at], map: "discussion_board_integration_logs_response_status_code_b65797a4")
+}

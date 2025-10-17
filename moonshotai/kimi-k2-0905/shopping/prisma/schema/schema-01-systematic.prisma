@@ -1,0 +1,245 @@
+/// Marketplace channel configuration defining different sales channels or
+/// storefronts within the multi-vendor shopping mall platform. Channels
+/// organize sellers and products into distinct market segments or geographic
+/// regions.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique channel identifier code used for system reference and URL
+  /// generation.
+  code String
+  
+  /// Display name of the channel shown to customers and sellers in the
+  /// marketplace.
+  name String
+  
+  /// Detailed description explaining the channel's purpose, target audience,
+  /// and business model.
+  description String?
+  
+  /// Indicates if this is the primary/default channel for the platform.
+  primary Boolean
+  
+  /// Specifies whether seller participation in this channel is mandatory or
+  /// optional.
+  required Boolean
+  
+  /// Determines if sellers can only participate in this channel or multiple
+  /// channels simultaneously.
+  exclusive Boolean
+  
+  /// Channel operational status indicating active, inactive, or maintenance
+  /// modes.
+  status String
+  
+  /// Configures whether channel settings multiply with other configuration
+  /// parameters or override them.
+  multiplicative Boolean
+  
+  /// Timestamp when the channel configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the channel configuration was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_configurations shopping_mall_configurations[]
+  shopping_mall_system_logs shopping_mall_system_logs[]
+  
+  @@unique([code])
+  @@index([primary, status])
+  @@index([created_at])
+  @@index([status])
+}
+
+/// Content sections for organizing marketplace features, content blocks, and
+/// navigation elements within the platform. Sections provide logical
+/// groupings for UI components and functionality organization.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent section's {@link shopping_mall_sections.id} for hierarchical
+  /// section organization.
+  parent_id String?
+  
+  /// Unique section identifier code used for system reference and navigation
+  /// routing.
+  code String
+  
+  /// Display name of the section shown in navigation and administrative
+  /// interfaces.
+  name String
+  
+  /// Section title used for display headers and SEO optimization in content
+  /// areas.
+  title String
+  
+  /// Detailed description explaining the section's content and organizational
+  /// purpose.
+  description String?
+  
+  /// Display order position for sections within their parent container or
+  /// navigation structure.
+  sequence Int
+  
+  /// Indicates if this section contains restricted administrative or
+  /// system-level content.
+  secret Boolean
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_sections? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_sections[] @relation("recursive")
+  shopping_mall_configurations shopping_mall_configurations[]
+  shopping_mall_system_logs shopping_mall_system_logs[]
+  
+  @@unique([code])
+  @@index([parent_id, sequence])
+  @@index([sequence])
+  @@index([secret])
+  @@index([created_at])
+}
+
+/// System-wide configuration settings controlling platform behavior, feature
+/// flags, integration parameters, and operational rules across the entire
+/// shopping mall marketplace.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel's {@link shopping_mall_channels.id} this configuration applies
+  /// to, or null for global settings.
+  channel_id String?
+  
+  /// Section's {@link shopping_mall_sections.id} this configuration belongs
+  /// to, or null for system-wide settings.
+  section_id String?
+  
+  /// Unique configuration key code used for programmatic reference and system
+  /// integration.
+  code String
+  
+  /// Human-readable name describing the configuration setting's purpose and
+  /// functionality.
+  name String
+  
+  /// Detailed explanation of the configuration setting, its impact, and
+  /// recommended values.
+  description String?
+  
+  /// Configuration value stored as string for maximum flexibility across
+  /// different data types.
+  value String
+  
+  /// Indicates if this configuration parameter is mandatory for system
+  /// operation.
+  required Boolean
+  
+  /// Specifies whether configuration values combine mathematically with other
+  /// settings or act as absolute values.
+  multiplicative Boolean
+  
+  /// Display order for configuration settings within groups or administrative
+  /// interfaces.
+  sequence Int
+  
+  /// Timestamp when the configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels? @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  section shopping_mall_sections? @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  
+  @@unique([channel_id, section_id, code])
+  @@index([channel_id, section_id, sequence])
+  @@index([section_id, sequence])
+  @@index([sequence])
+  @@index([created_at])
+}
+
+/// System audit logs recording platform activities, user actions,
+/// administrative changes, errors, and operational events for compliance,
+/// troubleshooting, and system monitoring purposes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel's {@link shopping_mall_channels.id} where the logged event
+  /// occurred, if applicable.
+  channel_id String?
+  
+  /// Section's {@link shopping_mall_sections.id} related to the logged event,
+  /// if applicable.
+  section_id String?
+  
+  /// Log event type code identifying the specific system action or event that
+  /// occurred.
+  code String
+  
+  /// Human-readable title describing the logged event for quick identification.
+  title String
+  
+  /// Detailed event description containing context, parameters, and relevant
+  /// data.
+  body String?
+  
+  /// IP address from which the logged action originated, for security and
+  /// auditing purposes.
+  ip String?
+  
+  /// Timestamp when the system log entry was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels? @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  section shopping_mall_sections? @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  
+  @@index([channel_id, code, created_at])
+  @@index([section_id, code, created_at])
+  @@index([code, created_at])
+  @@index([ip, created_at])
+  @@index([created_at])
+}

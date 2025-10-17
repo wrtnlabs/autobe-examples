@@ -1,0 +1,199 @@
+/// System configuration settings for the discussion board platform. Stores
+/// platform-wide configuration parameters that control system behavior,
+/// features, and operational settings. These configurations are managed by
+/// administrators and referenced by various system components. {@link
+/// discussion_board_admins.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_system_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier. Used to reference specific system
+  /// settings programmatically.
+  config_key String
+  
+  /// Configuration value stored as string. Can represent various data types
+  /// that are serialized to string format.
+  config_value String
+  
+  /// Data type of the configuration value. Examples: 'boolean', 'string',
+  /// 'integer', 'double', 'json'.
+  data_type String
+  
+  /// Human-readable description explaining the purpose and usage of this
+  /// configuration setting.
+  description String
+  
+  /// Configuration category for organizational grouping. Examples:
+  /// 'authentication', 'moderation', 'performance', 'ui'.
+  category String
+  
+  /// Configuration status indicating whether it's active, inactive, or
+  /// deprecated.
+  status String
+  
+  /// Timestamp when this configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this configuration was soft deleted. Allows for
+  /// configuration history and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key])
+  @@index([category])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Comprehensive audit trail of system actions and user activities. Records
+/// all important operations performed on the platform for security,
+/// compliance, and debugging purposes. Provides immutable historical record
+/// of system changes. {@link discussion_board_admins.id}, {@link
+/// discussion_board_members.id}, {@link discussion_board_moderators.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the action. References the user who initiated this
+  /// audit event. {@link discussion_board_admins.id} or {@link
+  /// discussion_board_members.id} or {@link discussion_board_moderators.id}
+  user_id String?
+  
+  /// Administrator who performed administrative action. References the admin
+  /// user for administrative audit events. {@link discussion_board_admins.id}
+  admin_id String?
+  
+  /// Type of action performed. Examples: 'user_login', 'content_create',
+  /// 'content_delete', 'user_ban', 'config_change'.
+  action_type String
+  
+  /// Type of resource affected by the action. Examples: 'user', 'topic',
+  /// 'comment', 'category', 'system_config'.
+  resource_type String
+  
+  /// Identifier of the specific resource affected by this action.
+  resource_id String?
+  
+  /// IP address from which the action was performed. Used for security and
+  /// geographic tracking.
+  ip_address String?
+  
+  /// User agent string from the client that performed the action. Helps
+  /// identify client software and devices.
+  user_agent String?
+  
+  /// Detailed information about the action performed, often stored as JSON for
+  /// flexibility.
+  details String?
+  
+  /// Whether the action was successful or failed. Helps track failed attempts
+  /// and errors.
+  success Boolean
+  
+  /// Error message if the action failed. Provides context for troubleshooting
+  /// failed operations.
+  error_message String?
+  
+  /// Timestamp when this audit event was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this audit event was last updated (rarely changed).
+  updated_at DateTime
+  
+  /// Timestamp when this audit event was soft deleted. Typically null as audit
+  /// logs are preserved.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_admins? @relation("discussion_board_audit_logs_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins? @relation("discussion_board_audit_logs_of_admin_id", fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([action_type])
+  @@index([resource_type])
+  @@index([created_at])
+  @@index([user_id])
+  @@index([admin_id])
+  @@index([success])
+}
+
+/// System performance monitoring and metrics collection. Tracks platform
+/// performance indicators, response times, resource utilization, and
+/// operational metrics for system health monitoring and optimization. {@link
+/// discussion_board_system_configs.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_performance_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the performance metric being tracked. Examples:
+  /// 'api_response_time', 'database_query_time', 'memory_usage',
+  /// 'cpu_utilization'.
+  metric_name String
+  
+  /// Numeric value of the performance metric measurement.
+  metric_value Float
+  
+  /// Unit of measurement for the metric value. Examples: 'milliseconds',
+  /// 'percentage', 'bytes', 'requests_per_second'.
+  metric_unit String
+  
+  /// System component being measured. Examples: 'authentication', 'database',
+  /// 'api', 'cache', 'search'.
+  component String
+  
+  /// Warning threshold value for this metric. Triggers alerts when exceeded.
+  threshold_warning Float?
+  
+  /// Critical threshold value for this metric. Triggers urgent alerts when
+  /// exceeded.
+  threshold_critical Float?
+  
+  /// Current status of this metric reading. Examples: 'normal', 'warning',
+  /// 'critical', 'unknown'.
+  status String
+  
+  /// Timestamp when this performance metric was sampled or collected.
+  sampled_at DateTime
+  
+  /// Timestamp when this performance metric record was created.
+  created_at DateTime
+  
+  /// Timestamp when this performance metric record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this performance metric record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([metric_name])
+  @@index([component])
+  @@index([status])
+  @@index([sampled_at])
+  @@index([created_at])
+}

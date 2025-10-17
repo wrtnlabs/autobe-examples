@@ -1,0 +1,63 @@
+/// Community records for communityPortal. Primary business entity
+/// representing a topic-focused community where members create posts,
+/// subscribe, and moderate content. Key relationships: creator user ({@link
+/// community_portal_users.id}). Contains temporal fields for auditing and
+/// soft-delete. Adjusted creator foreign key to be nullable to avoid
+/// cascade-delete of communities when a user is removed. Use
+/// application-level reassignment workflows or DB ON DELETE SET NULL.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creator user's {@link community_portal_users.id}. Nullable to avoid
+  /// cascade-deleting communities when the creator account is removed.
+  creator_user_id String?
+  
+  /// Human-readable community title.
+  name String
+  
+  /// URL-friendly unique identifier (slug) for the community; enforce
+  /// case-insensitive uniqueness at DB-level (e.g., unique index on
+  /// lower(slug)) or canonicalize on write.
+  slug String
+  
+  /// Short community description or purpose statement.
+  description String?
+  
+  /// Whether the community is private (invite-only).
+  is_private Boolean
+  
+  /// Visibility policy (e.g., 'public' or 'private'). Consider converting to
+  /// an enum or check constraint to ensure consistent values.
+  visibility String
+  
+  /// Record creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when record is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  creator community_portal_users? @relation(fields: [creator_user_id], references: [id], onDelete: Cascade)
+  
+  community_portal_moderators community_portal_moderators[]
+  community_portal_posts community_portal_posts[]
+  community_portal_subscriptions community_portal_subscriptions[]
+  community_portal_reports community_portal_reports[]
+  
+  @@unique([slug])
+  @@index([created_at])
+  @@index([visibility, created_at])
+  @@index([creator_user_id, created_at])
+}

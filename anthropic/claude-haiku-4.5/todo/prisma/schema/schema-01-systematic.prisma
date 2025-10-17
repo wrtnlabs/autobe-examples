@@ -1,0 +1,197 @@
+/// System configuration and application settings that control system
+/// behavior and initialization. This table stores key-value configuration
+/// pairs that enable system customization, feature flags, and operational
+/// parameters. Settings are typically set during system initialization and
+/// modified only by administrators through configuration interfaces. These
+/// settings persist across application restarts and sessions, providing
+/// consistent system behavior.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier such as 'max_todos_per_user',
+  /// 'session_timeout_minutes', 'app_version', 'maintenance_mode_enabled', or
+  /// 'feature_flag_offline_sync'. This key uniquely identifies each
+  /// configuration setting.
+  setting_key String
+  
+  /// Configuration value as string, allowing flexible storage of various data
+  /// types (numbers, booleans, JSON objects stored as strings). Examples:
+  /// '1000', 'true', '30', '{"enabled": true}'. Interpretation depends on
+  /// setting_key context.
+  setting_value String
+  
+  /// Data type of the setting value to guide interpretation: 'string',
+  /// 'integer', 'boolean', 'json', 'float'. Helps applications parse setting
+  /// values correctly without ambiguity.
+  setting_type String
+  
+  /// Human-readable description explaining the purpose and valid values of
+  /// this setting. Examples: 'Maximum number of todos allowed per user
+  /// account', 'Session timeout in minutes before automatic logout',
+  /// 'Indicates if system is in maintenance mode'. Helps administrators
+  /// understand settings.
+  description String?
+  
+  /// Whether this setting can be changed at runtime by administrators. True
+  /// allows runtime modification; false indicates immutable settings that
+  /// require system restart to change. Examples: app version is immutable,
+  /// maintenance mode is mutable.
+  is_mutable Boolean
+  
+  /// Whether the setting_value contains sensitive information requiring
+  /// encryption at rest. True indicates the value should be encrypted; false
+  /// allows plaintext storage. Examples: true for API keys, false for version
+  /// numbers.
+  is_encrypted Boolean
+  
+  /// UUID of the administrator who last modified this setting. Enables audit
+  /// trail tracking of configuration changes. Required for compliance
+  /// documentation of who changed system settings and when.
+  modified_by_admin_id String?
+  
+  /// Timestamp when this configuration setting was first created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this configuration setting was last modified. Tracks the
+  /// most recent change to the setting value or metadata.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([setting_key])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([is_mutable])
+  @@index([is_encrypted])
+}
+
+/// System error and exception logging table capturing all error events,
+/// failures, and exceptional conditions that occur during application
+/// operation. This table records comprehensive error details including error
+/// codes, messages, stack traces, affected resources, user context, and
+/// system state at time of error. Error logs are essential for debugging,
+/// monitoring system health, diagnosing issues, and identifying patterns of
+/// recurring problems. Logs are retained for analysis and compliance
+/// purposes according to data retention policies.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_error_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique error identifier following format TODOAPP-XXXX where XX represents
+  /// error category (AUTH, VAL, OP, SYS, REC, EDGE) and XX is sequence number.
+  /// Examples: TODOAPP-VAL-001, TODOAPP-OP-005, TODOAPP-SYS-003. Used for
+  /// tracking, monitoring, and support reference.
+  error_code String
+  
+  /// Classification of error type: 'validation', 'authentication',
+  /// 'authorization', 'database', 'network', 'server', 'storage',
+  /// 'concurrency', 'data_integrity', 'system'. Enables filtering and analysis
+  /// of specific error categories.
+  error_type String
+  
+  /// Error severity classification: 'critical' (system cannot function),
+  /// 'high' (operation failed, user action required), 'medium' (operation
+  /// partially affected, retry possible), 'low' (minor issue, informational).
+  /// Guides response priority and escalation.
+  severity_level String
+  
+  /// User-friendly error message displayed to end users, non-technical and
+  /// actionable. Examples: 'Unable to create todo. Please try again.', 'Title
+  /// cannot be empty. Please enter a title.', 'Connection lost. Check your
+  /// internet and refresh.' Maximum 500 characters.
+  error_message String
+  
+  /// Technical error details for debugging: exception names, stack traces, SQL
+  /// queries (sanitized), API responses, database errors. Used by developers
+  /// and system administrators for troubleshooting but never shown to users.
+  /// Stored as JSON for structured analysis.
+  technical_details String?
+  
+  /// Type of operation that triggered the error: 'create_todo', 'read_todos',
+  /// 'update_todo', 'delete_todo', 'login', 'register', 'logout',
+  /// 'database_query', 'file_write', 'network_request'. Identifies which
+  /// feature/operation failed.
+  operation_type String?
+  
+  /// UUID of the specific resource involved in the error (todo ID, user ID,
+  /// etc.) if applicable. Enables tracing error to specific record. Null if
+  /// error is system-level without specific resource.
+  resource_id String?
+  
+  /// Type of resource involved in error: 'todo', 'user', 'session', 'file',
+  /// 'database', 'network', 'storage'. Identifies what resource caused or was
+  /// affected by the error. MUST be provided if resource_id is not null.
+  resource_type String?
+  
+  /// UUID of the user associated with the error if applicable. Stored as user
+  /// ID for association with todo_app_authenticateduser. Null for system-level
+  /// errors. Used to track error frequency per user and user-specific issue
+  /// patterns.
+  user_context String?
+  
+  /// HTTP request path or API endpoint where error occurred. Examples:
+  /// '/api/todos', '/api/todos/123', '/auth/login'. Enables tracking which
+  /// endpoints have error issues.
+  request_path String?
+  
+  /// HTTP response status code associated with error: 400 (bad request), 401
+  /// (unauthorized), 403 (forbidden), 404 (not found), 429 (too many
+  /// requests), 500 (server error), 503 (service unavailable). Null if not
+  /// HTTP-based error.
+  http_status_code Int?
+  
+  /// Whether this error has been investigated, understood, and resolved
+  /// (patched). True indicates fix deployed and error should not recur; false
+  /// indicates active issue requiring attention. Used to track outstanding
+  /// problems.
+  is_resolved Boolean
+  
+  /// UUID of the administrator who resolved/investigated this error. Enables
+  /// audit trail tracking of error resolution. Null if error not yet resolved
+  /// or resolved by automated system.
+  resolved_by_admin_id String?
+  
+  /// Administrator notes documenting the investigation, root cause analysis,
+  /// and fix applied for resolved errors. Examples: 'Caused by database
+  /// connection timeout. Improved connection retry logic. Deploy to production
+  /// May 15.', 'User entered invalid email format. Improved validation message
+  /// clarity.'
+  resolution_notes String?
+  
+  /// Timestamp when error resolution was verified/confirmed. Indicates when
+  /// fix validation was completed. Null if error not yet resolved.
+  resolved_verification_at DateTime?
+  
+  /// Timestamp indicating when this error log should be purged according to
+  /// retention policy. Enables automatic cleanup of old error logs. Set to
+  /// current_time + retention_period at creation.
+  retention_expires_at DateTime?
+  
+  /// Timestamp when the error was first recorded in the system. Essential for
+  /// error trend analysis, time-based filtering, and retention policy
+  /// enforcement.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([error_code])
+  @@index([created_at, severity_level])
+  @@index([created_at, error_type])
+  @@index([severity_level, is_resolved, created_at])
+  @@index([retention_expires_at])
+}

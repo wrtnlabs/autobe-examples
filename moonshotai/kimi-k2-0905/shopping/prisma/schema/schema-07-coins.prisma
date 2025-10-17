@@ -1,0 +1,629 @@
+/// Customer digital coin account with secure financial asset management,
+/// offering loyalty program participation with comprehensive balance
+/// tracking, tier progression, and usage analytics across the multi-vendor
+/// marketplace.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_coins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Account owner's {@link shopping_mall_customers.id} linking coin balance
+  /// to registered customer identity.
+  shopping_customer_id String
+  
+  /// Current loyalty tier's {@link shopping_mall_loyalty_tiers.id} determining
+  /// earning rate and unlockable rewards.
+  shopping_loyalty_tier_id String?
+  
+  /// Secure password hash protecting coin account access with encryption
+  /// standards suitable for financial asset management.
+  password_hash String
+  
+  /// Financial account status: active, suspended, closed, locked maintaining
+  /// security and audit trail.
+  account_status String
+  
+  /// Account verification level: unverified, email_verified, identity_verified
+  /// ensuring compliance.
+  verification_status String
+  
+  /// Current redeemable coin balance with proper validation for secure
+  /// financial operations.
+  balance Int
+  
+  /// Lifetime coins earned including expired coins for comprehensive customer
+  /// value tracking.
+  total_earned Int
+  
+  /// Total coins successfully redeemed for rewards enabling redemption history
+  /// analysis.
+  total_redeemed Int
+  
+  /// Coins pending redemption or processing enabling real-time accurate
+  /// balance calculations.
+  pending_balance Int
+  
+  /// Accumulated expired coins removed from active circulation for audit
+  /// compliance.
+  expired_balance Int
+  
+  /// Progress percentage toward next loyalty tier (0-100) supporting tier
+  /// milestone celebrations.
+  tier_progress Float
+  
+  /// Monthly spending amount contributing to tier progression for transparent
+  /// customer guidance.
+  tier_qualification_amount Float
+  
+  /// Current tier qualification period start date enabling monthly/annual
+  /// qualification tracking.
+  tier_qualification_starts_at DateTime
+  
+  /// Current tier qualification period end date ensuring automatic tier
+  /// progression.
+  tier_qualification_ends_at DateTime
+  
+  /// Number of failed security question attempts with automatic lockout
+  /// protection.
+  security_question_count Int
+  
+  /// Last successful security verification maintaining financial account
+  /// integrity.
+  last_security_check_at DateTime?
+  
+  /// Automatic email notification when coin activity occurs providing customer
+  /// security awareness.
+  activity_notification_email Boolean
+  
+  /// SMS notification for significant coin transactions maintaining security
+  /// monitoring.
+  activity_notification_sms Boolean
+  
+  /// Automatic redemption when eligible rewards become available enhancing
+  /// customer experience.
+  auto_redeem_enabled Boolean
+  
+  /// Coin account creation timestamp for audit trail and account lifecycle
+  /// tracking.
+  created_at DateTime
+  
+  /// Last account activity including balance changes ensuring data freshness.
+  updated_at DateTime
+  
+  /// Account suspension timestamp for audit compliance while preserving
+  /// transaction history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  currentTier shopping_mall_loyalty_tiers? @relation(fields: [shopping_loyalty_tier_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_customer_id])
+  @@index([verification_status, account_status], map: "shopping_mall_customer_coins_verification_status_accou_9b25ac6a")
+  @@index([last_security_check_at])
+  @@index([shopping_loyalty_tier_id, tier_progress], map: "shopping_mall_customer_coins_shopping_loyalty_tier_id__624cd870")
+}
+
+/// Comprehensive audit trail for coin earnings across multi-vendor
+/// marketplace operations, supporting sophisticated seller commission
+/// calculations, multi-order attribution, and detailed revenue tracking for
+/// business intelligence and financial reconciliation.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_earnings_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer earning coins {@link shopping_mall_customers.id} enabling
+  /// loyalty program participation.
+  shopping_customer_id String
+  
+  /// Related multi-vendor order {@link shopping_mall_orders.id} linking
+  /// earnings to purchase transactions.
+  shopping_order_id String?
+  
+  /// Selling vendor {@link shopping_mall_sellers.id} whose products generated
+  /// coin earnings for commission tracking.
+  shopping_seller_id String
+  
+  /// Specific product {@link shopping_mall_products.id} generating earnings
+  /// enabling product-level analytics.
+  shopping_product_id String?
+  
+  /// Coins credited to customer account from qualifying purchase activity.
+  coins_earned Int
+  
+  /// Source activity: purchase, review, social_share, referral, welcome_bonus,
+  /// milestone, manual_adjustment.
+  earning_type String
+  
+  /// Commission percentage applied to seller at time of earning snapshot for
+  /// audit trail.
+  seller_commission_rate Float
+  
+  /// Actual commission amount calculated from transaction for transparent
+  /// financial tracking.
+  seller_commission_amount Float
+  
+  /// Platform commission rate at time of transaction enabling accurate
+  /// financial reconciliation.
+  platform_commission_rate Float
+  
+  /// Platform commission amount ensuring proper revenue attribution across
+  /// marketplace operations.
+  platform_commission_amount Float
+  
+  /// Net seller amount after commission enabling vendor profitability analysis.
+  seller_earnings_amount Float
+  
+  /// Order subtotal qualified for coin earning calculations supporting
+  /// detailed analytics.
+  order_subtotal Float
+  
+  /// Earning rate calculation coins per dollar enabling transparent program
+  /// mechanics.
+  coins_per_dollar Float?
+  
+  /// Purchase amount meeting loyalty program requirements for accurate earning
+  /// attribution.
+  qualifying_purchase_amount Float?
+  
+  /// Specific milestone achievement when earnings come from loyalty milestones
+  /// enabling recognition.
+  milestone_name String?
+  
+  /// Referral code generating earnings for affiliate tracking and marketing
+  /// attribution.
+  referral_code_used String?
+  
+  /// Social media platform generating social_share earnings for multi-channel
+  /// marketing.
+  social_platform String?
+  
+  /// Product category generating earnings enabling category-based earning
+  /// optimization.
+  product_category String?
+  
+  /// Loyalty tier bonus multiplier applied to base earning rate for
+  /// transparent tier benefits.
+  tier_multiplier_applied Float
+  
+  /// Detailed earning activity description for customer reference and
+  /// comprehensive audit trail.
+  earning_description String
+  
+  /// Transparent calculation breakdown showing how earning amount was
+  /// determined.
+  earnings_calculation String
+  
+  /// Coin expiration rules applied to this earning instance ensuring clear
+  /// customer communication.
+  expiration_policy String
+  
+  /// Promotional earning multiplier applied during special campaigns for
+  /// accurate attribution.
+  promotional_multiplier Float
+  
+  /// Specific promotional campaign that enhanced earning for marketing
+  /// effectiveness analysis.
+  promotional_campaign_name String?
+  
+  /// External system reference enabling integration with marketing platforms
+  /// and affiliates.
+  external_reference_id String?
+  
+  /// Earning qualification timestamp ensuring suitable delay for returns and
+  /// disputes.
+  earning_qualified_at DateTime
+  
+  /// These specific coins expiration date maintaining accurate expiry
+  /// management per earning.
+  coins_expire_at DateTime?
+  
+  /// Record creation timestamp for comprehensive chronological tracking across
+  /// marketplace operations.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_customer_id])
+  @@index([shopping_seller_id])
+  
+  @@index([earning_type, shopping_seller_id, created_at], map: "shopping_mall_earnings_history_earning_type_shopping_s_d7989155")
+  @@index([shopping_product_id, earning_type], map: "shopping_mall_earnings_history_shopping_product_id_ear_92c111e6")
+  @@index([milestone_name, earning_qualified_at], map: "shopping_mall_earnings_history_milestone_name_earning__970e1f86")
+  @@index([shopping_order_id, shopping_seller_id], map: "shopping_mall_earnings_history_shopping_order_id_shopp_0514188b")
+}
+
+/// Historical record of all coin redemptions for rewards. Provides audit
+/// trail for coin spending and maintains redemption history for loyalty
+/// program tracking.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coin_redemptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who redeemed coins {@link shopping_mall_customers.id}.
+  shopping_customer_id String
+  
+  /// Reward that was redeemed {@link shopping_mall_rewards.id}.
+  shopping_reward_id String
+  
+  /// Number of coins redeemed for this reward. Positive integer.
+  coins_redeemed Int
+  
+  /// Status: 'pending', 'confirmed', 'delivered', 'cancelled', 'expired'.
+  redemption_status String
+  
+  /// Unique verification code for tracking the reward redemption.
+  redemption_code String
+  
+  /// Monetary value of reward in USD at time of redemption.
+  redeemed_value Float
+  
+  /// Discount amount applied to order when reward is used. Null if not applied
+  /// to order.
+  discount_amount Float?
+  
+  /// Order ID if reward was applied to an order. Null for standalone rewards.
+  related_order_id String?
+  
+  /// Timestamp when redemption was initiated.
+  redeemed_at DateTime
+  
+  /// Timestamp when redemption was confirmed/approved.
+  confirmed_at DateTime?
+  
+  /// Timestamp when reward was delivered or applied.
+  delivered_at DateTime?
+  
+  /// Method used: 'customer_self', 'admin_assisted', 'automatic'.
+  redeemed_by String
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  reward shopping_mall_rewards @relation(fields: [shopping_reward_id], references: [id], onDelete: Cascade)
+  
+  @@unique([redemption_code])
+  @@index([shopping_customer_id, redeemed_at], map: "shopping_mall_coin_redemptions_shopping_customer_id_re_a49b0499")
+  @@index([redemption_status, redeemed_at], map: "shopping_mall_coin_redemptions_redemption_status_redee_03c934f2")
+  @@index([shopping_reward_id, redeemed_at], map: "shopping_mall_coin_redemptions_shopping_reward_id_rede_867cefbf")
+}
+
+/// Comprehensive reward catalog enabling coin redemption for discounts,
+/// products, and special offers while managing sophisticated vendor-specific
+/// availability, geographical restrictions, and time-based campaigns with
+/// transparent value calculations for business intelligence.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_rewards {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Redeemable product {@link shopping_mall_products.id} enabling
+  /// product-specific reward offerings.
+  shopping_product_id String?
+  
+  /// Offering vendor {@link shopping_mall_sellers.id} providing reward
+  /// supporting seller-specific promotions.
+  shopping_seller_id String?
+  
+  /// Unique reward identifier for catalog organization and redemption
+  /// processing.
+  reward_code String
+  
+  /// Customer-facing name displayed prominently in reward catalog and
+  /// redemption interfaces.
+  reward_name String
+  
+  /// Primary category: discount_percentage, discount_fixed, free_product,
+  /// free_shipping, upgrade, exclusive_access, gift_card.
+  reward_type String
+  
+  /// Monetary value in USD for accounting purposes enabling transparent
+  /// business financial tracking.
+  market_value Float
+  
+  /// Coins required for redemption supporting flexible pricing strategies for
+  /// different customer bands.
+  coin_cost Int
+  
+  /// Discount rate applied when redemption type is discount_percentage
+  /// enabling percentage-based rewards.
+  discount_percentage Float?
+  
+  /// Fixed monetary discount for discount_fixed type providing transparent
+  /// pricing for customers.
+  discount_fixed_amount Float?
+  
+  /// Minimum purchase requirement enabling strategic reward application for
+  /// business growth.
+  minimum_order_amount Float?
+  
+  /// Discount cap for percentage-based rewards maintaining cost control and
+  /// business sustainability.
+  maximum_discount_amount Float?
+  
+  /// Number of products awarded for free_product type supporting bundle reward
+  /// strategies.
+  free_product_quantity Int?
+  
+  /// Business workflow: draft, active, limited_time, seasonal, exclusive,
+  /// expired enabling lifecycle management.
+  reward_business_status String
+  
+  /// Availability scope: marketplace_wide, seller_specific, category_limited,
+  /// geographic_restricted.
+  vendor_availability String
+  
+  /// Geographic limitations if reward restricted to specific regions
+  /// supporting international operations.
+  target_geography String?
+  
+  /// Eligible customer segments: all_customers, new_customers,
+  /// loyalty_tier_specific, vip_only.
+  customer_segment_target String?
+  
+  /// Maximum redemptions per customer preventing reward abuse while
+  /// encouraging program participation.
+  usage_limit_per_customer Int?
+  
+  /// Total reward redemption limit enabling scarcity marketing and cost
+  /// control strategies.
+  total_usage_limit Int?
+  
+  /// Redemption counter tracking program effectiveness and availability status
+  /// for customer guidance.
+  current_usage_count Int
+  
+  /// Reward active status controlling visibility and availability in reward
+  /// catalog.
+  is_active Boolean
+  
+  /// Seasonal availability enabling holiday-specific and event-based reward
+  /// campaigns.
+  seasonal_restriction String?
+  
+  /// Indication if reward requires minimum cart size for activation supporting
+  /// upselling strategies.
+  bulk_order_qualification Boolean
+  
+  /// Reference enabling upgrade reward types where specific products unlock
+  /// premium offerings.
+  upgrade_from_product_id String?
+  
+  /// Features unlocked by exclusive_access reward type providing VIP customer
+  /// privileges.
+  exclusive_access_features String?
+  
+  /// Comprehensive reward explanation communicating benefits value proposition
+  /// effectively.
+  detailed_description String
+  
+  /// Complete terms and conditions ensuring customer understanding of
+  /// redemption requirements.
+  reward_terms_completeness String
+  
+  /// Step-by-step guidance for customers ensuring smooth reward application
+  /// and usage.
+  redemption_instructions String
+  
+  /// Visual representation in reward catalog enhancing customer recognition
+  /// and engagement.
+  reward_icon_url String?
+  
+  /// Marketing materials supporting reward promotion across platform
+  /// touchpoints.
+  promotional_banner_url String?
+  
+  /// Availability start date supporting planned reward campaigns for strategic
+  /// business timing.
+  valid_from DateTime?
+  
+  /// Availability end date maintaining automatic reward lifecycle management
+  /// and customer clarity.
+  valid_until DateTime?
+  
+  /// Catalog positioning enabling strategic reward highlighting based on
+  /// business priorities.
+  display_priority Int
+  
+  /// Reward creation timestamp providing comprehensive audit trail for
+  /// business analysis.
+  created_at DateTime
+  
+  /// Last modification tracking for reward optimization and maintenance
+  /// synchronization.
+  updated_at DateTime
+  
+  /// Reward catalog removal timestamp supporting soft deletion while
+  /// maintaining transaction history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products? @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coin_redemptions shopping_mall_coin_redemptions[]
+  
+  @@index([shopping_product_id])
+  
+  @@unique([reward_code])
+  @@index([vendor_availability, reward_business_status, display_priority], map: "shopping_mall_rewards_vendor_availability_reward_busin_3aee64fe")
+  @@index([customer_segment_target, is_active])
+  @@index([valid_from, valid_until])
+  @@index([shopping_seller_id, market_value])
+}
+
+/// Sophisticated tier hierarchy enabling customer progression through
+/// loyalty program with transparent qualification requirements, earning
+/// multipliers, and automatic upgrade capabilities supporting strategic
+/// customer retention and value optimization.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_loyalty_tiers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Descriptive name identifying tier level (Bronze, Silver, Gold, Platinum)
+  /// for customer recognition.
+  tier_name String
+  
+  /// Numbered hierarchy for technical progression calculations enabling
+  /// automated tier upgrades.
+  tier_level_order Int
+  
+  /// Unique systematic identifier for integration and business logic reference.
+  tier_code String
+  
+  /// Base earning rate multiplier providing transparent tier benefits and
+  /// upgrade incentives.
+  coin_earning_multiplier Float
+  
+  /// Points earned per dollar spent providing alternative calculation method
+  /// for customer flexibility.
+  point_earning_rate Float
+  
+  /// Spending required within qualification period for tier progression
+  /// enabling clear customer goals.
+  tier_advancement_threshold Float
+  
+  /// Measurement timeframe (months) for tier qualification tracking providing
+  /// predictable evaluation cycles.
+  qualification_period_months Int
+  
+  /// Minimum spending required to maintain current tier preventing automatic
+  /// downgrade.
+  tier_maintenance_threshold Float?
+  
+  /// Tier workflow: active, upcoming, retiring, exclusive, invitation_only
+  /// enabling tier lifecycle management.
+  qualification_business_status String
+  
+  /// Access restriction: public, invitation_only, exclusive,
+  /// regional_restricted, segmented_based.
+  tier_access_control String
+  
+  /// Annual vs monthly qualification period selection supporting different
+  /// business calendar preferences.
+  annual_qualification_period Boolean
+  
+  /// Lifetime vs annual spending calculation enabling multiple progression
+  /// strategies for customer retention.
+  tier_cumulative_spending Boolean
+  
+  /// Comprehensive benefits JSON package detailing specific tier privileges
+  /// and customer value propositions.
+  tier_entitlements_package String
+  
+  /// Transparent limitations and exclusions ensuring clear customer
+  /// understanding of tier boundaries.
+  tier_exclusions_and_restrictions String
+  
+  /// Automatic upgrade experiences including bonuses, notifications, and
+  /// recognition for milestone celebrations.
+  upgrade_celebration_package String?
+  
+  /// Downgrade policies providing clear expectations and maintaining positive
+  /// customer relationships.
+  tier_downgrade_rules String?
+  
+  /// Automated promotion to next tier when qualified ensuring smooth customer
+  /// progression experience.
+  automatic_upgrade_enabled Boolean
+  
+  /// Optional premium tiers charging monthly subscription fee for exclusive
+  /// benefits and premium experiences.
+  tier_subscription_fee Float?
+  
+  /// Targeted customer group: all_customers, premium_customers,
+  /// business_customers, new_customers, specific_segments.
+  tier_target_customer_segment String
+  
+  /// Market availability: global, specific_countries, invitation_only,
+  /// regional_restrictions supporting international expansion.
+  tier_geographic_availability String?
+  
+  /// Conditional availability: always_available, seasonal_only,
+  /// promotional_periods, beta_customer_exclusive.
+  tier_promotional_period String?
+  
+  /// Protection preventing active customers from losing earned tier status
+  /// during business changes.
+  tier_discontinuation_protection Boolean
+  
+  /// Tier availability start date controlling product launch timing and market
+  /// introduction strategy.
+  earliest_qualification_date DateTime?
+  
+  /// Tier availability end date supporting planned lifecycle management and
+  /// graceful transition planning.
+  latest_qualification_date DateTime?
+  
+  /// Position in customer interface supporting strategic presentation of tier
+  /// progression hierarchy.
+  tier_priority_display Int
+  
+  /// Tier relationships enabling complementary tiers and strategic upgrade
+  /// pathway optimization.
+  companion_tier_relationships String?
+  
+  /// Complete benefit description enabling transparent value proposition
+  /// communication supporting customer decisions.
+  detailed_tier_benefits String
+  
+  /// Customer-facing marketing materials communicating tier benefits and
+  /// upgrade strategies effectively.
+  tier_marketing_description String
+  
+  /// Tier system creation timestamp supporting comprehensive audit trail and
+  /// system evolution tracking.
+  created_at DateTime
+  
+  /// Last tier optimization enabling continuous improvement based on customer
+  /// behavior and business results.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_customer_coins shopping_mall_customer_coins[]
+  
+  @@unique([tier_code])
+  @@index([qualification_business_status, tier_level_order], map: "shopping_mall_loyalty_tiers_qualification_business_sta_20171fd6")
+  @@index([tier_priority_display, qualification_business_status], map: "shopping_mall_loyalty_tiers_tier_priority_display_qual_ef3e1634")
+}

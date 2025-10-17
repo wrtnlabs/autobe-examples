@@ -1,0 +1,254 @@
+/// Poll entity attached to a post with explicit support for multiple
+/// question types (single choice, multiple choice, Likert, ranking, numeric
+/// estimate), visibility modes, expert-only eligibility, vote-change policy,
+/// and per-type configuration. One-to-one with {@link econ_discuss_posts}.
+/// Options are stored in {@link econ_discuss_poll_options}. Responses reside
+/// in {@link econ_discuss_poll_responses} with selections in {@link
+/// econ_discuss_poll_response_options} for multi-select and ranking.
+///
+/// @namespace Polls
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_polls {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Host post's {@link econ_discuss_posts.id}. Exactly one poll per post.
+  econ_discuss_post_id String
+  
+  /// Poll prompt shown to voters.
+  question String
+  
+  /// Type of question: single_choice, multiple_choice, likert, ranking,
+  /// numeric_estimate. Application enforces valid values.
+  question_type String
+  
+  /// Visibility mode: hidden_until_close (default), visible_after_vote,
+  /// always_visible (policy may disallow for expert-only).
+  visibility_mode String
+  
+  /// Whether voting/participation is restricted to verified experts and staff.
+  expert_only Boolean
+  
+  /// Whether respondents may change their vote prior to poll closure. Default
+  /// business policy: enabled.
+  allow_vote_change Boolean
+  
+  /// Optional minimum voter reputation required to participate (members below
+  /// are ineligible).
+  min_voter_reputation Int?
+  
+  /// Optional minimum account age in hours for eligibility (e.g., 48).
+  min_account_age_hours Int?
+  
+  /// For multiple_choice: minimum number of selections required.
+  min_selections Int?
+  
+  /// For multiple_choice: maximum number of selections allowed (≤ number of
+  /// options).
+  max_selections Int?
+  
+  /// For likert: number of scale points (commonly 5 or 7).
+  scale_points Int?
+  
+  /// For likert: label for the minimum endpoint.
+  scale_min_label String?
+  
+  /// For likert: label for the maximum endpoint.
+  scale_max_label String?
+  
+  /// For likert: optional midpoint label.
+  scale_mid_label String?
+  
+  /// For numeric_estimate: unit label (e.g., %, index points).
+  unit_label String?
+  
+  /// For numeric_estimate: minimum allowed value.
+  numeric_min Float?
+  
+  /// For numeric_estimate: maximum allowed value.
+  numeric_max Float?
+  
+  /// For numeric_estimate: step size/precision for rounding.
+  numeric_step Float?
+  
+  /// Scheduled start time when the poll opens for responses (optional).
+  start_at DateTime?
+  
+  /// Scheduled end time after which responses are closed (optional).
+  end_at DateTime?
+  
+  /// Creation timestamp for audit and ordering.
+  created_at DateTime
+  
+  /// Last update timestamp for audit and cache invalidation.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the poll is considered removed from
+  /// active use.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post econ_discuss_posts @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
+  
+  econ_discuss_poll_options econ_discuss_poll_options[]
+  econ_discuss_poll_responses econ_discuss_poll_responses[]
+  
+  @@unique([econ_discuss_post_id])
+  @@index([econ_discuss_post_id, created_at])
+  @@index([start_at, end_at])
+  @@index([expert_only, start_at])
+  @@index([visibility_mode])
+  @@index([question_type])
+}
+
+/// Answer options for a given poll. Each option belongs to one {@link
+/// econ_discuss_polls} and participates in per-poll uniqueness and display
+/// ordering. Managed through the parent poll lifecycle.
+///
+/// @namespace Polls
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_poll_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner poll's {@link econ_discuss_polls.id}.
+  econ_discuss_poll_id String
+  
+  /// Display text for the option. Must be unique within the same poll.
+  option_text String
+  
+  /// Zero- or one-based position for deterministic display ordering within a
+  /// poll.
+  position Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to retire an option without losing history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  poll econ_discuss_polls @relation(fields: [econ_discuss_poll_id], references: [id], onDelete: Cascade)
+  
+  econ_discuss_poll_response_options econ_discuss_poll_response_options[]
+  
+  @@unique([econ_discuss_poll_id, option_text])
+  @@unique([econ_discuss_poll_id, position])
+  @@index([econ_discuss_poll_id, created_at])
+}
+
+/// One response per (poll, user) capturing lifecycle status, timestamps, and
+/// type-specific values. Option selections are recorded in {@link
+/// econ_discuss_poll_response_options} to support multiple choice and
+/// ranking. Likert responses use likert_value; numeric estimate uses
+/// numeric_value. Withdrawals and integrity actions are modeled via status
+/// and withdrawn_at.
+///
+/// @namespace Polls
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_poll_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target poll's {@link econ_discuss_polls.id}.
+  econ_discuss_poll_id String
+  
+  /// Respondent user's {@link econ_discuss_users.id}.
+  econ_discuss_user_id String
+  
+  /// Response status: active, withdrawn, quarantined, invalidated. Used for
+  /// moderation and integrity flows.
+  status String
+  
+  /// For likert: selected integer value within the defined scale points.
+  likert_value Int?
+  
+  /// For numeric_estimate: submitted numeric value (unit and bounds on poll).
+  numeric_value Float?
+  
+  /// Timestamp when the respondent withdrew their vote (if applicable).
+  withdrawn_at DateTime?
+  
+  /// Response creation timestamp used for user history and time-window
+  /// analytics.
+  created_at DateTime
+  
+  /// Last update timestamp (e.g., when editing within allowed window).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the response is removed from active
+  /// tallies; moderation may also use status to indicate reason.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  poll econ_discuss_polls @relation(fields: [econ_discuss_poll_id], references: [id], onDelete: Cascade)
+  user econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  
+  econ_discuss_poll_response_options econ_discuss_poll_response_options[]
+  
+  @@unique([econ_discuss_poll_id, econ_discuss_user_id], map: "econ_discuss_poll_responses_econ_discuss_poll_id_econ__1c62aa89")
+  @@index([econ_discuss_poll_id, created_at])
+  @@index([econ_discuss_user_id, created_at])
+  @@index([econ_discuss_poll_id, status])
+}
+
+/// Junction table linking a response to one or more options, enabling
+/// multiple choice and ranking support. When ranking is used, the position
+/// field stores the order assigned by the respondent (1 = highest). For
+/// single-choice questions, there will be exactly one row per response.
+///
+/// @namespace Polls
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_poll_response_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Linked response's {@link econ_discuss_poll_responses.id}.
+  econ_discuss_poll_response_id String
+  
+  /// Selected option's {@link econ_discuss_poll_options.id}.
+  econ_discuss_poll_option_id String
+  
+  /// For ranking questions: position order (1..N). Null for non-ranking types.
+  position Int?
+  
+  /// Creation timestamp for the selection record.
+  created_at DateTime
+  
+  /// Last update timestamp for the selection record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to remove a selection without losing audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  response econ_discuss_poll_responses @relation(fields: [econ_discuss_poll_response_id], references: [id], onDelete: Cascade)
+  option econ_discuss_poll_options @relation(fields: [econ_discuss_poll_option_id], references: [id], onDelete: Cascade)
+  
+  @@unique([econ_discuss_poll_response_id, econ_discuss_poll_option_id], map: "econ_discuss_poll_response_options_econ_discuss_poll_r_1e776cba")
+  @@index([econ_discuss_poll_response_id, created_at], map: "econ_discuss_poll_response_options_econ_discuss_poll_r_0aa45807")
+  @@index([econ_discuss_poll_option_id, created_at], map: "econ_discuss_poll_response_options_econ_discuss_poll_o_8e5e3b16")
+}

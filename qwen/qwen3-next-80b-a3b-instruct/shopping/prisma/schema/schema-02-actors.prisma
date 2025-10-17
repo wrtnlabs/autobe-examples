@@ -1,0 +1,213 @@
+/// Customer account information. Each customer has a unique identity with
+/// authentication credentials and profile details. This table represents the
+/// core user entity for platform consumers who browse, purchase, and review
+/// products.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the user account. {@link shopping_mall_customers.id}.
+  user_id String
+  
+  /// Timestamp when the customer account was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the customer account was soft-deleted. If null, account is
+  /// active.
+  deleted_at DateTime?
+  
+  /// Customer's primary email address for account login and communication.
+  email String
+  
+  /// Hashed password for authentication. Never store plain text passwords.
+  password_hash String
+  
+  /// Customer's first name as provided during registration.
+  first_name String?
+  
+  /// Customer's last name as provided during registration.
+  last_name String?
+  
+  /// Customer's phone number for order notifications and contact.
+  phone String?
+  
+  /// Indicates if customer has verified their email address.
+  email_verified Boolean
+  
+  /// Determines if the customer account is active and can log in. Suspended
+  /// accounts set this to false.
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customers @relation("recursive", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_customers? @relation("recursive")
+  shopping_mall_sellers shopping_mall_sellers?
+  shopping_mall_administrators shopping_mall_administrators?
+  shopping_mall_carts shopping_mall_carts?
+  shopping_mall_wishlists shopping_mall_wishlists?
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_review_flags shopping_mall_review_flags[]
+  shopping_mall_sales_analytics shopping_mall_sales_analytics[]
+  
+  @@unique([email])
+  @@unique([user_id])
+  @@index([created_at])
+  @@index([email_verified])
+  @@index([is_active])
+}
+
+/// Seller account information. Represents business entities that list and
+/// sell products on the platform. Each seller is associated with a verified
+/// user account and requires admin approval before gaining publishing
+/// rights.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the user account. {@link shopping_mall_customers.id}.
+  user_id String
+  
+  /// Timestamp when the seller account was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the seller account was soft-deleted. If null, account is
+  /// active.
+  deleted_at DateTime?
+  
+  /// Legal business name of the seller entity.
+  business_name String
+  
+  /// Tax identification number for the seller business.
+  tax_id String
+  
+  /// Bank account number for seller payouts.
+  bank_account_number String?
+  
+  /// Bank routing number for seller payouts.
+  bank_routing_number String?
+  
+  /// Physical business address for legal and tax purposes.
+  business_address String?
+  
+  /// Indicates if seller has been approved by admin. Only approved sellers can
+  /// list products.
+  is_approved Boolean
+  
+  /// Indicates if the seller application was rejected.
+  application_rejected Boolean
+  
+  /// Reason for seller application rejection. Only populated if
+  /// application_rejected is true.
+  rejection_reason String?
+  
+  /// Indicates if the seller account has been suspended by admin.
+  is_suspended Boolean
+  
+  /// Reason for seller suspension. Only populated if is_suspended is true.
+  suspension_reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customers @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_refund_approvals shopping_mall_refund_approvals[]
+  shopping_mall_review_responses shopping_mall_review_responses[]
+  shopping_mall_sales_analytics shopping_mall_sales_analytics[]
+  shopping_mall_earnings_ledger shopping_mall_earnings_ledger[]
+  shopping_mall_payouts shopping_mall_payouts[]
+  
+  @@unique([user_id])
+  @@unique([business_name])
+  @@unique([tax_id])
+  @@index([created_at])
+  @@index([is_approved])
+  @@index([is_suspended])
+}
+
+/// System administrator accounts with full platform governance capabilities.
+/// These accounts have elevated permissions to manage users, products,
+/// orders, refunds, and approve seller applications.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the user account. {@link shopping_mall_customers.id}.
+  user_id String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was soft-deleted. If null,
+  /// account is active.
+  deleted_at DateTime?
+  
+  /// Determines if the administrator account is active and can log in.
+  is_active Boolean
+  
+  /// Administrative role, typically 'super_admin' or 'support_admin' based on
+  /// permissions level.
+  role String
+  
+  /// Level of administrative access. 'full' gives complete control, 'limited'
+  /// restricts sensitive actions.
+  access_level String
+  
+  /// Timestamp of last successful login for this admin account.
+  last_login DateTime?
+  
+  /// Count of consecutive failed login attempts. Used for security lockout.
+  failed_login_attempts Int
+  
+  /// Indicates if the account has been locked due to excessive failed login
+  /// attempts.
+  is_locked_out Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customers @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_refund_approvals shopping_mall_refund_approvals[]
+  shopping_mall_review_flags shopping_mall_review_flags[]
+  
+  @@unique([user_id])
+  @@index([created_at])
+  @@index([is_active])
+  @@index([role])
+  @@index([is_locked_out])
+}

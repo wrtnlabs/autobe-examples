@@ -1,0 +1,1 @@
+The platform will have multiple user roles, including guests, members, moderators, and administrators. Each role will have distinct permissions and capabilities. The platform will use a combination of technical and business requirements to ensure the smooth operation of the community.

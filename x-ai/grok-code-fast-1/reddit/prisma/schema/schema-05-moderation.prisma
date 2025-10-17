@@ -1,0 +1,70 @@
+/// User-submitted reports of content violations requiring moderator
+/// attention. Captures reporter identification, targeted content references,
+/// violation categories, and moderation resolution workflow. Enables
+/// platform governance through transparent reporting system that maintains
+/// community standards.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporter's {@link community_platform_members.id}.
+  reporter_id String
+  
+  /// Assigned moderator's {@link community_platform_moderators.id} for
+  /// handling the report.
+  assigned_moderator_id String?
+  
+  /// Reported post's {@link community_platform_posts.id} if report is about a
+  /// post.
+  reported_post_id String?
+  
+  /// Reported comment's {@link community_platform_comments.id} if report is
+  /// about a comment.
+  reported_comment_id String?
+  
+  /// Type of report violation (spam, harassment, hate_speech, adult_content,
+  /// misinformation, copyright, other).
+  report_type String
+  
+  /// Additional details provided by reporter explaining the violation concern.
+  description String
+  
+  /// Current processing status of the report (pending, under_review, resolved,
+  /// dismissed).
+  status String
+  
+  /// Internal notes added by moderators during review and resolution process.
+  moderation_notes String?
+  
+  /// Timestamp when the report was first submitted for moderation review.
+  created_at DateTime
+  
+  /// Timestamp of last modification to the report record.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for report archival without permanent removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter community_platform_members @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  assignedModerator community_platform_moderators? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  reportedPost community_platform_posts? @relation(fields: [reported_post_id], references: [id], onDelete: Cascade)
+  reportedComment community_platform_comments? @relation(fields: [reported_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([reported_post_id])
+  @@index([reported_comment_id])
+  
+  @@index([status])
+  @@index([report_type])
+  @@index([created_at])
+  @@index([reporter_id, status])
+  @@index([assigned_moderator_id, updated_at])
+}

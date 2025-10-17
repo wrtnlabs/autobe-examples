@@ -1,0 +1,223 @@
+/// User profile information including display name, bio, avatar, and public
+/// profile data. Separate from authentication credentials to support profile
+/// deletion and GDPR compliance while preserving account history for audit
+/// purposes.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user account. {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// User's display name visible in discussions and comments. Maximum 50
+  /// characters. Can differ from username for personalization.
+  display_name String?
+  
+  /// User's biographical information and interests. Maximum 500 characters.
+  /// Optional field for profile customization.
+  bio String?
+  
+  /// URL to user's profile avatar image. Stored in external CDN/object storage
+  /// service.
+  avatar_url String?
+  
+  /// URL to user's profile avatar thumbnail (150x150px). Stored in external
+  /// CDN/object storage service.
+  avatar_thumbnail_url String?
+  
+  /// Optional URL to user's personal website or blog. Validated as valid URL
+  /// format starting with http:// or https://.
+  website_url String?
+  
+  /// User's location information as free-form text. Maximum 100 characters.
+  /// Not geocoded, user-entered only.
+  location String?
+  
+  /// User's areas of interest in comma-separated format. Used for
+  /// personalization and discovery. Maximum 500 characters.
+  interests String?
+  
+  /// Profile visibility setting: 'public' (visible to all), 'members_only'
+  /// (visible to authenticated members), or 'private' (hidden from other
+  /// users). Defaults to 'public'.
+  profile_visibility String
+  
+  /// Whether user's online/offline status is visible to other members.
+  /// Defaults to true for transparency.
+  show_online_status Boolean
+  
+  /// Whether user's discussion and comment history is visible on their public
+  /// profile. Defaults to true for contribution transparency.
+  show_activity_history Boolean
+  
+  /// Timestamp when profile was created, typically at account registration
+  /// time.
+  created_at DateTime
+  
+  /// Timestamp of last profile update, tracking when bio, avatar, or other
+  /// profile fields changed.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_user_id])
+  @@index([created_at])
+  @@index([profile_visibility])
+}
+
+/// User preferences and settings for customizing their experience on the
+/// platform including notification frequency, theme preferences, and display
+/// preferences. Allows users to personalize their interactions.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user account. {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// User's preferred color theme: 'light', 'dark', or 'auto' (follows system
+  /// preference). Defaults to 'auto'.
+  theme_preference String
+  
+  /// Number of discussions or comments to display per page in pagination.
+  /// Valid range: 10-100. Defaults to 20.
+  items_per_page Int
+  
+  /// Default sorting preference for discussions: 'newest', 'most_active',
+  /// 'most_voted', or 'trending'. Defaults to 'newest'.
+  sort_preference String
+  
+  /// Default sorting preference for comments/replies: 'oldest'
+  /// (chronological), 'newest', or 'most_voted'. Defaults to 'oldest'.
+  reply_sort_preference String
+  
+  /// User's preferred language code (e.g., 'en', 'es', 'fr'). Defaults to
+  /// 'en'. Used for UI localization.
+  language_preference String
+  
+  /// User's timezone (IANA timezone identifier, e.g., 'America/New_York',
+  /// 'Europe/London'). Used for displaying timestamps in user's local time.
+  timezone String?
+  
+  /// Whether to use compact layout for discussions and comments, displaying
+  /// more items per screen. Defaults to false.
+  compact_mode_enabled Boolean
+  
+  /// Whether to display user avatars in discussions and comments. Defaults to
+  /// true. Users can disable for bandwidth/performance.
+  show_avatars Boolean
+  
+  /// Whether keyboard shortcuts are enabled for navigation and common actions.
+  /// Defaults to false for accessibility.
+  enable_keyboard_shortcuts Boolean
+  
+  /// Timestamp when user preferences were initialized, typically at account
+  /// creation.
+  created_at DateTime
+  
+  /// Timestamp of last preference update when user modified any preference
+  /// setting.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_user_id])
+  @@index([updated_at])
+}
+
+/// Granular notification preferences for users controlling what
+/// notifications they receive and through which channels. Enables
+/// GDPR-compliant consent management for email and in-app notifications.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_notification_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user account. {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Global toggle for all email notifications. When disabled, no emails are
+  /// sent regardless of specific settings. Defaults to true.
+  email_notifications_enabled Boolean
+  
+  /// Global toggle for in-app notifications shown in the notification center.
+  /// Defaults to true.
+  in_app_notifications_enabled Boolean
+  
+  /// Email notification frequency: 'immediate' (one email per event),
+  /// 'daily_digest', 'weekly_digest', or 'never'. Defaults to 'immediate'.
+  email_frequency String
+  
+  /// Whether to notify when someone replies to user's comments or discussions.
+  /// Defaults to true. Major engagement driver.
+  notify_on_reply Boolean
+  
+  /// Whether to notify when user's posts receive upvotes. Defaults to false to
+  /// reduce notification volume.
+  notify_on_upvote Boolean
+  
+  /// Whether to notify when user is mentioned (@username) in discussions or
+  /// comments. Defaults to true.
+  notify_on_mention Boolean
+  
+  /// Whether to notify when moderator takes action on user's content (removal,
+  /// warning, etc.). Defaults to true. Important for user awareness.
+  notify_on_moderation_action Boolean
+  
+  /// Whether to notify when a discussion the user created is closed by
+  /// moderators. Defaults to true.
+  notify_on_discussion_closed Boolean
+  
+  /// Whether to receive important platform announcements and system
+  /// notifications. Defaults to true.
+  notify_on_announcement Boolean
+  
+  /// Whether to receive optional weekly summary emails with top discussions
+  /// and activity. Defaults to false.
+  notify_on_weekly_summary Boolean
+  
+  /// Unique token used in email unsubscribe links for one-click
+  /// unsubscription. Regenerated if user re-subscribes.
+  unsubscribe_token String?
+  
+  /// Timestamp when notification settings were initialized, typically at
+  /// account creation.
+  created_at DateTime
+  
+  /// Timestamp of last notification setting change tracking user consent
+  /// changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_user_id], map: "discussion_board_user_notification_settings_discussion_7dda04f4")
+  @@index([email_notifications_enabled], map: "discussion_board_user_notification_settings_email_noti_dcb6c4fa")
+  @@index([in_app_notifications_enabled], map: "discussion_board_user_notification_settings_in_app_not_fec2f186")
+  @@index([updated_at])
+}

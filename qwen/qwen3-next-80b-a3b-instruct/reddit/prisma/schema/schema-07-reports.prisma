@@ -1,0 +1,86 @@
+/// Records moderation actions taken on submitted reports. Contains audit
+/// trail of moderator decisions (removal, dismissal, warning) performed on
+/// reports. This table is strictly subsidiary - actions are created
+/// automatically when moderators act on reports, not by users directly. It
+/// links reports to the moderator who took action and captures the decision
+/// type and optional notes. This table supports reporting KPIs like report
+/// resolution time.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The report this action was taken on. Required to link the action to the
+  /// original report. {@link community_platform_reports.id}
+  report_id String
+  
+  /// The user who took this moderation action. The moderator responsible for
+  /// the decision. {@link community_platform_moderator.id}
+  moderator_id String
+  
+  /// The type of moderation action taken. Values: 'remove', 'dismiss', 'warn'.
+  /// Records the decision made by the moderator.
+  action_type String
+  
+  /// Optional internal notes from the moderator about why they took this
+  /// action. May include additional context not included in the report.
+  action_notes String?
+  
+  /// The exact timestamp when the moderator performed this action. Used to
+  /// calculate resolution time and audit trail.
+  acted_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([report_id])
+  @@index([moderator_id])
+  @@index([action_type])
+  @@index([acted_at])
+}
+
+/// Stores optional additional text comments provided by reporters when
+/// submitting a report. This supporting table provides context that
+/// supplements the main report entity. These comments are displayed only to
+/// moderators for better incident analysis and are not visible to the
+/// content author or public. The table may be referenced from the primary
+/// report to retrieve supplementary context but has no independent business
+/// purpose beyond supporting the main report workflow.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The report this comment belongs to. Required to link the comment to its
+  /// parent report. {@link community_platform_reports.id}
+  report_id String
+  
+  /// The text of the comment provided by the reporter during report
+  /// submission. Limited to 200 characters to maintain focus.
+  comment_text String
+  
+  /// Timestamp when this comment was added by the reporter. Used for
+  /// chronological ordering of reporter context.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  @@index([report_id])
+  @@index([created_at])
+}

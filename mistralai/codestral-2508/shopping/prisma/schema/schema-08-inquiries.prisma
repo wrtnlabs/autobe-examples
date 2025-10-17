@@ -1,0 +1,85 @@
+/// Customer inquiries for support or information. Represents the initial
+/// contact point for customer service interactions. {@link
+/// shopping_mall_member} for the customer who created the inquiry.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_inquiries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who created the inquiry. {@link shopping_mall_member.id}
+  shopping_mall_member_id String
+  
+  /// Title of the inquiry.
+  title String
+  
+  /// Detailed content of the inquiry.
+  content String
+  
+  /// Current status of the inquiry (e.g., 'open', 'in-progress', 'resolved').
+  status String
+  
+  /// When the inquiry was created.
+  created_at DateTime
+  
+  /// When the inquiry was last updated.
+  updated_at DateTime
+  
+  /// When the inquiry was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_member @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  shopping_inquiry_responses shopping_inquiry_responses[]
+  
+  @@index([shopping_mall_member_id, created_at])
+}
+
+/// Responses to customer inquiries. Represents support activities and
+/// resolutions. {@link shopping_inquiries} for the inquiry being responded
+/// to. {@link shopping_mall_admin} for the admin who responded.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_inquiry_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Inquiry being responded to. {@link shopping_inquiries.id}
+  shopping_inquiry_id String
+  
+  /// Admin who created the response. {@link shopping_mall_admin.id}
+  shopping_mall_admin_id String
+  
+  /// Content of the response.
+  content String
+  
+  /// When the response was created.
+  created_at DateTime
+  
+  /// When the response was last updated.
+  updated_at DateTime
+  
+  /// When the response was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inquiry shopping_inquiries @relation(fields: [shopping_inquiry_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_admin_id])
+  
+  @@index([shopping_inquiry_id, created_at])
+}

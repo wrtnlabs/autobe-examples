@@ -1,0 +1,108 @@
+/// User voting interactions on discussion topics and comments, enabling
+/// community-driven content quality assessment and popularity rankings. This
+/// table captures upvote/downvote actions to promote high-quality economic
+/// and political discussions while maintaining audit trails of user
+/// engagement.
+///
+/// @namespace Interactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voted user's discussion_board_registered_users.id
+  discussion_board_registered_user_id String
+  
+  /// Target topic's discussion_board_topics.id
+  discussion_board_topic_id String?
+  
+  /// Target comment's discussion_board_comments.id
+  discussion_board_comment_id String?
+  
+  /// Type of vote (upvote or downvote) indicating user sentiment and
+  /// contribution quality.
+  vote_type String
+  
+  /// Timestamp when the vote was cast to track user engagement timing.
+  created_at DateTime
+  
+  /// Last modification timestamp for audit purposes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_registered_users @relation(fields: [discussion_board_registered_user_id], references: [id], onDelete: Cascade)
+  topic discussion_board_topics? @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_registered_user_id, discussion_board_topic_id], map: "discussion_board_votes_discussion_board_registered_use_7960250b")
+  @@unique([discussion_board_registered_user_id, discussion_board_comment_id], map: "discussion_board_votes_discussion_board_registered_use_a59e7d88")
+  @@index([discussion_board_topic_id])
+  @@index([discussion_board_comment_id])
+  @@index([created_at])
+}
+
+/// User notification system for discussion board activities, including new
+/// comments, votes, and system announcements. This table manages
+/// personalized alerts to keep registered users engaged with relevant
+/// economic and political topic discussions, supporting both real-time and
+/// digest delivery options.
+///
+/// @namespace Interactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Recipient user's discussion_board_registered_users.id
+  discussion_board_registered_user_id String
+  
+  /// Related topic's discussion_board_topics.id
+  discussion_board_topic_id String?
+  
+  /// Related comment's discussion_board_comments.id
+  discussion_board_comment_id String?
+  
+  /// Category of notification (comment_reply, topic_update, vote_received,
+  /// moderation_action, system_announcement) to organize user alerts by
+  /// importance.
+  notification_type String
+  
+  /// Brief descriptive title for the notification displayed in user interfaces.
+  title String
+  
+  /// Detailed notification content providing context and actionable
+  /// information about discussion activities.
+  message String
+  
+  /// Whether the user has viewed this notification to enable unread count
+  /// tracking.
+  is_read Boolean
+  
+  /// Timestamp when the notification was generated to maintain chronological
+  /// order.
+  created_at DateTime
+  
+  /// Last modification timestamp for status updates.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_registered_users @relation(fields: [discussion_board_registered_user_id], references: [id], onDelete: Cascade)
+  topic discussion_board_topics? @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_registered_user_id, is_read], map: "discussion_board_notifications_discussion_board_regist_9eeac15a")
+  @@index([discussion_board_topic_id])
+  @@index([discussion_board_comment_id])
+  @@index([notification_type])
+  @@index([created_at])
+}

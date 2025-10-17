@@ -1,0 +1,41 @@
+/// Represents individual todo tasks created and managed by authenticated
+/// users. Each task is linked to a user (todo_list_users) by foreign key
+/// todo_list_user_id. Tasks have a description text, a boolean completion
+/// status, and temporal fields for created, updated, and optional deleted
+/// (soft delete). The model supports a primary stance for independent user
+/// task management requiring CRUD operations.
+///
+/// @namespace Tasks
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link todo_list_users.id}.
+  todo_list_user_id String
+  
+  /// Task description text, must be non-empty and trimmed.
+  description String
+  
+  /// Indicates whether the task is completed (true) or pending (false).
+  is_completed Boolean
+  
+  /// Timestamp when the task was created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+}

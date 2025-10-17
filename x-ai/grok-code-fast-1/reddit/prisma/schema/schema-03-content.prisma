@@ -1,0 +1,116 @@
+/// Core content entities representing user-submitted posts including text
+/// posts, link posts, and image posts. Posts can be upvoted/downvoted,
+/// commented on, and are associated with specific communities. Posts require
+/// independent creation, editing, and management capabilities across the
+/// platform, supporting the primary content lifecycle.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged community's {"@link community_platform_communities.id"}.
+  community_platform_community_id String
+  
+  /// Author's {"@link community_platform_members.id"}.
+  community_platform_member_id String
+  
+  /// Post title visible in listings and searches.
+  title String
+  
+  /// Type of post content: 'text', 'link', or 'image'.
+  content_type String
+  
+  /// Text content for text posts.
+  text_content String?
+  
+  /// URL for link posts.
+  url String?
+  
+  /// Image URL for image posts.
+  image_url String?
+  
+  /// Post creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when post is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  author community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  community_platform_comments community_platform_comments[]
+  community_platform_votes community_platform_votes[]
+  community_platform_reports community_platform_reports[]
+  
+  @@index([community_platform_community_id, created_at], map: "community_platform_posts_community_platform_community__4df12ea5")
+  @@index([created_at])
+  @@index([community_platform_member_id])
+}
+
+/// Threaded comment system supporting unlimited nesting for discussions on
+/// posts. Comments can be replied to independently, represent user
+/// engagement, and require separate management from parent posts. Each
+/// comment can be voted on and moderated independently, enabling cross-post
+/// search and user activity tracking.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced post's {"@link community_platform_posts.id"}.
+  community_platform_post_id String
+  
+  /// Comment author's {"@link community_platform_members.id"}.
+  community_platform_member_id String
+  
+  /// Parent comment's {"@link community_platform_comments.id"} for nested
+  /// structure.
+  parent_comment_id String?
+  
+  /// Comment text content.
+  content String
+  
+  /// Nesting level in comment thread.
+  depth Int
+  
+  /// Comment creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when comment is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  author community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_votes community_platform_votes[]
+  community_platform_reports community_platform_reports[]
+  
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  @@index([community_platform_member_id, created_at], map: "community_platform_comments_community_platform_member__5ac10bc6")
+  @@index([created_at])
+  @@index([parent_comment_id])
+}

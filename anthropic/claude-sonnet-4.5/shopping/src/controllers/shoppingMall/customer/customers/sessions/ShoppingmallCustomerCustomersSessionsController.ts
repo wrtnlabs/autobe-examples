@@ -1,0 +1,228 @@
+import { Controller } from "@nestjs/common";
+import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
+import typia, { tags } from "typia";
+import { patchShoppingMallCustomerCustomersCustomerIdSessions } from "../../../../../providers/patchShoppingMallCustomerCustomersCustomerIdSessions";
+import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
+import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
+import { getShoppingMallCustomerCustomersCustomerIdSessionsSessionId } from "../../../../../providers/getShoppingMallCustomerCustomersCustomerIdSessionsSessionId";
+import { deleteShoppingMallCustomerCustomersCustomerIdSessionsSessionId } from "../../../../../providers/deleteShoppingMallCustomerCustomersCustomerIdSessionsSessionId";
+
+import { IPageIShoppingMallCustomerSession } from "../../../../../api/structures/IPageIShoppingMallCustomerSession";
+import { IShoppingMallCustomerSession } from "../../../../../api/structures/IShoppingMallCustomerSession";
+import { IShoppingMallSession } from "../../../../../api/structures/IShoppingMallSession";
+
+@Controller("/shoppingMall/customer/customers/:customerId/sessions")
+export class ShoppingmallCustomerCustomersSessionsController {
+  /**
+   * Retrieve and filter active sessions for a specific customer account.
+   *
+   * Retrieves a comprehensive list of all active sessions associated with a
+   * specific customer account, supporting advanced filtering and pagination.
+   * This operation queries the shopping_mall_sessions table for records where
+   * user_type is 'customer' and matches the specified customer ID parameter.
+   *
+   * This endpoint serves multiple critical business purposes. First, it enables
+   * customers to monitor their account security by viewing all active login
+   * sessions across different devices and browsers. Customers can identify
+   * which devices are currently logged in, where those sessions originated (IP
+   * address and approximate location), and when each session was last active.
+   * This visibility is essential for detecting unauthorized access and
+   * maintaining account security.
+   *
+   * Second, the operation supports the multi-device session management feature
+   * described in the requirements. Customers can see sessions from their
+   * desktop computer, mobile phone, tablet, and any other devices
+   * simultaneously logged in. Each session record includes detailed device
+   * information parsed from the user agent string, including device type
+   * (mobile, tablet, desktop), browser name, operating system, and a
+   * user-friendly device name for easy identification.
+   *
+   * The filtering capabilities provided through the request body enable
+   * customers to narrow down sessions by specific criteria. For example,
+   * customers can filter sessions by device type to see only mobile sessions,
+   * or filter by date range to find sessions created within a specific
+   * timeframe. This is particularly useful for customers with many active
+   * sessions who want to identify and manage specific sessions.
+   *
+   * From a security perspective, this operation provides the foundation for
+   * customers to detect and respond to suspicious activity. If a customer sees
+   * a session from an unfamiliar location or device, they can identify it
+   * through this endpoint and then use related session revocation endpoints to
+   * terminate that session. The approximate location information, derived from
+   * IP address geolocation, helps customers quickly identify whether a session
+   * is legitimate.
+   *
+   * Administrators also use this operation for customer support and security
+   * investigations. When a customer reports unauthorized account access,
+   * administrators can retrieve the session list to identify suspicious
+   * sessions and take appropriate action. The comprehensive session details
+   * including IP addresses and timestamps provide valuable forensic
+   * information.
+   *
+   * The response includes pagination support for customers with many historical
+   * sessions, ensuring efficient data retrieval and display. Sessions are
+   * typically sorted by last activity timestamp with most recent sessions
+   * first, allowing customers to quickly see their active sessions.
+   *
+   * Related operations that customers might use together with this endpoint
+   * include session revocation (to terminate specific sessions), login history
+   * retrieval, and account security settings management. Together, these
+   * operations provide complete session lifecycle management and security
+   * control for customer accounts.
+   *
+   * @param connection
+   * @param customerId Unique identifier of the customer whose sessions are
+   *   being retrieved
+   * @param body Filtering and pagination criteria for session retrieval
+   *   including device type, date range, location filters, and sorting
+   *   preferences
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("customerId")
+    customerId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallCustomerSession.IRequest,
+  ): Promise<IPageIShoppingMallCustomerSession> {
+    try {
+      return await patchShoppingMallCustomerCustomersCustomerIdSessions({
+        customer,
+        customerId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a specific customer session by session ID.
+   *
+   * Retrieves detailed information about a specific active session for a
+   * customer. This operation queries the shopping_mall_sessions table to return
+   * comprehensive session data including device information, browser details,
+   * geographic location, activity timestamps, and token expiration status.
+   *
+   * This endpoint supports the multi-device session management feature
+   * described in the User Roles and Authentication requirements. Customers can
+   * view details about their active sessions across different devices to
+   * monitor account security and identify any suspicious login activity.
+   *
+   * The session information includes device type (mobile, tablet, desktop),
+   * browser name, operating system, approximate location based on IP address,
+   * and timestamps for session creation and last activity. This transparency
+   * helps customers ensure their account is being accessed only from authorized
+   * devices.
+   *
+   * Security considerations include verifying that the requesting customer owns
+   * the session being queried. The system enforces that customers can only view
+   * their own session details, preventing unauthorized access to other users'
+   * session information. Session details include last activity tracking to help
+   * customers identify inactive sessions that may need revocation.
+   *
+   * This operation integrates with the authentication system defined in the
+   * User Roles and Authentication document, providing visibility into the JWT
+   * refresh token lifecycle, session expiration, and revocation status.
+   * Customers use this information to make informed decisions about session
+   * management and security.
+   *
+   * @param connection
+   * @param customerId Unique identifier of the customer who owns the session
+   * @param sessionId Unique identifier of the specific session to retrieve
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":sessionId")
+  public async at(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("customerId")
+    customerId: string & tags.Format<"uuid">,
+    @TypedParam("sessionId")
+    sessionId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallSession> {
+    try {
+      return await getShoppingMallCustomerCustomersCustomerIdSessionsSessionId({
+        customer,
+        customerId,
+        sessionId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Terminate a specific customer session and revoke associated tokens.
+   *
+   * Terminates a specific active session for a customer by marking it as
+   * revoked and invalidating the associated JWT refresh token. This operation
+   * sets the is_revoked field to true and records the revoked_at timestamp,
+   * permanently preventing the session from being used for further
+   * authentication.
+   *
+   * This endpoint implements the multi-device session management and security
+   * features described in the User Roles and Authentication requirements.
+   * Customers can remotely revoke sessions from devices they no longer use or
+   * from devices they suspect may be compromised. This provides granular
+   * control over account access across multiple devices.
+   *
+   * The operation updates the shopping_mall_sessions table by setting
+   * is_revoked to true and recording the revoked_at timestamp. Once revoked,
+   * the session's refresh token can no longer be used to generate new access
+   * tokens, effectively terminating access from that device. The customer will
+   * need to log in again from that device to establish a new session.
+   *
+   * Security considerations include verifying that the requesting customer owns
+   * the session being revoked. The system enforces that customers can only
+   * revoke their own sessions, preventing unauthorized session termination. The
+   * operation logs the revocation event in the session record for security
+   * auditing.
+   *
+   * This operation supports the security requirement that customers should be
+   * able to view all active sessions and revoke any specific session remotely,
+   * as defined in the authentication security features. Common use cases
+   * include revoking sessions after logging in from a public computer,
+   * terminating access from a lost mobile device, or clearing all sessions
+   * except the current one for security purposes.
+   *
+   * Related operations include viewing all active sessions and the 'logout from
+   * all devices' functionality. This operation provides fine-grained control by
+   * targeting a specific session rather than terminating all sessions at once.
+   * The revocation is permanent and cannot be undone - the user must create a
+   * new session by logging in again.
+   *
+   * @param connection
+   * @param customerId Unique identifier of the customer who owns the session to
+   *   be terminated
+   * @param sessionId Unique identifier of the specific session to revoke and
+   *   terminate
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":sessionId")
+  public async erase(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("customerId")
+    customerId: string & tags.Format<"uuid">,
+    @TypedParam("sessionId")
+    sessionId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteShoppingMallCustomerCustomersCustomerIdSessionsSessionId(
+        {
+          customer,
+          customerId,
+          sessionId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

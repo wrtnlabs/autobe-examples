@@ -1,0 +1,86 @@
+/// Coupon definitions for promotional discounts. Represents available
+/// coupons that can be applied to orders.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique coupon code for redemption.
+  code String
+  
+  /// Type of discount (percentage or fixed amount).
+  discount_type String
+  
+  /// Discount value (percentage or fixed amount).
+  value Float
+  
+  /// Start date when the coupon becomes valid.
+  valid_from DateTime
+  
+  /// End date when the coupon expires.
+  valid_until DateTime
+  
+  /// Maximum number of times the coupon can be used.
+  max_uses Int?
+  
+  /// Timestamp when the coupon was created.
+  created_at DateTime
+  
+  /// Timestamp when the coupon was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_coupon_usage shopping_coupon_usage[]
+  
+  @@unique([code])
+  @@index([valid_from])
+  @@index([valid_until])
+}
+
+/// Records of coupon usage by users. Tracks each application of a coupon to
+/// an order.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_coupon_usage {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Coupon that was used. {@link shopping_coupons.id}
+  shopping_coupon_id String
+  
+  /// User who applied the coupon. {@link shopping_mall_member.id}
+  shopping_mall_member_id String
+  
+  /// Order to which the coupon was applied.
+  order_id String
+  
+  /// Timestamp when the coupon was used.
+  used_at DateTime
+  
+  /// Timestamp when the usage record was created.
+  created_at DateTime
+  
+  /// Timestamp when the usage record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  coupon shopping_coupons @relation(fields: [shopping_coupon_id], references: [id], onDelete: Cascade)
+  user shopping_mall_member @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_coupon_id])
+  @@index([shopping_mall_member_id])
+  @@index([used_at])
+}

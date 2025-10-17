@@ -1,0 +1,243 @@
+/// Stores user profile information visible to the community, aggregating
+/// references to posts, comments, karma, badges, and displaying preferences.
+/// Each profile is uniquely associated with a platform member, moderator, or
+/// admin. Includes user display settings, privacy, and status information.
+/// Links to badges (community_platform_profile_badges), history
+/// (community_platform_profile_histories), and preferences
+/// (community_platform_profile_preferences).
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Linked member's {@link community_platform_members.id}. Determines the
+  /// owner of the profile.
+  community_platform_member_id String
+  
+  /// User's display name or handle, visible publicly. Must be unique.
+  username String
+  
+  /// Custom profile biography/about text shown on the profile page.
+  bio String?
+  
+  /// Public URL to profile picture/avatar. Optional.
+  avatar_uri String?
+  
+  /// Public display email for profile, if user opts in. Used for public
+  /// contact/discovery.
+  display_email String?
+  
+  /// Short user-curated status, e.g., 'On vacation', visible on profile.
+  status_message String?
+  
+  /// Whether this profile is publicly visible or restricted by privacy
+  /// settings.
+  is_public Boolean
+  
+  /// Timestamp when profile was created.
+  created_at DateTime
+  
+  /// Timestamp when profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion/recovery tracking.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  community_platform_profile_badges community_platform_profile_badges[]
+  community_platform_profile_histories community_platform_profile_histories[]
+  community_platform_profile_preferences community_platform_profile_preferences?
+  
+  @@unique([username])
+  @@unique([community_platform_member_id])
+  @@index([is_public])
+  @@index([created_at])
+}
+
+/// Represents badges assigned to user profiles, reflecting rewards,
+/// achievements, or status earned by the user. Each badge is linked to a
+/// profile and includes badge type/name, granted timestamp, revocation info,
+/// and optional reason or issuer. Managed as part of profile functionality,
+/// not independently. Used to display user achievements on their profile.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_badges {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged profile's {@link community_platform_profiles.id}.
+  community_platform_profile_id String
+  
+  /// Linked karma/badge definition from {@link
+  /// community_platform_karma_awards.id}, if badge is tied to karma system.
+  community_platform_karma_award_id String?
+  
+  /// Type or category of badge (e.g., 'gold', 'anniversary',
+  /// 'community-contributor').
+  badge_type String
+  
+  /// Display name of badge assigned.
+  badge_name String
+  
+  /// Time when badge was granted to the profile.
+  issued_at DateTime
+  
+  /// Actor or system who issued the badge (username/admin name/system).
+  issuer String?
+  
+  /// When badge was revoked (if ever). Null otherwise.
+  revoked_at DateTime?
+  
+  /// Optional reason for badge revocation.
+  revoke_reason String?
+  
+  /// Timestamp of badge assignment record creation.
+  created_at DateTime
+  
+  /// Timestamp of last badge assignment record update.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion/recovery tracking.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  profile community_platform_profiles @relation(fields: [community_platform_profile_id], references: [id], onDelete: Cascade)
+  award community_platform_karma_awards? @relation(fields: [community_platform_karma_award_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_karma_award_id], map: "community_platform_profile_badges_community_platform_k_7340f129")
+  
+  @@index([community_platform_profile_id, badge_type], map: "community_platform_profile_badges_community_platform_p_5c677ab0")
+  @@index([issued_at])
+}
+
+/// Snapshot table storing historical changes to each user profile, capturing
+/// prior field values and changes for audit, policy compliance, and
+/// rollback. Enables a full versioned history of profile updates, privacy
+/// setting changes, and status modifications. Critical for legal/regulatory
+/// data retention and user history display.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Snapshot target profile {@link community_platform_profiles.id}.
+  community_platform_profile_id String
+  
+  /// Snapshot of display name/handle at the time of change.
+  username String
+  
+  /// Snapshot of biography text at the time of change.
+  bio String?
+  
+  /// Snapshot of avatar/profile image URL at the time of change.
+  avatar_uri String?
+  
+  /// Snapshot of public profile email at the time of change.
+  display_email String?
+  
+  /// Snapshot of profile status at the time of change.
+  status_message String?
+  
+  /// Snapshot of privacy/visibility setting.
+  is_public Boolean
+  
+  /// Indicates what user/admin/system changed the profile (may be system,
+  /// username, or admin name).
+  changed_by_actor String
+  
+  /// Reason for profile change (e.g., user request, moderation, system update).
+  change_reason String?
+  
+  /// When this change was recorded.
+  changed_at DateTime
+  
+  /// Audit field for when this snapshot record was created.
+  created_at DateTime
+  
+  /// Soft delete timestamp for history record, if ever removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  profile community_platform_profiles @relation(fields: [community_platform_profile_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_profile_id, changed_at], map: "community_platform_profile_histories_community_platfor_3a2b6c31")
+}
+
+/// Holds user-configurable preferences related to profile appearance and
+/// privacy, such as notification settings, preferred language, dark mode,
+/// and profile/public info visibility. Each record is tied to a profile,
+/// one-to-one, and always managed through the profile's own settings.
+/// Critical for supporting opt-in/out flows, accessibility, and user
+/// configuration via web/mobile.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to associated user profile {@link
+  /// community_platform_profiles.id}.
+  community_platform_profile_id String
+  
+  /// User’s preferred language setting for the platform or profile display.
+  language String?
+  
+  /// Preferred visual theme (e.g., 'light', 'dark').
+  theme String?
+  
+  /// Whether to show display email (see profile) on public profile page.
+  show_email Boolean
+  
+  /// Whether to show earned badges to the public.
+  show_badges Boolean
+  
+  /// Whether the user permits incoming messages from people they don’t
+  /// follow/subscriptions.
+  allow_messages_from_nonfollowers Boolean
+  
+  /// Serialized (JSON or similar) notification settings—a flexible preferences
+  /// blob for alerts, messaging, and platform info.
+  notification_settings String?
+  
+  /// Timestamp for preference record creation.
+  created_at DateTime
+  
+  /// Timestamp for last preference modification.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion or recovery of preferences.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  profile community_platform_profiles @relation(fields: [community_platform_profile_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_profile_id], map: "community_platform_profile_preferences_community_platf_a7e6d575")
+}

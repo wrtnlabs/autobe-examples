@@ -1,0 +1,237 @@
+/// Individual vote records for posts and comments, serving as the core
+/// mechanism for content curation and karma calculation. Tracks vote type,
+/// timing, and voter information for real-time ranking updates and
+/// anti-manipulation analysis.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter's {@link reddit_community_members.id}
+  user_id String
+  
+  /// Target content's ID (post or comment)
+  content_id String
+  
+  /// Target comment's {@link reddit_community_comments.id} if voting on comment
+  content_comment_id String?
+  
+  /// Type of content voted on: 'post' or 'comment'
+  content_type String
+  
+  /// Type of vote: 'upvote' or 'downvote'
+  vote_type String
+  
+  /// Calculated weight of vote based on voter reputation and anti-manipulation
+  /// factors
+  vote_weight Float
+  
+  /// IP address of voter for fraud detection
+  ip_address String
+  
+  /// Browser user agent for fraud detection
+  user_agent String?
+  
+  /// Timestamp when vote was cast
+  created_at DateTime
+  
+  /// Timestamp when vote was modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  voter reddit_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  content reddit_community_posts @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments? @relation(fields: [content_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([content_id])
+  @@index([content_comment_id])
+  
+  @@unique([user_id, content_id, content_type])
+  @@index([created_at, vote_type])
+  @@index([content_type, vote_weight])
+  @@index([user_id, created_at])
+}
+
+/// Complete audit trail of karma changes for users, tracking every
+/// karma-modifying event including votes received, votes reverted, and
+/// system adjustments. Essential for reputation calculations and dispute
+/// resolution.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_karma_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose karma changed {@link reddit_community_members.id}
+  user_id String
+  
+  /// Source content ID that caused karma change
+  source_id String?
+  
+  /// Type of karma: 'post' or 'comment'
+  karma_type String
+  
+  /// Amount of karma change (positive or negative)
+  change_amount Int
+  
+  /// Reason for karma change: 'upvote','downvote','revert','adjustment'
+  change_reason String
+  
+  /// Type of source content: 'post','comment','award','manual'
+  source_type String
+  
+  /// Community where karma was earned {@link reddit_community_communities.id}
+  community_id String?
+  
+  /// User karma balance before this change
+  previous_balance Int
+  
+  /// User karma balance after this change
+  new_balance Int
+  
+  /// Timestamp when karma change occurred
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  source reddit_community_posts? @relation(fields: [source_id], references: [id], onDelete: Cascade)
+  
+  @@index([source_id])
+  
+  @@index([user_id, created_at])
+  @@index([karma_type, change_reason])
+  @@index([community_id, created_at])
+}
+
+/// Point-in-time snapshots of voting patterns and content scores for
+/// historical analysis and algorithm calibration. Captures vote
+/// distributions, engagement metrics, and ranking factors used in content
+/// sorting algorithms.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_vote_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Content being snapshotted (post or comment)
+  content_id String
+  
+  /// Type of content: 'post' or 'comment'
+  content_type String
+  
+  /// Community ID for context {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Type of snapshot: 'ranking','trending','algorithm','manual'
+  snapshot_type String
+  
+  /// Number of upvotes at snapshot time
+  upvote_count Int
+  
+  /// Number of downvotes at snapshot time
+  downvote_count Int
+  
+  /// Calculated net score (upvotes - downvotes)
+  net_score Int
+  
+  /// Controversy calculation: (upvotes+downvotes)/max(|net_score|,1)
+  controversy_score Float
+  
+  /// Hot algorithm score for content ranking
+  hot_score Float
+  
+  /// Number of comments at snapshot time
+  comment_count Int
+  
+  /// Engagement rate calculation
+  engagement_rate Float
+  
+  /// Votes per hour rate at snapshot time
+  vote_velocity Float
+  
+  /// Timestamp when snapshot was created
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  content reddit_community_posts @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  
+  @@unique([content_id, snapshot_type, created_at], map: "reddit_community_vote_snapshots_content_id_snapshot_ty_5d635433")
+  @@index([community_id, snapshot_type])
+  @@index([hot_score, controversy_score])
+  @@index([vote_velocity, engagement_rate], map: "reddit_community_vote_snapshots_vote_velocity_engageme_7cd7aca0")
+}
+
+/// Defines reputation tiers and associated privileges based on karma
+/// thresholds. Controls access to advanced features, moderation
+/// capabilities, and platform recognition programs.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_reputation_levels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of reputation level: 'New
+  /// User','Regular','Active','Established','Veteran','Elite'
+  level_name String
+  
+  /// Numeric order of level (1-6) for ranking purposes
+  level_order Int
+  
+  /// Minimum total karma required for this level
+  min_karma Int
+  
+  /// Maximum karma for this level (null for highest level)
+  max_karma Int?
+  
+  /// JSON array of unlocked privileges for this level
+  privileges String?
+  
+  /// Hex color code for level badge display
+  badge_color String
+  
+  /// URI to badge icon for visual representation
+  badge_icon String?
+  
+  /// Description of reputation level and benefits
+  description String
+  
+  /// Whether this reputation level is currently active
+  is_active Boolean
+  
+  /// When reputation level was defined
+  created_at DateTime
+  
+  /// When reputation level was last modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([level_order])
+  @@unique([level_name])
+  @@index([min_karma, max_karma])
+  @@index([is_active, level_order])
+}

@@ -1,0 +1,387 @@
+/// Core product entity containing base product information that serves as
+/// the foundation for variant creation. Products represent the main catalog
+/// items that customers can purchase. Each product belongs to a brand and
+/// manufacturer, and can be categorized into multiple product categories for
+/// organization and discovery.
+///
+/// @namespace ProductCatalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated brand's {@link shopping_mall_brands.id}.
+  shopping_mall_brand_id String?
+  
+  /// Associated manufacturer's {@link shopping_mall_manufacturers.id}.
+  shopping_mall_manufacturer_id String?
+  
+  /// Seller who owns this product {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Product name displayed to customers.
+  name String
+  
+  /// Detailed product description including features and specifications.
+  description String?
+  
+  /// Base price for the product before variant-specific pricing.
+  base_price Float
+  
+  /// Whether the product is available for sale.
+  is_active Boolean
+  
+  /// Indicates if product requires variant selection before purchase.
+  requires_variants Boolean
+  
+  /// Timestamp when product was created.
+  created_at DateTime
+  
+  /// Timestamp when product was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when product was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  brand shopping_mall_brands? @relation(fields: [shopping_mall_brand_id], references: [id], onDelete: Cascade)
+  manufacturer shopping_mall_manufacturers? @relation(fields: [shopping_mall_manufacturer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_attributes shopping_mall_product_attributes[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_pricing_tiers shopping_mall_pricing_tiers[]
+  shopping_mall_discounts shopping_mall_discounts[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_ratings shopping_mall_ratings[]
+  
+  @@index([shopping_mall_brand_id])
+  @@index([shopping_mall_manufacturer_id])
+  
+  @@unique([shopping_mall_seller_id, name])
+  @@index([is_active])
+  @@index([base_price])
+  @@index([created_at])
+}
+
+/// Product variants representing different configurations of the same base
+/// product. Each variant has a unique SKU and specific pricing, enabling
+/// inventory management at the variant level. Variants inherit base product
+/// information but can override pricing and have distinct attributes.
+///
+/// @namespace ProductCatalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Unique Stock Keeping Unit identifier for the variant.
+  sku String
+  
+  /// Variant-specific name or description.
+  name String
+  
+  /// Variant-specific price that overrides base product price.
+  price Float
+  
+  /// Whether this specific variant is available for sale.
+  is_active Boolean
+  
+  /// Timestamp when variant was created.
+  created_at DateTime
+  
+  /// Timestamp when variant was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when variant was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_inventory shopping_mall_inventory[]
+  
+  @@unique([sku])
+  @@unique([shopping_mall_product_id, name], map: "shopping_mall_product_variants_shopping_mall_product_i_994d6c8c")
+  @@index([is_active])
+  @@index([price])
+  @@index([created_at])
+}
+
+/// Product category hierarchy for organizing products into logical groups.
+/// Categories support multi-level hierarchy with parent-child relationships
+/// enabling flexible product organization. Products can belong to multiple
+/// categories for enhanced discoverability.
+///
+/// @namespace ProductCatalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category's {@link shopping_mall_product_categories.id}.
+  parent_id String?
+  
+  /// Category name displayed to users.
+  name String
+  
+  /// Category description for administrative purposes.
+  description String?
+  
+  /// Level in category hierarchy (1 for root categories).
+  hierarchy_level Int
+  
+  /// Whether category is active and visible.
+  is_active Boolean
+  
+  /// Timestamp when category was created.
+  created_at DateTime
+  
+  /// Timestamp when category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when category was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_product_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_product_categories[] @relation("recursive")
+  shopping_mall_pricing_tiers shopping_mall_pricing_tiers[]
+  shopping_mall_discounts shopping_mall_discounts[]
+  shopping_mall_commission_rates shopping_mall_commission_rates[]
+  
+  @@index([parent_id])
+  
+  @@unique([name, parent_id])
+  @@index([hierarchy_level])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Product attributes defining the characteristics that distinguish product
+/// variants. Attributes represent the variable properties of products (like
+/// color, size, material) that enable variant creation. Each attribute can
+/// be used across multiple products and variants.
+///
+/// @namespace ProductCatalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that uses this attribute {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Attribute name (e.g., 'Color', 'Size', 'Material').
+  name String
+  
+  /// Attribute value (e.g., 'Red', 'Large', 'Cotton').
+  value String
+  
+  /// Whether this attribute is required for variant selection.
+  is_required Boolean
+  
+  /// Order in which attributes are displayed to users.
+  display_order Int
+  
+  /// Timestamp when attribute was created.
+  created_at DateTime
+  
+  /// Timestamp when attribute was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when attribute was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_id, name, value], map: "shopping_mall_product_attributes_shopping_mall_product_1a6fa31b")
+  @@index([display_order])
+  @@index([is_required])
+  @@index([created_at])
+}
+
+/// Product images and media files associated with products and variants.
+/// Supports multiple images per product/variant with ordering and type
+/// classification. Images can be specific to variants or shared across
+/// products for comprehensive product visualization.
+///
+/// @namespace ProductCatalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product associated with this image {@link shopping_mall_products.id}.
+  shopping_mall_product_id String?
+  
+  /// Variant-specific image {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String?
+  
+  /// URL to the product image file.
+  image_url String
+  
+  /// Alternative text for accessibility and SEO.
+  alt_text String?
+  
+  /// Order in which images are displayed (lower numbers first).
+  display_order Int
+  
+  /// Type of image (thumbnail, main, gallery, etc.).
+  image_type String
+  
+  /// Whether this is the primary image for the product/variant.
+  is_primary Boolean
+  
+  /// Timestamp when image was created.
+  created_at DateTime
+  
+  /// Timestamp when image was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when image was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_product_variants? @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_product_images_shopping_mall_product_var_3a5187d8")
+  
+  @@index([display_order])
+  @@index([is_primary])
+  @@index([image_type])
+  @@index([created_at])
+}
+
+/// Product brands representing the manufacturers or companies that produce
+/// products. Brands serve as important categorization and filtering criteria
+/// for customers. Each brand can have associated branding information and
+/// quality standards.
+///
+/// @namespace ProductCatalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_brands {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Brand name displayed to customers.
+  name String
+  
+  /// Brand description and company information.
+  description String?
+  
+  /// URL to brand logo image.
+  logo_url String?
+  
+  /// Official brand website URL.
+  website_url String?
+  
+  /// Whether brand is active and visible.
+  is_active Boolean
+  
+  /// Timestamp when brand was created.
+  created_at DateTime
+  
+  /// Timestamp when brand was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when brand was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_products shopping_mall_products[]
+  
+  @@unique([name])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Product manufacturers representing the actual producers of goods.
+/// Manufacturers are distinct from brands as they represent the entity
+/// responsible for product creation. This enables detailed supply chain
+/// tracking and quality control.
+///
+/// @namespace ProductCatalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_manufacturers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Manufacturer name for identification.
+  name String
+  
+  /// Manufacturer description and business details.
+  description String?
+  
+  /// Manufacturer contact email address.
+  contact_email String?
+  
+  /// Manufacturer website URL.
+  website_url String?
+  
+  /// Whether manufacturer is active in the system.
+  is_active Boolean
+  
+  /// Timestamp when manufacturer was created.
+  created_at DateTime
+  
+  /// Timestamp when manufacturer was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when manufacturer was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_products shopping_mall_products[]
+  
+  @@unique([name])
+  @@index([is_active])
+  @@index([created_at])
+}

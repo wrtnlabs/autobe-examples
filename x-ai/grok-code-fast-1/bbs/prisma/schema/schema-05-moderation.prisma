@@ -1,0 +1,57 @@
+/// User-generated reports on content that may violate community standards in
+/// economic and political discussions. This table captures detailed
+/// information about reported content, including the reporter, reported
+/// item, reason, and moderation status. {@link discussion_board_topics}
+/// {@link discussion_board_comments}
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporter's {@link discussion_board_registered_users.id} who submitted the
+  /// report.
+  reporter_id String
+  
+  /// Assigned moderator's {@link discussion_board_moderators.id} handling this
+  /// report.
+  assigned_moderator_id String?
+  
+  /// Type of content being reported (topic or comment).
+  reported_content_type String
+  
+  /// ID of the reported topic or comment.
+  reported_content_id String
+  
+  /// Reason for the report (spam, inappropriate, harassment, etc.).
+  reason String
+  
+  /// Detailed description of the reported issue.
+  description String?
+  
+  /// Current status of the report (pending, in_review, resolved, dismissed).
+  status String
+  
+  /// Resolution details provided by the moderator.
+  resolution String?
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reporter discussion_board_registered_users @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  assignedModerator discussion_board_moderators? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([status])
+  @@index([reporter_id, created_at])
+  @@index([assigned_moderator_id, status])
+}

@@ -1,0 +1,319 @@
+/// Comprehensive user profile information including personal details,
+/// preferences, and display settings. This table serves as the central
+/// profile entity for user identity and customization. {@link
+/// reddit_clone_users.id}
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user account. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// User's public display name, different from username. Optional for users
+  /// who prefer username display.
+  display_name String?
+  
+  /// User biography or about section text. Maximum 500 characters.
+  bio String?
+  
+  /// URL to user's profile avatar image.
+  avatar_url String?
+  
+  /// URL to user's profile banner image.
+  banner_url String?
+  
+  /// User's geographic location for community discovery.
+  location String?
+  
+  /// User's personal website or social media link.
+  website String?
+  
+  /// User's account creation anniversary date for annual celebration.
+  cake_day DateTime
+  
+  /// Profile visibility setting: public, followers_only, or private.
+  profile_visibility String
+  
+  /// Activity feed visibility setting: public, followers_only, or private.
+  activity_visibility String
+  
+  /// Karma score visibility setting: show, hide, or followers_only.
+  karma_visibility String
+  
+  /// Timestamp when the profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([profile_visibility])
+  @@index([cake_day])
+  @@index([created_at])
+}
+
+/// Comprehensive tracking of all user activities including posts, comments,
+/// votes, subscriptions, and other interactions. This table provides
+/// detailed activity history for user profiles and analytics. {@link
+/// reddit_clone_users.id} {@link reddit_clone_posts.id} {@link
+/// reddit_clone_comments.id} {@link reddit_clone_communities.id}
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_activity {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the activity. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Related post if activity involves a post. {@link reddit_clone_posts.id}
+  post_id String?
+  
+  /// Related comment if activity involves a comment. {@link
+  /// reddit_clone_comments.id}
+  comment_id String?
+  
+  /// Related community if activity involves a community. {@link
+  /// reddit_clone_communities.id}
+  community_id String?
+  
+  /// Type of activity: post_created, comment_created, post_upvoted,
+  /// post_downvoted, comment_upvoted, comment_downvoted, community_subscribed,
+  /// community_unsubscribed, post_saved, post_hidden, etc.
+  activity_type String
+  
+  /// Additional JSON data specific to the activity type for detailed tracking.
+  activity_data String?
+  
+  /// Karma points gained or lost from this activity.
+  karma_change Int?
+  
+  /// IP address from which the activity was performed for security tracking.
+  ip_address String?
+  
+  /// User agent string from the client for analytics.
+  user_agent String?
+  
+  /// Timestamp when the activity occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_clone_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment reddit_clone_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([post_id])
+  @@index([comment_id])
+  
+  @@index([user_id, created_at])
+  @@index([activity_type, created_at])
+  @@index([community_id, created_at])
+  @@index([created_at])
+}
+
+/// Aggregated statistics and metrics for user performance and engagement
+/// tracking. This table provides pre-computed statistics for efficient
+/// querying and user analytics. {@link reddit_clone_users.id}
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_statistics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User these statistics belong to. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Total number of posts created by the user.
+  total_posts Int
+  
+  /// Total number of comments created by the user.
+  total_comments Int
+  
+  /// Total number of upvotes received across all posts and comments.
+  total_upvotes_received Int
+  
+  /// Total number of downvotes received across all posts and comments.
+  total_downvotes_received Int
+  
+  /// Total number of upvotes given by the user.
+  total_upvotes_given Int
+  
+  /// Total number of downvotes given by the user.
+  total_downvotes_given Int
+  
+  /// Total number of communities the user is subscribed to.
+  total_communities_subscribed Int
+  
+  /// Total number of communities created by the user.
+  total_communities_created Int
+  
+  /// Total number of awards given to other users.
+  total_awards_given Int
+  
+  /// Total number of awards received from other users.
+  total_awards_received Int
+  
+  /// Timestamp when these statistics were last calculated.
+  last_calculated_at DateTime
+  
+  /// Timestamp when the statistics record was created.
+  created_at DateTime
+  
+  /// Timestamp when the statistics record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([total_upvotes_received])
+  @@index([total_posts])
+  @@index([last_calculated_at])
+}
+
+/// Detailed reputation metrics and karma breakdown for user reputation
+/// tracking. This table provides granular reputation data beyond simple
+/// karma totals. {@link reddit_clone_users.id}
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_reputation_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User these reputation metrics belong to. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Total karma earned from posts (upvotes - downvotes on posts).
+  post_karma Int
+  
+  /// Total karma earned from comments (upvotes - downvotes on comments).
+  comment_karma Int
+  
+  /// Karma earned from receiving awards from other users.
+  award_karma Int
+  
+  /// Karma earned from community-specific contributions and moderation.
+  community_karma Int
+  
+  /// Weighted score based on quality and frequency of contributions.
+  contribution_score Float
+  
+  /// Score measuring how helpful the user's contributions are to others.
+  helpfulness_score Float
+  
+  /// Score measuring consistency of user engagement over time.
+  consistency_score Float
+  
+  /// Rate of recent engagement activity and contribution frequency.
+  engagement_velocity Float
+  
+  /// User's current reputation tier: new_member, active_member,
+  /// trusted_member, community_leader, etc.
+  reputation_tier String
+  
+  /// Trend direction of karma: increasing, decreasing, or stable.
+  karma_trend String
+  
+  /// Timestamp when reputation metrics were last calculated.
+  last_reputation_calculation DateTime
+  
+  /// Timestamp when the reputation metrics record was created.
+  created_at DateTime
+  
+  /// Timestamp when the reputation metrics record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([post_karma])
+  @@index([comment_karma])
+  @@index([last_reputation_calculation])
+}
+
+/// User achievements and badges earned through platform participation and
+/// contributions. This table tracks achievement awards and user recognition
+/// milestones. {@link reddit_clone_users.id}
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_achievements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who earned the achievement. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Type of achievement: karma_milestone, post_milestone, comment_milestone,
+  /// community_milestone, moderator_milestone, etc.
+  achievement_type String
+  
+  /// Name of the achievement award.
+  achievement_name String
+  
+  /// Description of what the achievement represents.
+  achievement_description String
+  
+  /// Tier level of the achievement: bronze, silver, gold, platinum, diamond.
+  achievement_tier String
+  
+  /// Value that triggered the achievement (e.g., karma threshold).
+  criteria_value Int?
+  
+  /// Timestamp when the achievement was awarded.
+  awarded_at DateTime
+  
+  /// Whether the achievement is currently active and displayed.
+  is_active Boolean
+  
+  /// Timestamp when the achievement record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, achievement_type, achievement_tier], map: "reddit_clone_achievements_user_id_achievement_type_ach_8163a0ba")
+  @@index([achievement_type])
+  @@index([achievement_tier])
+  @@index([awarded_at])
+  @@index([is_active])
+}

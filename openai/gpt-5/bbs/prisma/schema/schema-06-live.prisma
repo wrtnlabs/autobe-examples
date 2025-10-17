@@ -1,0 +1,146 @@
+/// Represents a live discussion thread (room) attached to a specific post.
+/// One-to-one with {@link econ_discuss_posts}. Tracks lifecycle state
+/// (scheduled, waiting, live, paused, ended, archived), configuration flags
+/// (e.g., expert-only), access scope governance, and key timestamps for
+/// operations. Messages are stored in {@link econ_discuss_live_messages}.
+/// Managed independently from the post for starting, pausing, ending, and
+/// archiving workflows.
+///
+/// @namespace Live
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_live_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Host post's {@link econ_discuss_posts.id}. Exactly one live thread per
+  /// post.
+  econ_discuss_post_id String
+  
+  /// Host user's {@link econ_discuss_users.id} who can start/pause/end this
+  /// live thread. Co-hosts/participants may be modeled separately.
+  host_user_id String
+  
+  /// Lifecycle state of the live thread. Allowed values
+  /// (application-enforced): scheduled, waiting, live, paused, ended,
+  /// archived.
+  state String
+  
+  /// Whether participation is restricted to verified experts and staff
+  /// (expert-only mode). Reading may remain broader per policy.
+  expert_only Boolean
+  
+  /// Access scope for participation/visibility. Allowed values
+  /// (application-enforced): public, followers_only, topic_subscribers_only,
+  /// invite_only.
+  access_scope String
+  
+  /// Planned start time for scheduled rooms (displayed in user’s timezone;
+  /// stored canonical in UTC).
+  scheduled_start_at DateTime?
+  
+  /// Actual start time when the room transitions to live.
+  started_at DateTime?
+  
+  /// Timestamp when the room was paused. Null when not paused.
+  paused_at DateTime?
+  
+  /// Timestamp when the room ended. Null if still ongoing.
+  ended_at DateTime?
+  
+  /// Timestamp when the room was archived and made read-only.
+  archived_at DateTime?
+  
+  /// Optional slow-mode interval (in seconds) limiting how frequently a
+  /// participant may post messages.
+  slow_mode_interval_seconds Int?
+  
+  /// Creation timestamp of the live thread entity.
+  created_at DateTime
+  
+  /// Last update timestamp of the live thread entity.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the thread is no longer active but
+  /// retained for audit/restore windows.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post econ_discuss_posts @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
+  host econ_discuss_users @relation(fields: [host_user_id], references: [id], onDelete: Cascade)
+  
+  econ_discuss_live_messages econ_discuss_live_messages[]
+  
+  @@unique([econ_discuss_post_id])
+  @@index([state, updated_at])
+  @@index([expert_only, state])
+  @@index([created_at])
+  @@index([host_user_id, state])
+  @@index([scheduled_start_at])
+}
+
+/// Live chat messages belonging to {@link econ_discuss_live_threads}.
+/// Authored by users from {@link econ_discuss_users}. Stores raw message
+/// content, type, and lifecycle timestamps for ordering and limited edits.
+/// Used to render real-time streams and archived transcripts. Author is
+/// nullable to preserve transcripts when user accounts are
+/// deleted/anonymized.
+///
+/// @namespace Live
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_live_messages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged live thread’s {@link econ_discuss_live_threads.id}.
+  econ_discuss_live_thread_id String
+  
+  /// Author user’s {@link econ_discuss_users.id}. Nullable to preserve
+  /// transcripts by anonymizing author when the user is deleted.
+  econ_discuss_user_id String?
+  
+  /// Type of message for rendering/controls. Allowed values
+  /// (application-enforced): text, system, poll_prompt, poll_result,
+  /// moderation_notice, pinned.
+  message_type String
+  
+  /// Message body text (for system/control messages this may be short
+  /// explanatory text).
+  content String?
+  
+  /// Whether this message is currently pinned for context within the live
+  /// thread.
+  pinned Boolean
+  
+  /// Timestamp of last edit within allowed edit window. Null if never edited.
+  edited_at DateTime?
+  
+  /// Creation timestamp; also serves as the chronological ordering key for
+  /// fan-out and transcript views.
+  created_at DateTime
+  
+  /// Last update timestamp (e.g., pin/unpin, edit).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for moderated or removed messages while
+  /// preserving transcript placeholders as required.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  thread econ_discuss_live_threads @relation(fields: [econ_discuss_live_thread_id], references: [id], onDelete: Cascade)
+  author econ_discuss_users? @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([econ_discuss_live_thread_id, created_at], map: "econ_discuss_live_messages_econ_discuss_live_thread_id_d304bf54")
+  @@index([econ_discuss_user_id, created_at])
+  @@index([message_type, created_at])
+  @@index([econ_discuss_live_thread_id, pinned, created_at], map: "econ_discuss_live_messages_econ_discuss_live_thread_id_95a63afe")
+}

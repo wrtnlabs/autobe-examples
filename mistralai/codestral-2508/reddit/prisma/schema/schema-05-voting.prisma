@@ -1,0 +1,82 @@
+/// Tracks user votes on community posts. Represents the voting behavior of
+/// members on posts within communities. {@link
+/// reddit_like_community_posts.id} {@link reddit_like_community_member.id}
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target post's {@link reddit_like_community_posts.id}.
+  reddit_like_community_post_id String
+  
+  /// Voting member's {@link reddit_like_community_member.id}.
+  reddit_like_community_member_id String
+  
+  /// Type of vote: 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// When the vote was cast.
+  created_at DateTime
+  
+  /// When the vote was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  member reddit_like_community_member @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_like_community_member_id], map: "reddit_like_community_post_votes_reddit_like_community_a6ae410d")
+  
+  @@unique([reddit_like_community_post_id, reddit_like_community_member_id], map: "reddit_like_community_post_votes_reddit_like_community_86a79c6d")
+  @@index([vote_type])
+  @@index([created_at])
+}
+
+/// Tracks user votes on community comments. Represents the voting behavior
+/// of members on comments within communities. {@link
+/// reddit_like_community_comments.id} {@link
+/// reddit_like_community_member.id}
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target comment's {@link reddit_like_community_comments.id}.
+  reddit_like_community_comment_id String
+  
+  /// Voting member's {@link reddit_like_community_member.id}.
+  reddit_like_community_member_id String
+  
+  /// Type of vote: 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// When the vote was cast.
+  created_at DateTime
+  
+  /// When the vote was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment reddit_like_community_comments @relation(fields: [reddit_like_community_comment_id], references: [id], onDelete: Cascade)
+  member reddit_like_community_member @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_like_community_member_id], map: "reddit_like_community_comment_votes_reddit_like_commun_4a116bbb")
+  
+  @@unique([reddit_like_community_comment_id, reddit_like_community_member_id], map: "reddit_like_community_comment_votes_reddit_like_commun_2e553080")
+  @@index([vote_type])
+  @@index([created_at])
+}

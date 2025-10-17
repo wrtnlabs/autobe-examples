@@ -1,0 +1,62 @@
+/// User-submitted safety reports targeting either a post or a comment. Each
+/// record captures the reporter, a categorical reason, and a free-text
+/// explanation for triage. Exactly one of the two target references should
+/// be provided: either a post's {@link community_platform_posts.id} or a
+/// comment's {@link community_platform_comments.id}. Reports relate to
+/// reporters in {@link community_platform_users}. Designed for
+/// cross-community moderation queries, category-based triage, and audit
+/// timelines without embedding moderation outcomes (which are modeled in the
+/// moderation/cases domain). Note: Prisma cannot express the one-of
+/// constraint; enforce via application validation or a DB-level CHECK
+/// constraint.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting user's {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Target post's {@link community_platform_posts.id}. Exactly one of post or
+  /// comment should be set.
+  community_platform_post_id String?
+  
+  /// Target comment's {@link community_platform_comments.id}. Exactly one of
+  /// post or comment should be set.
+  community_platform_comment_id String?
+  
+  /// High-level report category for moderation triage. Example values include:
+  /// spam, harassment/hate, sexual_content/child_safety, violence/threats,
+  /// self_harm_risk, illegal, doxxing, misinformation, off_topic/low_effort,
+  /// copyright, other.
+  category String
+  
+  /// Free-text explanation provided by the reporter describing why the content
+  /// is inappropriate. Used for moderator review and search.
+  reason String
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated (e.g., user-edited reason).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reporter community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_user_id, created_at], map: "community_platform_reports_community_platform_user_id__94d81571")
+  @@index([community_platform_post_id, created_at], map: "community_platform_reports_community_platform_post_id__8e658ca6")
+  @@index([community_platform_comment_id, created_at], map: "community_platform_reports_community_platform_comment__128f7a48")
+  @@index([category, created_at])
+  @@index([community_platform_user_id, category, community_platform_post_id, created_at], map: "community_platform_reports_community_platform_user_id__3f900cef")
+  @@index([community_platform_user_id, category, community_platform_comment_id, created_at], map: "community_platform_reports_community_platform_user_id__ef569934")
+}

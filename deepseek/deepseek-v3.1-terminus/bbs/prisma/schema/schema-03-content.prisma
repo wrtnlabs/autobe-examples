@@ -1,0 +1,295 @@
+/// Core discussion posts containing economic and political content. Each
+/// post represents a discussion topic with title, content, category
+/// assignment, and engagement metrics. Posts follow a lifecycle from
+/// creation through moderation to publication and archival. {@link
+/// discussion_board_members.id} {@link discussion_board_categories.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author of the post. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Category for post classification. {@link discussion_board_categories.id}
+  discussion_board_category_id String
+  
+  /// Post title with 10-200 character limit for meaningful topic description.
+  title String
+  
+  /// Post content with 50-10,000 character limit for substantive
+  /// economic/political discussions.
+  content String
+  
+  /// Current lifecycle state: draft, pending_review, published, locked,
+  /// archived.
+  status String
+  
+  /// Total number of authenticated views for engagement tracking.
+  view_count Int
+  
+  /// Number of approved comments on the post for activity metrics.
+  comment_count Int
+  
+  /// Timestamp when the post was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft deleted for moderation recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_post_versions discussion_board_post_versions[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_comment_threads discussion_board_comment_threads[]
+  discussion_board_content_attachments discussion_board_content_attachments[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_moderation_queues discussion_board_moderation_queues[]
+  discussion_board_content_flags discussion_board_content_flags[]
+  discussion_board_post_views discussion_board_post_views[]
+  discussion_board_user_reactions discussion_board_user_reactions[]
+  discussion_board_content_shares discussion_board_content_shares[]
+  discussion_board_bookmarks discussion_board_bookmarks[]
+  discussion_board_content_performance discussion_board_content_performance[]
+  discussion_board_user_notifications discussion_board_user_notifications[]
+  
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_posts_discussion_board_member_id_crea_df884d20")
+  @@index([discussion_board_category_id, created_at], map: "discussion_board_posts_discussion_board_category_id_cr_329e994a")
+  @@index([status, created_at])
+  @@index([created_at])
+}
+
+/// Historical versions of discussion posts for audit trails and content
+/// modification tracking. Each version captures the complete state of a post
+/// at a specific point in time, enabling content recovery and moderation
+/// history. {@link discussion_board_posts.id} {@link
+/// discussion_board_members.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_post_versions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this version belongs to. {@link discussion_board_posts.id}
+  discussion_board_post_id String
+  
+  /// Member who created this version (author or moderator). {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Post title at the time of version creation.
+  title String
+  
+  /// Post content at the time of version creation.
+  content String
+  
+  /// Post status at the time of version creation.
+  status String
+  
+  /// Sequential version number for ordering modifications.
+  version_number Int
+  
+  /// Reason for creating this version (edit, moderation, correction).
+  modification_reason String?
+  
+  /// Timestamp when this version was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  modifier discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_post_id, version_number], map: "discussion_board_post_versions_discussion_board_post_i_49ee48d9")
+  @@index([discussion_board_post_id, created_at], map: "discussion_board_post_versions_discussion_board_post_i_425f7f01")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_post_versions_discussion_board_member_85128df1")
+  @@index([created_at])
+}
+
+/// User comments on discussion posts for economic/political discourse
+/// engagement. Comments enable threaded discussions with real-time updates
+/// and moderation capabilities. {@link discussion_board_posts.id} {@link
+/// discussion_board_members.id} {@link discussion_board_comment_threads.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this comment belongs to. {@link discussion_board_posts.id}
+  discussion_board_post_id String
+  
+  /// Author of the comment. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Thread that organizes this comment for discussion structure. {@link
+  /// discussion_board_comment_threads.id}
+  discussion_board_comment_thread_id String?
+  
+  /// Comment content with 5-2,000 character limit for substantive
+  /// contributions.
+  content String
+  
+  /// Current moderation state: pending, approved, flagged, removed.
+  status String
+  
+  /// Number of direct replies to this comment for thread activity.
+  reply_count Int
+  
+  /// Number of positive reactions to the comment.
+  like_count Int
+  
+  /// Timestamp when the comment was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft deleted for moderation recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  thread discussion_board_comment_threads? @relation(fields: [discussion_board_comment_thread_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_content_attachments discussion_board_content_attachments[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_moderation_queues discussion_board_moderation_queues[]
+  discussion_board_content_flags discussion_board_content_flags[]
+  discussion_board_comment_engagements discussion_board_comment_engagements[]
+  discussion_board_user_reactions discussion_board_user_reactions[]
+  discussion_board_bookmarks discussion_board_bookmarks[]
+  discussion_board_content_performance discussion_board_content_performance[]
+  discussion_board_user_notifications discussion_board_user_notifications[]
+  
+  @@index([discussion_board_post_id, created_at], map: "discussion_board_comments_discussion_board_post_id_cre_571d2d84")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_comments_discussion_board_member_id_c_c3eff834")
+  @@index([discussion_board_comment_thread_id, created_at], map: "discussion_board_comments_discussion_board_comment_thr_732b28fb")
+  @@index([status, created_at])
+  @@index([created_at])
+}
+
+/// Thread organization structure for comment discussions. Each thread
+/// represents a conversation branch within a post, enabling hierarchical
+/// comment organization and focused discussions. {@link
+/// discussion_board_posts.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this thread belongs to. {@link discussion_board_posts.id}
+  discussion_board_post_id String
+  
+  /// Optional thread title for discussion topic identification.
+  title String?
+  
+  /// Total number of comments in this thread for activity tracking.
+  comment_count Int
+  
+  /// Indicates whether the thread is currently receiving new comments.
+  is_active Boolean
+  
+  /// Timestamp when the thread was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the thread was last modified with new comments.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_comments discussion_board_comments[]
+  
+  @@index([discussion_board_post_id, created_at], map: "discussion_board_comment_threads_discussion_board_post_5a42b606")
+  @@index([discussion_board_post_id, is_active], map: "discussion_board_comment_threads_discussion_board_post_60b63be0")
+  @@index([created_at])
+}
+
+/// File attachments for posts and comments, supporting media-rich
+/// discussions. Attachments include images, documents, and other files that
+/// enhance economic/political content. {@link discussion_board_posts.id}
+/// {@link discussion_board_comments.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this attachment belongs to (optional). {@link
+  /// discussion_board_posts.id}
+  discussion_board_post_id String?
+  
+  /// Comment that this attachment belongs to (optional). {@link
+  /// discussion_board_comments.id}
+  discussion_board_comment_id String?
+  
+  /// Original filename of the uploaded attachment.
+  file_name String
+  
+  /// MIME type of the attachment for proper handling.
+  file_type String
+  
+  /// File size in bytes for storage management.
+  file_size Int
+  
+  /// Storage location URL for the attachment file.
+  file_url String
+  
+  /// Optional description of the attachment content.
+  description String?
+  
+  /// Timestamp when the attachment was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when the attachment was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts? @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_post_id, created_at], map: "discussion_board_content_attachments_discussion_board__100edf07")
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_content_attachments_discussion_board__4d9e5980")
+  @@index([file_type, created_at])
+  @@index([created_at])
+}

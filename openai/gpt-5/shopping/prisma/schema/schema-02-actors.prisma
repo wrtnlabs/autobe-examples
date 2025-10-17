@@ -1,0 +1,765 @@
+/// Platform user identities for all roles (guests who registered, customers,
+/// sellers, and staff). Holds login credentials, verification state, account
+/// status, and basic profile attributes. Other models link here: {@link
+/// shopping_mall_user_sessions}, {@link shopping_mall_user_addresses},
+/// {@link shopping_mall_consents}, {@link
+/// shopping_mall_user_security_events}, and all role-assignment tables
+/// (e.g., {@link shopping_mall_customer}). This version adds secure MFA
+/// artifacts and a password change timestamp to support token revocation and
+/// 2FA requirements.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for login and notifications. Must be verified
+  /// before checkout or review actions.
+  email String
+  
+  /// BCrypt/Argon2 hash of the user's password. Plaintext passwords are never
+  /// stored.
+  password_hash String
+  
+  /// Whether the email address has been verified.
+  email_verified Boolean
+  
+  /// Timestamp when the account's email verification completed.
+  verified_at DateTime?
+  
+  /// Whether multi-factor authentication is enabled for this user.
+  mfa_enabled Boolean
+  
+  /// Preferred 2FA method when multi-factor is enabled (e.g., totp, sms,
+  /// webauthn).
+  mfa_method String?
+  
+  /// Encrypted TOTP/credential secret material used for MFA; never stored in
+  /// plaintext. Encryption/at-rest protection required.
+  mfa_secret_encrypted String?
+  
+  /// Encrypted/hashed bundle of backup codes for MFA recovery; rotated on use
+  /// and never stored in plaintext.
+  mfa_backup_codes_encrypted String?
+  
+  /// Timestamp of the last successful password change, used to invalidate
+  /// refresh tokens and enforce re-authentication per policy.
+  password_changed_at DateTime?
+  
+  /// Administrative/account lifecycle status (e.g., active, suspended,
+  /// terminated).
+  status String
+  
+  /// Full name as provided by the user for display and fulfillment contexts.
+  name String?
+  
+  /// Optional nickname/handle used in certain UI contexts.
+  nickname String?
+  
+  /// Optional phone number for contact and risk checks.
+  phone String?
+  
+  /// Last successful interactive authentication timestamp.
+  last_login_at DateTime?
+  
+  /// If set, the account is locked until this time due to policy/risk controls.
+  lockout_until DateTime?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the account is deactivated for
+  /// recovery/compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_user_sessions shopping_mall_user_sessions[]
+  shopping_mall_user_addresses shopping_mall_user_addresses[]
+  shopping_mall_consents shopping_mall_consents[]
+  shopping_mall_user_security_events shopping_mall_user_security_events[]
+  shopping_mall_guest_of_shopping_mall_user_id shopping_mall_guest? @relation("shopping_mall_guest_of_shopping_mall_user_id")
+  shopping_mall_guest_of_granted_by_user_id shopping_mall_guest[] @relation("shopping_mall_guest_of_granted_by_user_id")
+  shopping_mall_customer_of_shopping_mall_user_id shopping_mall_customer? @relation("shopping_mall_customer_of_shopping_mall_user_id")
+  shopping_mall_customer_of_granted_by_user_id shopping_mall_customer[] @relation("shopping_mall_customer_of_granted_by_user_id")
+  shopping_mall_seller_of_shopping_mall_user_id shopping_mall_seller? @relation("shopping_mall_seller_of_shopping_mall_user_id")
+  shopping_mall_seller_of_granted_by_user_id shopping_mall_seller[] @relation("shopping_mall_seller_of_granted_by_user_id")
+  shopping_mall_supportagent_of_shopping_mall_user_id shopping_mall_supportagent? @relation("shopping_mall_supportagent_of_shopping_mall_user_id")
+  shopping_mall_supportagent_of_granted_by_user_id shopping_mall_supportagent[] @relation("shopping_mall_supportagent_of_granted_by_user_id")
+  shopping_mall_operationsmanager_of_shopping_mall_user_id shopping_mall_operationsmanager? @relation("shopping_mall_operationsmanager_of_shopping_mall_user_id")
+  shopping_mall_operationsmanager_of_granted_by_user_id shopping_mall_operationsmanager[] @relation("shopping_mall_operationsmanager_of_granted_by_user_id")
+  shopping_mall_financemanager_of_shopping_mall_user_id shopping_mall_financemanager? @relation("shopping_mall_financemanager_of_shopping_mall_user_id")
+  shopping_mall_financemanager_of_granted_by_user_id shopping_mall_financemanager[] @relation("shopping_mall_financemanager_of_granted_by_user_id")
+  shopping_mall_contentmoderator_of_shopping_mall_user_id shopping_mall_contentmoderator? @relation("shopping_mall_contentmoderator_of_shopping_mall_user_id")
+  shopping_mall_contentmoderator_of_granted_by_user_id shopping_mall_contentmoderator[] @relation("shopping_mall_contentmoderator_of_granted_by_user_id")
+  shopping_mall_systemadmin_of_shopping_mall_user_id shopping_mall_systemadmin? @relation("shopping_mall_systemadmin_of_shopping_mall_user_id")
+  shopping_mall_systemadmin_of_granted_by_user_id shopping_mall_systemadmin[] @relation("shopping_mall_systemadmin_of_granted_by_user_id")
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_payments shopping_mall_payments[]
+  shopping_mall_payment_methods shopping_mall_payment_methods[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_review_moderations shopping_mall_review_moderations[]
+  shopping_mall_review_reports_of_reporter_user_id shopping_mall_review_reports[] @relation("shopping_mall_review_reports_of_reporter_user_id")
+  shopping_mall_review_reports_of_resolver_user_id shopping_mall_review_reports[] @relation("shopping_mall_review_reports_of_resolver_user_id")
+  shopping_mall_cancellation_requests_of_requested_by_user_id shopping_mall_cancellation_requests[] @relation("shopping_mall_cancellation_requests_of_requested_by_user_id")
+  shopping_mall_cancellation_requests_of_approved_by_user_id shopping_mall_cancellation_requests[] @relation("shopping_mall_cancellation_requests_of_approved_by_user_id")
+  shopping_mall_return_requests shopping_mall_return_requests[]
+  shopping_mall_refund_requests_of_requested_by_user_id shopping_mall_refund_requests[] @relation("shopping_mall_refund_requests_of_requested_by_user_id")
+  shopping_mall_refund_requests_of_approved_by_user_id shopping_mall_refund_requests[] @relation("shopping_mall_refund_requests_of_approved_by_user_id")
+  shopping_mall_sellers shopping_mall_sellers?
+  shopping_mall_seller_verifications shopping_mall_seller_verifications[]
+  shopping_mall_support_cases_of_customer_user_id shopping_mall_support_cases[] @relation("shopping_mall_support_cases_of_customer_user_id")
+  shopping_mall_support_cases_of_seller_user_id shopping_mall_support_cases[] @relation("shopping_mall_support_cases_of_seller_user_id")
+  shopping_mall_support_cases_of_assigned_to_user_id shopping_mall_support_cases[] @relation("shopping_mall_support_cases_of_assigned_to_user_id")
+  shopping_mall_support_case_events shopping_mall_support_case_events[]
+  shopping_mall_support_attachments shopping_mall_support_attachments[]
+  shopping_mall_support_notes shopping_mall_support_notes[]
+  shopping_mall_audit_events shopping_mall_audit_events[]
+  shopping_mall_admin_actions_of_requested_by_user_id shopping_mall_admin_actions[] @relation("shopping_mall_admin_actions_of_requested_by_user_id")
+  shopping_mall_admin_actions_of_performed_by_user_id shopping_mall_admin_actions[] @relation("shopping_mall_admin_actions_of_performed_by_user_id")
+  shopping_mall_risk_rules_of_created_by_user_id shopping_mall_risk_rules[] @relation("shopping_mall_risk_rules_of_created_by_user_id")
+  shopping_mall_risk_rules_of_updated_by_user_id shopping_mall_risk_rules[] @relation("shopping_mall_risk_rules_of_updated_by_user_id")
+  shopping_mall_data_exports_of_requested_by_user_id shopping_mall_data_exports[] @relation("shopping_mall_data_exports_of_requested_by_user_id")
+  shopping_mall_data_exports_of_approved_by_user_id shopping_mall_data_exports[] @relation("shopping_mall_data_exports_of_approved_by_user_id")
+  shopping_mall_maker_checker_approvals shopping_mall_maker_checker_approvals[]
+  
+  @@unique([email])
+  @@index([email_verified, created_at])
+  @@index([created_at])
+}
+
+/// Authentication sessions/refresh tokens for users. Each record represents
+/// a logical session with expiry, device metadata, and revocation state.
+/// Belongs to {@link shopping_mall_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Hash of the refresh token for secure verification and revocation.
+  refresh_token_hash String
+  
+  /// Client user agent string captured at session creation.
+  user_agent String?
+  
+  /// IP address (string) observed for this session.
+  ip String?
+  
+  /// When this session/refresh token expires.
+  expires_at DateTime
+  
+  /// When this session was revoked (if applicable).
+  revoked_at DateTime?
+  
+  /// Most recent activity timestamp used for security analysis.
+  last_accessed_at DateTime?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_user_security_events shopping_mall_user_security_events[]
+  
+  @@unique([refresh_token_hash])
+  @@index([shopping_mall_user_id, created_at], map: "shopping_mall_user_sessions_shopping_mall_user_id_crea_52fa3360")
+  @@index([expires_at, created_at])
+}
+
+/// Customer-managed delivery/billing addresses. Validates serviceability and
+/// supports default shipping/billing flags per user. Belongs to {@link
+/// shopping_mall_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Address type: Shipping or Billing (business-enforced).
+  type String
+  
+  /// Recipient full name.
+  recipient String
+  
+  /// Contact phone number for delivery coordination.
+  phone String
+  
+  /// ISO country name/code string as stored by business rules.
+  country String
+  
+  /// Region/State/Province where applicable.
+  region String?
+  
+  /// City/Locality.
+  city String
+  
+  /// Postal/ZIP code as applicable.
+  postal_code String
+  
+  /// Primary street address or road name.
+  address_line1 String
+  
+  /// Secondary address info (building, unit).
+  address_line2 String?
+  
+  /// Whether this is the default shipping address for the user. Only one
+  /// should be true per user by policy.
+  default_shipping Boolean
+  
+  /// Whether this is the default billing address for the user. Only one should
+  /// be true per user by policy.
+  default_billing Boolean
+  
+  /// Whether platform/carriers can service this address given policy and
+  /// region constraints.
+  serviceable Boolean
+  
+  /// Whether this address passed validation checks.
+  verified Boolean
+  
+  /// Timestamp when the address was last validated.
+  validated_at DateTime?
+  
+  /// Timestamp when this address was last used in an order/checkout flow.
+  last_used_at DateTime?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when an address is removed from active use.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_orders_of_shopping_mall_shipping_address_id shopping_mall_orders[] @relation("shopping_mall_orders_of_shopping_mall_shipping_address_id")
+  shopping_mall_orders_of_shopping_mall_billing_address_id shopping_mall_orders[] @relation("shopping_mall_orders_of_shopping_mall_billing_address_id")
+  shopping_mall_payment_methods shopping_mall_payment_methods[]
+  
+  @@index([shopping_mall_user_id, type, created_at], map: "shopping_mall_user_addresses_shopping_mall_user_id_typ_aee702d5")
+  @@index([shopping_mall_user_id, default_shipping], map: "shopping_mall_user_addresses_shopping_mall_user_id_def_dd998db5")
+  @@index([shopping_mall_user_id, default_billing], map: "shopping_mall_user_addresses_shopping_mall_user_id_def_577b435b")
+}
+
+/// Consent records per user for marketing/personalization and other
+/// regulated communications. Enforces single current record per (user,
+/// scope). Belongs to {@link shopping_mall_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_consents {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Consent scope identifier (e.g., marketing_email, sms, personalization).
+  scope String
+  
+  /// Whether consent is currently granted for the scope.
+  granted Boolean
+  
+  /// When consent was granted.
+  granted_at DateTime?
+  
+  /// When consent was revoked.
+  revoked_at DateTime?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_user_id, scope])
+  @@index([granted, granted_at])
+  @@index([shopping_mall_user_id, created_at])
+}
+
+/// Append-only security/audit events for identity lifecycle (login
+/// success/failure, password reset, 2FA, token revocations). References
+/// {@link shopping_mall_users} and optionally {@link
+/// shopping_mall_user_sessions}. Used for investigations and compliance
+/// audits.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_security_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subject user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Related session's {@link shopping_mall_user_sessions.id} when applicable.
+  shopping_mall_user_session_id String?
+  
+  /// Event kind (e.g., login_success, login_failure, password_changed,
+  /// mfa_challenge, token_revoked).
+  event_type String
+  
+  /// Optional human-readable reason or category code for the event.
+  reason String?
+  
+  /// Observed IP address at time of event.
+  ip String?
+  
+  /// Observed user agent at time of event.
+  user_agent String?
+  
+  /// Business time the event occurred.
+  occurred_at DateTime
+  
+  /// Ingestion time the event was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  session shopping_mall_user_sessions? @relation(fields: [shopping_mall_user_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_user_id, occurred_at], map: "shopping_mall_user_security_events_shopping_mall_user__c3970e0a")
+  @@index([shopping_mall_user_session_id, occurred_at], map: "shopping_mall_user_security_events_shopping_mall_user__c196cc4a")
+  @@index([event_type, occurred_at])
+}
+
+/// Role-assignment table marking a {@link shopping_mall_users} identity as
+/// guest-kind (limited capabilities). Usually transient and auto-upgraded
+/// upon registration. 1:1 with user.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional staff actor's {@link shopping_mall_users.id} who granted the
+  /// role.
+  granted_by_user_id String?
+  
+  /// When this role was granted.
+  assigned_at DateTime
+  
+  /// When this role was revoked.
+  revoked_at DateTime?
+  
+  /// Reason text or code for assignment/revocation.
+  reason String?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation("shopping_mall_guest_of_shopping_mall_user_id", fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  grantedBy shopping_mall_users? @relation("shopping_mall_guest_of_granted_by_user_id", fields: [granted_by_user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  
+  @@index([granted_by_user_id])
+  
+  @@unique([shopping_mall_user_id])
+  @@index([assigned_at])
+  @@index([revoked_at])
+}
+
+/// Role-assignment table indicating a {@link shopping_mall_users} identity
+/// has customer capabilities. 1:1 with user. Used for query scoping like
+/// "find all customers" via role presence.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional staff actor's {@link shopping_mall_users.id} who granted the
+  /// role.
+  granted_by_user_id String?
+  
+  /// When this role was granted.
+  assigned_at DateTime
+  
+  /// When this role was revoked.
+  revoked_at DateTime?
+  
+  /// Reason text or code for assignment/revocation.
+  reason String?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation("shopping_mall_customer_of_shopping_mall_user_id", fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  grantedBy shopping_mall_users? @relation("shopping_mall_customer_of_granted_by_user_id", fields: [granted_by_user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_coupon_redemptions shopping_mall_coupon_redemptions[]
+  
+  @@index([granted_by_user_id])
+  
+  @@unique([shopping_mall_user_id])
+  @@index([assigned_at])
+  @@index([revoked_at])
+}
+
+/// Role-assignment table indicating a {@link shopping_mall_users} identity
+/// has seller capabilities. This table does not duplicate seller business
+/// entities; it only flags the role assignment and lifecycle. 1:1 with user.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional staff actor's {@link shopping_mall_users.id} who granted the
+  /// role.
+  granted_by_user_id String?
+  
+  /// When this role was granted.
+  assigned_at DateTime
+  
+  /// When this role was revoked.
+  revoked_at DateTime?
+  
+  /// Reason text or code for assignment/revocation.
+  reason String?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation("shopping_mall_seller_of_shopping_mall_user_id", fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  grantedBy shopping_mall_users? @relation("shopping_mall_seller_of_granted_by_user_id", fields: [granted_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([granted_by_user_id])
+  
+  @@unique([shopping_mall_user_id])
+  @@index([assigned_at])
+  @@index([revoked_at])
+}
+
+/// Role-assignment table indicating a {@link shopping_mall_users} identity
+/// has support agent capabilities within policy thresholds. 1:1 with user
+/// and governed by audit controls.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_supportagent {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional staff actor's {@link shopping_mall_users.id} who granted the
+  /// role.
+  granted_by_user_id String?
+  
+  /// When this role was granted.
+  assigned_at DateTime
+  
+  /// When this role was revoked.
+  revoked_at DateTime?
+  
+  /// Reason text or code for assignment/revocation.
+  reason String?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation("shopping_mall_supportagent_of_shopping_mall_user_id", fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  grantedBy shopping_mall_users? @relation("shopping_mall_supportagent_of_granted_by_user_id", fields: [granted_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([granted_by_user_id])
+  
+  @@unique([shopping_mall_user_id])
+  @@index([assigned_at])
+  @@index([revoked_at])
+}
+
+/// Role-assignment table indicating a {@link shopping_mall_users} identity
+/// has operations manager capabilities for catalog/policy governance. 1:1
+/// with user and governed by maker-checker policy.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_operationsmanager {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional staff actor's {@link shopping_mall_users.id} who granted the
+  /// role.
+  granted_by_user_id String?
+  
+  /// When this role was granted.
+  assigned_at DateTime
+  
+  /// When this role was revoked.
+  revoked_at DateTime?
+  
+  /// Reason text or code for assignment/revocation.
+  reason String?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation("shopping_mall_operationsmanager_of_shopping_mall_user_id", fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  grantedBy shopping_mall_users? @relation("shopping_mall_operationsmanager_of_granted_by_user_id", fields: [granted_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([granted_by_user_id])
+  
+  @@unique([shopping_mall_user_id])
+  @@index([assigned_at])
+  @@index([revoked_at])
+}
+
+/// Role-assignment table indicating a {@link shopping_mall_users} identity
+/// has finance manager capabilities for refunds, payouts, and reconciliation
+/// governance. 1:1 with user and governed by maker-checker policy.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_financemanager {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional staff actor's {@link shopping_mall_users.id} who granted the
+  /// role.
+  granted_by_user_id String?
+  
+  /// When this role was granted.
+  assigned_at DateTime
+  
+  /// When this role was revoked.
+  revoked_at DateTime?
+  
+  /// Reason text or code for assignment/revocation.
+  reason String?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation("shopping_mall_financemanager_of_shopping_mall_user_id", fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  grantedBy shopping_mall_users? @relation("shopping_mall_financemanager_of_granted_by_user_id", fields: [granted_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([granted_by_user_id])
+  
+  @@unique([shopping_mall_user_id])
+  @@index([assigned_at])
+  @@index([revoked_at])
+}
+
+/// Role-assignment table indicating a {@link shopping_mall_users} identity
+/// has content moderation capabilities. 1:1 with user and fully audited.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_contentmoderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional staff actor's {@link shopping_mall_users.id} who granted the
+  /// role.
+  granted_by_user_id String?
+  
+  /// When this role was granted.
+  assigned_at DateTime
+  
+  /// When this role was revoked.
+  revoked_at DateTime?
+  
+  /// Reason text or code for assignment/revocation.
+  reason String?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation("shopping_mall_contentmoderator_of_shopping_mall_user_id", fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  grantedBy shopping_mall_users? @relation("shopping_mall_contentmoderator_of_granted_by_user_id", fields: [granted_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([granted_by_user_id])
+  
+  @@unique([shopping_mall_user_id])
+  @@index([assigned_at])
+  @@index([revoked_at])
+}
+
+/// Role-assignment table indicating a {@link shopping_mall_users} identity
+/// has system administrator capabilities. 1:1 with user under the platform’s
+/// highest audit and maker-checker rules.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_systemadmin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional staff actor's {@link shopping_mall_users.id} who granted the
+  /// role.
+  granted_by_user_id String?
+  
+  /// When this role was granted.
+  assigned_at DateTime
+  
+  /// When this role was revoked.
+  revoked_at DateTime?
+  
+  /// Reason text or code for assignment/revocation.
+  reason String?
+  
+  /// Creation timestamp in UTC.
+  created_at DateTime
+  
+  /// Last update timestamp in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation("shopping_mall_systemadmin_of_shopping_mall_user_id", fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  grantedBy shopping_mall_users? @relation("shopping_mall_systemadmin_of_granted_by_user_id", fields: [granted_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([granted_by_user_id])
+  
+  @@unique([shopping_mall_user_id])
+  @@index([assigned_at])
+  @@index([revoked_at])
+}

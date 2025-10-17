@@ -1,0 +1,347 @@
+/// Customer inquiry submissions and communications tracking system enabling
+/// customers to submit questions, complaints, feedback, and support requests
+/// with complete audit trail management. Supports inquiry categorization,
+/// priority assignment, and communication history preservation for customer
+/// service excellence.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_inquiries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target customer's {@link shopping_mall_customers.id} who submitted the
+  /// inquiry
+  shopping_customer_id String?
+  
+  /// Related order's {@link shopping_mall_orders.id} if inquiry concerns
+  /// specific order
+  shopping_order_id String?
+  
+  /// Target seller's {@link shopping_mall_sellers.id} if inquiry concerns
+  /// specific seller
+  shopping_seller_id String?
+  
+  /// Brief summary of the inquiry subject matter
+  subject String
+  
+  /// Primary category of inquiry: order_issue, product_question,
+  /// shipping_concern, billing_inquiry, general_support, complaint, feedback
+  inquiry_type String
+  
+  /// Urgency level: low, medium, high, urgent based on inquiry content and
+  /// impact
+  priority String
+  
+  /// Detailed description of the inquiry or issue requiring support attention
+  content String
+  
+  /// Current processing status: open, in_progress, pending_customer,
+  /// pending_vendor, resolved, closed
+  status String
+  
+  /// Submission channel: website, email, phone, mobile_app, seller_portal,
+  /// admin_portal
+  source String
+  
+  /// Admin staff member or support agent assigned to handle this inquiry
+  assigned_to String?
+  
+  /// Timestamp when the inquiry was first submitted
+  created_at DateTime
+  
+  /// Timestamp when the inquiry was last modified
+  updated_at DateTime
+  
+  /// Timestamp when the inquiry was marked as resolved
+  resolved_at DateTime?
+  
+  /// Soft deletion timestamp for legal audit trail preservation
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_support_tickets shopping_mall_support_tickets?
+  
+  @@index([shopping_seller_id])
+  
+  @@unique([shopping_order_id, inquiry_type, shopping_customer_id], map: "shopping_mall_customer_inquiries_shopping_order_id_inq_4438be48")
+  @@index([status, priority, created_at])
+  @@index([shopping_customer_id, status, created_at], map: "shopping_mall_customer_inquiries_shopping_customer_id__e1dd4a5b")
+  @@index([assigned_to, status, created_at], map: "shopping_mall_customer_inquiries_assigned_to_status_cr_a2507559")
+}
+
+/// Structured support ticket management system handling technical issues,
+/// account problems, and complex service requests requiring defined workflow
+/// processes and resolution tracking. Enables multi-step problem resolution
+/// with internal team coordination and customer communication management.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_tickets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent customer inquiry's {@link shopping_mall_customer_inquiries.id}
+  /// this ticket addresses
+  inquiry_id String?
+  
+  /// Customer's {@link shopping_mall_customers.id} if ticket is
+  /// customer-initiated
+  shopping_customer_id String?
+  
+  /// Seller's {@link shopping_mall_sellers.id} if ticket concerns seller
+  /// account or products
+  shopping_seller_id String?
+  
+  /// Supporting admin's {@link shopping_mall_administrators.id} assigned to
+  /// handle this ticket
+  assigned_admin_id String?
+  
+  /// Human-readable ticket identifier: format TIC-YYMMDD-8digit-sequence for
+  /// easy reference
+  ticket_number String
+  
+  /// Ticket classification: technical_issue, account_problem, billing_dispute,
+  /// order_error, seller_complaint, platform_bug, feature_request,
+  /// data_correction
+  category String
+  
+  /// Workflow status: new, assigned, in_progress, escalation_required,
+  /// waiting_customer, waiting_vendor, testing_resolution, resolved, closed,
+  /// archived
+  status String
+  
+  /// Service level priority: critical_1h_response, high_4h_response,
+  /// medium_24h_response, low_72h_response
+  priority String
+  
+  /// Concise title summarizing the issue or request requiring resolution
+  title String
+  
+  /// Detailed technical description of the problem, symptoms, and expected
+  /// resolution
+  description String
+  
+  /// Internal team communication and technical notes not visible to customers
+  internal_notes String?
+  
+  /// Final resolution description explaining solution applied and customer
+  /// communication
+  resolution_summary String?
+  
+  /// Escalation hierarchy level: 0=regular, 1=team_lead, 2=manager, 3=director
+  escalation_level Int
+  
+  /// Deadline for initial response based on priority level and creation
+  /// timestamp
+  sla_deadline DateTime
+  
+  /// Ticket creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Resolution completion timestamp
+  resolved_at DateTime?
+  
+  /// Final closure timestamp after verification
+  closed_at DateTime?
+  
+  /// Soft deletion timestamp for audit trail maintenance
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inquiry shopping_mall_customer_inquiries? @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  assignedAdmin shopping_mall_administrators? @relation(fields: [assigned_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([inquiry_id])
+  @@index([shopping_seller_id])
+  
+  @@unique([ticket_number])
+  @@index([status, priority, created_at])
+  @@index([shopping_customer_id, status, created_at], map: "shopping_mall_support_tickets_shopping_customer_id_sta_ff7dd3fa")
+  @@index([assigned_admin_id, status, created_at], map: "shopping_mall_support_tickets_assigned_admin_id_status_6ef7a90c")
+  @@index([category, priority, created_at])
+}
+
+/// Frequently asked questions content management for public knowledge base
+/// supporting customer self-service and reducing support volume. Enables
+/// categorized question organization with structured answers and helpfulness
+/// tracking.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_faqs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin's {@link shopping_mall_administrators.id} who created this FAQ entry
+  created_by_admin_id String
+  
+  /// Customer-oriented question phrased for easy search and understanding
+  question String
+  
+  /// Comprehensive detailed answer with step-by-step instructions when
+  /// applicable
+  answer String
+  
+  /// Knowledge area classification: ordering, payment, shipping, returns,
+  /// account, products, sellers, technical
+  category String
+  
+  /// Search terms and synonyms for improved FAQ discovery
+  keywords String
+  
+  /// Number of users who found this FAQ helpful
+  helpful_count Int
+  
+  /// Total number of times this FAQ has been viewed
+  view_count Int
+  
+  /// Display ordering priority where lower numbers appear first
+  priority Int
+  
+  /// Whether this FAQ should be prominently featured in search results
+  is_featured Boolean
+  
+  /// Publication status controlling public visibility
+  is_published Boolean
+  
+  /// Creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Publication timestamp
+  published_at DateTime?
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  createdByAdmin shopping_mall_administrators @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_by_admin_id])
+  
+  @@unique([question, category])
+  @@index([category, is_published, priority])
+  @@index([is_featured, is_published, priority])
+}
+
+/// Comprehensive help documentation articles forming extended knowledge base
+/// with rich content, categorized guides, tutorials, and platform policy
+/// explanations. Supports multimedia content and hierarchical organization
+/// for customer education.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_help_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author admin's {@link shopping_mall_administrators.id} who created this
+  /// article
+  created_by_admin_id String
+  
+  /// Parent article's {@link shopping_mall_help_articles.id} for hierarchical
+  /// content organization
+  parent_article_id String?
+  
+  /// Article headline optimized for search and clear topic identification
+  title String
+  
+  /// URL-friendly identifier for article navigation: getting-started-guide
+  slug String
+  
+  /// Comprehensive article content with markdown support for rich formatting
+  content String
+  
+  /// Brief excerpt displayed in search results and category listings
+  summary String
+  
+  /// Primary classification: getting-started, account-management,
+  /// selling-guide, buying-guide, platform-policies, technical-help
+  category String
+  
+  /// Comma-separated tags for cross-referencing and improved discoverability
+  tags String
+  
+  /// Content format: tutorial, guide, policy, announcement, troubleshooting,
+  /// faq-collection
+  article_type String
+  
+  /// Estimated reading time in minutes for user convenience
+  estimated_read_time Int?
+  
+  /// Header image URI for visual appeal and social media sharing
+  feature_image_uri String?
+  
+  /// Total article views for popularity tracking
+  view_count Int
+  
+  /// User likes or positive ratings for quality indication
+  like_count Int
+  
+  /// Featured article designation for homepage and prominent placement
+  is_featured Boolean
+  
+  /// Publication status controlling article visibility
+  is_published Boolean
+  
+  /// Publication timestamp when article became publicly available
+  published_at DateTime?
+  
+  /// Last content accuracy review timestamp for currency maintenance
+  last_reviewed_at DateTime?
+  
+  /// Article creation timestamp
+  created_at DateTime
+  
+  /// Last content modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for content management and audit
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author shopping_mall_administrators @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  parentArticle shopping_mall_help_articles? @relation("recursive", fields: [parent_article_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_help_articles[] @relation("recursive")
+  
+  @@index([created_by_admin_id])
+  @@index([parent_article_id])
+  
+  @@unique([slug])
+  @@index([category, is_published, created_at], map: "shopping_mall_help_articles_category_is_published_crea_6825ba6a")
+  @@index([article_type, is_published, created_at], map: "shopping_mall_help_articles_article_type_is_published__2cb29c65")
+  @@index([is_featured, is_published, created_at], map: "shopping_mall_help_articles_is_featured_is_published_c_5cc0a2a3")
+}

@@ -1,0 +1,300 @@
+/// Product information, the core sales entity representing items available
+/// for purchase. {@link shopping_platform_sale_units} Contains basic product
+/// details like name, description, and pricing, with relationships to
+/// sellers, categories, and shipping addresses.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_sales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller's {@link shopping_platform_sellers.id}
+  shopping_platform_seller_id String
+  
+  /// Belonged category's {@link shopping_platform_categories.id}
+  shopping_platform_category_id String
+  
+  /// Return address for this product's {@link shopping_platform_addresses.id}
+  shopping_platform_address_id String
+  
+  /// Unique business identifier for the product.
+  code String
+  
+  /// Display name of the product.
+  name String
+  
+  /// Detailed description of the product.
+  description String?
+  
+  /// Base selling price in USD.
+  base_price Float
+  
+  /// Whether the product is currently available for purchase.
+  is_active Boolean
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_platform_sellers @relation(fields: [shopping_platform_seller_id], references: [id], onDelete: Cascade)
+  category shopping_platform_categories @relation(fields: [shopping_platform_category_id], references: [id], onDelete: Cascade)
+  returnAddress shopping_platform_addresses @relation(fields: [shopping_platform_address_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_sale_snapshots shopping_platform_sale_snapshots[]
+  shopping_platform_sale_units shopping_platform_sale_units[]
+  
+  @@index([shopping_platform_address_id])
+  
+  @@unique([code])
+  @@index([shopping_platform_seller_id])
+  @@index([shopping_platform_category_id])
+  @@index([created_at])
+}
+
+/// Historical snapshots of sales data for audit trails and change tracking.
+/// {@link shopping_platform_sales} Captures point-in-time states of product
+/// listings with denormalized data for historical accuracy.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_sale_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced sale's {@link shopping_platform_sales.id}
+  shopping_platform_sale_id String
+  
+  /// Snapshot of the product code.
+  code String
+  
+  /// Snapshot of the product name.
+  name String
+  
+  /// Snapshot of the product description.
+  description String?
+  
+  /// Snapshot of the base price.
+  base_price Float
+  
+  /// Snapshot of active status.
+  is_active Boolean
+  
+  /// Timestamp when snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_platform_sales @relation(fields: [shopping_platform_sale_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_platform_sale_id, created_at], map: "shopping_platform_sale_snapshots_shopping_platform_sal_2d34c353")
+  @@index([shopping_platform_sale_id])
+  @@index([created_at])
+}
+
+/// Product units or variants, subsidiary to main sales entity for managing
+/// different options like sizes or colors. {@link shopping_platform_sales}
+/// {@link shopping_platform_sale_unit_options} Represents individual
+/// purchasable items within a product.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_sale_units {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent sale's {@link shopping_platform_sales.id}
+  shopping_platform_sale_id String
+  
+  /// Stock Keeping Unit unique identifier.
+  sku String
+  
+  /// Display name for this unit/variant.
+  name String
+  
+  /// Price adjustment relative to base price.
+  price_modifier Float
+  
+  /// Whether this unit is currently available.
+  is_available Boolean
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_platform_sales @relation(fields: [shopping_platform_sale_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_sale_unit_options shopping_platform_sale_unit_options[]
+  shopping_platform_inventory shopping_platform_inventory[]
+  shopping_platform_cart_items shopping_platform_cart_items[]
+  shopping_platform_wishlist_items shopping_platform_wishlist_items[]
+  
+  @@unique([sku])
+  @@unique([shopping_platform_sale_id, sku])
+  @@index([shopping_platform_sale_id])
+}
+
+/// Options for sale units, subsidiary entity detailing variant choices like
+/// color, size, or material. {@link shopping_platform_sale_units} Provides
+/// specific attribute values for product customization.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_sale_unit_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent unit's {@link shopping_platform_sale_units.id}
+  shopping_platform_sale_unit_id String
+  
+  /// Name of the attribute (e.g., 'color', 'size').
+  attribute_name String
+  
+  /// Value of the attribute (e.g., 'red', 'large').
+  attribute_value String
+  
+  /// Order for displaying options.
+  display_order Int
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  unit shopping_platform_sale_units @relation(fields: [shopping_platform_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_platform_sale_unit_id, attribute_name, attribute_value], map: "shopping_platform_sale_unit_options_shopping_platform__b97de830")
+  @@index([shopping_platform_sale_unit_id], map: "shopping_platform_sale_unit_options_shopping_platform__2b7a57e3")
+  @@index([attribute_name])
+}
+
+/// Product category hierarchy for organizing sales items. {@link
+/// shopping_platform_channel_categories} Supports nested categories with
+/// parent relationships for efficient browsing.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category's {@link shopping_platform_categories.id} for
+  /// hierarchical structure.
+  parent_category_id String?
+  
+  /// Category display name.
+  name String
+  
+  /// Category description.
+  description String?
+  
+  /// Whether the category is active.
+  is_active Boolean
+  
+  /// Display order for categories.
+  sort_order Int
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parentCategory shopping_platform_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_channel_categories shopping_platform_channel_categories[]
+  shopping_platform_sales shopping_platform_sales[]
+  recursive shopping_platform_categories[] @relation("recursive")
+  
+  @@unique([name])
+  @@index([parent_category_id])
+  @@index([sort_order])
+}
+
+/// Inventory levels per SKU, subsidiary to sale units for stock management.
+/// {@link shopping_platform_sale_units} Tracks available, reserved, and sold
+/// quantities with thresholds for automated alerts.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated unit's {@link shopping_platform_sale_units.id}
+  shopping_platform_sale_unit_id String
+  
+  /// Current available stock quantity.
+  quantity_available Int
+  
+  /// Quantity reserved in carts/orders.
+  quantity_reserved Int
+  
+  /// Total quantity sold.
+  quantity_sold Int
+  
+  /// Threshold for low stock alerts.
+  low_stock_threshold Int
+  
+  /// Whether backorders are allowed.
+  is_backordered_allowed Boolean
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  unit shopping_platform_sale_units @relation(fields: [shopping_platform_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_order_items shopping_platform_order_items[]
+  
+  @@unique([shopping_platform_sale_unit_id])
+  @@index([quantity_available])
+  @@index([low_stock_threshold])
+}

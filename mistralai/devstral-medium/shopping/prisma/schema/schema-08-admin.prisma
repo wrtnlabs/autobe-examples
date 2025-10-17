@@ -1,0 +1,67 @@
+/// Records of actions performed by administrators. Tracks all administrative
+/// activities for audit and accountability purposes. Each action is linked
+/// to a specific administrator.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_admin_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the action. {@link
+  /// shopping_administrators.id}.
+  shopping_administrator_id String
+  
+  /// Type of action performed (e.g., 'user_management', 'product_approval',
+  /// 'order_update').
+  action_type String
+  
+  /// Detailed description of the action performed.
+  description String
+  
+  /// Timestamp when the action was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_administrators @relation(fields: [shopping_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_administrator_id, created_at])
+}
+
+/// System logs recording important events and changes. Tracks system-level
+/// events that may be initiated by administrators or system processes.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_admin_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator associated with the log entry (if applicable). {@link
+  /// shopping_administrators.id}.
+  shopping_administrator_id String?
+  
+  /// Type of log entry (e.g., 'system_event', 'security_event', 'data_change').
+  log_type String
+  
+  /// Detailed log message describing the event.
+  message String
+  
+  /// Timestamp when the log entry was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_administrators? @relation(fields: [shopping_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_administrator_id, created_at])
+}

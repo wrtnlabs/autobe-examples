@@ -1,0 +1,263 @@
+/// Tracks which users are subscribed to which communities. This is the
+/// primary membership record establishing the user-community relationship.
+/// When a user subscribes to a community, a record is created here. Users
+/// can subscribe to multiple communities and communities can have thousands
+/// of subscribers.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who is subscribed. Reference to {@link
+  /// community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// The community being subscribed to. Reference to {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Status of the subscription: 'active' (normal member), 'muted' (receives
+  /// no notifications), 'archived' (hidden from list but can reactivate).
+  /// Subscription can transition between these states.
+  subscription_status String
+  
+  /// Whether the member has marked this community as a favorite for easy
+  /// access and priority in feeds.
+  is_favorite Boolean
+  
+  /// Member's role in this community: 'member' (regular subscriber),
+  /// 'moderator' (can moderate), 'owner' (created or owns community).
+  /// Determines what actions they can perform.
+  subscription_role String
+  
+  /// When the user subscribed to this community. Used for tracking membership
+  /// tenure and sorting 'oldest members first'.
+  created_at DateTime
+  
+  /// When the subscription record was last modified (status change, role
+  /// change, etc.).
+  updated_at DateTime
+  
+  /// When the member last performed action in this community (post, comment,
+  /// vote, view). Used for engagement tracking and identifying active members.
+  last_activity_at DateTime?
+  
+  /// JSON-encoded notification preferences for this community subscription:
+  /// digest frequency, content types to notify on, quiet hours, etc.
+  notification_preferences String?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id, community_platform_community_id], map: "community_platform_community_subscriptions_community_p_8cd60684")
+  @@index([community_platform_user_id, created_at], map: "community_platform_community_subscriptions_community_p_2cb67f1e")
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_subscriptions_community_p_98b73d50")
+  @@index([community_platform_user_id, subscription_status], map: "community_platform_community_subscriptions_community_p_031ae375")
+  @@index([community_platform_community_id, subscription_status], map: "community_platform_community_subscriptions_community_p_499b1862")
+  @@index([community_platform_user_id, is_favorite], map: "community_platform_community_subscriptions_community_p_a6624c99")
+  @@index([community_platform_community_id, subscription_role], map: "community_platform_community_subscriptions_community_p_7745c577")
+}
+
+/// Alternative view of community membership with denormalized member
+/// information for efficient querying and analytics. Stores member count
+/// tracking and member statistics per community. Complementary to
+/// subscriptions table, providing aggregated view of community membership
+/// state.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member user. Reference to {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// The community. Reference to {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Member's role in community: 'member', 'moderator', 'owner'. Denormalized
+  /// from subscription_role for quick access.
+  member_role String
+  
+  /// Current status of the membership: 'active', 'suspended', 'banned'. Tracks
+  /// if member can participate.
+  member_status String
+  
+  /// Total posts created by this member in this community. Denormalized for
+  /// performance.
+  posts_count Int
+  
+  /// Total comments created by this member in this community. Denormalized for
+  /// analytics.
+  comments_count Int
+  
+  /// Total karma earned from posts and comments in this community.
+  /// Community-specific reputation metric.
+  karma_in_community Int
+  
+  /// When member joined this community. Used for tenure-based features.
+  joined_at DateTime
+  
+  /// When member was last active in community (post, comment, vote). Tracks
+  /// engagement.
+  last_active_at DateTime?
+  
+  /// Whether this member is banned from the community. Banned members cannot
+  /// create content or interact.
+  is_banned Boolean
+  
+  /// Reason for community ban if applicable. Explains why member was banned.
+  ban_reason String?
+  
+  /// When temporary ban expires. Null for permanent bans. Used for automatic
+  /// ban lifting.
+  ban_expires_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id, community_platform_community_id], map: "community_platform_community_members_community_platfor_12a4e033")
+  @@index([community_platform_community_id, member_status], map: "community_platform_community_members_community_platfor_d6778a0c")
+  @@index([community_platform_community_id, member_role], map: "community_platform_community_members_community_platfor_30f4f9df")
+  @@index([community_platform_community_id, is_banned], map: "community_platform_community_members_community_platfor_939fad2d")
+  @@index([community_platform_user_id, karma_in_community], map: "community_platform_community_members_community_platfor_b88cef7e")
+  @@index([community_platform_community_id, last_active_at], map: "community_platform_community_members_community_platfor_f4811832")
+}
+
+/// Tracks users who have blocked other users within specific communities. A
+/// blocked user cannot interact with the blocker in that community: cannot
+/// message, cannot see content, cannot follow. This represents
+/// community-level blocking separate from platform-wide blocking.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_blocks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user doing the blocking. Reference to {@link
+  /// community_platform_users.id}.
+  community_platform_blocker_user_id String
+  
+  /// The user being blocked. Reference to {@link community_platform_users.id}.
+  community_platform_blocked_user_id String
+  
+  /// The community where the blocking applies. Reference to {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// When the block was initiated. Used for tracking block tenure and patterns.
+  created_at DateTime
+  
+  /// User-provided reason for blocking (optional). Explains why the user
+  /// blocked another user.
+  block_reason String?
+  
+  /// Whether this block is currently active. Allows for soft-deletion of
+  /// blocks.
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  blockerUser community_platform_users @relation("community_platform_community_blocks_of_community_platf_416743f6", fields: [community_platform_blocker_user_id], references: [id], onDelete: Cascade)
+  blockedUser community_platform_users @relation("community_platform_community_blocks_of_community_platf_116dadc7", fields: [community_platform_blocked_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_blocker_user_id, community_platform_blocked_user_id, community_platform_community_id], map: "community_platform_community_blocks_community_platform_5e648a8c")
+  @@index([community_platform_blocker_user_id, community_platform_community_id], map: "community_platform_community_blocks_community_platform_e0ce7402")
+  @@index([community_platform_blocked_user_id, community_platform_community_id], map: "community_platform_community_blocks_community_platform_bc64f077")
+  @@index([community_platform_community_id, is_active], map: "community_platform_community_blocks_community_platform_e344f591")
+}
+
+/// Tracks requests from users to join private communities. When a user
+/// requests membership in a private community, a record is created here
+/// pending moderator approval. Moderators review and accept or reject join
+/// requests. Used for private community access control and membership
+/// management.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_join_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user requesting to join. Reference to {@link
+  /// community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// The private community being requested to join. Reference to {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// The moderator who reviewed/approved/rejected this request. Reference to
+  /// {@link community_platform_users.id}. Null while pending.
+  reviewed_by_user_id String?
+  
+  /// Status of the join request: 'pending' (awaiting review), 'approved'
+  /// (accepted, user now member), 'rejected' (denied). Tracks the workflow
+  /// state.
+  request_status String
+  
+  /// Optional message from requester explaining why they want to join. Maximum
+  /// 500 characters. Helps moderators decide.
+  request_message String?
+  
+  /// When the join request was submitted. Used for sorting requests by age and
+  /// enforcing review SLA.
+  created_at DateTime
+  
+  /// When the request was reviewed (approved or rejected). Null while pending.
+  /// Used for tracking review time.
+  reviewed_at DateTime?
+  
+  /// Notes from moderator reviewing the request. Explains decision to approve
+  /// or reject. Visible to requester.
+  moderator_notes String?
+  
+  /// Structured reason for rejection (if rejected): 'not_qualified',
+  /// 'community_full', 'rule_violation', 'other'. Helps user understand
+  /// decision.
+  rejection_reason String?
+  
+  /// When the request expires if not reviewed. Pending requests expire after
+  /// 30 days. Used for automatic cleanup.
+  expires_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation("community_platform_join_requests_of_community_platform_user_id", fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  reviewedByUser community_platform_users? @relation("community_platform_join_requests_of_reviewed_by_user_id", fields: [reviewed_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([reviewed_by_user_id])
+  
+  @@unique([community_platform_user_id, community_platform_community_id, request_status], map: "community_platform_join_requests_community_platform_us_faa5fd1a")
+  @@index([community_platform_community_id, request_status], map: "community_platform_join_requests_community_platform_co_36966810")
+  @@index([community_platform_community_id, created_at], map: "community_platform_join_requests_community_platform_co_b28c064b")
+  @@index([community_platform_user_id, request_status], map: "community_platform_join_requests_community_platform_us_b9c707a5")
+  @@index([request_status])
+  @@index([expires_at])
+}

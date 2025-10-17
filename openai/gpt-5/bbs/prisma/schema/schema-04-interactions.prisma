@@ -1,0 +1,107 @@
+/// Post voting interactions supporting both upvotes and downvotes with full
+/// lifecycle states. Each record represents a single member’s vote on a
+/// specific post and maintains idempotency via a unique (user, post)
+/// constraint. Includes status tracking to support switching/withdrawal
+/// windows and integrity outcomes (discounted/invalidated). References
+/// {@link econ_discuss_users} as voter and {@link econ_discuss_posts} as
+/// target post. Optimized for time-window analytics and user-private
+/// history.
+///
+/// @namespace Interactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voting member’s {@link econ_discuss_users.id}.
+  econ_discuss_user_id String
+  
+  /// Target post’s {@link econ_discuss_posts.id}.
+  econ_discuss_post_id String
+  
+  /// Type of vote: allowed values are "up" or "down". Used for content
+  /// aggregates, reputation weighting, and trending windows.
+  vote_type String
+  
+  /// Lifecycle state of the vote: allowed values are "active", "withdrawn",
+  /// "switched", "discounted", or "invalidated". Application logic enforces
+  /// transitions and time windows.
+  status String
+  
+  /// Optional reason/category when status is discounted/invalidated (e.g.,
+  /// integrity_violation, moderation_invalidation).
+  status_reason String?
+  
+  /// Vote creation timestamp for history and time-window analytics.
+  created_at DateTime
+  
+  /// Vote last update timestamp (e.g., on switch/withdrawal or moderation
+  /// outcome).
+  updated_at DateTime
+  
+  /// Soft delete timestamp for exceptional removals. Prefer status transitions
+  /// over deletion for auditability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  post econ_discuss_posts @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([econ_discuss_user_id, econ_discuss_post_id], map: "econ_discuss_post_votes_econ_discuss_user_id_econ_disc_ec986588")
+  @@index([econ_discuss_post_id, created_at])
+  @@index([econ_discuss_user_id, created_at])
+  @@index([econ_discuss_post_id, vote_type, created_at], map: "econ_discuss_post_votes_econ_discuss_post_id_vote_type_d06e353e")
+  @@index([econ_discuss_user_id, status, created_at], map: "econ_discuss_post_votes_econ_discuss_user_id_status_cr_36df0791")
+}
+
+/// User saved-item relationships for posts with owner-only personal notes.
+/// Each record indicates that a member saved a given post to their personal
+/// bookmarks. Enforces idempotent saves via unique (user, post). References
+/// {@link econ_discuss_users} as owner and {@link econ_discuss_posts} as
+/// saved post. Notes remain private to the owner (application-enforced).
+///
+/// @namespace Interactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_post_bookmarks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Bookmark owner’s {@link econ_discuss_users.id}.
+  econ_discuss_user_id String
+  
+  /// Saved post’s {@link econ_discuss_posts.id}.
+  econ_discuss_post_id String
+  
+  /// Owner-only personal note attached to the saved item. Excluded from any
+  /// shared collection views and external exports to others.
+  note String?
+  
+  /// Bookmark creation timestamp used for listing, sorting, and export.
+  created_at DateTime
+  
+  /// Timestamp when the bookmark record was last updated (including note
+  /// edits).
+  updated_at DateTime
+  
+  /// Soft delete timestamp to support reversible unbookmark operations, audit
+  /// trails, and delayed purging.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  post econ_discuss_posts @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([econ_discuss_user_id, econ_discuss_post_id], map: "econ_discuss_post_bookmarks_econ_discuss_user_id_econ__cc2a9218")
+  @@index([econ_discuss_user_id, created_at])
+  @@index([econ_discuss_post_id, created_at])
+}

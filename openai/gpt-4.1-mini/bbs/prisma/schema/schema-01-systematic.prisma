@@ -1,0 +1,36 @@
+/// Discussion board categories representing the classification domains such
+/// as Economic and Political. Core to content organization and filtering.
+/// This table allows independent CRUD operations and is referenced by posts
+/// within the discussion board domain.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The unique name of the category, e.g., Economic or Political.
+  name String
+  
+  /// Optional detailed description of the category's purpose or scope.
+  description String?
+  
+  /// Timestamp of when the category was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the category.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for the category, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_posts discussion_board_posts[]
+  
+  @@unique([name])
+}

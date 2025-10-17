@@ -1,0 +1,104 @@
+/// Email notifications for discussion board activities. Tracks notifications
+/// sent via email for user activities like replies, mentions, and moderation
+/// alerts.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_email_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who receives the notification. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Discussion related to the notification. {@link
+  /// discussion_board_discussions.id}.
+  discussion_board_discussion_id String?
+  
+  /// Comment related to the notification. {@link discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Type of notification (reply, mention, moderation, etc.).
+  notification_type String
+  
+  /// Email address where notification was sent.
+  email_address String
+  
+  /// Email subject line.
+  subject String
+  
+  /// Email body content.
+  body String
+  
+  /// Timestamp when notification was sent.
+  sent_at DateTime
+  
+  /// Timestamp when notification record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  discussion discussion_board_discussions? @relation(fields: [discussion_board_discussion_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id, notification_type, discussion_board_discussion_id, discussion_board_comment_id], map: "discussion_board_email_notifications_discussion_board__730696f5")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_email_notifications_discussion_board__7fef5392")
+  @@index([discussion_board_discussion_id, created_at], map: "discussion_board_email_notifications_discussion_board__e4b0b6cd")
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_email_notifications_discussion_board__0d300499")
+}
+
+/// In-app notifications for discussion board activities. Tracks
+/// notifications displayed within the application for user activities like
+/// replies, mentions, and moderation alerts.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_in_app_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who receives the notification. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Discussion related to the notification. {@link
+  /// discussion_board_discussions.id}.
+  discussion_board_discussion_id String?
+  
+  /// Comment related to the notification. {@link discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Type of notification (reply, mention, moderation, etc.).
+  notification_type String
+  
+  /// Notification message content.
+  message String
+  
+  /// Whether the notification has been read by the user.
+  is_read Boolean
+  
+  /// Timestamp when notification was created.
+  created_at DateTime
+  
+  /// Timestamp when notification was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  discussion discussion_board_discussions? @relation(fields: [discussion_board_discussion_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id, notification_type, discussion_board_discussion_id, discussion_board_comment_id], map: "discussion_board_in_app_notifications_discussion_board_9452b257")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_in_app_notifications_discussion_board_3ff95be3")
+  @@index([discussion_board_discussion_id, created_at], map: "discussion_board_in_app_notifications_discussion_board_a1774248")
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_in_app_notifications_discussion_board_6b7453b0")
+}

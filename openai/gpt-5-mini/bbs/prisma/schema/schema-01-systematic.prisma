@@ -1,0 +1,155 @@
+/// Categories for econPoliticalForum. Represents the canonical
+/// classification of threads and content. Categories drive visibility rules
+/// (public, moderated, restricted), may require verification for posting,
+/// and are referenced by threads and moderation workflows. Contains business
+/// identifiers (code, slug), display metadata, and flags used by content
+/// gating and moderator routing.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional short business code for the category (e.g., 'fiscal', 'trade').
+  /// Unique when present.
+  code String?
+  
+  /// Human-visible category name (for display in UI and navigation).
+  name String
+  
+  /// URL-friendly unique slug for the category (used for routing and lookups).
+  slug String
+  
+  /// Longer textual description explaining the purpose and scope of the
+  /// category.
+  description String?
+  
+  /// Whether new posts in this category require moderator approval before
+  /// public publishing.
+  is_moderated Boolean
+  
+  /// If true, posting in this category requires a verified account (email
+  /// verified or other verification).
+  requires_verification Boolean
+  
+  /// Display order hint for UI lists; lower values are shown earlier.
+  order Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  econ_political_forum_threads econ_political_forum_threads[]
+  
+  @@unique([slug])
+  @@unique([code])
+  @@index([is_moderated, order])
+  @@index([created_at])
+}
+
+/// Site-level configuration settings for econPoliticalForum. Key/value pairs
+/// used by application code and business logic to control runtime behavior,
+/// feature gating defaults, moderation thresholds, and environment-specific
+/// overrides. Intended to be small, read-mostly, and administrable via an
+/// admin UI. Keys must be unique.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_site_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key (namespace.form). Example:
+  /// 'moderation.report_threshold'.
+  key String
+  
+  /// Configuration value stored as string. Typed interpretation handled by
+  /// application logic (boolean/int/json as needed).
+  value String
+  
+  /// Human-readable description and intent of the setting for administrators.
+  description String?
+  
+  /// Optional environment tag (e.g., 'production', 'staging') to scope
+  /// overrides.
+  environment String?
+  
+  /// Whether this setting is visible to non-admin clients/UI (for example for
+  /// feature exposure).
+  is_public Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([environment, key])
+  @@index([created_at])
+}
+
+/// Runtime feature flags controlling experimental features, gradual
+/// rollouts, and admin toggles. This table is read-mostly and is consulted
+/// at runtime to enable/disable features per key. Includes rollout
+/// percentage for progressive exposure and an administrable description.
+/// Keys are unique.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_feature_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique feature flag key (e.g., 'new_search_ui').
+  key String
+  
+  /// Whether the feature is currently enabled globally.
+  enabled Boolean
+  
+  /// Optional rollout percentage (0-100) used for gradual exposure to a subset
+  /// of users; null indicates not used.
+  rollout_percentage Int?
+  
+  /// Human-readable description explaining the feature and purpose.
+  description String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([enabled, created_at])
+}

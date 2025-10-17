@@ -1,0 +1,81 @@
+/// Represents a single user (member) subscription to a specific community.
+/// Each row links a member to a community and supports subscription
+/// management, quota enforcement, and personalized feeds. Soft deletion
+/// supports unsubscribing and historical tracking. Referential integrity is
+/// enforced to members and communities. Used for per-user feed generation
+/// and community analytics.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscribed member's {@link community_platform_members.id}.
+  member_id String
+  
+  /// Targeted community's {@link community_platform_communities.id}.
+  community_id String
+  
+  /// Subscription creation timestamp.
+  created_at DateTime
+  
+  /// Time of unsubscribe (soft delete). Null when subscription is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id, community_id])
+  @@index([member_id])
+  @@index([community_id])
+  @@index([created_at])
+}
+
+/// Logs all subscription and unsubscription events for audit, quota
+/// enforcement, and analytics. Each record indicates the event type
+/// (subscribe/unsubscribe), timestamp, and references to the member and
+/// community involved. Supports analytics and troubleshooting; not managed
+/// by users directly.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscription_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor member's {@link community_platform_members.id}.
+  member_id String
+  
+  /// Impacted community's {@link community_platform_communities.id}.
+  community_id String
+  
+  /// Describes event type: 'subscribe', 'unsubscribe', or future event types.
+  event_type String
+  
+  /// Event timestamp for when the action occurred.
+  event_at DateTime
+  
+  /// Optional JSON-structured metadata for analytic/audit use. Should be null
+  /// unless required for event context.
+  metadata String?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([member_id])
+  @@index([community_id])
+  @@index([event_at])
+}

@@ -1,0 +1,245 @@
+import { Controller } from "@nestjs/common";
+import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
+import typia, { tags } from "typia";
+import { postDiscussionBoardMemberUsersUserIdBlockedUsers } from "../../../../../providers/postDiscussionBoardMemberUsersUserIdBlockedUsers";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
+import { patchDiscussionBoardMemberUsersUserIdBlockedUsers } from "../../../../../providers/patchDiscussionBoardMemberUsersUserIdBlockedUsers";
+import { deleteDiscussionBoardMemberUsersUserIdBlockedUsersBlockedUserId } from "../../../../../providers/deleteDiscussionBoardMemberUsersUserIdBlockedUsersBlockedUserId";
+
+import { IDiscussionBoardBlockedUser } from "../../../../../api/structures/IDiscussionBoardBlockedUser";
+import { IPageIDiscussionBoardBlockedUser } from "../../../../../api/structures/IPageIDiscussionBoardBlockedUser";
+
+@Controller("/discussionBoard/member/users/:userId/blockedUsers")
+export class DiscussionboardMemberUsersBlockedusersController {
+  /**
+   * Create a new blocking relationship to block another user from interacting
+   * with the authenticated member.
+   *
+   * Create a new user blocking relationship where the authenticated member
+   * blocks another member to prevent unwanted interactions and filter their
+   * content from the blocker's view. This operation implements the asymmetric
+   * blocking mechanism that is central to user privacy and control on the
+   * discussion board platform.
+   *
+   * Blocking is a critical user empowerment feature that allows members to
+   * curate their discussion board experience by removing disruptive, offensive,
+   * or simply unwanted interactions from specific users. When a member blocks
+   * another user, the blocker will no longer see the blocked user's discussion
+   * topics, replies, or receive any notifications from them. The blocking
+   * relationship is asymmetric, meaning that blocking user B does not prevent B
+   * from seeing A's content—only A's view is filtered.
+   *
+   * The operation validates several critical business rules before creating the
+   * block. First, it verifies that the authenticated user matches the userId
+   * parameter to prevent unauthorized blocking on behalf of other users.
+   * Second, it checks that the user is not attempting to block themselves,
+   * which would be illogical and is explicitly prevented. Third, it validates
+   * that the target user exists and is a valid member account (not deleted or
+   * banned). Fourth, it enforces the platform's business rule limiting each
+   * member to a maximum of 100 blocked users to prevent abuse and maintain
+   * system performance. Finally, it checks that a blocking relationship does
+   * not already exist between these two users to prevent duplicate blocks.
+   *
+   * The request body includes the target user's identifier (the user to be
+   * blocked) and an optional reason for the block. The reason field is optional
+   * but encouraged, as it helps the blocker remember why they blocked someone
+   * when reviewing their blocked users list later. It also provides context to
+   * support teams if a blocking relationship is reported as retaliatory or
+   * abusive, though blocks themselves are generally unrestricted user
+   * preferences.
+   *
+   * Upon successful block creation, the operation records the blocking
+   * relationship in the discussion_board_blocked_users table with the blocker's
+   * ID, blocked user's ID, optional reason, and current timestamp. The response
+   * returns the created block relationship including the blocked user's basic
+   * profile information (username, display name) to confirm which user was
+   * blocked. The blocked user does not receive any notification that they have
+   * been blocked, maintaining privacy for the blocker.
+   *
+   * If a user previously blocked and then unblocked another user (creating a
+   * soft-deleted block record with deleted_at set), creating a new block
+   * establishes a fresh blocking relationship with a new record and timestamp.
+   * The system does not reuse soft-deleted block records.
+   *
+   * This operation is essential for user safety and experience, particularly on
+   * a platform focused on potentially contentious political and economic
+   * discussions. It empowers users to create their own boundaries and filter
+   * out interactions that detract from their platform experience, reducing the
+   * need for moderator intervention in interpersonal conflicts. The blocking
+   * system is detailed in the User Profiles and Preferences requirements
+   * document under the blocked users management section.
+   *
+   * @param connection
+   * @param userId Unique identifier of the user who is creating the block (the
+   *   blocker)
+   * @param body Information about the user to block including their identifier
+   *   and optional reason for blocking
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("userId")
+    userId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardBlockedUser.ICreate,
+  ): Promise<IDiscussionBoardBlockedUser> {
+    try {
+      return await postDiscussionBoardMemberUsersUserIdBlockedUsers({
+        member,
+        userId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve paginated list of blocked users for a specific member with
+   * filtering and search capabilities.
+   *
+   * Retrieve a comprehensive, filtered list of users that a specific member has
+   * blocked on the discussion board platform. This operation provides members
+   * with visibility into their blocked user list, allowing them to review who
+   * they have blocked, when the blocks were created, and why users were blocked
+   * if reasons were provided.
+   *
+   * The blocking system is a core privacy and user experience feature that
+   * allows members to control their interactions on the platform. When a user
+   * blocks another user, they no longer see that user's topics, replies, or
+   * receive notifications from them. This operation enables users to manage
+   * their block list by reviewing all current blocks with filtering, sorting,
+   * and search capabilities.
+   *
+   * Security considerations ensure that users can only access their own blocked
+   * user list unless they have moderator or administrator privileges. The
+   * operation validates that the requesting user matches the userId parameter
+   * or has elevated permissions. This prevents unauthorized access to other
+   * users' blocking relationships, which are considered private user
+   * preferences.
+   *
+   * The response includes essential information about each blocked user
+   * including their username, display name, when they were blocked, and any
+   * reason provided during blocking. This helps users remember why they blocked
+   * specific individuals and make informed decisions about maintaining or
+   * removing blocks. The blocked user's basic profile information is included
+   * to provide context without requiring additional API calls.
+   *
+   * Filtering options support searching by username, filtering by date range
+   * (when blocks were created), and sorting by various criteria. Pagination
+   * ensures efficient handling of large block lists, with the standard 20 items
+   * per page. The operation respects the business rule maximum of 100 blocked
+   * users per account, so result sets will never exceed this limit.
+   *
+   * The operation automatically filters out soft-deleted blocking relationships
+   * (where deleted_at is not null) to return only currently active blocks. This
+   * ensures users see only their current blocking relationships, not historical
+   * blocks that have been removed.
+   *
+   * This operation integrates with the user profile and preferences system
+   * documented in the User Profiles and Preferences requirements, specifically
+   * the blocked users management functionality. It supports the privacy and
+   * user control principles central to the platform's design philosophy for
+   * managing interactions on sensitive political and economic discussions.
+   *
+   * @param connection
+   * @param userId Unique identifier of the user whose blocked user list is
+   *   being retrieved
+   * @param body Search criteria, filtering parameters, and pagination options
+   *   for retrieving the blocked users list
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("userId")
+    userId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardBlockedUser.IRequest,
+  ): Promise<IPageIDiscussionBoardBlockedUser.ISummary> {
+    try {
+      return await patchDiscussionBoardMemberUsersUserIdBlockedUsers({
+        member,
+        userId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a user blocking relationship to unblock a previously blocked user.
+   *
+   * Removes an existing user blocking relationship, allowing the authenticated
+   * user to once again see content from and receive notifications from the
+   * previously blocked user. This operation performs a hard delete on the
+   * discussion_board_blocked_users table, permanently removing the block record
+   * from the database.
+   *
+   * When a user unblocks another user, the system immediately restores
+   * visibility of the unblocked user's topics, replies, and other content
+   * throughout the platform. The user who performed the unblock will also
+   * resume receiving notifications from the previously blocked user according
+   * to their notification preference settings.
+   *
+   * The operation validates that the authenticated user is the blocker (user_id
+   * matches blocker_id in the block record) to prevent users from removing
+   * other users' blocks. It also confirms that an active blocking relationship
+   * exists between the specified users before attempting deletion. If no block
+   * relationship exists, the operation returns an error indicating the block
+   * was not found.
+   *
+   * This operation is part of the user privacy and interaction control features
+   * defined in the User Profiles and Preferences requirements. Users can manage
+   * their blocked users list through their profile settings, with a maximum of
+   * 100 blocked users per account. The business rules enforce a limit of 3
+   * block/unblock cycles per user pair per day to prevent abuse of the blocking
+   * system.
+   *
+   * Security considerations include verifying the authenticated user's identity
+   * through JWT token validation and ensuring users cannot manipulate other
+   * users' blocking relationships. The operation enforces role-based access
+   * control where only the blocker themselves can remove their own blocks.
+   *
+   * After successful unblock, users may immediately see the previously blocked
+   * user's content in discussion threads and search results. The change takes
+   * effect instantly without requiring page refresh for real-time interfaces,
+   * though cached content may take a few moments to update.
+   *
+   * @param connection
+   * @param userId Unique identifier of the authenticated user who is removing
+   *   the block (the blocker)
+   * @param blockedUserId Unique identifier of the user who is being unblocked
+   *   (the blocked user)
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":blockedUserId")
+  public async erase(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("userId")
+    userId: string & tags.Format<"uuid">,
+    @TypedParam("blockedUserId")
+    blockedUserId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteDiscussionBoardMemberUsersUserIdBlockedUsersBlockedUserId(
+        {
+          member,
+          userId,
+          blockedUserId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

@@ -1,0 +1,544 @@
+/// Stores commission rate configurations for sellers. Tracks both default
+/// platform commission rates and custom seller-specific rates with effective
+/// dating for rate changes over time. Enables flexible commission management
+/// and historical rate tracking for financial reconciliation.
+///
+/// @namespace Commission
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_commission_rates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to seller this commission rate applies to. If null, represents
+  /// default platform commission rate. {@link shopping_mall_seller.id}
+  shopping_mall_seller_id String?
+  
+  /// Commission percentage applied to seller transactions. Valid range 0.0 to
+  /// 100.0 representing percentage (e.g., 10.0 for 10% commission).
+  commission_rate Float
+  
+  /// Type of commission: 'PERCENTAGE' for percentage-based commission or
+  /// 'FIXED' for fixed amount per transaction. Default is PERCENTAGE.
+  commission_type String
+  
+  /// Date and time when this commission rate becomes effective. Commission
+  /// rates can be scheduled for future implementation.
+  effective_from DateTime
+  
+  /// Date and time when this commission rate ceases to be effective. Null
+  /// indicates rate is currently active or no end date set.
+  effective_to DateTime?
+  
+  /// Explanation for commission rate change (e.g., 'Top seller promotion',
+  /// 'Performance penalty', 'Seasonal adjustment'). Provides audit trail for
+  /// rate changes.
+  reason_for_change String?
+  
+  /// Minimum order subtotal that qualifies for this commission rate. Orders
+  /// below this value may have different commission treatment.
+  minimum_order_value Float?
+  
+  /// Maximum order subtotal subject to this commission rate. Orders exceeding
+  /// this value may have tiered commission treatment.
+  maximum_order_value Float?
+  
+  /// Whether this commission rate is currently active and applicable to new
+  /// transactions. Inactive rates are historical only.
+  is_active Boolean
+  
+  /// Timestamp when commission rate record was created. Used for audit trail
+  /// and historical tracking.
+  created_at DateTime
+  
+  /// Timestamp when commission rate record was last modified. Null indicates
+  /// no updates after creation.
+  updated_at DateTime
+  
+  /// Admin user ID who created this commission rate. Used for audit trail
+  /// accountability.
+  created_by String?
+  
+  /// Admin user ID who last updated this commission rate. Used for audit trail
+  /// accountability.
+  updated_by String?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_seller_id, effective_from], map: "shopping_mall_commission_rates_shopping_mall_seller_id_d0683ecb")
+  @@index([shopping_mall_seller_id, is_active], map: "shopping_mall_commission_rates_shopping_mall_seller_id_c9653814")
+  @@index([effective_from, effective_to])
+  @@index([is_active, created_at])
+}
+
+/// Aggregated earnings and commission tracking per seller. Maintains running
+/// totals of seller revenue, platform commissions deducted, and pending
+/// payouts. Single record per seller enables efficient earnings dashboard
+/// queries and payout processing.
+///
+/// @namespace Commission
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_earnings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to seller this earnings record belongs to. One-to-one
+  /// relationship with seller. {@link shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Total gross sales amount (before commission deductions) accumulated over
+  /// seller's lifetime on platform. Updated whenever order is completed.
+  total_gross_sales Float
+  
+  /// Total platform commission amount deducted from seller's sales over
+  /// lifetime. Calculated as sum of all commission charges across all orders.
+  total_commission_deducted Float
+  
+  /// Total net earnings for seller (gross sales minus commissions). Represents
+  /// seller's cumulative profit after platform fees.
+  total_net_earnings Float
+  
+  /// Gross sales amount for current calendar month. Reset to zero on first day
+  /// of each month for monthly reporting.
+  current_month_gross_sales Float
+  
+  /// Commission charged to seller in current calendar month. Reset to zero
+  /// monthly for tracking monthly commission accumulation.
+  current_month_commission Float
+  
+  /// Net earnings for seller in current calendar month
+  /// (current_month_gross_sales - current_month_commission).
+  current_month_net_earnings Float
+  
+  /// Commission amount that has been calculated but not yet transferred to
+  /// seller. Amount awaiting payout processing.
+  pending_commission_amount Float
+  
+  /// Total amount that has been successfully paid out to seller through
+  /// payouts. Cumulative lifetime payout amount.
+  total_paid_out Float
+  
+  /// Count of orders successfully completed by seller that resulted in
+  /// earnings. Used for seller performance metrics.
+  total_orders_completed Int
+  
+  /// Count of orders cancelled that affected earnings (refunds issued). Used
+  /// to track order success rate.
+  total_orders_cancelled Int
+  
+  /// Total amount refunded to customers from seller's earnings. Represents
+  /// earnings that were reversed due to returns.
+  total_refunds_issued Float
+  
+  /// Current active commission rate percentage applied to this seller's
+  /// transactions. May differ from platform default rate.
+  commission_rate_applied Float
+  
+  /// Date and time when seller received last payout. Null if seller has never
+  /// been paid out.
+  last_payout_date DateTime?
+  
+  /// Scheduled date and time for next payout to this seller. Based on payout
+  /// schedule (typically weekly).
+  next_scheduled_payout DateTime?
+  
+  /// Timestamp when seller earnings record was created (typically at seller
+  /// account creation).
+  created_at DateTime
+  
+  /// Timestamp when seller earnings were last updated. Updated whenever new
+  /// order is completed or payout processed.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_seller_payouts shopping_mall_seller_payouts[]
+  
+  @@unique([shopping_mall_seller_id])
+  @@index([last_payout_date, next_scheduled_payout], map: "shopping_mall_seller_earnings_last_payout_date_next_sc_c4ee5baa")
+  @@index([total_orders_completed, total_gross_sales], map: "shopping_mall_seller_earnings_total_orders_completed_t_e8231d34")
+  @@index([commission_rate_applied, pending_commission_amount], map: "shopping_mall_seller_earnings_commission_rate_applied__b9d1a891")
+}
+
+/// Individual payout transactions sent to sellers. Each record represents
+/// one payment sent or scheduled to be sent to a seller. Tracks payout
+/// status, amount, method, and processing details for complete financial
+/// accounting.
+///
+/// @namespace Commission
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_payouts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to seller receiving this payout. {@link shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Reference to seller's earnings record this payout applies to. {@link
+  /// shopping_mall_seller_earnings.id}
+  shopping_mall_seller_earnings_id String
+  
+  /// Unique identifier for this payout (e.g., PAY-20241016-000123). Used for
+  /// tracking and reference purposes.
+  payout_reference_id String
+  
+  /// Amount being paid to seller in this payout. Net amount after all
+  /// deductions and adjustments.
+  payout_amount Float
+  
+  /// Start date of the earning period this payout covers (typically Monday of
+  /// payout week).
+  payout_period_start DateTime
+  
+  /// End date of the earning period this payout covers (typically Sunday of
+  /// payout week).
+  payout_period_end DateTime
+  
+  /// Number of orders included in this payout calculation. Indicates scope of
+  /// earnings aggregated.
+  orders_included_count Int
+  
+  /// Total commission amount deducted from earnings in this payout period.
+  total_commission_deducted Float
+  
+  /// Total amount of adjustments (positive or negative) applied to seller
+  /// earnings in this payout.
+  total_adjustments Float
+  
+  /// Method of payout: 'BANK_TRANSFER', 'WIRE_TRANSFER', 'DIGITAL_WALLET',
+  /// 'CHECK'. Indicates how payment will be delivered.
+  payout_method String
+  
+  /// Last 4 digits of bank account used for payout (for security display and
+  /// verification).
+  bank_account_last_four String?
+  
+  /// Current status of payout: 'SCHEDULED', 'PROCESSING', 'COMPLETED',
+  /// 'FAILED', 'REVERSED'. Tracks payout lifecycle.
+  payout_status String
+  
+  /// Date when payout is scheduled to be sent. Payout may be scheduled in
+  /// advance before actual processing.
+  scheduled_date DateTime
+  
+  /// Date and time when payout was actually processed/sent to seller. Null if
+  /// not yet processed.
+  processed_date DateTime?
+  
+  /// Date when payout was confirmed as received/completed. Null if not yet
+  /// completed.
+  completed_date DateTime?
+  
+  /// If payout failed, explanation of failure reason (e.g., 'Invalid bank
+  /// account', 'Insufficient funds', 'Bank rejected'). Null for successful
+  /// payouts.
+  failure_reason String?
+  
+  /// Number of times failed payout was retried. Tracks retry attempts for
+  /// failed payments.
+  retry_count Int
+  
+  /// Timestamp when payout record was created (when payout was scheduled).
+  created_at DateTime
+  
+  /// Timestamp when payout record was last updated. Updated as payout status
+  /// changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  earnings shopping_mall_seller_earnings @relation(fields: [shopping_mall_seller_earnings_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payout_history shopping_mall_payout_history[]
+  
+  @@index([shopping_mall_seller_earnings_id], map: "shopping_mall_seller_payouts_shopping_mall_seller_earn_dfb01029")
+  
+  @@unique([payout_reference_id])
+  @@index([shopping_mall_seller_id, payout_status], map: "shopping_mall_seller_payouts_shopping_mall_seller_id_p_263e1865")
+  @@index([scheduled_date, payout_status])
+  @@index([processed_date, completed_date])
+  @@index([payout_period_start, payout_period_end], map: "shopping_mall_seller_payouts_payout_period_start_payou_54d44b58")
+}
+
+/// Complete historical record of all payout transactions. Provides immutable
+/// audit trail of seller payments for reconciliation, compliance, and
+/// financial reporting. Each record represents finalized payout state.
+///
+/// @namespace Commission
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payout_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to seller who received this payout. {@link
+  /// shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Reference to source payout record this history entry documents. {@link
+  /// shopping_mall_seller_payouts.id}
+  shopping_mall_seller_payout_id String?
+  
+  /// Reference identifier for this payout (copied from payout record for
+  /// historical tracking).
+  payout_reference_id String
+  
+  /// Amount paid in this payout transaction. Historical snapshot of paid
+  /// amount.
+  payout_amount Float
+  
+  /// Commission amount deducted from seller earnings in this period.
+  commission_deducted Float
+  
+  /// Start of earning period covered by this payout.
+  payout_period_start DateTime
+  
+  /// End of earning period covered by this payout.
+  payout_period_end DateTime
+  
+  /// Number of orders included in this payout's calculation.
+  orders_included_count Int
+  
+  /// Method used to deliver payment (BANK_TRANSFER, WIRE_TRANSFER, etc.).
+  payout_method String
+  
+  /// Final status of this payout: 'COMPLETED', 'FAILED', or 'REVERSED'.
+  /// Snapshot of final state.
+  final_status String
+  
+  /// Date payout was actually processed/sent.
+  processed_date DateTime
+  
+  /// Date payout was confirmed as completed. Null if failed.
+  completed_date DateTime?
+  
+  /// If payout failed, the reason for failure. Null for successful payouts.
+  failure_reason String?
+  
+  /// Timestamp when this history record was created (snapshot capture time).
+  created_at DateTime
+  
+  /// Additional notes or details about this payout for audit/reference
+  /// purposes.
+  notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  payout shopping_mall_seller_payouts? @relation(fields: [shopping_mall_seller_payout_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_seller_payout_id], map: "shopping_mall_payout_history_shopping_mall_seller_payo_5664578d")
+  
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_payout_history_shopping_mall_seller_id_c_541c02b1")
+  @@index([payout_reference_id, final_status], map: "shopping_mall_payout_history_payout_reference_id_final_1cace0c6")
+  @@index([processed_date, completed_date])
+}
+
+/// Line-item commission records for individual orders. Each record
+/// represents commission calculation for one order from one seller. Provides
+/// detailed audit trail of how each commission amount was derived, enabling
+/// financial reconciliation and dispute resolution.
+///
+/// @namespace Commission
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_commission_calculations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to seller whose commission is being calculated. {@link
+  /// shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Reference to order that generated this commission. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Order subtotal amount (sum of item prices before tax/shipping) used as
+  /// basis for commission calculation.
+  order_subtotal Float
+  
+  /// Commission rate percentage applied to this order (e.g., 10.0 for 10%).
+  /// Rate may vary based on seller status at time of order.
+  commission_rate_applied Float
+  
+  /// Calculated commission amount (order_subtotal × commission_rate_applied ÷
+  /// 100). Amount deducted from seller's earnings.
+  commission_amount Float
+  
+  /// Any additional deductions from commission (e.g., refunds, chargebacks,
+  /// adjustments). Reduces seller's net amount.
+  deductions Float
+  
+  /// Final commission amount after deductions (commission_amount -
+  /// deductions). Amount credited to seller.
+  net_commission Float
+  
+  /// Date and time when order was placed. Used for period tracking and payout
+  /// grouping.
+  order_date DateTime
+  
+  /// Order status when commission was calculated (e.g., 'DELIVERED',
+  /// 'COMPLETED'). Only calculates commission for delivered/completed orders.
+  order_status String
+  
+  /// Whether order was refunded. If true, commission may be reversed or
+  /// adjusted.
+  is_refunded Boolean
+  
+  /// If refunded, the amount refunded to customer. Used to calculate
+  /// commission reversal.
+  refund_amount Float?
+  
+  /// Status of commission: 'PENDING' (awaiting payout), 'PAID' (included in
+  /// payout), 'REVERSED' (refunded), 'ADJUSTED' (modified).
+  commission_status String
+  
+  /// ID of payout that included this commission (if paid). Null if commission
+  /// is still pending.
+  payout_id String?
+  
+  /// Additional notes about commission calculation (e.g., 'Applied top seller
+  /// rate', 'Partial refund applied'). Audit trail purposes.
+  calculation_notes String?
+  
+  /// Timestamp when commission was calculated (typically when order
+  /// transitioned to completed/delivered status).
+  created_at DateTime
+  
+  /// Timestamp when commission record was last updated (if commission was
+  /// adjusted or refund applied).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_commission_adjustments shopping_mall_commission_adjustments[]
+  
+  @@index([shopping_mall_seller_id, commission_status], map: "shopping_mall_commission_calculations_shopping_mall_se_a333f805")
+  @@index([shopping_mall_order_id, shopping_mall_seller_id], map: "shopping_mall_commission_calculations_shopping_mall_or_dcc02a5b")
+  @@index([order_date, commission_status], map: "shopping_mall_commission_calculations_order_date_commi_51f8eaf6")
+  @@index([payout_id, shopping_mall_seller_id], map: "shopping_mall_commission_calculations_payout_id_shoppi_cf6a0c17")
+}
+
+/// Manual adjustments to seller commissions for corrections, penalties,
+/// bonuses, or special circumstances. Maintains complete audit trail of all
+/// commission modifications with justification and approver information.
+/// Enables transparent seller financial management and dispute resolution.
+///
+/// @namespace Commission
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_commission_adjustments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to seller whose commission is being adjusted. {@link
+  /// shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Reference to specific commission calculation being adjusted. Null if
+  /// adjustment is to overall seller account. {@link
+  /// shopping_mall_commission_calculations.id}
+  shopping_mall_commission_calculation_id String?
+  
+  /// Type of adjustment: 'BONUS' (positive addition), 'PENALTY' (negative
+  /// deduction), 'CORRECTION' (error fix), 'REVERSAL' (undo previous),
+  /// 'REFUND_ADJUSTMENT' (refund-related).
+  adjustment_type String
+  
+  /// Amount of adjustment (positive or negative). Positive for
+  /// bonuses/credits, negative for penalties/deductions.
+  adjustment_amount Float
+  
+  /// Detailed explanation of why adjustment was made. Required for audit trail
+  /// and seller transparency. Examples: 'Correcting double-commission error',
+  /// 'Performance bonus for top seller', 'Penalty for policy violation'.
+  reason String
+  
+  /// Status of adjustment: 'PENDING' (awaiting approval), 'APPROVED'
+  /// (authorized), 'REJECTED' (denied), 'APPLIED' (included in payout).
+  /// Workflow status tracking.
+  adjustment_status String
+  
+  /// Admin user ID who created/requested this adjustment. Audit trail for who
+  /// initiated the change.
+  created_by_admin_id String
+  
+  /// Admin user ID who approved this adjustment. Null if pending or rejected.
+  /// Two-level approval for financial changes.
+  approved_by_admin_id String?
+  
+  /// Timestamp when adjustment was requested/created. Tracks when change was
+  /// initiated.
+  requested_date DateTime
+  
+  /// Timestamp when adjustment was approved. Null if not yet approved.
+  approved_date DateTime?
+  
+  /// Timestamp when adjustment was actually applied to seller earnings. Null
+  /// if not yet applied.
+  applied_date DateTime?
+  
+  /// If adjustment was rejected, explanation of why. Null for approved
+  /// adjustments.
+  rejection_reason String?
+  
+  /// References to supporting documentation (file IDs, URLs) justifying the
+  /// adjustment. Used for complex adjustments requiring evidence.
+  supporting_documents String?
+  
+  /// If adjustment relates to specific order, the order ID. Helps track which
+  /// order triggered the adjustment.
+  related_order_id String?
+  
+  /// Additional internal notes about adjustment for admin reference. May
+  /// include investigation details or follow-up required.
+  notes String?
+  
+  /// Timestamp when adjustment record was created in system.
+  created_at DateTime
+  
+  /// Timestamp when adjustment record was last modified (status change,
+  /// approval, rejection).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  commissionCalculation shopping_mall_commission_calculations? @relation(fields: [shopping_mall_commission_calculation_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_commission_calculation_id], map: "shopping_mall_commission_adjustments_shopping_mall_com_e8fd38d4")
+  
+  @@index([shopping_mall_seller_id, adjustment_status], map: "shopping_mall_commission_adjustments_shopping_mall_sel_ec842ce5")
+  @@index([created_by_admin_id, requested_date], map: "shopping_mall_commission_adjustments_created_by_admin__dc04ed19")
+  @@index([adjustment_status, approved_date], map: "shopping_mall_commission_adjustments_adjustment_status_63ef1117")
+  @@index([related_order_id, adjustment_type], map: "shopping_mall_commission_adjustments_related_order_id__b7e22819")
+}

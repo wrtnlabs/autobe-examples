@@ -1,0 +1,587 @@
+/// Platform accounts and identity records for econDiscuss. Holds login
+/// credentials, display identity, and preferences such as timezone and
+/// locale. Adds secure 2FA storage (secret and recovery codes) to meet
+/// policy. Primary reference for most other entities including {@link
+/// econ_discuss_user_profiles}, {@link econ_discuss_user_follows}, {@link
+/// econ_discuss_notifications}, {@link econ_discuss_user_reputations}, and
+/// {@link econ_discuss_reputation_events}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's unique email address for authentication and notifications. Store a
+  /// normalized lowercased form at application layer for uniqueness semantics.
+  email String
+  
+  /// Hashed password for email+password sign-in. Never store plaintext.
+  password_hash String
+  
+  /// Publicly visible display name or handle.
+  display_name String
+  
+  /// Optional avatar image URI for the profile. Keep within reasonable length
+  /// (e.g., ≤ 2048 chars) and validate format in application.
+  avatar_uri String?
+  
+  /// IANA timezone identifier used for notifications, digests, and scheduling
+  /// (e.g., Asia/Seoul).
+  timezone String?
+  
+  /// Preferred locale (e.g., en-US) for UI and communication.
+  locale String?
+  
+  /// Whether the email address has been verified.
+  email_verified Boolean
+  
+  /// Whether multi-factor authentication is enabled for this account.
+  mfa_enabled Boolean
+  
+  /// Encrypted/managed secret for TOTP (or equivalent 2FA). Store encrypted
+  /// and restrict access. Null when 2FA is not configured.
+  mfa_secret String?
+  
+  /// Hashed or encrypted 2FA recovery codes (concatenated or structured
+  /// storage). Rotated on regeneration. Null when 2FA not configured.
+  mfa_recovery_codes String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  econ_discuss_user_profiles econ_discuss_user_profiles?
+  econ_discuss_visitors econ_discuss_visitors?
+  econ_discuss_members econ_discuss_members?
+  econ_discuss_verified_experts econ_discuss_verified_experts?
+  econ_discuss_moderators econ_discuss_moderators?
+  econ_discuss_admins econ_discuss_admins?
+  econ_discuss_user_follows_of_follower_user_id econ_discuss_user_follows[] @relation("econ_discuss_user_follows_of_follower_user_id")
+  econ_discuss_user_follows_of_followee_user_id econ_discuss_user_follows[] @relation("econ_discuss_user_follows_of_followee_user_id")
+  econ_discuss_notifications_of_recipient_user_id econ_discuss_notifications[] @relation("econ_discuss_notifications_of_recipient_user_id")
+  econ_discuss_notifications_of_actor_user_id econ_discuss_notifications[] @relation("econ_discuss_notifications_of_actor_user_id")
+  econ_discuss_user_reputations econ_discuss_user_reputations?
+  econ_discuss_reputation_events_of_user_id econ_discuss_reputation_events[] @relation("econ_discuss_reputation_events_of_user_id")
+  econ_discuss_reputation_events_of_actor_user_id econ_discuss_reputation_events[] @relation("econ_discuss_reputation_events_of_actor_user_id")
+  econ_discuss_expert_domain_badges econ_discuss_expert_domain_badges[]
+  econ_discuss_user_topic_subscriptions econ_discuss_user_topic_subscriptions[]
+  econ_discuss_posts econ_discuss_posts[]
+  econ_discuss_post_drafts econ_discuss_post_drafts[]
+  econ_discuss_post_snapshots econ_discuss_post_snapshots[]
+  econ_discuss_post_votes econ_discuss_post_votes[]
+  econ_discuss_post_bookmarks econ_discuss_post_bookmarks[]
+  econ_discuss_poll_responses econ_discuss_poll_responses[]
+  econ_discuss_live_threads econ_discuss_live_threads[]
+  econ_discuss_live_messages econ_discuss_live_messages[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Extended profile details for a user. Managed through the owning {@link
+/// econ_discuss_users} entity. Supports bio, affiliation, and web presence.
+/// Enables richer discovery while keeping base identity minimal.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning user's {@link econ_discuss_users.id}.
+  user_id String
+  
+  /// Short biography or professional summary.
+  bio String?
+  
+  /// Current affiliation or organization string.
+  affiliation String?
+  
+  /// Personal or professional website URI.
+  website String?
+  
+  /// Freeform location string for public display.
+  location String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+}
+
+/// Role assignment table indicating a user has the "visitor" role scope
+/// (read-only baseline). Although visitors generally represent
+/// unauthenticated contexts, this table captures explicit role assignment
+/// for edge or operational cases. Managed through {@link
+/// econ_discuss_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_visitors {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link econ_discuss_users.id}.
+  user_id String
+  
+  /// Optional notes about why this role assignment exists (e.g., operational
+  /// testing, restricted mode).
+  notes String?
+  
+  /// Assignment creation timestamp.
+  created_at DateTime
+  
+  /// Assignment last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to end this role assignment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+}
+
+/// Role assignment table for standard platform members with participation
+/// privileges. Existence of a record implies member capabilities for the
+/// linked {@link econ_discuss_users} account.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link econ_discuss_users.id}.
+  user_id String
+  
+  /// Timestamp when member role became effective.
+  joined_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to end this role assignment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+}
+
+/// Role assignment for verified experts. Captures verification moment and
+/// optional validity window for expert badges. Referenced by discovery and
+/// gating policies via joins from {@link econ_discuss_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_verified_experts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link econ_discuss_users.id}.
+  user_id String
+  
+  /// Timestamp when expert verification was approved.
+  verified_at DateTime
+  
+  /// Optional expiration timestamp for the current expert badge.
+  badge_valid_until DateTime?
+  
+  /// Primary economics domain (e.g., Macroeconomics, Labor) for display and
+  /// policy hints.
+  primary_domain String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for revocation or expiry handling.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([verified_at])
+}
+
+/// Role assignment for moderators with governance permissions. Requires 2FA
+/// per policy. Managed through {@link econ_discuss_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link econ_discuss_users.id}.
+  user_id String
+  
+  /// Whether 2FA enforcement is active for this moderator assignment per
+  /// policy.
+  enforced_2fa Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to end this role assignment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+}
+
+/// Role assignment for platform administrators with full administrative
+/// privileges. Requires 2FA and dual-control for severe actions. Mirrors
+/// moderators with explicit 2FA enforcement flag. Managed through {@link
+/// econ_discuss_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned user's {@link econ_discuss_users.id}.
+  user_id String
+  
+  /// Whether this admin has superuser capabilities enabled by policy.
+  superuser Boolean
+  
+  /// Whether 2FA enforcement is active for this admin assignment per policy.
+  enforced_2fa Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to end this role assignment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+}
+
+/// User-to-user follow relationships forming the social graph. Supports
+/// listing followers/following and feed personalization. Both follower and
+/// followee reference {@link econ_discuss_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_user_follows {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Follower user's {@link econ_discuss_users.id}.
+  follower_user_id String
+  
+  /// Followed (target) user's {@link econ_discuss_users.id}.
+  followee_user_id String
+  
+  /// Follow creation timestamp.
+  created_at DateTime
+  
+  /// Soft deletion timestamp; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  follower econ_discuss_users @relation("econ_discuss_user_follows_of_follower_user_id", fields: [follower_user_id], references: [id], onDelete: Cascade)
+  followee econ_discuss_users @relation("econ_discuss_user_follows_of_followee_user_id", fields: [followee_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([follower_user_id, followee_user_id])
+  @@index([follower_user_id, created_at])
+  @@index([followee_user_id, created_at])
+}
+
+/// Persisted notifications delivered to recipients. Each record targets a
+/// recipient {@link econ_discuss_users} and may reference an actor {@link
+/// econ_discuss_users}. Business consumers list, filter, and
+/// mark-as-read/unread per user.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Recipient user's {@link econ_discuss_users.id}.
+  recipient_user_id String
+  
+  /// Optional actor user's {@link econ_discuss_users.id} that triggered the
+  /// notification.
+  actor_user_id String?
+  
+  /// Notification type key (business category identifier).
+  type String
+  
+  /// Short title or summary text for the notification.
+  title String
+  
+  /// Optional detailed body text; localized per user locale.
+  body String?
+  
+  /// Optional target entity type (e.g., post, comment, poll).
+  entity_type String?
+  
+  /// Optional target entity identifier for deep-linking (no FK to allow
+  /// polymorphism).
+  entity_id String?
+  
+  /// Timestamp when the recipient read this notification; null if unread.
+  read_at DateTime?
+  
+  /// Notification creation timestamp (send time).
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recipient-side removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  recipient econ_discuss_users @relation("econ_discuss_notifications_of_recipient_user_id", fields: [recipient_user_id], references: [id], onDelete: Cascade)
+  actor econ_discuss_users? @relation("econ_discuss_notifications_of_actor_user_id", fields: [actor_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_user_id])
+  
+  @@index([recipient_user_id, created_at])
+  @@index([recipient_user_id, read_at])
+}
+
+/// Current reputation aggregate per user, derived from {@link
+/// econ_discuss_reputation_events}. Stores the latest computed score and
+/// timestamp for quick gating checks while preserving full historical detail
+/// in the ledger.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_user_reputations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related user's {@link econ_discuss_users.id}.
+  user_id String
+  
+  /// Current reputation score for the user (non-negative integer).
+  score Int
+  
+  /// Timestamp when the score was last recalculated.
+  last_updated_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this aggregate, if deprecated.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+}
+
+/// Immutable ledger of reputation-impacting events for users. Each entry
+/// captures points, reason, and optional linkage to a content item (e.g., a
+/// {@link econ_discuss_posts}). Serves as the audit trail and supports
+/// recomputation of {@link econ_discuss_user_reputations}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_reputation_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Beneficiary user's {@link econ_discuss_users.id}.
+  user_id String
+  
+  /// Optional actor user's {@link econ_discuss_users.id} who caused the event
+  /// (e.g., curator, voter).
+  actor_user_id String?
+  
+  /// Optional related post's {@link econ_discuss_posts.id} for content-scoped
+  /// events.
+  post_id String?
+  
+  /// Signed integer delta applied to the user’s reputation for this event
+  /// (caps and decay applied externally).
+  points Int
+  
+  /// Human-readable reason or category for the points change (e.g.,
+  /// upvote_post, curated_feature, moderation_penalty).
+  reason String
+  
+  /// Optional source system or process identifier for traceability.
+  source String?
+  
+  /// When the underlying action occurred; used for time-window calculations
+  /// and decay.
+  occurred_at DateTime
+  
+  /// Ledger entry creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp (rare in append-only ledgers).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for exceptional corrections; null in normal
+  /// operation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation("econ_discuss_reputation_events_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  actor econ_discuss_users? @relation("econ_discuss_reputation_events_of_actor_user_id", fields: [actor_user_id], references: [id], onDelete: Cascade)
+  post econ_discuss_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_user_id])
+  
+  @@index([user_id, occurred_at])
+  @@index([post_id, occurred_at])
+}
+
+/// Per-domain expert badges assigned to verified experts. Normalizes
+/// expertise domains as a junction between {@link econ_discuss_users} and
+/// curated topics in {@link econ_discuss_topics}. Captures lifecycle with
+/// verified_at, optional valid_until, and optional revocation metadata.
+/// Supports expert-only filters and discovery surfaces while preserving
+/// auditability.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_expert_domain_badges {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner expert user's {@link econ_discuss_users.id}.
+  user_id String
+  
+  /// Linked topic/domain badge {@link econ_discuss_topics.id}.
+  econ_discuss_topic_id String
+  
+  /// Timestamp when the domain badge was approved for the user.
+  verified_at DateTime
+  
+  /// Optional expiration timestamp for the domain badge; null if perpetual
+  /// until policy change or revocation.
+  valid_until DateTime?
+  
+  /// Optional timestamp when the domain badge was revoked for policy reasons.
+  revoked_at DateTime?
+  
+  /// Optional human-readable rationale for revocation (secured to governance
+  /// staff).
+  revoked_reason String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to retire this badge record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  topic econ_discuss_topics @relation(fields: [econ_discuss_topic_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, econ_discuss_topic_id], map: "econ_discuss_expert_domain_badges_user_id_econ_discuss_922f0151")
+  @@index([user_id, verified_at])
+  @@index([econ_discuss_topic_id])
+}

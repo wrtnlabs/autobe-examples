@@ -1,0 +1,476 @@
+/// Primary table for regular customers of the shopping mall. Stores core
+/// authentication credentials, profile attributes, account verification
+/// status, and soft deletion tracking. Supports independent customer
+/// onboarding, profile management, and login/authentication workflows.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's unique login email address, used for authentication and
+  /// communications.
+  email String
+  
+  /// BCrypt hash of the customer's authentication password. Never store plain
+  /// text passwords.
+  password_hash String
+  
+  /// Customer's displayable full name for orders and account management.
+  full_name String
+  
+  /// Customer's main phone number for account verification and notifications.
+  phone String
+  
+  /// Current account status (e.g., active, suspended, pending_verification,
+  /// etc.).
+  status String
+  
+  /// Whether the customer has completed email verification.
+  email_verified Boolean
+  
+  /// Timestamp of customer registration.
+  created_at DateTime
+  
+  /// Timestamp of latest customer profile update.
+  updated_at DateTime
+  
+  /// Timestamp marking soft deletion (if account is deleted or withdrawn).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_customer_addresses shopping_mall_customer_addresses[]
+  shopping_mall_user_sessions shopping_mall_user_sessions[]
+  shopping_mall_email_verifications shopping_mall_email_verifications[]
+  shopping_mall_password_resets shopping_mall_password_resets[]
+  shopping_mall_carts shopping_mall_carts?
+  shopping_mall_wishlists shopping_mall_wishlists?
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_order_cancellations shopping_mall_order_cancellations[]
+  shopping_mall_order_refunds shopping_mall_order_refunds[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_review_flags shopping_mall_review_flags[]
+  shopping_mall_customer_service_events shopping_mall_customer_service_events[]
+  shopping_mall_escalations shopping_mall_escalations[]
+  shopping_mall_appeals shopping_mall_appeals[]
+  shopping_mall_admin_action_logs shopping_mall_admin_action_logs[]
+  
+  @@unique([email])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Primary table for sellers. Stores core authentication, profile,
+/// business/KYC information, approval state, and operational status. Enables
+/// independent onboarding and management for marketplace sellers.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email for seller login/authentication.
+  email String
+  
+  /// BCrypt hash of seller's password.
+  password_hash String
+  
+  /// Formal business entity name of the seller.
+  business_name String
+  
+  /// Individual's name for seller account contacts and support.
+  contact_name String
+  
+  /// Seller's primary contact phone number.
+  phone String
+  
+  /// URI to uploaded KYC document (business registration, ID, etc.).
+  kyc_document_uri String?
+  
+  /// Account approval/verification status: pending, approved, rejected,
+  /// suspended, etc.
+  approval_status String
+  
+  /// Legal registration number for seller's business entity.
+  business_registration_number String
+  
+  /// Whether the seller's email has been verified.
+  email_verified Boolean
+  
+  /// Date/time seller account was created.
+  created_at DateTime
+  
+  /// Date/time of last update to the seller account.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion, if seller is removed from platform.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_seller_addresses shopping_mall_seller_addresses[]
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_inventory_logs shopping_mall_inventory_logs[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_order_cancellations shopping_mall_order_cancellations[]
+  shopping_mall_review_flags shopping_mall_review_flags[]
+  shopping_mall_review_replies shopping_mall_review_replies[]
+  shopping_mall_customer_service_events shopping_mall_customer_service_events[]
+  shopping_mall_escalations shopping_mall_escalations[]
+  shopping_mall_appeals shopping_mall_appeals[]
+  shopping_mall_admin_action_logs shopping_mall_admin_action_logs[]
+  shopping_mall_moderation_event_logs shopping_mall_moderation_event_logs[]
+  
+  @@unique([email])
+  @@unique([business_registration_number])
+  @@index([approval_status])
+  @@index([created_at])
+}
+
+/// Primary table for platform administrators. Manages credentials,
+/// permissions, 2FA secrets, and key profile/audit attributes. Required for
+/// secure, auditable admin platform access with multi-factor authentication.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin's unique email address for login and communications.
+  email String
+  
+  /// BCrypt hash of admin's password.
+  password_hash String
+  
+  /// Admin's name for audit and dashboard tracking.
+  full_name String
+  
+  /// Admin account status (active, disabled, suspended, etc.).
+  status String
+  
+  /// Secret key for TOTP-based two-factor auth. Encrypted and stored securely;
+  /// required for login flows.
+  two_factor_secret String?
+  
+  /// Timestamp of administrator's last successful login.
+  last_login_at DateTime?
+  
+  /// Admin account creation timestamp.
+  created_at DateTime
+  
+  /// Last updated timestamp for the admin profile.
+  updated_at DateTime
+  
+  /// Timestamp of logical deletion, if account is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_inventory_logs shopping_mall_inventory_logs[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_order_cancellations shopping_mall_order_cancellations[]
+  shopping_mall_order_refunds shopping_mall_order_refunds[]
+  shopping_mall_review_flags shopping_mall_review_flags[]
+  shopping_mall_review_replies shopping_mall_review_replies[]
+  shopping_mall_customer_service_events shopping_mall_customer_service_events[]
+  shopping_mall_escalations shopping_mall_escalations[]
+  shopping_mall_appeals shopping_mall_appeals[]
+  shopping_mall_admin_action_logs shopping_mall_admin_action_logs[]
+  shopping_mall_admin_audit_logs shopping_mall_admin_audit_logs[]
+  shopping_mall_moderation_event_logs shopping_mall_moderation_event_logs[]
+  shopping_mall_notification_jobs shopping_mall_notification_jobs[]
+  shopping_mall_analytics_triggers shopping_mall_analytics_triggers[]
+  
+  @@unique([email])
+  @@index([status])
+}
+
+/// Stores addresses managed by customers for shipping, billing, and
+/// delivery. Linked to individual customers. Not a standalone business
+/// entity; supports multiple addresses per customer, with default/primary
+/// flag and region info.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}
+  customer_id String
+  
+  /// Name of the individual receiving the shipment.
+  recipient_name String
+  
+  /// Contact number for delivery at address.
+  phone String
+  
+  /// Administrative region (e.g., city, province, district).
+  region String
+  
+  /// Postal or ZIP code for the address.
+  postal_code String
+  
+  /// First line of the address (street/number).
+  address_line1 String
+  
+  /// Second line of address, optional (apartment, unit, etc.).
+  address_line2 String?
+  
+  /// Whether this is the customer's default address.
+  is_default Boolean
+  
+  /// Date/time address entry was created.
+  created_at DateTime
+  
+  /// Date/time of last change to the address entry.
+  updated_at DateTime
+  
+  /// Timestamp of logical deletion, if address is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([customer_id, is_default])
+  @@index([customer_id])
+  @@index([region])
+}
+
+/// Sellers' addresses for business, returns, or shipping. Managed per
+/// seller, supports multiple addresses with type (e.g., business, shipping,
+/// return) and region. Not independently managed by users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller's {@link shopping_mall_sellers.id}
+  seller_id String
+  
+  /// Address type: business, shipping, or return.
+  type String
+  
+  /// Recipient or company name for this address.
+  recipient_name String
+  
+  /// Contact number for this address.
+  phone String
+  
+  /// Geographic/administrative area (city, province, etc.).
+  region String
+  
+  /// ZIP/postal code of the address.
+  postal_code String
+  
+  /// Primary address line (street/number).
+  address_line1 String
+  
+  /// Secondary address line (apartment/suite etc.), optional.
+  address_line2 String?
+  
+  /// Whether this address is the primary business address for seller.
+  is_primary Boolean
+  
+  /// Timestamp of creation.
+  created_at DateTime
+  
+  /// Timestamp of last update.
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion/removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([seller_id, type])
+  @@index([seller_id])
+}
+
+/// System-wide role definitions. Stores all role types supported on the
+/// platform (customer, seller, admin, plus future extensible values),
+/// isolated for controlled assignment to user entities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Role key in uppercase (e.g. CUSTOMER, SELLER, ADMIN, ...).
+  role_name String
+  
+  /// Explanation of platform permissions for the role.
+  description String
+  
+  /// Timestamp of role creation.
+  created_at DateTime
+  
+  /// Timestamp of last modification.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([role_name])
+}
+
+/// Active and historical user sessions for authentication. Tracks current
+/// session, refresh token, and optional device metadata for each logged user
+/// or admin. Used for revoking sessions/security audit.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ID of associated customer, seller, or admin. Can reference any actor.
+  /// Application-level logic controls correct FK.
+  user_id String
+  
+  /// Opaque JWT access token for this session.
+  access_token String
+  
+  /// Refresh token string issued for session prolongation.
+  refresh_token String
+  
+  /// Session expiry timestamp.
+  expires_at DateTime
+  
+  /// Time of manual or automatic session revocation, if any.
+  revoked_at DateTime?
+  
+  /// Client device, browser, or IP information (for auditing/oauth, optional).
+  device_info String?
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customers @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([access_token])
+  @@unique([refresh_token])
+  @@index([user_id])
+}
+
+/// Active or historical email verification records. Used for initial signup,
+/// change of email, and re-verification flows. Contains token and expiry per
+/// user; managed at the authentication layer.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// FK to verified user (may reference customer, seller, or admin table
+  /// logic).
+  user_id String
+  
+  /// Email address subject to verification process.
+  email String
+  
+  /// Opaque/secure verification token for email activation.
+  token String
+  
+  /// Date/time when verification expires.
+  expires_at DateTime
+  
+  /// Timestamp when verification was successfully completed.
+  verified_at DateTime?
+  
+  /// Verification record creation time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customers @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  
+  @@unique([token])
+  @@index([email])
+}
+
+/// Password reset tokens generated upon user request. Supports secure
+/// token-based password recovery, with expiry tracking and single-use
+/// enforcement. Not directly user-managed.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// FK to account requesting password reset (customer/seller/admin by app
+  /// logic).
+  user_id String
+  
+  /// Secure, random password reset token.
+  token String
+  
+  /// Date/time when password reset token expires.
+  expires_at DateTime
+  
+  /// Timestamp the token was used for password reset.
+  used_at DateTime?
+  
+  /// Record creation date/time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_customers @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  @@index([user_id])
+}

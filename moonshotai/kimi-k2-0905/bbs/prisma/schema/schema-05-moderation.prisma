@@ -1,0 +1,339 @@
+/// Content violation reports submitted by users to flag inappropriate
+/// content including posts, replies, or other community contributions
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the report. {@link
+  /// political_discussion_board_member.id}
+  reporter_id String
+  
+  /// Author of the content being reported. {@link
+  /// political_discussion_board_member.id}
+  content_author_id String
+  
+  /// Type of content being reported (post, reply, attachment)
+  content_type String
+  
+  /// Reference ID to the actual content item
+  content_id String
+  
+  /// Primary category of violation (spam, harassment, misinformation, etc.)
+  category String
+  
+  /// Assigned severity level (1-5) for prioritization
+  severity Int
+  
+  /// Detailed explanation of the violation
+  description String
+  
+  /// Links to supporting evidence or screenshots
+  evidence String?
+  
+  /// Current status (pending, under_review, resolved, false_report)
+  status String
+  
+  /// Explanation of resolution decision
+  resolution String?
+  
+  /// When the report was resolved
+  resolution_date DateTime?
+  
+  /// When the report was submitted
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reporter political_discussion_board_member @relation("political_discussion_board_content_reports_of_reporter_id", fields: [reporter_id], references: [id], onDelete: Cascade)
+  contentAuthor political_discussion_board_member @relation("political_discussion_board_content_reports_of_content_author_id", fields: [content_author_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_moderation_actions political_discussion_board_moderation_actions[]
+  
+  @@index([content_author_id], map: "political_discussion_board_content_reports_content_aut_b9511699")
+  
+  @@unique([reporter_id, content_type, content_id], map: "political_discussion_board_content_reports_reporter_id_e367a2c8")
+  @@index([status, severity, created_at], map: "political_discussion_board_content_reports_status_seve_a83036b1")
+  @@index([category, status, created_at], map: "political_discussion_board_content_reports_category_st_e31cb7d2")
+  @@index([content_id, status], map: "political_discussion_board_content_reports_content_id__490a804d")
+}
+
+/// Official actions taken by moderators including warnings, content removal,
+/// user restrictions, and bans
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link
+  /// political_discussion_board_moderator.id}
+  moderator_id String
+  
+  /// User who received the moderation action. {@link
+  /// political_discussion_board_member.id}
+  target_user_id String?
+  
+  /// Associated content report if action resulted from user report. {@link
+  /// political_discussion_board_content_reports.id}
+  content_report_id String?
+  
+  /// Type of moderation action (warning, content_removal,
+  /// temporary_suspension, permanent_ban, etc.)
+  action_type String
+  
+  /// Type of content affected (post, reply, attachment, profile, user)
+  content_type String
+  
+  /// Reference to specific content item or user
+  content_id String?
+  
+  /// Detailed explanation of why the action was taken
+  reason String
+  
+  /// Action severity level (1-10) for escalation tracking
+  severity Int
+  
+  /// Duration in days for temporary actions (null for permanent actions)
+  duration Int?
+  
+  /// When temporary restrictions expire
+  effective_until DateTime?
+  
+  /// Previous warning that was escalated to this action
+  escalated_from String?
+  
+  /// Whether this action can be appealed
+  is_appealable Boolean
+  
+  /// Current status (active, expired, overturned)
+  status String
+  
+  /// When the action was performed
+  created_at DateTime
+  
+  /// Last status update
+  updated_at DateTime
+  
+  /// When the action automatically expires if temporary
+  expires_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator political_discussion_board_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetUser political_discussion_board_member? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  contentReport political_discussion_board_content_reports? @relation(fields: [content_report_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_appeals political_discussion_board_appeals[]
+  
+  @@index([moderator_id])
+  @@index([content_report_id], map: "political_discussion_board_moderation_actions_content__80332dca")
+  
+  @@index([action_type, status, created_at], map: "political_discussion_board_moderation_actions_action_t_2c06a510")
+  @@index([target_user_id, status, effective_until], map: "political_discussion_board_moderation_actions_target_u_751d2f5d")
+  @@index([status, expires_at], map: "political_discussion_board_moderation_actions_status_e_972ab148")
+  @@index([created_at, action_type], map: "political_discussion_board_moderation_actions_created__8ae08d7a")
+}
+
+/// User appeals against moderation actions including appeal review process
+/// and final decisions
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who filed the appeal. {@link political_discussion_board_member.id}
+  appellant_id String
+  
+  /// Moderation action being appealed. {@link
+  /// political_discussion_board_moderation_actions.id}
+  moderation_action_id String
+  
+  /// Moderator who reviewed the appeal. {@link
+  /// political_discussion_board_moderator.id}
+  reviewer_id String?
+  
+  /// Detailed explanation of why the moderation action should be overturned
+  appeal_reason String
+  
+  /// Additional evidence or context that wasn't considered originally
+  new_evidence String?
+  
+  /// User acknowledgment of policy violation if applicable
+  acknowledgment String?
+  
+  /// Appeal status (pending, under_review, approved, rejected, dismissed)
+  status String
+  
+  /// Internal notes from reviewer about decision process
+  review_notes String?
+  
+  /// Final decision outcome with detailed explanation
+  decision String?
+  
+  /// When the appeal decision was made
+  decision_date DateTime?
+  
+  /// When the appeal was submitted
+  filing_date DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  appellant political_discussion_board_member @relation(fields: [appellant_id], references: [id], onDelete: Cascade)
+  moderationAction political_discussion_board_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  reviewer political_discussion_board_moderator? @relation(fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderation_action_id])
+  @@index([reviewer_id])
+  
+  @@unique([appellant_id, moderation_action_id], map: "political_discussion_board_appeals_appellant_id_modera_f56bdf85")
+  @@index([status, filing_date])
+  @@index([appellant_id, status])
+  @@index([decision_date])
+}
+
+/// Centralized queue for organizing and prioritizing content moderation
+/// tasks across all moderation activities
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_moderation_queue {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator currently assigned to handle this item. {@link
+  /// political_discussion_board_moderator.id}
+  assigned_moderator_id String?
+  
+  /// Type of item in queue (content_report, flagged_user, pattern_match,
+  /// manual_review)
+  item_type String
+  
+  /// Reference ID to the actual item (report, user, pattern, etc.)
+  item_id String
+  
+  /// Priority score (1-100) for queue ordering
+  priority Int
+  
+  /// Primary category for routing (harassment, spam, misinformation, policy)
+  category String
+  
+  /// Queue status (waiting, assigned, in_progress, completed, escalated)
+  status String
+  
+  /// Estimated effort in minutes for resolution
+  estimated_effort Int?
+  
+  /// Due date based on SLA and priority
+  deadline DateTime
+  
+  /// Administrative notes and context
+  notes String?
+  
+  /// When item entered the queue
+  created_at DateTime
+  
+  /// When item was assigned to moderator
+  assigned_at DateTime?
+  
+  /// When processing was completed
+  completed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  assignedModerator political_discussion_board_moderator? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([item_type, item_id], map: "political_discussion_board_moderation_queue_item_type__b115fa88")
+  @@unique([assigned_moderator_id, item_id], map: "political_discussion_board_moderation_queue_assigned_m_7c7a6944")
+  @@index([status, priority, deadline], map: "political_discussion_board_moderation_queue_status_pri_c97ea3b3")
+  @@index([category, status, priority], map: "political_discussion_board_moderation_queue_category_s_212e4359")
+  @@index([assigned_at, created_at], map: "political_discussion_board_moderation_queue_assigned_a_7f59b0ab")
+  @@index([deadline])
+}
+
+/// Catalog of specific policy violations and community standards used for
+/// categorizing infractions and tracking enforcement patterns
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_policy_violations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for hierarchical violation organization. {@link
+  /// political_discussion_board_policy_violations.id}
+  parent_violation_id String?
+  
+  /// Unique identifier for policy violation category (H1, D3, M2 format)
+  code String
+  
+  /// Human-readable name of the policy violation
+  name String
+  
+  /// Detailed description of what constitutes this violation
+  description String
+  
+  /// Primary category (harassment, spam, misinformation, hate, etc.)
+  category String
+  
+  /// Default severity level (1-5) for automatic categorization
+  severity_level Int
+  
+  /// Default first action for this violation type
+  first_action String
+  
+  /// Whether repeated violations escalate severity
+  repeat_escalation Boolean
+  
+  /// Whether violations of this type can be appealed
+  requires_appeal Boolean
+  
+  /// Whether this violation type is currently enforced
+  is_active Boolean
+  
+  /// When this violation category was established
+  created_at DateTime
+  
+  /// Last modification time
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parentViolation political_discussion_board_policy_violations? @relation("recursive", fields: [parent_violation_id], references: [id], onDelete: Cascade)
+  
+  recursive political_discussion_board_policy_violations[] @relation("recursive")
+  
+  @@unique([code])
+  @@unique([name])
+  @@index([category, severity_level], map: "political_discussion_board_policy_violations_category__d6f1bee0")
+  @@index([is_active, category], map: "political_discussion_board_policy_violations_is_active_c492a0da")
+  @@index([parent_violation_id], map: "political_discussion_board_policy_violations_parent_vi_38a2df79")
+}

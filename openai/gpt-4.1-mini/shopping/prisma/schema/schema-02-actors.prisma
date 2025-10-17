@@ -1,0 +1,196 @@
+/// Guest users of the shopping mall platform representing unauthenticated
+/// visitors possibly tracked for session and analytics purposes. This model
+/// stores minimal information to identify guest sessions and access
+/// patterns. No authentication fields are required. The guest entities serve
+/// as primary actors in the system to track guest activity independently
+/// from registered users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique session token identifying the guest session.
+  session_token String
+  
+  /// IP address from which the guest accessed the system.
+  ip_address String?
+  
+  /// Browser or client user agent string of the guest session.
+  user_agent String?
+  
+  /// Timestamp when this guest record was created.
+  created_at DateTime
+  
+  /// Timestamp when this guest record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking soft deletion of this guest record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_token])
+  @@index([created_at])
+}
+
+/// Customer user accounts who can browse products, manage orders, addresses,
+/// and submit product reviews. Customers require authentication with email
+/// and password hash. This table stores user identity and authentication
+/// data separately from transactional sales data. Customers are a primary
+/// actor type in the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's unique email address used for login and notifications.
+  email String
+  
+  /// Hashed password for secure customer authentication.
+  password_hash String
+  
+  /// Nickname or display name of the customer.
+  nickname String?
+  
+  /// Customer's contact phone number in E.164 format.
+  phone_number String?
+  
+  /// Status of the customer account, e.g., 'active', 'inactive', or
+  /// 'suspended'.
+  status String
+  
+  /// Timestamp when the customer was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking soft deletion of the customer account.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_shopping_carts shopping_mall_shopping_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists?
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_cancellation_requests shopping_mall_cancellation_requests[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  
+  @@unique([email])
+  @@index([status, created_at])
+}
+
+/// Seller accounts that manage product listings, SKUs, inventory, and orders
+/// for their products. Sellers require authentication with email and
+/// password hash. This table stores identity and authentication information
+/// for sellers as primary actors distinct from customers.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's unique email address for login and notifications.
+  email String
+  
+  /// Hashed password for secure seller authentication.
+  password_hash String
+  
+  /// Legal or brand name of the seller company.
+  company_name String?
+  
+  /// Main contact person name for the seller.
+  contact_name String?
+  
+  /// Contact phone number of the seller in E.164 format.
+  phone_number String?
+  
+  /// Current status of the seller account such as 'active' or 'suspended'.
+  status String
+  
+  /// Timestamp when the seller account was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking soft deletion of the seller account.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_orders shopping_mall_orders[]
+  
+  @@unique([email])
+  @@index([status, created_at])
+}
+
+/// Administrator accounts that oversee platform operations including user
+/// management, product controls, order processing, and review moderation.
+/// Admins have elevated permissions and require secure authentication with
+/// email and password hash. This primary actor entity stores identity and
+/// authorization data to support system administration tasks.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's unique email address for login and critical notifications.
+  email String
+  
+  /// Hashed password for secure admin authentication.
+  password_hash String
+  
+  /// Full legal name of the administrator.
+  full_name String?
+  
+  /// Contact phone number of the admin in E.164 format.
+  phone_number String?
+  
+  /// Administrative account status, indicating if active, suspended, or
+  /// disabled.
+  status String
+  
+  /// Timestamp when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking soft deletion of the admin account.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_review_moderations shopping_mall_review_moderations[]
+  shopping_mall_audit_logs shopping_mall_audit_logs[]
+  shopping_mall_reports shopping_mall_reports[]
+  
+  @@unique([email])
+  @@index([status, created_at])
+}

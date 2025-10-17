@@ -1,0 +1,158 @@
+import { IConnection, HttpError } from "@nestia/fetcher";
+import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
+import typia from "typia";
+import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
+
+import { IDiscussionBoardAppeal } from "../../../../structures/IDiscussionBoardAppeal";
+import { IPageIDiscussionBoardAppeal } from "../../../../structures/IPageIDiscussionBoardAppeal";
+
+/**
+ * Search and retrieve all appeals across all users for administrative review
+ * with filtering and pagination.
+ *
+ * This operation retrieves a filtered and paginated list of all appeals
+ * submitted by any member contesting moderation decisions on the discussion
+ * board platform, providing administrators with complete visibility into the
+ * appeals queue. Appeals represent a critical component of the platform's fair
+ * and transparent moderation system, and this administrative endpoint enables
+ * comprehensive appeal management and review across the entire user base.
+ *
+ * The operation supports comprehensive search and filtering capabilities
+ * including filtering by appeal status (pending_review, under_review, approved,
+ * denied, modified), submission date ranges, specific member who submitted the
+ * appeal, reviewing administrator assignment, decision outcome, and the type of
+ * moderation action being appealed (warning, suspension, ban, content removal).
+ * Administrators can sort results by submission date, review date, status, or
+ * member to organize their review workflow.
+ *
+ * For administrators accessing this endpoint, the operation returns appeals
+ * across all users without member-based filtering, serving as the primary
+ * interface for the administrative appeal review queue. Administrators use this
+ * endpoint to identify pending appeals requiring review, track appeals
+ * currently under review by specific administrators, analyze appeal patterns
+ * and outcomes across the platform, and ensure timely processing of appeals
+ * within the target review timelines specified in moderation system
+ * requirements (7 days for warning appeals, 3 days for suspension appeals, 14
+ * days for ban appeals).
+ *
+ * The response includes complete appeal information for each result: the appeal
+ * explanation provided by the member (100-1000 characters), any additional
+ * evidence or context submitted, the current appeal status, the assigned
+ * reviewing administrator (if applicable), the administrator's decision
+ * (uphold, reverse, or modify), detailed decision reasoning, descriptions of
+ * any corrective actions taken for approved appeals (warning removal,
+ * suspension lift, account restoration), and complete timestamp tracking from
+ * submission through review to resolution.
+ *
+ * Each appeal result includes references to the underlying moderation action
+ * being contested, allowing administrators to view the complete context
+ * including the original violation, moderator reasoning, content snapshots, and
+ * the full moderation history that led to the appeal. This comprehensive
+ * context supports informed appeal decisions and maintains transparency
+ * throughout the appeals process.
+ *
+ * The operation supports pagination for efficient handling of large appeal
+ * volumes across the entire platform, with configurable page sizes and
+ * navigation through multi-page result sets. Sorting options enable
+ * administrators to prioritize appeals by urgency (oldest pending first),
+ * recency (newest submissions first), assigned reviewer, or resolution status
+ * to organize their administrative workflow effectively.
+ *
+ * This search operation integrates with the appeal submission workflow, the
+ * moderation action system, and the notification system to provide
+ * administrators with complete appeal management capabilities. When
+ * administrators review appeals and make decisions, they can access complete
+ * moderation context, user history, and relevant content to make fair, informed
+ * determinations. When appeals are approved and decisions are reversed, the
+ * system automatically triggers corrective actions and sends notifications to
+ * affected users.
+ *
+ * Security and privacy considerations include validation that the requesting
+ * user has administrator role with proper permissions to review all appeals,
+ * comprehensive audit logging of all administrative appeal searches and reviews
+ * for accountability and compliance reporting as specified in the moderation
+ * audit requirements, and appropriate handling of sensitive moderation
+ * information in responses.
+ *
+ * @param props.connection
+ * @param props.body Search criteria, filters, and pagination parameters for
+ *   appeal queries including status filters, member filters, administrator
+ *   assignment, date ranges, and sorting preferences
+ * @path /discussionBoard/administrator/appeals
+ * @accessor api.functional.discussionBoard.administrator.appeals.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Search criteria, filters, and pagination parameters for appeal
+     * queries including status filters, member filters, administrator
+     * assignment, date ranges, and sorting preferences
+     */
+    body: IDiscussionBoardAppeal.IRequest;
+  };
+  export type Body = IDiscussionBoardAppeal.IRequest;
+  export type Response = IPageIDiscussionBoardAppeal;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/discussionBoard/administrator/appeals",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/discussionBoard/administrator/appeals";
+  export const random = (): IPageIDiscussionBoardAppeal =>
+    typia.random<IPageIDiscussionBoardAppeal>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}

@@ -1,0 +1,247 @@
+/// Individual votes cast by users on posts. Tracks upvotes and downvotes
+/// separately for post scoring and user karma calculations. {@link
+/// reddit_clone_posts.id} {@link reddit_clone_users.id}
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Post that received the vote. {@link reddit_clone_posts.id}
+  post_id String
+  
+  /// Type of vote cast: 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_clone_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_vote_history reddit_clone_vote_history[]
+  
+  @@unique([user_id, post_id])
+  @@index([post_id, vote_type])
+  @@index([user_id, created_at])
+  @@index([vote_type, created_at])
+}
+
+/// Individual votes cast by users on comments. Tracks upvotes and downvotes
+/// separately for comment scoring and user karma calculations. {@link
+/// reddit_clone_comments.id} {@link reddit_clone_users.id}
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Comment that received the vote. {@link reddit_clone_comments.id}
+  comment_id String
+  
+  /// Type of vote cast: 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  comment reddit_clone_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_vote_history reddit_clone_vote_history[]
+  
+  @@unique([user_id, comment_id])
+  @@index([comment_id, vote_type])
+  @@index([user_id, created_at])
+  @@index([vote_type, created_at])
+}
+
+/// Aggregated karma score for users based on post and comment votes. Used
+/// for user reputation tracking and content ranking algorithms. {@link
+/// reddit_clone_users.id}
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose karma is being tracked. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Total karma earned from post votes. Calculated as (post upvotes - post
+  /// downvotes).
+  post_karma Int
+  
+  /// Total karma earned from comment votes. Calculated as (comment upvotes -
+  /// comment downvotes).
+  comment_karma Int
+  
+  /// Combined karma score (post_karma + comment_karma).
+  total_karma Int
+  
+  /// Timestamp when karma was last calculated.
+  last_calculated_at DateTime
+  
+  /// Timestamp when karma tracking started for this user.
+  created_at DateTime
+  
+  /// Timestamp when karma was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  
+  @@index([total_karma])
+  @@index([last_calculated_at])
+  @@index([user_id, last_calculated_at])
+}
+
+/// Historical record of vote changes for audit trail and karma
+/// recalibration. Tracks vote creation, updates, and deletions. {@link
+/// reddit_clone_post_votes.id} {@link reddit_clone_comment_votes.id} {@link
+/// reddit_clone_users.id}
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_vote_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Post vote record that was changed (nullable for comment votes). {@link
+  /// reddit_clone_post_votes.id}
+  post_vote_id String?
+  
+  /// Comment vote record that was changed (nullable for post votes). {@link
+  /// reddit_clone_comment_votes.id}
+  comment_vote_id String?
+  
+  /// Type of vote action: 'created', 'updated', 'deleted'.
+  action_type String
+  
+  /// Previous vote type before change (null for creation).
+  previous_vote_type String?
+  
+  /// New vote type after change (null for deletion).
+  new_vote_type String?
+  
+  /// Net karma impact of this vote change (+1 for upvote, -1 for downvote, 0
+  /// for no change).
+  karma_impact Int
+  
+  /// Timestamp when the vote history record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  postVote reddit_clone_post_votes? @relation(fields: [post_vote_id], references: [id], onDelete: Cascade)
+  commentVote reddit_clone_comment_votes? @relation(fields: [comment_vote_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+  @@index([action_type, created_at])
+  @@index([post_vote_id])
+  @@index([comment_vote_id])
+  @@index([karma_impact])
+}
+
+/// Pre-calculated ranking scores for posts and comments to optimize content
+/// sorting algorithms. Used for 'hot', 'top', 'controversial', and 'rising'
+/// sorting methods. {@link reddit_clone_posts.id} {@link
+/// reddit_clone_comments.id}
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_ranking_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post being scored (nullable for comment scoring). {@link
+  /// reddit_clone_posts.id}
+  post_id String?
+  
+  /// Comment being scored (nullable for post scoring). {@link
+  /// reddit_clone_comments.id}
+  comment_id String?
+  
+  /// Hot ranking score based on votes and time decay. Higher scores indicate
+  /// trending content.
+  hot_score Float
+  
+  /// Top ranking score based on net votes (upvotes - downvotes).
+  top_score Int
+  
+  /// Controversial ranking score based on high vote counts in both directions.
+  /// Higher scores indicate controversial content.
+  controversial_score Float
+  
+  /// Rising ranking score based on recent vote velocity. Higher scores
+  /// indicate rapidly gaining popularity.
+  rising_score Float
+  
+  /// Timestamp when scores were last calculated.
+  calculated_at DateTime
+  
+  /// Timestamp when the ranking record was created.
+  created_at DateTime
+  
+  /// Timestamp when the ranking record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_clone_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment reddit_clone_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  @@unique([comment_id])
+  @@index([hot_score])
+  @@index([top_score])
+  @@index([controversial_score])
+  @@index([rising_score])
+  @@index([calculated_at])
+}

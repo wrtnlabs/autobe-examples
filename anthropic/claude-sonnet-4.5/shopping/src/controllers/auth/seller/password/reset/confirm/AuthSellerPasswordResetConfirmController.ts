@@ -1,0 +1,100 @@
+import { Controller } from "@nestjs/common";
+import { TypedRoute, TypedBody } from "@nestia/core";
+import typia from "typia";
+import { postAuthSellerPasswordResetConfirm } from "../../../../../../providers/postAuthSellerPasswordResetConfirm";
+
+import { IShoppingMallSeller } from "../../../../../../api/structures/IShoppingMallSeller";
+
+@Controller("/auth/seller/password/reset/confirm")
+export class AuthSellerPasswordResetConfirmController {
+  /**
+   * Reset seller password using valid reset token.
+   *
+   * Completes the password reset workflow by validating the reset token and
+   * updating the seller's password with enhanced security measures. This
+   * endpoint is the second step of the two-step password recovery process,
+   * accepting the token sent via email and the new password credentials to
+   * restore seller account access.
+   *
+   * The operation performs comprehensive token validation by querying the
+   * shopping_mall_sellers table for a record where password_reset_token matches
+   * the provided token. The system verifies the token exists (not null), has
+   * not been used (token is cleared after successful reset), and has not
+   * expired by comparing password_reset_expires_at timestamp against the
+   * current time (token lifetime is 1 hour from generation in the request
+   * operation). If validation fails, the endpoint returns error 'Password reset
+   * link is invalid or has expired. Please request a new password reset' and
+   * suggests using the password reset request endpoint to generate a fresh
+   * token.
+   *
+   * Password complexity validation enforces platform security requirements:
+   * minimum 8 characters, maximum 128 characters, must contain at least one
+   * uppercase letter (A-Z), one lowercase letter (a-z), one digit (0-9), and
+   * one special character from the set (@, $, !, %, *, ?, &, #). The system
+   * rejects passwords matching the seller's email address to prevent easily
+   * guessable credentials. If complexity validation fails, specific error
+   * messages indicate which requirements are not met.
+   *
+   * Password reuse prevention checks the password_history field (JSON array
+   * storing hashes of the last 5 passwords with format [{"hash": "bcrypt_hash",
+   * "changed_at": "timestamp"}]). The system compares the new password against
+   * all 5 historical password hashes using bcrypt/Argon2 verification. If the
+   * new password matches any previous password, the endpoint rejects the reset
+   * with error 'This password was recently used. Please choose a different
+   * password' to enforce password rotation policy.
+   *
+   * Upon successful validation, the new password is hashed using bcrypt with
+   * cost factor 12 or Argon2 and stored in the password_hash field. The
+   * password_changed_at timestamp is updated to the current time for security
+   * audit tracking. The old password hash (current password_hash before update)
+   * is appended to the password_history JSON array, maintaining only the most
+   * recent 5 password hashes (oldest hash is removed if array exceeds 5
+   * entries).
+   *
+   * Session invalidation occurs for all active seller sessions by updating all
+   * records in shopping_mall_sessions where seller_id matches the seller's ID
+   * and is_revoked is false, setting is_revoked to true and revoked_at to the
+   * current timestamp. This forces logout on all devices and browsers where the
+   * seller is currently authenticated, requiring re-login with the new password
+   * for security. Only the current password reset session is exempt from
+   * revocation (if token was used in authenticated context).
+   *
+   * Token cleanup clears the password_reset_token field (set to null) and
+   * password_reset_expires_at field (set to null) to prevent token reuse. Each
+   * reset token is single-use and cannot be reused after successful password
+   * update. Failed reset attempts do not clear the token, allowing sellers to
+   * retry if they make mistakes entering the new password (token remains valid
+   * until 1-hour expiration).
+   *
+   * Security notification email is sent to the seller's registered email
+   * address confirming the password was successfully changed, including
+   * timestamp of change, IP address from which reset was completed (if
+   * trackable), and advisory to contact support immediately if the seller did
+   * not initiate the password reset (potential account compromise). The
+   * notification is sent asynchronously within 5 minutes of password update.
+   *
+   * The endpoint returns a simple success confirmation without issuing new JWT
+   * tokens. Sellers must use the login endpoint with their new password to
+   * obtain authentication tokens and access their account. This security
+   * measure ensures the password reset was intentional and the seller can
+   * successfully authenticate with the new credentials.
+   *
+   * @param connection
+   * @param body Password reset token and new password credentials
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async confirmPasswordReset(
+    @TypedBody()
+    body: IShoppingMallSeller.IPasswordResetConfirm,
+  ): Promise<IShoppingMallSeller.IPasswordResetConfirmResponse> {
+    try {
+      return await postAuthSellerPasswordResetConfirm({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

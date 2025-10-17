@@ -1,0 +1,1 @@
+The document 01-user-roles.md describes the different user roles and their corresponding permissions. It outlines the role definitions, permissions matrix, and other relevant details.

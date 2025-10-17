@@ -1,0 +1,137 @@
+/// Represents individual product variants (SKUs) that represent atomic sale
+/// units. Each SKU has unique pricing, attributes, and inventory. Managed
+/// directly by sellers through product listing interface. Customers select
+/// SKUs for purchase in cart and orders. Required for inventory tracking and
+/// order fulfillment. References master product.
+///
+/// @namespace SKUs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_skus {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the master product this SKU belongs to. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Unique system-generated SKU code (e.g., SH-RED-M-2024).
+  sku_code String
+  
+  /// Display name of the SKU variant (e.g., 'Red, Medium').
+  name String
+  
+  /// Individual price for this specific SKU variant. Must be greater than 0.
+  price Float
+  
+  /// Timestamp when this SKU was created.
+  created_at DateTime
+  
+  /// Timestamp when this SKU was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sku_attributes shopping_mall_sku_attributes[]
+  shopping_mall_sku_inventory shopping_mall_sku_inventory?
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  
+  @@unique([sku_code])
+  @@index([shopping_mall_product_id])
+  @@index([price])
+  @@index([created_at])
+}
+
+/// Stores attribute name-value pairs for each SKU. Maintains normalized
+/// representation of variant characteristics like color, size, material.
+/// Each record belongs to exactly one SKU. Used to build dynamic product
+/// configurators and display variant options. This table enables flexible
+/// product variants without schema changes.
+///
+/// @namespace SKUs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the SKU this attribute belongs to. {@link
+  /// shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Name of the attribute (e.g., 'Color', 'Size', 'Material'). Locked after
+  /// first SKU creation.
+  attribute_name String
+  
+  /// Value of the attribute for this particular SKU (e.g., 'Red', 'Medium',
+  /// 'Cotton').
+  attribute_value String
+  
+  /// Timestamp when this attribute was added to the SKU.
+  created_at DateTime
+  
+  /// Timestamp when this attribute was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_sku_id, attribute_name], map: "shopping_mall_sku_attributes_shopping_mall_product_sku_44cd9513")
+  @@index([shopping_mall_product_sku_id])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Tracks real-time inventory levels per SKU for accurate stock management.
+/// Directly impacts product availability on the storefront. Sellers update
+/// inventory here. System validates cart and checkout against this
+/// inventory. Updated atomically during order processing to prevent
+/// oversell.
+///
+/// @namespace SKUs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the SKU this inventory record belongs to. One-to-one
+  /// relationship. {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Current available inventory count for this SKU. Must be >= 0.
+  quantity Int
+  
+  /// Inventory level at which 'Low Stock' warning should be displayed.
+  /// Optional.
+  warning_threshold Int?
+  
+  /// Timestamp when inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when inventory was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_sku_id])
+  @@index([quantity])
+  @@index([warning_threshold])
+}

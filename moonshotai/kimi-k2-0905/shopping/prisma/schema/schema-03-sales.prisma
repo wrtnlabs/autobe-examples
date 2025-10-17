@@ -1,0 +1,659 @@
+/// Core product definitions representing unified catalog items offered by
+/// sellers across the marketplace. Contains standardized product information
+/// with temporal tracking for price history and promotional integration
+/// while maintaining complete seller relationship audit trails.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller's {@link shopping_mall_sellers.id}. Links products to
+  /// their offering sellers and enables comprehensive seller-specific
+  /// performance tracking across marketplace operations.
+  shopping_mall_seller_id String
+  
+  /// Primary category's {@link shopping_mall_categories.id} for main product
+  /// classification while supporting multiple category assignments for
+  /// enhanced discoverability.
+  primary_category_id String?
+  
+  /// Unique product identifier code used for SKU generation and comprehensive
+  /// inventory management across the marketplace platform.
+  code String
+  
+  /// Product display name used in catalog listings and search results with
+  /// comprehensive multilingual support for customer discovery.
+  name String
+  
+  /// Detailed product description supporting rich formatting and multimedia
+  /// content for comprehensive customer information and persuasive marketing.
+  description String
+  
+  /// Extended product description supporting unlimited text content for SEO
+  /// optimization and comprehensive customer education about product features.
+  long_description String?
+  
+  /// URL of the main product image for catalog display and customer visual
+  /// presentation with automatic image optimization for various device sizes.
+  primary_image_url String
+  
+  /// JSON array containing URLs of additional product images supporting
+  /// comprehensive visual representation and customer confidence building.
+  additional_image_urls String?
+  
+  /// Product visibility control enabling sellers to activate, deactivate, or
+  /// preview listings without losing historical performance data.
+  is_active Boolean
+  
+  /// Business workflow status tracking product lifecycle stages including
+  /// active, discontinued, seasonal, limited, exclusive and promotion-ready
+  /// states.
+  business_status String
+  
+  /// Base retail price for the product used as default pricing reference
+  /// before promotional adjustments and seller-specific markup calculations.
+  base_price Float
+  
+  /// Product acquisition cost enabling margin calculations and comprehensive
+  /// seller performance analytics across product lifecycle management.
+  cost_price Float?
+  
+  /// Product pricing currency code (USD, EUR, etc.) supporting comprehensive
+  /// international marketplace operations with automatic conversion.
+  currency String
+  
+  /// Product weight in kilograms for accurate shipping calculations and
+  /// inventory management across multiple fulfillment centers.
+  weight Float?
+  
+  /// Product length in centimeters for shipping calculations and efficient
+  /// warehouse storage space allocation requirements.
+  dimensions_length Float?
+  
+  /// Product width in centimeters enabling optimal warehouse carton selection
+  /// and automated capacity planning for marketplace seller inventory
+  /// management.
+  dimensions_width Float?
+  
+  /// Product height in centimeters supporting dimensional weight calculations
+  /// and comprehensive shipping cost optimization across multiple carrier
+  /// platforms.
+  dimensions_height Float?
+  
+  /// Inventory management classification enabling differentiated tracking
+  /// strategies including standard, perishable, serialized, bundle, and
+  /// digital product handling.
+  inventory_type String
+  
+  /// JSON configuration defining personalized product options enabling
+  /// customer customization while maintaining proper SKU generation for
+  /// fulfillment tracking.
+  customizable_options String?
+  
+  /// Enhanced search keywords and synonyms supporting intelligent discovery
+  /// algorithms and comprehensive external search engine optimization.
+  search_keywords String?
+  
+  /// Flexible tagging system for categorization beyond traditional hierarchies
+  /// enabling semantic search and cross-category product discovery
+  /// capabilities.
+  tags String?
+  
+  /// Product creation timestamp for audit trails and chronological tracking
+  /// across seller performance analysis and marketplace growth metrics.
+  created_at DateTime
+  
+  /// Last modification timestamp for data freshness monitoring and
+  /// synchronization across distributed marketplace systems and external
+  /// integrations.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp enabling product recovery and maintaining
+  /// historical integrity for comprehensive marketplace analytics.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  primaryCategory shopping_mall_categories? @relation(fields: [primary_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_categories shopping_mall_product_categories[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_earnings_history shopping_mall_earnings_history[]
+  shopping_mall_rewards shopping_mall_rewards[]
+  shopping_mall_favorites shopping_mall_favorites[]
+  shopping_mall_recently_viewed shopping_mall_recently_viewed[]
+  
+  @@index([primary_category_id])
+  
+  @@unique([code])
+  @@unique([shopping_mall_seller_id, code])
+  @@index([shopping_mall_seller_id, is_active])
+  @@index([business_status, is_active])
+}
+
+/// Individual SKU inventory variants representing specific product
+/// combinations with comprehensive option tracking. Enables granular
+/// inventory management per variant with independent pricing capabilities
+/// and real-time stock level monitoring while maintaining complete pricing
+/// history for marketplace operations.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product's {@link shopping_mall_products.id} linking variants to
+  /// parent products and maintaining comprehensive variant hierarchy
+  /// relationships.
+  shopping_product_id String
+  
+  /// Parent variant's {@link shopping_mall_product_variants.id} enabling
+  /// variant configuration inheritance and simplified management for complex
+  /// product option hierarchies.
+  parent_variant_id String?
+  
+  /// Unique Stock Keeping Unit identifier for this specific variant
+  /// combination across the entire marketplace platform with comprehensive
+  /// barcode integration.
+  sku String
+  
+  /// Variant display name showing option combinations clearly identifiable by
+  /// customers and supporting multilingual marketplace operations with size,
+  /// color, and material descriptions.
+  name String
+  
+  /// Comprehensive variant option details stored as JSON structure including
+  /// unlimited color, size, material, configuration options enabling flexible
+  /// product customization.
+  options_json String
+  
+  /// Variant-specific price enabling premium pricing for specific options
+  /// while maintaining competitive pricing strategies for enhanced marketplace
+  /// profitability.
+  price Float
+  
+  /// Non-promotional reference price supporting markdown display and savings
+  /// calculations providing customer value indicators and improved conversion
+  /// rates.
+  original_price Float?
+  
+  /// Variant acquisition cost enabling precise profit margin calculations and
+  /// comprehensive seller performance analytics across product lifecycle
+  /// management.
+  cost_price Float?
+  
+  /// Available inventory count for this specific SKU variant enabling
+  /// per-variant stock management with automated restock triggers and low
+  /// stock notifications.
+  inventory_quantity Int
+  
+  /// Currently reserved inventory count for pending orders preventing
+  /// overselling while maintaining accurate real-time stock visibility across
+  /// marketplace operations.
+  reserved_quantity Int
+  
+  /// Inventory level triggering proactive seller alerts for reorder management
+  /// and automated marketplace notifications preventing stockout scenarios.
+  low_stock_threshold Int
+  
+  /// Maximum allowable backorder quantity enabling oversell scenarios for
+  /// high-velocity products while maintaining customer expectation management.
+  maximum_backorder Int?
+  
+  /// Variant-specific image gallery URLs supporting different photography for
+  /// option combinations including advanced product visualization and
+  /// lifestyle imagery.
+  images String?
+  
+  /// Precise product weight in grams for accurate shipping cost calculations
+  /// with industry-compliant dimensional weight pricing across carrier
+  /// integrations.
+  weight_grams Int?
+  
+  /// Product length in millimeters for precise fulfillment center operations
+  /// with automated dimensional shipping rate calculations for marketplace
+  /// environments.
+  dimensions_length_mm Int?
+  
+  /// Product width in millimeters enabling optimal warehouse carton selection
+  /// and automated capacity planning for marketplace seller inventory
+  /// management.
+  dimensions_width_mm Int?
+  
+  /// Product height in millimeters supporting dimensional weight calculations
+  /// and comprehensive shipping cost optimization across multiple carrier
+  /// platforms.
+  dimensions_height_mm Int?
+  
+  /// Universal Product Code (UPC) or equivalent barcode identifier enabling
+  /// comprehensive retail integration and efficient point-of-sale system
+  /// operations.
+  barcode String?
+  
+  /// Original manufacturer SKU code providing audit trail capabilities and
+  /// enabling comprehensive cross-referencing across marketplace seller
+  /// integrations.
+  manufacturer_sku String?
+  
+  /// International harmonized system code for global trade classification
+  /// enabling comprehensive customs documentation and international shipping
+  /// compliance.
+  harmonized_code String?
+  
+  /// ISO country code indicating product origin enabling regulatory
+  /// compliance, import/export documentation, and comprehensive quality
+  /// control monitoring.
+  country_of_origin String?
+  
+  /// Digital product flag enabling separate fulfillment workflows for digital
+  /// downloads eliminating inventory requirements while maintaining
+  /// comprehensive marketplace integration.
+  is_digital Boolean
+  
+  /// Standard processing time in business days setting customer expectations
+  /// while enabling automated shipping calculation and comprehensive delivery
+  /// planning.
+  fulfillment_time_days Int?
+  
+  /// Variant-specific business workflow status tracking lifecycle stages
+  /// including active, seasonal, limited, exclusive, and discontinued states.
+  business_status String
+  
+  /// Flexible variant-specific tags and keywords enhancing search visibility
+  /// and enabling sophisticated marketplace discovery algorithms with
+  /// comprehensive semantic analysis.
+  tags String?
+  
+  /// Variant-specific search optimization keywords and synonyms supporting
+  /// enhanced product discovery across marketplace search algorithms and
+  /// external platforms.
+  search_keywords String?
+  
+  /// Variant creation timestamp for audit trails and chronological tracking
+  /// across comprehensive seller performance monitoring and business
+  /// intelligence analysis.
+  created_at DateTime
+  
+  /// Last modification timestamp for data freshness monitoring and
+  /// synchronization across multi-vendor marketplace operations with
+  /// comprehensive audit compliance.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp enabling variant recovery while maintaining
+  /// historical data integrity for comprehensive marketplace analytics and
+  /// seller performance tracking.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_product_variants? @relation("recursive", fields: [parent_variant_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_product_variants[] @relation("recursive")
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@index([parent_variant_id])
+  
+  @@unique([sku])
+  @@unique([shopping_product_id, sku])
+  @@index([price])
+  @@index([inventory_quantity])
+  @@index([business_status])
+  @@index([is_digital])
+  @@index([country_of_origin])
+}
+
+/// Hierarchical category system enabling intuitive product organization and
+/// discovery. Serves as the primary navigation mechanism for customers to
+/// browse products across the marketplace with unlimited depth support and
+/// comprehensive meta-information management.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category's {@link shopping_mall_categories.id} for unlimited
+  /// hierarchical depth and logical category relationships supporting complex
+  /// marketplace taxonomy.
+  parent_id String?
+  
+  /// Category display name used in navigation menus and product filtering for
+  /// enhanced customer discovery with multilingual support.
+  name String
+  
+  /// SEO-friendly URL identifier enabling optimized category navigation and
+  /// comprehensive search engine visibility.
+  slug String
+  
+  /// Comprehensive category description supporting SEO optimization and
+  /// providing additional context for improved customer browsing experience.
+  description String
+  
+  /// Extended category description supporting unlimited text content for
+  /// enhanced customer education and advanced search engine optimization.
+  long_description String?
+  
+  /// URL of category icon for visual navigation aids and promotional display
+  /// purposes with comprehensive device responsiveness.
+  icon_url String?
+  
+  /// URL of category banner image for enhanced visual presentation and
+  /// marketing campaign integration across marketplace operations.
+  banner_url String?
+  
+  /// Manual positioning control enabling strategic category ordering in
+  /// navigation menus and display interfaces for improved user experience.
+  sort_order Int
+  
+  /// Category visibility control enabling platform managers to activate,
+  /// deactivate, or phase out category navigation as marketplace strategy
+  /// evolves.
+  is_active Boolean
+  
+  /// Featured category flag enabling promotional category highlighting for
+  /// seasonal campaigns, new product categories, and strategic marketplace
+  /// positioning.
+  is_featured Boolean
+  
+  /// Root category classification enabling proper taxonomy management with
+  /// distinction between primary categories and subcategories for improved
+  /// organization.
+  is_root Boolean
+  
+  /// Category SEO meta title optimization for improved search engine rankings
+  /// and enhanced customer discovery across external platforms.
+  meta_title String?
+  
+  /// Category SEO meta description for comprehensive search engine
+  /// optimization and improved category visibility across major search
+  /// platforms.
+  meta_description String?
+  
+  /// Category SEO keywords and meta tags supporting improved search visibility
+  /// with comprehensive keyword density optimization for marketplace
+  /// discovery.
+  meta_keywords String?
+  
+  /// URL of category featured image for homepage display and promotional
+  /// marketing integration supporting seasonal product category campaigns.
+  featured_image_url String?
+  
+  /// Comprehensive SEO-friendly category path supporting advanced structured
+  /// data and comprehensive search engine optimization across marketplace
+  /// taxonomy.
+  seo_path String?
+  
+  /// Google category classification supporting product feed integration and
+  /// comprehensive Google Shopping campaign management capabilities.
+  google_category_id String?
+  
+  /// Google category path mapping supporting comprehensive Google Shopping
+  /// integration with complete hierarchical category assignment for marketing
+  /// optimization.
+  google_category_path String?
+  
+  /// Category creation timestamp for audit trails and comprehensive
+  /// chronological tracking across seller performance analysis and business
+  /// intelligence reporting.
+  created_at DateTime
+  
+  /// Last category modification timestamp for data freshness monitoring and
+  /// synchronization with comprehensive marketplace taxonomy management.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp enabling category recovery while maintaining
+  /// historical integrity for comprehensive marketplace analytics and seller
+  /// performance tracking.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_products shopping_mall_products[]
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_product_categories shopping_mall_product_categories[]
+  shopping_mall_blog_posts shopping_mall_blog_posts[]
+  
+  @@unique([slug])
+  @@index([parent_id, is_active])
+  @@index([sort_order])
+  @@index([is_featured, is_active])
+}
+
+/// Junction table enabling many-to-many relationships between products and
+/// categories. Supports flexible product categorization within the
+/// hierarchical taxonomy system and enables complex navigation paths for
+/// enhanced customer discovery.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product's {@link shopping_mall_products.id}. Links products to
+  /// their category assignments.
+  shopping_product_id String
+  
+  /// Belonged category's {@link shopping_mall_categories.id}. Links products
+  /// to their category taxonomy.
+  shopping_category_id String
+  
+  /// Primary category designation for main categorization while supporting
+  /// multiple category assignments.
+  is_primary Boolean
+  
+  /// Association creation timestamp for tracking when products were added to
+  /// categories.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_product_id, shopping_category_id], map: "shopping_mall_product_categories_shopping_product_id_s_7433bec0")
+  @@index([shopping_product_id, is_primary], map: "shopping_mall_product_categories_shopping_product_id_i_ba34fbda")
+  @@index([shopping_category_id, shopping_product_id], map: "shopping_mall_product_categories_shopping_category_id__986df56c")
+}
+
+/// Active sales and promotional campaigns including discounts, special
+/// offers, and marketing events. Manages current promotional state with
+/// temporal constraints and enables real-time customer engagement through
+/// discounted pricing strategies.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Promotional campaign title displayed to customers and used in marketing
+  /// materials.
+  title String
+  
+  /// Detailed promotional description explaining offer terms and customer
+  /// benefits.
+  description String
+  
+  /// Discount method applied 'percentage', fixed_amount', 'buy_x_get_y'
+  /// enabling various promotion strategies.
+  discount_type String
+  
+  /// Discount amount or percentage value applied based on discount_type
+  /// configuration.
+  discount_value Float
+  
+  /// Minimum order value required for promotion eligibility enabling
+  /// order-level targeted campaigns.
+  minimum_purchase_amount Float?
+  
+  /// Maximum usage count for limited-time offers creating urgency and scarcity
+  /// marketing effects.
+  usage_limit Int?
+  
+  /// Current usage tracking for performance monitoring and limitation
+  /// enforcement.
+  usage_count Int
+  
+  /// Campaign activation timestamp enabling automated promotional scheduling
+  /// and time-limited offers.
+  starts_at DateTime
+  
+  /// Campaign termination timestamp supporting seasonal promotions and ending
+  /// date automation.
+  expires_at DateTime
+  
+  /// Active campaign status controlling customer visibility and promotional
+  /// availability.
+  is_active Boolean
+  
+  /// Campaign creation timestamp for audit trails and chronological tracking.
+  created_at DateTime
+  
+  /// Last modification timestamp for campaign updates and synchronization
+  /// tracking.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp enabling campaign recovery and maintaining
+  /// historical integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_sale_snapshots shopping_mall_sale_snapshots[]
+  
+  @@index([discount_type, is_active])
+  @@index([starts_at, expires_at, is_active])
+}
+
+/// Historical snapshots capturing promotional campaign state at specific
+/// times for price tracking analytics, sales history evaluation, and
+/// comprehensive audit trail management supporting strategic business
+/// intelligence operations.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged promotional campaign's {@link shopping_mall_sales.id} linking
+  /// snapshots to active campaigns for comprehensive historical tracking and
+  /// analytics reporting.
+  shopping_sale_id String
+  
+  /// Snapshot comprehensive campaign title supporting promotional
+  /// identification and historical reference for complete audit trail and
+  /// business intelligence reporting.
+  title String
+  
+  /// Snapshot detailed campaign description preserving promotional details for
+  /// comprehensive audit trail and historical analysis documentation.
+  description String
+  
+  /// Snapshot advanced campaign classification preserving multi-vendor
+  /// promotional strategy details for comprehensive historical campaign
+  /// performance analysis.
+  campaign_type String
+  
+  /// Snapshot complex pricing strategy details preserving promotional
+  /// calculation methodology for comprehensive historical discount tracking
+  /// and profit analysis.
+  discount_strategy String
+  
+  /// Snapshot marketing campaign value preserving historical discount amounts
+  /// for comparative ROI analysis and promotional effectiveness measurement.
+  discount_value Float
+  
+  /// Snapshot comprehensive targeting strategy preserving customer segments
+  /// for historical analysis of promotional campaign reach and impact
+  /// measurement.
+  target_customer_segments String?
+  
+  /// Snapshot minimum purchase requirement preserving historical eligibility
+  /// details for accurate retrospective campaign effectiveness analysis.
+  minimum_purchase_amount Float?
+  
+  /// Snapshot maximum value protection preserving historical margin protection
+  /// details for accurate promotional impact and profitability analysis.
+  maximum_discount_amount Float?
+  
+  /// Snapshot sophisticated tiering configuration preserving progressive
+  /// discount levels for comprehensive historical campaign complexity
+  /// tracking.
+  tier_config String?
+  
+  /// Snapshot strategic inventory classification preserving category targeting
+  /// for historical campaign inventory optimization analysis.
+  applicable_categories String?
+  
+  /// Snapshot recurring campaign flag preserving automated promotional
+  /// patterns for historical scheduling analysis and marketplace promotional
+  /// rhythm tracking.
+  is_recurring Boolean
+  
+  /// Snapshot recurring configuration preserving seasonal promotional
+  /// automation details for comprehensive historical marketing calendar
+  /// analysis.
+  recurrence_pattern String?
+  
+  /// Snapshot comprehensive targeting data preserving customer segments and
+  /// campaign scope for complete historical performance analysis and
+  /// optimization insights.
+  targeting_data String?
+  
+  /// Snapshot seller participation strategy preserving multi-vendor
+  /// distribution details for comprehensive marketplace promotional balance
+  /// tracking.
+  seller_involvement String?
+  
+  /// Snapshot advanced analytics configuration preserving comprehensive ROI
+  /// tracking setup for complete historical campaign impact measurement.
+  roi_tracking String?
+  
+  /// Snapshot creation timestamp for historical chronological ordering
+  /// supporting comprehensive promotional lifecycle analysis and marketplace
+  /// performance evaluation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_sale_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_sale_id, created_at])
+}

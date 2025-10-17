@@ -1,0 +1,157 @@
+/// Guest users who can browse public content without authentication. They
+/// provide anonymous access to discussion board content with basic tracking
+/// for session management and user experience monitoring.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guest_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// IP address of the guest user for anonymous session tracking and security
+  /// monitoring.
+  ip_address String
+  
+  /// Browser user agent string for compatibility and analytics purposes.
+  user_agent String
+  
+  /// Temporary session identifier for tracking guest user interactions across
+  /// page views.
+  session_token String?
+  
+  /// Timestamp of the guest user's last activity on the platform.
+  last_accessed_at DateTime
+  
+  /// Timestamp when the guest user session was first recorded.
+  created_at DateTime
+  
+  /// Timestamp when the guest user session data was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for guest user tracking, allowing data retention
+  /// for analytics while marking inactive sessions.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([last_accessed_at])
+  @@index([created_at])
+}
+
+/// Registered users who have completed authentication and can fully
+/// participate in discussion board activities. They can create content,
+/// respond to discussions, vote, and access member-only features with proper
+/// account management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_registered_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for authentication and notifications, must be unique
+  /// across the platform.
+  email String
+  
+  /// Hashed password for secure user authentication, stored as encrypted
+  /// string.
+  password_hash String
+  
+  /// Optional display name shown in discussions and profiles, can be changed
+  /// by the user.
+  display_name String?
+  
+  /// Indicates whether the user's email address has been verified through
+  /// confirmation process.
+  email_verified Boolean
+  
+  /// Timestamp of the user's most recent successful login.
+  last_login_at DateTime?
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account information was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for user accounts, preserving content attribution
+  /// while removing access.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_moderators discussion_board_moderators?
+  discussion_board_topics discussion_board_topics[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_notifications discussion_board_notifications[]
+  discussion_board_reports discussion_board_reports[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([last_login_at])
+}
+
+/// Moderators who have elevated permissions to manage content, users, and
+/// platform operations. They inherit registered user capabilities while
+/// adding administrative tools and oversight responsibilities through
+/// reference to their underlying user account. References {@link
+/// discussion_board_registered_users.id} for authentication and profile
+/// information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the registered user account this moderator inherits from.
+  /// {@link discussion_board_registered_users.id}.
+  discussion_board_registered_user_id String
+  
+  /// Timestamp when the user was promoted to moderator role.
+  promoted_at DateTime
+  
+  /// Indicates whether the moderator account is currently active with full
+  /// permissions.
+  is_active_moderator Boolean
+  
+  /// Internal notes for moderator management and performance tracking.
+  moderation_notes String?
+  
+  /// Timestamp when the moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator account information was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for moderator accounts, maintaining audit trail
+  /// while removing active permissions.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_registered_users @relation(fields: [discussion_board_registered_user_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_reports discussion_board_reports[]
+  
+  @@unique([discussion_board_registered_user_id], map: "discussion_board_moderators_discussion_board_registere_043e5f99")
+  
+  @@index([discussion_board_registered_user_id], map: "discussion_board_moderators_discussion_board_registere_e1582541")
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([promoted_at])
+}

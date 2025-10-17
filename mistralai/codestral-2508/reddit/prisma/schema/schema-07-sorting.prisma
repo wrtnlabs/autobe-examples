@@ -1,0 +1,44 @@
+/// Manages the sorting preferences for posts within communities. This table
+/// allows users to customize how posts are displayed, such as by hot, new,
+/// top, or controversial criteria. Each sorting configuration is associated
+/// with a specific community and includes timestamps for tracking creation
+/// and updates.
+///
+/// @namespace Sorting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_sorting {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community to which this sorting configuration belongs. {@link
+  /// reddit_like_community_communities.id}
+  reddit_like_community_community_id String
+  
+  /// Whether the community uses hot sorting for posts.
+  hot Boolean
+  
+  /// Whether the community uses new sorting for posts.
+  new Boolean
+  
+  /// Whether the community uses top sorting for posts.
+  top Boolean
+  
+  /// Whether the community uses controversial sorting for posts.
+  controversial Boolean
+  
+  /// The timestamp when the sorting configuration was created.
+  created_at DateTime
+  
+  /// The timestamp when the sorting configuration was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_like_community_community_id], map: "reddit_like_community_post_sorting_reddit_like_communi_e8f6997b")
+}

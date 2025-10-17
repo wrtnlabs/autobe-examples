@@ -1,0 +1,218 @@
+/// Authored, published content items forming the core discussion surface.
+/// Each post is created by a user and is discoverable via search, topic
+/// associations, and timelines. Related entities like votes, bookmarks,
+/// polls, and live threads exist in other components and reference this
+/// table. Supports scheduled publishing via scheduled_publish_at and
+/// maintains publication timestamps for feeds. Version history is captured
+/// in {@link econ_discuss_post_snapshots}.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author user's {@link econ_discuss_users.id}. Identifies who created the
+  /// post.
+  econ_discuss_user_id String
+  
+  /// Human-readable post title for listing and SEO. Required at publish time.
+  title String
+  
+  /// Main content body in sanitized, possibly markdown-like format. Used for
+  /// full-text search.
+  body String
+  
+  /// Optional short abstract or excerpt for previews and feeds.
+  summary String?
+  
+  /// Publication timestamp. Supports chronological feeds and scheduling
+  /// validations. May equal created_at on immediate publish.
+  published_at DateTime?
+  
+  /// Optional scheduled time for future publication (stored in UTC, displayed
+  /// in user timezone). Used to validate scheduling windows and drive
+  /// publisher jobs.
+  scheduled_publish_at DateTime?
+  
+  /// Creation timestamp for the post record.
+  created_at DateTime
+  
+  /// Last update timestamp for the post record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when the post is removed from public visibility.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  
+  econ_discuss_reputation_events econ_discuss_reputation_events[]
+  econ_discuss_post_drafts econ_discuss_post_drafts[]
+  econ_discuss_post_topics econ_discuss_post_topics[]
+  econ_discuss_post_snapshots econ_discuss_post_snapshots[]
+  econ_discuss_post_votes econ_discuss_post_votes[]
+  econ_discuss_post_bookmarks econ_discuss_post_bookmarks[]
+  econ_discuss_polls econ_discuss_polls?
+  econ_discuss_live_threads econ_discuss_live_threads?
+  
+  @@index([econ_discuss_user_id, created_at])
+  @@index([created_at])
+  @@index([published_at])
+  @@index([econ_discuss_user_id, published_at])
+}
+
+/// Private, autosaved drafts authored by users for long-form writing before
+/// publication. Drafts are not publicly visible and support cross-device
+/// synchronization and conflict resolution in application logic. Optionally
+/// linked to a resulting published post for traceability. {@link
+/// econ_discuss_users} authors; optional link to {@link econ_discuss_posts}.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_post_drafts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author user's {@link econ_discuss_users.id}. Owner of this draft.
+  econ_discuss_user_id String
+  
+  /// Optional linkage to the published post's {@link econ_discuss_posts.id}
+  /// created from this draft (if any). Multiple drafts may relate to one post.
+  econ_discuss_post_id String?
+  
+  /// Working draft title. Optional to allow early autosave before title is
+  /// chosen.
+  title String?
+  
+  /// Working draft body content. Optional to support early autosaves.
+  body String?
+  
+  /// Creation timestamp for the draft.
+  created_at DateTime
+  
+  /// Last update timestamp for the draft (used by autosave sync and ordering).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when the draft is discarded.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  publishedPost econ_discuss_posts? @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
+  
+  @@index([econ_discuss_post_id])
+  
+  @@index([econ_discuss_user_id, updated_at])
+  @@index([updated_at])
+}
+
+/// Junction association between posts and curated topics to support
+/// filtering, discovery, and subscriptions. Enforces uniqueness per (post,
+/// topic). {@link econ_discuss_posts} to {@link econ_discuss_topics}.
+/// Includes additional recency index for topic pages.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_post_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated post's {@link econ_discuss_posts.id}.
+  econ_discuss_post_id String
+  
+  /// Associated topic's {@link econ_discuss_topics.id}.
+  econ_discuss_topic_id String
+  
+  /// Creation timestamp for the association.
+  created_at DateTime
+  
+  /// Last update timestamp for the association.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when the association is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post econ_discuss_posts @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
+  topic econ_discuss_topics @relation(fields: [econ_discuss_topic_id], references: [id], onDelete: Cascade)
+  
+  @@unique([econ_discuss_post_id, econ_discuss_topic_id], map: "econ_discuss_post_topics_econ_discuss_post_id_econ_dis_d9fdf66d")
+  @@index([econ_discuss_topic_id, econ_discuss_post_id], map: "econ_discuss_post_topics_econ_discuss_topic_id_econ_di_d667544f")
+  @@index([econ_discuss_topic_id, created_at])
+}
+
+/// Historical snapshots of {@link econ_discuss_posts} capturing the exact
+/// state of a post at a point in time for auditability and public version
+/// history. Each snapshot stores the full text fields and publication state.
+/// Versions are unique per post and are typically append-only.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Source post’s {@link econ_discuss_posts.id}.
+  econ_discuss_post_id String
+  
+  /// Editor/author’s {@link econ_discuss_users.id} responsible for this
+  /// snapshot.
+  econ_discuss_user_id String
+  
+  /// Monotonic version number per post. Combined with post_id to enforce
+  /// uniqueness.
+  version Int
+  
+  /// Snapshot of the post title at this version.
+  title String
+  
+  /// Snapshot of the post body at this version.
+  body String
+  
+  /// Snapshot of the post summary at this version.
+  summary String?
+  
+  /// Post’s published_at value at the time of snapshot (null if unpublished).
+  published_at DateTime?
+  
+  /// Snapshot creation timestamp (when this version was recorded).
+  created_at DateTime
+  
+  /// Last update timestamp for this snapshot record (rarely used; retained for
+  /// consistency).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for exceptional corrections; normally null in
+  /// append-only operation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post econ_discuss_posts @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
+  editor econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([econ_discuss_user_id])
+  
+  @@unique([econ_discuss_post_id, version])
+  @@index([econ_discuss_post_id, created_at])
+}

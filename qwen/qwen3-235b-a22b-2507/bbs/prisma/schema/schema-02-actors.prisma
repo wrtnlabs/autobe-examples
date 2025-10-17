@@ -1,0 +1,194 @@
+/// Represents unauthenticated visitors who can browse public content on the
+/// discussion board. Guest users have view-only permissions and must
+/// register to participate in discussions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guestuser {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's verified email address used for authentication and notifications.
+  email String
+  
+  /// Temporary session identifier for guest users to maintain state during
+  /// browsing.
+  session_token String
+  
+  /// Timestamp of guest user creation or first session.
+  created_at DateTime
+  
+  /// Timestamp of last guest user activity or update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if guest session is marked for removal.
+  deleted_at DateTime?
+  
+  /// Account status (active, suspended, disabled).
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_registereduser discussion_board_registereduser?
+  
+  @@unique([email])
+  @@index([created_at, status])
+}
+
+/// Authenticated users who can actively participate in discussions on the
+/// economic/political discussion board. Registered users can create
+/// discussions, post comments, vote on content, and report inappropriate
+/// content.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_registereduser {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References originating guest session. {@link
+  /// discussion_board_guestuser.id}.
+  discussion_board_guestuser_id String
+  
+  /// User's verified email address used for authentication and notifications.
+  email String
+  
+  /// BCrypt hash of user's password for secure authentication.
+  password_hash String
+  
+  /// User's display name for public identification in discussions.
+  username String
+  
+  /// User's self-description or professional affiliation.
+  bio String?
+  
+  /// Timestamp of user registration.
+  created_at DateTime
+  
+  /// Timestamp of last profile update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for account deletion.
+  deleted_at DateTime?
+  
+  /// Account status (active, suspended, banned, pending_verification).
+  status String
+  
+  /// Indicates whether user's email address has been verified.
+  email_verified Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  guestUser discussion_board_guestuser @relation(fields: [discussion_board_guestuser_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_categories discussion_board_categories[]
+  discussion_board_discussions discussion_board_discussions[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_reputation discussion_board_reputation?
+  discussion_board_reports discussion_board_reports[]
+  discussion_board_warnings discussion_board_warnings[]
+  
+  @@unique([discussion_board_guestuser_id], map: "discussion_board_registereduser_discussion_board_guest_ad1e3b8b")
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at, status, email_verified], map: "discussion_board_registereduser_created_at_status_emai_9e878c76")
+}
+
+/// Trusted community members with responsibility for maintaining civil
+/// discourse on the discussion board. Moderators can review reported
+/// content, remove inappropriate content, issue warnings to users, and
+/// temporarily suspend accounts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's email address for official communications.
+  email String
+  
+  /// BCrypt hash of moderator's password for secure authentication.
+  password_hash String
+  
+  /// Timestamp of moderator appointment.
+  created_at DateTime
+  
+  /// Timestamp of last moderator privilege update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if moderator privileges are removed.
+  deleted_at DateTime?
+  
+  /// Moderator status (active, suspended, revoked).
+  status String
+  
+  /// Moderator's area of expertise (economics, politics, foreign_policy,
+  /// domestic_policy).
+  specialization String?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  discussion_board_warnings discussion_board_warnings[]
+  
+  @@unique([email])
+  @@index([created_at, status, specialization])
+}
+
+/// Platform managers with complete control over system operation.
+/// Administrators can manage user accounts, configure platform settings,
+/// assign moderator roles, access complete audit logs, and perform system
+/// maintenance.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's email address for official communications.
+  email String
+  
+  /// BCrypt hash of administrator's password for secure authentication.
+  password_hash String
+  
+  /// Timestamp of administrator appointment.
+  created_at DateTime
+  
+  /// Timestamp of last administrator privilege update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if administrator privileges are removed.
+  deleted_at DateTime?
+  
+  /// Administrator status (active, suspended, revoked).
+  status String
+  
+  /// Administrator's organizational department (operations, security,
+  /// compliance).
+  department String?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([email])
+  @@index([created_at, status, department])
+}

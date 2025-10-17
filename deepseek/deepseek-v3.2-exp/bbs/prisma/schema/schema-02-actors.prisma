@@ -1,0 +1,442 @@
+/// Guest users who can view public content but cannot create discussions or
+/// comments. Guest access provides read-only functionality for users who
+/// haven't registered or logged in.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique session identifier for guest users to track their activity and
+  /// preferences during their visit.
+  session_id String
+  
+  /// IP address of the guest user for analytics and security purposes.
+  ip_address String?
+  
+  /// Browser user agent string for device and browser identification.
+  user_agent String?
+  
+  /// Timestamp of the guest user's last activity on the platform.
+  last_active_at DateTime?
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest session was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest session was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_id])
+  @@index([last_active_at])
+  @@index([created_at])
+}
+
+/// Registered member users who can create discussion topics, post comments,
+/// and participate in discussions. Members form the core user base of the
+/// discussion platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for the member account. Used for display and
+  /// identification.
+  username String
+  
+  /// Email address for the member account. Used for communication and account
+  /// recovery.
+  email String
+  
+  /// Optional display name that can be different from username for privacy
+  /// preferences.
+  display_name String?
+  
+  /// Numerical reputation score based on community engagement and content
+  /// quality.
+  reputation_score Int
+  
+  /// Securely hashed password for user authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Whether the member's email address has been verified through the
+  /// registration process.
+  is_verified Boolean
+  
+  /// Whether the member account is temporarily suspended due to policy
+  /// violations.
+  is_suspended Boolean
+  
+  /// Business workflow status (active, pending, banned) for workflow
+  /// management.
+  business_status String
+  
+  /// Timestamp of the member's most recent login to the platform.
+  last_login_at DateTime?
+  
+  /// Timestamp when the member registered and joined the platform.
+  joined_at DateTime
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was soft deleted, allowing for account
+  /// recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_moderators discussion_board_moderators?
+  discussion_board_admins discussion_board_admins?
+  discussion_board_user_profiles discussion_board_user_profiles?
+  discussion_board_user_authentications discussion_board_user_authentications?
+  discussion_board_topics discussion_board_topics[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_comment_replies discussion_board_comment_replies[]
+  discussion_board_content_versions discussion_board_content_versions[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_user_follows_of_follower_id discussion_board_user_follows[] @relation("discussion_board_user_follows_of_follower_id")
+  discussion_board_user_follows_of_following_id discussion_board_user_follows[] @relation("discussion_board_user_follows_of_following_id")
+  discussion_board_bookmarks discussion_board_bookmarks[]
+  discussion_board_reputation_scores discussion_board_reputation_scores?
+  discussion_board_user_achievements discussion_board_user_achievements[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_violation_records discussion_board_violation_records[]
+  discussion_board_appeals discussion_board_appeals[]
+  discussion_board_notifications discussion_board_notifications[]
+  discussion_board_notification_preferences discussion_board_notification_preferences?
+  discussion_board_messages_of_discussion_board_sender_id discussion_board_messages[] @relation("discussion_board_messages_of_discussion_board_sender_id")
+  discussion_board_messages_of_discussion_board_recipient_id discussion_board_messages[] @relation("discussion_board_messages_of_discussion_board_recipient_id")
+  discussion_board_message_threads_of_discussion_board_p_31359818 discussion_board_message_threads[] @relation("discussion_board_message_threads_of_discussion_board_p_31359818")
+  discussion_board_message_threads_of_discussion_board_p_1ae54e67 discussion_board_message_threads[] @relation("discussion_board_message_threads_of_discussion_board_p_1ae54e67")
+  discussion_board_email_logs discussion_board_email_logs[]
+  discussion_board_user_activities discussion_board_user_activities[]
+  discussion_board_search_analytics discussion_board_search_analytics[]
+  discussion_board_content_metrics discussion_board_content_metrics[]
+  discussion_board_performance_logs discussion_board_performance_logs[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([reputation_score])
+  @@index([joined_at])
+  @@index([last_login_at])
+  @@index([is_suspended])
+  @@index([business_status])
+}
+
+/// Moderator users with content moderation permissions. Moderators can
+/// review, approve, or remove content, manage user reports, and maintain
+/// discussion quality.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account that was promoted to moderator. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Level of moderation permissions (basic, advanced, senior) determining the
+  /// scope of moderation capabilities.
+  moderation_level String
+  
+  /// Comma-separated list of category IDs that this moderator is specifically
+  /// assigned to manage.
+  assigned_categories String?
+  
+  /// JSON string containing moderation statistics and performance metrics for
+  /// this moderator.
+  moderation_stats String?
+  
+  /// Whether the moderator account is currently active and able to perform
+  /// moderation duties.
+  is_active Boolean
+  
+  /// Timestamp when the member was promoted to moderator role.
+  promoted_at DateTime
+  
+  /// Timestamp of the moderator's most recent moderation action.
+  last_moderation_at DateTime?
+  
+  /// Timestamp when the moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator account was soft deleted or demoted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_user_profiles discussion_board_user_profiles?
+  discussion_board_user_authentications discussion_board_user_authentications?
+  discussion_board_category_moderators discussion_board_category_moderators[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_appeals discussion_board_appeals[]
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  discussion_board_notifications discussion_board_notifications[]
+  
+  @@unique([discussion_board_member_id])
+  
+  @@index([moderation_level])
+  @@index([is_active])
+  @@index([promoted_at])
+  @@index([last_moderation_at])
+}
+
+/// System administrator users with full access to manage users, categories,
+/// system settings, and perform administrative functions. Admins have the
+/// highest level of permissions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account that was promoted to administrator.
+  /// {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Level of administrative permissions (system, content, user) determining
+  /// the scope of administrative capabilities.
+  admin_level String
+  
+  /// JSON string containing specific permission flags and access controls for
+  /// this administrator.
+  permissions String?
+  
+  /// Whether this administrator has super admin privileges with unrestricted
+  /// system access.
+  is_super_admin Boolean
+  
+  /// Timestamp of the administrator's most recent administrative action.
+  last_admin_action_at DateTime?
+  
+  /// Timestamp when the member was promoted to administrator role.
+  promoted_at DateTime
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was soft deleted or demoted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_audit_logs_of_user_id discussion_board_audit_logs[] @relation("discussion_board_audit_logs_of_user_id")
+  discussion_board_audit_logs_of_admin_id discussion_board_audit_logs[] @relation("discussion_board_audit_logs_of_admin_id")
+  discussion_board_user_profiles discussion_board_user_profiles?
+  discussion_board_user_authentications discussion_board_user_authentications?
+  
+  @@unique([discussion_board_member_id])
+  
+  @@index([admin_level])
+  @@index([is_super_admin])
+  @@index([promoted_at])
+  @@index([last_admin_action_at])
+}
+
+/// User profile information that extends the basic user account data.
+/// Contains personalization settings, preferences, and additional user
+/// metadata for all user types.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to member account if this profile belongs to a member. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String?
+  
+  /// Reference to moderator account if this profile belongs to a moderator.
+  /// {@link discussion_board_moderators.id}
+  discussion_board_moderator_id String?
+  
+  /// Reference to administrator account if this profile belongs to an admin.
+  /// {@link discussion_board_admins.id}
+  discussion_board_admin_id String?
+  
+  /// User biography or description that appears on their public profile.
+  bio String?
+  
+  /// Geographical location or timezone preference for the user.
+  location String?
+  
+  /// Personal website or blog URL associated with the user's profile.
+  website String?
+  
+  /// URL to the user's profile picture or avatar image.
+  avatar_url String?
+  
+  /// Privacy setting controlling who can view the user's profile information
+  /// (public, private, friends-only).
+  profile_privacy String
+  
+  /// JSON string containing user's notification preferences and subscription
+  /// settings.
+  notification_preferences String?
+  
+  /// User interface theme preference (light, dark, system) for personalized
+  /// experience.
+  theme_preference String?
+  
+  /// Language preference for the user interface and content display.
+  language_preference String?
+  
+  /// Whether the user has enabled email notifications for platform activities.
+  email_notifications Boolean
+  
+  /// Whether the user has enabled push notifications for real-time updates.
+  push_notifications Boolean
+  
+  /// Timestamp when the user profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the user profile was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id])
+  @@unique([discussion_board_moderator_id], map: "discussion_board_user_profiles_discussion_board_modera_349d62aa")
+  @@unique([discussion_board_admin_id])
+  
+  @@index([profile_privacy])
+  @@index([email_notifications])
+  @@index([push_notifications])
+  @@index([created_at])
+}
+
+/// Authentication credentials and security information for user accounts.
+/// Stores password hashes, security tokens, and authentication-related data
+/// for secure user access.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_authentications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to member account if this authentication belongs to a member.
+  /// {@link discussion_board_members.id}
+  discussion_board_member_id String?
+  
+  /// Reference to moderator account if this authentication belongs to a
+  /// moderator. {@link discussion_board_moderators.id}
+  discussion_board_moderator_id String?
+  
+  /// Reference to administrator account if this authentication belongs to an
+  /// admin. {@link discussion_board_admins.id}
+  discussion_board_admin_id String?
+  
+  /// Securely hashed password for user authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Timestamp when the password was last changed for security tracking.
+  password_updated_at DateTime
+  
+  /// Timestamp of the user's most recent successful login.
+  last_login_at DateTime?
+  
+  /// Count of consecutive failed login attempts for security lockout
+  /// protection.
+  failed_login_attempts Int
+  
+  /// Timestamp until which the account is locked due to excessive failed login
+  /// attempts.
+  account_locked_until DateTime?
+  
+  /// Whether two-factor authentication is enabled for additional account
+  /// security.
+  two_factor_enabled Boolean
+  
+  /// Encrypted two-factor authentication secret for generating verification
+  /// codes.
+  two_factor_secret String?
+  
+  /// Encrypted backup recovery codes for account recovery when two-factor is
+  /// enabled.
+  recovery_codes String?
+  
+  /// Current session token for maintaining user authentication state across
+  /// requests.
+  session_token String?
+  
+  /// Expiration timestamp for the current session token.
+  session_expires_at DateTime?
+  
+  /// Timestamp when the authentication record was created.
+  created_at DateTime
+  
+  /// Timestamp when the authentication record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id], map: "discussion_board_user_authentications_discussion_board_eb05af3e")
+  @@unique([discussion_board_moderator_id], map: "discussion_board_user_authentications_discussion_board_bf6e9b58")
+  @@unique([discussion_board_admin_id], map: "discussion_board_user_authentications_discussion_board_94a0bc69")
+  
+  @@index([last_login_at])
+  @@index([failed_login_attempts])
+  @@index([account_locked_until])
+  @@index([two_factor_enabled])
+  @@index([session_expires_at])
+}

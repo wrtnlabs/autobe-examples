@@ -1,0 +1,170 @@
+/// Main product entity representing items available for sale in the shopping
+/// mall platform. Each product has a unique identifier and serves as the
+/// foundation for product variants (SKUs).
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category to which this product belongs. {@link
+  /// shopping_mall_product_categories.id}.
+  shopping_mall_product_categories_id String
+  
+  /// The display name of the product.
+  name String
+  
+  /// Detailed description of the product, including features and
+  /// specifications.
+  description String
+  
+  /// Timestamp when this product record was created.
+  created_at DateTime
+  
+  /// Timestamp when this product record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_product_categories @relation(fields: [shopping_mall_product_categories_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_product_videos shopping_mall_product_videos[]
+  shopping_mall_product_skus shopping_mall_product_skus[]
+  shopping_mall_sales_analytics shopping_mall_sales_analytics[]
+  
+  @@unique([name])
+  @@index([created_at])
+  @@index([shopping_mall_product_categories_id, created_at], map: "shopping_mall_products_shopping_mall_product_categorie_d809b4ab")
+}
+
+/// Images associated with products in the catalog. Supports multiple images
+/// per product for comprehensive visual presentation.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product to which this image belongs. {@link shopping_mall_products.id}.
+  shopping_mall_products_id String
+  
+  /// Full URL or path to the image file.
+  url String
+  
+  /// Indicates whether this image is the primary (featured) image for the
+  /// product.
+  is_primary Boolean
+  
+  /// Order index for displaying images in galleries. Lower numbers appear
+  /// first.
+  sort_order Int
+  
+  /// Timestamp when this image was uploaded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_products_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_products_id, is_primary], map: "shopping_mall_product_images_shopping_mall_products_id_c5ce9ac2")
+  @@index([shopping_mall_products_id])
+  @@index([sort_order])
+  @@index([created_at])
+  @@index([url])
+}
+
+/// Videos associated with products in the catalog. Supports up to two videos
+/// per product for enhanced product demonstrations.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_videos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product to which this video belongs. {@link shopping_mall_products.id}.
+  shopping_mall_products_id String
+  
+  /// Full URL or path to the video file.
+  url String
+  
+  /// Order index for displaying videos. Lower numbers appear first.
+  sort_order Int
+  
+  /// Timestamp when this video was uploaded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_products_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_products_id, sort_order], map: "shopping_mall_product_videos_shopping_mall_products_id_d698a27a")
+  @@index([shopping_mall_products_id])
+  @@index([sort_order])
+  @@index([created_at])
+  @@index([url])
+}
+
+/// Product categories for organizing products in a hierarchical structure.
+/// Each category serves as a filterable group for product discovery.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category if this is a subcategory. {@link
+  /// shopping_mall_product_categories.id}.
+  parent_id String?
+  
+  /// Display name of the category.
+  name String
+  
+  /// Optional description of the category's purpose or content.
+  description String?
+  
+  /// URL-friendly identifier for the category (used in routing).
+  slug String
+  
+  /// Whether this category is currently active and visible to customers.
+  is_active Boolean
+  
+  /// Timestamp when this category was created.
+  created_at DateTime
+  
+  /// Timestamp when this category was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_product_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_products shopping_mall_products[]
+  recursive shopping_mall_product_categories[] @relation("recursive")
+  
+  @@unique([slug])
+  @@unique([name])
+  @@index([parent_id])
+  @@index([is_active])
+  @@index([created_at])
+}

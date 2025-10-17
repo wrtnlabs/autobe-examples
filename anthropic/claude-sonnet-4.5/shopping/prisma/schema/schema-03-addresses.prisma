@@ -1,0 +1,127 @@
+/// Delivery addresses for customers, sellers, and admins. Supports multiple
+/// addresses per user with default address designation. Addresses are
+/// soft-deleted to preserve historical order data. Used during checkout for
+/// order delivery destination and preserved as snapshots in completed
+/// orders.
+///
+/// @namespace Addresses
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this address (null if owned by seller or admin). {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Seller who owns this address (null if owned by customer or admin). {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// Admin who owns this address (null if owned by customer or seller). {@link
+  /// shopping_mall_admins.id}
+  shopping_mall_admin_id String?
+  
+  /// Type of user who owns this address. Valid values: 'customer', 'seller',
+  /// 'admin'. Must match the populated foreign key (customer_id, seller_id, or
+  /// admin_id).
+  user_type String
+  
+  /// Full name of the person who will receive deliveries at this address. May
+  /// differ from account holder name for gift deliveries or business
+  /// addresses.
+  recipient_name String
+  
+  /// Contact phone number for delivery coordination. Used by shipping carriers
+  /// to contact recipient. Format validated by application layer for
+  /// international compatibility.
+  phone_number String
+  
+  /// Primary street address including house/building number and street name.
+  /// Required field for all delivery addresses.
+  address_line1 String
+  
+  /// Secondary address information such as apartment number, suite, unit,
+  /// floor, or building name. Optional field for additional address details.
+  address_line2 String?
+  
+  /// City or locality name for the delivery address. Required for address
+  /// validation and shipping cost calculation.
+  city String
+  
+  /// State, province, or administrative region for the delivery address. Used
+  /// for tax calculation and address validation.
+  state_province String
+  
+  /// ZIP code or postal code for the delivery address. Format varies by
+  /// country. Used for address validation, shipping cost calculation, and
+  /// delivery routing.
+  postal_code String
+  
+  /// Country name or ISO 3166-1 alpha-2 country code for the delivery address.
+  /// Determines address format validation rules, postal code format, and
+  /// international shipping availability.
+  country String
+  
+  /// ISO 3166-1 alpha-2 country code (US, GB, FR, etc.) for standardized
+  /// country identification. Enables consistent filtering, grouping, and
+  /// international shipping logic.
+  country_code String
+  
+  /// Whether this address is the user's default delivery address. Only one
+  /// address per user should be marked as default. Default address is
+  /// pre-selected during checkout.
+  is_default Boolean
+  
+  /// Optional user-defined label for the address such as 'Home', 'Office',
+  /// 'Parents House'. Helps users identify addresses quickly. Must be unique
+  /// per user if provided.
+  label String?
+  
+  /// Whether this address has been verified through address validation
+  /// service. Unverified addresses may require customer confirmation during
+  /// checkout.
+  is_verified Boolean
+  
+  /// Timestamp when the address was last verified through validation service.
+  /// Used to determine if revalidation is needed.
+  verified_at DateTime?
+  
+  /// Timestamp when the address was first created by the user. Used for audit
+  /// trail and chronological ordering of addresses.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the address. Updated whenever any
+  /// address field is changed. Used for tracking address changes and
+  /// validation updates.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, indicates the address has been deleted
+  /// by the user but preserved for historical order references. Null for
+  /// active addresses.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_methods shopping_mall_payment_methods[]
+  
+  @@unique([shopping_mall_customer_id, label])
+  @@unique([shopping_mall_seller_id, label])
+  @@unique([shopping_mall_admin_id, label])
+  @@index([user_type, shopping_mall_customer_id, deleted_at], map: "shopping_mall_addresses_user_type_shopping_mall_custom_b730e93d")
+  @@index([user_type, shopping_mall_seller_id, deleted_at], map: "shopping_mall_addresses_user_type_shopping_mall_seller_a5738fe4")
+  @@index([user_type, shopping_mall_admin_id, deleted_at], map: "shopping_mall_addresses_user_type_shopping_mall_admin__9ba59902")
+  @@index([user_type, shopping_mall_customer_id, is_default], map: "shopping_mall_addresses_user_type_shopping_mall_custom_9afb91dc")
+  @@index([user_type, shopping_mall_seller_id, is_default], map: "shopping_mall_addresses_user_type_shopping_mall_seller_3bd122cb")
+  @@index([user_type, shopping_mall_admin_id, is_default], map: "shopping_mall_addresses_user_type_shopping_mall_admin__68c11706")
+  @@index([postal_code])
+  @@index([country_code, state_province])
+}

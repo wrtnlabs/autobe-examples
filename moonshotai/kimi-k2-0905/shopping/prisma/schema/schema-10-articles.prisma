@@ -1,0 +1,490 @@
+/// Blog post content management for shopping mall platform with publishing
+/// workflow and author relationships
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_blog_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author administrator's {@link shopping_mall_administrators.id}
+  administrator_id String
+  
+  /// Primary category's {@link shopping_mall_categories.id}
+  category_id String?
+  
+  /// Blog post title displayed to readers
+  title String
+  
+  /// URL-friendly slug for SEO optimization
+  slug String
+  
+  /// Brief excerpt or summary for previews
+  excerpt String?
+  
+  /// Main blog post content in markdown or HTML format
+  content String
+  
+  /// Publishing status: draft, pending, published, archived
+  status String
+  
+  /// Detailed workflow state
+  publishing_status String
+  
+  /// Whether post appears in featured section
+  is_featured Boolean
+  
+  /// Number of approved comments
+  comment_count Int
+  
+  /// Total view count for analytics
+  view_count Int
+  
+  /// When the post was published
+  published_at DateTime?
+  
+  /// When the post is scheduled for publication
+  scheduled_at DateTime?
+  
+  /// When featured status expires
+  featured_until DateTime?
+  
+  /// SEO meta title override
+  meta_title String?
+  
+  /// SEO meta description
+  meta_description String?
+  
+  /// Comma-separated tags for filtering
+  tags String?
+  
+  /// Estimated reading time in minutes
+  read_time_minutes Int
+  
+  /// Total word count for content analysis
+  word_count Int
+  
+  /// Soft delete timestamp for content removal
+  deleted_at DateTime?
+  
+  /// When the blog post was created
+  created_at DateTime
+  
+  /// When the blog post was last modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  author shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories? @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_editorial_calendar shopping_mall_editorial_calendar[]
+  
+  @@index([administrator_id])
+  
+  @@unique([slug])
+  @@index([status, publishing_status])
+  @@index([published_at])
+  @@index([scheduled_at])
+  @@index([is_featured, featured_until])
+  @@index([category_id, status])
+}
+
+/// Static content pages for shopping mall platform including policies, help,
+/// and marketing content
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_content_pages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Page author's {@link shopping_mall_administrators.id}
+  administrator_id String
+  
+  /// Page title displayed to visitors
+  title String
+  
+  /// URL path segment for page navigation
+  slug String
+  
+  /// Page content in HTML or markdown format
+  content String
+  
+  /// Brief summary for navigation aids
+  excerpt String?
+  
+  /// Type: about, policy, help, terms, privacy, contact, custom
+  page_type String
+  
+  /// Publishing status: draft, published, archived
+  status String
+  
+  /// Detailed workflow state for content approval
+  publishing_status String
+  
+  /// Whether page is accessible to public visitors
+  is_public Boolean
+  
+  /// Whether login is required to view page
+  requires_authentication Boolean
+  
+  /// Display order in navigation menus
+  menu_order Int?
+  
+  /// Parent page slug for hierarchical navigation
+  parent_slug String?
+  
+  /// Page template identifier for custom layouts
+  template String?
+  
+  /// Override page title for SEO
+  meta_title String?
+  
+  /// SEO meta description
+  meta_description String?
+  
+  /// OpenGraph title for social sharing
+  og_title String?
+  
+  /// OpenGraph description
+  og_description String?
+  
+  /// OpenGraph image file's {@link attachment_files.id}
+  og_image_id String?
+  
+  /// Page view analytics counter
+  view_count Int
+  
+  /// When page content was last reviewed
+  last_reviewed_at DateTime?
+  
+  /// Months between content reviews
+  review_frequency_months Int?
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  /// When page became publicly available
+  published_at DateTime?
+  
+  /// When the content page was created
+  created_at DateTime
+  
+  /// When the content page was last modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  author shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([administrator_id])
+  
+  @@unique([slug])
+  @@index([page_type, status])
+  @@index([status, publishing_status])
+  @@index([is_public])
+  @@index([menu_order])
+  @@index([parent_slug])
+}
+
+/// Promotional banner management for shopping mall platform with placement
+/// and targeting features
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_banners {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Banner creator's {@link shopping_mall_administrators.id}
+  administrator_id String
+  
+  /// Internal banner title for management
+  title String
+  
+  /// Customer-facing banner title
+  display_title String?
+  
+  /// Banner description or call-to-action text
+  description String?
+  
+  /// Type: hero, sidebar, popup, footer, interstitial
+  banner_type String
+  
+  /// Page placement: home, category, product, checkout, global
+  placement String
+  
+  /// Position on page: top, bottom, left, right, center
+  position String
+  
+  /// Active, inactive, scheduled, expired
+  status String
+  
+  /// Display priority (higher shows first)
+  priority Int
+  
+  /// When banner becomes active
+  start_date DateTime
+  
+  /// When banner expires
+  end_date DateTime?
+  
+  /// URL for banner click-through
+  click_url String?
+  
+  /// Whether banner supports click-through
+  is_clickable Boolean
+  
+  /// Audience targeting: all, new_customers, returning_customers
+  target_audience String?
+  
+  /// Maximum impressions before deactivation
+  impression_limit Int?
+  
+  /// Maximum clicks before deactivation
+  click_limit Int?
+  
+  /// Current impression counter
+  impression_count Int
+  
+  /// Current click counter
+  click_count Int
+  
+  /// Conversion tracking counter
+  conversion_count Int
+  
+  /// Promotional priority flag
+  is_featured Boolean
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  /// When banner was created
+  created_at DateTime
+  
+  /// When banner was last modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  creator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([administrator_id])
+  
+  @@index([status, start_date, end_date])
+  @@index([banner_type, placement])
+  @@index([priority, status])
+  @@index([impression_limit, impression_count])
+  @@index([target_audience, status])
+}
+
+/// Newsletter and email marketing content management with subscription
+/// targeting and campaign tracking
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_newsletter_content {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Content creator's {@link shopping_mall_administrators.id}
+  administrator_id String
+  
+  /// Newsletter subject line or internal title
+  title String
+  
+  /// URL-friendly identifier for tracking
+  slug String
+  
+  /// HTML email content body
+  content_html String
+  
+  /// Plain text email content alternative
+  content_text String?
+  
+  /// Preview snippet shown in email clients
+  preview_text String
+  
+  /// Email template: newsletter, promotional, transactional
+  template_type String
+  
+  /// Campaign: weekly, product_launch, sale, announcement
+  campaign_type String
+  
+  /// Status: draft, scheduled, sent, archived
+  status String
+  
+  /// Detailed workflow state
+  publishing_status String
+  
+  /// Total recipients in campaign
+  recipients_count Int
+  
+  /// Number of emails successfully sent
+  sent_count Int
+  
+  /// Number of email opens tracked
+  opened_count Int
+  
+  /// Number of link clicks tracked
+  clicked_count Int
+  
+  /// Number of bounced emails
+  bounced_count Int
+  
+  /// Number of unsubscribes
+  unsubscribed_count Int
+  
+  /// When newsletter was/will be sent
+  send_date DateTime?
+  
+  /// Scheduled send date and time
+  scheduled_for DateTime?
+  
+  /// Recipient segment: all, new_customers, vip, inactive
+  target_segment String?
+  
+  /// Whether content uses personalization tokens
+  is_personalized Boolean
+  
+  /// Personalization tokens and merge fields
+  personalization_data String?
+  
+  /// Whether email tracking is enabled
+  tracking_enabled Boolean
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  /// When newsletter content was created
+  created_at DateTime
+  
+  /// When newsletter content was last modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  creator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([administrator_id])
+  
+  @@unique([slug])
+  @@index([status, scheduled_for])
+  @@index([campaign_type, send_date])
+  @@index([target_segment, status])
+}
+
+/// Editorial content scheduling and planning system for coordinated content
+/// publishing
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_editorial_calendar {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Calendar owner's {@link shopping_mall_administrators.id}
+  administrator_id String
+  
+  /// Linked content resource ID for scheduling
+  content_reference_id String?
+  
+  /// Assigned creator's {@link shopping_mall_administrators.id}
+  assigned_to_id String?
+  
+  /// Editorial item title or topic
+  title String
+  
+  /// Detailed assignment description
+  description String?
+  
+  /// Type: blog_post, newsletter, banner, content_page
+  content_type String
+  
+  /// Status: planned, assigned, in_progress, completed, published
+  status String
+  
+  /// Priority: low, medium, high, urgent
+  priority String
+  
+  /// Target publication or completion date
+  scheduled_date DateTime?
+  
+  /// Hard deadline for content delivery
+  deadline DateTime?
+  
+  /// When editorial item was completed
+  completed_at DateTime?
+  
+  /// When associated content was published
+  published_at DateTime?
+  
+  /// Estimated effort required in hours
+  estimated_hours Float?
+  
+  /// Actual hours spent on creation
+  actual_hours Float?
+  
+  /// SEO and topic keywords
+  keywords String?
+  
+  /// Intended audience description
+  target_audience String?
+  
+  /// Associated marketing campaigns
+  related_campaigns String?
+  
+  /// Internal notes and communications
+  notes String?
+  
+  /// Editorial approval: pending, approved, rejected
+  approval_status String?
+  
+  /// Approving administrator's ID
+  approved_by_id String?
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  /// When editorial item was created
+  created_at DateTime
+  
+  /// When editorial item was last modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  owner shopping_mall_administrators @relation("shopping_mall_editorial_calendar_of_administrator_id", fields: [administrator_id], references: [id], onDelete: Cascade)
+  contentReference shopping_mall_blog_posts? @relation(fields: [content_reference_id], references: [id], onDelete: Cascade)
+  assignedTo shopping_mall_administrators? @relation("shopping_mall_editorial_calendar_of_assigned_to_id", fields: [assigned_to_id], references: [id], onDelete: Cascade)
+  
+  @@index([administrator_id])
+  @@index([content_reference_id])
+  @@index([assigned_to_id])
+  
+  @@index([scheduled_date, deadline])
+  @@index([content_type, status])
+  @@index([priority, status])
+  @@index([scheduled_date, status])
+}

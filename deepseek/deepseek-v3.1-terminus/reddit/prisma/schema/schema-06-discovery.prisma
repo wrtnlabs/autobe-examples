@@ -1,0 +1,381 @@
+/// Personalized content feeds for users, combining subscribed communities,
+/// trending content, and algorithmic recommendations. Each feed represents a
+/// user's customized content stream that adapts based on engagement patterns
+/// and preferences.
+///
+/// @namespace Discovery
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_feeds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns this personalized feed. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Primary community for feed content focus. {@link
+  /// reddit_community_communities.id}.
+  preferred_community_id String?
+  
+  /// User-defined name for the feed (e.g., 'Tech News', 'Personal Favorites').
+  feed_name String
+  
+  /// Comma-separated list of preferred content types (text, link, image,
+  /// video).
+  content_types String?
+  
+  /// Preferred sorting method (hot, new, top, controversial, rising).
+  sorting_algorithm String
+  
+  /// How often the feed refreshes in minutes (5, 15, 30, 60, 1440).
+  refresh_frequency Int
+  
+  /// Whether this feed is currently active and visible to the user.
+  is_active Boolean
+  
+  /// Timestamp when this feed was last refreshed with new content.
+  last_refreshed_at DateTime?
+  
+  /// When this feed configuration was created.
+  created_at DateTime
+  
+  /// When this feed configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this feed was soft-deleted by the user.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  preferredCommunity reddit_community_communities? @relation(fields: [preferred_community_id], references: [id], onDelete: Cascade)
+  
+  @@index([preferred_community_id])
+  
+  @@unique([reddit_community_member_id, feed_name])
+  @@index([reddit_community_member_id, is_active])
+  @@index([sorting_algorithm, last_refreshed_at])
+  @@index([created_at])
+}
+
+/// Configuration and metadata for content sorting algorithms used across the
+/// platform. Defines how content is ranked and displayed in different
+/// contexts (hot, new, top, controversial).
+///
+/// @namespace Discovery
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_sorting_algorithms {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the sorting algorithm (hot, new, top,
+  /// controversial, rising).
+  algorithm_name String
+  
+  /// User-friendly name displayed in the interface (Hot, New, Top,
+  /// Controversial).
+  display_name String
+  
+  /// Detailed explanation of how this algorithm works and what it prioritizes.
+  description String
+  
+  /// JSON configuration for algorithm-specific parameters and weights.
+  parameters String
+  
+  /// Whether this algorithm should be used as the default for new users.
+  is_default Boolean
+  
+  /// Whether this algorithm is currently available for use.
+  is_active Boolean
+  
+  /// How quickly content ages out of relevance (higher values mean faster
+  /// decay).
+  time_decay_factor Float
+  
+  /// Weight given to engagement metrics (votes, comments, shares).
+  engagement_weight Float
+  
+  /// Weight given to relevance based on user preferences and behavior.
+  relevance_weight Float
+  
+  /// When this algorithm configuration was created.
+  created_at DateTime
+  
+  /// When this algorithm configuration was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([algorithm_name])
+  @@index([is_active, is_default])
+  @@index([created_at])
+}
+
+/// User-specific preferences for content discovery, feed customization, and
+/// personalization settings. Controls how content is filtered, sorted, and
+/// recommended to individual users.
+///
+/// @namespace Discovery
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns these preferences. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Preferred content age range (hour, day, week, month, year, all).
+  preferred_content_age String
+  
+  /// Whether to filter out potentially sensitive or NSFW content.
+  safe_search_enabled Boolean
+  
+  /// Whether to automatically play media content in feeds.
+  auto_play_media Boolean
+  
+  /// Whether to use compact view instead of card view for content.
+  compact_view_enabled Boolean
+  
+  /// Whether to show Not Safe For Work content when safe search is off.
+  show_nsfw_content Boolean
+  
+  /// Frequency of email digests (never, daily, weekly, monthly).
+  email_digest_frequency String
+  
+  /// How aggressively to recommend content (1-5 scale).
+  recommendation_strength Int
+  
+  /// Whether to use dark mode for the interface.
+  dark_mode_enabled Boolean
+  
+  /// Preferred language for content and interface.
+  language_preference String
+  
+  /// User's timezone for content timing and notifications.
+  timezone String
+  
+  /// When these preferences were first set.
+  created_at DateTime
+  
+  /// When these preferences were last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_member_id], map: "reddit_community_user_preferences_reddit_community_mem_e2a735ab")
+  @@index([safe_search_enabled, show_nsfw_content], map: "reddit_community_user_preferences_safe_search_enabled__cf5a94f0")
+  @@index([created_at])
+}
+
+/// Historical record of trending topics and content across the platform.
+/// Captures popularity spikes and engagement patterns for analytics and
+/// recommendation systems.
+///
+/// @namespace Discovery
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_trending_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where this topic is trending. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String?
+  
+  /// Primary post driving this trending topic. {@link
+  /// reddit_community_posts.id}.
+  related_post_id String?
+  
+  /// Comma-separated keywords that represent the trending topic.
+  topic_keywords String
+  
+  /// Numerical score representing the topic's current popularity.
+  trending_score Float
+  
+  /// Rate of engagement growth (posts, comments, votes per hour).
+  engagement_velocity Float
+  
+  /// Maximum number of concurrent engagements during the trend.
+  peak_engagement Int
+  
+  /// How long the topic has been trending in hours.
+  duration_hours Int
+  
+  /// Category of trend (viral, breaking, seasonal, evergreen).
+  trend_category String
+  
+  /// Whether this topic is currently trending.
+  is_active Boolean
+  
+  /// When this topic first started trending.
+  started_trending_at DateTime
+  
+  /// When the trending metrics were last calculated.
+  last_updated_at DateTime
+  
+  /// When this trending record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities? @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  relatedPost reddit_community_posts? @relation(fields: [related_post_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_community_community_id], map: "reddit_community_trending_topics_reddit_community_comm_1a7092f4")
+  @@index([related_post_id])
+  
+  @@unique([topic_keywords, started_trending_at], map: "reddit_community_trending_topics_topic_keywords_starte_ed9f49e7")
+  @@index([trending_score, is_active])
+  @@index([engagement_velocity, last_updated_at], map: "reddit_community_trending_topics_engagement_velocity_l_2e55406d")
+  @@index([trend_category, started_trending_at], map: "reddit_community_trending_topics_trend_category_starte_f124bbab")
+  @@index([created_at])
+}
+
+/// Content and community recommendations generated for users based on
+/// behavior, preferences, and similarity algorithms. Supports personalized
+/// discovery of new content and communities.
+///
+/// @namespace Discovery
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_recommendations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who receives this recommendation. {@link
+  /// reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Community being recommended. {@link reddit_community_communities.id}.
+  recommended_community_id String?
+  
+  /// Post being recommended. {@link reddit_community_posts.id}.
+  recommended_post_id String?
+  
+  /// Type of recommendation (community, post, user, topic).
+  recommendation_type String
+  
+  /// Algorithm's confidence in this recommendation (0.0-1.0).
+  confidence_score Float
+  
+  /// Explanation of why this recommendation was generated.
+  reasoning String?
+  
+  /// Whether the user has dismissed this recommendation.
+  is_dismissed Boolean
+  
+  /// Whether the user has accepted/followed this recommendation.
+  is_accepted Boolean
+  
+  /// When the user dismissed this recommendation.
+  dismissed_at DateTime?
+  
+  /// When the user accepted this recommendation.
+  accepted_at DateTime?
+  
+  /// When this recommendation expires and should be removed.
+  expires_at DateTime?
+  
+  /// When this recommendation was generated.
+  created_at DateTime
+  
+  /// When this recommendation was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  recommendedCommunity reddit_community_communities? @relation(fields: [recommended_community_id], references: [id], onDelete: Cascade)
+  recommendedPost reddit_community_posts? @relation(fields: [recommended_post_id], references: [id], onDelete: Cascade)
+  
+  @@index([recommended_community_id])
+  @@index([recommended_post_id])
+  
+  @@unique([reddit_community_member_id, recommended_community_id, recommended_post_id, created_at], map: "reddit_community_recommendations_reddit_community_memb_f5934d10")
+  @@index([reddit_community_member_id, is_dismissed, is_accepted], map: "reddit_community_recommendations_reddit_community_memb_104ae724")
+  @@index([recommendation_type, confidence_score], map: "reddit_community_recommendations_recommendation_type_c_956ee250")
+  @@index([expires_at, created_at])
+  @@index([created_at])
+}
+
+/// Search index for efficient content discovery and full-text search
+/// capabilities. Contains processed and indexed content for fast retrieval
+/// and relevance ranking.
+///
+/// @namespace Discovery
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_search_index {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post being indexed for search. {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// Community context for the indexed content. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// Processed and normalized title text for search indexing.
+  indexed_title String
+  
+  /// Processed and normalized content text for search indexing.
+  indexed_content String?
+  
+  /// Aggregated and processed comment text for search relevance.
+  indexed_comments String?
+  
+  /// Tokenized keywords and phrases extracted from the content.
+  search_tokens String
+  
+  /// Calculated relevance score for search ranking.
+  relevance_score Float
+  
+  /// Language of the indexed content for proper stemming.
+  language String
+  
+  /// Whether this content has been fully processed and indexed.
+  is_indexed Boolean
+  
+  /// When this content was last indexed or updated.
+  last_indexed_at DateTime
+  
+  /// When this index entry was created.
+  created_at DateTime
+  
+  /// When this index entry was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_post_id])
+  @@index([reddit_community_community_id, relevance_score], map: "reddit_community_search_index_reddit_community_communi_de4ef6a5")
+  @@index([language, is_indexed])
+  @@index([last_indexed_at])
+  @@index([created_at])
+}

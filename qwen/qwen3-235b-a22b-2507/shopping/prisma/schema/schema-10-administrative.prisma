@@ -1,0 +1,708 @@
+/// Tracks all administrative actions across the platform including
+/// modifications to orders, users, products, and system settings. This table
+/// provides a comprehensive record of administrator interventions for
+/// accountability and compliance purposes.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator who performed the action. {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// Type of administrative action performed (e.g., 'order_status_update',
+  /// 'user_suspension', 'product_removal')
+  action_type String
+  
+  /// The entity that was acted upon (e.g., 'order', 'user', 'product')
+  target_entity String
+  
+  /// The ID of the specific entity that was acted upon
+  target_entity_id String
+  
+  /// Specific details about the action performed, including change
+  /// descriptions and justification
+  action_details String
+  
+  /// Number of records impacted by this action
+  impacted_records Int
+  
+  /// Priority level of the action (e.g., 'low', 'medium', 'high', 'critical')
+  priority String
+  
+  /// Current status of the action (e.g., 'completed', 'in_progress',
+  /// 'pending_review')
+  status String
+  
+  /// Timestamp when the action was initiated
+  created_at DateTime
+  
+  /// Timestamp when the action record was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the action record was soft deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_administrator_id, created_at], map: "shopping_mall_admin_actions_shopping_mall_administrato_7116294b")
+  @@index([action_type, status])
+  @@index([target_entity, target_entity_id])
+  @@index([created_at, priority])
+}
+
+/// Stores administrative notes and observations made by platform
+/// administrators. These notes provide context for decisions, document
+/// issues, and track ongoing concerns that don't require immediate action
+/// but need to be recorded for future reference.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_notes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator who created the note. {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// Descriptive title for the note
+  title String
+  
+  /// Full text of the administrative note
+  content String
+  
+  /// Category of the note (e.g., 'observation', 'warning', 'follow_up',
+  /// 'policy_concern')
+  note_type String
+  
+  /// Sensitivity level of the note (e.g., 'public', 'internal',
+  /// 'confidential', 'restricted')
+  sensitivity_level String
+  
+  /// JSON array of related entities that this note references
+  related_entities String?
+  
+  /// Comma-separated tags for categorizing and searching notes
+  tags String?
+  
+  /// Current status of the note (e.g., 'active', 'resolved', 'archived')
+  status String
+  
+  /// Reference to a related admin action if applicable. {@link
+  /// shopping_mall_admin_actions.id}.
+  related_action_id String?
+  
+  /// Timestamp when the note was created
+  created_at DateTime
+  
+  /// Timestamp when the note was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the note was soft deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_administrator_id, title, created_at], map: "shopping_mall_admin_notes_shopping_mall_administrator__c07f0a47")
+  @@index([note_type, status])
+  @@index([sensitivity_level, created_at])
+  @@index([related_action_id])
+}
+
+/// Handles critical system alerts that require administrator attention. This
+/// table manages the alert lifecycle from detection through resolution,
+/// ensuring that important issues are properly tracked and addressed.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator assigned to handle the alert. {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String?
+  
+  /// Type of alert (e.g., 'fraud_detection', 'system_failure',
+  /// 'policy_violation', 'inventory_critical')
+  alert_type String
+  
+  /// Severity level of the alert (e.g., 'info', 'warning', 'error', 'critical')
+  severity String
+  
+  /// System component or process that generated the alert
+  source String
+  
+  /// Detailed description of the alert condition
+  description String
+  
+  /// JSON representation of the data that triggered the alert
+  trigger_data String
+  
+  /// Number of users potentially affected by this alert condition
+  affected_users Int
+  
+  /// JSON array of related system entities involved in the alert
+  related_entities String?
+  
+  /// Timestamp by which the alert should be addressed
+  deadline DateTime?
+  
+  /// Notes documenting how the alert was resolved
+  resolution_notes String?
+  
+  /// Current status of the alert (e.g., 'pending', 'in_progress', 'resolved',
+  /// 'ignored')
+  status String
+  
+  /// Timestamp when the alert was created
+  created_at DateTime
+  
+  /// Timestamp when the alert was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the alert was soft deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([alert_type, created_at])
+  @@index([severity, status])
+  @@index([source, created_at])
+  @@index([shopping_mall_administrator_id, status], map: "shopping_mall_admin_alerts_shopping_mall_administrator_c12fc67d")
+}
+
+/// Stores generated administrative reports that provide insights into
+/// platform performance, user behavior, and business metrics. This table
+/// manages report metadata and serves as the foundation for the reporting
+/// system.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator who generated or requested the report.
+  /// {@link shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// Type of report (e.g., 'sales_summary', 'user_engagement',
+  /// 'fraud_analysis', 'inventory_turnover')
+  report_type String
+  
+  /// Descriptive title for the report
+  title String
+  
+  /// Summary of the report's purpose and content
+  description String?
+  
+  /// JSON representation of the parameters used to generate the report
+  parameters String
+  
+  /// Start timestamp of the data range covered by the report
+  data_range_start DateTime
+  
+  /// End timestamp of the data range covered by the report
+  data_range_end DateTime
+  
+  /// JSON representation of the actual data in the report
+  generated_data String
+  
+  /// Size of the report data in megabytes
+  size_mb Float
+  
+  /// Format of the generated report (e.g., 'json', 'csv', 'pdf', 'excel')
+  format String
+  
+  /// Current status of the report (e.g., 'generating', 'completed', 'failed',
+  /// 'expired')
+  status String
+  
+  /// How often this report is generated (e.g., 'one_time', 'daily', 'weekly',
+  /// 'monthly')
+  schedule_frequency String?
+  
+  /// Timestamp for the next scheduled generation if recurring
+  next_generation DateTime?
+  
+  /// Timestamp when the report was created
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_administrator_id, title, created_at], map: "shopping_mall_admin_reports_shopping_mall_administrato_51f87909")
+  @@index([report_type, status])
+  @@index([data_range_start, data_range_end])
+  @@index([schedule_frequency, next_generation], map: "shopping_mall_admin_reports_schedule_frequency_next_ge_d9bb96d4")
+  @@index([created_at])
+}
+
+/// Manages user-specific administrator dashboards that provide customized
+/// views of platform metrics and information. Each administrator can have a
+/// personalized dashboard configuration.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_dashboards {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator who owns this dashboard. {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// Name of the dashboard
+  name String
+  
+  /// Description of the dashboard purpose
+  description String?
+  
+  /// JSON representation of the dashboard layout and widget arrangement
+  layout_configuration String
+  
+  /// Default refresh interval for dashboard widgets in seconds
+  refresh_interval Int
+  
+  /// Whether this is the default dashboard for the administrator
+  is_default Boolean
+  
+  /// Indicates if and how this dashboard is shared (e.g., 'private', 'team',
+  /// 'all_admins', 'public')
+  sharing_status String
+  
+  /// Access level required to view this dashboard (e.g., 'basic', 'standard',
+  /// 'advanced')
+  access_level String
+  
+  /// Current status of the dashboard (e.g., 'active', 'archived', 'draft')
+  status String
+  
+  /// Timestamp when the dashboard was created
+  created_at DateTime
+  
+  /// Timestamp when the dashboard was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the dashboard was soft deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_admin_widgets shopping_mall_admin_widgets[]
+  
+  @@unique([shopping_mall_administrator_id], map: "shopping_mall_admin_dashboards_shopping_mall_administr_9c18fa7e")
+  @@unique([shopping_mall_administrator_id, name], map: "shopping_mall_admin_dashboards_shopping_mall_administr_e70bb8ad")
+  @@index([is_default, status])
+  @@index([sharing_status])
+  @@index([access_level])
+}
+
+/// Stores configuration for dashboard widgets that display specific metrics,
+/// charts, or information blocks. Widgets are building blocks of dashboards
+/// and are managed through the dashboard relationship.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_widgets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the dashboard this widget belongs to. {@link
+  /// shopping_mall_admin_dashboards.id}.
+  shopping_mall_admin_dashboard_id String
+  
+  /// Type of widget (e.g., 'chart', 'metric', 'table', 'timeline',
+  /// 'alert_summary')
+  widget_type String
+  
+  /// Title displayed on the widget
+  title String
+  
+  /// Primary data source for the widget (e.g., 'sales_data', 'user_metrics',
+  /// 'system_logs')
+  data_source String
+  
+  /// JSON representation of the widget's specific configuration
+  configuration String
+  
+  /// Size/position configuration (e.g., 'small', 'medium', 'large',
+  /// 'full_width')
+  size String
+  
+  /// Refresh interval for the widget data in seconds
+  refresh_interval Int
+  
+  /// Whether the widget supports user interaction or drill-down
+  is_interactive Boolean
+  
+  /// JSON representation of any data filters applied to the widget
+  filters String?
+  
+  /// Current status of the widget (e.g., 'active', 'inactive', 'debug')
+  status String
+  
+  /// Timestamp when the widget was created
+  created_at DateTime
+  
+  /// Timestamp when the widget was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the widget was soft deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  dashboard shopping_mall_admin_dashboards @relation(fields: [shopping_mall_admin_dashboard_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_admin_dashboard_id, title], map: "shopping_mall_admin_widgets_shopping_mall_admin_dashbo_6a87d552")
+  @@index([widget_type, status])
+  @@index([data_source, created_at])
+}
+
+/// Manages the comprehensive permission system that controls administrator
+/// access to various platform functions and data. This table defines the
+/// core permission structure for the administrative system.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to parent permission for hierarchical organization. {@link
+  /// shopping_mall_admin_permissions.id}.
+  parent_id String?
+  
+  /// Unique code for the permission (e.g., 'user_management',
+  /// 'order_approval', 'financial_overview')
+  code String
+  
+  /// Human-readable name of the permission
+  name String
+  
+  /// Category of the permission (e.g., 'user_management', 'order_management',
+  /// 'financial', 'reporting', 'system_settings')
+  category String
+  
+  /// Detailed description of what the permission allows
+  description String
+  
+  /// Hierarchical level of the permission in the tree structure
+  level Int
+  
+  /// Materialized path in the permission hierarchy (e.g.,
+  /// '/user_management/create_user/')
+  path String
+  
+  /// Applicable scope of the permission (e.g., 'global', 'regional',
+  /// 'store_specific')
+  scope String
+  
+  /// Administrative roles that require this permission (e.g., 'senior_admin',
+  /// 'support_staff')
+  required_for_role String?
+  
+  /// Business impact level (e.g., 'low', 'medium', 'high', 'critical')
+  business_impact String
+  
+  /// Current status of the permission (e.g., 'active', 'deprecated', 'planned')
+  status String
+  
+  /// Timestamp when the permission was created
+  created_at DateTime
+  
+  /// Timestamp when the permission was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the permission was soft deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_admin_permissions? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_admin_permissions[] @relation("recursive")
+  
+  @@unique([code])
+  @@index([category, level, status])
+  @@index([parent_id])
+  @@index([path])
+  @@index([business_impact])
+}
+
+/// Immutable record of critical system changes and access events for
+/// compliance and security auditing. This table provides a tamper-resistant
+/// history of important operations.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator associated with this audit event. {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// Type of audit event (e.g., 'login', 'permission_change',
+  /// 'critical_data_access', 'security_configuration')
+  event_type String
+  
+  /// Security severity of the event (e.g., 'info', 'warning', 'high',
+  /// 'critical')
+  severity String
+  
+  /// Entity type affected by the event
+  entity_affected String?
+  
+  /// ID of the specific entity affected by the event
+  entity_id String?
+  
+  /// Detailed description of the action taken
+  action_details String
+  
+  /// IP address from which the action was performed
+  ip_address String
+  
+  /// User agent string of the client used
+  user_agent String
+  
+  /// Session identifier associated with the action
+  session_id String
+  
+  /// Whether the action was successful
+  success Boolean
+  
+  /// JSON representation of data state before the change
+  data_before String?
+  
+  /// JSON representation of data state after the change
+  data_after String?
+  
+  /// Duration of the operation in milliseconds
+  duration_ms Int?
+  
+  /// Additional notes about the audit event
+  notes String?
+  
+  /// Timestamp when the audit event occurred
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([created_at, shopping_mall_administrator_id, event_type], map: "shopping_mall_admin_audit_logs_created_at_shopping_mal_9df128da")
+  @@index([event_type, severity])
+  @@index([entity_affected, entity_id])
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_admin_audit_logs_shopping_mall_administr_12801aca")
+  @@index([success, created_at])
+}
+
+/// Stores time-series data for key system performance indicators and
+/// business metrics that administrators monitor to ensure platform health
+/// and performance.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_system_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the source of the metric data. (e.g., service, server,
+  /// process). This ID points to a generic source entity.
+  metric_source_id String?
+  
+  /// Name of the metric being tracked (e.g., 'orders_per_minute',
+  /// 'api_response_time', 'memory_usage')
+  metric_name String
+  
+  /// Category of the metric (e.g., 'performance', 'business', 'security',
+  /// 'engagement')
+  metric_category String
+  
+  /// Unit of measurement for the metric (e.g., 'ms', '%', 'count', 'MB', 'USD')
+  unit String
+  
+  /// Numerical value of the metric
+  value Float
+  
+  /// Warning threshold value for this metric
+  threshold_warning Float?
+  
+  /// Critical threshold value for this metric
+  threshold_critical Float?
+  
+  /// Interval at which this metric is collected in seconds
+  collection_interval Int
+  
+  /// Number of days to retain this metric data
+  data_retention_days Int
+  
+  /// Whether this is raw data or an aggregated view
+  is_aggregated Boolean
+  
+  /// Method used for aggregation if is_aggregated is true (e.g., 'average',
+  /// 'sum', 'max', 'min')
+  aggregation_method String?
+  
+  /// Comma-separated tags for categorizing and searching metrics
+  tags String?
+  
+  /// Current status of the metric tracking (e.g., 'active', 'paused', 'debug')
+  status String
+  
+  /// Timestamp when this metric value was recorded
+  recorded_at DateTime
+  
+  /// Timestamp when the metric record was created
+  created_at DateTime
+  
+  /// Timestamp when the metric record was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the metric record was soft deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  metricSource shopping_mall_administrators? @relation(fields: [metric_source_id], references: [id], onDelete: Cascade)
+  
+  @@unique([metric_name, recorded_at])
+  @@index([metric_category, status])
+  @@index([recorded_at, is_aggregated], map: "shopping_mall_admin_system_metrics_recorded_at_is_aggr_613acf55")
+  @@index([status, created_at])
+  @@index([metric_source_id])
+}
+
+/// Records results of automated system health checks that verify the
+/// integrity and availability of platform components. This table helps
+/// administrators monitor and troubleshoot system issues.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_health_checks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator who initiated or received this health
+  /// check. {@link shopping_mall_administrators.id}.
+  checked_by_id String?
+  
+  /// Type of health check performed (e.g., 'database_connection',
+  /// 'api_latency', 'storage_space', 'security_scan')
+  check_type String
+  
+  /// System component that was checked (e.g., 'order_service',
+  /// 'payment_gateway', 'inventory_db')
+  target_component String
+  
+  /// Result of the health check (e.g., 'healthy', 'warning', 'unhealthy',
+  /// 'critical')
+  status String
+  
+  /// Numeric health score (0-100) representing component health
+  score Float
+  
+  /// Detailed breakdown of the health check results
+  details String
+  
+  /// Response time of the checked component in milliseconds
+  response_time_ms Int?
+  
+  /// Number of errors detected during the check
+  error_count Int
+  
+  /// JSON array of functions that are degraded or impaired
+  degraded_functions String?
+  
+  /// Recommended actions to address any issues
+  recommendations String?
+  
+  /// Timestamp for the next scheduled health check
+  next_check_scheduled DateTime
+  
+  /// Whether this check was performed automatically or manually initiated
+  is_automated Boolean
+  
+  /// Timestamp when the health check was performed
+  created_at DateTime
+  
+  /// Timestamp when the health check record was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the health check record was soft deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  checkedBy shopping_mall_administrators? @relation(fields: [checked_by_id], references: [id], onDelete: Cascade)
+  
+  @@unique([target_component, created_at], map: "shopping_mall_admin_health_checks_target_component_cre_4f256322")
+  @@index([check_type, status])
+  @@index([status, score])
+  @@index([is_automated, created_at])
+  @@index([next_check_scheduled])
+  @@index([checked_by_id])
+}

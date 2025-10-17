@@ -1,0 +1,83 @@
+/// Vote record for discussions and comments, supporting the dual-axis voting
+/// system with quality and agreement assessments.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target discussion. {@link discussion_board_discussions.id}.
+  discussion_board_discussions_id String?
+  
+  /// Target comment. {@link discussion_board_comments.id}.
+  discussion_board_comments_id String?
+  
+  /// User who cast the vote. {@link discussion_board_registereduser.id}.
+  discussion_board_registereduser_id String
+  
+  /// Assessment of argument quality (Excellent, Good, Poor, Uncivil)
+  quality_vote String
+  
+  /// Personal agreement with position (Strongly Agree, Agree, Disagree,
+  /// Strongly Disagree)
+  agreement_vote String
+  
+  /// Timestamp of vote creation
+  created_at DateTime
+  
+  /// Timestamp of last vote update
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  discussion discussion_board_discussions? @relation(fields: [discussion_board_discussions_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comments_id], references: [id], onDelete: Cascade)
+  voter discussion_board_registereduser @relation(fields: [discussion_board_registereduser_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_discussions_id, discussion_board_registereduser_id], map: "discussion_board_votes_discussion_board_discussions_id_5f61940c")
+  @@unique([discussion_board_comments_id, discussion_board_registereduser_id], map: "discussion_board_votes_discussion_board_comments_id_di_b2472893")
+  @@index([discussion_board_discussions_id])
+  @@index([discussion_board_comments_id])
+  @@index([discussion_board_registereduser_id])
+}
+
+/// User reputation score calculated based on community feedback and voting
+/// patterns.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_reputation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose reputation is being tracked. {@link
+  /// discussion_board_registereduser.id}.
+  discussion_board_registereduser_id String
+  
+  /// Current reputation score, ranging from 0.0 to 100.0
+  score Float
+  
+  /// Timestamp of when the reputation score was last calculated
+  last_calculated DateTime
+  
+  /// Timestamp of reputation record creation
+  created_at DateTime
+  
+  /// Timestamp of last reputation update
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_registereduser @relation(fields: [discussion_board_registereduser_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_registereduser_id], map: "discussion_board_reputation_discussion_board_registere_b4238de3")
+}

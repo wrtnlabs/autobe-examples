@@ -1,0 +1,347 @@
+/// Tracks user engagement patterns, session data, and interaction metrics
+/// for platform analytics. Records user actions including login/logout,
+/// content creation, voting, and navigation patterns to understand user
+/// behavior and platform usage trends. {@link discussion_board_members.id}
+/// {@link discussion_board_topics.id} {@link discussion_board_comments.id}
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_activities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user whose activity is being tracked. {@link
+  /// discussion_board_members.id}
+  member_id String
+  
+  /// Reference to the topic involved in the activity, if applicable. {@link
+  /// discussion_board_topics.id}
+  topic_id String?
+  
+  /// Reference to the comment involved in the activity, if applicable. {@link
+  /// discussion_board_comments.id}
+  comment_id String?
+  
+  /// Type of user activity (login, logout, view_topic, create_topic,
+  /// create_comment, vote, search, etc.).
+  activity_type String
+  
+  /// Unique identifier for the user session during which the activity occurred.
+  session_id String
+  
+  /// IP address from which the activity originated for geographic analysis.
+  ip_address String?
+  
+  /// Browser/user agent information for client-side analytics.
+  user_agent String?
+  
+  /// Type of device used (desktop, mobile, tablet) for platform optimization.
+  device_type String?
+  
+  /// Duration of the activity in seconds, if applicable (e.g., session
+  /// duration).
+  duration_seconds Int?
+  
+  /// JSON-formatted additional context data for the activity.
+  additional_data String?
+  
+  /// Timestamp when the activity was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the activity record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  topic discussion_board_topics? @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([topic_id])
+  @@index([comment_id])
+  
+  @@index([member_id, created_at])
+  @@index([activity_type, created_at])
+  @@index([session_id])
+  @@index([created_at])
+}
+
+/// Tracks search operations, query patterns, and result effectiveness for
+/// platform optimization. Records user search behavior including search
+/// terms, filters applied, result counts, and user interactions with search
+/// results. {@link discussion_board_members.id}
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_search_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who performed the search, if authenticated. {@link
+  /// discussion_board_members.id}
+  member_id String?
+  
+  /// The original search query entered by the user.
+  search_query String
+  
+  /// JSON-formatted filters applied to the search (category, date range, etc.).
+  search_filters String?
+  
+  /// Number of results returned for the search query.
+  result_count Int
+  
+  /// Number of search results the user actually viewed.
+  results_viewed Int
+  
+  /// Percentage of viewed results that the user clicked on.
+  click_through_rate Float?
+  
+  /// Session identifier to track search patterns across multiple queries.
+  session_id String?
+  
+  /// Time taken to execute the search query in milliseconds.
+  search_duration_ms Int?
+  
+  /// Whether the search was considered successful based on user behavior.
+  search_success Boolean
+  
+  /// Timestamp when the search was performed.
+  created_at DateTime
+  
+  /// Timestamp when the search analytics record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members? @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@index([member_id, created_at])
+  @@index([search_query])
+  @@index([created_at])
+  @@index([search_success])
+}
+
+/// Measures content performance, engagement rates, and quality indicators
+/// for topics and comments. Tracks views, votes, comments, and other
+/// engagement metrics to identify popular content and measure content
+/// quality. {@link discussion_board_topics.id} {@link
+/// discussion_board_comments.id} {@link discussion_board_members.id}
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the topic being measured. {@link discussion_board_topics.id}
+  topic_id String?
+  
+  /// Reference to the comment being measured. {@link
+  /// discussion_board_comments.id}
+  comment_id String?
+  
+  /// Reference to the content author for user-level analytics. {@link
+  /// discussion_board_members.id}
+  author_id String?
+  
+  /// Total number of views for the content piece.
+  view_count Int
+  
+  /// Number of distinct users who viewed the content.
+  unique_viewers Int
+  
+  /// Total number of upvotes received.
+  upvote_count Int
+  
+  /// Total number of downvotes received.
+  downvote_count Int
+  
+  /// Number of comments generated (for topics only).
+  comment_count Int
+  
+  /// Number of times content was shared externally.
+  share_count Int
+  
+  /// Number of users who bookmarked the content.
+  bookmark_count Int
+  
+  /// Calculated engagement rate based on interactions per view.
+  engagement_rate Float?
+  
+  /// Average time users spend engaging with the content.
+  avg_time_spent_seconds Int?
+  
+  /// Percentage of users who view but don't interact with content.
+  bounce_rate Float?
+  
+  /// Timestamp when the metrics snapshot was created.
+  created_at DateTime
+  
+  /// Timestamp when metrics were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  topic discussion_board_topics? @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  author discussion_board_members? @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  @@index([topic_id, created_at])
+  @@index([comment_id, created_at])
+  @@index([author_id, created_at])
+  @@index([view_count])
+  @@index([engagement_rate])
+  @@index([created_at])
+}
+
+/// Records system performance metrics, response times, and operational
+/// health indicators. Tracks API response times, database query performance,
+/// page load times, and system resource usage for performance monitoring and
+/// optimization. {@link discussion_board_members.id}
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_performance_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who triggered the performance event, if applicable.
+  /// {@link discussion_board_members.id}
+  member_id String?
+  
+  /// API endpoint or page that was accessed.
+  endpoint String
+  
+  /// HTTP method used for the request (GET, POST, PUT, DELETE).
+  http_method String
+  
+  /// Response time in milliseconds for the operation.
+  response_time_ms Int
+  
+  /// HTTP status code returned by the operation.
+  status_code Int
+  
+  /// Size of the request payload in bytes.
+  request_size_bytes Int?
+  
+  /// Size of the response payload in bytes.
+  response_size_bytes Int?
+  
+  /// Browser/user agent making the request.
+  user_agent String?
+  
+  /// IP address where the request originated.
+  ip_address String?
+  
+  /// Time spent on database queries for this request.
+  database_query_time_ms Int?
+  
+  /// CPU usage percentage during the operation.
+  cpu_usage_percent Float?
+  
+  /// Memory usage in megabytes during the operation.
+  memory_usage_mb Float?
+  
+  /// Error message if the operation failed.
+  error_message String?
+  
+  /// Timestamp when the performance log was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members? @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@index([member_id])
+  
+  @@index([endpoint, created_at])
+  @@index([status_code, created_at])
+  @@index([response_time_ms])
+  @@index([created_at])
+}
+
+/// Identifies and tracks trending topics based on engagement metrics and
+/// temporal patterns. Aggregates data from content metrics and user
+/// activities to surface popular discussions and detect emerging trends in
+/// real-time. {@link discussion_board_topics.id}
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_trending_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the topic that is trending. {@link
+  /// discussion_board_topics.id}
+  topic_id String
+  
+  /// Calculated trend score based on engagement velocity and volume.
+  trend_score Float
+  
+  /// Engagement velocity over the last 24 hours.
+  velocity_24h Float
+  
+  /// Engagement velocity over the last 7 days.
+  velocity_7d Float
+  
+  /// Direction of trend (rising, falling, stable, emerging).
+  trend_direction String
+  
+  /// Total engagement count (views, votes, comments) for trending period.
+  engagement_volume Int
+  
+  /// Number of unique users who engaged with the topic.
+  unique_engagers Int
+  
+  /// Ranking position within the topic's category.
+  category_trend_rank Int?
+  
+  /// Global ranking position across all categories.
+  global_trend_rank Int?
+  
+  /// Trend score from the previous calculation period.
+  previous_trend_score Float?
+  
+  /// Start timestamp of the trend calculation period.
+  trend_period_start DateTime
+  
+  /// End timestamp of the trend calculation period.
+  trend_period_end DateTime
+  
+  /// Timestamp when the trend record was created.
+  created_at DateTime
+  
+  /// Timestamp when the trend record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  topic discussion_board_topics @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  
+  @@unique([topic_id, trend_period_start], map: "discussion_board_trending_topics_topic_id_trend_period_5afb2d33")
+  @@index([trend_score])
+  @@index([trend_direction])
+  @@index([trend_period_start, trend_period_end], map: "discussion_board_trending_topics_trend_period_start_tr_f448ddac")
+  @@index([category_trend_rank])
+  @@index([global_trend_rank])
+}

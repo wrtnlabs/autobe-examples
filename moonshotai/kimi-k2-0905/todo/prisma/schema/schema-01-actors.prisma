@@ -1,0 +1,187 @@
+/// Guest users represent unauthenticated visitors who can only view
+/// demonstration todos. These users have read-only access to sample content
+/// to understand application functionality without requiring registration or
+/// personal data collection.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique session identifier for tracking guest browsing activity.
+  session_identifier String
+  
+  /// Timestamp of the guest's last activity for session management.
+  last_activity_at DateTime
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo_todos todo_todos[]
+}
+
+/// Member users are authenticated users with full CRUD access to their
+/// personal todo collections. These users can create, read, update, and
+/// delete their own todo items while maintaining complete privacy and data
+/// ownership.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_member {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's email address for authentication and account identification.
+  email String
+  
+  /// Securely hashed password for JWT authentication.
+  password_hash String
+  
+  /// Current JWT session token for persistent authentication.
+  session_token String?
+  
+  /// JWT session token expiration timestamp.
+  session_expires_at DateTime?
+  
+  /// User role for access control (member/admin).
+  role String
+  
+  /// Timestamp of the member's last successful login for session tracking.
+  last_login_at DateTime?
+  
+  /// Number of consecutive failed login attempts for security monitoring.
+  login_attempts Int
+  
+  /// Account lockout timestamp after excessive failed login attempts.
+  locked_until DateTime?
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp of the last account modification.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo_todos todo_todos[]
+  todo_sessions todo_sessions[]
+  
+  @@unique([email])
+  @@index([session_token])
+  @@index([last_login_at])
+}
+
+/// Core todo items representing tasks that users need to complete. Supports
+/// the complete todo lifecycle from creation through completion with
+/// essential tracking fields.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member user who owns this todo. {@link todo_member.id}
+  member_id String
+  
+  /// Guest user viewing this demo todo. {@link todo_guest.id}
+  guest_id String?
+  
+  /// The primary task description using natural language. Supports up to 500
+  /// characters for comprehensive task descriptions.
+  title String
+  
+  /// Completion status indicating whether the task is finished. Defaults to
+  /// false for new todos.
+  completed Boolean
+  
+  /// Priority level for organization (Low/Medium/High). Defaults to Medium
+  /// when not specified.
+  priority String
+  
+  /// Timestamp recording when the todo was created. Automatically set by the
+  /// system and never editable.
+  created_at DateTime
+  
+  /// Timestamp recording the most recent change to the todo. Automatically
+  /// updated whenever any property changes.
+  updated_at DateTime
+  
+  /// Timestamp when the todo was marked as complete. Only set when completion
+  /// status changes to true.
+  completed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  owner todo_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  viewer todo_guest? @relation(fields: [guest_id], references: [id], onDelete: Cascade)
+  
+  @@index([guest_id])
+  
+  @@index([created_at])
+  @@index([member_id, created_at])
+  @@index([completed, member_id, created_at])
+}
+
+/// JWT session management for member authentication and secure access
+/// control. Manages active sessions and provides secure authentication
+/// tokens.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning member user. {@link todo_member.id}
+  member_id String
+  
+  /// JWT authentication token for secure session management.
+  jwt_token String
+  
+  /// Token expiration timestamp for session validity.
+  expires_at DateTime
+  
+  /// Last time this session token was used for authentication.
+  last_used_at DateTime
+  
+  /// IP address for session security tracking.
+  ip_address String?
+  
+  /// Browser user agent for session identification.
+  user_agent String?
+  
+  /// When the session was created.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member todo_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([jwt_token])
+  @@index([member_id, expires_at])
+  @@index([expires_at])
+  @@index([last_used_at])
+}

@@ -1,0 +1,136 @@
+/// Primary table for managing customer orders. This table captures all
+/// essential order information including customer details, order status, and
+/// total amount. It serves as the central entity for order processing and
+/// tracking.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who placed the order. {@link
+  /// shopping_mall_member.id}
+  shopping_mall_member_id String
+  
+  /// Unique order code for tracking and reference purposes.
+  code String
+  
+  /// Current status of the order (e.g., pending, processing, shipped,
+  /// delivered).
+  status String
+  
+  /// Total amount of the order including all items and taxes.
+  total_amount Float
+  
+  /// Shipping address for the order.
+  shipping_address String
+  
+  /// Payment method used for the order (e.g., credit card, PayPal).
+  payment_method String
+  
+  /// Timestamp when the order was created.
+  created_at DateTime
+  
+  /// Timestamp when the order was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the order was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member shopping_mall_member @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  shopping_order_snapshots shopping_order_snapshots[]
+  shopping_order_items shopping_order_items[]
+  shopping_coin_transactions shopping_coin_transactions[]
+  
+  @@unique([code])
+  @@index([shopping_mall_member_id, created_at])
+}
+
+/// Table for capturing historical states of orders for audit trails and
+/// version control. This table records all changes to order information over
+/// time, allowing for comprehensive tracking and analysis.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order being snapshotted. {@link shopping_orders.id}
+  shopping_order_id String
+  
+  /// Unique order code for tracking and reference purposes.
+  code String
+  
+  /// Status of the order at the time of the snapshot.
+  status String
+  
+  /// Total amount of the order including all items and taxes.
+  total_amount Float
+  
+  /// Shipping address for the order.
+  shipping_address String
+  
+  /// Payment method used for the order.
+  payment_method String
+  
+  /// Timestamp when the snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_id, created_at])
+}
+
+/// Table for managing items within each order. This table captures detailed
+/// information about each item in the order, including quantity, price, and
+/// product details.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order that contains this item. {@link shopping_orders.id}
+  shopping_order_id String
+  
+  /// Unique identifier for the product.
+  product_id String
+  
+  /// Quantity of the product ordered.
+  quantity Int
+  
+  /// Price of the product at the time of order.
+  price Float
+  
+  /// Timestamp when the order item was created.
+  created_at DateTime
+  
+  /// Timestamp when the order item was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_id])
+}

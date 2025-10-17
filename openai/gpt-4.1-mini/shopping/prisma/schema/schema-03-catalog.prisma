@@ -1,0 +1,144 @@
+/// Represents products listed by sellers on the shopping mall platform. Each
+/// product belongs to a category and has various SKUs representing different
+/// variants. Supports product lifecycle states and soft deletion. Includes
+/// timestamps for creation and updates.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The category to which this product belongs. {@link
+  /// shopping_mall_categories.id}.
+  shopping_mall_category_id String
+  
+  /// The seller who owns this product. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique business code identifying the product.
+  code String
+  
+  /// The display name of the product.
+  name String
+  
+  /// Detailed description of the product.
+  description String?
+  
+  /// The lifecycle state of the product, e.g., Draft, Active, Inactive.
+  status String
+  
+  /// Timestamp when the product was created.
+  created_at DateTime
+  
+  /// Timestamp when the product was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the product was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_skus shopping_mall_skus[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  
+  @@index([shopping_mall_seller_id])
+  
+  @@unique([code])
+  @@index([shopping_mall_category_id, status])
+}
+
+/// Represents product SKUs (stock keeping units) that specify variants such
+/// as color, size, and options for each product. SKUs track inventory
+/// quantities and pricing and have lifecycle states. SKUs belong to one
+/// product and are managed by sellers.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_skus {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product to which this SKU belongs. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Unique SKU code within the product.
+  sku_code String
+  
+  /// Retail price of this SKU.
+  price Float
+  
+  /// Weight of the SKU for shipping calculations.
+  weight Float?
+  
+  /// Lifecycle state of the SKU, e.g., Draft, Active, Inactive.
+  status String
+  
+  /// Timestamp when the SKU was created.
+  created_at DateTime
+  
+  /// Timestamp when the SKU was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the SKU was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory shopping_mall_inventory?
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@unique([shopping_mall_product_id, sku_code])
+  @@index([price, status])
+}
+
+/// Tracks real-time inventory levels for SKUs managed by sellers in the
+/// shopping mall platform. Each inventory record links to a SKU and records
+/// available stock quantity with timestamps for auditing inventory changes.
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The SKU that this inventory record refers to. {@link
+  /// shopping_mall_skus.id}.
+  shopping_mall_sku_id String
+  
+  /// Available stock quantity for this SKU.
+  quantity Int
+  
+  /// Timestamp when the inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when the inventory record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_sku_id])
+  
+  @@index([quantity])
+}

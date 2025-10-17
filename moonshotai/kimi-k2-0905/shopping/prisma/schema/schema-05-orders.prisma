@@ -1,0 +1,530 @@
+/// Order management system for multi-vendor marketplace transactions. Tracks
+/// customer purchases across multiple sellers with unified order experience
+/// while maintaining separate seller-specific fulfillment workflows.
+/// Supports complex order lifecycle from placement through delivery
+/// confirmation.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Purchasing customer's {@link shopping_mall_customers.id}
+  shopping_customer_id String
+  
+  /// Delivery address reference for order fulfillment routing
+  shipping_address_id String
+  
+  /// Billing address reference for payment and invoice processing
+  billing_address_id String
+  
+  /// Unique order identifier formatted as ORD-YYYYMMDD-NNNNNN for customer
+  /// reference
+  order_number String
+  
+  /// Current order status in lifecycle: confirmed, processing, ready_to_ship,
+  /// shipped, delivered, cancelled, returned
+  status String
+  
+  /// Business workflow status: pending_payment, paid, partial_refund,
+  /// fully_refunded, disputed
+  business_status String
+  
+  /// Total order value including all items, shipping, taxes, and fees
+  total_amount Float
+  
+  /// Transaction currency code (USD, EUR, etc.) for multi-currency support
+  currency String
+  
+  /// Sum of all item prices before shipping and taxes
+  subtotal Float
+  
+  /// Combined shipping costs across all sellers in the order
+  shipping_total Float
+  
+  /// Total tax amount calculated based on shipping destinations
+  tax_total Float
+  
+  /// Platform commission calculated from seller revenues
+  commission_total Float
+  
+  /// Total number of items across all order lines
+  item_count Int
+  
+  /// Number of distinct sellers fulfilling this order
+  seller_count Int
+  
+  /// Customer's selected payment method: credit_card, paypal, apple_pay,
+  /// google_pay
+  payment_method String
+  
+  /// Payment processing status: authorized, captured, failed, refunded
+  payment_status String
+  
+  /// Selected shipping speed: standard, expedited, express, same_day
+  shipping_method String
+  
+  /// Projected delivery date based on shipping method and destinations
+  estimated_delivery DateTime?
+  
+  /// Optional gift message for recipient when order contains gift items
+  gift_message String?
+  
+  /// Customer delivery instructions or order notes
+  special_instructions String?
+  
+  /// Order origination channel: web, mobile_app, api, admin
+  source_channel String
+  
+  /// Applied promotional code for discount tracking
+  coupon_code String?
+  
+  /// Marketing campaign tracking for attribution analysis
+  tracking_token String?
+  
+  /// Order placement timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for order cancellation or removal
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  shippingAddress shopping_mall_user_profiles @relation("shopping_mall_orders_of_shipping_address_id", fields: [shipping_address_id], references: [id], onDelete: Cascade)
+  billingAddress shopping_mall_user_profiles @relation("shopping_mall_orders_of_billing_address_id", fields: [billing_address_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_invoices shopping_mall_invoices?
+  shopping_mall_shipping_tracking shopping_mall_shipping_tracking[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  shopping_mall_customer_coupons shopping_mall_customer_coupons?
+  shopping_mall_earnings_history shopping_mall_earnings_history[]
+  shopping_mall_customer_inquiries shopping_mall_customer_inquiries[]
+  
+  @@index([shipping_address_id])
+  @@index([billing_address_id])
+  
+  @@unique([order_number])
+  @@unique([shopping_customer_id, order_number])
+  @@index([status, created_at])
+  @@index([business_status, updated_at])
+  @@index([payment_status, created_at])
+  @@index([estimated_delivery, status])
+  @@index([shopping_customer_id, created_at])
+  @@index([source_channel, created_at])
+}
+
+/// Individual line items within multi-vendor orders supporting commission
+/// calculations and seller-specific fulfillment workflows
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Selling vendor {@link shopping_mall_sellers.id}
+  shopping_seller_id String
+  
+  /// Product reference {@link shopping_mall_products.id}
+  shopping_product_id String
+  
+  /// Specific variant SKU {@link shopping_mall_product_variants.id}
+  shopping_product_variant_id String
+  
+  /// Number of units ordered for this item
+  quantity Int
+  
+  /// Price per unit at time of order
+  unit_price Float
+  
+  /// Total price for this line item (quantity * unit_price)
+  total_price Float
+  
+  /// Discount applied to this specific item
+  discount_amount Float
+  
+  /// Platform commission percentage for this item
+  commission_rate Float
+  
+  /// Calculated platform commission for this item
+  commission_amount Float
+  
+  /// Net revenue to seller after commission deduction
+  seller_revenue Float
+  
+  /// Allocated shipping cost for this item
+  shipping_cost Float
+  
+  /// Calculated tax for this line item
+  tax_amount Float
+  
+  /// SKU code at time of order for audit trail
+  item_sku String
+  
+  /// Product name snapshot at order time
+  item_name String
+  
+  /// Variant options selected (color, size, etc.)
+  variant_description String?
+  
+  /// Whether this item requires gift wrapping
+  gift_wrap Boolean
+  
+  /// Custom text or personalization instructions
+  personalization String?
+  
+  /// Item-level fulfillment: pending, processing, shipped, delivered
+  fulfillment_status String
+  
+  /// Return processing: none, requested, approved, received, refunded
+  return_status String
+  
+  /// Item creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_shipping_tracking shopping_mall_shipping_tracking[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  
+  @@unique([shopping_mall_order_id, shopping_product_variant_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_825e9aaf")
+  @@index([shopping_product_variant_id])
+  @@index([shopping_seller_id, fulfillment_status], map: "shopping_mall_order_items_shopping_seller_id_fulfillme_4ce3bd59")
+  @@index([shopping_product_id, created_at])
+  @@index([fulfillment_status, updated_at])
+  @@index([return_status, updated_at])
+}
+
+/// Historical record of all order status changes creating comprehensive
+/// audit trail for customer service, dispute resolution, and operational
+/// analysis. Tracks complete lifecycle with timestamps and actor
+/// identification.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_status_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related order {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// User who made the change (customer, seller, admin, system)
+  actor_id String?
+  
+  /// Seller actor when change initiated by vendor {@link
+  /// shopping_mall_sellers.id}
+  actor_seller_id String?
+  
+  /// Order status before this change
+  previous_status String
+  
+  /// Order status after this change
+  new_status String
+  
+  /// Business workflow status before change
+  previous_business_status String?
+  
+  /// Business workflow status after change
+  new_business_status String?
+  
+  /// Detailed explanation for status change
+  reason String?
+  
+  /// Timestamp when the status change was recorded
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  actor shopping_mall_customers? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  actorSeller shopping_mall_sellers? @relation(fields: [actor_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_id])
+  @@index([actor_seller_id])
+  
+  @@index([shopping_mall_order_id])
+}
+
+/// Billing documents for orders supporting payment reconciliation, tax
+/// reporting, and financial audit requirements. Links orders to payment
+/// processing and provides comprehensive billing history.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_invoices {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related order {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Seller for this invoice portion {@link shopping_mall_sellers.id}
+  shopping_seller_id String?
+  
+  /// Unique invoice identifier for accounting and tax purposes
+  invoice_number String
+  
+  /// Invoice category: customer_invoice, seller_statement, commission_invoice,
+  /// refund_invoice
+  invoice_type String
+  
+  /// Invoice status: draft, issued, paid, overdue, cancelled
+  status String
+  
+  /// Invoice subtotal before taxes and fees
+  subtotal Float
+  
+  /// Calculated tax amount for this invoice
+  tax_amount Float
+  
+  /// Total invoice amount including taxes
+  total_amount Float
+  
+  /// Invoice currency matching order currency
+  currency String
+  
+  /// Payment due date for this invoice
+  due_date DateTime?
+  
+  /// Actual payment receipt date
+  paid_date DateTime?
+  
+  /// Payment processor transaction reference
+  payment_reference String?
+  
+  /// Tax calculation method used: destination_based, origin_based, exempt
+  tax_calculation_method String
+  
+  /// Invoice creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_refunds shopping_mall_refunds[]
+  
+  @@unique([shopping_mall_order_id])
+  
+  @@unique([invoice_number])
+  @@index([invoice_type, status])
+  @@index([shopping_seller_id, status])
+  @@index([due_date, status])
+  @@index([paid_date, created_at])
+}
+
+/// Logistics tracking information for order shipments supporting multiple
+/// carriers, delivery methods, and real-time status updates. Integrates with
+/// carrier systems for comprehensive delivery management.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_tracking {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Shipping seller {@link shopping_mall_sellers.id}
+  shopping_seller_id String
+  
+  /// Specific items in this shipment {@link shopping_mall_order_items.id}
+  shopping_mall_order_item_id String?
+  
+  /// Shipping carrier: fedex, ups, usps, dhl, amazon_logistics
+  carrier String
+  
+  /// Carrier tracking number for external tracking
+  tracking_number String
+  
+  /// Shipping service: ground, expedited, express, overnight, same_day
+  service_level String
+  
+  /// Shipping status: label_created, picked_up, in_transit, out_for_delivery,
+  /// delivered, failed_delivery
+  status String
+  
+  /// Date package shipped from seller
+  shipped_date DateTime?
+  
+  /// Carrier estimated delivery date
+  estimated_delivery DateTime?
+  
+  /// Confirmed delivery date and time
+  actual_delivery DateTime?
+  
+  /// Actual shipping cost charged to customer
+  shipping_cost Float
+  
+  /// Package weight in pounds for shipping calculations
+  package_weight Float?
+  
+  /// Package dimensions LxWxH in inches
+  package_dimensions String?
+  
+  /// Shipping origin ZIP code
+  origin_zip String
+  
+  /// Delivery destination ZIP code
+  destination_zip String
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_order_item_id], map: "shopping_mall_shipping_tracking_shopping_mall_order_it_db869aa1")
+  
+  @@unique([carrier, tracking_number])
+  @@index([shopping_seller_id, status])
+  @@index([tracking_number, status])
+  @@index([status, estimated_delivery])
+  @@index([actual_delivery])
+}
+
+/// Refund processing system for returns, cancellations, and dispute
+/// resolution. Manages financial reconciliation across sellers and platform
+/// while maintaining comprehensive audit trail for accounting and
+/// compliance.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original order {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Specific item being refunded {@link shopping_mall_order_items.id}
+  shopping_mall_order_item_id String?
+  
+  /// Seller responsible for refund {@link shopping_mall_sellers.id}
+  shopping_seller_id String
+  
+  /// Related invoice for financial reconciliation {@link
+  /// shopping_mall_invoices.id}
+  invoice_id String?
+  
+  /// Unique refund identifier for tracking and accounting
+  refund_number String
+  
+  /// Refund reason: return, cancellation, damaged, defective,
+  /// dispute_resolution
+  refund_type String
+  
+  /// Refund status: requested, approved, processing, completed, rejected
+  status String
+  
+  /// Original refund amount requested by customer
+  requested_amount Float
+  
+  /// Final approved refund amount after review
+  approved_amount Float
+  
+  /// Refund currency matching original order currency
+  currency String
+  
+  /// Detailed explanation of refund request
+  reason String
+  
+  /// Portion of refund borne by seller (0-100%)
+  seller_responsibility Float
+  
+  /// Portion of refund borne by platform (0-100%)
+  platform_responsibility Float
+  
+  /// Non-refundable processing fee amount
+  processing_fee Float
+  
+  /// Restocking fee deducted from refund
+  restocking_fee Float?
+  
+  /// Cost of return shipping if applicable
+  return_shipping_cost Float?
+  
+  /// Refund processed to: original_payment, store_credit, alternate_method
+  refund_method String
+  
+  /// Date refund was processed and funds transferred
+  processed_date DateTime?
+  
+  /// Estimated refund processing completion date
+  expected_date DateTime?
+  
+  /// Refund request timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  invoice shopping_mall_invoices? @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_order_item_id])
+  @@index([invoice_id])
+  
+  @@unique([refund_number])
+  @@index([refund_type, status])
+  @@index([shopping_seller_id, status])
+  @@index([status, processed_date])
+  @@index([refund_method, expected_date])
+}

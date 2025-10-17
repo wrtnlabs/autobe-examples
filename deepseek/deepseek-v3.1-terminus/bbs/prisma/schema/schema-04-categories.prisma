@@ -1,0 +1,216 @@
+/// Main category table for organizing economic and political discussions.
+/// Supports hierarchical structure and content categorization. Categories
+/// can have parent-child relationships for organizational hierarchy.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category reference for hierarchical organization. {@link
+  /// discussion_board_categories.id}.
+  parent_id String?
+  
+  /// Category name display for users. Must be unique within the same hierarchy
+  /// level.
+  name String
+  
+  /// URL-friendly category identifier for routing and SEO purposes.
+  slug String
+  
+  /// Detailed explanation of category purpose and content scope.
+  description String?
+  
+  /// Numerical ordering for category display in user interface.
+  display_order Int
+  
+  /// Category activation status for content filtering and display control.
+  is_active Boolean
+  
+  /// Timestamp when category was initially created.
+  created_at DateTime
+  
+  /// Timestamp when category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when category was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent discussion_board_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_posts discussion_board_posts[]
+  recursive discussion_board_categories[] @relation("recursive")
+  discussion_board_category_hierarchies_of_parent_category_id discussion_board_category_hierarchies[] @relation("discussion_board_category_hierarchies_of_parent_category_id")
+  discussion_board_category_hierarchies_of_child_category_id discussion_board_category_hierarchies[] @relation("discussion_board_category_hierarchies_of_child_category_id")
+  discussion_board_category_moderators discussion_board_category_moderators[]
+  discussion_board_topic_tags discussion_board_topic_tags[]
+  discussion_board_content_performance discussion_board_content_performance[]
+  discussion_board_trending_topics discussion_board_trending_topics[]
+  
+  @@unique([parent_id, name])
+  @@unique([slug])
+  @@index([display_order])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Hierarchical relationships between categories for organizing content in
+/// tree structures. Supports unlimited nesting levels with proper
+/// parent-child relationships.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_category_hierarchies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to parent category in hierarchy. {@link
+  /// discussion_board_categories.id}.
+  parent_category_id String
+  
+  /// Reference to child category in hierarchy. {@link
+  /// discussion_board_categories.id}.
+  child_category_id String
+  
+  /// Depth level in category tree for organizational purposes.
+  hierarchy_level Int
+  
+  /// Timestamp when hierarchy relationship was established.
+  created_at DateTime
+  
+  /// Timestamp when hierarchy relationship was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when hierarchy was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parentCategory discussion_board_categories @relation("discussion_board_category_hierarchies_of_parent_category_id", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  childCategory discussion_board_categories @relation("discussion_board_category_hierarchies_of_child_category_id", fields: [child_category_id], references: [id], onDelete: Cascade)
+  
+  @@index([child_category_id])
+  
+  @@unique([parent_category_id, child_category_id], map: "discussion_board_category_hierarchies_parent_category__77d79ef0")
+  @@index([hierarchy_level])
+  @@index([created_at])
+}
+
+/// Assignment of moderators to specific categories for specialized content
+/// management. Moderators have authority within their assigned categories
+/// only.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_category_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to category being moderated. {@link
+  /// discussion_board_categories.id}.
+  category_id String
+  
+  /// Reference to user with moderator privileges. {@link
+  /// discussion_board_moderators.id}.
+  moderator_id String
+  
+  /// Timestamp when moderator was assigned to category.
+  assigned_at DateTime
+  
+  /// Specific moderation permissions granted for this category assignment.
+  permissions_level String
+  
+  /// Assignment activation status for category moderation.
+  is_active Boolean
+  
+  /// Timestamp when moderator assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when assignment details were last modified.
+  updated_at DateTime
+  
+  /// Timestamp when assignment was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id])
+  
+  @@unique([category_id, moderator_id], map: "discussion_board_category_moderators_category_id_moder_8a76bb8d")
+  @@index([is_active])
+  @@index([assigned_at])
+  @@index([permissions_level])
+}
+
+/// Topic tags for categorizing and organizing discussion content. Tags
+/// provide additional classification beyond main categories for improved
+/// content discovery.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_topic_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Primary category association for tag organization. {@link
+  /// discussion_board_categories.id}.
+  category_id String?
+  
+  /// Tag name for content classification and search optimization.
+  name String
+  
+  /// URL-friendly tag identifier for routing and filtering purposes.
+  slug String
+  
+  /// Brief explanation of tag purpose and typical usage context.
+  description String?
+  
+  /// Number of times this tag has been applied to content.
+  usage_count Int
+  
+  /// Featured tag status for promoted content discovery.
+  is_featured Boolean
+  
+  /// Timestamp when tag was initially created.
+  created_at DateTime
+  
+  /// Timestamp when tag was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when tag was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories? @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_trending_topics discussion_board_trending_topics[]
+  
+  @@unique([slug])
+  @@unique([category_id, name])
+  @@index([usage_count])
+  @@index([is_featured])
+  @@index([created_at])
+}

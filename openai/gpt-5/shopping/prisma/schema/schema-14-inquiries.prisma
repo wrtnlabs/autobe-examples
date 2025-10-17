@@ -1,0 +1,272 @@
+/// Support case master record for customer/seller inquiries and operational
+/// issues. Provides routing (status, priority, category), SLA (sla_due_at),
+/// assignment, and relationships to customer/seller identities, related
+/// orders and shipments. Designed for independent search, filtering, and
+/// recent-activity sorting via last_event_at. Timeline events, notes, and
+/// attachments reference this parent.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_cases {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer subject's {@link shopping_mall_users.id} when applicable.
+  customer_user_id String?
+  
+  /// Seller subject's {@link shopping_mall_users.id} when the case concerns a
+  /// seller.
+  seller_user_id String?
+  
+  /// Related order's {@link shopping_mall_orders.id} if the case concerns a
+  /// specific order.
+  order_id String?
+  
+  /// Related shipment's {@link shopping_mall_shipments.id} if fulfillment is
+  /// in scope.
+  shipment_id String?
+  
+  /// Assignee staff's {@link shopping_mall_users.id} responsible for handling
+  /// the case.
+  assigned_to_user_id String?
+  
+  /// Immutable human-friendly case number (e.g., "CAS-YYYYMMDD-NNNNNN").
+  /// Unique across the platform.
+  case_number String
+  
+  /// Short subject/title summarizing the issue for search and list displays.
+  subject String
+  
+  /// Detailed issue description provided at intake. May contain PII; masking
+  /// is enforced at application layer.
+  description String?
+  
+  /// Workflow state (e.g., open, pending, on_hold, resolved, closed).
+  status String
+  
+  /// Business priority (e.g., low, medium, high, urgent) used for SLA routing.
+  priority String
+  
+  /// Business category/reason code (e.g., billing, fulfillment, product,
+  /// policy).
+  category String?
+  
+  /// Channel where the case originated: web, email, chat, phone, or system.
+  origin_channel String?
+  
+  /// Deadline for first response/next action per SLA policy.
+  sla_due_at DateTime?
+  
+  /// Timestamp when case was resolved/closed.
+  closed_at DateTime?
+  
+  /// Timestamp of the most recent timeline event to support recency sorting.
+  last_event_at DateTime?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when the case is logically removed from active
+  /// views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_users? @relation("shopping_mall_support_cases_of_customer_user_id", fields: [customer_user_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_users? @relation("shopping_mall_support_cases_of_seller_user_id", fields: [seller_user_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  shipment shopping_mall_shipments? @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  assignee shopping_mall_users? @relation("shopping_mall_support_cases_of_assigned_to_user_id", fields: [assigned_to_user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_support_case_events shopping_mall_support_case_events[]
+  shopping_mall_support_attachments shopping_mall_support_attachments[]
+  shopping_mall_support_notes shopping_mall_support_notes[]
+  
+  @@unique([case_number])
+  @@index([customer_user_id, created_at])
+  @@index([seller_user_id, created_at])
+  @@index([order_id, created_at])
+  @@index([shipment_id, created_at])
+  @@index([assigned_to_user_id, status, priority], map: "shopping_mall_support_cases_assigned_to_user_id_status_2c8f2bbb")
+  @@index([status, priority, created_at])
+  @@index([sla_due_at, priority])
+  @@index([last_event_at])
+}
+
+/// Timeline entries for a {@link shopping_mall_support_cases} capturing
+/// state changes, communications, and system actions. Each event records an
+/// actor (when applicable), type, visibility, and body. Used for audit
+/// trails and customer/staff-facing timelines.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_case_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged case's {@link shopping_mall_support_cases.id}.
+  shopping_mall_support_case_id String
+  
+  /// Actor's {@link shopping_mall_users.id} who performed the event. Null when
+  /// system-generated.
+  actor_user_id String?
+  
+  /// Business event type key (e.g., customer_message, staff_reply,
+  /// status_change, assignment_change, sla_breach).
+  event_type String
+  
+  /// Visibility scope string such as public, internal, or staff_only
+  /// controlling who can see the event.
+  visibility String
+  
+  /// Event content/body in plain text (masked/redacted where required).
+  body String?
+  
+  /// Timestamp representing when the event actually occurred (may differ from
+  /// persistence time).
+  occurred_at DateTime
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for redaction/removal from active views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  supportCase shopping_mall_support_cases @relation(fields: [shopping_mall_support_case_id], references: [id], onDelete: Cascade)
+  actor shopping_mall_users? @relation(fields: [actor_user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_support_attachments shopping_mall_support_attachments[]
+  
+  @@index([shopping_mall_support_case_id, created_at], map: "shopping_mall_support_case_events_shopping_mall_suppor_c03fb8b6")
+  @@index([actor_user_id, created_at])
+  @@index([event_type, created_at])
+}
+
+/// File attachments associated with support cases. Attachments are always
+/// tied to a parent {@link shopping_mall_support_cases} and may optionally
+/// reference a specific {@link shopping_mall_support_case_events} or {@link
+/// shopping_mall_support_notes}. Used for evidence, screenshots, invoices,
+/// or proofs.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent case's {@link shopping_mall_support_cases.id}.
+  shopping_mall_support_case_id String
+  
+  /// Optional related event's {@link shopping_mall_support_case_events.id}
+  /// when the file belongs to a specific timeline entry.
+  shopping_mall_support_case_event_id String?
+  
+  /// Optional related note's {@link shopping_mall_support_notes.id} when the
+  /// file belongs to a case note.
+  shopping_mall_support_note_id String?
+  
+  /// Uploader's {@link shopping_mall_users.id} (customer, seller, or staff).
+  uploaded_by_user_id String
+  
+  /// Original file name as provided by the uploader.
+  file_name String
+  
+  /// URI to the stored file location.
+  file_uri String
+  
+  /// MIME content type of the uploaded file.
+  content_type String
+  
+  /// File size in bytes for validation and storage accounting.
+  file_size Int
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when attachment is removed from active views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  supportCase shopping_mall_support_cases @relation(fields: [shopping_mall_support_case_id], references: [id], onDelete: Cascade)
+  supportCaseEvent shopping_mall_support_case_events? @relation(fields: [shopping_mall_support_case_event_id], references: [id], onDelete: Cascade)
+  supportNote shopping_mall_support_notes? @relation(fields: [shopping_mall_support_note_id], references: [id], onDelete: Cascade)
+  uploadedBy shopping_mall_users @relation(fields: [uploaded_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_support_case_id, created_at], map: "shopping_mall_support_attachments_shopping_mall_suppor_b40dca03")
+  @@index([shopping_mall_support_case_event_id, created_at], map: "shopping_mall_support_attachments_shopping_mall_suppor_bf7ba0e7")
+  @@index([shopping_mall_support_note_id, created_at], map: "shopping_mall_support_attachments_shopping_mall_suppor_9d682dbc")
+  @@index([uploaded_by_user_id, created_at], map: "shopping_mall_support_attachments_uploaded_by_user_id__5817ca6e")
+}
+
+/// Free-form notes associated with a {@link shopping_mall_support_cases}.
+/// Typically internal or restricted-visibility staff notes; may also store
+/// limited audience messages per policy. Notes can carry attachments via
+/// {@link shopping_mall_support_attachments}.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_notes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent case's {@link shopping_mall_support_cases.id}.
+  shopping_mall_support_case_id String
+  
+  /// Author's {@link shopping_mall_users.id} who wrote the note.
+  author_user_id String
+  
+  /// Visibility scope string such as internal, staff_only, or limited_audience
+  /// per policy.
+  visibility String
+  
+  /// Note content in plain text (PII should be masked/redacted for staff views
+  /// by default).
+  body String
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for logical removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  supportCase shopping_mall_support_cases @relation(fields: [shopping_mall_support_case_id], references: [id], onDelete: Cascade)
+  author shopping_mall_users @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_support_attachments shopping_mall_support_attachments[]
+  
+  @@index([shopping_mall_support_case_id, created_at], map: "shopping_mall_support_notes_shopping_mall_support_case_61324e4e")
+  @@index([author_user_id, created_at])
+}

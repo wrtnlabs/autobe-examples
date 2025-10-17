@@ -1,0 +1,345 @@
+/// Tracks user voting activity on posts and comments within the community
+/// platform. Each vote record captures the voting user, target content, vote
+/// type (upvote/downvote), and timestamp. The system maintains vote
+/// integrity through user-content uniqueness constraints and supports
+/// real-time vote counting for content ranking algorithms.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_community_members.id}.
+  user_id String
+  
+  /// Target post that received the vote. {@link reddit_community_posts.id}.
+  post_id String?
+  
+  /// Target comment that received the vote. {@link
+  /// reddit_community_comments.id}.
+  comment_id String?
+  
+  /// Type of vote cast - either 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// Weight of the vote based on user karma and account factors.
+  vote_weight Float
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, post_id])
+  @@unique([user_id, comment_id])
+  @@index([post_id, created_at])
+  @@index([comment_id, created_at])
+  @@index([user_id, created_at])
+  @@index([vote_type, created_at])
+}
+
+/// Stores user comments within community discussions. Supports unlimited
+/// nesting through parent-child relationships and integrates with voting and
+/// karma systems. Each comment maintains its position in the thread
+/// hierarchy and supports rich text formatting through Markdown.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who authored the comment. {@link reddit_community_members.id}.
+  user_id String
+  
+  /// Post that the comment belongs to. {@link reddit_community_posts.id}.
+  post_id String
+  
+  /// Parent comment for nested replies. {@link reddit_community_comments.id}.
+  parent_comment_id String?
+  
+  /// Comment text content with Markdown formatting support.
+  content String
+  
+  /// Nesting depth of the comment in the thread hierarchy.
+  depth Int
+  
+  /// Indicates if the comment has been edited after creation.
+  is_edited Boolean
+  
+  /// Indicates if the comment has been soft deleted.
+  is_deleted Boolean
+  
+  /// Current vote score calculated from upvotes minus downvotes.
+  score Int
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parent reddit_community_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_votes reddit_community_votes[]
+  recursive reddit_community_comments[] @relation("recursive")
+  reddit_community_comment_threads_of_root_comment_id reddit_community_comment_threads[] @relation("reddit_community_comment_threads_of_root_comment_id")
+  reddit_community_comment_threads_of_comment_id reddit_community_comment_threads? @relation("reddit_community_comment_threads_of_comment_id")
+  reddit_community_karma_records reddit_community_karma_records[]
+  reddit_community_user_reactions reddit_community_user_reactions[]
+  reddit_community_saved_content reddit_community_saved_content[]
+  reddit_community_user_activities reddit_community_user_activities[]
+  
+  @@index([post_id, created_at])
+  @@index([parent_comment_id, depth])
+  @@index([user_id, created_at])
+  @@index([depth, created_at])
+  @@index([score, created_at])
+}
+
+/// Optimizes comment organization and retrieval by maintaining thread
+/// structures for efficient nested comment display. This subsidiary table
+/// supports rapid comment tree traversal and parent-child relationship
+/// management without recursive database queries.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Top-level comment that starts the thread. {@link
+  /// reddit_community_comments.id}.
+  root_comment_id String
+  
+  /// Comment belonging to this thread. {@link reddit_community_comments.id}.
+  comment_id String
+  
+  /// Post that contains this comment thread. {@link reddit_community_posts.id}.
+  post_id String
+  
+  /// Materialized path representing the comment's position in the thread.
+  thread_path String
+  
+  /// Number of descendant comments in this thread branch.
+  descendant_count Int
+  
+  /// Timestamp when the thread entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the thread entry was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  rootComment reddit_community_comments @relation("reddit_community_comment_threads_of_root_comment_id", fields: [root_comment_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments @relation("reddit_community_comment_threads_of_comment_id", fields: [comment_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([comment_id])
+  @@index([post_id, thread_path])
+  @@index([root_comment_id, descendant_count], map: "reddit_community_comment_threads_root_comment_id_desce_7088283c")
+  @@index([thread_path])
+}
+
+/// Tracks karma changes for users based on voting activity and content
+/// interactions. Each record represents a karma transaction with source
+/// context, amount, and timestamp. Used for user reputation calculation and
+/// voting weight adjustments.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_karma_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose karma is being updated. {@link reddit_community_members.id}.
+  user_id String
+  
+  /// Post that generated the karma change. {@link reddit_community_posts.id}.
+  source_post_id String?
+  
+  /// Comment that generated the karma change. {@link
+  /// reddit_community_comments.id}.
+  source_comment_id String?
+  
+  /// User who cast the vote that generated karma. {@link
+  /// reddit_community_members.id}.
+  voting_user_id String?
+  
+  /// Amount of karma gained or lost in this transaction.
+  karma_change Int
+  
+  /// Type of karma transaction - 'post', 'comment', or 'award'.
+  karma_type String
+  
+  /// Detailed reason for the karma change.
+  transaction_reason String
+  
+  /// User's total karma after this transaction.
+  current_total Int
+  
+  /// Timestamp when the karma transaction occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation("reddit_community_karma_records_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  sourcePost reddit_community_posts? @relation(fields: [source_post_id], references: [id], onDelete: Cascade)
+  sourceComment reddit_community_comments? @relation(fields: [source_comment_id], references: [id], onDelete: Cascade)
+  votingUser reddit_community_members? @relation("reddit_community_karma_records_of_voting_user_id", fields: [voting_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([voting_user_id])
+  
+  @@index([user_id, created_at])
+  @@index([karma_type, created_at])
+  @@index([source_post_id, created_at])
+  @@index([source_comment_id, created_at])
+}
+
+/// Captures diverse user reactions beyond simple voting, including awards,
+/// emoji reactions, and other engagement types. Supports rich interaction
+/// patterns and community-specific reaction systems.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_reactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the reaction. {@link reddit_community_members.id}.
+  user_id String
+  
+  /// Post that received the reaction. {@link reddit_community_posts.id}.
+  target_post_id String?
+  
+  /// Comment that received the reaction. {@link reddit_community_comments.id}.
+  target_comment_id String?
+  
+  /// Type of reaction performed - 'award', 'emoji', 'like', etc.
+  reaction_type String
+  
+  /// Specific value of the reaction (emoji character, award type).
+  reaction_value String
+  
+  /// Cost in karma or virtual currency for premium reactions.
+  reaction_cost Int?
+  
+  /// Indicates if the reaction is publicly visible.
+  is_visible Boolean
+  
+  /// Timestamp when the reaction was performed.
+  created_at DateTime
+  
+  /// Timestamp when the reaction was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the reaction was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  targetPost reddit_community_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment reddit_community_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, target_post_id, reaction_type], map: "reddit_community_user_reactions_user_id_target_post_id_778bd5fb")
+  @@unique([user_id, target_comment_id, reaction_type], map: "reddit_community_user_reactions_user_id_target_comment_b51b6a5b")
+  @@index([target_post_id, created_at])
+  @@index([target_comment_id, created_at], map: "reddit_community_user_reactions_target_comment_id_crea_35d4a48b")
+  @@index([user_id, created_at])
+  @@index([reaction_type, created_at])
+}
+
+/// Enables users to save posts and comments for later reference. Each saved
+/// item maintains user context, saving timestamp, and organizational
+/// metadata for personal content management.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_saved_content {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who saved the content. {@link reddit_community_members.id}.
+  user_id String
+  
+  /// Post that was saved. {@link reddit_community_posts.id}.
+  post_id String?
+  
+  /// Comment that was saved. {@link reddit_community_comments.id}.
+  comment_id String?
+  
+  /// User-defined category for organizing saved content.
+  category String?
+  
+  /// User notes attached to the saved content item.
+  notes String?
+  
+  /// Indicates if the saved item has been archived.
+  is_archived Boolean
+  
+  /// Timestamp when the content was saved.
+  created_at DateTime
+  
+  /// Timestamp when the saved item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the saved item was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, post_id])
+  @@unique([user_id, comment_id])
+  @@index([user_id, created_at])
+  @@index([category, created_at])
+  @@index([post_id, created_at])
+  @@index([comment_id, created_at])
+}

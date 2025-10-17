@@ -1,0 +1,72 @@
+/// Represents tasks in the todo list application. Each task has a title,
+/// description, priority, and deadline. Tasks are associated with users
+/// through the todo_list_users table.
+///
+/// @namespace Tasks
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who created this task. {@link todo_list_users.id}.
+  todo_list_user_id String
+  
+  /// The title of the task.
+  title String
+  
+  /// The description of the task.
+  description String
+  
+  /// The deadline for the task.
+  deadline DateTime?
+  
+  /// The timestamp when the task was created.
+  created_at DateTime
+  
+  /// The timestamp when the task was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  todo_list_task_priorities todo_list_task_priorities?
+  
+  @@index([todo_list_user_id])
+}
+
+/// Represents the priority levels for tasks in the todo list application.
+/// Each priority has a name and a description.
+///
+/// @namespace Tasks
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_task_priorities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The task associated with this priority. {@link todo_list_tasks.id}.
+  todo_list_task_id String
+  
+  /// The priority level of the task (Low, Medium, High).
+  priority_level String
+  
+  /// The timestamp when the priority was created.
+  created_at DateTime
+  
+  /// The timestamp when the priority was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  task todo_list_tasks @relation(fields: [todo_list_task_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_list_task_id])
+}

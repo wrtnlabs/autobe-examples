@@ -1,0 +1,469 @@
+/// Parent order entity representing the commercial contract created after
+/// successful authorization (or COD acceptance). Captures immutable order
+/// snapshot values (currency and monetary breakdown) and immutable
+/// shipping/billing address snapshots. Also links to buyer and the original
+/// address records for lineage only. Serves as the anchor for per-seller
+/// child orders {@link shopping_mall_seller_orders}, order line items {@link
+/// shopping_mall_order_items}, and status history {@link
+/// shopping_mall_order_status_history}. Supports fraud holds and split
+/// shipments through related subsystems.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional buyer user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String?
+  
+  /// Original shipping address record for lineage. {@link
+  /// shopping_mall_user_addresses.id}. Not used for rendering; use snapshot
+  /// fields.
+  shopping_mall_shipping_address_id String
+  
+  /// Original billing address record for lineage. {@link
+  /// shopping_mall_user_addresses.id}. Not used for rendering; use snapshot
+  /// fields.
+  shopping_mall_billing_address_id String?
+  
+  /// Immutable human-readable order number in format "ORD-YYYYMMDD-NNNNNN".
+  order_number String
+  
+  /// Current canonical order state (e.g., pending_confirmation, confirmed,
+  /// partially_shipped, shipped, partially_delivered, delivered, completed,
+  /// on_hold, under_review, canceled, refunded).
+  status String
+  
+  /// Optional workflow/business status (e.g., fraud_hold, payment_pending,
+  /// awaiting_acknowledgment).
+  business_status String?
+  
+  /// ISO 4217 currency code for monetary snapshot values (e.g., USD, KRW).
+  currency String
+  
+  /// Order subtotal at time of sale before discounts, taxes, shipping, and
+  /// duties (snapshot).
+  subtotal Float
+  
+  /// Total discounts applied at order time (snapshot).
+  discount_total Float
+  
+  /// Shipping charges at order time (snapshot).
+  shipping_total Float
+  
+  /// Total tax amount at order time across lines and shipping (snapshot).
+  tax_total Float
+  
+  /// Total duties/import fees when applicable (snapshot).
+  duty_total Float?
+  
+  /// Final order total at order time (subtotal − discounts + shipping + taxes
+  /// + duties). Snapshot value.
+  grand_total Float
+  
+  /// Legal time of sale at order creation (UTC).
+  placed_at DateTime
+  
+  /// Record creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Record last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (orders are never physically deleted).
+  deleted_at DateTime?
+  
+  /// Snapshot: Ship-to recipient name captured at order time (immutable).
+  shipping_recipient String
+  
+  /// Snapshot: Ship-to phone captured at order time (immutable).
+  shipping_phone String
+  
+  /// Snapshot: Ship-to address line 1 captured at order time (immutable).
+  shipping_address_line1 String
+  
+  /// Snapshot: Ship-to address line 2 captured at order time (immutable).
+  shipping_address_line2 String?
+  
+  /// Snapshot: Ship-to city captured at order time (immutable).
+  shipping_city String
+  
+  /// Snapshot: Ship-to region/province/state captured at order time
+  /// (immutable).
+  shipping_region String?
+  
+  /// Snapshot: Ship-to postal/ZIP captured at order time (immutable).
+  shipping_postal_code String
+  
+  /// Snapshot: Ship-to country code captured at order time (immutable).
+  shipping_country String
+  
+  /// Snapshot: Billing recipient name captured at order time (immutable).
+  billing_recipient String?
+  
+  /// Snapshot: Billing phone captured at order time (immutable).
+  billing_phone String?
+  
+  /// Snapshot: Billing address line 1 captured at order time (immutable).
+  billing_address_line1 String?
+  
+  /// Snapshot: Billing address line 2 captured at order time (immutable).
+  billing_address_line2 String?
+  
+  /// Snapshot: Billing city captured at order time (immutable).
+  billing_city String?
+  
+  /// Snapshot: Billing region/province/state captured at order time
+  /// (immutable).
+  billing_region String?
+  
+  /// Snapshot: Billing postal/ZIP captured at order time (immutable).
+  billing_postal_code String?
+  
+  /// Snapshot: Billing country code captured at order time (immutable).
+  billing_country String?
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users? @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  shippingAddress shopping_mall_user_addresses @relation("shopping_mall_orders_of_shopping_mall_shipping_address_id", fields: [shopping_mall_shipping_address_id], references: [id], onDelete: Cascade)
+  billingAddress shopping_mall_user_addresses? @relation("shopping_mall_orders_of_shopping_mall_billing_address_id", fields: [shopping_mall_billing_address_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_coupon_redemptions shopping_mall_coupon_redemptions[]
+  shopping_mall_promotion_applications shopping_mall_promotion_applications[]
+  shopping_mall_seller_orders shopping_mall_seller_orders[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_payments shopping_mall_payments?
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_cancellation_requests shopping_mall_cancellation_requests[]
+  shopping_mall_return_requests shopping_mall_return_requests[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_seller_ledgers shopping_mall_seller_ledgers[]
+  shopping_mall_reserves shopping_mall_reserves[]
+  shopping_mall_fees shopping_mall_fees[]
+  shopping_mall_chargebacks shopping_mall_chargebacks[]
+  shopping_mall_support_cases shopping_mall_support_cases[]
+  
+  @@index([shopping_mall_shipping_address_id])
+  @@index([shopping_mall_billing_address_id])
+  
+  @@unique([order_number])
+  @@index([shopping_mall_user_id, created_at])
+  @@index([created_at])
+}
+
+/// Child order per seller/store to enable split fulfillment, partial
+/// captures, and per-seller KPIs. Uniquely tied to a parent {@link
+/// shopping_mall_orders} and owning {@link shopping_mall_stores}. Holds
+/// monetary snapshots required for reconciliation to the parent order.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order reference. Target model's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Owning store reference for this seller order. Target model's {@link
+  /// shopping_mall_stores.id}
+  shopping_mall_store_id String
+  
+  /// Unique seller-facing order identifier, often derived from parent order
+  /// number with a suffix.
+  seller_order_number String
+  
+  /// Current seller order state aligned with fulfillment (e.g., awaiting_ack,
+  /// ready_to_ship, in_transit, delivered, exception).
+  status String
+  
+  /// ISO 4217 currency code for monetary snapshot values (e.g., USD, KRW).
+  currency String
+  
+  /// Sum of line item base amounts at creation for this seller order.
+  subtotal Float
+  
+  /// Total discounts applied to items in this seller order.
+  discount_total Float
+  
+  /// Shipping charges attributable to this seller order.
+  shipping_total Float
+  
+  /// Tax amount attributable to this seller order.
+  tax_total Float
+  
+  /// Duties/import fees attributable when applicable.
+  duty_total Float?
+  
+  /// Payable amount for this seller order (subtotal − discounts + shipping +
+  /// taxes + duties).
+  grand_total Float
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for administrative purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parentOrder shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  store shopping_mall_stores @relation(fields: [shopping_mall_store_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@unique([seller_order_number])
+  @@unique([shopping_mall_order_id, shopping_mall_store_id], map: "shopping_mall_seller_orders_shopping_mall_order_id_sho_a3913c68")
+  @@index([shopping_mall_store_id, created_at], map: "shopping_mall_seller_orders_shopping_mall_store_id_cre_e29d0707")
+  @@index([created_at])
+}
+
+/// Order line items capturing immutable per-SKU snapshots at order time.
+/// Each item belongs to the parent {@link shopping_mall_orders} and a
+/// specific {@link shopping_mall_seller_orders} for split-seller
+/// reconciliation, and references the purchased {@link shopping_mall_skus}.
+/// Stores only raw snapshot values required for audit and refunds; no
+/// derived/calculated fields beyond the captured amounts themselves.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order reference. Target model's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Owning seller order reference for reconciliation. Target model's {@link
+  /// shopping_mall_seller_orders.id}
+  shopping_mall_seller_order_id String
+  
+  /// Purchased SKU reference. Target model's {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Line item position within the parent order; used for deterministic
+  /// ordering.
+  line_position Int
+  
+  /// Snapshot of the product name at the time of purchase (buyer-visible).
+  product_name String
+  
+  /// Snapshot of the SKU/variant display name if distinct from product name.
+  sku_name String?
+  
+  /// Human-readable summary of selected option values (e.g., Color: Red; Size:
+  /// M).
+  option_summary String?
+  
+  /// Ordered quantity for the SKU.
+  quantity Int
+  
+  /// Base unit price at order time for the SKU.
+  unit_price Float
+  
+  /// Discount amount per unit applied at order time.
+  unit_discount Float
+  
+  /// Tax amount per unit at order time.
+  unit_tax Float
+  
+  /// Line subtotal at order time before discounts and taxes (recorded as
+  /// snapshot).
+  line_subtotal Float
+  
+  /// Total discount amount applied to this line at order time (snapshot).
+  line_discount_total Float
+  
+  /// Total tax amount allocated to this line at order time (snapshot).
+  line_tax_total Float
+  
+  /// Final line total after discounts and taxes at order time (snapshot).
+  line_grand_total Float
+  
+  /// ISO 4217 currency code for line-level snapshot values.
+  currency String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for administrative purposes (line items are
+  /// rarely deleted).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  sellerOrder shopping_mall_seller_orders @relation(fields: [shopping_mall_seller_order_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_allocations shopping_mall_inventory_allocations[]
+  shopping_mall_promotion_applications shopping_mall_promotion_applications[]
+  shopping_mall_order_item_allocations shopping_mall_order_item_allocations[]
+  shopping_mall_shipment_items shopping_mall_shipment_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_return_items shopping_mall_return_items[]
+  shopping_mall_refund_items shopping_mall_refund_items[]
+  
+  @@unique([shopping_mall_order_id, line_position], map: "shopping_mall_order_items_shopping_mall_order_id_line__1c9dc127")
+  @@index([shopping_mall_seller_order_id, created_at], map: "shopping_mall_order_items_shopping_mall_seller_order_i_888dc57c")
+  @@index([shopping_mall_sku_id, shopping_mall_order_id], map: "shopping_mall_order_items_shopping_mall_sku_id_shoppin_0a80588b")
+  @@index([created_at])
+}
+
+/// Mapping table linking order line items to inventory allocation records
+/// for auditability of stock commitments. Maintains quantity allocated per
+/// allocation record. Supports reconciliation between sales and inventory
+/// subsystems. Related entities: {@link shopping_mall_order_items}, {@link
+/// shopping_mall_inventory_allocations}.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_allocations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Linked order item. Target model's {@link shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// Inventory allocation reference. Target model's {@link
+  /// shopping_mall_inventory_allocations.id}
+  shopping_mall_inventory_allocation_id String
+  
+  /// Quantity of the order item covered by this specific inventory allocation
+  /// link.
+  quantity Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  inventoryAllocation shopping_mall_inventory_allocations @relation(fields: [shopping_mall_inventory_allocation_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_inventory_allocation_id], map: "shopping_mall_order_item_allocations_shopping_mall_inv_93edae21")
+  
+  @@unique([shopping_mall_order_item_id, shopping_mall_inventory_allocation_id], map: "shopping_mall_order_item_allocations_shopping_mall_ord_650de408")
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_order_item_allocations_shopping_mall_ord_080a2e14")
+}
+
+/// Append-only snapshot of order status transitions for audit trails and
+/// customer/staff timelines. Records who/what/when/why for state changes.
+/// Related to {@link shopping_mall_orders}.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_status_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated order. Target model's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Actor responsible for the change (customer, seller, or staff) when known.
+  /// Target model's {@link shopping_mall_users.id}
+  triggered_by_user_id String?
+  
+  /// Canonical order status after the transition (e.g., confirmed,
+  /// partially_shipped, delivered, on_hold).
+  status String
+  
+  /// Optional business workflow state (e.g., fraud_hold,
+  /// awaiting_acknowledgment).
+  business_status String?
+  
+  /// Reason code or human-readable explanation for the transition.
+  reason String?
+  
+  /// Additional note or comment regarding the transition.
+  note String?
+  
+  /// Timestamp when the transition occurred (UTC).
+  recorded_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when an entry is administratively hidden (rare).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  triggeredBy shopping_mall_users? @relation(fields: [triggered_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([triggered_by_user_id])
+  
+  @@index([shopping_mall_order_id, recorded_at], map: "shopping_mall_order_status_history_shopping_mall_order_63943909")
+  @@index([created_at])
+}
+
+/// System-maintained daily sequence counter to generate deterministic order
+/// numbers (e.g., ORD-YYYYMMDD-NNNNNN). Used during order creation to
+/// allocate the next sequence for a given business day.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_sequences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Business date in YYYYMMDD format used for generating daily order
+  /// sequences.
+  sequence_yyyymmdd String
+  
+  /// Last consumed integer sequence value for the given date; next order
+  /// number uses last_value+1.
+  last_value Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([sequence_yyyymmdd])
+  @@index([updated_at])
+}

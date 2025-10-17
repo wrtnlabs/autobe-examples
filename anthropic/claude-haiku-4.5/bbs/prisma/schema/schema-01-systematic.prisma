@@ -1,0 +1,228 @@
+/// Central configuration repository for platform-wide system settings and
+/// configuration parameters. Stores system operation parameters including
+/// feature flags, email configuration, rate limiting thresholds, moderation
+/// settings, and performance parameters. Acts as the single source of truth
+/// for how the platform operates at the system level. Settings can be simple
+/// key-value pairs or complex structured JSON configurations. Modified
+/// infrequently but read frequently by multiple system components.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier key for the configuration setting (e.g.,
+  /// 'email_sender_address', 'max_discussions_per_day',
+  /// 'moderation_response_time_minutes'). Used to retrieve specific settings.
+  /// Must be unique across all settings to prevent duplicate configurations.
+  setting_key String
+  
+  /// The actual configuration value stored as string (converted to appropriate
+  /// type by application). Can store simple values (numbers, strings) or
+  /// complex JSON structures. Empty string or null indicates setting is
+  /// disabled or unconfigured.
+  setting_value String?
+  
+  /// Data type of the setting value to guide interpretation: 'string',
+  /// 'integer', 'boolean', 'json', 'uri'. Helps application layer deserialize
+  /// and validate the setting_value appropriately.
+  setting_type String
+  
+  /// Human-readable description explaining what this setting controls, valid
+  /// value ranges, and any dependencies on other settings. Helps
+  /// administrators understand the purpose and impact of each configuration
+  /// parameter.
+  description String?
+  
+  /// Logical grouping category for organizing settings in UI and configuration
+  /// panels: 'email', 'rate_limiting', 'moderation', 'performance',
+  /// 'features', 'security'. Enables administrators to view related settings
+  /// together.
+  category String?
+  
+  /// Whether this setting is currently active and should be applied by the
+  /// system. Allows disabling settings without deletion for audit trail
+  /// purposes.
+  is_active Boolean
+  
+  /// Timestamp when this setting was first created, recorded in UTC.
+  /// Establishes when the configuration was initially added to the system.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this setting's value or
+  /// properties. Updated whenever the setting is modified to track change
+  /// history.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([setting_key])
+  @@index([category])
+  @@index([is_active])
+  @@index([updated_at])
+}
+
+/// Defines the taxonomy of discussion categories that organize all
+/// discussions on the platform. Contains category metadata including name,
+/// description, display order, and visibility. Supports hierarchical
+/// category structure through optional parent_category_id for subcategories.
+/// Categories are the primary organizational structure that discussions are
+/// assigned to. Referenced by discussion management and moderation systems.
+/// Includes category-specific rules/guidelines and statistics about category
+/// activity.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Self-referencing foreign key to parent category for hierarchical category
+  /// structure. Enables subcategories under main categories. Null if this is a
+  /// top-level category with no parent. Example: 'International Trade' might
+  /// have parent_category_id pointing to 'Economics' category.
+  parent_category_id String?
+  
+  /// Human-readable name of the category displayed in the UI (e.g.,
+  /// 'Economics', 'Political Systems', 'International Trade'). Limited to 50
+  /// characters for display formatting. Must be unique to prevent duplicate
+  /// categories with same name.
+  category_name String
+  
+  /// Detailed description of the category purpose and scope, explaining what
+  /// topics belong in this category. Displayed to users when browsing
+  /// categories. Helps users understand appropriate content for each category
+  /// and what discussions to expect.
+  description String?
+  
+  /// Numeric order for displaying categories in UI listings. Lower numbers
+  /// appear first. Used for sorting categories in navigation menus and
+  /// category lists. Administrators can reorder by adjusting this value.
+  display_order Int
+  
+  /// URL to optional icon/image representing the category visually in UI. Used
+  /// in category badges, navigation, and listings. Supports visual
+  /// identification of categories at a glance.
+  icon_url String?
+  
+  /// Whether this category is currently active and accepting new discussions.
+  /// Allows archiving categories without deletion. When false, prevents
+  /// creation of new discussions in this category but keeps existing
+  /// discussions visible in read-only mode.
+  is_active Boolean
+  
+  /// Whether this category is visible to non-administrator users. False hides
+  /// category from category browser and discussion listings. Used for staging
+  /// categories before public launch or hiding deprecated categories.
+  is_visible Boolean
+  
+  /// Category-specific guidelines or rules in addition to general community
+  /// guidelines. Stored as JSON for structured enforcement. Example:
+  /// category-specific prohibited topics or content restrictions unique to
+  /// that category.
+  category_rules String?
+  
+  /// Cached count of active discussions in this category for performance
+  /// optimization. Incremented when discussion created, decremented when
+  /// deleted. Recalculated periodically from actual database records to
+  /// maintain accuracy.
+  discussion_count Int
+  
+  /// Timestamp when this category was created in the system, recorded in UTC.
+  /// Establishes when the category was added to the platform.
+  created_at DateTime
+  
+  /// Timestamp of most recent modification to category properties. Updated
+  /// when category metadata changes (name, description, rules, etc.).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parent discussion_board_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_categories[] @relation("recursive")
+  discussion_board_discussions discussion_board_discussions[]
+  
+  @@unique([category_name])
+  @@index([display_order])
+  @@index([is_active])
+  @@index([is_visible])
+  @@index([parent_category_id])
+}
+
+/// Versioned repository of community guidelines and policy documents
+/// governing user behavior and content standards. Maintains complete history
+/// of all guideline versions with effective dates and version numbers.
+/// Tracks when guidelines were created, updated, and became effective.
+/// Provides audit trail for compliance purposes and historical context for
+/// moderation decisions. Each version is a complete snapshot of guidelines
+/// at a point in time, allowing reference to guidelines that applied when a
+/// moderation decision was made.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_community_guidelines {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Sequential version number of the guidelines document (1, 2, 3, etc.).
+  /// Used to identify which version of guidelines was active at any given
+  /// time. Incremented each time guidelines are updated.
+  version_number Int
+  
+  /// Title of the guidelines document version (e.g., 'Community Guidelines
+  /// v2.1' or 'Community Guidelines v3.0'). Displayed in audit logs and
+  /// version history.
+  title String
+  
+  /// Complete text content of the community guidelines document. Includes all
+  /// rules, policies, prohibited content types, and enforcement procedures.
+  /// Stored as plain text or markdown for easy reading and versioning.
+  content String
+  
+  /// Timestamp when this version of guidelines became effective and should be
+  /// applied. Can be in the future for pre-scheduled guideline updates. Used
+  /// to determine which guidelines applied at time of user action for
+  /// moderation decisions.
+  effective_date DateTime
+  
+  /// Whether this is the current active version of guidelines. Only one
+  /// version should have is_current=true. Used for quick lookup of current
+  /// guidelines without querying by date.
+  is_current Boolean
+  
+  /// Username or ID of administrator who created this guidelines version.
+  /// Recorded for audit trail and accountability. Identifies who was
+  /// responsible for policy changes.
+  created_by String?
+  
+  /// Timestamp when this guidelines version was created/stored in the
+  /// database, recorded in UTC. Different from effective_date which indicates
+  /// when guidelines take effect.
+  created_at DateTime
+  
+  /// Timestamp of last modification to this guidelines version record.
+  /// Generally not updated after creation (guidelines are versioned, not
+  /// modified), but included for consistency.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([version_number])
+  @@index([is_current])
+  @@index([effective_date])
+  @@index([created_at])
+}

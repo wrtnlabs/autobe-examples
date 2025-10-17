@@ -1,0 +1,254 @@
+/// Primary post entity representing user-generated content within a specific
+/// community. Posts may contain text, links, or images, and are subject to
+/// both user and moderator actions (creation, editing, removal, reporting).
+/// Posts are associated with a creator, target community, timestamps,
+/// status, and soft deletion fields. Voting and karma are linked through
+/// related tables (not present here). Attachments and links are referenced
+/// via subsidiary tables. Supports moderation status for workflow
+/// visibility. Key relationships: {@link community_platform_members}, {@link
+/// community_platform_communities}, {@link community_platform_comments}.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creator member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Target community's {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Post title (text, max 300 characters, used for indexing and search).
+  title String
+  
+  /// Optional text content body for text posts (up to 40,000 characters).
+  content_body String?
+  
+  /// Indicates the type of post (text, link, or image). Must match one of
+  /// allowed enum values in business logic.
+  content_type String
+  
+  /// Moderation or publication status for workflow (e.g., pending, published,
+  /// removed, hidden, mod_queued).
+  status String
+  
+  /// Timestamp of post creation.
+  created_at DateTime
+  
+  /// Timestamp of last substantive update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (null if active, else deleted).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_images community_platform_post_images[]
+  community_platform_post_links community_platform_post_links[]
+  community_platform_comments community_platform_comments[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_controversial_scores community_platform_controversial_scores[]
+  community_platform_vote_logs community_platform_vote_logs[]
+  community_platform_reports community_platform_reports[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_karma_history community_platform_karma_history[]
+  
+  @@unique([community_platform_community_id, title], map: "community_platform_posts_community_platform_community__f0743395")
+  @@index([community_platform_member_id, created_at], map: "community_platform_posts_community_platform_member_id__94e4a784")
+  @@index([community_platform_community_id, created_at], map: "community_platform_posts_community_platform_community__4df12ea5")
+  @@index([status])
+}
+
+/// Subsidiary table storing post image attachments. References uploaded
+/// files, each image linked to one parent post. Enforces image ordering,
+/// file type/size controlled elsewhere. All images referenced are stored in
+/// {@link community_platform_file_uploads}. Attachments are managed through
+/// the parent post UI. Deletion cascades from posts. Used for rendering
+/// image posts and galleries.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Image file reference from {@link community_platform_file_uploads.id}.
+  community_platform_file_upload_id String
+  
+  /// Image order for post (1..N, per post constraint).
+  ordering Int
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  fileUpload community_platform_file_uploads @relation(fields: [community_platform_file_upload_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_file_upload_id], map: "community_platform_post_images_community_platform_file_98beadb9")
+  
+  @@unique([community_platform_post_id, ordering], map: "community_platform_post_images_community_platform_post_956e2919")
+  @@index([community_platform_post_id])
+}
+
+/// Subsidiary table mapping external hyperlink information for link posts.
+/// Links are 1:N related to parent post; additional link metadata (e.g.,
+/// preview, favicon) can be referenced here. All link validation and safety
+/// is handled at ingestion layer or application logic. Only used where post
+/// type is 'link'.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Validated external link URL (must be well-formed, non-empty, and subject
+  /// to platform policy).
+  url String
+  
+  /// Optional preview title extracted from target URL.
+  preview_title String?
+  
+  /// Optional preview description extracted from target URL.
+  preview_description String?
+  
+  /// Optional preview image/favico URI from target URL.
+  preview_image_uri String?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_post_id, url], map: "community_platform_post_links_community_platform_post__856d647f")
+  @@index([community_platform_post_id])
+}
+
+/// Primary table for user comments, supporting nested/threaded replies.
+/// Comments are associated with a post, an authoring member, and optionally
+/// a parent comment (self-referencing). Contains body text, timestamp,
+/// moderation status, and soft deletion. Each comment's nesting level and
+/// reply relationships are maintained. Voting and reporting are handled in
+/// separate tables. Key relationships: {@link community_platform_posts},
+/// {@link community_platform_members}, self-relation for nesting.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Authoring member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Optional parent comment reference for threading (self-relation to {@link
+  /// community_platform_comments.id}).
+  parent_id String?
+  
+  /// Comment body text (max 10,000 characters, validates text format).
+  body String
+  
+  /// Current depth in comment thread (root=1, limited per system config).
+  nesting_level Int
+  
+  /// Moderation/publication status (e.g., published, deleted, hidden,
+  /// mod_queued, removed).
+  status String
+  
+  /// Time of comment creation.
+  created_at DateTime
+  
+  /// Time of last edit or update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (null when active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_comment_edits community_platform_comment_edits[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_controversial_scores community_platform_controversial_scores[]
+  community_platform_vote_logs community_platform_vote_logs[]
+  community_platform_reports community_platform_reports[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_karma_history community_platform_karma_history[]
+  
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  @@index([community_platform_member_id, created_at], map: "community_platform_comments_community_platform_member__5ac10bc6")
+  @@index([parent_id])
+  @@index([status])
+}
+
+/// Snapshot table recording the full edit/overwrite history of comment text.
+/// Used for auditing, moderation review, rollback, and transparency to
+/// end-users. Each entry references the original comment and includes prior
+/// content body, who edited, and timestamps. This is an append-only table.
+/// Key relationships: {@link community_platform_comments}, {@link
+/// community_platform_members} (for editor).
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original comment's {@link community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Member who performed the edit, from {@link community_platform_members.id}.
+  edited_by_member_id String
+  
+  /// Previous body content before this edit (max 10,000 characters, immutable
+  /// once written in snapshot).
+  old_body String
+  
+  /// Timestamp when the edit was made (append-only).
+  edited_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  editor community_platform_members @relation(fields: [edited_by_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([edited_by_member_id])
+  
+  @@index([community_platform_comment_id, edited_at], map: "community_platform_comment_edits_community_platform_co_db64686f")
+}

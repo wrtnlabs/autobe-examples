@@ -1,0 +1,43 @@
+/// Todo task entities owned by authenticated users with full CRUD operations
+/// including creation, completion tracking, and permanent deletion.
+///
+/// @namespace Tasks
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owned user of this task {@link todo_list_users.id}.
+  todo_list_user_id String
+  
+  /// Task title with maximum 100 characters.
+  title String
+  
+  /// Optional task description limited to 500 characters.
+  description String?
+  
+  /// Task completion status.
+  completed Boolean
+  
+  /// Timestamp when task was marked as completed.
+  completed_at DateTime?
+  
+  /// Task creation timestamp.
+  created_at DateTime
+  
+  /// Task last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+  @@index([todo_list_user_id, completed])
+  @@index([created_at])
+  @@index([updated_at])
+}

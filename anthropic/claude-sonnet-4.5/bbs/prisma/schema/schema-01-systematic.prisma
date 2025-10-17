@@ -1,0 +1,88 @@
+/// Foundational organizational structure for classifying discussion topics
+/// into Economics and Politics domains. Categories provide the primary
+/// taxonomy for content organization, supporting hierarchical structures
+/// with parent-child relationships (e.g., Economics > Macroeconomics). This
+/// table enables users to browse organized discussions and administrators to
+/// manage the discussion board's organizational structure. Categories are
+/// independently managed entities that support the platform's dual focus on
+/// economic and political discourse.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for hierarchical organization. Null for top-level
+  /// categories (Economics, Politics), references parent for subcategories
+  /// (Macroeconomics references Economics). Enables multi-level category
+  /// taxonomy. {@link discussion_board_categories.id}
+  parent_category_id String?
+  
+  /// Category name displayed throughout the platform (e.g., 'Economics',
+  /// 'Macroeconomics', 'Politics', 'International Relations'). Must be unique
+  /// across all categories. Length: 3-50 characters per business rules. Used
+  /// in navigation menus, category selection, and content organization.
+  name String
+  
+  /// URL-friendly identifier derived from category name. Used for clean,
+  /// readable category URLs (e.g., '/category/macroeconomics'). Must be unique
+  /// for proper routing. Lowercase alphanumeric with hyphens.
+  slug String
+  
+  /// Detailed explanation of the category's purpose and scope. Helps users
+  /// understand what discussion topics belong in this category. Displayed on
+  /// category pages and selection interfaces. Optional but recommended for
+  /// user clarity.
+  description String?
+  
+  /// Controls the order in which categories appear in listings and navigation
+  /// menus. Lower numbers appear first, enabling administrators to prioritize
+  /// category display (e.g., Economics=1, Politics=2). Allows custom
+  /// organization beyond alphabetical sorting.
+  display_order Int
+  
+  /// Whether the category is currently visible and available for use. Inactive
+  /// categories (false) are hidden from category selection but existing topics
+  /// remain accessible. Allows temporary disabling without deletion. Default:
+  /// true.
+  is_active Boolean
+  
+  /// Number of discussion topics currently assigned to this category. Updated
+  /// when topics are created or deleted. Used for displaying category activity
+  /// levels and helping users identify active discussion areas. Maintained via
+  /// application logic or triggers. Default: 0.
+  topic_count Int
+  
+  /// Timestamp when the category was created. Used for audit trail and
+  /// tracking category establishment history. Automatically set on record
+  /// creation.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to category information (name,
+  /// description, status, etc.). Used for audit trail and change tracking.
+  /// Automatically updated on record modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp enabling category recovery. When set, category is
+  /// hidden from active use but preserved for audit trail and data integrity.
+  /// Null for active categories. Supports 30-day recovery window per platform
+  /// policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parentCategory discussion_board_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_categories[] @relation("recursive")
+  discussion_board_topics discussion_board_topics[]
+  
+  @@unique([name])
+  @@unique([slug])
+  @@index([parent_category_id, display_order], map: "discussion_board_categories_parent_category_id_display_76b4e4f9")
+  @@index([is_active, display_order])
+}

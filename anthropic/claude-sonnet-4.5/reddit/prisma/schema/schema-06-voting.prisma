@@ -1,0 +1,155 @@
+/// Individual user votes on posts enabling democratic content curation
+/// through upvotes and downvotes. Each record represents a single user's
+/// vote on a specific post, storing the vote direction (upvote +1 or
+/// downvote -1), timestamp, and anti-manipulation data. This table is the
+/// foundation for calculating post karma, vote scores, and detecting voting
+/// patterns for anti-manipulation measures. Users can change their votes,
+/// with updated_at tracking modifications. The unique constraint on (member,
+/// post) ensures one vote per user per post. IP address and user agent
+/// tracking enable detection of multiple accounts and vote manipulation per
+/// requirements section 8.3. Vote weight field supports trust-based vote
+/// impact adjustments per requirements section 8.6.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who cast this vote. {@link reddit_like_members.id}
+  reddit_like_member_id String
+  
+  /// The post being voted on. {@link reddit_like_posts.id}
+  reddit_like_post_id String
+  
+  /// The vote direction: 1 for upvote (positive endorsement), -1 for downvote
+  /// (negative signal). This value directly impacts the post's net vote score
+  /// and the post author's karma.
+  vote_value Int
+  
+  /// IP address of the voter at time of vote. Required per requirements
+  /// section 8.3 for detecting multiple accounts from same IP voting on same
+  /// content, implementing vote weight reduction for suspicious IPs, and
+  /// identifying vote brigading patterns. Used for anti-manipulation analysis
+  /// and security monitoring.
+  ip_address String?
+  
+  /// Browser user agent string of the voter's device. Required per
+  /// requirements section 8.3 for device fingerprinting to detect users
+  /// operating multiple accounts. Enables correlation of voting patterns
+  /// across devices for sockpuppet detection.
+  user_agent String?
+  
+  /// Calculated weight for this vote based on trust factors per requirements
+  /// section 8.6. Default value 1.0 for normal votes. Reduced values (0.5,
+  /// 0.25) for new accounts, suspicious patterns, or low-trust voters. May be
+  /// increased (rare) for highly trusted accounts. Used to calculate weighted
+  /// vote impact on scores and karma. Enables trust-based vote weighting
+  /// without deleting votes.
+  vote_weight Float?
+  
+  /// Timestamp when the vote was originally cast. Used for vote velocity
+  /// calculations, manipulation detection, engagement analytics, and hot
+  /// algorithm time decay factors.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified (vote value changed or weight
+  /// adjusted). Tracks vote changes for detecting rapid vote cycling
+  /// manipulation and vote editing patterns. Initially equals created_at.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  voter reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  post reddit_like_posts @relation(fields: [reddit_like_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_member_id, reddit_like_post_id], map: "reddit_like_post_votes_reddit_like_member_id_reddit_li_b4d98426")
+  @@index([reddit_like_post_id, vote_value])
+  @@index([reddit_like_member_id, created_at])
+  @@index([created_at])
+  @@index([reddit_like_post_id, created_at])
+  @@index([reddit_like_member_id, vote_value, created_at], map: "reddit_like_post_votes_reddit_like_member_id_vote_valu_b2911f38")
+  @@index([ip_address, created_at])
+}
+
+/// Individual user votes on comments enabling community-driven discussion
+/// quality assessment through upvotes and downvotes. Each record represents
+/// a single user's vote on a specific comment, storing the vote direction
+/// (upvote +1 or downvote -1), timestamp, and anti-manipulation data. This
+/// table powers comment karma calculation, comment sorting algorithms (best,
+/// top, controversial), and vote manipulation detection. Users can modify
+/// their votes, with updated_at tracking changes. The unique constraint on
+/// (member, comment) enforces one vote per user per comment. IP address and
+/// user agent tracking enable detection of coordinated voting and multiple
+/// account abuse per requirements section 8.3. Vote weight field supports
+/// trust-based vote impact adjustments per requirements section 8.6.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who cast this vote. {@link reddit_like_members.id}
+  reddit_like_member_id String
+  
+  /// The comment being voted on. {@link reddit_like_comments.id}
+  reddit_like_comment_id String
+  
+  /// The vote direction: 1 for upvote (positive endorsement), -1 for downvote
+  /// (negative signal). This value directly impacts the comment's net vote
+  /// score and the comment author's karma.
+  vote_value Int
+  
+  /// IP address of the voter at time of vote. Required per requirements
+  /// section 8.3 for detecting multiple accounts from same IP voting on same
+  /// content, implementing vote weight reduction for suspicious IPs, and
+  /// identifying coordinated comment vote brigading. Used for
+  /// anti-manipulation analysis and security monitoring.
+  ip_address String?
+  
+  /// Browser user agent string of the voter's device. Required per
+  /// requirements section 8.3 for device fingerprinting to detect users
+  /// operating multiple accounts for comment vote manipulation. Enables
+  /// correlation of voting patterns across devices for sockpuppet detection.
+  user_agent String?
+  
+  /// Calculated weight for this vote based on trust factors per requirements
+  /// section 8.6. Default value 1.0 for normal votes. Reduced values (0.5,
+  /// 0.25) for new accounts, suspicious patterns, or low-trust voters. May be
+  /// increased (rare) for highly trusted accounts. Used to calculate weighted
+  /// vote impact on comment scores and karma. Enables trust-based vote
+  /// weighting without deleting votes.
+  vote_weight Float?
+  
+  /// Timestamp when the vote was originally cast. Used for vote timing
+  /// analysis, manipulation detection patterns (rapid voting, coordinated
+  /// timing), engagement metrics, and comment sorting algorithm inputs.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified (vote value changed or weight
+  /// adjusted). Tracks vote changes for detecting rapid vote cycling
+  /// manipulation and vote editing patterns. Initially equals created_at.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  voter reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  comment reddit_like_comments @relation(fields: [reddit_like_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_member_id, reddit_like_comment_id], map: "reddit_like_comment_votes_reddit_like_member_id_reddit_09ffcce0")
+  @@index([reddit_like_comment_id, vote_value])
+  @@index([reddit_like_member_id, created_at])
+  @@index([created_at])
+  @@index([reddit_like_comment_id, created_at])
+  @@index([reddit_like_member_id, vote_value, created_at], map: "reddit_like_comment_votes_reddit_like_member_id_vote_v_ef4e1c87")
+  @@index([ip_address, created_at])
+}

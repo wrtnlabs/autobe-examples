@@ -1,0 +1,107 @@
+/// Product reviews submitted by customers who purchased the products.
+/// Includes rating, review text, moderation status, and links to related
+/// entities such as customers, products, and orders. Supports soft delete
+/// and audit timestamps. Independent user management and search capabilities
+/// are essential for customer feedback and trust building.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Reviewed product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Order that confirmed purchase for eligibility. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Review rating score between 1 and 5 indicating product satisfaction level.
+  rating Int
+  
+  /// Review content text provided by the customer.
+  review_text String?
+  
+  /// Moderation status of the review such as 'pending', 'approved', or
+  /// 'rejected'.
+  status String
+  
+  /// Timestamp when the review was created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp indicating when the review was deleted, if
+  /// applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_moderations shopping_mall_review_moderations[]
+  
+  @@index([shopping_mall_order_id])
+  
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id, shopping_mall_order_id], map: "shopping_mall_product_reviews_shopping_mall_customer_i_e15b9abb")
+  @@index([shopping_mall_product_id, status, created_at], map: "shopping_mall_product_reviews_shopping_mall_product_id_3d148458")
+}
+
+/// Administrative moderation records for product reviews, capturing the
+/// review reference, admin who performed the moderation, the moderation
+/// action taken, comments, and timestamps. Supports soft deletion and audit
+/// trails. Managed as a subsidiary entity belonging to product reviews.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_moderations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reviewed product review {@link shopping_mall_product_reviews.id} which is
+  /// moderated.
+  shopping_mall_product_review_id String
+  
+  /// Admin user who performed this moderation action {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admin_id String
+  
+  /// Moderation action taken such as 'approve', 'reject', or 'flag'.
+  action String
+  
+  /// Administrative comments or reasons related to the moderation action.
+  comment String?
+  
+  /// Timestamp when this moderation record was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderation record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if this moderation record was deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productReview shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_admin_id])
+  
+  @@index([shopping_mall_product_review_id, shopping_mall_admin_id], map: "shopping_mall_review_moderations_shopping_mall_product_13e912a0")
+}

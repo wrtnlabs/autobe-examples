@@ -1,0 +1,602 @@
+/// User-submitted reports for content that may violate community or platform
+/// rules. Supports both authenticated member reports and anonymous guest
+/// reports. Each report includes violation categories, additional context,
+/// and routing information for moderator review queues. Reports are
+/// permanent records and maintain reporter privacy while enabling moderation
+/// workflows. Ensures exactly one content type is reported per submission
+/// through application-level validation.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporter's member account. {@link reddit_like_members.id}. Nullable for
+  /// anonymous guest reports.
+  reporter_member_id String?
+  
+  /// Reported post if content type is post. {@link reddit_like_posts.id}.
+  /// Nullable when reporting comments. Must be non-null when
+  /// content_type='post'.
+  reported_post_id String?
+  
+  /// Reported comment if content type is comment. {@link
+  /// reddit_like_comments.id}. Nullable when reporting posts. Must be non-null
+  /// when content_type='comment'.
+  reported_comment_id String?
+  
+  /// Community where reported content exists, used for routing to correct
+  /// moderators. {@link reddit_like_communities.id}.
+  community_id String
+  
+  /// Type of content being reported: 'post' or 'comment'. Used for polymorphic
+  /// relationship handling and validation.
+  content_type String
+  
+  /// Comma-separated or JSON array of violation category names selected by
+  /// reporter (spam, harassment, hate speech, etc.). Supports multiple
+  /// categories per report.
+  violation_categories String
+  
+  /// Optional text provided by reporter explaining the violation (max 500
+  /// characters). Helps moderators understand reporter's perspective.
+  additional_context String?
+  
+  /// Report review status: 'pending', 'reviewed', or 'dismissed'. Tracks
+  /// progression through moderation queue.
+  status String
+  
+  /// IP address of reporter for abuse detection and anti-spam. Stored for
+  /// guest reports and logged for authenticated reports.
+  reporter_ip_address String?
+  
+  /// Whether this report was submitted by an unauthenticated guest user. True
+  /// when reporter_member_id is null, false when authenticated member
+  /// submitted the report. Simplifies guest vs member report filtering.
+  is_anonymous_report Boolean
+  
+  /// Whether report is flagged as high priority (5+ reports on same content
+  /// within 24 hours). Auto-calculated flag.
+  is_high_priority Boolean
+  
+  /// Timestamp when report was submitted. Used for queue ordering and SLA
+  /// tracking.
+  created_at DateTime
+  
+  /// Timestamp when report status was last updated (reviewed, dismissed).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reporter reddit_like_members? @relation(fields: [reporter_member_id], references: [id], onDelete: Cascade)
+  reportedPost reddit_like_posts? @relation(fields: [reported_post_id], references: [id], onDelete: Cascade)
+  reportedComment reddit_like_comments? @relation(fields: [reported_comment_id], references: [id], onDelete: Cascade)
+  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_moderation_actions reddit_like_moderation_actions[]
+  reddit_like_moderation_logs reddit_like_moderation_logs[]
+  
+  @@index([status, created_at])
+  @@index([community_id, status])
+  @@index([content_type, status])
+  @@index([reported_post_id])
+  @@index([reported_comment_id])
+  @@index([reporter_member_id, created_at])
+  @@index([is_high_priority, status, created_at], map: "reddit_like_content_reports_is_high_priority_status_cr_55c6757c")
+}
+
+/// Actions taken by moderators or administrators in response to content
+/// reports or proactive moderation. Records removal, approval, dismissal,
+/// and escalation decisions with full audit trail. Each action references
+/// the triggering report and includes detailed reasoning for transparency
+/// and appeal processes. Ensures exactly one content type and one actor type
+/// per action through application-level validation.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Content report that triggered this action. {@link
+  /// reddit_like_content_reports.id}. Nullable for proactive moderation
+  /// without reports.
+  report_id String?
+  
+  /// Moderator who performed this action. {@link reddit_like_moderators.id}.
+  /// Nullable when action taken by admin. Exactly one of moderator_id or
+  /// admin_id must be non-null.
+  moderator_id String?
+  
+  /// Administrator who performed this action. {@link reddit_like_admins.id}.
+  /// Nullable when action taken by moderator. Exactly one of moderator_id or
+  /// admin_id must be non-null.
+  admin_id String?
+  
+  /// Post affected by this action. {@link reddit_like_posts.id}. Nullable when
+  /// action affects comments. Must be non-null when content_type='post'.
+  affected_post_id String?
+  
+  /// Comment affected by this action. {@link reddit_like_comments.id}.
+  /// Nullable when action affects posts. Must be non-null when
+  /// content_type='comment'.
+  affected_comment_id String?
+  
+  /// Community where action was taken. {@link reddit_like_communities.id}.
+  /// Used for community-specific moderation scope.
+  community_id String
+  
+  /// Type of moderation action: 'remove', 'approve', 'dismiss_report',
+  /// 'escalate', 'restore', 'lock'. Defines what action was taken.
+  action_type String
+  
+  /// Type of affected content: 'post' or 'comment'. Used for polymorphic
+  /// relationship handling and validation.
+  content_type String
+  
+  /// For removal actions, specifies scope: 'community', 'platform', or 'spam'.
+  /// Nullable for non-removal actions.
+  removal_type String?
+  
+  /// Predefined reason category selected by moderator (rule violation, spam,
+  /// harassment, etc.). Required for all actions.
+  reason_category String
+  
+  /// Detailed explanation of why action was taken. Shown to content author in
+  /// notifications. Required for transparency.
+  reason_text String
+  
+  /// Private notes visible only to moderators and administrators. Used for
+  /// context sharing among moderation team.
+  internal_notes String?
+  
+  /// Action status: 'completed', 'reversed', 'appealed'. Tracks action
+  /// lifecycle including reversals.
+  status String
+  
+  /// Timestamp when moderation action was taken. Critical for audit trail and
+  /// SLA tracking.
+  created_at DateTime
+  
+  /// Timestamp when action status changed (reversed, appealed).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report reddit_like_content_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  moderator reddit_like_moderators? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  admin reddit_like_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  affectedPost reddit_like_posts? @relation(fields: [affected_post_id], references: [id], onDelete: Cascade)
+  affectedComment reddit_like_comments? @relation(fields: [affected_comment_id], references: [id], onDelete: Cascade)
+  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_moderation_appeals reddit_like_moderation_appeals[]
+  reddit_like_moderation_logs reddit_like_moderation_logs[]
+  
+  @@index([moderator_id, created_at])
+  @@index([admin_id, created_at])
+  @@index([community_id, created_at])
+  @@index([action_type, status])
+  @@index([content_type, status])
+  @@index([affected_post_id])
+  @@index([affected_comment_id])
+  @@index([report_id])
+}
+
+/// Community-level bans issued by community moderators preventing users from
+/// participating in specific communities. Supports both temporary and
+/// permanent bans with expiration tracking. Soft delete enabled to track ban
+/// history including lifted bans while maintaining audit trail. Active bans
+/// are enforced to prevent posting, commenting, and voting in the banned
+/// community.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who is banned from the community. {@link reddit_like_members.id}.
+  banned_member_id String
+  
+  /// Community from which member is banned. {@link reddit_like_communities.id}.
+  community_id String
+  
+  /// Moderator who issued the ban. {@link reddit_like_moderators.id}.
+  moderator_id String
+  
+  /// Predefined ban reason: 'repeated_violations', 'harassment', 'spam',
+  /// 'hate_speech', 'illegal_content', 'ban_evasion', 'other'. Required for
+  /// all bans.
+  ban_reason_category String
+  
+  /// Detailed explanation of ban reason shown to banned user. Required for
+  /// transparency and appeal context.
+  ban_reason_text String
+  
+  /// Private notes visible only to moderators. Used for documenting ban
+  /// history and context for moderation team.
+  internal_notes String?
+  
+  /// Whether ban is permanent (true) or temporary (false). Determines if
+  /// expiration_date is relevant.
+  is_permanent Boolean
+  
+  /// Date when temporary ban expires and user regains access. Null for
+  /// permanent bans. Auto-restore triggers on expiration.
+  expiration_date DateTime?
+  
+  /// Whether ban is currently active. False when lifted by moderators or
+  /// automatically expired. Used for quick active ban checks.
+  is_active Boolean
+  
+  /// Timestamp when ban was issued. Used for ban history tracking and duration
+  /// calculations.
+  created_at DateTime
+  
+  /// Timestamp when ban status changed (lifted, expired).
+  updated_at DateTime
+  
+  /// Soft delete timestamp when ban was lifted by moderators. Null for active
+  /// bans. Enables ban history tracking.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  bannedMember reddit_like_members @relation(fields: [banned_member_id], references: [id], onDelete: Cascade)
+  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  issuingModerator reddit_like_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_moderation_appeals reddit_like_moderation_appeals[]
+  reddit_like_moderation_logs reddit_like_moderation_logs[]
+  
+  @@unique([banned_member_id, community_id, is_active], map: "reddit_like_community_bans_banned_member_id_community__b7368e0f")
+  @@index([banned_member_id, is_active])
+  @@index([community_id, is_active, expiration_date], map: "reddit_like_community_bans_community_id_is_active_expi_df128fa6")
+  @@index([expiration_date, is_active])
+  @@index([moderator_id, created_at])
+}
+
+/// Platform-wide suspensions issued by administrators preventing users from
+/// accessing the entire platform. More severe than community bans, affecting
+/// all platform activity. Supports temporary and permanent suspensions with
+/// expiration tracking and soft delete for lifted suspensions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_platform_suspensions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who is suspended from the platform. {@link reddit_like_members.id}.
+  suspended_member_id String
+  
+  /// Administrator who issued the suspension. {@link reddit_like_admins.id}.
+  admin_id String
+  
+  /// Predefined suspension reason: 'repeated_violations', 'harassment',
+  /// 'spam', 'hate_speech', 'illegal_content', 'ban_evasion', 'other'.
+  /// Required for all suspensions.
+  suspension_reason_category String
+  
+  /// Detailed explanation of suspension reason shown to suspended user via
+  /// email. Required for transparency and appeal context.
+  suspension_reason_text String
+  
+  /// Private notes visible only to administrators. Used for documenting
+  /// suspension history and context for admin team.
+  internal_notes String?
+  
+  /// Whether suspension is permanent account termination (true) or temporary
+  /// (false). Determines if expiration_date is relevant.
+  is_permanent Boolean
+  
+  /// Date when temporary suspension expires and user regains access. Null for
+  /// permanent suspensions. Auto-restore triggers on expiration.
+  expiration_date DateTime?
+  
+  /// Whether suspension is currently active. False when lifted by admins or
+  /// automatically expired. Used for login access checks.
+  is_active Boolean
+  
+  /// Timestamp when suspension was issued. Used for suspension history
+  /// tracking and duration calculations.
+  created_at DateTime
+  
+  /// Timestamp when suspension status changed (lifted, expired).
+  updated_at DateTime
+  
+  /// Soft delete timestamp when suspension was lifted by administrators. Null
+  /// for active suspensions. Enables suspension history tracking.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  suspendedMember reddit_like_members @relation(fields: [suspended_member_id], references: [id], onDelete: Cascade)
+  issuingAdmin reddit_like_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_moderation_appeals reddit_like_moderation_appeals[]
+  reddit_like_moderation_logs reddit_like_moderation_logs[]
+  
+  @@unique([suspended_member_id, is_active], map: "reddit_like_platform_suspensions_suspended_member_id_i_524731e0")
+  @@index([suspended_member_id, created_at], map: "reddit_like_platform_suspensions_suspended_member_id_c_8a519ac1")
+  @@index([expiration_date, is_active])
+  @@index([admin_id, created_at])
+  @@index([is_active, is_permanent])
+}
+
+/// User-submitted appeals challenging moderation actions, bans, or
+/// suspensions. Enables due process by allowing users to contest decisions
+/// with written reasoning. Appeals are reviewed by moderators (for community
+/// actions) or administrators (for platform actions) with status tracking
+/// through resolution. Expected resolution timestamps enable SLA monitoring
+/// and automated reminder notifications.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_moderation_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who submitted the appeal. {@link reddit_like_members.id}.
+  appellant_member_id String
+  
+  /// Moderation action being appealed. {@link
+  /// reddit_like_moderation_actions.id}. Nullable when appealing
+  /// bans/suspensions directly.
+  moderation_action_id String?
+  
+  /// Community ban being appealed. {@link reddit_like_community_bans.id}.
+  /// Nullable when appealing other action types.
+  community_ban_id String?
+  
+  /// Platform suspension being appealed. {@link
+  /// reddit_like_platform_suspensions.id}. Nullable when appealing other
+  /// action types.
+  platform_suspension_id String?
+  
+  /// Moderator who reviewed this appeal. {@link reddit_like_moderators.id}.
+  /// Nullable when reviewed by admin or still pending.
+  reviewer_moderator_id String?
+  
+  /// Administrator who reviewed this appeal. {@link reddit_like_admins.id}.
+  /// Nullable when reviewed by moderator or still pending.
+  reviewer_admin_id String?
+  
+  /// Type of action being appealed: 'content_removal', 'community_ban',
+  /// 'platform_suspension'. Determines routing to moderators vs admins.
+  appeal_type String
+  
+  /// User's written explanation of why the action should be reversed (50-1000
+  /// characters). Required reasoning for all appeals.
+  appeal_text String
+  
+  /// Appeal status: 'pending', 'under_review', 'upheld', 'overturned',
+  /// 'reduced'. Tracks progression through review process.
+  status String
+  
+  /// Reviewer's written explanation of appeal decision. Required when status
+  /// changes from pending to final decision. Shown to appellant.
+  decision_explanation String?
+  
+  /// Whether appeal was escalated from moderator review to administrator
+  /// review. Used for tracking escalation workflow.
+  is_escalated Boolean
+  
+  /// Expected timestamp by which this appeal should be reviewed and decided.
+  /// Calculated based on appeal type: community appeals (2-3 days), platform
+  /// suspensions (5-7 days), escalated appeals (7-10 days). Used for SLA
+  /// monitoring and automated reminder notifications per R-APP-029 and
+  /// R-APP-030.
+  expected_resolution_at DateTime
+  
+  /// Timestamp when appeal was submitted. Used for SLA tracking and queue
+  /// ordering.
+  created_at DateTime
+  
+  /// Timestamp when appeal status changed (under review, decided).
+  updated_at DateTime
+  
+  /// Timestamp when appeal decision was finalized. Null for pending appeals.
+  /// Used for response time metrics.
+  reviewed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  appellant reddit_like_members @relation(fields: [appellant_member_id], references: [id], onDelete: Cascade)
+  moderationAction reddit_like_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  communityBan reddit_like_community_bans? @relation(fields: [community_ban_id], references: [id], onDelete: Cascade)
+  platformSuspension reddit_like_platform_suspensions? @relation(fields: [platform_suspension_id], references: [id], onDelete: Cascade)
+  reviewerModerator reddit_like_moderators? @relation(fields: [reviewer_moderator_id], references: [id], onDelete: Cascade)
+  reviewerAdmin reddit_like_admins? @relation(fields: [reviewer_admin_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_moderation_logs reddit_like_moderation_logs[]
+  
+  @@index([appellant_member_id, created_at], map: "reddit_like_moderation_appeals_appellant_member_id_cre_dc86855e")
+  @@index([status, created_at])
+  @@index([status, expected_resolution_at], map: "reddit_like_moderation_appeals_status_expected_resolut_c8400fb7")
+  @@index([reviewer_moderator_id, reviewed_at], map: "reddit_like_moderation_appeals_reviewer_moderator_id_r_8a02e2c1")
+  @@index([reviewer_admin_id, reviewed_at], map: "reddit_like_moderation_appeals_reviewer_admin_id_revie_339b5175")
+  @@index([moderation_action_id])
+  @@index([community_ban_id])
+  @@index([platform_suspension_id])
+  @@index([is_escalated, status])
+}
+
+/// Comprehensive immutable audit trail of all moderation system activities.
+/// Records every report submission, action taken, ban issued, appeal filed,
+/// and decision made with complete context. Snapshot-based table serving as
+/// permanent historical record for accountability, analytics, and legal
+/// compliance.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who performed the logged action (reporter, appellant). {@link
+  /// reddit_like_members.id}. Nullable for system-generated events.
+  actor_member_id String?
+  
+  /// Moderator who performed the logged action. {@link
+  /// reddit_like_moderators.id}. Nullable for member/admin/system actions.
+  actor_moderator_id String?
+  
+  /// Administrator who performed the logged action. {@link
+  /// reddit_like_admins.id}. Nullable for member/moderator/system actions.
+  actor_admin_id String?
+  
+  /// Content report associated with this log entry. {@link
+  /// reddit_like_content_reports.id}. Nullable for non-report events.
+  related_report_id String?
+  
+  /// Moderation action associated with this log entry. {@link
+  /// reddit_like_moderation_actions.id}. Nullable for non-action events.
+  related_action_id String?
+  
+  /// Community ban associated with this log entry. {@link
+  /// reddit_like_community_bans.id}. Nullable for non-ban events.
+  related_ban_id String?
+  
+  /// Platform suspension associated with this log entry. {@link
+  /// reddit_like_platform_suspensions.id}. Nullable for non-suspension events.
+  related_suspension_id String?
+  
+  /// Appeal associated with this log entry. {@link
+  /// reddit_like_moderation_appeals.id}. Nullable for non-appeal events.
+  related_appeal_id String?
+  
+  /// Community context for this log entry. {@link reddit_like_communities.id}.
+  /// Nullable for platform-level events.
+  community_id String?
+  
+  /// Category of moderation event: 'report_submitted', 'action_taken',
+  /// 'ban_issued', 'ban_lifted', 'suspension_issued', 'suspension_lifted',
+  /// 'appeal_submitted', 'appeal_decided', 'report_dismissed'. Used for
+  /// filtering and analytics.
+  log_type String
+  
+  /// Human-readable description of what occurred in this log entry.
+  /// Auto-generated from event data for audit trail readability.
+  action_description String
+  
+  /// JSON object containing additional context and details specific to the log
+  /// event type. Flexible storage for event-specific data.
+  metadata String?
+  
+  /// IP address of actor who performed the logged action. Stored for security
+  /// auditing and abuse detection.
+  ip_address String?
+  
+  /// Timestamp when moderation event occurred. Immutable audit trail timestamp
+  /// with second precision.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  actorMember reddit_like_members? @relation(fields: [actor_member_id], references: [id], onDelete: Cascade)
+  actorModerator reddit_like_moderators? @relation(fields: [actor_moderator_id], references: [id], onDelete: Cascade)
+  actorAdmin reddit_like_admins? @relation(fields: [actor_admin_id], references: [id], onDelete: Cascade)
+  relatedReport reddit_like_content_reports? @relation(fields: [related_report_id], references: [id], onDelete: Cascade)
+  relatedAction reddit_like_moderation_actions? @relation(fields: [related_action_id], references: [id], onDelete: Cascade)
+  relatedBan reddit_like_community_bans? @relation(fields: [related_ban_id], references: [id], onDelete: Cascade)
+  relatedSuspension reddit_like_platform_suspensions? @relation(fields: [related_suspension_id], references: [id], onDelete: Cascade)
+  relatedAppeal reddit_like_moderation_appeals? @relation(fields: [related_appeal_id], references: [id], onDelete: Cascade)
+  community reddit_like_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([log_type, created_at])
+  @@index([actor_member_id, created_at])
+  @@index([actor_moderator_id, created_at])
+  @@index([actor_admin_id, created_at])
+  @@index([community_id, created_at])
+  @@index([related_report_id])
+  @@index([related_action_id])
+  @@index([related_ban_id])
+  @@index([related_suspension_id])
+  @@index([related_appeal_id])
+}
+
+/// Materialized view providing pre-calculated moderator activity metrics for
+/// performance optimization. Aggregates data from moderation actions,
+/// reports, bans, and appeals to provide dashboard statistics without
+/// expensive real-time aggregation. Includes total actions, response times,
+/// and activity breakdowns per moderator. Refreshed periodically for
+/// near-real-time metrics. Marked as @hidden per materialized view
+/// conventions.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_reddit_like_moderator_activity_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator whose activity statistics are calculated. {@link
+  /// reddit_like_moderators.id}.
+  moderator_id String
+  
+  /// Total number of content reports this moderator has reviewed. Aggregated
+  /// from reddit_like_moderation_actions where report_id is not null.
+  total_reports_reviewed Int
+  
+  /// Total number of content removal actions taken by this moderator.
+  /// Aggregated from reddit_like_moderation_actions where
+  /// action_type='remove'.
+  total_content_removals Int
+  
+  /// Total number of community bans issued by this moderator. Aggregated from
+  /// reddit_like_community_bans.
+  total_bans_issued Int
+  
+  /// Total number of appeals reviewed by this moderator. Aggregated from
+  /// reddit_like_moderation_appeals where reviewer_moderator_id matches.
+  total_appeals_reviewed Int
+  
+  /// Average time in hours from report submission to moderator action.
+  /// Calculated from time difference between report created_at and action
+  /// created_at. Null if no reports reviewed.
+  average_report_response_hours Float?
+  
+  /// Timestamp of the moderator's most recent moderation action. Used for
+  /// identifying inactive moderators per R-LOG-014 (30 days threshold).
+  last_activity_at DateTime?
+  
+  /// Timestamp when this materialized view was last refreshed. Indicates data
+  /// freshness.
+  last_calculated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator reddit_like_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([moderator_id])
+  @@index([last_activity_at])
+}

@@ -1,0 +1,416 @@
+/// Primary promotional campaigns with comprehensive discount management,
+/// usage limits, and validity constraints across the marketplace
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Target customer's {@link shopping_mall_customers.id} who created this
+  /// coupon
+  creator_customer_id String?
+  
+  /// Target seller's {@link shopping_mall_sellers.id} who created this coupon
+  /// for their store promotions
+  creator_seller_id String?
+  
+  /// Target administrator's {@link shopping_mall_administrators.id} who
+  /// created platform-wide promotional coupons
+  admin_creator_id String?
+  
+  /// Unique coupon code for customer input. Must be alphanumeric with maximum
+  /// length 50 characters
+  code String
+  
+  /// Descriptive name for the coupon campaign displayed to customers
+  title String
+  
+  /// Detailed explanation of the discount offer with terms and conditions
+  description String?
+  
+  /// Type of discount: 'percentage' for % off, 'fixed' for flat amount off
+  discount_type String
+  
+  /// Discount amount based on type: percentage (0-100) or fixed amount in
+  /// currency
+  discount_value Float
+  
+  /// Minimum purchase amount required to validate coupon eligibility
+  minimum_order_amount Float?
+  
+  /// Maximum discount that can be applied to prevent excessive discounts
+  maximum_discount_amount Float?
+  
+  /// Maximum number of times a single customer can use this coupon
+  usage_limit_per_customer Int?
+  
+  /// Maximum total uses across all customers for limited promotional campaigns
+  total_usage_limit Int?
+  
+  /// Track of how many times this coupon has been redeemed
+  current_usage_count Int
+  
+  /// Start date when coupon becomes valid for customer use
+  valid_from DateTime?
+  
+  /// Expiration date when coupon becomes invalid
+  valid_until DateTime?
+  
+  /// Coupon lifecycle status: 'draft', 'active', 'expired', 'disabled',
+  /// 'sold_out'
+  status String
+  
+  /// Whether coupon is available to all customers or restricted segments
+  is_public Boolean
+  
+  /// Whether coupon is automatically applied at checkout without customer entry
+  auto_apply Boolean
+  
+  /// Comma-separated list of specific product IDs this coupon applies to
+  target_product_ids String?
+  
+  /// Comma-separated list of category IDs this coupon applies to
+  target_category_ids String?
+  
+  /// Whether coupon is restricted to customers with no previous orders
+  is_first_order_only Boolean
+  
+  /// Whether coupon requires active newsletter subscription
+  is_newsletter_subscriber_only Boolean
+  
+  /// Percentage of discount absorbed by platform versus seller (0-100)
+  business_impact_percentage Int
+  
+  /// Whether this promotional campaign requires moderator approval
+  requires_approval Boolean
+  
+  /// Timestamp when promotional campaign was approved for market use
+  approved_at DateTime?
+  
+  /// Expected commission reduction amount for seller participation validation
+  commission_impact_amount Float
+  
+  /// Percentage of sellers participating in this promotional campaign
+  vendor_participation_rate Float
+  
+  /// Calculated effectiveness score based on conversion and engagement metrics
+  campaign_performance_score Float
+  
+  /// Timestamp when coupon was created for audit tracking
+  created_at DateTime
+  
+  /// Timestamp when coupon was last modified tracking lifecycle changes
+  updated_at DateTime
+  
+  /// Soft delete timestamp for discontinued coupons maintaining data integrity
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  creatorCustomer shopping_mall_customers? @relation(fields: [creator_customer_id], references: [id], onDelete: Cascade)
+  creatorSeller shopping_mall_sellers? @relation(fields: [creator_seller_id], references: [id], onDelete: Cascade)
+  adminCreator shopping_mall_administrators? @relation(fields: [admin_creator_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_promotional_codes shopping_mall_promotional_codes[]
+  shopping_mall_discounts shopping_mall_discounts?
+  shopping_mall_seller_coupons shopping_mall_seller_coupons[]
+  shopping_mall_customer_coupons shopping_mall_customer_coupons[]
+  
+  @@index([creator_customer_id])
+  @@index([admin_creator_id])
+  
+  @@unique([code])
+  @@index([creator_seller_id, status])
+  @@index([status, valid_until])
+  @@index([discount_type, status])
+  @@index([business_impact_percentage, status])
+  @@index([created_at, status])
+  @@index([vendor_participation_rate])
+  @@index([campaign_performance_score])
+}
+
+/// Individual promotional codes within coupon campaigns supporting bulk
+/// generation for mass distribution or personalized campaigns
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotional_codes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Target coupon's {@link shopping_mall_coupons.id} that this promotional
+  /// code belongs to
+  coupon_id String
+  
+  /// Unique promotional code string typically 8-16 alphanumeric characters
+  promotional_code String
+  
+  /// Code status: 'available', 'redeemed', 'expired', 'disabled'
+  status String
+  
+  /// If assigned to specific customer, stores their ID for personalized
+  /// campaigns
+  customer_assignment_id String?
+  
+  /// How the code was redeemed: 'customer_entered', 'auto_applied',
+  /// 'system_assigned'
+  redemption_type String
+  
+  /// Context details for redemption tracking like landing page or campaign
+  /// source
+  redemption_context String?
+  
+  /// Boolean ensuring redemption validation across customer and order
+  /// constraints
+  unique_usage_validation Boolean
+  
+  /// Maximum duration in minutes a redemption can be pending validation
+  redemption_session_timeout Int
+  
+  /// Security hash for validating redemption authenticity against manipulation
+  redemption_verification_hash String?
+  
+  /// Geographic context for redemption for fraud detection and market analysis
+  redemption_geo_location String?
+  
+  /// Timestamp when code was successfully redeemed by customer
+  redeemed_at DateTime?
+  
+  /// Timestamp when associated order completed payment processing
+  redemption_order_timestamp DateTime?
+  
+  /// Current validation state: 'verified', 'pending', 'rejected', 'expired'
+  validation_status String
+  
+  /// Timestamp when code was generated for campaign lifecycle tracking
+  created_at DateTime
+  
+  /// Timestamp when code status was last updated
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  coupon shopping_mall_coupons @relation(fields: [coupon_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_customer_coupons shopping_mall_customer_coupons?
+  
+  @@unique([promotional_code])
+  @@unique([coupon_id, promotional_code])
+  @@index([coupon_id, status])
+  @@index([status, redeemed_at])
+  @@index([unique_usage_validation, validation_status], map: "shopping_mall_promotional_codes_unique_usage_validatio_7c678fbd")
+}
+
+/// Calculation rules for how coupons affect orders defining discount
+/// application methods with hierarchical exclusions and sophisticated
+/// promotional combinations
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_discounts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Target coupon's {@link shopping_mall_coupons.id} for discount application
+  /// rules
+  coupon_id String
+  
+  /// How discount is calculated: 'percentage_of_subtotal',
+  /// 'percentage_of_item', 'fixed_amount', 'tiered'
+  discount_calculation_method String
+  
+  /// What the discount applies to: 'entire_order', 'specific_items',
+  /// 'category_total', 'tiered_bonus'
+  application_scope String
+  
+  /// Maximum number of times this discount can apply to a single order
+  redemption_limit_per_order Int
+  
+  /// Upper price limit for order eligibility to prevent abuse on high-value
+  /// orders
+  maximum_applicable_order_value Float?
+  
+  /// Minimum quantity of qualifying items required for discount application
+  minimum_applicable_item_quantity Int?
+  
+  /// JSON array of customer segment codes eligible for this discount
+  eligible_customer_segments String?
+  
+  /// Comma-separated regions where this discount is not applicable for legal
+  /// compliance
+  restricted_geographic_regions String?
+  
+  /// Priority order when multiple discounts apply (higher values override
+  /// lower)
+  stacking_priority Int
+  
+  /// Structured tiers for graduated discount calculations: min quantity,
+  /// discount percentage
+  tiered_discount_tiers String?
+  
+  /// Date-ranges when this discount can be applied for holiday campaigns
+  seasonal_availability String?
+  
+  /// Minimum number of participating sellers for marketplace-wide applicability
+  vendor_participation_minimum Int
+  
+  /// Timestamp when discount rule was created for audit tracking
+  created_at DateTime
+  
+  /// Timestamp when discount rule was last modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  coupon shopping_mall_coupons @relation(fields: [coupon_id], references: [id], onDelete: Cascade)
+  
+  @@unique([coupon_id])
+  @@index([application_scope, discount_calculation_method], map: "shopping_mall_discounts_application_scope_discount_cal_73687c0e")
+  @@index([stacking_priority])
+  @@index([vendor_participation_minimum, seasonal_availability], map: "shopping_mall_discounts_vendor_participation_minimum_s_7845bf3b")
+}
+
+/// Junction table managing coupon distribution to specific sellers. Enables
+/// marketplace-wide promotions targeting specific vendor participation.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target coupon's {@link shopping_mall_coupons.id} that is available to the
+  /// seller.
+  coupon_id String
+  
+  /// Target seller's {@link shopping_mall_sellers.id} who can use this coupon
+  /// for their store.
+  seller_id String
+  
+  /// Target administrator's {@link shopping_mall_administrators.id} who
+  /// assigned this coupon to seller.
+  administrator_id String
+  
+  /// Whether seller can actively use and distribute this coupon to their
+  /// customers.
+  is_enabled Boolean
+  
+  /// Assignment method: 'auto' (system assigned), 'seller_request' (seller
+  /// opted in), 'admin_selection' (manual assignment).
+  assignment_type String
+  
+  /// Administrative notes about why coupon was assigned to this seller. Used
+  /// for internal tracking.
+  notes String?
+  
+  /// Timestamp when coupon was assigned to seller. Tracks assignment timeline.
+  assigned_at DateTime
+  
+  /// When seller's ability to use this coupon expires. Different from coupon's
+  /// customer validity.
+  expires_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  coupon shopping_mall_coupons @relation(fields: [coupon_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([administrator_id])
+  
+  @@unique([coupon_id, seller_id])
+  @@index([seller_id, is_enabled])
+  @@index([coupon_id, is_enabled])
+  @@index([expires_at, is_enabled])
+}
+
+/// Tracks individual customer coupon usage, redemptions, and eligibility.
+/// Prevents coupon abuse while enabling personalized promotional campaigns.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target customer's {@link shopping_mall_customers.id} who has access to or
+  /// has used this coupon.
+  customer_id String
+  
+  /// Target coupon's {@link shopping_mall_coupons.id} that was provided to or
+  /// used by the customer.
+  coupon_id String
+  
+  /// Target promotional code's {@link shopping_mall_promotional_codes.id} that
+  /// was redeemed by customer.
+  promotional_code_id String?
+  
+  /// Target order's {@link shopping_mall_orders.id} where coupon was applied.
+  /// Links redemption to transaction.
+  order_id String?
+  
+  /// Coupon status for customer: 'assigned' (available to use), 'redeemed'
+  /// (successfully used), 'expired' (past validity), 'cancelled' (manually
+  /// revoked).
+  status String
+  
+  /// Timestamp when coupon was first made available to customer. Tracks
+  /// assignment timing.
+  assigned_at DateTime
+  
+  /// Timestamp when customer successfully applied coupon to order. Tracks
+  /// redemption timing.
+  redeemed_at DateTime?
+  
+  /// When customer was notified about coupon availability. Used for engagement
+  /// tracking.
+  notification_sent_at DateTime?
+  
+  /// Actual discount amount that was applied to order. Used for financial
+  /// reconciliation.
+  discount_amount_applied Float?
+  
+  /// Record creation timestamp. Tracks customer-coupon relationship
+  /// establishment.
+  created_at DateTime
+  
+  /// Record modification timestamp. Tracks status changes and usage updates.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  coupon shopping_mall_coupons @relation(fields: [coupon_id], references: [id], onDelete: Cascade)
+  promotionalCode shopping_mall_promotional_codes? @relation(fields: [promotional_code_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([promotional_code_id])
+  @@unique([order_id])
+  
+  @@unique([customer_id, coupon_id])
+  @@index([customer_id, status])
+  @@index([coupon_id, status])
+  @@index([status, redeemed_at])
+  @@index([promotional_code_id, status])
+}

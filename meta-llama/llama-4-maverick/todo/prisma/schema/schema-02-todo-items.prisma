@@ -1,0 +1,33 @@
+/// Todo items managed by users
+///
+/// @namespace TodoItems
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todo_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns this Todo item. {@link todo_list_users.id}.
+  user_id String
+  
+  /// Text content of the Todo item.
+  content String
+  
+  /// Whether the Todo item is completed.
+  completed Boolean
+  
+  /// Timestamp when the Todo item was created.
+  created_at DateTime
+  
+  /// Timestamp when the Todo item was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+}

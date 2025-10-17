@@ -1,0 +1,81 @@
+/// Normalized tag catalog used for discovery and search across the
+/// econPoliticalForum. Each tag is a primary, independently managed entity.
+/// Tags are referenced by threads through the join table {@link
+/// econ_political_forum_thread_tags}. Includes temporal fields for auditing
+/// and soft-delete support.
+///
+/// @namespace Taxonomy
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable tag name. Examples: 'fiscal-policy', 'inflation'.
+  /// Normalized and unique.
+  name String
+  
+  /// URL-safe lower-case slug for the tag. Unique and indexed for fast lookup.
+  slug String
+  
+  /// Optional longer description of the tag's purpose or scope.
+  description String?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  econ_political_forum_thread_tags econ_political_forum_thread_tags[]
+  
+  @@unique([slug])
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Join table mapping threads to tags. Renamed foreign key field to tag_id
+/// for naming consistency and added index optimized for tag->threads
+/// lookups. Preserves UUID primary key, created_at and soft-delete fields
+/// for audit. References: {@link econ_political_forum_threads.id}, {@link
+/// econ_political_forum_tags.id}.
+///
+/// @namespace Taxonomy
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_thread_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged thread. {@link econ_political_forum_threads.id}.
+  thread_id String
+  
+  /// Belonged tag. {@link econ_political_forum_tags.id}.
+  tag_id String
+  
+  /// Timestamp when the tag was attached to the thread.
+  created_at DateTime
+  
+  /// Soft-delete timestamp for the join. Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  thread econ_political_forum_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade)
+  tag econ_political_forum_tags @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  
+  @@unique([thread_id, tag_id])
+  @@index([tag_id, thread_id])
+  @@index([created_at])
+}

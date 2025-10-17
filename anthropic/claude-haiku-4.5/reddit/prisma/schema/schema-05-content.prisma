@@ -1,0 +1,379 @@
+/// Represents user-created posts within communities. Posts are the primary
+/// content type on the platform and can be text, links, or images. Each post
+/// belongs to a community and author, tracks engagement metrics (views,
+/// votes, comments), and maintains edit history.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author of the post. Reference to {@link community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Community where the post was created. Reference to {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Post title (3-300 characters). Required for all post types.
+  title String
+  
+  /// Type of post: 'text', 'link', or 'image'. Determines which content fields
+  /// are populated.
+  post_type String
+  
+  /// Post body text (0-40,000 characters). Used for text posts, optional for
+  /// other types.
+  body_content String?
+  
+  /// External URL for link posts (HTTP/HTTPS only, max 2,000 characters).
+  /// Populated only for link posts.
+  link_url String?
+  
+  /// Domain extracted from link_url for display and filtering purposes.
+  link_domain String?
+  
+  /// Publication status: 'draft', 'published', 'archived', 'removed', or
+  /// 'deleted'. Controls visibility and functionality.
+  status String
+  
+  /// Cached count of upvotes received. Updated in real-time as votes arrive.
+  upvote_count Int
+  
+  /// Cached count of downvotes received. Updated in real-time as votes arrive.
+  downvote_count Int
+  
+  /// Calculated score: upvote_count - downvote_count. Used for sorting and
+  /// ranking.
+  net_score Int
+  
+  /// Cached count of root-level comments on this post. Updated when comments
+  /// are created or deleted.
+  comment_count Int
+  
+  /// Number of unique user views of this post. Incremented once per user per
+  /// 24-hour period.
+  view_count Int
+  
+  /// Whether post is pinned by moderators. Pinned posts appear at top of
+  /// community feed.
+  is_pinned Boolean
+  
+  /// Whether comments are disabled on this post. Locked posts remain visible
+  /// but cannot receive new comments.
+  is_locked Boolean
+  
+  /// Whether post was removed by moderators for policy violation. Soft delete
+  /// indicator.
+  is_removed Boolean
+  
+  /// Reason for removal if is_removed=true. Category of policy violation
+  /// (spam, harassment, misinformation, etc.).
+  removal_reason String?
+  
+  /// Number of times this post has been edited by the author. Incremented each
+  /// time post is modified.
+  edit_count Int
+  
+  /// Timestamp when post was created (UTC). Used for sorting and age-based
+  /// algorithms.
+  created_at DateTime
+  
+  /// Timestamp of most recent edit. Null if post has never been edited.
+  edited_at DateTime?
+  
+  /// Timestamp when post was soft-deleted by author. Null if post is active.
+  /// Used for soft delete recovery.
+  deleted_at DateTime?
+  
+  /// Timestamp of most recent vote or comment on this post. Used for hot
+  /// algorithm calculations.
+  last_activity_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  author community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_images community_platform_post_images[]
+  community_platform_comments community_platform_comments[]
+  community_platform_post_edits community_platform_post_edits[]
+  community_platform_content_views community_platform_content_views[]
+  community_platform_reports community_platform_reports[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_content_removals community_platform_content_removals[]
+  community_platform_user_warnings community_platform_user_warnings[]
+  
+  @@index([community_platform_community_id, created_at], map: "community_platform_posts_community_platform_community__4df12ea5")
+  @@index([community_platform_user_id, created_at], map: "community_platform_posts_community_platform_user_id_cr_897aa442")
+  @@index([status, created_at])
+  @@index([is_pinned, created_at])
+  @@index([last_activity_at])
+}
+
+/// Stores image files associated with image posts. One post can have
+/// multiple images (up to 20). Each image record references the parent post
+/// and stores file metadata, URLs, and dimensions for responsive delivery.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that contains this image. Reference to {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Display order of image within the post (1-based). Determines sequence in
+  /// carousel or grid.
+  image_order Int
+  
+  /// URL to full-resolution image (original size, up to 8000x8000 pixels).
+  image_url_full String
+  
+  /// URL to medium-sized image (800x800 pixels, optimized for post view).
+  image_url_medium String
+  
+  /// URL to thumbnail image (300x300 pixels, optimized for feed display).
+  image_url_thumbnail String
+  
+  /// Original image width in pixels.
+  image_width Int
+  
+  /// Original image height in pixels.
+  image_height Int
+  
+  /// Image format (JPEG, PNG, GIF, WebP). All images stored internally as JPEG
+  /// for optimization.
+  image_format String
+  
+  /// File size of original image in bytes. Used for bandwidth tracking.
+  image_size_bytes Int
+  
+  /// Optional caption for this specific image (max 500 characters). Supports
+  /// markdown formatting.
+  caption String?
+  
+  /// Timestamp when image was uploaded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_post_id, image_order], map: "community_platform_post_images_community_platform_post_83725533")
+}
+
+/// Represents comments and nested replies on posts. Supports hierarchical
+/// threading up to 10 levels deep. Each comment tracks engagement (votes,
+/// edit history), parent relationships for nesting, and publication status.
+/// Comments form the discussion backbone of the platform.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this comment belongs to. Reference to {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Author of the comment. Reference to {@link community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Parent comment if this is a nested reply. Null for root-level comments.
+  /// Enables threaded discussion structure.
+  parent_comment_id String?
+  
+  /// Comment text content (1-10,000 characters). Supports markdown formatting
+  /// including code blocks.
+  content String
+  
+  /// Hierarchy level (1=root comment, 2=reply to root, max=10). Enforced to
+  /// prevent excessively deep threads.
+  nesting_depth Int
+  
+  /// Cached count of upvotes received. Updated in real-time.
+  upvote_count Int
+  
+  /// Cached count of downvotes received. Updated in real-time.
+  downvote_count Int
+  
+  /// Calculated score: upvote_count - downvote_count. Used for sorting
+  /// comments.
+  net_score Int
+  
+  /// Publication status: 'published', 'removed', or 'deleted'. Controls
+  /// visibility.
+  status String
+  
+  /// Whether comment was removed by moderators. Soft delete indicator.
+  is_removed Boolean
+  
+  /// Reason for removal if is_removed=true.
+  removal_reason String?
+  
+  /// Whether replies to this comment are disabled. Locked comments remain
+  /// visible.
+  is_locked Boolean
+  
+  /// Whether comment is pinned by moderator in its thread.
+  is_pinned Boolean
+  
+  /// Number of times comment has been edited.
+  edit_count Int
+  
+  /// Whether comment author is a moderator of the community. Shown with badge.
+  is_moderator_post Boolean
+  
+  /// Whether comment author is a platform administrator. Shown with badge.
+  is_admin_post Boolean
+  
+  /// Timestamp when comment was created.
+  created_at DateTime
+  
+  /// Timestamp of most recent edit. Null if never edited.
+  edited_at DateTime?
+  
+  /// Timestamp when comment was soft-deleted by author. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  author community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  parentComment community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_comment_edits community_platform_comment_edits[]
+  
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  @@index([community_platform_user_id, created_at], map: "community_platform_comments_community_platform_user_id_d682cb89")
+  @@index([parent_comment_id])
+  @@index([nesting_depth, created_at])
+  @@index([status])
+}
+
+/// Records historical edit history of posts for audit trail and change
+/// tracking. Each edit entry captures the previous state before
+/// modification. Allows reconstruction of edit timeline and detection of
+/// suspicious patterns.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that was edited. Reference to {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Post title before this edit. Captures state for comparison.
+  previous_title String
+  
+  /// Post body content before this edit (for text posts only).
+  previous_body_content String?
+  
+  /// Post URL before this edit (for link posts only).
+  previous_link_url String?
+  
+  /// Sequential edit number (1st edit, 2nd edit, etc.). Used to maintain edit
+  /// order.
+  edit_number Int
+  
+  /// Timestamp when this edit occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_edits_community_platform_post__d90bef41")
+}
+
+/// Records historical edit history of comments for audit trail and change
+/// tracking. Each edit entry captures the content state before modification.
+/// Enables reconstruction of discussion evolution.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment that was edited. Reference to {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// Comment content before this edit.
+  previous_content String
+  
+  /// Sequential edit number (1st edit, 2nd edit, etc.).
+  edit_number Int
+  
+  /// Timestamp when this edit occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_edits_community_platform_co_b7b4c7e4")
+}
+
+/// Tracks individual user views of posts for engagement metrics and view
+/// count calculation. Records when users view posts with deduplication (one
+/// view per user per 24 hours). Used for calculating view counts and
+/// identifying engagement patterns.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_content_views {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that was viewed. Reference to {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// User who viewed the post. Reference to {@link community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Timestamp when post was viewed. Used for deduplication (one per user per
+  /// 24 hours).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_post_id, community_platform_user_id], map: "community_platform_content_views_community_platform_po_c0577332")
+  @@index([community_platform_user_id, created_at], map: "community_platform_content_views_community_platform_us_970c6319")
+}

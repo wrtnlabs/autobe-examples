@@ -1,0 +1,75 @@
+/// Represents a customer's shopping cart containing items they intend to
+/// purchase. Each cart belongs to a specific customer and can contain
+/// multiple cart items. This is a primary business entity that users manage
+/// independently through their shopping experience.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this shopping cart. {@link shopping_customers.id}.
+  shopping_customer_id String
+  
+  /// Timestamp when the shopping cart was created.
+  created_at DateTime
+  
+  /// Timestamp when the shopping cart was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_cart_items shopping_cart_items[]
+  
+  @@unique([shopping_customer_id])
+  @@index([created_at])
+}
+
+/// Represents individual items in a shopping cart. Each item references a
+/// specific product variant and belongs to a specific shopping cart. This is
+/// a subsidiary entity managed through the parent shopping cart.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shopping cart that contains this item. {@link shopping_shopping_carts.id}.
+  shopping_shopping_cart_id String
+  
+  /// Product variant referenced by this cart item. {@link
+  /// shopping_product_variants.id}.
+  shopping_product_variant_id String
+  
+  /// Quantity of this product variant in the cart.
+  quantity Int
+  
+  /// Price of the product variant at the time it was added to the cart.
+  price Float
+  
+  /// Timestamp when the cart item was added.
+  created_at DateTime
+  
+  /// Timestamp when the cart item was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_shopping_carts @relation(fields: [shopping_shopping_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_shopping_cart_id, shopping_product_variant_id], map: "shopping_cart_items_shopping_shopping_cart_id_shopping_127c34ce")
+  @@index([shopping_product_variant_id, created_at])
+}

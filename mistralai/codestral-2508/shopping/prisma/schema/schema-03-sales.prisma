@@ -1,0 +1,203 @@
+/// Main sales entity representing product offerings in the shopping mall.
+/// This table captures all essential information about products available
+/// for purchase, including pricing, availability, and basic attributes. It
+/// serves as the primary reference for all sales-related operations.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_sales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged channel's {@link shopping_channels.id}.
+  shopping_channel_id String
+  
+  /// Belonged section's {@link shopping_sections.id}.
+  shopping_section_id String
+  
+  /// Unique business identifier for the sale.
+  code String
+  
+  /// Display name of the sale.
+  name String
+  
+  /// Detailed description of the sale.
+  description String?
+  
+  /// Current price of the sale.
+  price Float
+  
+  /// Current inventory stock level.
+  stock Int
+  
+  /// Timestamp when the sale was created.
+  created_at DateTime
+  
+  /// Timestamp when the sale was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the sale was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_channels @relation(fields: [shopping_channel_id], references: [id], onDelete: Cascade)
+  section shopping_sections @relation(fields: [shopping_section_id], references: [id], onDelete: Cascade)
+  
+  shopping_sale_snapshots shopping_sale_snapshots[]
+  shopping_sale_units shopping_sale_units[]
+  
+  @@index([shopping_section_id])
+  
+  @@unique([code])
+  @@index([shopping_channel_id, shopping_section_id])
+}
+
+/// Historical snapshots of shopping_sales for audit trails and version
+/// control. This table captures point-in-time states of sales entities,
+/// allowing for complete historical tracking of all changes to product
+/// offerings. Each snapshot represents a complete state of a sale at a
+/// specific moment in time.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_sale_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged sale's {@link shopping_sales.id}.
+  shopping_sale_id String
+  
+  /// Unique business identifier for the sale at this snapshot.
+  code String
+  
+  /// Display name of the sale at this snapshot.
+  name String
+  
+  /// Detailed description of the sale at this snapshot.
+  description String?
+  
+  /// Price of the sale at this snapshot.
+  price Float
+  
+  /// Inventory stock level at this snapshot.
+  stock Int
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_sales @relation(fields: [shopping_sale_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_sale_id, created_at])
+}
+
+/// Product variants for sales entities. This table represents different
+/// versions or options of a product offering, allowing for flexible product
+/// configurations and customization. Each unit belongs to a specific sale
+/// and has its own unique attributes and pricing.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_sale_units {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged sale's {@link shopping_sales.id}.
+  shopping_sale_id String
+  
+  /// Unique business identifier for the sale unit.
+  code String
+  
+  /// Display name of the sale unit.
+  name String
+  
+  /// Detailed description of the sale unit.
+  description String?
+  
+  /// Price of the sale unit.
+  price Float
+  
+  /// Inventory stock level of the sale unit.
+  stock Int
+  
+  /// Timestamp when the sale unit was created.
+  created_at DateTime
+  
+  /// Timestamp when the sale unit was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the sale unit was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_sales @relation(fields: [shopping_sale_id], references: [id], onDelete: Cascade)
+  
+  shopping_sale_unit_options shopping_sale_unit_options[]
+  shopping_cart_items shopping_cart_items[]
+  shopping_favorite_items shopping_favorite_items[]
+  
+  @@unique([shopping_sale_id, code])
+  @@index([shopping_sale_id])
+}
+
+/// Customizable options for sale units. This table represents additional
+/// configuration choices that can be made for product variants, allowing
+/// customers to personalize their purchases. Each option belongs to a
+/// specific sale unit and has its own unique attributes and pricing.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_sale_unit_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged sale unit's {@link shopping_sale_units.id}.
+  shopping_sale_unit_id String
+  
+  /// Unique business identifier for the sale unit option.
+  code String
+  
+  /// Display name of the sale unit option.
+  name String
+  
+  /// Detailed description of the sale unit option.
+  description String?
+  
+  /// Price of the sale unit option.
+  price Float
+  
+  /// Timestamp when the sale unit option was created.
+  created_at DateTime
+  
+  /// Timestamp when the sale unit option was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the sale unit option was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  saleUnit shopping_sale_units @relation(fields: [shopping_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_sale_unit_id, code])
+  @@index([shopping_sale_unit_id])
+}

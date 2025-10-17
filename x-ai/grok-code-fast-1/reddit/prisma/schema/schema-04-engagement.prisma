@@ -1,0 +1,89 @@
+/// Tracks user votes on posts and comments within the engagement system.
+/// Each vote represents member engagement with community content, affecting
+/// karma calculations and content visibility. Relationships exist with
+/// members (voters), posts, and comments (voted content). Votes are
+/// immutable once cast but require efficient querying for real-time karma
+/// updates and content sorting algorithms. Modified to include proper stance
+/// classification and check constraint for mutual exclusivity.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voted member's {@link community_platform_members.id} who cast the vote.
+  member_id String
+  
+  /// Related post's {@link community_platform_posts.id} that received the vote
+  /// (if applicable).
+  post_id String?
+  
+  /// Related comment's {@link community_platform_comments.id} that received
+  /// the vote (if applicable).
+  comment_id String?
+  
+  /// Type of vote cast - 'up' for positive or 'down' for negative engagement.
+  vote_type String
+  
+  /// Timestamp when the vote was cast, used for audit trails and analytical
+  /// purposes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id, post_id])
+  @@unique([member_id, comment_id])
+  @@index([created_at])
+  @@index([post_id])
+  @@index([comment_id])
+  @@index([member_id, created_at])
+}
+
+/// Manages member subscriptions to communities for personalized content
+/// delivery. Each subscription represents active interest in specific
+/// community content, enabling personalized feeds and notification systems.
+/// Relationships exist with members (subscribers) and communities
+/// (subscribed content). Subscriptions can be toggled on/off with proper
+/// timestamp tracking.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscribing member's {@link community_platform_members.id}.
+  member_id String
+  
+  /// Subscribed community's {@link community_platform_communities.id}.
+  community_id String
+  
+  /// Timestamp when the subscription was established.
+  subscribed_at DateTime
+  
+  /// Timestamp when the subscription was terminated (null if still active).
+  unsubscribed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id, community_id])
+  @@index([subscribed_at])
+  @@index([community_id])
+  @@index([member_id, unsubscribed_at])
+}

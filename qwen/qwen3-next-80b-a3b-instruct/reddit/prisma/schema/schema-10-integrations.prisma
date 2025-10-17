@@ -1,0 +1,391 @@
+/// Stores Stripe customer identifiers for platform users to enable payment
+/// processing integration. This table acts as an adapter between platform
+/// user accounts and Stripe billing system. Each record maps a platform user
+/// to their unique Stripe customer ID for recurring billing, invoice
+/// management, and payment method storage. This ensures platform can process
+/// payments without exposing Stripe internals to core business logic.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_stripe_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the platform user. {@link community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// Reference to the user profile. {@link
+  /// community_platform_user_profiles.id}.
+  community_platform_user_profiles_id String?
+  
+  /// Unique identifier assigned by Stripe for this customer account. Must be
+  /// unique across all records.
+  stripe_customer_id String
+  
+  /// Identifier for the default payment method stored in Stripe. Can be null
+  /// if no payment method is set.
+  payment_method_id String?
+  
+  /// Timestamp when this customer record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this customer record was last updated.
+  updated_at DateTime
+  
+  /// Indicates if the Stripe customer account is active and can process
+  /// payments.
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  profile community_platform_user_profiles? @relation(fields: [community_platform_user_profiles_id], references: [id], onDelete: Cascade)
+  
+  community_platform_stripe_subscriptions community_platform_stripe_subscriptions[]
+  
+  @@unique([stripe_customer_id])
+  @@unique([community_platform_member_id], map: "community_platform_stripe_customers_community_platform_c32ebeb9")
+  @@unique([community_platform_user_profiles_id], map: "community_platform_stripe_customers_community_platform_58374412")
+}
+
+/// Tracks Stripe subscription relationships between users and their paid
+/// plans. Each record represents a subscription to a paid tier (Premium) in
+/// the Stripe system, linked to a specific platform user. This table enables
+/// seamless subscription management, billing cycle tracking, and churn
+/// analysis while maintaining separation between platform logic and Stripe's
+/// billing system.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_stripe_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the platform user who subscribed. {@link
+  /// community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// Reference to the associated Stripe customer record. {@link
+  /// community_platform_stripe_customers.id}.
+  community_platform_stripe_customers_id String
+  
+  /// Unique identifier assigned by Stripe for this subscription. Must be
+  /// unique across all records.
+  stripe_subscription_id String
+  
+  /// The Stripe plan identifier (e.g., premium_monthly, premium_annual).
+  plan_id String
+  
+  /// Current status of the subscription (active, canceled, past_due, unpaid,
+  /// trialing).
+  status String
+  
+  /// When the subscription was activated.
+  start_date DateTime
+  
+  /// Start of the current billing period.
+  current_period_start DateTime
+  
+  /// End of the current billing period.
+  current_period_end DateTime
+  
+  /// True if subscription will be canceled at the end of the current period.
+  cancel_at_period_end Boolean
+  
+  /// When the subscription was canceled, if applicable.
+  canceled_at DateTime?
+  
+  /// Timestamp when this subscription record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this subscription record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  stripeCustomer community_platform_stripe_customers @relation(fields: [community_platform_stripe_customers_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_stripe_customers_id], map: "community_platform_stripe_subscriptions_community_plat_328a73c0")
+  
+  @@unique([stripe_subscription_id], map: "community_platform_stripe_subscriptions_stripe_subscri_7c981f51")
+  @@unique([community_platform_member_id], map: "community_platform_stripe_subscriptions_community_plat_b0ccd6b7")
+}
+
+/// Stores metadata for images uploaded to external hosting services
+/// (Cloudinary or S3). This table acts as an adapter between platform posts
+/// and external image storage systems. It maps platform-generated content to
+/// external image URLs and metadata, allowing seamless integration with
+/// image hosting providers while maintaining separation of concerns.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_image_hosting {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post containing this image. {@link
+  /// community_platform_posts.id}.
+  community_platform_posts_id String
+  
+  /// The full URL to the hosted image on the external service.
+  image_url String
+  
+  /// The unique identifier assigned by the image hosting service (Cloudinary
+  /// public ID or S3 key).
+  public_id String
+  
+  /// The image format (jpg, png, webp, gif).
+  format String
+  
+  /// Original width of the image in pixels.
+  width Int
+  
+  /// Original height of the image in pixels.
+  height Int
+  
+  /// Size of the original file in bytes.
+  file_size Int
+  
+  /// Timestamp when this image record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this image record was last updated.
+  updated_at DateTime
+  
+  /// True if this is the original uploaded image, false if it's a processed
+  /// version.
+  is_original Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_posts_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_posts_id], map: "community_platform_image_hosting_community_platform_po_517e1e4a")
+  
+  @@unique([public_id])
+  @@unique([image_url])
+}
+
+/// Maps platform users to their external authentication provider identities
+/// (Google, Apple, Microsoft, Twitter) via Auth0. This table enables
+/// seamless social login integration by connecting platform user accounts to
+/// their corresponding external provider identifiers while maintaining
+/// separation between platform authentication and external identity systems.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_auth0_mappings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the platform user account. {@link
+  /// community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// The external authentication provider (google, apple, microsoft, twitter).
+  provider String
+  
+  /// The unique identifier assigned by the external authentication provider to
+  /// this user.
+  provider_user_id String
+  
+  /// The email address associated with this external account, used for
+  /// platform account linking.
+  email String
+  
+  /// Timestamp when this mapping was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this mapping was last updated.
+  updated_at DateTime
+  
+  /// True if this is the primary login method for the user, false if it's an
+  /// additional connection.
+  is_primary Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, provider_user_id])
+  @@unique([email])
+  @@unique([community_platform_member_id], map: "community_platform_auth0_mappings_community_platform_m_598e6c32")
+  @@index([provider])
+  @@index([provider_user_id])
+  @@index([created_at])
+}
+
+/// Stores analysis results from Google's Perspective API for content
+/// moderation. This table captures toxicity scores and moderation
+/// recommendations for posts and comments to enable automated content
+/// flagging while maintaining privacy and separation from core platform
+/// logic. Represents an adapter layer between platform content and external
+/// AI moderation services.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_perspective_api_results {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post that was analyzed. {@link
+  /// community_platform_posts.id}.
+  community_platform_posts_id String?
+  
+  /// Reference to the comment that was analyzed. {@link
+  /// community_platform_comments.id}.
+  community_platform_comments_id String?
+  
+  /// The toxicity score from Perspective API (0.0-1.0), where higher values
+  /// indicate more offensive content.
+  toxicity_score Float
+  
+  /// The severe toxicity score from Perspective API (0.0-1.0).
+  severe_toxicity_score Float
+  
+  /// The obscenity score from Perspective API (0.0-1.0).
+  obscene_score Float
+  
+  /// The threat score from Perspective API (0.0-1.0).
+  threat_score Float
+  
+  /// The insult score from Perspective API (0.0-1.0).
+  insult_score Float
+  
+  /// The identity attack score from Perspective API (0.0-1.0).
+  identity_attack_score Float
+  
+  /// The spam score from Perspective API (0.0-1.0).
+  spam_score Float
+  
+  /// Timestamp when the API analysis was performed and record created.
+  created_at DateTime
+  
+  /// The recommended moderation action from the API (none, flag, remove,
+  /// report).
+  action_recommendation String
+  
+  /// The unique identifier for this API request to the Perspective service.
+  api_request_id String
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts? @relation(fields: [community_platform_posts_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comments_id], references: [id], onDelete: Cascade)
+  
+  @@unique([api_request_id])
+  @@unique([community_platform_posts_id], map: "community_platform_perspective_api_results_community_p_f45c794f")
+  @@unique([community_platform_comments_id], map: "community_platform_perspective_api_results_community_p_ca0ab3ac")
+  @@index([toxicity_score])
+  @@index([action_recommendation], map: "community_platform_perspective_api_results_action_reco_58cbf860")
+  @@index([created_at])
+}
+
+/// Tracks email delivery status and metadata for all platform notifications
+/// sent through SendGrid. This table records delivery outcomes, errors, and
+/// timestamps for every email sent, enabling monitoring of email service
+/// reliability, troubleshooting delivery issues, and compliance with email
+/// regulations. Acts as an audit trail for communication between platform
+/// and email service provider.
+///
+/// @namespace Integrations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_email_delivery_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the recipient user account. {@link
+  /// community_platform_member.id}.
+  community_platform_member_id String?
+  
+  /// Reference to the post that triggered this email (e.g., post reply
+  /// notification). {@link community_platform_posts.id}.
+  community_platform_posts_id String?
+  
+  /// Reference to the comment that triggered this email (e.g., comment reply
+  /// notification). {@link community_platform_comments.id}.
+  community_platform_comments_id String?
+  
+  /// The email address of the recipient.
+  recipient_email String
+  
+  /// The type of email sent (verification, password_reset, notification,
+  /// digest).
+  email_type String
+  
+  /// The email subject line.
+  subject String
+  
+  /// The SendGrid template identifier used for this email.
+  template_id String
+  
+  /// The delivery status (sent, delivered, opened, clicked, bounced, dropped,
+  /// unsubscribe, spamreport).
+  status String
+  
+  /// Error code if delivery failed (if applicable).
+  error_code String?
+  
+  /// Detailed error message if delivery failed (if applicable).
+  error_message String?
+  
+  /// The unique message ID assigned by SendGrid for this email.
+  gateway_message_id String
+  
+  /// Number of times links in the email were clicked.
+  click_count Int
+  
+  /// Number of times the email was opened.
+  open_count Int
+  
+  /// Timestamp when email was successfully delivered.
+  delivered_at DateTime?
+  
+  /// Timestamp when email was sent to SendGrid API.
+  sent_at DateTime
+  
+  /// Timestamp when this log record was created in the database.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  recipient community_platform_member? @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [community_platform_posts_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comments_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_member_id], map: "community_platform_email_delivery_logs_community_platf_8c5f43e6")
+  @@index([community_platform_posts_id], map: "community_platform_email_delivery_logs_community_platf_83c464f5")
+  @@index([community_platform_comments_id], map: "community_platform_email_delivery_logs_community_platf_d1c45185")
+  
+  @@unique([gateway_message_id])
+  @@index([recipient_email])
+  @@index([email_type])
+  @@index([status])
+  @@index([sent_at])
+  @@index([delivered_at])
+}

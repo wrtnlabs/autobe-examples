@@ -1,0 +1,132 @@
+/// Primary entity for community posts. Stores canonical post data (type,
+/// title, body/link/image), community membership, author reference, and
+/// temporal audit fields. Aggregated ranking signals (score, upvote_count,
+/// downvote_count) MUST NOT be stored here per normalization rules; instead,
+/// compute/store them in materialized views (mv_) or event-driven aggregate
+/// tables. Author reference is nullable and should use SET NULL on user
+/// deletion to preserve content auditability. {@link
+/// community_portal_communities.id} {@link community_portal_users.id}.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged community's {@link community_portal_communities.id}. Required; a
+  /// post must belong to a community.
+  community_id String
+  
+  /// Authoring user's {@link community_portal_users.id}. Nullable to allow
+  /// account deletion while preserving post content (SET NULL on user delete
+  /// recommended).
+  author_user_id String?
+  
+  /// Post type indicator: 'text', 'link', or 'image'. Determines which content
+  /// field is expected to be populated.
+  post_type String
+  
+  /// User-facing title of the post. Use for listing and search. Recommend max
+  /// 300 chars at application level.
+  title String
+  
+  /// Text body for text posts. Nullable for link/image posts.
+  body String?
+  
+  /// External link URL for link posts. Nullable for other post types.
+  link_url String?
+  
+  /// Representative image URL for image posts (for multi-image support use a
+  /// separate media table).
+  image_url String?
+  
+  /// Moderation state of the post (e.g., 'published', 'pending', 'removed').
+  /// Application enforces allowed values.
+  status String
+  
+  /// Record creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null when not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_portal_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  author community_portal_users? @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
+  
+  community_portal_comments community_portal_comments[]
+  community_portal_votes community_portal_votes[]
+  community_portal_reports community_portal_reports[]
+  
+  @@index([community_id, created_at])
+  @@index([author_user_id, created_at])
+  @@index([created_at])
+}
+
+/// Primary entity for comments and nested replies. Stores canonical comment
+/// text, parent/post references, author reference, and temporal audit
+/// fields. Aggregated vote counters MUST NOT be stored here; surface
+/// aggregates via materialized views or event-driven aggregate tables.
+/// Preserve comments for audit on user deletion by using nullable author
+/// reference and SET NULL semantics. {@link community_portal_posts.id}
+/// {@link community_portal_users.id}.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_portal_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link community_portal_posts.id}. Comment must belong to a
+  /// post.
+  post_id String
+  
+  /// Optional parent comment's {@link community_portal_comments.id} for nested
+  /// replies. Nullable for top-level comments.
+  parent_comment_id String?
+  
+  /// Authoring user's {@link community_portal_users.id}. Nullable to allow
+  /// account deletion while preserving comment audit trail (SET NULL
+  /// recommended).
+  author_user_id String?
+  
+  /// Comment text body. Required for a valid comment.
+  body String
+  
+  /// Comment creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null when not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_portal_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parent community_portal_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  author community_portal_users? @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
+  
+  recursive community_portal_comments[] @relation("recursive")
+  community_portal_votes community_portal_votes[]
+  community_portal_reports community_portal_reports[]
+  
+  @@index([parent_comment_id])
+  
+  @@index([post_id, created_at])
+  @@index([author_user_id, created_at])
+  @@index([created_at])
+}

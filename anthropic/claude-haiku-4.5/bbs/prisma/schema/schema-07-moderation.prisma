@@ -1,0 +1,473 @@
+/// Records user-submitted reports of inappropriate content. Captures what
+/// content was flagged, by whom, for what reason, and tracking the status of
+/// the report through the moderation workflow. Essential for the content
+/// moderation system, enabling the community to report violations and
+/// moderators to manage review queue.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the report. References {@link
+  /// discussion_board_users.id}.
+  reported_by_user_id String
+  
+  /// Discussion that was flagged, if applicable. References {@link
+  /// discussion_board_discussions.id}.
+  discussion_id String?
+  
+  /// Comment that was flagged, if applicable. References {@link
+  /// discussion_board_comments.id}.
+  comment_id String?
+  
+  /// User who created the flagged content. References {@link
+  /// discussion_board_users.id}.
+  user_id String
+  
+  /// Category of violation reported: Violence, Harassment, Misinformation,
+  /// Spam, Illegal, PlatformAbuse, Other. Helps moderators categorize and
+  /// prioritize reports.
+  violation_category String
+  
+  /// User's detailed explanation of why content violates guidelines (maximum
+  /// 500 characters). Provides context for moderator review.
+  reporter_explanation String?
+  
+  /// Current status of flag report: pending (awaiting review), under_review
+  /// (moderator actively reviewing), resolved (decision made). Used for
+  /// workflow state tracking.
+  status String
+  
+  /// Timestamp when flag was submitted. Used for sorting reports in queue.
+  created_at DateTime
+  
+  /// Timestamp of most recent status update. Tracks progress through review
+  /// workflow.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reportedByUser discussion_board_users @relation("discussion_board_content_flags_of_reported_by_user_id", fields: [reported_by_user_id], references: [id], onDelete: Cascade)
+  discussion discussion_board_discussions? @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  contentAuthor discussion_board_users @relation("discussion_board_content_flags_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_flag_reviews discussion_board_flag_reviews[]
+  
+  @@index([reported_by_user_id])
+  @@index([discussion_id])
+  @@index([comment_id])
+  
+  @@index([status, created_at])
+  @@index([violation_category, created_at], map: "discussion_board_content_flags_violation_category_crea_045cc0dd")
+  @@index([user_id, created_at])
+}
+
+/// Records when moderators begin reviewing flagged content. Tracks which
+/// moderator is assigned to review each flag, when they start, and ensures
+/// different moderators review appeals (conflict of interest prevention).
+/// Bridges user reports and moderation decisions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_flag_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Content flag being reviewed. References {@link
+  /// discussion_board_content_flags.id}.
+  flag_id String
+  
+  /// Moderator assigned to review this flag. References {@link
+  /// discussion_board_users.id}.
+  moderator_id String
+  
+  /// Timestamp when moderator began reviewing this flag. Tracks response time
+  /// to reports.
+  review_started_at DateTime
+  
+  /// Internal notes from moderator during review process, documenting analysis
+  /// and reasoning (maximum 1000 characters).
+  review_notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  flag discussion_board_content_flags @relation(fields: [flag_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_users @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id, review_started_at], map: "discussion_board_flag_reviews_moderator_id_review_star_8ee35371")
+  @@index([flag_id])
+}
+
+/// Core record of all moderator enforcement actions. Captures what action
+/// was taken (remove content, warn user, suspend account, ban), why it was
+/// taken, who took it, and when. The central decision log for the moderation
+/// system, enabling transparency and audit trails.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator or administrator who took this action. References {@link
+  /// discussion_board_users.id}.
+  moderator_id String
+  
+  /// User who is subject of this action (usually the violator). References
+  /// {@link discussion_board_users.id}.
+  user_id String
+  
+  /// Discussion affected by this action, if applicable. References {@link
+  /// discussion_board_discussions.id}.
+  discussion_id String?
+  
+  /// Comment affected by this action, if applicable. References {@link
+  /// discussion_board_comments.id}.
+  comment_id String?
+  
+  /// Type of enforcement action taken: remove (content deleted), edit (content
+  /// modified), warn (warning issued), suspend (temporary ban), ban (permanent
+  /// ban), label (content flagged as disputed). Determines which escalation
+  /// table is relevant.
+  action_type String
+  
+  /// Specific guideline violated and brief explanation why action was taken
+  /// (maximum 500 characters). Justification for the moderation decision.
+  violation_reason String
+  
+  /// Additional details about the action taken, such as duration for
+  /// suspensions, specific edits made, or context (maximum 1000 characters).
+  action_details String?
+  
+  /// Timestamp when moderation action was taken. Record creation timestamp for
+  /// audit trail.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_users @relation("discussion_board_moderation_actions_of_moderator_id", fields: [moderator_id], references: [id], onDelete: Cascade)
+  affectedUser discussion_board_users @relation("discussion_board_moderation_actions_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  discussion discussion_board_discussions? @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_user_warnings discussion_board_user_warnings[]
+  discussion_board_user_suspensions discussion_board_user_suspensions[]
+  discussion_board_user_bans discussion_board_user_bans[]
+  discussion_board_appeals discussion_board_appeals[]
+  
+  @@index([discussion_id])
+  @@index([comment_id])
+  
+  @@index([user_id, created_at])
+  @@index([moderator_id, created_at])
+  @@index([action_type, created_at])
+}
+
+/// Records formal warnings issued to users for guideline violations. Each
+/// warning is immutable and tracks escalation (counting toward automatic
+/// suspension). Supports the progressive penalty framework by maintaining
+/// warning history and count for each user.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_warnings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who received this warning. References {@link
+  /// discussion_board_users.id}.
+  user_id String
+  
+  /// Moderator who issued this warning. References {@link
+  /// discussion_board_users.id}.
+  moderator_id String
+  
+  /// Associated moderation action record. References {@link
+  /// discussion_board_moderation_actions.id}.
+  moderation_action_id String?
+  
+  /// Description of the violation that triggered this warning (maximum 500
+  /// characters). Explains to user why warning was issued.
+  violation_reason String
+  
+  /// This user's warning count when warning was issued (1st, 2nd, 3rd warning,
+  /// etc.). Used to determine if automatic escalation to suspension should
+  /// occur.
+  warning_count_at_time Int
+  
+  /// Timestamp when warning was issued. First warning, second warning, etc.
+  /// timestamps determine escalation logic.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation("discussion_board_user_warnings_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  issuedByModerator discussion_board_users @relation("discussion_board_user_warnings_of_moderator_id", fields: [moderator_id], references: [id], onDelete: Cascade)
+  moderationAction discussion_board_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id])
+  @@index([moderation_action_id])
+  
+  @@index([user_id, created_at])
+  @@index([warning_count_at_time, created_at], map: "discussion_board_user_warnings_warning_count_at_time_c_8eb3eecc")
+}
+
+/// Records temporary restrictions on user accounts. Tracks suspension start
+/// and end dates, enabling automatic expiration and re-enabling of accounts.
+/// Part of progressive enforcement: escalated from warnings for repeated
+/// violations or serious first offenses.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_suspensions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose account is suspended. References {@link
+  /// discussion_board_users.id}.
+  user_id String
+  
+  /// Moderator who issued the suspension. References {@link
+  /// discussion_board_users.id}.
+  moderator_id String
+  
+  /// Associated moderation action record. References {@link
+  /// discussion_board_moderation_actions.id}.
+  moderation_action_id String?
+  
+  /// Reason for suspension explaining which guideline(s) were violated
+  /// (maximum 500 characters). Justification visible to user.
+  reason String
+  
+  /// Timestamp when suspension became effective. User cannot post after this
+  /// time.
+  suspension_start_at DateTime
+  
+  /// Timestamp when suspension expires and account becomes active again. Used
+  /// for automatic account re-enablement.
+  suspension_end_at DateTime
+  
+  /// Timestamp when suspension was issued by moderator. Record creation time
+  /// for audit trail.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation("discussion_board_user_suspensions_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  issuedByModerator discussion_board_users @relation("discussion_board_user_suspensions_of_moderator_id", fields: [moderator_id], references: [id], onDelete: Cascade)
+  moderationAction discussion_board_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id])
+  @@index([moderation_action_id])
+  
+  @@index([user_id, suspension_end_at])
+  @@index([suspension_start_at, suspension_end_at], map: "discussion_board_user_suspensions_suspension_start_at__569416de")
+}
+
+/// Records permanent bans of user accounts. Final enforcement action in
+/// progressive penalty system (only for critical violations or repeated
+/// serious violations). Immutable record supporting ban appeals and
+/// historical tracking of banned users.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who is permanently banned. References {@link
+  /// discussion_board_users.id}.
+  user_id String
+  
+  /// Administrator or moderator who issued the ban. References {@link
+  /// discussion_board_users.id}.
+  moderator_id String
+  
+  /// Associated moderation action record. References {@link
+  /// discussion_board_moderation_actions.id}.
+  moderation_action_id String?
+  
+  /// Detailed reason for permanent ban, citing critical violations or repeated
+  /// serious breaches (maximum 500 characters). Justification for permanent
+  /// account termination.
+  reason String
+  
+  /// Type of ban: critical_violation (immediate permanent ban for CSAM,
+  /// violence, threats), escalated (from repeated suspensions), emergency
+  /// (security threat). Distinguishes ban severity levels.
+  ban_type String
+  
+  /// Timestamp when ban was issued. Immutable record creation time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation("discussion_board_user_bans_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  issuedByModerator discussion_board_users @relation("discussion_board_user_bans_of_moderator_id", fields: [moderator_id], references: [id], onDelete: Cascade)
+  moderationAction discussion_board_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id])
+  @@index([moderation_action_id])
+  
+  @@index([user_id, created_at])
+  @@index([ban_type, created_at])
+}
+
+/// Records user appeals against moderation decisions (warnings, suspensions,
+/// bans). Tracks appeal submission, review status, and outcome. Supports
+/// appeal workflow: submitted → under_review → approved/denied, enabling
+/// fair dispute resolution.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the appeal. References {@link
+  /// discussion_board_users.id}.
+  user_id String
+  
+  /// The moderation decision being appealed. References {@link
+  /// discussion_board_moderation_actions.id}.
+  moderation_action_id String
+  
+  /// Moderator who reviewed the appeal (must be different from original
+  /// decision-maker for fairness). References {@link
+  /// discussion_board_users.id}.
+  reviewed_by_moderator_id String?
+  
+  /// User's explanation of why they believe the moderation decision was unjust
+  /// (maximum 2000 characters). Detailed justification for the appeal.
+  appeal_reason String
+  
+  /// Current status of appeal: submitted (pending review), under_review
+  /// (moderator actively considering), approved (decision reversed), denied
+  /// (decision upheld), partially_approved (penalty reduced). Workflow state
+  /// indicator.
+  status String
+  
+  /// Decision made on appeal: approved (original decision reversed, content
+  /// restored, action cancelled), denied (original decision upheld, penalty
+  /// continues), partially_approved (penalty reduced, e.g., 7-day suspension
+  /// reduced to 24-hour). Outcome of appeal review.
+  appeal_decision String?
+  
+  /// Detailed reasoning from moderator reviewing the appeal, explaining why
+  /// decision was approved/denied/partially_approved (maximum 1000
+  /// characters). Transparency for appeal outcome.
+  appeal_reasoning String?
+  
+  /// Timestamp when appeal was submitted by user. Start of appeal review
+  /// period.
+  created_at DateTime
+  
+  /// Timestamp when appeal review was completed and decision made. Null until
+  /// appeal is decided.
+  reviewed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation("discussion_board_appeals_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  originalModerationAction discussion_board_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  reviewingModerator discussion_board_users? @relation("discussion_board_appeals_of_reviewed_by_moderator_id", fields: [reviewed_by_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([reviewed_by_moderator_id])
+  
+  @@index([user_id, created_at])
+  @@index([status, created_at])
+  @@index([moderation_action_id])
+}
+
+/// Comprehensive audit trail of all moderation system events. Immutable log
+/// capturing every moderator action, system event, and relevant decision for
+/// compliance, investigation, and performance monitoring. Central record for
+/// forensic analysis and accountability.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator performing the action. References {@link
+  /// discussion_board_users.id}.
+  moderator_id String?
+  
+  /// User affected by this log event. References {@link
+  /// discussion_board_users.id}.
+  user_id String?
+  
+  /// Type of moderation event logged: flag_submitted, flag_reviewed,
+  /// content_removed, content_edited, warning_issued, user_suspended,
+  /// user_banned, appeal_submitted, appeal_reviewed, moderator_assigned,
+  /// report_dismissed. Categorizes log events.
+  event_type String
+  
+  /// Detailed description of the event that occurred (maximum 1000
+  /// characters). Human-readable account of what happened.
+  event_description String
+  
+  /// Structured additional context about the event, including affected content
+  /// IDs, action parameters, or system state (maximum 2000 characters). JSON
+  /// or key-value format acceptable.
+  event_details String?
+  
+  /// Severity level of this event: critical (CSAM, violence, threats), high
+  /// (bans, escalated violations), medium (warnings, suspensions, appeals),
+  /// low (routine moderation notes). Used for alert and filtering.
+  severity String
+  
+  /// Timestamp when this log event was created. Immutable record of when event
+  /// occurred.
+  created_at DateTime
+  
+  /// IP address from which action was performed (if applicable). Security
+  /// tracking for moderator actions.
+  ip_address String?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_users? @relation("discussion_board_moderation_logs_of_moderator_id", fields: [moderator_id], references: [id], onDelete: Cascade)
+  affectedUser discussion_board_users? @relation("discussion_board_moderation_logs_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([event_type, created_at])
+  @@index([severity, created_at])
+  @@index([moderator_id, created_at])
+  @@index([user_id, created_at])
+}

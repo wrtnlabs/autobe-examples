@@ -1,0 +1,159 @@
+/// User-submitted reports on inappropriate content. This primary entity
+/// enables users to flag content that violates community guidelines,
+/// ensuring accountability and maintaining civil discourse on the platform.
+/// It supports independent reporting workflows and cross-discussion
+/// monitoring.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting user who flagged the content. {@link
+  /// discussion_board_registereduser.id}.
+  discussion_board_registereduser_id String
+  
+  /// Target discussion being reported. {@link discussion_board_discussions.id}.
+  discussion_board_discussions_id String?
+  
+  /// Target comment being reported. {@link discussion_board_comments.id}.
+  discussion_board_comments_id String?
+  
+  /// User-provided explanation for the report.
+  reason String
+  
+  /// Report classification (harassment, misinformation, spam, rule violation,
+  /// etc.).
+  category String
+  
+  /// Current state of the report (pending, under_review, resolved, dismissed).
+  status String
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reportingUser discussion_board_registereduser @relation(fields: [discussion_board_registereduser_id], references: [id], onDelete: Cascade)
+  reportedDiscussion discussion_board_discussions? @relation(fields: [discussion_board_discussions_id], references: [id], onDelete: Cascade)
+  reportedComment discussion_board_comments? @relation(fields: [discussion_board_comments_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  discussion_board_warnings discussion_board_warnings[]
+  
+  @@index([discussion_board_registereduser_id, status], map: "discussion_board_reports_discussion_board_registeredus_b1c53120")
+  @@index([discussion_board_discussions_id, created_at], map: "discussion_board_reports_discussion_board_discussions__59230025")
+  @@index([discussion_board_comments_id, created_at], map: "discussion_board_reports_discussion_board_comments_id__8bde65a1")
+  @@index([status, created_at])
+}
+
+/// Immutable audit trails of all moderator actions. This snapshot entity
+/// captures point-in-time decisions made during content moderation,
+/// preserving a complete history of interventions to maintain transparency
+/// and accountability within the governance system.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who took the action. {@link discussion_board_moderator.id}.
+  discussion_board_moderator_id String
+  
+  /// Original report that triggered this action. {@link
+  /// discussion_board_reports.id}.
+  discussion_board_reports_id String?
+  
+  /// Type of moderation action taken (warning_issued, content_removed,
+  /// user_suspended, etc.).
+  action_type String
+  
+  /// Specific information about the moderation action.
+  details String
+  
+  /// Reasoning and explanation for the moderator's decision.
+  justification String
+  
+  /// Timestamp when the moderation action was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderator @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  report discussion_board_reports? @relation(fields: [discussion_board_reports_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_moderation_logs_discussion_board_mode_a10dc83a")
+  @@index([discussion_board_reports_id, created_at], map: "discussion_board_moderation_logs_discussion_board_repo_98f3203f")
+  @@index([action_type, created_at])
+}
+
+/// Formal warnings issued to users for guideline violations. This primary
+/// entity enables the moderation system to track disciplinary actions,
+/// provide educational feedback to users, and support escalation protocols
+/// for repeated offenses.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_warnings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who received the warning. {@link discussion_board_registereduser.id}.
+  discussion_board_registereduser_id String
+  
+  /// Moderator who issued the warning. {@link discussion_board_moderator.id}.
+  discussion_board_moderator_id String
+  
+  /// Original report that led to the warning. {@link
+  /// discussion_board_reports.id}.
+  discussion_board_reports_id String?
+  
+  /// Violation category that prompted the warning.
+  reason String
+  
+  /// Specific explanation of the guideline violation.
+  details String
+  
+  /// Timestamp when the warning was issued.
+  issued_at DateTime
+  
+  /// Timestamp when the warning was resolved or expired.
+  resolved_at DateTime?
+  
+  /// Current state of the warning (active, resolved, expired).
+  status String
+  
+  /// Timestamp when the warning record was created.
+  created_at DateTime
+  
+  /// Timestamp when the warning record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_registereduser @relation(fields: [discussion_board_registereduser_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderator @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  report discussion_board_reports? @relation(fields: [discussion_board_reports_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_registereduser_id, status], map: "discussion_board_warnings_discussion_board_registeredu_c6442cbc")
+  @@index([discussion_board_moderator_id, issued_at], map: "discussion_board_warnings_discussion_board_moderator_i_7a4b6233")
+  @@index([discussion_board_reports_id, issued_at], map: "discussion_board_warnings_discussion_board_reports_id__6486a678")
+  @@index([status, issued_at])
+}

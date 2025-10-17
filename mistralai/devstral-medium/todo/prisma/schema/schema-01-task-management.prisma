@@ -1,0 +1,30 @@
+/// Stores individual tasks for the Todo list application. This table
+/// contains all task information including title, completion status, and
+/// timestamps for creation and updates.
+///
+/// @namespace TaskManagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Title of the task.
+  title String
+  
+  /// Whether the task is completed or not.
+  is_completed Boolean
+  
+  /// Timestamp when the task was created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+}

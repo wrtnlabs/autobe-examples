@@ -1,0 +1,365 @@
+/// Complete order records representing purchase transactions between buyers
+/// and sellers. Tracks order lifecycle from placement through completion,
+/// including financial totals, status progression, and relationships to
+/// buyers, sellers, and delivery addresses. Central to the e-commerce
+/// fulfillment workflow with comprehensive audit capabilities.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Buyer's {@link shopping_platform_buyers.id} who placed the order.
+  shopping_platform_buyer_id String
+  
+  /// Seller's {@link shopping_platform_sellers.id} fulfilling the order.
+  shopping_platform_seller_id String
+  
+  /// Billing address's {@link shopping_platform_addresses.id} for the order.
+  billing_shopping_platform_address_id String
+  
+  /// Shipping address's {@link shopping_platform_addresses.id} for delivery.
+  shipping_shopping_platform_address_id String
+  
+  /// Original cart's {@link shopping_platform_carts.id} that generated this
+  /// order.
+  shopping_platform_cart_id String
+  
+  /// Unique order identifier for customer reference and tracking.
+  code String
+  
+  /// Current order status indicating progress through fulfillment phases.
+  status String
+  
+  /// Business workflow state for operational tracking and reporting.
+  business_status String
+  
+  /// Order subtotal before taxes and shipping charges.
+  subtotal Float
+  
+  /// Calculated tax amount based on shipping destination and items.
+  tax_amount Float
+  
+  /// Shipping charges for the order including carrier and service fees.
+  shipping_cost Float
+  
+  /// Final order total including all items, taxes, and shipping.
+  total Float
+  
+  /// Applied discount amount from coupons or promotions.
+  discount_amount Float
+  
+  /// Additional customer notes or special handling instructions.
+  notes String?
+  
+  /// Order creation timestamp.
+  created_at DateTime
+  
+  /// Order last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for canceled orders.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  buyer shopping_platform_buyers @relation(fields: [shopping_platform_buyer_id], references: [id], onDelete: Cascade)
+  seller shopping_platform_sellers @relation(fields: [shopping_platform_seller_id], references: [id], onDelete: Cascade)
+  billingAddress shopping_platform_addresses @relation("shopping_platform_orders_of_billing_shopping_platform__77008864", fields: [billing_shopping_platform_address_id], references: [id], onDelete: Cascade)
+  shippingAddress shopping_platform_addresses @relation("shopping_platform_orders_of_shipping_shopping_platform_c2dbd427", fields: [shipping_shopping_platform_address_id], references: [id], onDelete: Cascade)
+  cart shopping_platform_carts @relation(fields: [shopping_platform_cart_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_order_snapshots shopping_platform_order_snapshots[]
+  shopping_platform_order_items shopping_platform_order_items[]
+  shopping_platform_payments shopping_platform_payments[]
+  shopping_platform_shippings shopping_platform_shippings?
+  
+  @@index([billing_shopping_platform_address_id], map: "shopping_platform_orders_billing_shopping_platform_add_5ad19c14")
+  @@index([shipping_shopping_platform_address_id], map: "shopping_platform_orders_shipping_shopping_platform_ad_72b2f836")
+  @@index([shopping_platform_cart_id])
+  
+  @@unique([code])
+  @@index([shopping_platform_buyer_id, created_at], map: "shopping_platform_orders_shopping_platform_buyer_id_cr_4ad44a99")
+  @@index([shopping_platform_seller_id, created_at], map: "shopping_platform_orders_shopping_platform_seller_id_c_2377ecd4")
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Historical snapshots of order states for comprehensive audit trails and
+/// change tracking. Captures point-in-time representations of orders
+/// enabling rollback capabilities and historical reporting. Supports
+/// regulatory compliance with complete order modification history.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_order_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced order's {@link shopping_platform_orders.id} for snapshot
+  /// tracking.
+  shopping_platform_order_id String
+  
+  /// Order code at snapshot time.
+  code String
+  
+  /// Order status at snapshot time.
+  status String
+  
+  /// Business status at snapshot time.
+  business_status String
+  
+  /// Subtotal at snapshot time.
+  subtotal Float
+  
+  /// Tax amount at snapshot time.
+  tax_amount Float
+  
+  /// Shipping cost at snapshot time.
+  shipping_cost Float
+  
+  /// Total amount at snapshot time.
+  total Float
+  
+  /// Discount amount at snapshot time.
+  discount_amount Float
+  
+  /// Notes at snapshot time.
+  notes String?
+  
+  /// Snapshot creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_platform_orders @relation(fields: [shopping_platform_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_platform_order_id, created_at], map: "shopping_platform_order_snapshots_shopping_platform_or_6174ee80")
+}
+
+/// Individual line items within orders detailing specific product purchases.
+/// Breaks down orders into constituent products with quantities, pricing,
+/// and variant specifications. Supports detailed order fulfillment and
+/// inventory allocation.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order's {@link shopping_platform_orders.id}.
+  shopping_platform_order_id String
+  
+  /// Inventory item's {@link shopping_platform_inventory.id} being purchased.
+  shopping_platform_inventory_id String
+  
+  /// Number of items ordered for this line item.
+  quantity Int
+  
+  /// Price per item at time of order.
+  unit_price Float
+  
+  /// Total price for this line item (quantity × unit_price).
+  total_price Float
+  
+  /// Product code reference for fulfillment.
+  product_code String
+  
+  /// Selected product variant specifications (color, size, etc.).
+  variant_details String
+  
+  /// Item creation timestamp.
+  created_at DateTime
+  
+  /// Item last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_platform_orders @relation(fields: [shopping_platform_order_id], references: [id], onDelete: Cascade)
+  inventory shopping_platform_inventory @relation(fields: [shopping_platform_inventory_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_reviews shopping_platform_reviews[]
+  
+  @@index([shopping_platform_order_id])
+  @@index([shopping_platform_inventory_id], map: "shopping_platform_order_items_shopping_platform_invent_1fde4647")
+}
+
+/// Financial transaction records tracking payment processing for orders.
+/// Captures payment methods, amounts, statuses, and processing details
+/// enabling secure financial operations and audit trails. Critical for
+/// revenue tracking and dispute resolution.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated order's {@link shopping_platform_orders.id}.
+  shopping_platform_order_id String
+  
+  /// Unique payment transaction identifier.
+  code String
+  
+  /// Payment method used (credit card, digital wallet, etc.).
+  method String
+  
+  /// Payment processing status and authorization state.
+  status String
+  
+  /// Payment amount processed.
+  amount Float
+  
+  /// Payment currency code.
+  currency String
+  
+  /// External payment gateway transaction reference.
+  gateway_transaction_id String?
+  
+  /// Reason for payment failure if applicable.
+  failure_reason String?
+  
+  /// Payment processing completion timestamp.
+  processed_at DateTime?
+  
+  /// Payment record creation timestamp.
+  created_at DateTime
+  
+  /// Payment record last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_platform_orders @relation(fields: [shopping_platform_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([code])
+  @@index([shopping_platform_order_id, status], map: "shopping_platform_payments_shopping_platform_order_id__e7bb2229")
+  @@index([status, created_at])
+  @@index([processed_at])
+}
+
+/// Shipping and delivery records for orders. Manages carrier assignments,
+/// service levels, and delivery instructions. Supports tracking integration
+/// and customer communication about delivery progress.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_shippings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated order's {@link shopping_platform_orders.id}.
+  shopping_platform_order_id String
+  
+  /// Shipping carrier provider name.
+  carrier String
+  
+  /// Service level (standard, express, overnight).
+  service_level String
+  
+  /// Carrier-assigned tracking number.
+  tracking_number String?
+  
+  /// Estimated delivery date and time.
+  estimated_delivery DateTime?
+  
+  /// Actual delivery completion timestamp.
+  actual_delivery DateTime?
+  
+  /// Current shipping status.
+  status String
+  
+  /// Shipping cost charged.
+  cost Float
+  
+  /// Package weight for shipping calculation.
+  weight Float
+  
+  /// Package dimensions for shipping.
+  dimensions String?
+  
+  /// Special delivery instructions from customer.
+  special_instructions String?
+  
+  /// Shipping record creation timestamp.
+  created_at DateTime
+  
+  /// Shipping record last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_platform_orders @relation(fields: [shopping_platform_order_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_trackings shopping_platform_trackings[]
+  
+  @@unique([shopping_platform_order_id])
+  
+  @@unique([tracking_number])
+  @@index([shopping_platform_order_id])
+  @@index([status, estimated_delivery])
+  @@index([carrier])
+}
+
+/// Detailed tracking events and status updates for shipments. Provides
+/// granular delivery progress information enabling customers and sellers to
+/// monitor package movement through the delivery network.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_trackings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent shipping's {@link shopping_platform_shippings.id}.
+  shopping_platform_shipping_id String
+  
+  /// Tracking status event (picked up, in transit, delivered).
+  status String
+  
+  /// Current or event location description.
+  location String?
+  
+  /// Detailed status description from carrier.
+  description String?
+  
+  /// Event occurrence timestamp.
+  timestamp DateTime
+  
+  /// Tracking event creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipping shopping_platform_shippings @relation(fields: [shopping_platform_shipping_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_platform_shipping_id, timestamp], map: "shopping_platform_trackings_shopping_platform_shipping_14e7fd4f")
+  @@index([status])
+}

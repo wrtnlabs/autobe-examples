@@ -1,0 +1,420 @@
+/// User-submitted reports about problematic content on the discussion board.
+/// Contains detailed information about reported posts, comments, or users,
+/// including the reason for reporting and the current status of the report.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who submitted the report. {@link discussion_board_members.id}
+  reporter_id String
+  
+  /// Reported post content. {@link discussion_board_posts.id}
+  reported_post_id String?
+  
+  /// Reported comment content. {@link discussion_board_comments.id}
+  reported_comment_id String?
+  
+  /// Reported user account. {@link discussion_board_members.id}
+  reported_user_id String?
+  
+  /// Moderator assigned to review this report. {@link
+  /// discussion_board_moderators.id}
+  assigned_moderator_id String?
+  
+  /// Category or reason for the report (spam, harassment, misinformation,
+  /// etc.).
+  report_reason String
+  
+  /// Detailed explanation provided by the reporter.
+  report_details String?
+  
+  /// Current status of the report (pending, under_review, resolved, dismissed).
+  report_status String
+  
+  /// Priority level for moderation (low, medium, high, critical).
+  priority_level String
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter discussion_board_members @relation("discussion_board_content_reports_of_reporter_id", fields: [reporter_id], references: [id], onDelete: Cascade)
+  reportedPost discussion_board_posts? @relation(fields: [reported_post_id], references: [id], onDelete: Cascade)
+  reportedComment discussion_board_comments? @relation(fields: [reported_comment_id], references: [id], onDelete: Cascade)
+  reportedUser discussion_board_members? @relation("discussion_board_content_reports_of_reported_user_id", fields: [reported_user_id], references: [id], onDelete: Cascade)
+  assignedModerator discussion_board_moderators? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_moderation_queues discussion_board_moderation_queues[]
+  
+  @@index([assigned_moderator_id])
+  
+  @@index([report_status, priority_level], map: "discussion_board_content_reports_report_status_priorit_943caa09")
+  @@index([created_at])
+  @@index([reporter_id])
+  @@index([reported_post_id])
+  @@index([reported_comment_id])
+  @@index([reported_user_id])
+}
+
+/// Complete audit trail of all moderation actions taken on the platform.
+/// Records decisions made by moderators and administrators, including
+/// content removals, user warnings, and account suspensions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link discussion_board_moderators.id}
+  moderator_id String
+  
+  /// Post that was moderated. {@link discussion_board_posts.id}
+  target_post_id String?
+  
+  /// Comment that was moderated. {@link discussion_board_comments.id}
+  target_comment_id String?
+  
+  /// User who was moderated. {@link discussion_board_members.id}
+  target_user_id String?
+  
+  /// Content report that triggered this action. {@link
+  /// discussion_board_content_reports.id}
+  related_content_report_id String?
+  
+  /// Type of moderation action (remove_content, approve_content, warn_user,
+  /// suspend_user, ban_user).
+  action_type String
+  
+  /// Detailed explanation of the moderation decision.
+  action_details String
+  
+  /// Duration of enforcement in hours (for suspensions, etc.).
+  enforcement_duration Int?
+  
+  /// Whether this action was performed automatically by system.
+  automated_action Boolean
+  
+  /// Whether this action can be appealed by the user.
+  appeal_available Boolean
+  
+  /// Timestamp when the action was performed.
+  created_at DateTime
+  
+  /// Timestamp when the action was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the action record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetPost discussion_board_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment discussion_board_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  targetUser discussion_board_members? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  relatedContentReport discussion_board_content_reports? @relation(fields: [related_content_report_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_user_warnings discussion_board_user_warnings[]
+  discussion_board_appeal_requests discussion_board_appeal_requests[]
+  
+  @@index([related_content_report_id], map: "discussion_board_moderation_actions_related_content_re_78a420c2")
+  
+  @@index([action_type, created_at])
+  @@index([moderator_id, created_at])
+  @@index([target_user_id])
+  @@index([target_post_id])
+  @@index([target_comment_id])
+  @@index([automated_action])
+}
+
+/// Queue management system for content awaiting moderation review. Organizes
+/// moderation workload by priority, category, and assigned moderators.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_queues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator currently assigned to this queue item. {@link
+  /// discussion_board_moderators.id}
+  assigned_moderator_id String?
+  
+  /// Post content awaiting moderation. {@link discussion_board_posts.id}
+  content_post_id String?
+  
+  /// Comment content awaiting moderation. {@link discussion_board_comments.id}
+  content_comment_id String?
+  
+  /// Content report that created this queue item. {@link
+  /// discussion_board_content_reports.id}
+  related_content_report_id String?
+  
+  /// Type of content in queue (new_post, reported_content, flagged_content,
+  /// appeal_review).
+  queue_type String
+  
+  /// Priority for moderation (low, medium, high, critical).
+  priority_level String
+  
+  /// Current status in queue (pending, assigned, in_review, completed).
+  queue_status String
+  
+  /// Estimated time in minutes for review completion.
+  estimated_review_time Int?
+  
+  /// Timestamp when the item entered the queue.
+  created_at DateTime
+  
+  /// Timestamp when the item was assigned to a moderator.
+  assigned_at DateTime?
+  
+  /// Timestamp when the queue item was completed.
+  completed_at DateTime?
+  
+  /// Timestamp when the queue item was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  assignedModerator discussion_board_moderators? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  contentPost discussion_board_posts? @relation(fields: [content_post_id], references: [id], onDelete: Cascade)
+  contentComment discussion_board_comments? @relation(fields: [content_comment_id], references: [id], onDelete: Cascade)
+  relatedContentReport discussion_board_content_reports? @relation(fields: [related_content_report_id], references: [id], onDelete: Cascade)
+  
+  @@index([related_content_report_id], map: "discussion_board_moderation_queues_related_content_rep_b177f93f")
+  
+  @@index([queue_status, priority_level], map: "discussion_board_moderation_queues_queue_status_priori_9f9e7a05")
+  @@index([assigned_moderator_id, queue_status], map: "discussion_board_moderation_queues_assigned_moderator__cdf963be")
+  @@index([created_at])
+  @@index([content_post_id])
+  @@index([content_comment_id])
+}
+
+/// Automated content flags generated by system analysis tools. Records
+/// automated detection of potential policy violations, spam, or suspicious
+/// content patterns.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that was automatically flagged. {@link discussion_board_posts.id}
+  flagged_post_id String?
+  
+  /// Comment that was automatically flagged. {@link
+  /// discussion_board_comments.id}
+  flagged_comment_id String?
+  
+  /// User whose content was flagged. {@link discussion_board_members.id}
+  flagged_user_id String?
+  
+  /// Type of automated flag (spam_detection, toxicity_score,
+  /// duplicate_content, suspicious_pattern).
+  flag_type String
+  
+  /// Severity level of the flag (low, medium, high, critical).
+  flag_severity String
+  
+  /// Confidence score from automated detection (0.0 to 1.0).
+  flag_confidence Float
+  
+  /// Automated analysis of why content was flagged.
+  flag_reason String?
+  
+  /// Whether this flag has been reviewed by a human moderator.
+  reviewed_by_moderator Boolean
+  
+  /// Timestamp when the flag was generated.
+  created_at DateTime
+  
+  /// Timestamp when the flag was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the flag was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  flaggedPost discussion_board_posts? @relation(fields: [flagged_post_id], references: [id], onDelete: Cascade)
+  flaggedComment discussion_board_comments? @relation(fields: [flagged_comment_id], references: [id], onDelete: Cascade)
+  flaggedUser discussion_board_members? @relation(fields: [flagged_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([flagged_post_id])
+  @@index([flagged_comment_id])
+  
+  @@index([flag_type, flag_severity])
+  @@index([flagged_user_id])
+  @@index([flag_confidence])
+  @@index([reviewed_by_moderator])
+  @@index([created_at])
+}
+
+/// Formal warnings issued to users for policy violations. Records the
+/// warning details, severity, and any follow-up actions required from the
+/// user.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_warnings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who received the warning. {@link discussion_board_members.id}
+  warned_user_id String
+  
+  /// Moderator who issued the warning. {@link discussion_board_moderators.id}
+  issuing_moderator_id String
+  
+  /// Moderation action that resulted in this warning. {@link
+  /// discussion_board_moderation_actions.id}
+  related_moderation_action_id String?
+  
+  /// Type of warning issued (minor_violation, major_violation, final_warning,
+  /// suspended).
+  warning_type String
+  
+  /// Detailed explanation of the policy violation.
+  warning_reason String
+  
+  /// Severity level of the warning (low, medium, high, critical).
+  warning_severity String
+  
+  /// Action required from the user to resolve the warning.
+  required_action String?
+  
+  /// Current status of the warning (active, acknowledged, resolved, expired).
+  warning_status String
+  
+  /// Timestamp when the warning automatically expires.
+  expires_at DateTime?
+  
+  /// Timestamp when the user acknowledged the warning.
+  acknowledged_at DateTime?
+  
+  /// Timestamp when the warning was issued.
+  created_at DateTime
+  
+  /// Timestamp when the warning was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the warning was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  warnedUser discussion_board_members @relation(fields: [warned_user_id], references: [id], onDelete: Cascade)
+  issuingModerator discussion_board_moderators @relation(fields: [issuing_moderator_id], references: [id], onDelete: Cascade)
+  relatedModerationAction discussion_board_moderation_actions? @relation(fields: [related_moderation_action_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_appeal_requests discussion_board_appeal_requests[]
+  
+  @@index([related_moderation_action_id], map: "discussion_board_user_warnings_related_moderation_acti_e0ce256e")
+  
+  @@index([warning_type, warning_status])
+  @@index([warned_user_id, warning_status], map: "discussion_board_user_warnings_warned_user_id_warning__c2a35df0")
+  @@index([issuing_moderator_id])
+  @@index([expires_at])
+  @@index([created_at])
+}
+
+/// User appeals against moderation decisions. Manages the appeal process for
+/// users who wish to challenge moderation actions, warnings, or account
+/// restrictions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_appeal_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User submitting the appeal. {@link discussion_board_members.id}
+  appealing_user_id String
+  
+  /// Moderation action being appealed. {@link
+  /// discussion_board_moderation_actions.id}
+  appealed_moderation_action_id String?
+  
+  /// User warning being appealed. {@link discussion_board_user_warnings.id}
+  appealed_user_warning_id String?
+  
+  /// Moderator assigned to review the appeal. {@link
+  /// discussion_board_moderators.id}
+  assigned_moderator_id String?
+  
+  /// Detailed explanation from the user about why they are appealing.
+  appeal_reason String
+  
+  /// Current status of the appeal (pending, under_review, approved, rejected).
+  appeal_status String
+  
+  /// Priority level for appeal review (low, medium, high, critical).
+  priority_level String
+  
+  /// Detailed explanation of the appeal resolution decision.
+  resolution_details String?
+  
+  /// Estimated time in days for appeal review completion.
+  estimated_review_time Int?
+  
+  /// Timestamp when the appeal was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the appeal was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the appeal was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  appealingUser discussion_board_members @relation(fields: [appealing_user_id], references: [id], onDelete: Cascade)
+  appealedModerationAction discussion_board_moderation_actions? @relation(fields: [appealed_moderation_action_id], references: [id], onDelete: Cascade)
+  appealedUserWarning discussion_board_user_warnings? @relation(fields: [appealed_user_warning_id], references: [id], onDelete: Cascade)
+  assignedModerator discussion_board_moderators? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([appeal_status, priority_level], map: "discussion_board_appeal_requests_appeal_status_priorit_9aa897c6")
+  @@index([appealing_user_id, appeal_status], map: "discussion_board_appeal_requests_appealing_user_id_app_edd0a5a2")
+  @@index([assigned_moderator_id])
+  @@index([created_at])
+  @@index([appealed_moderation_action_id], map: "discussion_board_appeal_requests_appealed_moderation_a_c648737f")
+  @@index([appealed_user_warning_id])
+}

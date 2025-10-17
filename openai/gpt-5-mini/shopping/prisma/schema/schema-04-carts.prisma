@@ -1,0 +1,223 @@
+/// Persistent shopping carts and guest carts. A cart may belong to either a
+/// registered customer ({@link shopping_mall_customer.id}) or a guest
+/// session ({@link shopping_mall_guest.id}). Used to persist items prior to
+/// checkout and to support merge behavior when guests log in. Soft-delete
+/// and timestamps maintained for auditing and lifecycle management. NOTE:
+/// removed single-column unique constraint on shopping_mall_customer_id to
+/// allow multiple saved carts per customer. If single active-cart semantics
+/// are required, implement a partial unique index on
+/// (shopping_mall_customer_id) WHERE status='active' at DB migration time.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customer.id}. Nullable to
+  /// support guest carts.
+  shopping_mall_customer_id String?
+  
+  /// Belonged guest session {@link shopping_mall_guest.id}. Nullable to
+  /// support persistent customer carts.
+  shopping_mall_guest_id String?
+  
+  /// Optional guest token for client-side mapping of temporary guest carts.
+  guest_token String?
+  
+  /// Optional reservation identifier used during checkout to correlate
+  /// reserved inventory or payment attempts. INDEX recommended for lookup
+  /// performance.
+  reservation_token String?
+  
+  /// Cart lifecycle status (for example: 'active', 'merged', 'abandoned').
+  /// Application controls valid values; consider using an enum for stronger
+  /// validation.
+  status String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for cart recovery and audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  guest shopping_mall_guest? @relation(fields: [shopping_mall_guest_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  
+  @@index([shopping_mall_guest_id])
+  @@index([shopping_mall_customer_id, updated_at])
+  @@index([created_at, updated_at])
+  @@index([reservation_token])
+}
+
+/// Line items within a shopping cart. Each item references a SKU ({@link
+/// shopping_mall_skus.id}) and records quantity and unit price snapshot.
+/// Items are managed via the parent cart and include optional reservation
+/// metadata to support the checkout reservation lifecycle. Added composite
+/// unique constraint on (shopping_mall_cart_id, shopping_mall_sku_id) to
+/// prevent duplicate lines and simplify upsert logic.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent cart reference. {@link shopping_mall_carts.id}
+  shopping_mall_cart_id String
+  
+  /// Referenced SKU for this line item. {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Requested quantity for this SKU in the cart. Must be validated against
+  /// inventory at checkout; non-negative at application level.
+  quantity Int
+  
+  /// Snapshot of unit price at the time item was added to cart to preserve
+  /// pricing during checkout.
+  unit_price Float
+  
+  /// Optional reservation identifier linked to inventory reservation or
+  /// payment attempt.
+  reservation_id String?
+  
+  /// Optional reservation expiry timestamp for this item when a temporary hold
+  /// on inventory exists.
+  reserved_until DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for item removal history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_cart_id, shopping_mall_sku_id], map: "shopping_mall_cart_items_shopping_mall_cart_id_shoppin_b4d582b2")
+  @@index([shopping_mall_cart_id, created_at])
+  @@index([shopping_mall_sku_id, created_at])
+}
+
+/// User wishlists for saving SKUs for later. Wishlists may belong to a
+/// registered customer ({@link shopping_mall_customer.id}) or a guest
+/// session ({@link shopping_mall_guest.id}). Supports named lists and
+/// soft-delete for lifecycle management. Recommendation: default is_public
+/// to false at DB or application layer to avoid accidental public lists for
+/// guests.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning customer reference. {@link shopping_mall_customer.id}. Nullable to
+  /// support guest wishlists.
+  shopping_mall_customer_id String?
+  
+  /// Owning guest session reference. {@link shopping_mall_guest.id}. Nullable
+  /// to support persistent customer lists.
+  shopping_mall_guest_id String?
+  
+  /// Optional user-visible name for the wishlist (for example 'Birthday
+  /// ideas').
+  name String?
+  
+  /// Whether the wishlist is visible to others. Recommended default: false.
+  /// Application must enforce visibility semantics for guest vs. authenticated
+  /// lists.
+  is_public Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  guest shopping_mall_guest? @relation(fields: [shopping_mall_guest_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@index([shopping_mall_guest_id])
+  
+  @@unique([shopping_mall_customer_id, name])
+  @@index([shopping_mall_customer_id, updated_at], map: "shopping_mall_wishlists_shopping_mall_customer_id_upda_654ceeef")
+}
+
+/// Items saved in a wishlist. Each record links a wishlist to a SKU ({@link
+/// shopping_mall_skus.id}). Duplicate (wishlist, sku) pairs are prevented by
+/// a unique index to avoid redundant entries.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent wishlist reference. {@link shopping_mall_wishlists.id}
+  shopping_mall_wishlist_id String
+  
+  /// Referenced SKU saved in the wishlist. {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Optional user note attached to the wishlist item (for example 'gift for
+  /// mom').
+  note String?
+  
+  /// Timestamp when the SKU was added to the wishlist.
+  added_at DateTime
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for history and audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_sku_id])
+  
+  @@unique([shopping_mall_wishlist_id, shopping_mall_sku_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_745f462f")
+  @@index([shopping_mall_wishlist_id, added_at], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_2354fef5")
+}

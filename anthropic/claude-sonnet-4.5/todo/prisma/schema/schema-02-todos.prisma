@@ -1,0 +1,60 @@
+/// Core todo item entity representing user tasks. Each todo belongs to a
+/// specific user and contains a title, optional description, and completion
+/// status. This is the primary business entity of the application where
+/// users manage their personal task lists. Todos support creation, viewing,
+/// editing, status toggling, and deletion workflows. The table maintains
+/// strict data isolation between users - each user can only access their own
+/// todos.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner of this todo item. References the user who created this todo.
+  /// {@link todo_list_users.id}
+  todo_list_user_id String
+  
+  /// The main text describing the task. Required field with 1-200 characters.
+  /// Must contain at least one non-whitespace character. This is the primary
+  /// display text in todo lists.
+  title String
+  
+  /// Optional detailed information about the task. Can be null or empty.
+  /// Maximum 2000 characters when provided. Provides additional context for
+  /// complex tasks.
+  description String?
+  
+  /// Completion status indicating whether the task is finished. True means
+  /// completed, false means incomplete. Defaults to false for newly created
+  /// todos. Users can toggle this status unlimited times.
+  completed Boolean
+  
+  /// Timestamp when this todo was created. System-generated upon todo
+  /// creation. Immutable - never changes after creation. Used for
+  /// chronological sorting and audit trails.
+  created_at DateTime
+  
+  /// Timestamp when this todo was last modified. System-generated and
+  /// automatically updated on every modification. Changes whenever title,
+  /// description, or completion status is updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null indicates the todo is active. Non-null value
+  /// indicates when the todo was deleted. Supports data lifecycle management
+  /// and potential recovery processes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+  @@index([todo_list_user_id, completed])
+  @@index([todo_list_user_id, deleted_at])
+}

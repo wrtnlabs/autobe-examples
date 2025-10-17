@@ -1,0 +1,354 @@
+/// Guest user profiles for non-authenticated browsing with limited platform
+/// access. Guest accounts enable content viewing and community discovery
+/// without requiring registration, providing seamless entry into the
+/// platform ecosystem.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guest_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user's {@link reddit_community_user_profiles.id}
+  user_id String
+  
+  /// Anonymous display name for guest browsing sessions
+  guest_alias String?
+  
+  /// Unique session identifier for tracking guest activity
+  session_id String
+  
+  /// Most recent IP address used by the guest
+  last_ip_address String?
+  
+  /// Browser and device metadata for session management
+  device_info String?
+  
+  /// JSON-encoded preferences for content filtering and display
+  browsing_preferences String?
+  
+  /// Total number of posts and comments viewed during guest session
+  total_views Int
+  
+  /// Whether the guest session is currently active
+  is_active Boolean
+  
+  /// When the guest session was initiated
+  session_started_at DateTime
+  
+  /// When the guest session will automatically expire
+  session_expires_at DateTime
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record last update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@unique([session_id])
+  @@index([session_expires_at, is_active], map: "reddit_community_guest_profiles_session_expires_at_is__83c52ad7")
+  @@index([guest_alias])
+}
+
+/// Registered member accounts with full platform access including
+/// authentication, karma tracking, and community participation privileges.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user's reddit_community_user_profiles.id
+  user_id String
+  
+  /// Unique username for member identification
+  username String
+  
+  /// Email address for authentication and notifications
+  email String
+  
+  /// Hashed password for secure authentication
+  password_hash String
+  
+  /// Whether the member's email address has been verified
+  email_verified Boolean
+  
+  /// Current business workflow status (active, suspended, banned, pending)
+  business_status String
+  
+  /// Total karma earned from post submissions
+  post_karma Int
+  
+  /// Total karma earned from comment contributions
+  comment_karma Int
+  
+  /// Combined karma score from all contributions
+  total_karma Int
+  
+  /// Current reputation level based on karma thresholds
+  reputation_level String
+  
+  /// Whether the member can create new communities
+  can_create_communities Boolean
+  
+  /// Whether the member has moderator privileges in any community
+  is_moderator Boolean
+  
+  /// Soft delete timestamp for account deactivation
+  deleted_at DateTime?
+  
+  /// Most recent login timestamp
+  last_login_at DateTime?
+  
+  /// When the member joined the platform
+  joined_at DateTime
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record last update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_audit_logs_of_performed_by_id reddit_community_audit_logs[] @relation("reddit_community_audit_logs_of_performed_by_id")
+  reddit_community_audit_logs_of_impacted_user_id reddit_community_audit_logs[] @relation("reddit_community_audit_logs_of_impacted_user_id")
+  reddit_community_moderators reddit_community_moderators?
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_communities_subscriptions reddit_community_communities_subscriptions[]
+  reddit_community_community_moderators_of_member_id reddit_community_community_moderators[] @relation("reddit_community_community_moderators_of_member_id")
+  reddit_community_community_moderators_of_appointed_by_id reddit_community_community_moderators[] @relation("reddit_community_community_moderators_of_appointed_by_id")
+  reddit_community_community_polls reddit_community_community_polls[]
+  reddit_community_community_votes reddit_community_community_votes[]
+  reddit_community_votes reddit_community_votes[]
+  reddit_community_karma_history reddit_community_karma_history[]
+  reddit_community_comment_votes reddit_community_comment_votes[]
+  reddit_community_content_reports_of_reporter_id reddit_community_content_reports[] @relation("reddit_community_content_reports_of_reporter_id")
+  reddit_community_content_reports_of_content_author_id reddit_community_content_reports[] @relation("reddit_community_content_reports_of_content_author_id")
+  reddit_community_violation_records reddit_community_violation_records[]
+  reddit_community_user_bans reddit_community_user_bans[]
+  reddit_community_appeals reddit_community_appeals[]
+  
+  @@unique([user_id])
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([business_status, email_verified])
+  @@index([reputation_level])
+  @@index([last_login_at])
+  @@index([deleted_at])
+  @@index([user_id])
+}
+
+/// Community moderator accounts with permissions for content management,
+/// user supervision, and community governance within specific communities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's {@link reddit_community_user_profiles.id}
+  user_id String
+  
+  /// Moderated community's {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Member account's {@link reddit_community_members.id}
+  member_id String
+  
+  /// Moderator hierarchy level: head, senior, or junior
+  moderator_level String
+  
+  /// JSON-encoded object defining specific moderation permissions
+  permissions_set String
+  
+  /// Member ID of the moderator who appointed this role
+  appointed_by String?
+  
+  /// Total number of moderation actions taken
+  moderation_count Int
+  
+  /// When the moderator role was assigned
+  appointed_at DateTime
+  
+  /// Most recent moderation action timestamp
+  last_moderation_at DateTime?
+  
+  /// Whether the moderator role is currently active
+  is_active Boolean
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record last update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_comment_moderation_queue reddit_community_comment_moderation_queue[]
+  reddit_community_moderation_queue reddit_community_moderation_queue[]
+  reddit_community_violation_records reddit_community_violation_records[]
+  reddit_community_user_bans reddit_community_user_bans[]
+  reddit_community_appeals reddit_community_appeals[]
+  
+  @@index([user_id])
+  
+  @@unique([member_id])
+  @@index([community_id, is_active])
+  @@index([moderator_level])
+  @@index([last_moderation_at])
+  @@index([appointed_by])
+}
+
+/// Platform administrator accounts with system-wide privileges for platform
+/// management, policy enforcement, and administrative oversight across all
+/// communities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_admin_accounts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's {@link reddit_community_user_profiles.id}
+  user_id String
+  
+  /// Admin hierarchy level (super, senior, support)
+  admin_level String
+  
+  /// Specific administrative role (platform, legal, community, technical)
+  admin_role String
+  
+  /// JSON-encoded object defining system-wide permissions
+  permissions_matrix String
+  
+  /// When the administrator role was assigned
+  appointed_at DateTime
+  
+  /// Most recent administrative action timestamp
+  last_admin_action_at DateTime?
+  
+  /// Whether the admin account is currently active
+  is_active Boolean
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record last update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([admin_level, is_active])
+  @@index([admin_role])
+  @@index([last_admin_action_at])
+  @@index([is_active])
+}
+
+/// Core user profile information serving as the public identity interface
+/// with display customization and verification status.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Parent user profile reference
+  user_id String
+  
+  /// User's public display name shown in communities and posts
+  display_name String
+  
+  /// Brief user biography or description visible in profile
+  bio String?
+  
+  /// User's public location information
+  location String?
+  
+  /// User's personal website URL
+  website_url String?
+  
+  /// User's Reddit profile URL
+  reddit_url String?
+  
+  /// User's Twitter profile URL
+  twitter_url String?
+  
+  /// Whether user's email and identity are verified
+  is_verified Boolean
+  
+  /// Date when user was verified
+  verification_date DateTime?
+  
+  /// Soft delete timestamp for profile deactivation
+  deleted_at DateTime?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record last update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parentUser reddit_community_user_profiles @relation("recursive", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_guest_profiles reddit_community_guest_profiles?
+  reddit_community_members reddit_community_members?
+  reddit_community_moderators reddit_community_moderators[]
+  reddit_community_admin_accounts reddit_community_admin_accounts?
+  recursive reddit_community_user_profiles[] @relation("recursive")
+  reddit_community_communities reddit_community_communities[]
+  reddit_community_user_subscriptions reddit_community_user_subscriptions[]
+  reddit_community_feed_algorithms reddit_community_feed_algorithms?
+  reddit_community_content_discoveries reddit_community_content_discoveries[]
+  mv_reddit_community_user_subscription_analytics mv_reddit_community_user_subscription_analytics[]
+  reddit_community_user_activities reddit_community_user_activities[]
+  reddit_community_user_privacy_settings reddit_community_user_privacy_settings[]
+  reddit_community_profile_customizations reddit_community_profile_customizations[]
+  
+  @@index([display_name])
+  @@index([is_verified])
+  @@index([deleted_at])
+  @@index([created_at])
+  @@index([user_id])
+}

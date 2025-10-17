@@ -1,0 +1,128 @@
+/// Represents the main channels or sections of the discussion board where
+/// users can engage in conversations. Each channel has a unique identifier,
+/// name, and description. Channels are organized into sections and can
+/// contain multiple categories. This table serves as the top-level
+/// organizational structure for the discussion board.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The name of the channel.
+  name String
+  
+  /// A brief description of the channel's purpose and content.
+  description String?
+  
+  /// The timestamp when the channel was created.
+  created_at DateTime
+  
+  /// The timestamp when the channel was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the channel was deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  economic_political_discussion_board_sections economic_political_discussion_board_sections[]
+  economic_political_discussion_board_threads economic_political_discussion_board_threads[]
+  
+  @@unique([name])
+}
+
+/// Represents the sections within a channel of the discussion board. Each
+/// section has a unique identifier, name, and description. Sections are used
+/// to further organize content within a channel and can contain multiple
+/// categories. This table provides a mid-level organizational structure for
+/// the discussion board.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The ID of the channel that this section belongs to. {@link
+  /// economic_political_discussion_board_channels.id}
+  economic_political_discussion_board_channel_id String
+  
+  /// The name of the section.
+  name String
+  
+  /// A brief description of the section's purpose and content.
+  description String?
+  
+  /// The timestamp when the section was created.
+  created_at DateTime
+  
+  /// The timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the section was deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel economic_political_discussion_board_channels @relation(fields: [economic_political_discussion_board_channel_id], references: [id], onDelete: Cascade)
+  
+  economic_political_discussion_board_categories economic_political_discussion_board_categories[]
+  
+  @@unique([economic_political_discussion_board_channel_id, name], map: "economic_political_discussion_board_sections_economic__cdef8d35")
+  @@index([economic_political_discussion_board_channel_id], map: "economic_political_discussion_board_sections_economic__b64b2a68")
+}
+
+/// Represents the categories within a section of the discussion board. Each
+/// category has a unique identifier, name, and description. Categories are
+/// used to further organize content within a section and can contain
+/// multiple discussion threads. This table provides a detailed
+/// organizational structure for the discussion board.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The ID of the section that this category belongs to. {@link
+  /// economic_political_discussion_board_sections.id}
+  economic_political_discussion_board_section_id String
+  
+  /// The name of the category.
+  name String
+  
+  /// A brief description of the category's purpose and content.
+  description String?
+  
+  /// The timestamp when the category was created.
+  created_at DateTime
+  
+  /// The timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the category was deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  section economic_political_discussion_board_sections @relation(fields: [economic_political_discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  economic_political_discussion_board_threads economic_political_discussion_board_threads[]
+  
+  @@unique([economic_political_discussion_board_section_id, name], map: "economic_political_discussion_board_categories_economi_655ecfff")
+  @@index([economic_political_discussion_board_section_id], map: "economic_political_discussion_board_categories_economi_bd814340")
+}

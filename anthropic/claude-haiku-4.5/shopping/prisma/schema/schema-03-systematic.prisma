@@ -1,0 +1,364 @@
+/// Product categories representing the hierarchical taxonomy of products.
+/// This is a foundational system table that organizes all products into
+/// logical groupings (e.g., Electronics, Clothing, Home & Garden).
+/// Categories are used for product browsing, filtering, and navigation
+/// within the platform. Works in conjunction with {@link
+/// shopping_mall_category_hierarchy} for multi-level category organization.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the category (e.g., 'Electronics', 'Clothing', 'Home & Garden').
+  /// Must be unique within the system to prevent duplicate categories.
+  category_name String
+  
+  /// Detailed description of what products are included in this category.
+  /// Helps customers understand the category scope and purpose.
+  description String?
+  
+  /// System-generated unique code for the category used in APIs and internal
+  /// references. Format: uppercase alphanumeric (e.g., 'ELEC', 'CLOTH').
+  category_code String
+  
+  /// Whether this category is currently active and visible to customers.
+  /// Inactive categories are hidden from browse but can be reactivated without
+  /// data loss.
+  is_active Boolean
+  
+  /// Timestamp when the category was created in ISO 8601 format (UTC timezone).
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified. Auto-updated on any
+  /// changes to category information.
+  updated_at DateTime
+  
+  /// Timestamp when category was soft-deleted (archived). Null if category is
+  /// active. Allows recovery of deleted categories.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_category_hierarchy_of_parent_category_id shopping_mall_category_hierarchy[] @relation("shopping_mall_category_hierarchy_of_parent_category_id")
+  shopping_mall_category_hierarchy_of_child_category_id shopping_mall_category_hierarchy[] @relation("shopping_mall_category_hierarchy_of_child_category_id")
+  shopping_mall_products shopping_mall_products[]
+  
+  @@unique([category_name])
+  @@unique([category_code])
+  @@index([is_active, created_at])
+  @@index([created_at])
+}
+
+/// Defines the hierarchical parent-child relationships between categories,
+/// enabling multi-level category structures (e.g., Electronics > Computers >
+/// Laptops). This allows categories to be organized into a tree structure
+/// for improved product navigation and filtering. Works with {@link
+/// shopping_mall_categories} to establish the category taxonomy.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_category_hierarchy {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent category's {@link shopping_mall_categories.id}.
+  /// This establishes the hierarchical relationship. Root-level categories
+  /// have null parent_id.
+  parent_category_id String?
+  
+  /// Reference to the child category's {@link shopping_mall_categories.id}.
+  /// This is the subcategory in the hierarchical relationship.
+  child_category_id String
+  
+  /// Depth level in the hierarchy (1 for root, 2 for first-level children, 3
+  /// for second-level, etc.). Used for navigation and breadcrumb generation.
+  hierarchy_level Int
+  
+  /// Display order of this subcategory within its parent category siblings.
+  /// Used for consistent category ordering in UI.
+  sort_order Int
+  
+  /// Timestamp when the hierarchy relationship was established.
+  created_at DateTime
+  
+  /// Timestamp when the hierarchy relationship was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parentCategory shopping_mall_categories? @relation("shopping_mall_category_hierarchy_of_parent_category_id", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  childCategory shopping_mall_categories @relation("shopping_mall_category_hierarchy_of_child_category_id", fields: [child_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([parent_category_id, child_category_id], map: "shopping_mall_category_hierarchy_parent_category_id_ch_1bdab65f")
+  @@index([parent_category_id, hierarchy_level], map: "shopping_mall_category_hierarchy_parent_category_id_hi_578659fe")
+  @@index([child_category_id])
+  @@index([hierarchy_level])
+}
+
+/// Major platform sections that organize content and features into distinct
+/// areas (e.g., Featured Products, New Arrivals, Flash Sales, Top Sellers).
+/// Sections are different from categories - they represent feature areas or
+/// promotional sections that may contain products from multiple categories.
+/// These are configured by admins to organize the customer shopping
+/// experience.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the section visible to customers (e.g., 'Featured
+  /// Products', 'New Arrivals', 'Flash Sales'). Should be concise and clear.
+  section_name String
+  
+  /// Type classification of section (e.g., 'featured', 'new_arrivals',
+  /// 'flash_sale', 'top_sellers', 'curated'). Used for organizing and
+  /// filtering sections by type.
+  section_type String
+  
+  /// Detailed description explaining the section's purpose and what customers
+  /// can expect to find. Helps customers understand the content.
+  description String?
+  
+  /// Display order of this section on the platform homepage and section pages.
+  /// Lower numbers appear first.
+  sort_order Int
+  
+  /// Whether this section is currently visible to customers. Inactive sections
+  /// are hidden but can be reactivated.
+  is_active Boolean
+  
+  /// Whether this section should be displayed on the platform homepage. Allows
+  /// selective promotion of important sections.
+  is_featured_on_homepage Boolean
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when section was soft-deleted (archived). Null if section is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([section_name])
+  @@index([section_type, is_active])
+  @@index([is_featured_on_homepage])
+  @@index([sort_order])
+  @@index([created_at])
+}
+
+/// Distribution channels representing different sales paths or business
+/// models (e.g., Direct Sales, Marketplace, B2B Channel, Wholesale, Premium
+/// Channel). Channels allow the platform to segment products and sellers for
+/// different sales strategies and customer groups. Products and sellers can
+/// be assigned to specific channels.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the sales channel (e.g., 'Direct Sales', 'Marketplace', 'B2B',
+  /// 'Wholesale', 'Premium'). Identifies the channel for admin configuration.
+  channel_name String
+  
+  /// System code for the channel used in APIs and internal references. Format:
+  /// uppercase alphanumeric (e.g., 'DIRECT', 'MARKETPLACE').
+  channel_code String
+  
+  /// Detailed description of the channel's purpose, target audience, and
+  /// business model. Helps stakeholders understand channel positioning.
+  description String?
+  
+  /// Default commission rate (as percentage) for sellers on this channel.
+  /// Example: 0.10 for 10% commission. Can be overridden per seller.
+  commission_rate Float
+  
+  /// Minimum order value required for purchases on this channel. Orders below
+  /// this value are not processed. Example: 10.00 for $10 minimum.
+  min_order_value Float?
+  
+  /// Maximum order value allowed for purchases on this channel. Orders
+  /// exceeding this value are rejected. Used to prevent fraud or system
+  /// issues.
+  max_order_value Float?
+  
+  /// Whether this channel is currently active and accepting orders. Inactive
+  /// channels are temporarily closed.
+  is_active Boolean
+  
+  /// Whether this channel is visible to customers. Private channels can be
+  /// used for internal testing or invitation-only access.
+  is_public Boolean
+  
+  /// Timestamp when the channel was created.
+  created_at DateTime
+  
+  /// Timestamp when the channel was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when channel was soft-deleted (archived). Null if channel is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([channel_name])
+  @@unique([channel_code])
+  @@index([is_active, is_public])
+  @@index([created_at])
+}
+
+/// Global system configuration settings that control platform behavior,
+/// policies, and operational parameters. Includes settings for commission
+/// rates, refund policies, shipping rules, fraud detection thresholds, and
+/// other operational constants. These configurations are managed by admins
+/// and affect all users across the platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier/name for this configuration setting. Format:
+  /// CONSTANT_CASE (e.g., 'DEFAULT_COMMISSION_RATE', 'REFUND_WINDOW_DAYS',
+  /// 'MAX_CART_ITEMS'). Used for programmatic access.
+  config_key String
+  
+  /// The configuration value as a string. Can represent various types
+  /// (percentage, number, boolean, text, JSON). Must be parsed appropriately
+  /// by application based on config_key.
+  config_value String
+  
+  /// Data type of the configuration value (e.g., 'string', 'number',
+  /// 'boolean', 'percentage', 'json'). Helps application parse the
+  /// config_value correctly.
+  data_type String
+  
+  /// Human-readable explanation of what this configuration controls and its
+  /// impact on platform behavior. Helps admins understand the setting.
+  description String
+  
+  /// Whether this configuration can be modified by admins. Some critical
+  /// settings may be read-only after initial setup.
+  is_editable Boolean
+  
+  /// Environment where this configuration applies (e.g., 'development',
+  /// 'staging', 'production', 'all'). Allows different configurations per
+  /// environment.
+  environment String
+  
+  /// Timestamp when this configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last modified.
+  updated_at DateTime
+  
+  /// Admin ID or username who last updated this configuration. For audit trail
+  /// purposes.
+  updated_by String?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key, environment])
+  @@index([config_key])
+  @@index([environment])
+  @@index([updated_at])
+}
+
+/// Feature flags enabling/disabling platform features for A/B testing,
+/// gradual rollouts, and controlled feature releases. Allows admins to
+/// toggle features on/off without code deployment. Supports targeting by
+/// user segment (e.g., enable for 10% of users, specific user roles,
+/// specific regions).
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_feature_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for this feature flag (e.g., 'new_checkout_flow',
+  /// 'ai_recommendations', 'one_click_purchase'). Used to check flag status in
+  /// application code.
+  feature_name String
+  
+  /// Human-readable description of what this feature does and why it exists.
+  /// Helps admins understand the feature's purpose and impact.
+  feature_description String
+  
+  /// Master toggle controlling whether this feature is enabled globally. When
+  /// false, the feature is disabled for all users regardless of other
+  /// settings.
+  is_enabled Boolean
+  
+  /// Percentage of users who see this feature (0-100). Example: 25 means 25%
+  /// of users get the feature, 75% don't. Enables gradual rollout.
+  rollout_percentage Int
+  
+  /// Comma-separated list of user roles who can access this feature (e.g.,
+  /// 'customer,seller,admin' or 'admin' for admins only). Empty/null means all
+  /// roles.
+  target_user_roles String?
+  
+  /// Comma-separated list of country codes where feature is available (e.g.,
+  /// 'US,CA,UK' or 'ALL' for all regions). Enables regional feature testing.
+  target_regions String?
+  
+  /// Environment where this flag applies (e.g., 'development', 'staging',
+  /// 'production', 'all'). Allows different flag states per environment.
+  environment String
+  
+  /// Timestamp when this feature flag was created.
+  created_at DateTime
+  
+  /// Timestamp when this feature flag was last modified.
+  updated_at DateTime
+  
+  /// Admin ID or username who created this feature flag.
+  created_by String?
+  
+  /// Admin ID or username who last updated this feature flag.
+  updated_by String?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([feature_name, environment])
+  @@index([feature_name])
+  @@index([is_enabled, environment])
+  @@index([environment])
+  @@index([updated_at])
+}

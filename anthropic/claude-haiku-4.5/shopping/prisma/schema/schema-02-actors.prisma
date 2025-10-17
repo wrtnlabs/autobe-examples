@@ -1,0 +1,897 @@
+/// Customer user accounts representing authenticated buyers on the platform.
+/// Stores core customer profile information including personal details,
+/// account status, email verification state, and security settings.
+/// Customers are the primary users who browse products, create orders, write
+/// reviews, and manage their shopping experience on the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's email address used for login and communication. Must be unique
+  /// across all customers on the platform. Email is verified during
+  /// registration before account activation.
+  email String
+  
+  /// Bcrypt-hashed password for account authentication. The plain password is
+  /// never stored; only the cryptographic hash is maintained for security.
+  /// Password updates create new hash.
+  password_hash String
+  
+  /// Customer's first name. Used for personalization in communications and
+  /// order fulfillment. Required field for all customers.
+  first_name String
+  
+  /// Customer's last name. Combined with first name for complete customer
+  /// identification in orders and communications.
+  last_name String
+  
+  /// Customer's contact phone number in international format. Optional field
+  /// that enables SMS notifications and seller communication. Stored in E.164
+  /// format (e.g., +1-555-123-4567).
+  phone_number String?
+  
+  /// Customer's date of birth for age verification and personalization.
+  /// Optional field used for age-restricted products and birthday promotions.
+  date_of_birth DateTime?
+  
+  /// Customer's gender for personalization and targeted recommendations.
+  /// Values: 'M', 'F', 'O' (Other), 'N' (Prefer not to say). Optional field.
+  gender String?
+  
+  /// URL to customer's profile picture. Used for display in reviews, comments,
+  /// and public-facing customer profiles. Optional field.
+  profile_image_url String?
+  
+  /// Current status of customer account: 'ACTIVE' (normal operation),
+  /// 'SUSPENDED' (temporary restriction), 'DEACTIVATED' (account closed),
+  /// 'PENDING_EMAIL_VERIFICATION' (awaiting email confirmation). Controls
+  /// account access and functionality.
+  account_status String
+  
+  /// Flag indicating whether customer's email address has been verified. Email
+  /// verification is required for account activation and must be completed
+  /// within 24 hours of registration.
+  email_verified Boolean
+  
+  /// Whether two-factor authentication (2FA) is enabled for this customer
+  /// account. When enabled, login requires secondary verification (SMS code,
+  /// authenticator app).
+  two_factor_enabled Boolean
+  
+  /// Method used for two-factor authentication if enabled. Values: 'SMS',
+  /// 'EMAIL', 'AUTHENTICATOR_APP', 'BACKUP_CODES'. Null if 2FA not enabled.
+  two_factor_method String?
+  
+  /// Timestamp of customer's most recent successful login. Used for tracking
+  /// account activity and detecting suspicious access patterns.
+  last_login_at DateTime?
+  
+  /// Timestamp until which account is locked due to failed login attempts.
+  /// Account automatically unlocks when this timestamp is reached. Null if
+  /// account is not locked.
+  account_locked_until DateTime?
+  
+  /// Count of consecutive failed login attempts. Resets to zero on successful
+  /// login. Account locks after 5 failed attempts within 15 minutes.
+  failed_login_attempts Int
+  
+  /// Timestamp when customer account was created. Immutable field set at
+  /// registration completion.
+  created_at DateTime
+  
+  /// Timestamp of most recent account update including profile changes, status
+  /// changes, or password updates.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when customer account was permanently deleted. Null
+  /// for active/suspended accounts. Enables account recovery within compliance
+  /// window.
+  deleted_at DateTime?
+  
+  /// Comma-separated flags for account restrictions or notes:
+  /// 'FRAUD_INVESTIGATION', 'POLICY_VIOLATION', 'CHARGEBACK_HISTORY',
+  /// 'MULTIPLE_RETURNS'. Used by admins for account moderation.
+  account_flags String?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_auth_tokens shopping_mall_auth_tokens[]
+  shopping_mall_sessions shopping_mall_sessions[]
+  shopping_mall_session_devices shopping_mall_session_devices[]
+  shopping_mall_password_reset_tokens shopping_mall_password_reset_tokens[]
+  shopping_mall_customer_addresses shopping_mall_customer_addresses[]
+  shopping_mall_user_preferences shopping_mall_user_preferences?
+  shopping_mall_user_notification_settings shopping_mall_user_notification_settings?
+  shopping_mall_shopping_carts shopping_mall_shopping_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_payments shopping_mall_payments[]
+  shopping_mall_payment_methods shopping_mall_payment_methods[]
+  shopping_mall_return_requests shopping_mall_return_requests[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_review_votes shopping_mall_review_votes[]
+  
+  @@unique([email])
+  @@index([account_status])
+  @@index([email_verified])
+  @@index([created_at])
+  @@index([last_login_at])
+}
+
+/// Seller merchant accounts representing businesses selling products on the
+/// platform. Stores seller business profile, verification status, commission
+/// configuration, and account settings. Sellers manage product inventory,
+/// fulfill customer orders, and operate their online stores within the
+/// marketplace ecosystem.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's business email address used for login and official
+  /// communications. Must be unique across all sellers. Email is verified
+  /// during onboarding.
+  email String
+  
+  /// Bcrypt-hashed password for seller account authentication. Plain password
+  /// never stored for security compliance.
+  password_hash String
+  
+  /// Official name of seller's store as displayed to customers. Must be unique
+  /// across platform. Used in product listings, orders, and customer
+  /// communications.
+  store_name String
+  
+  /// Unique alphanumeric code for seller store (e.g., 'SELLER-001'). Used for
+  /// internal routing and metrics. Format: seller-assigned or system-generated
+  /// during registration.
+  store_code String
+  
+  /// Seller's store description visible on public store page. Up to 5000
+  /// characters describing business, policies, and seller story. Optional
+  /// field.
+  store_description String?
+  
+  /// URL to seller's store logo displayed on store page and product listings.
+  /// Optional field for branding.
+  store_logo_url String?
+  
+  /// URL to seller's store banner image displayed at top of store page.
+  /// Optional field for visual branding.
+  store_banner_url String?
+  
+  /// Type of business entity: 'INDIVIDUAL' (sole proprietor), 'SMALL_BUSINESS'
+  /// (1-50 employees), 'MEDIUM_BUSINESS' (50-500 employees), 'ENTERPRISE'
+  /// (500+ employees). Affects commission rates and feature access.
+  business_type String
+  
+  /// Official business registration number (e.g., EIN, Company Registration
+  /// Number). Varies by jurisdiction. Optional for individual sellers in some
+  /// regions.
+  business_registration_number String?
+  
+  /// Tax identification number (e.g., VAT ID, GST number) for tax compliance.
+  /// Encrypted in database. Optional field.
+  tax_id String?
+  
+  /// Name of primary contact person for seller account. Used for communication
+  /// and verification purposes.
+  contact_person_name String
+  
+  /// Business phone number in international format. Used for seller contact
+  /// and verification.
+  contact_phone String
+  
+  /// Complete business address including street, city, state, postal code,
+  /// country. Used for order fulfillment and seller identity verification.
+  business_address String
+  
+  /// Country code (ISO 3166-1 alpha-2) where seller business is registered.
+  /// Affects tax rates, shipping capabilities, and payment processing.
+  country String
+  
+  /// Seller account status: 'PENDING_VERIFICATION' (awaiting approval),
+  /// 'VERIFIED' (approved to sell), 'REJECTED' (application rejected),
+  /// 'SUSPENDED' (temporary restriction), 'DEACTIVATED' (account closed). Only
+  /// verified sellers can list and sell products.
+  account_status String
+  
+  /// Document verification status: 'PENDING' (awaiting review), 'VERIFIED'
+  /// (documents approved), 'REJECTED' (documents not acceptable), 'EXPIRED'
+  /// (verification documents expired). Separate from account_status.
+  verification_status String
+  
+  /// Seller's average rating calculated from customer reviews. Range: 1.0 to
+  /// 5.0. Updated when new reviews are published. Used for seller visibility
+  /// and trust metrics.
+  average_rating Float
+  
+  /// Total count of approved customer reviews for this seller's products.
+  /// Updated when reviews are published or removed.
+  total_reviews Int
+  
+  /// Percentage of orders successfully fulfilled on time (0-100). Calculated
+  /// as: (on-time orders / total orders) * 100. Used for seller ranking and
+  /// visibility.
+  fulfillment_rate Float
+  
+  /// Average response time to customer inquiries in hours. Calculated from
+  /// support ticket response times. Used for seller performance metrics.
+  response_time_hours Float
+  
+  /// Percentage commission charged on seller's sales (0-100). Default: 10%.
+  /// Premium sellers or negotiated rates may differ. Updated when seller tier
+  /// changes.
+  commission_rate Float
+  
+  /// Seller's tier/status level: 'STANDARD' (default), 'PREMIUM' (top
+  /// performer), 'ENTERPRISE' (high volume). Affects commission rates and
+  /// feature access.
+  seller_tier String
+  
+  /// Whether two-factor authentication is enabled for seller account.
+  two_factor_enabled Boolean
+  
+  /// Timestamp of most recent seller dashboard login.
+  last_login_at DateTime?
+  
+  /// Timestamp until which seller account is locked due to failed login
+  /// attempts. Null if not locked.
+  account_locked_until DateTime?
+  
+  /// Count of consecutive failed seller login attempts. Resets on successful
+  /// login.
+  failed_login_attempts Int
+  
+  /// Timestamp when seller account was created during registration.
+  created_at DateTime
+  
+  /// Timestamp of most recent seller account update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when seller account was closed. Null for active
+  /// accounts. Enables account data retention for compliance.
+  deleted_at DateTime?
+  
+  /// Comma-separated admin flags: 'FRAUD_INVESTIGATION', 'POLICY_VIOLATION',
+  /// 'HIGH_CHARGEBACK_RATE'. Used for account moderation.
+  account_flags String?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_seller_bank_accounts shopping_mall_seller_bank_accounts[]
+  shopping_mall_seller_verification_documents shopping_mall_seller_verification_documents[]
+  shopping_mall_user_preferences shopping_mall_user_preferences?
+  shopping_mall_user_notification_settings shopping_mall_user_notification_settings?
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_inventory_skus shopping_mall_inventory_skus[]
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_seller_responses shopping_mall_seller_responses[]
+  shopping_mall_commission_rates shopping_mall_commission_rates[]
+  shopping_mall_seller_earnings shopping_mall_seller_earnings?
+  shopping_mall_seller_payouts shopping_mall_seller_payouts[]
+  shopping_mall_payout_history shopping_mall_payout_history[]
+  shopping_mall_commission_calculations shopping_mall_commission_calculations[]
+  shopping_mall_commission_adjustments shopping_mall_commission_adjustments[]
+  
+  @@unique([email])
+  @@unique([store_name])
+  @@unique([store_code])
+  @@index([account_status])
+  @@index([verification_status])
+  @@index([average_rating])
+  @@index([created_at])
+  @@index([seller_tier])
+}
+
+/// Administrator accounts with platform management and moderation
+/// capabilities. Admins have elevated permissions to manage users, approve
+/// products, handle disputes, process refunds, configure settings, and
+/// access audit logs. Admin accounts track access control levels and
+/// maintain security audit trails.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin's email address used for login and official administrative
+  /// communications. Must be unique across all admins.
+  email String
+  
+  /// Bcrypt-hashed password for admin authentication. Plain password never
+  /// stored.
+  password_hash String
+  
+  /// Admin's first name for identification and audit trails.
+  first_name String
+  
+  /// Admin's last name for identification in administrative records.
+  last_name String
+  
+  /// Admin permission level: 'SUPER_ADMIN' (full platform access), 'ADMIN'
+  /// (general admin functions), 'MODERATOR' (content moderation only),
+  /// 'SUPPORT_ADMIN' (customer support), 'FINANCE_ADMIN' (payment management).
+  /// Determines feature access.
+  admin_role String
+  
+  /// Numeric permission hierarchy (0-100): 100=Super Admin with all
+  /// permissions, 75=Admin with most permissions, 50=Moderator with
+  /// moderation-only permissions, 25=Support with limited access. Used for
+  /// permission checks.
+  permission_level Int
+  
+  /// Admin account status: 'ACTIVE' (can access platform), 'INACTIVE' (cannot
+  /// access), 'SUSPENDED' (temporary restriction). Controls admin access.
+  account_status String
+  
+  /// Whether two-factor authentication is required for this admin. Mandatory
+  /// for Super Admin and recommended for all admins.
+  two_factor_enabled Boolean
+  
+  /// Timestamp of admin's most recent login.
+  last_login_at DateTime?
+  
+  /// Timestamp until which admin account is locked due to failed login
+  /// attempts. Null if not locked.
+  account_locked_until DateTime?
+  
+  /// Count of consecutive failed admin login attempts. Resets on successful
+  /// login.
+  failed_login_attempts Int
+  
+  /// Timestamp when admin account was created.
+  created_at DateTime
+  
+  /// Timestamp of most recent admin account update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when admin account was deactivated. Null for active
+  /// accounts. Enables audit trail preservation.
+  deleted_at DateTime?
+  
+  /// Administrative notes about this admin account (e.g., department,
+  /// responsibilities, creation reason). Optional field for documentation.
+  notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_product_approvals shopping_mall_product_approvals[]
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  shopping_mall_payment_disputes shopping_mall_payment_disputes[]
+  shopping_mall_payment_reconciliation shopping_mall_payment_reconciliation[]
+  shopping_mall_review_moderation shopping_mall_review_moderation[]
+  
+  @@unique([email])
+  @@index([admin_role])
+  @@index([permission_level])
+  @@index([account_status])
+  @@index([created_at])
+}
+
+/// Guest user profiles for unauthenticated users browsing the platform.
+/// Tracks guest sessions for analytics, recommendations, and fraud
+/// detection. Guests can browse products and read reviews but cannot
+/// purchase or create accounts. Guest data enables anonymous user experience
+/// tracking and recommendations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique anonymous identifier for guest session. Generated format: 'GUEST-'
+  /// + random string. Used to track guest activity without personal
+  /// identification.
+  guest_code String
+  
+  /// Reference to the guest's current session. Links to session tracking
+  /// system for timeout and activity monitoring.
+  session_id String
+  
+  /// Hash of device characteristics (user agent, IP, browser) for fraud
+  /// detection and session security. Can identify same device accessing
+  /// platform.
+  device_fingerprint String?
+  
+  /// IP address of guest user request. Used for geographic targeting and fraud
+  /// detection. Stored for security audit.
+  ip_address String?
+  
+  /// Country code (ISO 3166-1 alpha-2) derived from IP or user preference.
+  /// Used for product availability and recommendation localization.
+  country String?
+  
+  /// Guest's language preference (ISO 639-1 code, e.g., 'en', 'fr'). Can be
+  /// inferred from browser settings or explicitly set.
+  preferred_language String?
+  
+  /// Comma-separated list of recently viewed product IDs for recommendation
+  /// engine. Stored as denormalized data for performance. Cleared on session
+  /// timeout.
+  browsing_history String?
+  
+  /// Count of items in guest's temporary shopping cart (not persisted if guest
+  /// doesn't register). Used for analytics.
+  cart_items_count Int
+  
+  /// Timestamp when guest session was initiated.
+  created_at DateTime
+  
+  /// Timestamp of guest's most recent activity. Used to determine session
+  /// timeout.
+  last_activity_at DateTime
+  
+  /// Soft delete timestamp when guest session expired or ended. Null for
+  /// active guest sessions.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([guest_code])
+  @@unique([session_id])
+  @@index([created_at])
+  @@index([last_activity_at])
+  @@index([country])
+}
+
+/// Multiple delivery addresses associated with customers for flexible order
+/// fulfillment. Customers can save multiple addresses (home, work, family,
+/// etc.) and select delivery address during checkout. Addresses include
+/// validation status and default address tracking for convenient ordering.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who owns this address. {@link
+  /// shopping_mall_customer.id}
+  shopping_customer_id String
+  
+  /// User-defined label for address: 'Home', 'Work', 'Office', 'Parents',
+  /// 'Vacation Home', etc. Helps customer quickly identify desired address
+  /// during checkout.
+  address_label String
+  
+  /// Whether this is the customer's default delivery address. Used for quick
+  /// checkout. Only one address per customer can be default.
+  is_default Boolean
+  
+  /// Name of person who will receive delivery at this address. May differ from
+  /// customer name for household members or business locations.
+  recipient_name String
+  
+  /// Contact phone number for delivery. Used by shipping carriers for delivery
+  /// coordination and exception handling.
+  recipient_phone String
+  
+  /// Full street address including number and street name. Example: '123 Main
+  /// Street Apt 4B' or 'PO Box 456'.
+  street_address String
+  
+  /// City or town name where address is located.
+  city String
+  
+  /// State, province, or region code. Format varies by country (e.g., 'CA' for
+  /// California, 'BC' for British Columbia).
+  state_province String
+  
+  /// Postal code in country-specific format. Examples: '90210' (USA), 'V6B
+  /// 4X8' (Canada), 'SW1A 1AA' (UK). Validated against country format rules.
+  postal_code String
+  
+  /// Country code (ISO 3166-1 alpha-2) where address is located. Determines
+  /// shipping availability and tax calculations.
+  country String
+  
+  /// Type of address: 'RESIDENTIAL' (home address), 'BUSINESS'
+  /// (office/business), 'PO_BOX' (postal box). Used for delivery method
+  /// selection.
+  address_type String
+  
+  /// Special delivery instructions (e.g., 'Use back gate', 'Leave with
+  /// neighbor', 'Ring twice'). Passed to shipping carrier for delivery
+  /// optimization.
+  delivery_instructions String?
+  
+  /// Whether address has been verified as deliverable by shipping carriers.
+  /// Unverified addresses may have delivery issues.
+  is_verified Boolean
+  
+  /// Timestamp when customer added this address.
+  created_at DateTime
+  
+  /// Timestamp of most recent address modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when customer archived address. Null for active
+  /// addresses. Allows removal without losing order history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_customer_id, is_default], map: "shopping_mall_customer_addresses_shopping_customer_id__e18b2225")
+  @@index([shopping_customer_id, created_at], map: "shopping_mall_customer_addresses_shopping_customer_id__259ee6b9")
+}
+
+/// Bank account information for seller commission payouts and fund
+/// transfers. Stores encrypted bank details for financial transactions and
+/// seller fund management. Includes verification status and preferred
+/// payment method configuration. Critical for seller payment processing and
+/// financial reconciliation.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_bank_accounts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller who owns this bank account. {@link
+  /// shopping_mall_seller.id}
+  shopping_seller_id String
+  
+  /// Name of bank account holder. Must match bank records for account
+  /// verification and compliance.
+  account_holder_name String
+  
+  /// Official name of the bank issuing the account. Example: 'JPMorgan Chase',
+  /// 'Bank of America'.
+  bank_name String
+  
+  /// Bank's routing number (USA), SWIFT code, or country-specific bank code
+  /// for wire transfers.
+  bank_code String
+  
+  /// Bank account number encrypted using application-level encryption. Never
+  /// stored in plain text for PCI compliance. Encryption key stored
+  /// separately.
+  account_number_encrypted String
+  
+  /// Last 4 digits of bank account for customer reference (e.g., '5678'). Used
+  /// to display account without revealing full number.
+  account_number_last4 String
+  
+  /// Type of bank account: 'CHECKING' (standard business account), 'SAVINGS'
+  /// (interest-bearing), 'MONEY_MARKET' (limited transfers). Affects transfer
+  /// capabilities.
+  account_type String
+  
+  /// ISO 4217 currency code for the bank account (e.g., 'USD', 'EUR', 'GBP').
+  /// Payouts are made in this currency.
+  currency String
+  
+  /// Whether this is the primary payout account for commissions. Only one
+  /// account per seller can be primary. Fallback for disputes and reversals.
+  is_primary Boolean
+  
+  /// Bank account verification status: 'PENDING' (awaiting verification),
+  /// 'VERIFIED' (confirmed valid), 'FAILED' (rejected during verification),
+  /// 'UNVERIFIED' (needs re-verification). Only verified accounts receive
+  /// payouts.
+  verification_status String
+  
+  /// Number of verification attempts made for this bank account. Failed
+  /// verification may indicate incorrect account details.
+  verification_attempts Int
+  
+  /// Timestamp when bank account was successfully verified. Null if not
+  /// verified.
+  verified_at DateTime?
+  
+  /// Timestamp when seller added this bank account.
+  created_at DateTime
+  
+  /// Timestamp of most recent bank account update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when bank account was removed. Null for active
+  /// accounts. Preserves payment history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_seller_id, is_primary], map: "shopping_mall_seller_bank_accounts_shopping_seller_id__0532e148")
+  @@index([verification_status])
+}
+
+/// Seller identity and business verification documents for regulatory
+/// compliance and fraud prevention. Stores document types, upload status,
+/// verification results, and rejection reasons. Enables multi-step seller
+/// onboarding with document validation and compliance tracking.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_verification_documents {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller who submitted this verification document. {@link
+  /// shopping_mall_seller.id}
+  shopping_seller_id String
+  
+  /// Type of verification document submitted: 'BUSINESS_LICENSE' (official
+  /// business registration), 'TAX_ID_DOCUMENT' (tax identification),
+  /// 'BANK_STATEMENT' (account verification), 'OWNER_ID' (identity
+  /// verification), 'ARTICLES_OF_INCORPORATION' (business formation),
+  /// 'PASSPORT' (personal identification), 'UTILITY_BILL' (address
+  /// verification). Determines validation requirements.
+  document_type String
+  
+  /// URL to uploaded document file. Stored in secure cloud storage with access
+  /// restricted to authorized personnel. Documents expire and must be
+  /// re-uploaded periodically.
+  document_url String
+  
+  /// Original filename of uploaded document. Used for reference in
+  /// verification process.
+  document_name String
+  
+  /// Date document was issued by issuing authority. Null if not applicable.
+  /// Used for expiration calculation.
+  document_issue_date DateTime?
+  
+  /// Date document expires if applicable. Null for non-expiring documents.
+  /// System alerts seller when expiry approaches.
+  document_expiry_date DateTime?
+  
+  /// Document verification status: 'PENDING_REVIEW' (awaiting human review),
+  /// 'VERIFIED' (approved as valid), 'REJECTED' (failed verification),
+  /// 'EXPIRED' (document needs renewal). Controls seller account eligibility.
+  verification_status String
+  
+  /// Admin notes from verification process. For rejected documents, explains
+  /// reason for rejection (e.g., 'Document illegible', 'Expired', 'Does not
+  /// match seller information'). Guides seller on corrective action.
+  verification_notes String?
+  
+  /// Reference to admin who verified this document. Null if not yet verified.
+  /// Used for audit trail.
+  verified_by_admin_id String?
+  
+  /// Timestamp when document was verified or rejected. Null if still pending.
+  verified_at DateTime?
+  
+  /// Timestamp when seller uploaded this document.
+  created_at DateTime
+  
+  /// Timestamp of most recent document status update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when document was archived. Null for active
+  /// documents. Preserves verification history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_seller_id, document_type], map: "shopping_mall_seller_verification_documents_shopping_s_77b2b15d")
+  @@index([verification_status], map: "shopping_mall_seller_verification_documents_verificati_378248d1")
+  @@index([created_at])
+}
+
+/// User-configurable preferences and settings for personalized platform
+/// experience. Enables customers to customize interface language, currency
+/// display, search preferences, recommendation settings, and shopping
+/// behavior. Applies to both customers and sellers for UX personalization.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer these preferences belong to. {@link
+  /// shopping_mall_customer.id} Set for customer preferences, null for seller
+  /// preferences.
+  shopping_customer_id String?
+  
+  /// Reference to the seller these preferences belong to. {@link
+  /// shopping_mall_seller.id} Set for seller preferences, null for customer
+  /// preferences.
+  shopping_seller_id String?
+  
+  /// ISO 639-1 language code for UI language (e.g., 'en', 'es', 'fr', 'de',
+  /// 'zh', 'ja'). Defaults to account creation language.
+  preferred_language String
+  
+  /// ISO 4217 currency code for price display (e.g., 'USD', 'EUR', 'GBP',
+  /// 'JPY'). Can differ from account currency.
+  preferred_currency String
+  
+  /// IANA timezone identifier (e.g., 'America/New_York', 'Europe/London',
+  /// 'Asia/Tokyo'). Used for time-based notifications and reports.
+  timezone String
+  
+  /// Whether to save search history for personalized recommendations. Users
+  /// can delete history anytime.
+  enable_search_history Boolean
+  
+  /// Whether to enable AI-powered product recommendations based on browsing
+  /// and purchase history.
+  enable_personalized_recommendations Boolean
+  
+  /// Whether to enable notifications when prices drop on wishlisted items.
+  enable_price_drop_alerts Boolean
+  
+  /// UI theme preference: 'LIGHT' (light mode), 'DARK' (dark mode), 'AUTO'
+  /// (follow system preference). Default: 'LIGHT'.
+  theme_preference String
+  
+  /// Default product sort order: 'RELEVANCE' (search relevance), 'PRICE_ASC'
+  /// (low to high), 'PRICE_DESC' (high to low), 'NEWEST' (latest first),
+  /// 'BEST_RATED' (highest rating). Default: 'RELEVANCE'.
+  product_sorting_default String
+  
+  /// Number of items displayed per page (20, 50, 100). Default: 50. Affects
+  /// pagination.
+  items_per_page Int
+  
+  /// Whether to show age-restricted products in search results. Default: false
+  /// (unless user verified as adult).
+  show_adult_products Boolean
+  
+  /// Timestamp when preference record was created (usually at user
+  /// registration).
+  created_at DateTime
+  
+  /// Timestamp of most recent preference update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer? @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller? @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_customer_id])
+  @@unique([shopping_seller_id])
+  
+  @@index([shopping_customer_id])
+  @@index([shopping_seller_id])
+}
+
+/// Detailed notification channel preferences and frequency controls for both
+/// customers and sellers. Enables granular control over email, SMS, in-app,
+/// and push notifications for different event types. Supports opt-in/opt-out
+/// by channel and event category with quiet hours configuration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_notification_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer these notification settings belong to. {@link
+  /// shopping_mall_customer.id} Set for customer notification settings, null
+  /// for seller settings.
+  shopping_customer_id String?
+  
+  /// Reference to the seller these notification settings belong to. {@link
+  /// shopping_mall_seller.id} Set for seller notification settings, null for
+  /// customer settings.
+  shopping_seller_id String?
+  
+  /// Whether to receive email notifications. Controls all email-based alerts.
+  /// Default: true.
+  email_enabled Boolean
+  
+  /// Whether to receive SMS text notifications. Requires verified phone
+  /// number. Default: false.
+  sms_enabled Boolean
+  
+  /// Whether to receive push notifications on mobile app. Default: true (if
+  /// app installed).
+  push_enabled Boolean
+  
+  /// Whether to receive in-app notifications. These always appear regardless
+  /// of other settings. Default: true.
+  in_app_enabled Boolean
+  
+  /// Whether to receive order-related notifications (confirmation, shipping,
+  /// delivery). Default: true.
+  order_notifications_enabled Boolean
+  
+  /// Whether to receive notifications about product reviews and ratings.
+  /// Default: true.
+  review_notifications_enabled Boolean
+  
+  /// Whether to receive promotional and marketing notifications (deals, new
+  /// arrivals). Default: true.
+  promotion_notifications_enabled Boolean
+  
+  /// Whether to receive notifications about direct messages from
+  /// sellers/customers. Default: true.
+  message_notifications_enabled Boolean
+  
+  /// Whether to receive payment and billing notifications. Default: true.
+  payment_notifications_enabled Boolean
+  
+  /// Frequency of non-urgent notifications: 'REAL_TIME' (immediate),
+  /// 'DAILY_DIGEST' (batched daily), 'WEEKLY_DIGEST' (batched weekly).
+  /// Default: 'REAL_TIME'.
+  notification_frequency String
+  
+  /// Start time of quiet hours in HH:MM format (24-hour). No notifications
+  /// sent during quiet hours. Example: '21:00'. Null if quiet hours disabled.
+  quiet_hours_start String?
+  
+  /// End time of quiet hours in HH:MM format (24-hour). Example: '08:00'. Null
+  /// if quiet hours disabled. Can be next day if wraps midnight.
+  quiet_hours_end String?
+  
+  /// Whether quiet hours (do-not-disturb period) are enabled. Default: false.
+  quiet_hours_enabled Boolean
+  
+  /// One-click unsubscribe from all marketing communications. GDPR/CAN-SPAM
+  /// compliance. Default: false.
+  unsubscribe_all_marketing Boolean
+  
+  /// Timestamp when notification settings were first created (usually at user
+  /// registration).
+  created_at DateTime
+  
+  /// Timestamp of most recent notification settings update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer? @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller? @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_customer_id], map: "shopping_mall_user_notification_settings_shopping_cust_eef044a0")
+  @@unique([shopping_seller_id], map: "shopping_mall_user_notification_settings_shopping_sell_1dabe2d9")
+  
+  @@index([shopping_customer_id], map: "shopping_mall_user_notification_settings_shopping_cust_48dfa826")
+  @@index([shopping_seller_id])
+}

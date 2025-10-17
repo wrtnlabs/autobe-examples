@@ -1,0 +1,203 @@
+/// Individual comments and nested replies posted to discussions. Represents
+/// the actual conversational content with full edit history and soft delete
+/// support. Supports threaded conversations up to 5 levels deep. Core
+/// high-volume table in the system.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent discussion. {@link
+  /// discussion_board_discussions.id}
+  discussion_id String
+  
+  /// Author of the comment. {@link discussion_board_users.id}
+  user_id String
+  
+  /// Parent comment for nested replies. Null for top-level comments. {@link
+  /// discussion_board_comments.id}
+  parent_comment_id String?
+  
+  /// Full text content of the comment. Stored plain text with HTML escaping
+  /// applied by application layer. Range: 1-2000 characters.
+  comment_text String
+  
+  /// How many levels deep this comment is nested (1 for root level, 2 for
+  /// reply to root, etc.). Maximum 5 levels enforced by application and
+  /// database check constraint.
+  nesting_depth Int
+  
+  /// Cached vote count (upvotes minus downvotes). Denormalized for query
+  /// performance, recalculated nightly from votes table. Updated
+  /// asynchronously.
+  vote_count Int
+  
+  /// Number of direct replies to this comment. Used for determining if comment
+  /// can be deleted and for reply preview functionality.
+  reply_count Int
+  
+  /// Current status of comment: 'active' (normal), 'flagged' (awaiting
+  /// review), 'removed' (moderation action), 'edited' (content modified).
+  /// Default 'active'.
+  status String
+  
+  /// Whether the comment has been edited since creation. Used to display
+  /// '[edited X minutes ago]' indicator to users.
+  is_edited Boolean
+  
+  /// Timestamp when comment was created. Server time, UTC, seconds precision.
+  /// Used for sorting and activity tracking.
+  created_at DateTime
+  
+  /// Timestamp of last update to comment (including edits and status changes).
+  /// Server time, UTC, seconds precision.
+  updated_at DateTime
+  
+  /// Timestamp when comment was soft-deleted. Null if comment is active.
+  /// Supports 90-day recovery window and compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion discussion_board_discussions @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  author discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  parentComment discussion_board_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_comments[] @relation("recursive")
+  discussion_board_comment_threads_of_root_comment_id discussion_board_comment_threads? @relation("discussion_board_comment_threads_of_root_comment_id")
+  discussion_board_comment_threads_of_parent_comment_id discussion_board_comment_threads[] @relation("discussion_board_comment_threads_of_parent_comment_id")
+  discussion_board_content_edits discussion_board_content_edits[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_vote_history discussion_board_vote_history[]
+  discussion_board_bookmarks discussion_board_bookmarks[]
+  discussion_board_content_flags discussion_board_content_flags[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  
+  @@index([discussion_id, created_at])
+  @@index([user_id, created_at])
+  @@index([parent_comment_id])
+  @@index([status, created_at])
+  @@index([nesting_depth])
+}
+
+/// Organizes comments into conversation threads. Represents the hierarchical
+/// structure of nested replies. Automatically managed through comment
+/// creation/deletion. Tracks thread-level metadata for efficient querying of
+/// threaded conversations.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The discussion this thread belongs to. {@link
+  /// discussion_board_discussions.id}
+  discussion_id String
+  
+  /// The root/top-level comment that started this thread. {@link
+  /// discussion_board_comments.id}
+  root_comment_id String
+  
+  /// The parent comment if this is a nested thread. Null for root-level
+  /// threads. {@link discussion_board_comments.id}
+  parent_comment_id String?
+  
+  /// Total number of replies in this entire thread (all nested levels). Used
+  /// for pagination and thread size estimation.
+  total_replies Int
+  
+  /// Number of unique users who have participated in this thread. Used for
+  /// engagement metrics and thread popularity indicators.
+  unique_participants Int
+  
+  /// Timestamp of most recent comment in thread. Used for sorting 'most
+  /// active' threads and real-time activity tracking.
+  last_activity_at DateTime
+  
+  /// Timestamp when thread was created (same as root comment creation). Server
+  /// time, UTC, seconds precision.
+  created_at DateTime
+  
+  /// Timestamp of last update to thread metadata. Updated when replies added
+  /// or thread marked as resolved.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  discussion discussion_board_discussions @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  rootComment discussion_board_comments @relation("discussion_board_comment_threads_of_root_comment_id", fields: [root_comment_id], references: [id], onDelete: Cascade)
+  parentComment discussion_board_comments? @relation("discussion_board_comment_threads_of_parent_comment_id", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([root_comment_id])
+  
+  @@index([discussion_id, last_activity_at], map: "discussion_board_comment_threads_discussion_id_last_ac_ecafb0a9")
+  @@index([root_comment_id])
+  @@index([parent_comment_id])
+}
+
+/// Immutable audit trail of all comment edits. Append-only table tracking
+/// every modification to comment content. Supports transparency, appeals,
+/// and compliance requirements. Used for displaying edit history and
+/// detecting coordinated manipulation.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment that was edited. {@link discussion_board_comments.id}
+  comment_id String
+  
+  /// User who made the edit. {@link discussion_board_users.id}
+  editor_user_id String
+  
+  /// Full text of comment before this edit. Preserved for historical record
+  /// and appeals. Maximum 2000 characters.
+  original_content String
+  
+  /// Full text of comment after this edit. Shows what user changed to. Maximum
+  /// 2000 characters.
+  edited_content String
+  
+  /// Reason for edit if provided by moderator (e.g., 'Removed slur', 'Redacted
+  /// personal info'). Member edits typically empty. Maximum 500 characters.
+  edit_reason String?
+  
+  /// Whether edit history is visible to general users. True by default.
+  /// Moderators can hide sensitive edits from public view.
+  is_visible_to_user Boolean
+  
+  /// Type of edit: 'member_edit' (user edited own comment), 'moderator_edit'
+  /// (moderator edited for violation), 'system_edit' (automated system
+  /// change). Used for audit filtering.
+  edit_type String
+  
+  /// Timestamp when edit was made. Server time, UTC, seconds precision. Used
+  /// for chronological edit history.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  editor discussion_board_users @relation(fields: [editor_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([comment_id, created_at])
+  @@index([editor_user_id, created_at])
+  @@index([edit_type, created_at])
+}

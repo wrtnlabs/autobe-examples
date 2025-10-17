@@ -1,0 +1,91 @@
+/// Curated taxonomy of economics subjects used for organizing content and
+/// personalization. Managed primarily by admins/moderators with clear naming
+/// and optional description. Serves as the authoritative list of topics
+/// referenced by {@link econ_discuss_post_topics} and user subscriptions in
+/// {@link econ_discuss_user_topic_subscriptions}. Includes temporal fields
+/// for audit and soft deletion. Supports search through text indexes on name
+/// and description.
+///
+/// @namespace Topics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Immutable business identifier (slug-like) for the topic. Used in URLs and
+  /// external references; unique across all topics.
+  code String
+  
+  /// Human-readable topic name shown to users. Used for search and display.
+  name String
+  
+  /// Optional longer description of the topic’s scope and purpose for curation
+  /// context and tooltips.
+  description String?
+  
+  /// Creation timestamp of the topic record.
+  created_at DateTime
+  
+  /// Last update timestamp of the topic record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the topic is considered
+  /// archived/removed from user-facing lists while preserved for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  econ_discuss_expert_domain_badges econ_discuss_expert_domain_badges[]
+  econ_discuss_user_topic_subscriptions econ_discuss_user_topic_subscriptions[]
+  econ_discuss_post_topics econ_discuss_post_topics[]
+  
+  @@unique([code])
+  @@index([created_at])
+}
+
+/// User-to-topic subscription relationship representing personalization
+/// preferences. Each record indicates that a user follows a topic to
+/// prioritize related content and digests. References {@link
+/// econ_discuss_users} and {@link econ_discuss_topics}. Designed for
+/// efficient queries by user and by topic, auditability via temporal fields,
+/// and uniqueness per (user, topic).
+///
+/// @namespace Topics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_discuss_user_topic_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscribed account’s {@link econ_discuss_users.id}.
+  econ_discuss_user_id String
+  
+  /// Subscribed topic’s {@link econ_discuss_topics.id}.
+  econ_discuss_topic_id String
+  
+  /// Creation timestamp when the subscription was established.
+  created_at DateTime
+  
+  /// Last update timestamp of this subscription record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the subscription is considered
+  /// inactive but retained for audit and possible restoration.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  topic econ_discuss_topics @relation(fields: [econ_discuss_topic_id], references: [id], onDelete: Cascade)
+  
+  @@unique([econ_discuss_user_id, econ_discuss_topic_id], map: "econ_discuss_user_topic_subscriptions_econ_discuss_use_a9820ed4")
+  @@index([econ_discuss_user_id, created_at], map: "econ_discuss_user_topic_subscriptions_econ_discuss_use_df3f49fe")
+  @@index([econ_discuss_topic_id, created_at], map: "econ_discuss_user_topic_subscriptions_econ_discuss_top_30791834")
+}

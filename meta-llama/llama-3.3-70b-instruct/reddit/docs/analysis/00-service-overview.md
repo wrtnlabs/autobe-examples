@@ -1,0 +1,1 @@
+The content of the platform will include user-generated posts, comments, and community descriptions

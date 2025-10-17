@@ -1,0 +1,299 @@
+/// Core community entity representing subreddit-like communities where users
+/// can create and share content. Communities are organized around specific
+/// topics and managed by moderators. {@link reddit_clone_users.id} {@link
+/// reddit_clone_members.id} {@link reddit_clone_moderators.id}
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who created this community. References the creator's user ID. {@link
+  /// reddit_clone_users.id}
+  creator_id String
+  
+  /// Primary category classification for this community. {@link
+  /// reddit_clone_community_categories.id}
+  primary_category_id String?
+  
+  /// Unique name identifier for the community (e.g., 'programming', 'gaming').
+  /// Used in URLs and community discovery.
+  name String
+  
+  /// Human-readable display name for the community (e.g., 'Programming',
+  /// 'Video Games').
+  display_name String
+  
+  /// Community description explaining the purpose, topics, and guidelines.
+  /// Maximum 500 characters.
+  description String?
+  
+  /// URL-friendly version of the community name for use in paths (e.g.,
+  /// 'r/programming'). Must be unique.
+  slug String
+  
+  /// Type of community: 'public' (anyone can view/post), 'restricted'
+  /// (viewable by all, posting requires approval), or 'private' (invite-only).
+  community_type String
+  
+  /// Content rating: 'sfw' (Safe For Work) or 'nsfw' (Not Safe For Work).
+  /// Controls content visibility and warnings.
+  content_rating String
+  
+  /// Whether the community is currently active and accepting new content.
+  /// Inactive communities are archived.
+  is_active Boolean
+  
+  /// Whether the community has been archived and no longer accepts new content
+  /// or subscriptions.
+  is_archived Boolean
+  
+  /// URL to the community's avatar image. Typically a small square image
+  /// representing the community.
+  avatar_url String?
+  
+  /// URL to the community's banner image. Displayed at the top of the
+  /// community page.
+  banner_url String?
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  creator reddit_clone_users @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  primaryCategory reddit_clone_community_categories? @relation(fields: [primary_category_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_system_logs reddit_clone_system_logs[]
+  reddit_clone_platform_metrics reddit_clone_platform_metrics[]
+  reddit_clone_community_settings reddit_clone_community_settings?
+  reddit_clone_community_rules reddit_clone_community_rules[]
+  reddit_clone_posts reddit_clone_posts[]
+  reddit_clone_subscriptions reddit_clone_subscriptions[]
+  reddit_clone_user_feeds reddit_clone_user_feeds[]
+  reddit_clone_user_bans reddit_clone_user_bans[]
+  reddit_clone_user_activity reddit_clone_user_activity[]
+  
+  @@index([creator_id])
+  
+  @@unique([name])
+  @@unique([slug])
+  @@index([community_type, is_active])
+  @@index([primary_category_id])
+  @@index([created_at])
+}
+
+/// Configuration and preference settings for individual communities. Stores
+/// community-specific customization options that moderators can adjust.
+/// {@link reddit_clone_communities.id}
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community these settings belong to. Each community has exactly one
+  /// settings record. {@link reddit_clone_communities.id}
+  community_id String
+  
+  /// Whether this community allows image posts. Can be disabled for text-only
+  /// communities.
+  allow_images Boolean
+  
+  /// Whether this community allows link posts. Can be disabled for
+  /// discussion-only communities.
+  allow_links Boolean
+  
+  /// Whether this community allows poll posts. Requires additional poll
+  /// functionality.
+  allow_polls Boolean
+  
+  /// Whether posts in this community must have flair assigned before
+  /// submission.
+  require_post_flair Boolean
+  
+  /// Whether comments in this community must have flair. Less common but
+  /// available.
+  require_comment_flair Boolean
+  
+  /// Whether new posts require moderator approval before becoming visible.
+  /// Used in restricted communities.
+  post_approval_required Boolean
+  
+  /// Minimum account age in days required to post in this community. Helps
+  /// prevent spam.
+  minimum_account_age_days Int?
+  
+  /// Minimum karma points required to post in this community. Helps ensure
+  /// quality contributors.
+  minimum_karma_required Int?
+  
+  /// Whether slow mode is enabled, limiting how frequently users can
+  /// post/comments.
+  slow_mode_enabled Boolean
+  
+  /// Time interval in seconds between posts/comments when slow mode is enabled.
+  slow_mode_interval_seconds Int?
+  
+  /// Whether to send a welcome message to new subscribers.
+  welcome_message_enabled Boolean
+  
+  /// Custom welcome message text sent to new subscribers when
+  /// welcome_message_enabled is true.
+  welcome_message_text String?
+  
+  /// Timestamp when these settings were created.
+  created_at DateTime
+  
+  /// Timestamp when these settings were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id])
+  
+  @@index([community_id])
+}
+
+/// Community-specific rules and guidelines that members must follow. Each
+/// community can have multiple rules that are displayed to users. {@link
+/// reddit_clone_communities.id}
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that this rule belongs to. Rules are specific to each
+  /// community. {@link reddit_clone_communities.id}
+  community_id String
+  
+  /// Short, descriptive title for the rule (e.g., 'No Spam', 'Be Civil').
+  /// Maximum 100 characters.
+  title String
+  
+  /// Detailed explanation of the rule and its enforcement. Maximum 1000
+  /// characters.
+  description String
+  
+  /// Display order for the rule within the community's rules list. Lower
+  /// numbers appear first.
+  rule_order Int
+  
+  /// Whether this rule is currently active and being enforced. Disabled rules
+  /// are not shown to users.
+  is_enabled Boolean
+  
+  /// Action taken when this rule is violated: 'warning', 'post_removal',
+  /// 'temporary_ban', 'permanent_ban'.
+  violation_action String
+  
+  /// Timestamp when this rule was created.
+  created_at DateTime
+  
+  /// Timestamp when this rule was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this rule was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, rule_order])
+  @@index([community_id, is_enabled])
+  @@index([rule_order])
+}
+
+/// Taxonomy system for categorizing communities by topic. Used for community
+/// discovery and organization. Categories are platform-wide and managed by
+/// administrators.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the category (e.g., 'Technology', 'Sports',
+  /// 'Entertainment'). Used for display and organization.
+  name String
+  
+  /// URL-friendly version of the category name for use in navigation and
+  /// filtering.
+  slug String
+  
+  /// Description explaining what types of communities belong in this category.
+  /// Maximum 500 characters.
+  description String?
+  
+  /// URL to an icon representing this category. Used in category browsing
+  /// interfaces.
+  icon_url String?
+  
+  /// Hex color code for this category (e.g., '#FF6B35'). Used for visual
+  /// differentiation.
+  color_hex String?
+  
+  /// Whether this category is featured and shown prominently in category
+  /// discovery.
+  is_featured Boolean
+  
+  /// Number of communities currently categorized under this category. Updated
+  /// automatically.
+  community_count Int
+  
+  /// Order in which this category appears in category lists. Lower numbers
+  /// appear first.
+  display_order Int
+  
+  /// Whether this category is active and available for use. Inactive
+  /// categories are hidden.
+  is_active Boolean
+  
+  /// Timestamp when this category was created.
+  created_at DateTime
+  
+  /// Timestamp when this category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this category was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_clone_communities reddit_clone_communities[]
+  
+  @@unique([name])
+  @@unique([slug])
+  @@index([display_order])
+  @@index([is_featured, is_active])
+}

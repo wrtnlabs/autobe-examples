@@ -1,0 +1,264 @@
+/// Structured user reports of potentially violating content (post or
+/// thread). Captures reporter identity (when available), selected reason
+/// code, optional reporter details, linkage to target content (post or
+/// thread), current processing status, moderation_case association, and SLA
+/// timestamps for triage and review. Adjusted to ensure referential
+/// integrity and audit preservation: reporter FK uses SET NULL semantics
+/// (preserve reports if user removed), removed incorrect generated
+/// reverse-array relation, and added composite indexes and GIN index for
+/// search. Includes explicit temporal fields and soft-delete for retention.
+/// {@link econ_political_forum_posts.id} {@link
+/// econ_political_forum_threads.id} {@link
+/// econ_political_forum_registereduser.id}
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting user's {@link econ_political_forum_registereduser.id}. Null if
+  /// reporter requested anonymity or is unauthenticated.
+  reporter_id String?
+  
+  /// Target post's {@link econ_political_forum_posts.id}. Nullable if the
+  /// report targets a thread instead.
+  reported_post_id String?
+  
+  /// Target thread's {@link econ_political_forum_threads.id}. Nullable if the
+  /// report targets a post.
+  reported_thread_id String?
+  
+  /// Reviewing moderator's {@link econ_political_forum_moderator.id}.
+  /// Populated when a moderator triages or acts on the report.
+  moderator_id String?
+  
+  /// Associated moderation case {@link
+  /// econ_political_forum_moderation_cases.id} aggregating related reports for
+  /// admin review.
+  moderation_case_id String?
+  
+  /// Structured reason code selected by the reporter (e.g.,
+  /// 'harassment','doxxing','misinformation','illegal_content','spam','other').
+  /// Stored as string for flexibility and clarity.
+  reason_code String
+  
+  /// Optional free-text provided by reporter giving additional context (max
+  /// 2000 chars recommended).
+  reporter_text String?
+  
+  /// Whether the reporter requested anonymity from the content author/public.
+  /// Moderators retain reporter identity in internal UI when available.
+  reporter_anonymous Boolean
+  
+  /// Processing state of the report (e.g.,
+  /// 'pending','triaged','dismissed','action_taken','escalated').
+  status String
+  
+  /// Operational priority label for triage (e.g.,
+  /// 'low','normal','high','urgent').
+  priority String
+  
+  /// Report creation timestamp (immutable).
+  created_at DateTime
+  
+  /// Timestamp when a moderator first acknowledged or triaged the report.
+  triaged_at DateTime?
+  
+  /// Timestamp when a final review/action was recorded for the report.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the report was resolved (action taken or dismissed).
+  resolved_at DateTime?
+  
+  /// Soft-delete timestamp for the report record when removal is required. Use
+  /// sparingly; legal holds may prevent deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter econ_political_forum_registereduser? @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  reportedPost econ_political_forum_posts? @relation(fields: [reported_post_id], references: [id], onDelete: Cascade)
+  reportedThread econ_political_forum_threads? @relation(fields: [reported_thread_id], references: [id], onDelete: Cascade)
+  moderator econ_political_forum_moderator? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  moderationCase econ_political_forum_moderation_cases? @relation(fields: [moderation_case_id], references: [id], onDelete: Cascade)
+  
+  econ_political_forum_audit_logs econ_political_forum_audit_logs[]
+  
+  @@index([reporter_id])
+  @@index([moderator_id])
+  
+  @@index([status, created_at])
+  @@index([priority, created_at])
+  @@index([reported_post_id, status, created_at], map: "econ_political_forum_reports_reported_post_id_status_c_03e03213")
+  @@index([reported_thread_id, status, created_at], map: "econ_political_forum_reports_reported_thread_id_status_61829c0e")
+  @@index([moderation_case_id, created_at])
+}
+
+/// Immutable moderation log entries recording actions taken by moderators or
+/// system actors. Each entry is append-only and includes actor reference,
+/// action type, linked content (post or thread), optional linkage to a
+/// moderation case, structured reason codes, and free-text rationale.
+/// Designed for legal audit, retention, and chronological reconstruction of
+/// moderation decisions. {@\link econ_political_forum_moderator.id} {@\link
+/// econ_political_forum_posts.id} {@\link econ_political_forum_threads.id}
+/// {@\link econ_political_forum_moderation_cases.id}
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Acting moderator's {@\link econ_political_forum_moderator.id}. Nullable
+  /// for system or automated actions.
+  moderator_id String?
+  
+  /// Target post affected by the action ({@\link
+  /// econ_political_forum_posts.id}). Nullable if action targets a thread or
+  /// user record.
+  target_post_id String?
+  
+  /// Target thread affected by the action ({@\link
+  /// econ_political_forum_threads.id}). Nullable if action targets a post.
+  target_thread_id String?
+  
+  /// Associated moderation case {@\link
+  /// econ_political_forum_moderation_cases.id} for grouped investigations.
+  moderation_case_id String?
+  
+  /// Acting administrator id when an admin performed or finalized the action
+  /// ({@\link econ_political_forum_administrator.id}). Nullable.
+  acted_admin_id String?
+  
+  /// Type of moderation action (e.g.,
+  /// 'hide','remove','warning','suspend','approve','escalate','merge','flag').
+  action_type String
+  
+  /// Structured policy reason code applied by the moderator (maps to policy
+  /// clauses).
+  reason_code String
+  
+  /// Moderator-provided free-text rationale explaining the action (up to
+  /// recommended 1000 chars).
+  rationale String?
+  
+  /// Optional URI or reference id pointing to stored evidence bundles or
+  /// archived snapshots (could be internal object id or URL).
+  evidence_reference String?
+  
+  /// Timestamp when the moderation action was recorded (immutable).
+  created_at DateTime
+  
+  /// Soft-delete marker for the log entry (rare; prefer append-only retention).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator econ_political_forum_moderator? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetPost econ_political_forum_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetThread econ_political_forum_threads? @relation(fields: [target_thread_id], references: [id], onDelete: Cascade)
+  moderationCase econ_political_forum_moderation_cases? @relation(fields: [moderation_case_id], references: [id], onDelete: Cascade)
+  actedAdmin econ_political_forum_administrator? @relation(fields: [acted_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([target_post_id])
+  @@index([target_thread_id])
+  @@index([moderation_case_id])
+  @@index([acted_admin_id])
+  
+  @@index([moderator_id, created_at], map: "econ_political_forum_moderation_logs_moderator_id_crea_01f39989")
+  @@index([action_type, created_at])
+}
+
+/// Moderation case entity that aggregates related reports and moderation
+/// logs for administrator investigation, escalation, and appeals processing.
+/// Contains operational metadata for triage, assignment, legal hold
+/// flagging, and case lifecycle timestamps. Cases provide a single
+/// coordination point for researchers and admins while preserving immutable
+/// moderation_logs for audit.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_moderation_cases {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator assigned to manage the case {@link
+  /// econ_political_forum_moderator.id}. Nullable when unassigned.
+  assigned_moderator_id String?
+  
+  /// Administrator owner or final approver for the case {@link
+  /// econ_political_forum_administrator.id}. Nullable.
+  owner_admin_id String?
+  
+  /// Representative report id that initiated the case {@link
+  /// econ_political_forum_reports.id}. Stored as uuid rather than a DB-level
+  /// foreign key to avoid circular dependency.
+  lead_report_id String?
+  
+  /// Human-friendly unique case identifier used in operations and
+  /// communication (e.g., 'CASE-2025-0001').
+  case_number String
+  
+  /// Short case title summarizing the issue for quick identification.
+  title String?
+  
+  /// Lifecycle status of the case (e.g.,
+  /// 'open','investigating','closed','on_hold').
+  status String
+  
+  /// Operational priority label (e.g., 'low','normal','high','urgent').
+  priority String
+  
+  /// Concise summary or executive note for the case; suitable for dashboards
+  /// and quick reviews.
+  summary String?
+  
+  /// If escalated, the reason for escalation (e.g.,
+  /// 'legal','law_enforcement','coordinated_activity').
+  escalation_reason String?
+  
+  /// Whether a legal hold applies to the case and associated evidence; when
+  /// true archival/deletion operations must be inhibited.
+  legal_hold Boolean
+  
+  /// Case creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for the case.
+  updated_at DateTime
+  
+  /// Timestamp when the case was closed/resolved.
+  closed_at DateTime?
+  
+  /// Soft-delete timestamp for the case record (rare).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  assignedModerator econ_political_forum_moderator? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  ownerAdmin econ_political_forum_administrator? @relation(fields: [owner_admin_id], references: [id], onDelete: Cascade)
+  
+  econ_political_forum_reports econ_political_forum_reports[]
+  econ_political_forum_moderation_logs econ_political_forum_moderation_logs[]
+  econ_political_forum_audit_logs econ_political_forum_audit_logs[]
+  econ_political_forum_legal_holds econ_political_forum_legal_holds[]
+  
+  @@index([assigned_moderator_id], map: "econ_political_forum_moderation_cases_assigned_moderat_8b4d99d5")
+  @@index([owner_admin_id])
+  
+  @@unique([case_number])
+  @@index([status, priority, created_at], map: "econ_political_forum_moderation_cases_status_priority__18091a64")
+}

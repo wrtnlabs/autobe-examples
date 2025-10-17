@@ -1,0 +1,340 @@
+/// Immutable audit trail entries recording who did what, when, and why
+/// across the platform. Primarily used for compliance, forensics, and
+/// operational observability. Each event may optionally reference the actor
+/// user and an associated {@link shopping_mall_admin_actions} record. Target
+/// business object is referenced generically by table name and entity_id to
+/// avoid polymorphic FK constraints.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_audit_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor user's {@link shopping_mall_users.id}. Optional for
+  /// system-generated events.
+  actor_user_id String?
+  
+  /// Related admin action's {@link shopping_mall_admin_actions.id} when the
+  /// event is tied to an admin workflow.
+  shopping_mall_admin_action_id String?
+  
+  /// Table name of the business entity this event pertains to (e.g.,
+  /// shopping_mall_orders).
+  entity_table String
+  
+  /// Target entity identifier. Nullable for global/system events not tied to a
+  /// single record.
+  entity_id String?
+  
+  /// Normalized action keyword (e.g., created, updated, published, suspended,
+  /// refunded).
+  action String
+  
+  /// Human-readable summary of the event suitable for staff consoles.
+  summary String?
+  
+  /// Optional reason code or narrative for state-changing events (policy
+  /// reference, justification).
+  reason String?
+  
+  /// Correlation identifier to link related events across services and retries.
+  correlation_id String?
+  
+  /// Originating IP address (string form).
+  source_ip String?
+  
+  /// User-Agent string when applicable.
+  user_agent String?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC). Typically equals created_at for immutable
+  /// entries.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for retention workflows (null for active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  actorUser shopping_mall_users? @relation(fields: [actor_user_id], references: [id], onDelete: Cascade)
+  adminAction shopping_mall_admin_actions? @relation(fields: [shopping_mall_admin_action_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_user_id, created_at])
+  @@index([shopping_mall_admin_action_id, created_at], map: "shopping_mall_audit_events_shopping_mall_admin_action__60521a86")
+  @@index([created_at])
+  @@index([entity_table, entity_id, created_at], map: "shopping_mall_audit_events_entity_table_entity_id_crea_39291ed0")
+  @@index([correlation_id])
+}
+
+/// Staff-initiated administrative actions that may require approval and
+/// execution (maker-checker). Tracks the requestor, target entity, status
+/// transitions, and idempotency. Related approvals are stored in {@link
+/// shopping_mall_maker_checker_approvals}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Requesting staff user's {@link shopping_mall_users.id}.
+  requested_by_user_id String
+  
+  /// Executing staff user's {@link shopping_mall_users.id} when carried out.
+  performed_by_user_id String?
+  
+  /// Client-supplied idempotency key to prevent duplicate execution of the
+  /// same admin action.
+  idempotency_key String
+  
+  /// Business name of the administrative action (e.g., suspend_product,
+  /// approve_refund, publish_category).
+  action_name String
+  
+  /// Target table name for the action (e.g., shopping_mall_products).
+  target_entity_table String
+  
+  /// Identifier of the target entity when applicable.
+  target_entity_id String?
+  
+  /// Current workflow status (e.g., pending, under_review, approved, rejected,
+  /// executed, canceled).
+  status String
+  
+  /// Requestor-provided justification text referencing policy or operational
+  /// reasons.
+  justification String?
+  
+  /// Reason specified when the action is rejected.
+  rejection_reason String?
+  
+  /// Optional scheduled execution time for time-bound or deferred actions.
+  scheduled_at DateTime?
+  
+  /// Timestamp when the action was executed.
+  executed_at DateTime?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for retention workflows (null for active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  requestedBy shopping_mall_users @relation("shopping_mall_admin_actions_of_requested_by_user_id", fields: [requested_by_user_id], references: [id], onDelete: Cascade)
+  performedBy shopping_mall_users? @relation("shopping_mall_admin_actions_of_performed_by_user_id", fields: [performed_by_user_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_audit_events shopping_mall_audit_events[]
+  shopping_mall_maker_checker_approvals shopping_mall_maker_checker_approvals[]
+  
+  @@unique([idempotency_key])
+  @@index([requested_by_user_id, created_at])
+  @@index([status, created_at])
+  @@index([performed_by_user_id, executed_at], map: "shopping_mall_admin_actions_performed_by_user_id_execu_54aa7655")
+  @@index([target_entity_table, target_entity_id, status], map: "shopping_mall_admin_actions_target_entity_table_target_b40f09d5")
+  @@index([scheduled_at])
+}
+
+/// Configurable fraud/risk rules managed by operations/finance/security.
+/// Each rule defines a condition expression and decision outcome (e.g.,
+/// allow, review, block) with priority and activation status. Actions are
+/// audited via {@link shopping_mall_audit_events}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_risk_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creator staff user's {@link shopping_mall_users.id}.
+  created_by_user_id String
+  
+  /// Last editor staff user's {@link shopping_mall_users.id}.
+  updated_by_user_id String?
+  
+  /// Stable business identifier for the rule (unique).
+  code String
+  
+  /// Human-readable rule name for consoles and search.
+  name String
+  
+  /// Detailed description and policy references.
+  description String?
+  
+  /// Whether the rule is currently active and evaluated.
+  active Boolean
+  
+  /// Evaluation priority; lower numbers evaluated earlier or with higher
+  /// precedence depending on engine configuration.
+  priority Int
+  
+  /// Expression string describing the rule condition (domain-specific syntax).
+  condition String
+  
+  /// Outcome decision when condition matches (e.g., allow, review, block,
+  /// hold).
+  decision String
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for retention workflows (null for active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  createdBy shopping_mall_users @relation("shopping_mall_risk_rules_of_created_by_user_id", fields: [created_by_user_id], references: [id], onDelete: Cascade)
+  updatedBy shopping_mall_users? @relation("shopping_mall_risk_rules_of_updated_by_user_id", fields: [updated_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([code])
+  @@index([active, priority])
+  @@index([created_by_user_id, created_at])
+  @@index([decision, active])
+  @@index([updated_by_user_id, updated_at])
+}
+
+/// Governed data export requests for audit, compliance, and operations.
+/// Captures requester identity, purpose, scope, approvals, delivery details,
+/// and lifecycle status. Approvals are optional and may be recorded in
+/// {@link shopping_mall_maker_checker_approvals}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_data_exports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Requesting staff user's {@link shopping_mall_users.id}.
+  requested_by_user_id String
+  
+  /// Approver staff user's {@link shopping_mall_users.id} when maker-checker
+  /// applies.
+  approved_by_user_id String?
+  
+  /// Human-readable request number unique across all exports (e.g.,
+  /// EXP-YYYYMMDD-NNNNNN).
+  request_number String
+  
+  /// Declared business purpose for the export (e.g., DSAR, audit,
+  /// reconciliation) used for policy checks.
+  purpose String
+  
+  /// Textual description of included entities/fields/filters (no raw data).
+  scope_description String
+  
+  /// Lifecycle status (e.g., requested, approved, processing, completed,
+  /// failed, canceled).
+  status String
+  
+  /// Optional justification or case reference for policy review.
+  justification String?
+  
+  /// Delivery channel or mechanism (e.g., secure_link, sftp, in_app).
+  delivery_channel String?
+  
+  /// Where the generated artifact is available when completed (if applicable).
+  file_uri String?
+  
+  /// Optional expiration timestamp after which the artifact is no longer
+  /// accessible.
+  expires_at DateTime?
+  
+  /// Completion timestamp for successful exports.
+  completed_at DateTime?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for retention workflows (null for active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  requestedBy shopping_mall_users @relation("shopping_mall_data_exports_of_requested_by_user_id", fields: [requested_by_user_id], references: [id], onDelete: Cascade)
+  approvedBy shopping_mall_users? @relation("shopping_mall_data_exports_of_approved_by_user_id", fields: [approved_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([request_number])
+  @@index([requested_by_user_id, created_at])
+  @@index([status, created_at])
+  @@index([approved_by_user_id, updated_at])
+  @@index([expires_at])
+  @@index([completed_at])
+}
+
+/// Approval decisions supporting the maker-checker pattern for sensitive
+/// administrative actions. Each record captures one approver’s decision tied
+/// to a specific {@link shopping_mall_admin_actions} entry for auditability.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_maker_checker_approvals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target admin action's {@link shopping_mall_admin_actions.id}.
+  shopping_mall_admin_action_id String
+  
+  /// Approver staff user's {@link shopping_mall_users.id}.
+  approver_user_id String
+  
+  /// Decision outcome (e.g., approved, rejected).
+  decision String
+  
+  /// Optional rationale or policy reference for the decision.
+  reason String?
+  
+  /// Timestamp when the decision was made.
+  decided_at DateTime?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for retention workflows (null for active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  adminAction shopping_mall_admin_actions @relation(fields: [shopping_mall_admin_action_id], references: [id], onDelete: Cascade)
+  approver shopping_mall_users @relation(fields: [approver_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_admin_action_id, approver_user_id], map: "shopping_mall_maker_checker_approvals_shopping_mall_ad_f59e5c21")
+  @@index([shopping_mall_admin_action_id, created_at], map: "shopping_mall_maker_checker_approvals_shopping_mall_ad_ba2142b4")
+  @@index([approver_user_id, created_at], map: "shopping_mall_maker_checker_approvals_approver_user_id_3c54361c")
+  @@index([decision, decided_at])
+}

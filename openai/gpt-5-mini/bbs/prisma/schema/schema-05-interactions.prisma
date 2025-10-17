@@ -1,0 +1,131 @@
+/// User votes on posts. One vote per user per post is enforced via a
+/// composite unique constraint. Stores vote value (application-enforced
+/// domain: 1 = upvote, -1 = downvote), timestamps, and soft-delete to
+/// support audit and rollback. References {@link
+/// econ_political_forum_registereduser.id} and {@link
+/// econ_political_forum_posts.id}.
+///
+/// @namespace Interactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning registered user's {@link econ_political_forum_registereduser.id}.
+  registereduser_id String
+  
+  /// Target post's {@link econ_political_forum_posts.id}.
+  post_id String
+  
+  /// Vote value. Business domain: 1 = upvote, -1 = downvote. Application
+  /// should validate allowed values; consider DB CHECK or string enum if
+  /// preferred.
+  value Int
+  
+  /// Creation timestamp for the vote record.
+  created_at DateTime
+  
+  /// Last update time for the vote record (used when vote is changed).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser econ_political_forum_registereduser @relation(fields: [registereduser_id], references: [id], onDelete: Cascade)
+  post econ_political_forum_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([registereduser_id, post_id])
+  @@index([post_id, created_at])
+  @@index([registereduser_id, created_at])
+}
+
+/// User bookmarks (saved posts). Enforces one bookmark per user per post via
+/// composite unique constraint. Soft-delete used to allow unbookmark while
+/// preserving an audit trail. References {@link
+/// econ_political_forum_registereduser.id} and {@link
+/// econ_political_forum_posts.id}.
+///
+/// @namespace Interactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_bookmarks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning registered user's {@link econ_political_forum_registereduser.id}.
+  registereduser_id String
+  
+  /// Bookmarked post's {@link econ_political_forum_posts.id}.
+  post_id String
+  
+  /// Bookmark creation timestamp.
+  created_at DateTime
+  
+  /// Last update time for the bookmark (if metadata changes).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when bookmark is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser econ_political_forum_registereduser @relation(fields: [registereduser_id], references: [id], onDelete: Cascade)
+  post econ_political_forum_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([registereduser_id, post_id])
+  @@index([post_id, created_at])
+  @@index([registereduser_id, created_at])
+}
+
+/// Tracks thread subscriptions (follows) by users for notification and feed
+/// generation. Enforces one follow per user per thread. Includes optional
+/// muted_until for temporary notification suppression. References {@link
+/// econ_political_forum_registereduser.id} and {@link
+/// econ_political_forum_threads.id}.
+///
+/// @namespace Interactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_thread_follows {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning registered user's {@link econ_political_forum_registereduser.id}.
+  registereduser_id String
+  
+  /// Followed thread's {@link econ_political_forum_threads.id}.
+  thread_id String
+  
+  /// Timestamp when the follow was created.
+  created_at DateTime
+  
+  /// Last update time for the follow (e.g., mute toggles).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when follow is active.
+  deleted_at DateTime?
+  
+  /// Optional timestamp until which notifications for this follow are muted.
+  muted_until DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser econ_political_forum_registereduser @relation(fields: [registereduser_id], references: [id], onDelete: Cascade)
+  thread econ_political_forum_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade)
+  
+  @@unique([registereduser_id, thread_id], map: "econ_political_forum_thread_follows_registereduser_id__85104963")
+  @@index([thread_id, created_at])
+  @@index([registereduser_id, created_at], map: "econ_political_forum_thread_follows_registereduser_id__638bdd4b")
+}

@@ -1,0 +1,304 @@
+/// Main discussion topics created by users. Represents the starting point
+/// for economic and political discussions. Topics can be created, edited,
+/// and managed independently by users.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category this topic belongs to. {@link discussion_board_categories.id}.
+  discussion_board_category_id String
+  
+  /// Member who created this topic. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Topic title that summarizes the discussion point.
+  title String
+  
+  /// Detailed content of the discussion topic.
+  content String
+  
+  /// Current status of the topic (draft, published, archived,
+  /// pending_moderation).
+  status String
+  
+  /// Business workflow status (active, locked, closed, deleted).
+  business_status String
+  
+  /// Number of times this topic has been viewed.
+  view_count Int
+  
+  /// Number of comments on this topic.
+  comment_count Int
+  
+  /// Timestamp of the last activity (comment, edit) on this topic.
+  last_activity_at DateTime
+  
+  /// Timestamp when this topic was created.
+  created_at DateTime
+  
+  /// Timestamp when this topic was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this topic was soft deleted, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_topic_snapshots discussion_board_topic_snapshots[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_content_versions discussion_board_content_versions[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_bookmarks discussion_board_bookmarks[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_notifications discussion_board_notifications[]
+  discussion_board_user_activities discussion_board_user_activities[]
+  discussion_board_content_metrics discussion_board_content_metrics[]
+  discussion_board_trending_topics discussion_board_trending_topics[]
+  
+  @@index([discussion_board_category_id, created_at], map: "discussion_board_topics_discussion_board_category_id_c_2706e440")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_topics_discussion_board_member_id_cre_83b58038")
+  @@index([status, created_at])
+  @@index([last_activity_at])
+}
+
+/// Historical snapshots of discussion topics capturing point-in-time states
+/// for audit trails and version control. Used to track changes to topics
+/// over time.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_topic_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Topic this snapshot belongs to. {@link discussion_board_topics.id}.
+  discussion_board_topic_id String
+  
+  /// Topic title at the time of snapshot.
+  title String
+  
+  /// Topic content at the time of snapshot.
+  content String
+  
+  /// Topic status at the time of snapshot.
+  status String
+  
+  /// Business workflow status at the time of snapshot.
+  business_status String
+  
+  /// Reason for creating this snapshot (edit, moderation, etc.).
+  reason String?
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  topic discussion_board_topics @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_topic_id, created_at], map: "discussion_board_topic_snapshots_discussion_board_topi_52e69387")
+  @@index([created_at])
+}
+
+/// Comments posted by users on discussion topics. Users can independently
+/// create, search, and manage comments across different topics.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Topic this comment belongs to. {@link discussion_board_topics.id}.
+  discussion_board_topic_id String
+  
+  /// Member who created this comment. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// The comment content text.
+  content String
+  
+  /// Current status of the comment (published, pending_moderation, deleted).
+  status String
+  
+  /// Business workflow status (active, hidden, removed).
+  business_status String
+  
+  /// Number of upvotes this comment has received.
+  upvote_count Int
+  
+  /// Number of downvotes this comment has received.
+  downvote_count Int
+  
+  /// Number of replies to this comment.
+  reply_count Int
+  
+  /// Timestamp when this comment was created.
+  created_at DateTime
+  
+  /// Timestamp when this comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this comment was soft deleted, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  topic discussion_board_topics @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_comment_replies discussion_board_comment_replies[]
+  discussion_board_content_versions discussion_board_content_versions[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_bookmarks discussion_board_bookmarks[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_notifications discussion_board_notifications[]
+  discussion_board_user_activities discussion_board_user_activities[]
+  discussion_board_content_metrics discussion_board_content_metrics[]
+  
+  @@index([discussion_board_topic_id, created_at], map: "discussion_board_comments_discussion_board_topic_id_cr_71c789c8")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_comments_discussion_board_member_id_c_c3eff834")
+  @@index([status, created_at])
+}
+
+/// Replies to comments forming threaded discussions. These are supporting
+/// entities managed through parent comments and do not require independent
+/// API operations.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent comment this reply belongs to. {@link
+  /// discussion_board_comments.id}.
+  discussion_board_comment_id String
+  
+  /// Member who created this reply. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Parent reply for nested replies, null if direct reply to comment. {@link
+  /// discussion_board_comment_replies.id}.
+  parent_reply_id String?
+  
+  /// The reply content text.
+  content String
+  
+  /// Current status of the reply (published, pending_moderation, deleted).
+  status String
+  
+  /// Business workflow status (active, hidden, removed).
+  business_status String
+  
+  /// Number of upvotes this reply has received.
+  upvote_count Int
+  
+  /// Number of downvotes this reply has received.
+  downvote_count Int
+  
+  /// Depth level of this reply in the thread (1 for direct replies, 2 for
+  /// replies to replies, etc.).
+  reply_depth Int
+  
+  /// Timestamp when this reply was created.
+  created_at DateTime
+  
+  /// Timestamp when this reply was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this reply was soft deleted, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parentComment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  parentReply discussion_board_comment_replies? @relation("recursive", fields: [parent_reply_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_comment_replies[] @relation("recursive")
+  
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_replies_discussion_board_comm_eefbbb24")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_comment_replies_discussion_board_memb_1b12bfc3")
+  @@index([parent_reply_id, created_at])
+  @@index([reply_depth])
+}
+
+/// Version history for content edits across topics and comments. Captures
+/// historical states for audit trails and content change tracking.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_versions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Topic this version belongs to, null if version is for a comment. {@link
+  /// discussion_board_topics.id}.
+  discussion_board_topic_id String?
+  
+  /// Comment this version belongs to, null if version is for a topic. {@link
+  /// discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Member who created this version. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Type of content this version represents (topic, comment, reply).
+  content_type String
+  
+  /// Previous content before the edit.
+  previous_content String
+  
+  /// New content after the edit.
+  new_content String
+  
+  /// Reason for the content edit (user_edit, moderation, etc.).
+  edit_reason String?
+  
+  /// Sequential version number for this content item.
+  version_number Int
+  
+  /// Timestamp when this version was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  topic discussion_board_topics? @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_topic_id, version_number], map: "discussion_board_content_versions_discussion_board_top_21cf3b58")
+  @@unique([discussion_board_comment_id, version_number], map: "discussion_board_content_versions_discussion_board_com_bb760fab")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_content_versions_discussion_board_mem_491e8ce2")
+  @@index([content_type, created_at])
+  @@index([created_at])
+}

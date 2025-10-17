@@ -1,0 +1,170 @@
+/// Discussion threads (top-level topics). Canonical thread metadata only —
+/// no pre-calculated aggregates. Refer to category ({@link
+/// econ_political_forum_categories.id}) and author ({@link
+/// econ_political_forum_registereduser.id}). Temporal fields included for
+/// audit and soft-delete. Counters (view_count, post_count) removed per
+/// normalization rules; use materialized views (mv_*) for aggregates.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged category. {@link econ_political_forum_categories.id}.
+  category_id String
+  
+  /// Authoring registered user. {@link econ_political_forum_registereduser.id}.
+  author_id String
+  
+  /// Thread title used for listing and search.
+  title String
+  
+  /// URL-friendly identifier for the thread (unique).
+  slug String
+  
+  /// Thread lifecycle status (e.g., 'open','closed','pinned').
+  status String
+  
+  /// Whether the thread is pinned for prominent display.
+  pinned Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category econ_political_forum_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  author econ_political_forum_registereduser @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  econ_political_forum_posts econ_political_forum_posts[]
+  econ_political_forum_thread_tags econ_political_forum_thread_tags[]
+  econ_political_forum_thread_follows econ_political_forum_thread_follows[]
+  econ_political_forum_reports econ_political_forum_reports[]
+  econ_political_forum_moderation_logs econ_political_forum_moderation_logs[]
+  econ_political_forum_audit_logs econ_political_forum_audit_logs[]
+  econ_political_forum_legal_holds econ_political_forum_legal_holds[]
+  
+  @@unique([slug])
+  @@index([category_id, created_at])
+  @@index([author_id, created_at])
+}
+
+/// Posts and replies belonging to threads. Canonical post content only (no
+/// cached counters or rendered HTML). Parent relation kept for replies.
+/// Revision history stored in econ_political_forum_post_revisions
+/// (snapshot). Removed derived fields (vote_count, upvote_count,
+/// downvote_count, content_html) to comply with normalization rules; move
+/// aggregates to materialized views.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged thread. {@link econ_political_forum_threads.id}.
+  thread_id String
+  
+  /// Authoring registered user. {@link econ_political_forum_registereduser.id}.
+  author_id String
+  
+  /// Optional parent post for replies. {@link econ_political_forum_posts.id}.
+  parent_id String?
+  
+  /// Raw post content (plaintext or sanitized markdown).
+  content String
+  
+  /// Flag indicating whether the post was edited after creation.
+  is_edited Boolean
+  
+  /// Timestamp of the latest edit; null if never edited.
+  edited_at DateTime?
+  
+  /// Moderator hide flag; when true the post is not shown in public listings.
+  is_hidden Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  thread econ_political_forum_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade)
+  author econ_political_forum_registereduser @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  parent econ_political_forum_posts? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive econ_political_forum_posts[] @relation("recursive")
+  econ_political_forum_post_revisions econ_political_forum_post_revisions[]
+  econ_political_forum_votes econ_political_forum_votes[]
+  econ_political_forum_bookmarks econ_political_forum_bookmarks[]
+  econ_political_forum_reports econ_political_forum_reports[]
+  econ_political_forum_moderation_logs econ_political_forum_moderation_logs[]
+  econ_political_forum_audit_logs econ_political_forum_audit_logs[]
+  econ_political_forum_legal_holds econ_political_forum_legal_holds[]
+  
+  @@index([thread_id, created_at])
+  @@index([author_id, created_at])
+  @@index([parent_id])
+  @@index([thread_id, is_hidden, created_at])
+}
+
+/// Append-only revision history for posts. Each revision captures the full
+/// post content at a point in time, the editor (if different from author),
+/// and a created_at timestamp. This table is snapshot-like and intended for
+/// audit/history and moderator review.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_post_revisions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced post. {@link econ_political_forum_posts.id}.
+  post_id String
+  
+  /// Editor (registered user) who made the revision, if applicable. {@link
+  /// econ_political_forum_registereduser.id}.
+  editor_id String?
+  
+  /// Full post content snapshot at the time of revision.
+  content String
+  
+  /// Optional short editor note describing the change.
+  note String?
+  
+  /// Revision timestamp (when the snapshot was recorded).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post econ_political_forum_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  editor econ_political_forum_registereduser? @relation(fields: [editor_id], references: [id], onDelete: Cascade)
+  
+  @@index([editor_id])
+  
+  @@index([post_id, created_at])
+}

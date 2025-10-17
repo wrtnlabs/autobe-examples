@@ -1,0 +1,509 @@
+/// Core product information in the e-commerce platform. Contains essential
+/// details about products available for purchase including title,
+/// description, pricing, and status. This is a primary business entity that
+/// customers interact with directly through browsing, searching, and
+/// purchasing.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller who created the product. {@link shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// The main category this product belongs to. {@link
+  /// shopping_mall_product_categories.id}.
+  primary_category_id String
+  
+  /// Product title visible to customers.
+  title String
+  
+  /// Base price of the product before variant adjustments.
+  base_price Float
+  
+  /// Currency code for the product price (e.g., USD, EUR).
+  currency String
+  
+  /// Manufacturer or brand name.
+  brand String?
+  
+  /// Lifecycle status of the product (draft, active, inactive, discontinued).
+  product_status String
+  
+  /// When the product was created.
+  created_at DateTime
+  
+  /// When the product was last updated.
+  updated_at DateTime
+  
+  /// When the product was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  primaryCategory shopping_mall_product_categories @relation(fields: [primary_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_attributes shopping_mall_product_attributes[]
+  shopping_mall_product_descriptions shopping_mall_product_descriptions[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_product_videos shopping_mall_product_videos[]
+  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_options shopping_mall_product_options[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_product_tags shopping_mall_product_tags[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  
+  @@index([seller_id])
+  @@index([primary_category_id])
+  
+  @@unique([title, seller_id])
+  @@index([product_status, created_at])
+  @@index([brand, product_status])
+}
+
+/// Structured attributes that describe product characteristics beyond basic
+/// information. Contains specifications like material, warranty period,
+/// dimensions, and other technical details that help customers evaluate
+/// products. This is a subsidiary entity that supports the main product
+/// information.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product this attribute belongs to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Name of the product attribute (e.g., Material, Warranty, Dimensions).
+  attribute_name String
+  
+  /// Value of the product attribute (e.g., Cotton, 2 years, 10x5x3 inches).
+  attribute_value String
+  
+  /// Order in which this attribute should be displayed.
+  display_order Int
+  
+  /// When the attribute was created.
+  created_at DateTime
+  
+  /// When the attribute was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_ratings shopping_mall_review_ratings[]
+  
+  @@unique([shopping_mall_product_id, attribute_name], map: "shopping_mall_product_attributes_shopping_mall_product_fd79683f")
+  @@index([attribute_name])
+  @@index([created_at])
+}
+
+/// Rich text descriptions of products that provide detailed information to
+/// potential customers. Contains the main product description with
+/// formatting capabilities, longer than the basic product information. This
+/// is a subsidiary entity that enhances the product presentation.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_descriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product this description belongs to. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// The main product description with rich text content.
+  description_text String
+  
+  /// Format of the description (markdown, html, plain).
+  description_format String
+  
+  /// When the description was created.
+  created_at DateTime
+  
+  /// When the description was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_id])
+  @@index([description_format, updated_at], map: "shopping_mall_product_descriptions_description_format__3065bd8c")
+}
+
+/// Images associated with products that visually represent the product to
+/// customers. Contains references to image files and metadata such as
+/// display order and alt text. This is a subsidiary entity that supports
+/// product presentation.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product this image belongs to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// URL to the product image.
+  image_url String
+  
+  /// URL to the thumbnail version of the product image.
+  thumbnail_url String
+  
+  /// Order in which this image should be displayed.
+  display_order Int
+  
+  /// Alternative text for accessibility purposes.
+  alt_text String?
+  
+  /// Whether this is the primary product image.
+  is_primary Boolean
+  
+  /// When the image reference was created.
+  created_at DateTime
+  
+  /// When the image reference was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_user_profiles shopping_mall_user_profiles[]
+  
+  @@unique([shopping_mall_product_id, display_order], map: "shopping_mall_product_images_shopping_mall_product_id__5e0eacb7")
+  @@index([is_primary, display_order])
+  @@index([created_at])
+}
+
+/// Video content associated with products that provide dynamic visual
+/// information to customers. Contains references to video files and metadata
+/// such as display order and captions. This is a subsidiary entity that
+/// supports product presentation.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_videos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product this video belongs to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// URL to the product video.
+  video_url String
+  
+  /// URL to the thumbnail image of the video.
+  thumbnail_url String
+  
+  /// Title of the video content.
+  video_title String
+  
+  /// Order in which this video should be displayed.
+  display_order Int
+  
+  /// Duration of the video in seconds.
+  duration_seconds Int
+  
+  /// URL to caption file for accessibility.
+  captions_url String?
+  
+  /// When the video reference was created.
+  created_at DateTime
+  
+  /// When the video reference was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_id, display_order], map: "shopping_mall_product_videos_shopping_mall_product_id__b8008553")
+  @@index([display_order, duration_seconds])
+  @@index([created_at])
+}
+
+/// Product variants (SKUs) representing different configurations of the same
+/// product such as color, size, or material. Each variant has its own
+/// pricing, inventory count, and availability. This is a primary business
+/// entity due to its importance in inventory management and the purchasing
+/// process.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The parent product this variant belongs to. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Unique stock keeping unit code for this variant.
+  sku_code String
+  
+  /// Current price of this variant.
+  price Float
+  
+  /// Current available inventory for this variant.
+  inventory_count Int
+  
+  /// Status of the variant (active, out-of-stock, discontinued).
+  variant_status String
+  
+  /// Weight of the variant in kilograms.
+  weight Float
+  
+  /// Dimensions of the variant (length x width x height).
+  dimensions String
+  
+  /// When the variant was created.
+  created_at DateTime
+  
+  /// When the variant was last updated.
+  updated_at DateTime
+  
+  /// When the variant was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_inventory shopping_mall_inventory[]
+  
+  @@unique([sku_code])
+  @@unique([shopping_mall_product_id, sku_code], map: "shopping_mall_product_variants_shopping_mall_product_i_275bf3f1")
+  @@index([variant_status, inventory_count], map: "shopping_mall_product_variants_variant_status_inventor_faba496b")
+  @@index([price])
+  @@index([created_at])
+}
+
+/// Configuration options that define the possible values for product
+/// variants such as available colors, sizes, or materials. Each option
+/// represents a specific attribute value that can be combined to create
+/// product variants. This is a subsidiary entity that supports the product
+/// variant system.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product these options belong to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// The group this option belongs to. {@link
+  /// shopping_mall_product_options.id}.
+  option_group_id String
+  
+  /// Value of the option (e.g., Red, Large, Cotton).
+  option_value String
+  
+  /// Order in which this option should be displayed.
+  display_order Int
+  
+  /// When the option was created.
+  created_at DateTime
+  
+  /// When the option was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  optionGroup shopping_mall_product_options @relation("recursive", fields: [option_group_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_product_options[] @relation("recursive")
+  
+  @@unique([shopping_mall_product_id, option_group_id, option_value], map: "shopping_mall_product_options_shopping_mall_product_id_a2affaf4")
+  @@index([option_group_id, display_order])
+  @@index([created_at])
+}
+
+/// Customer reviews for products, containing ratings, written content, and
+/// status information. Reviews undergo a moderation process before becoming
+/// publicly visible. This is a primary business entity as it requires
+/// independent management of its lifecycle and status.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product being reviewed. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// The customer who wrote the review. {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Star rating from 1-5.
+  rating Int
+  
+  /// Title of the review.
+  title String
+  
+  /// Main content of the review.
+  content String
+  
+  /// Current status of the review (draft, submitted, approved, rejected).
+  review_status String
+  
+  /// When the review was created.
+  created_at DateTime
+  
+  /// When the review was last updated.
+  updated_at DateTime
+  
+  /// When the review was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([customer_id])
+  
+  @@unique([shopping_mall_product_id, customer_id], map: "shopping_mall_product_reviews_shopping_mall_product_id_072ae5eb")
+  @@index([review_status, rating])
+  @@index([created_at])
+}
+
+/// Tags used to categorize and enhance discoverability of products. Tags
+/// help with search functionality and allow customers to find related
+/// products. This is a subsidiary entity that supports the search and
+/// discovery system.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product this tag belongs to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Name of the tag (e.g., summer, gift, eco-friendly).
+  tag_name String
+  
+  /// Order in which this tag should be displayed.
+  display_order Int
+  
+  /// When the tag was created.
+  created_at DateTime
+  
+  /// When the tag was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_id, tag_name], map: "shopping_mall_product_tags_shopping_mall_product_id_ta_c2a49fb8")
+  @@index([tag_name, display_order])
+  @@index([created_at])
+}
+
+/// Categories used to organize products in a hierarchical structure.
+/// Categories enable browsing and filtering of products. This is a
+/// subsidiary entity that provides organizational structure for the product
+/// catalog.
+///
+/// @namespace Product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The parent category if this is a subcategory. {@link
+  /// shopping_mall_product_categories.id}.
+  parent_category_id String?
+  
+  /// Name of the product category.
+  category_name String
+  
+  /// Description of the category.
+  description String?
+  
+  /// URL to the category image.
+  category_image_url String?
+  
+  /// Order in which this category should be displayed.
+  display_order Int
+  
+  /// Whether the category is active and visible to customers.
+  is_active Boolean
+  
+  /// When the category was created.
+  created_at DateTime
+  
+  /// When the category was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parentCategory shopping_mall_product_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_products shopping_mall_products[]
+  recursive shopping_mall_product_categories[] @relation("recursive")
+  
+  @@unique([category_name, parent_category_id], map: "shopping_mall_product_categories_category_name_parent__6d4fab12")
+  @@index([parent_category_id, is_active], map: "shopping_mall_product_categories_parent_category_id_is_361f796b")
+  @@index([display_order])
+}

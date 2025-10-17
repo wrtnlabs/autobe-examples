@@ -1,0 +1,1 @@
+{"introduction": "This document provides an overview of the Todo List application.", "requirements": ["The system shall allow users to create todo items.", "The system shall allow users to mark todo items as completed or uncompleted."], "scenarios": ["User creates a new todo item", "User marks a todo item as completed"]}

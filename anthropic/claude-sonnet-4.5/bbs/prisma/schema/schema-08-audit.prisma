@@ -1,0 +1,235 @@
+/// General audit trail for all significant user and system actions across
+/// the platform. Records create, update, delete operations on topics,
+/// replies, votes, and user profile changes. Provides comprehensive activity
+/// tracking for compliance, security analysis, and user activity monitoring.
+/// Immutable records ensure audit integrity.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the action. {@link discussion_board_members.id}.
+  /// Nullable for system-initiated events.
+  user_id String?
+  
+  /// Type of action performed (e.g., topic_created, reply_posted, vote_cast,
+  /// profile_updated, content_deleted).
+  action_type String
+  
+  /// Type of entity affected by the action (e.g., topic, reply, vote, user,
+  /// tag).
+  entity_type String
+  
+  /// UUID of the affected entity. Nullable if action does not target a
+  /// specific entity.
+  entity_id String?
+  
+  /// Human-readable description of the action for audit review and reporting.
+  description String
+  
+  /// JSON blob containing additional context about the action (before/after
+  /// values, affected fields, request parameters).
+  metadata String?
+  
+  /// IP address from which the action was performed. Nullable for
+  /// system-initiated actions.
+  ip_address String?
+  
+  /// Browser user agent string for device and browser tracking. Nullable for
+  /// API or system actions.
+  user_agent String?
+  
+  /// Timestamp when the audit log entry was created. Immutable audit records
+  /// have no updated_at.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_members? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+  @@index([action_type, created_at])
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+}
+
+/// Security-specific event logging for authentication attempts, permission
+/// denials, account lockouts, and suspicious activities. Tracks login
+/// successes and failures, account security events, rate limit violations,
+/// and potential security threats. Critical for security monitoring,
+/// incident response, and compliance with security audit requirements.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_security_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User associated with the security event. {@link
+  /// discussion_board_members.id}. Nullable for failed login attempts with
+  /// invalid credentials.
+  user_id String?
+  
+  /// Type of security event (e.g., login_success, login_failed,
+  /// account_locked, permission_denied, suspicious_activity,
+  /// rate_limit_exceeded).
+  event_type String
+  
+  /// Severity level of the security event: low, medium, high, or critical.
+  /// Used for prioritizing security response.
+  severity String
+  
+  /// IP address from which the security event originated. Required for
+  /// security analysis and IP-based blocking.
+  ip_address String
+  
+  /// Browser user agent string for device fingerprinting and bot detection.
+  /// Nullable for some automated events.
+  user_agent String?
+  
+  /// Human-readable description of the security event for incident review and
+  /// reporting.
+  description String
+  
+  /// JSON blob containing detailed security event context (failed login
+  /// reason, permission attempted, threat indicators).
+  metadata String?
+  
+  /// Timestamp when the security event occurred. Used for security timeline
+  /// analysis and incident investigation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_members? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+  @@index([event_type, created_at])
+  @@index([severity, created_at])
+  @@index([ip_address, created_at])
+  @@index([created_at])
+}
+
+/// Comprehensive audit trail of all moderation actions for accountability,
+/// transparency, and appeals processing. Logs content removal, user
+/// warnings, suspensions, bans, and moderator interventions. Includes
+/// moderator identity, target user/content, action rationale, and preserved
+/// content snapshots. Essential for moderator performance review and user
+/// appeal investigations.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link
+  /// discussion_board_moderators.id}. Nullable for automated moderation
+  /// actions.
+  moderator_id String?
+  
+  /// User targeted by the moderation action. {@link
+  /// discussion_board_members.id}. Nullable for content-only actions.
+  target_user_id String?
+  
+  /// Type of moderation action (e.g., content_hidden, content_removed,
+  /// warning_issued, user_suspended, user_banned, appeal_approved).
+  action_type String
+  
+  /// UUID of the content affected by moderation. Nullable for user-level
+  /// actions without specific content.
+  target_content_id String?
+  
+  /// Type of content affected (topic or reply). Nullable for user-level
+  /// actions.
+  target_content_type String?
+  
+  /// Moderator's explanation for the action. Required for transparency and
+  /// appeals process.
+  reason String
+  
+  /// JSON blob containing additional context (original content snapshot,
+  /// violation category, previous warnings, action duration for suspensions).
+  metadata String?
+  
+  /// Timestamp when the moderation action was performed. Immutable for audit
+  /// integrity.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderators? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetUser discussion_board_members? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id, created_at], map: "discussion_board_moderation_audit_logs_moderator_id_cr_3ddf55ba")
+  @@index([target_user_id, created_at], map: "discussion_board_moderation_audit_logs_target_user_id__5410102b")
+  @@index([action_type, created_at], map: "discussion_board_moderation_audit_logs_action_type_cre_988f8c43")
+  @@index([created_at])
+}
+
+/// Tracks user search queries for search analytics, query improvement, and
+/// personalized recommendations. Records search terms, applied filters,
+/// result counts, and user engagement with results. Used for identifying
+/// common search patterns, improving search algorithms, and understanding
+/// user information needs. Supports both authenticated users and guest
+/// searches.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_search_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the search. {@link discussion_board_members.id}.
+  /// Nullable for guest searches.
+  user_id String?
+  
+  /// The actual search text entered by the user. Used for search analytics and
+  /// query pattern identification.
+  search_query String
+  
+  /// JSON blob containing search filters (category, date range, vote
+  /// threshold, tag filters). Nullable if no filters used.
+  filters_applied String?
+  
+  /// Number of search results returned. Used to identify zero-result queries
+  /// and search effectiveness.
+  results_count Int
+  
+  /// UUID of the search result the user clicked on. Nullable if user did not
+  /// click any result. Used for relevance tracking.
+  clicked_result_id String?
+  
+  /// Session identifier to track related searches within a session. Nullable
+  /// for one-off searches.
+  session_id String?
+  
+  /// Timestamp when the search was performed. Used for search trend analysis
+  /// over time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_members? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+  @@index([created_at])
+}

@@ -1,0 +1,41 @@
+/// Read-only derived value representing total karma score based on
+/// aggregated upvotes minus downvotes on user's posts and comments. This
+/// table exists for performance optimization to avoid expensive
+/// recomputation during profile displays. Updated via background jobs or
+/// database triggers when votes change. Never modified directly by users or
+/// API calls.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user this karma score belongs to. {@link
+  /// community_platform_user_profiles.id}.
+  user_id String
+  
+  /// Total karma points calculated as sum of all upvotes minus downvotes
+  /// received on user's posts and comments. Never negative - max 1,000,000 per
+  /// business rules.
+  karma_score Int
+  
+  /// Timestamp when this karma record was first calculated and stored.
+  /// Immutable.
+  created_at DateTime
+  
+  /// Timestamp when this karma score was last recalculated. Updated via
+  /// background job when votes change.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([karma_score])
+}

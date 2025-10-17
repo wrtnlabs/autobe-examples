@@ -1,0 +1,47 @@
+/// User profile metadata including public bio, join date, and association to
+/// user identity and karma. This table stores enriched user information
+/// separate from authentication and role data, facilitating public profile
+/// display and user-specific metadata management. It references core user
+/// identity tables and karma entities for reputation tracking.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced user identity from reddit_community_members.id.
+  reddit_community_member_id String
+  
+  /// Referenced user karma record from reddit_community_user_karma.id.
+  reddit_community_user_karma_id String?
+  
+  /// Date when the user joined the platform, tracking membership duration.
+  join_date DateTime
+  
+  /// Public bio or description provided by the user for profile display.
+  bio String?
+  
+  /// Record creation timestamp, for auditing and temporal queries.
+  created_at DateTime
+  
+  /// Last record update timestamp, for auditing and synchronization.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null if record is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  redditCommunityMember reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  redditCommunityUserKarma reddit_community_user_karma? @relation(fields: [reddit_community_user_karma_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_user_karma_id], map: "reddit_community_user_profiles_reddit_community_user_k_02a6824b")
+  
+  @@unique([reddit_community_member_id])
+  @@index([reddit_community_user_karma_id], map: "reddit_community_user_profiles_reddit_community_user_k_ddfecbdd")
+}

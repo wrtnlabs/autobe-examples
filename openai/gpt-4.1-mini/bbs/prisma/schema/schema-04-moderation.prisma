@@ -1,0 +1,48 @@
+/// Audit log for moderator actions on posts and replies within the
+/// discussion board. This table records the user performing the action
+/// (moderator or admin), the type of action (edit, delete, etc.), associated
+/// post or reply IDs, detailed notes, and timestamps for auditing and
+/// compliance purposes. It ensures a historical record of all moderation
+/// activities and supports accountability and transparency.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced post's discussion_board_posts.id.
+  post_id String?
+  
+  /// Referenced reply's discussion_board_replies.id.
+  reply_id String?
+  
+  /// User performing the moderation action. Can be moderator or admin.
+  /// References either discussion_board_moderators.id or
+  /// discussion_board_admins.id but treated as nullable foreign key here.
+  moderator_id String?
+  
+  /// Type of moderation action performed, e.g., 'edit', 'delete', 'approve'.
+  action_type String
+  
+  /// Detailed notes or comments about the moderation action.
+  action_details String?
+  
+  /// Timestamp of when the moderation action was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  reply discussion_board_replies? @relation(fields: [reply_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([post_id])
+  @@index([reply_id])
+  @@index([moderator_id])
+  @@index([created_at])
+}

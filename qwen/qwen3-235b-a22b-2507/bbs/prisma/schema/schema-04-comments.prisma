@@ -1,0 +1,54 @@
+/// Represents user comments on discussions within the economic/political
+/// discussion board. This table stores individual comments that create
+/// threaded conversations in response to discussion posts.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent discussion. {@link
+  /// discussion_board_discussions.id}.
+  discussion_board_discussion_id String
+  
+  /// Reference to the registered user who authored the comment. {@link
+  /// discussion_board_registereduser.id}.
+  registered_user_id String
+  
+  /// Reference to the parent comment in the thread. {@link
+  /// discussion_board_comments.id}.
+  parent_comment_id String?
+  
+  /// The actual text content of the comment, limited to 2000 characters as
+  /// specified in requirements.
+  content String
+  
+  /// Timestamp when the comment was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion discussion_board_discussions @relation(fields: [discussion_board_discussion_id], references: [id], onDelete: Cascade)
+  author discussion_board_registereduser @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
+  parent discussion_board_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_comments[] @relation("recursive")
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_reports discussion_board_reports[]
+  
+  @@unique([created_at, registered_user_id])
+  @@index([discussion_board_discussion_id, created_at], map: "discussion_board_comments_discussion_board_discussion__15070b0f")
+  @@index([parent_comment_id, created_at])
+  @@index([registered_user_id, created_at])
+}

@@ -1,0 +1,297 @@
+/// Primary business entity representing customer orders within the shopping
+/// mall platform. Each order is linked to a customer, seller, and contains
+/// information about total price, status, payment and shipping details. It
+/// supports lifecycle tracking with created, updated, and optional deleted
+/// timestamps. Orders are central to transactional workflows and aggregate
+/// multiple order items. Foreign keys reference customers, sellers, and
+/// payment methods.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Belonged seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique order number for business identification and tracking.
+  order_number String
+  
+  /// Total price of the order including taxes and shipping.
+  total_price Float
+  
+  /// Current status of the order (e.g., Pending Payment, Paid, Processing,
+  /// Shipped, Delivered, Cancelled).
+  status String
+  
+  /// Business-specific status for workflow management.
+  business_status String
+  
+  /// Payment method used for the order (e.g., credit card, PayPal, bank
+  /// transfer).
+  payment_method String
+  
+  /// Shipping address for the order delivery.
+  shipping_address String
+  
+  /// Carrier tracking number for shipment, nullable if not yet shipped.
+  tracking_number String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Record deletion timestamp for soft delete.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_payments shopping_mall_payments[]
+  shopping_mall_order_statuses shopping_mall_order_statuses[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_cancellation_requests shopping_mall_cancellation_requests[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_audit_logs shopping_mall_audit_logs[]
+  
+  @@unique([order_number])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([shopping_mall_seller_id, created_at])
+}
+
+/// Subsidiary entity representing individual items within shopping mall
+/// orders. Each record associates an order with a SKU, with details
+/// including quantity, price per unit, and total price for that item. This
+/// entity supports detailed order contents and SKU-level inventory tracking.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Belonged SKU's {@link shopping_mall_skus.id}.
+  shopping_mall_sku_id String
+  
+  /// Quantity of the SKU ordered.
+  quantity Int
+  
+  /// Price per unit of the SKU at the time of order.
+  unit_price Float
+  
+  /// Total price for the SKU line item (quantity * unit_price).
+  total_price Float
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_sku_id])
+  
+  @@index([shopping_mall_order_id, shopping_mall_sku_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_d6baab83")
+}
+
+/// Primary entity capturing payment transactions associated with orders.
+/// Records include payment amount, method, confirmation status, and related
+/// timestamps. Supports tracking multiple payments per order in complex
+/// payment scenarios.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Amount paid in this transaction.
+  payment_amount Float
+  
+  /// Payment method used (e.g., credit card, PayPal, bank transfer).
+  payment_method String
+  
+  /// Status of the payment (Pending, Completed, Failed).
+  payment_status String
+  
+  /// External payment gateway transaction identifier, nullable if not
+  /// applicable.
+  transaction_id String?
+  
+  /// Timestamp when payment was confirmed.
+  confirmed_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id, payment_status], map: "shopping_mall_payments_shopping_mall_order_id_payment__8020ae30")
+}
+
+/// Subsidiary entity capturing historical status changes of orders to
+/// support audit trails and order lifecycle tracking. Records store status
+/// and corresponding timestamps.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Order status at this point in time (Pending Payment, Paid, Processing,
+  /// Shipped, Delivered, Cancelled).
+  status String
+  
+  /// Timestamp when the status was recorded.
+  status_changed_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id, status_changed_at], map: "shopping_mall_order_statuses_shopping_mall_order_id_st_340d7288")
+}
+
+/// Primary entity representing refund requests initiated by customers for
+/// orders. Includes reason, status, refund amount, and timestamps for
+/// request and processing. Connected to orders and customers for validation
+/// and audit purposes.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Reason for the refund request.
+  reason String
+  
+  /// Amount requested to be refunded.
+  refund_amount Float
+  
+  /// Status of the refund request (Pending, Approved, Rejected).
+  status String
+  
+  /// Timestamp when refund was requested.
+  requested_at DateTime
+  
+  /// Timestamp when refund request was processed.
+  processed_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id])
+  
+  @@index([shopping_mall_order_id, status])
+}
+
+/// Primary entity representing cancellation requests made by customers on
+/// orders. Contains reason, status, timestamps, and relationships to orders
+/// and customers. Facilitates order cancellation workflows and auditing.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Reason for the cancellation request.
+  reason String
+  
+  /// Status of the cancellation request (Pending, Approved, Rejected).
+  status String
+  
+  /// Timestamp when cancellation was requested.
+  requested_at DateTime
+  
+  /// Timestamp when cancellation request was processed.
+  processed_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id], map: "shopping_mall_cancellation_requests_shopping_mall_cust_e7d34440")
+  
+  @@index([shopping_mall_order_id, status], map: "shopping_mall_cancellation_requests_shopping_mall_orde_41614406")
+}

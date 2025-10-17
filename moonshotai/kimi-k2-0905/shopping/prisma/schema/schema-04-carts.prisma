@@ -1,0 +1,226 @@
+/// Shopping cart management for customers and guests, storing active cart
+/// sessions with customer relationships, session tracking, status
+/// management, and temporal fields for audit trails. Supports both
+/// authenticated customers and guest sessions with cart persistence across
+/// devices.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target customer's {@link shopping_mall_customers.id}. Nullable for guest
+  /// carts.
+  shopping_customer_id String?
+  
+  /// External guest session identifier for cart persistence. Required when
+  /// customer is null.
+  guest_session_id String?
+  
+  /// Cart status: active, abandoned, converted, expired.
+  status String
+  
+  /// Total number of items in cart. Auto-calculated from cart items.
+  item_count Int
+  
+  /// Cart creation timestamp.
+  created_at DateTime
+  
+  /// Last cart modification timestamp.
+  updated_at DateTime
+  
+  /// Cart expiration timestamp for guest sessions. Usually 30 days from
+  /// creation.
+  expires_at DateTime?
+  
+  /// Timestamp when cart items were successfully ordered.
+  converted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  guestSession shopping_mall_guests? @relation(fields: [guest_session_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  
+  @@unique([shopping_customer_id])
+  @@index([status, created_at])
+  @@index([expires_at])
+  @@index([guest_session_id, status])
+}
+
+/// Individual cart items linking carts to specific product variants with
+/// quantity, pricing snapshot, and reservation tracking. Supports complex
+/// multi-vendor cart scenarios with proper SKU-level inventory management.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target cart's {@link shopping_mall_carts.id}.
+  shopping_cart_id String
+  
+  /// Target product variant's {@link shopping_mall_product_variants.id}.
+  shopping_product_variant_id String
+  
+  /// Target seller's {@link shopping_mall_sellers.id} for commission
+  /// calculations.
+  shopping_seller_id String
+  
+  /// Number of units added to cart. Validates against current inventory.
+  quantity Int
+  
+  /// Price per unit at time of cart addition. Snapshot for price change
+  /// handling.
+  unit_price Float
+  
+  /// Total price for this line item (quantity * unit_price).
+  total_price Float
+  
+  /// Timestamp when item was added to cart.
+  added_at DateTime
+  
+  /// Last modification timestamp for quantity changes.
+  updated_at DateTime
+  
+  /// Inventory reservation expiration timestamp. Usually 30 minutes from last
+  /// update.
+  reserved_until DateTime?
+  
+  /// Optional notes about the cart item selection.
+  notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_cart_id, shopping_product_variant_id], map: "shopping_mall_cart_items_shopping_cart_id_shopping_pro_b9527c87")
+  @@index([shopping_cart_id, added_at])
+  @@index([shopping_product_variant_id])
+  @@index([reserved_until])
+  @@index([shopping_seller_id, shopping_cart_id], map: "shopping_mall_cart_items_shopping_seller_id_shopping_c_db98539d")
+}
+
+/// Customer wishlists for saving products for future purchase consideration.
+/// Supports multiple wishlists per customer with privacy settings and
+/// sharing capabilities. Independent from cart functionality to serve
+/// different shopping intentions.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target customer's {@link shopping_mall_customers.id}. Required for
+  /// wishlist ownership.
+  shopping_customer_id String
+  
+  /// Wishlist display name or title. Maximum 100 characters.
+  title String
+  
+  /// Optional wishlist description or notes. Maximum 500 characters.
+  description String?
+  
+  /// Privacy setting: public, private, or shared. Controls sharing
+  /// capabilities.
+  privacy String
+  
+  /// Whether this is the customer's primary/default wishlist.
+  is_primary Boolean
+  
+  /// Unique sharing token for shared wishlists. Used in public URLs.
+  share_token String?
+  
+  /// Total number of items in wishlist. Auto-calculated from wishlist items.
+  item_count Int
+  
+  /// Wishlist creation timestamp.
+  created_at DateTime
+  
+  /// Last wishlist modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_customer_id, title])
+  @@unique([share_token])
+  @@index([shopping_customer_id, privacy])
+  @@index([is_primary, shopping_customer_id])
+}
+
+/// Individual wishlist items linking wishlists to specific product variants
+/// with customer notes and timestamps. Supports wishlist-specific
+/// functionality like price drop notifications and availability alerts.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target wishlist's {@link shopping_mall_wishlists.id}.
+  shopping_wishlist_id String
+  
+  /// Target product variant's {@link shopping_mall_product_variants.id}.
+  shopping_product_variant_id String
+  
+  /// Target seller's {@link shopping_mall_sellers.id} for notification routing.
+  shopping_seller_id String
+  
+  /// Item priority within wishlist (1-10) for sorting and filtering.
+  priority Int
+  
+  /// Customer notes about why this item is saved. Maximum 500 characters.
+  notes String?
+  
+  /// Customer's desired price point for price drop notifications. Null if not
+  /// desired.
+  price_alert_threshold Float?
+  
+  /// Whether to notify customer when item becomes available if out of stock.
+  notify_on_availability Boolean
+  
+  /// Timestamp when item was added to wishlist.
+  added_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_wishlist_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_wishlist_id, shopping_product_variant_id], map: "shopping_mall_wishlist_items_shopping_wishlist_id_shop_e0ba57d4")
+  @@index([shopping_wishlist_id, priority])
+  @@index([shopping_product_variant_id])
+  @@index([price_alert_threshold])
+  @@index([shopping_seller_id])
+}

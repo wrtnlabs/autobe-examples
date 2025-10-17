@@ -1,0 +1,259 @@
+/// Buyer account information for customers who shop and place orders.
+/// Represents the buyer's identity and connection basis for all shopping
+/// activities including authentication, personal details, and account status
+/// management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_buyers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Buyer's email address used for authentication and notifications. Must be
+  /// unique per buyer account.
+  email String
+  
+  /// Hashed password for buyer authentication. Never stores plain passwords.
+  password_hash String
+  
+  /// Buyer's first name for personalization and shipping labels.
+  first_name String
+  
+  /// Buyer's last name for personalization and shipping labels.
+  last_name String
+  
+  /// Buyer's contact phone number for order communications and support.
+  phone String?
+  
+  /// Buyer's account status indicating active, suspended, or inactive state
+  /// for workflow management.
+  status String
+  
+  /// Accumulated loyalty points for rewards and special offers, defaulting to
+  /// zero.
+  loyalty_points Int
+  
+  /// Timestamp when buyer account was created for audit trails.
+  created_at DateTime
+  
+  /// Timestamp of last buyer account modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for buyers, allowing recovery and preserving
+  /// referential integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_platform_addresses shopping_platform_addresses[]
+  shopping_platform_carts shopping_platform_carts[]
+  shopping_platform_wishlists shopping_platform_wishlists[]
+  shopping_platform_orders shopping_platform_orders[]
+  shopping_platform_reviews shopping_platform_reviews[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([status])
+}
+
+/// Seller account information for merchants listing products and managing
+/// sales. Represents verified business entities managing their catalogs,
+/// inventory, and fulfillment operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's email address used for authentication, order notifications, and
+  /// business communications.
+  email String
+  
+  /// Hashed password for seller authentication. Never stores plain passwords.
+  password_hash String
+  
+  /// Legal business name of the seller entity for compliance and tax purposes.
+  company_name String
+  
+  /// Business tax identification number for regulatory compliance and payouts.
+  tax_id String
+  
+  /// Seller's business contact phone for support and verification purposes.
+  phone String
+  
+  /// Seller's business status indicating active, pending verification,
+  /// suspended, or inactive state.
+  status String
+  
+  /// Percentage commission rate applied to seller's transactions, ranging from
+  /// 0 to 100.
+  commission_rate Float
+  
+  /// Timestamp when seller account was created for business registration
+  /// tracking.
+  created_at DateTime
+  
+  /// Timestamp of last seller account or business detail modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for sellers, preserving transaction history and
+  /// allowing business reactivation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_platform_addresses shopping_platform_addresses[]
+  shopping_platform_sales shopping_platform_sales[]
+  shopping_platform_orders shopping_platform_orders[]
+  shopping_platform_seller_dashboards shopping_platform_seller_dashboards?
+  
+  @@unique([email])
+  @@unique([tax_id])
+  @@index([created_at])
+  @@index([status])
+  @@index([commission_rate])
+}
+
+/// Admin account information for system administrators managing platform
+/// operations, user accounts, content moderation, and system-wide oversight.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin's email address used for authentication and secure system access.
+  email String
+  
+  /// Hashed password for admin authentication. Never stores plain passwords.
+  password_hash String
+  
+  /// Admin username for login purposes, unique within admin accounts.
+  username String
+  
+  /// Admin's full legal name for audit logging and access verification.
+  full_name String
+  
+  /// Administrative department or role designation for access control and
+  /// oversight.
+  department String
+  
+  /// Admin account status indicating active, locked, or disabled state.
+  status String
+  
+  /// Timestamp when admin account was created for system security tracking.
+  created_at DateTime
+  
+  /// Timestamp of last admin account modification or security event.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for admins, maintaining security logs and allowing
+  /// account reactivation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_platform_addresses shopping_platform_addresses[]
+  shopping_platform_admin_logins shopping_platform_admin_logins[]
+  shopping_platform_audit_logs shopping_platform_audit_logs[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+  @@index([status])
+  @@index([department])
+}
+
+/// Address information associated with buyers, sellers, or admins. Each
+/// address belongs to exactly one actor through the foreign key references,
+/// supporting multiple addresses per user for shipping, billing, and
+/// business purposes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged buyer's {@link shopping_platform_buyers.id}
+  shopping_platform_buyer_id String?
+  
+  /// Belonged seller's {@link shopping_platform_sellers.id}
+  shopping_platform_seller_id String?
+  
+  /// Belonged admin's {@link shopping_platform_admins.id}
+  shopping_platform_admin_id String?
+  
+  /// Descriptive name for this address (e.g., 'Home', 'Office', 'Warehouse')
+  /// to help users identify multiple addresses.
+  nickname String
+  
+  /// Primary street address line including building number and street name.
+  street_1 String
+  
+  /// Secondary address line for apartment/unit numbers or additional address
+  /// details.
+  street_2 String?
+  
+  /// City or municipality name for the address location.
+  city String
+  
+  /// State, province, or region name for administrative subdivision.
+  state String
+  
+  /// Postal or ZIP code for mail delivery routing and verification.
+  postal_code String
+  
+  /// Country name or code for international address formatting and shipping.
+  country String
+  
+  /// Indicates whether this address is the default selection for the owner
+  /// actor.
+  is_default Boolean
+  
+  /// Timestamp when this address was created for historical tracking.
+  created_at DateTime
+  
+  /// Timestamp of last address detail modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for addresses, allowing recovery without affecting
+  /// active orders.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  buyer shopping_platform_buyers? @relation(fields: [shopping_platform_buyer_id], references: [id], onDelete: Cascade)
+  seller shopping_platform_sellers? @relation(fields: [shopping_platform_seller_id], references: [id], onDelete: Cascade)
+  admin shopping_platform_admins? @relation(fields: [shopping_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_sales shopping_platform_sales[]
+  shopping_platform_orders_of_billing_shopping_platform__77008864 shopping_platform_orders[] @relation("shopping_platform_orders_of_billing_shopping_platform__77008864")
+  shopping_platform_orders_of_shipping_shopping_platform_c2dbd427 shopping_platform_orders[] @relation("shopping_platform_orders_of_shipping_shopping_platform_c2dbd427")
+  
+  @@index([shopping_platform_buyer_id])
+  @@index([shopping_platform_seller_id])
+  @@index([shopping_platform_admin_id])
+  
+  @@index([country])
+  @@index([created_at])
+  @@index([is_default])
+}

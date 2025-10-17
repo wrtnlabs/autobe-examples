@@ -1,0 +1,495 @@
+/// Tracks upvotes and downvotes on discussion content (topics and replies).
+/// Each vote records which user voted, what they voted on, and the vote
+/// direction. Users can only cast one vote per content item, and can change
+/// their vote within allowed time windows. Vote data drives content ranking
+/// algorithms and user reputation calculations. Supports polymorphic voting
+/// pattern to handle both topics and replies efficiently.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who cast this vote. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Type of content being voted on. Either 'topic' or 'reply' to support
+  /// polymorphic voting on different content types.
+  votable_type String
+  
+  /// ID of the content being voted on (references either
+  /// discussion_board_topics.id or discussion_board_replies.id depending on
+  /// votable_type).
+  votable_id String
+  
+  /// Direction of the vote. Either 'upvote' (positive, agrees/supports
+  /// content) or 'downvote' (negative, disagrees/low quality content).
+  vote_type String
+  
+  /// Timestamp when the vote was cast. Used for vote change time window
+  /// validation and activity tracking.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified (vote direction changed). Used
+  /// for audit trail and tracking vote changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp enabling vote recovery if content is restored. Null
+  /// for active votes. Supports 30-day recovery window per platform policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id, votable_type, votable_id], map: "discussion_board_votes_discussion_board_member_id_vota_721f9914")
+  @@index([votable_type, votable_id, vote_type])
+}
+
+/// Tracks user bookmarks/favorites on discussion topics. Allows users to
+/// save topics for later reference and quick access. Favorited topics appear
+/// in user's personal collection and may trigger notifications for new
+/// activity based on user preferences. Supports soft deletion for recovery
+/// of accidentally removed bookmarks.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who favorited the topic. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Topic that was favorited. {@link discussion_board_topics.id}
+  discussion_board_topic_id String
+  
+  /// Timestamp when the topic was favorited. Used for sorting user's favorites
+  /// by recency.
+  created_at DateTime
+  
+  /// Timestamp when the favorite record was last modified. Used for audit
+  /// trail.
+  updated_at DateTime
+  
+  /// Soft delete timestamp enabling bookmark recovery. Null for active
+  /// favorites. Supports accidental removal recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  topic discussion_board_topics @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_topic_id])
+  
+  @@unique([discussion_board_member_id, discussion_board_topic_id], map: "discussion_board_favorites_discussion_board_member_id__4bb81cac")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_favorites_discussion_board_member_id__d4839b69")
+}
+
+/// Master tag vocabulary for categorizing and organizing discussion topics.
+/// Tags provide additional categorization beyond primary categories,
+/// enabling cross-category topic discovery. Users can search, filter, and
+/// follow tags. Tags are created through topic creation workflow and managed
+/// by moderators. Tag lifecycle includes active, pending review, disabled,
+/// and merged states.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Tag name, normalized to lowercase for consistency. Must be unique across
+  /// all tags. Length 2-30 characters, alphanumeric with spaces and hyphens
+  /// allowed.
+  name String
+  
+  /// Optional description explaining what this tag represents and when to use
+  /// it. Helps users apply tags consistently.
+  description String?
+  
+  /// Tag lifecycle status: active (available for use), pending_review
+  /// (awaiting moderator approval), disabled (hidden from selection), merged
+  /// (consolidated into another tag).
+  status String
+  
+  /// Timestamp when the tag was first created. Used for tracking tag evolution
+  /// and identifying emerging tags.
+  created_at DateTime
+  
+  /// Timestamp when the tag was last modified (name, description, or status
+  /// change). Used for audit trail.
+  updated_at DateTime
+  
+  /// Soft delete timestamp enabling tag recovery. Null for active tags.
+  /// Supports 30-day recovery window per platform policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_topic_tags discussion_board_topic_tags[]
+  discussion_board_followed_tags discussion_board_followed_tags[]
+  mv_discussion_board_tag_statistics mv_discussion_board_tag_statistics?
+  
+  @@unique([name])
+  @@index([status, created_at])
+}
+
+/// Junction table establishing many-to-many relationship between topics and
+/// tags. Allows topics to be tagged with multiple relevant tags (up to 5 per
+/// topic per business rules), and tags to be applied to many topics.
+/// Supports topic discovery through tag-based filtering and search.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_topic_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Topic being tagged. {@link discussion_board_topics.id}
+  discussion_board_topic_id String
+  
+  /// Tag applied to the topic. {@link discussion_board_tags.id}
+  discussion_board_tag_id String
+  
+  /// Timestamp when the tag was applied to the topic. Used for tracking tag
+  /// application history.
+  created_at DateTime
+  
+  /// Timestamp when the topic-tag association was last modified. Used for
+  /// audit trail.
+  updated_at DateTime
+  
+  /// Soft delete timestamp enabling tag association recovery. Null for active
+  /// associations. Supports recovery if tags removed accidentally.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  topic discussion_board_topics @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_topic_id, discussion_board_tag_id], map: "discussion_board_topic_tags_discussion_board_topic_id__d1a5c16c")
+  @@index([discussion_board_tag_id, created_at], map: "discussion_board_topic_tags_discussion_board_tag_id_cr_2d95f72a")
+}
+
+/// Tracks which tags users follow for personalized content recommendations
+/// and notifications. When users follow tags, they receive notifications
+/// about new topics with those tags and see followed tags prioritized in
+/// their feed. Supports user interest management and content
+/// personalization. Maximum 50 followed tags per user per business rules.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_followed_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member following the tag. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Tag being followed by the member. {@link discussion_board_tags.id}
+  discussion_board_tag_id String
+  
+  /// Timestamp when the user started following this tag. Used for tracking
+  /// user interest evolution and follow recency.
+  created_at DateTime
+  
+  /// Timestamp when the follow relationship was last modified. Used for audit
+  /// trail.
+  updated_at DateTime
+  
+  /// Soft delete timestamp enabling follow relationship recovery. Null for
+  /// active follows. Supports unfollow recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_tag_id])
+  
+  @@unique([discussion_board_member_id, discussion_board_tag_id], map: "discussion_board_followed_tags_discussion_board_member_968c6d01")
+  @@index([discussion_board_member_id])
+}
+
+/// Tracks topics users are watching for notifications on new activity (new
+/// replies, votes, etc.). Users can explicitly watch topics they're
+/// interested in to receive updates. Includes last_read_at timestamp to
+/// detect new activity since last view and show 'unread' indicators.
+/// Supports notification batching to prevent overwhelming users with
+/// excessive alerts.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_watched_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member watching the topic. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Topic being watched. {@link discussion_board_topics.id}
+  discussion_board_topic_id String
+  
+  /// Timestamp when the user started watching this topic. Used for tracking
+  /// watch duration.
+  created_at DateTime
+  
+  /// Timestamp when the watch relationship was last modified (last_read_at
+  /// updated). Used for audit trail.
+  updated_at DateTime
+  
+  /// Timestamp when the user last viewed this topic. Used to determine if
+  /// there is new activity (replies, votes) since their last visit to show
+  /// unread indicators and notification triggers.
+  last_read_at DateTime?
+  
+  /// Soft delete timestamp enabling watch relationship recovery. Null for
+  /// active watches. Supports unwatch recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  topic discussion_board_topics @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id, discussion_board_topic_id], map: "discussion_board_watched_topics_discussion_board_membe_62090c1f")
+  @@index([discussion_board_member_id])
+  @@index([discussion_board_topic_id])
+}
+
+/// Tracks user blocking relationships for content filtering. When user A
+/// blocks user B, A no longer sees B's topics, replies, or receives
+/// notifications from B. Blocking is asymmetric (A blocking B does not mean
+/// B blocks A). Includes optional reason for accountability and support
+/// purposes. Maximum 100 blocked users per account per business rules.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_blocked_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who initiated the block. {@link discussion_board_members.id}
+  blocker_id String
+  
+  /// Member who is being blocked. {@link discussion_board_members.id}
+  blocked_id String
+  
+  /// Optional user-provided reason for blocking this user. Helps support team
+  /// if blocking is reported as abuse, and helps user remember why they
+  /// blocked someone.
+  reason String?
+  
+  /// Timestamp when the block was created. Used for tracking block duration
+  /// and history.
+  created_at DateTime
+  
+  /// Timestamp when the block relationship was last modified. Used for audit
+  /// trail.
+  updated_at DateTime
+  
+  /// Soft delete timestamp enabling block relationship recovery (unblock
+  /// recovery). Null for active blocks. Supports accidental unblock recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  blocker discussion_board_members @relation("discussion_board_blocked_users_of_blocker_id", fields: [blocker_id], references: [id], onDelete: Cascade)
+  blocked discussion_board_members @relation("discussion_board_blocked_users_of_blocked_id", fields: [blocked_id], references: [id], onDelete: Cascade)
+  
+  @@index([blocked_id])
+  
+  @@unique([blocker_id, blocked_id])
+  @@index([blocker_id])
+}
+
+/// Aggregated reputation score for each user based on community voting on
+/// their content. Reputation represents contribution quality and community
+/// trust. Calculated from upvotes/downvotes received on topics and replies.
+/// Denormalized for performance to enable reputation-based features
+/// (leaderboards, privilege unlocking) without expensive vote aggregation
+/// queries. Updated when votes are cast, changed, or removed.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_reputation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member whose reputation is tracked. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Total reputation score calculated from all votes on user's content.
+  /// Weighted formula: (topic upvotes × 5) - (topic downvotes × 2) + (reply
+  /// upvotes × 2) - (reply downvotes × 1). Used for leaderboards and privilege
+  /// unlocking.
+  total_score Int
+  
+  /// Total number of upvotes received across all user's topics and replies.
+  /// Used for reputation calculation and user statistics display.
+  upvotes_received Int
+  
+  /// Total number of downvotes received across all user's topics and replies.
+  /// Used for reputation calculation and quality monitoring.
+  downvotes_received Int
+  
+  /// Reputation score derived from votes on user's topics only. Allows
+  /// separate tracking of topic quality vs reply quality.
+  topics_score Int
+  
+  /// Reputation score derived from votes on user's replies only. Allows
+  /// separate tracking of reply quality vs topic quality.
+  replies_score Int
+  
+  /// Timestamp when reputation was last recalculated. Used for cache
+  /// invalidation and tracking reputation changes over time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id])
+  @@index([total_score])
+}
+
+/// Materialized view aggregating reputation scores for each user based on
+/// community voting on their content. Reputation represents contribution
+/// quality and community trust. Calculated from votes received on topics and
+/// replies using weighted formula: (topic upvotes × 5) - (topic downvotes ×
+/// 2) + (reply upvotes × 2) - (reply downvotes × 1). This denormalized view
+/// enables reputation-based features (leaderboards, privilege unlocking,
+/// reputation badges) without expensive real-time vote aggregation queries.
+/// Refreshed periodically or on vote events.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_discussion_board_user_reputation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member whose reputation is tracked. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Total reputation score calculated from all votes on user's content.
+  /// Weighted formula: (topic upvotes × 5) - (topic downvotes × 2) + (reply
+  /// upvotes × 2) - (reply downvotes × 1). Used for leaderboards and privilege
+  /// unlocking.
+  total_score Int
+  
+  /// Total number of upvotes received across all user's topics and replies.
+  /// Used for reputation calculation and user statistics display.
+  upvotes_received Int
+  
+  /// Total number of downvotes received across all user's topics and replies.
+  /// Used for reputation calculation and quality monitoring.
+  downvotes_received Int
+  
+  /// Reputation score derived from votes on user's topics only. Allows
+  /// separate tracking of topic quality vs reply quality.
+  topics_score Int
+  
+  /// Reputation score derived from votes on user's replies only. Allows
+  /// separate tracking of reply quality vs topic quality.
+  replies_score Int
+  
+  /// Timestamp when reputation was last recalculated. Used for cache
+  /// invalidation and tracking reputation changes over time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id], map: "mv_discussion_board_user_reputation_discussion_board_m_ce8ac4c3")
+  @@index([total_score])
+}
+
+/// Materialized view providing aggregated statistics for tags including
+/// usage counts, trending metrics, and activity indicators. Denormalizes
+/// data from topic_tags junction table for efficient tag cloud generation,
+/// popular tags display, and tag discovery features. Refreshed periodically
+/// to reflect current tag usage patterns without impacting normalized base
+/// tables.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_discussion_board_tag_statistics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Tag for which statistics are calculated. {@link discussion_board_tags.id}
+  discussion_board_tag_id String
+  
+  /// Number of topics currently tagged with this tag. Aggregated from
+  /// topic_tags junction table. Used for popular tags display and tag cloud
+  /// generation.
+  usage_count Int
+  
+  /// Number of topics tagged in the last 7 days. Used for identifying trending
+  /// tags and emerging topics.
+  recent_usage_count Int
+  
+  /// Sum of all votes (upvotes + downvotes) on topics with this tag. Indicates
+  /// tag engagement level.
+  total_votes Int
+  
+  /// Number of users following this tag. Aggregated from followed_tags
+  /// junction table. Indicates tag popularity.
+  follower_count Int
+  
+  /// Timestamp when these statistics were last recalculated. Used for cache
+  /// invalidation and refresh scheduling.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_tag_id])
+  @@index([usage_count])
+  @@index([recent_usage_count])
+}

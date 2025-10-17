@@ -1,0 +1,290 @@
+/// Main posts table storing common attributes for all post types (text,
+/// link, image). Posts are the primary content type in the platform, created
+/// by members within communities. Each post has a type discriminator and
+/// links to type-specific content tables. Posts support voting, commenting,
+/// editing, and soft deletion. Vote scores and comment counts should be
+/// calculated from related tables or materialized views, not stored here to
+/// maintain strict 3NF normalization.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post author's {@link reddit_like_members.id}. References the member who
+  /// created this post.
+  reddit_like_member_id String
+  
+  /// Community where post was published {@link reddit_like_communities.id}.
+  /// Every post belongs to exactly one community.
+  reddit_like_community_id String
+  
+  /// Post type discriminator. Valid values: 'text', 'link', 'image'.
+  /// Determines which type-specific content table contains the post's detailed
+  /// content.
+  type String
+  
+  /// Post title (3-300 characters). Required for all post types. Indexed for
+  /// full-text search.
+  title String
+  
+  /// Timestamp when the post was created. Used for chronological sorting and
+  /// time-based filtering.
+  created_at DateTime
+  
+  /// Timestamp of last edit. Updated when post title or type-specific content
+  /// is modified. Initially equals created_at.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, post is hidden from public view but
+  /// preserved in database with metadata. Null indicates post is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  community reddit_like_communities @relation(fields: [reddit_like_community_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_post_text_content reddit_like_post_text_content?
+  reddit_like_post_link_content reddit_like_post_link_content?
+  reddit_like_post_image_content reddit_like_post_image_content?
+  mv_reddit_like_post_metrics mv_reddit_like_post_metrics?
+  reddit_like_comments reddit_like_comments[]
+  reddit_like_post_votes reddit_like_post_votes[]
+  reddit_like_karma_history reddit_like_karma_history[]
+  reddit_like_content_reports reddit_like_content_reports[]
+  reddit_like_moderation_actions reddit_like_moderation_actions[]
+  
+  @@index([reddit_like_community_id, created_at])
+  @@index([reddit_like_member_id, created_at])
+  @@index([type, created_at])
+}
+
+/// Text-specific content for text posts. Contains the body text/markdown
+/// content for posts with type='text'. Has 1:1 relationship with
+/// reddit_like_posts. The body supports markdown formatting and can be up to
+/// 40,000 characters. Managed through parent post entity - no independent
+/// lifecycle.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_post_text_content {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_like_posts.id}. One-to-one relationship with
+  /// posts table.
+  reddit_like_post_id String
+  
+  /// Post body text content. Supports markdown formatting. Maximum 40,000
+  /// characters. Can be empty for title-only posts. Indexed for full-text
+  /// search.
+  body String?
+  
+  /// Timestamp when text content was created. Typically matches parent post's
+  /// created_at.
+  created_at DateTime
+  
+  /// Timestamp when text content was last edited. Updated when body is
+  /// modified within edit time window.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_posts @relation(fields: [reddit_like_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_post_id])
+}
+
+/// Link-specific content for link posts. Contains URL and extracted metadata
+/// for posts with type='link'. Has 1:1 relationship with reddit_like_posts.
+/// The system attempts to extract Open Graph metadata (title, description,
+/// preview image) from the target URL. Managed through parent post entity -
+/// no independent lifecycle.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_post_link_content {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_like_posts.id}. One-to-one relationship with
+  /// posts table.
+  reddit_like_post_id String
+  
+  /// The shared URL (HTTP or HTTPS). Maximum 2,000 characters. Required for
+  /// all link posts. Must be valid web address.
+  url String
+  
+  /// Extracted domain name from URL for display and filtering. Example:
+  /// 'example.com' from 'https://example.com/article'. Indexed for
+  /// domain-based queries.
+  domain String
+  
+  /// Extracted page title from target URL metadata (Open Graph or meta tags).
+  /// Used for preview display. Null if extraction failed or not yet attempted.
+  preview_title String?
+  
+  /// Extracted page description from target URL metadata. Used for preview
+  /// display. Null if extraction failed or not yet attempted.
+  preview_description String?
+  
+  /// Extracted preview/thumbnail image URL from target page metadata. Used for
+  /// link preview card. Null if no image available or extraction failed.
+  preview_image_url String?
+  
+  /// Timestamp when metadata extraction was attempted. Null if metadata hasn't
+  /// been fetched yet. Used to determine if re-fetch is needed.
+  metadata_fetched_at DateTime?
+  
+  /// Timestamp when link content was created. Typically matches parent post's
+  /// created_at.
+  created_at DateTime
+  
+  /// Timestamp when link content was last updated. Updated when metadata is
+  /// refreshed.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_posts @relation(fields: [reddit_like_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_post_id])
+  @@index([domain])
+}
+
+/// Image-specific content for image posts. Contains image URLs and metadata
+/// for posts with type='image'. Has 1:1 relationship with reddit_like_posts.
+/// The system stores multiple image versions (original, medium 640px,
+/// thumbnail 150x150) for responsive display. Includes optional caption
+/// supporting markdown. Managed through parent post entity - no independent
+/// lifecycle.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_post_image_content {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_like_posts.id}. One-to-one relationship with
+  /// posts table.
+  reddit_like_post_id String
+  
+  /// URL to full-resolution original uploaded image. Used for full-size
+  /// viewing. Maximum 20MB file size.
+  original_image_url String
+  
+  /// URL to medium-resolution version (640px width). Used for feed display.
+  /// Maintains aspect ratio.
+  medium_image_url String
+  
+  /// URL to thumbnail version (150x150 pixels). Used for list views and
+  /// previews. Maintains aspect ratio within bounds.
+  thumbnail_image_url String
+  
+  /// Original image width in pixels. Used for aspect ratio calculations and
+  /// responsive display.
+  image_width Int
+  
+  /// Original image height in pixels. Used for aspect ratio calculations and
+  /// responsive display.
+  image_height Int
+  
+  /// Original image file size in bytes. Maximum 20MB (20,971,520 bytes).
+  /// Displayed to users.
+  file_size Int
+  
+  /// Image file format. Valid values: 'JPEG', 'PNG', 'GIF', 'WebP'. Validated
+  /// during upload.
+  file_format String
+  
+  /// Optional image caption (up to 10,000 characters). Supports markdown
+  /// formatting. Displayed below image. Indexed for search.
+  caption String?
+  
+  /// Timestamp when image content was created. Typically matches parent post's
+  /// created_at.
+  created_at DateTime
+  
+  /// Timestamp when image content was last updated. Updated when caption is
+  /// modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_posts @relation(fields: [reddit_like_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_post_id])
+}
+
+/// Materialized view for post engagement metrics providing denormalized vote
+/// scores and comment counts for query performance optimization.
+/// Pre-calculates net vote score (upvotes - downvotes) from
+/// reddit_like_post_votes and total comment count from reddit_like_comments.
+/// Refreshed periodically to maintain accurate metrics without impacting
+/// write performance on normalized tables. This is the ONLY appropriate
+/// location for denormalized post metrics per architectural requirements.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_reddit_like_post_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post whose metrics are calculated. {@link
+  /// reddit_like_posts.id}
+  reddit_like_post_id String
+  
+  /// Pre-calculated net vote score (upvotes minus downvotes) aggregated from
+  /// reddit_like_post_votes. This denormalized value enables fast query
+  /// performance for sorting and ranking algorithms without real-time vote
+  /// aggregation.
+  vote_score Int
+  
+  /// Pre-calculated total number of comments on this post aggregated from
+  /// reddit_like_comments. This denormalized value enables fast feed display
+  /// and post listing without counting comments in real-time.
+  comment_count Int
+  
+  /// Total number of upvotes (vote_value = 1) aggregated from
+  /// reddit_like_post_votes. Used for calculating upvote percentage and
+  /// controversial ranking.
+  upvote_count Int
+  
+  /// Total number of downvotes (vote_value = -1) aggregated from
+  /// reddit_like_post_votes. Used for calculating upvote percentage and
+  /// controversial ranking.
+  downvote_count Int
+  
+  /// Timestamp when this materialized view was last refreshed with current
+  /// vote and comment data. Indicates the freshness of calculated metrics.
+  last_calculated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_posts @relation(fields: [reddit_like_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_post_id])
+  @@index([vote_score])
+  @@index([comment_count])
+}

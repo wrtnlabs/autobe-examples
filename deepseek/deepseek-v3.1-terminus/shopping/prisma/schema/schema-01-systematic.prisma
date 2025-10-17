@@ -1,0 +1,341 @@
+/// Defines the organizational channels within the shopping mall platform.
+/// Channels represent major business divisions or market segments that
+/// contain multiple sections. Each channel has hierarchical capabilities for
+/// nesting and manages its own branding, configuration, and operational
+/// parameters. {@link shopping_mall_sections} are organized within channels
+/// to create a structured marketplace environment.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent channel for hierarchical organization. Enables nested channel
+  /// structures. {@link shopping_mall_channels.id}
+  parent_id String?
+  
+  /// Unique business identifier for the channel. Used for API references and
+  /// system integration.
+  code String
+  
+  /// Display name of the channel shown to users and administrators.
+  name String
+  
+  /// Detailed description explaining the channel's purpose and business
+  /// context.
+  description String?
+  
+  /// Channel branding logo image URL for visual identification.
+  logo_url String?
+  
+  /// Header banner image URL for channel presentation.
+  banner_url String?
+  
+  /// Sort order for channel display in listings and navigation.
+  display_order Int
+  
+  /// Indicates whether the channel is currently active and visible.
+  is_active Boolean
+  
+  /// Controls visibility of the channel in public interfaces.
+  is_visible Boolean
+  
+  /// JSON structured data for channel-specific configurations and extensions.
+  metadata String?
+  
+  /// Timestamp when the channel was created.
+  created_at DateTime
+  
+  /// Timestamp when the channel was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the channel was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_channels? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_channels[] @relation("recursive")
+  shopping_mall_sections shopping_mall_sections[]
+  shopping_mall_channel_category_assignments shopping_mall_channel_category_assignments[]
+  shopping_mall_configurations shopping_mall_configurations[]
+  
+  @@unique([code])
+  @@index([parent_id, display_order])
+  @@index([is_active, is_visible])
+  @@index([display_order])
+}
+
+/// Organizational sections that group related content within channels.
+/// Sections provide logical segmentation within channels for better content
+/// organization and user navigation. Each section belongs to a specific
+/// channel and can contain products, categories, or other platform
+/// components. {@link shopping_mall_channels}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent channel that contains this section. {@link
+  /// shopping_mall_channels.id}
+  shopping_mall_channel_id String
+  
+  /// Unique section identifier within the channel context.
+  code String
+  
+  /// Display name of the section for user interfaces.
+  name String
+  
+  /// Detailed explanation of the section's purpose and content.
+  description String?
+  
+  /// Icon image URL for section visual representation.
+  icon_url String?
+  
+  /// Background image URL for section presentation.
+  background_url String?
+  
+  /// Sort order for section display within its channel.
+  display_order Int
+  
+  /// Indicates whether the section is active and operational.
+  is_active Boolean
+  
+  /// Marks the section as featured for prominent display.
+  is_featured Boolean
+  
+  /// Access control level for section visibility and permissions.
+  access_level String
+  
+  /// JSON structured data for section-specific configurations.
+  metadata String?
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_configurations shopping_mall_configurations[]
+  
+  @@unique([shopping_mall_channel_id, code])
+  @@index([shopping_mall_channel_id, display_order], map: "shopping_mall_sections_shopping_mall_channel_id_displa_d6778c49")
+  @@index([is_active, is_featured])
+  @@index([access_level])
+}
+
+/// Classification system for organizing channels into meaningful categories.
+/// Enables hierarchical categorization of channels for better discovery,
+/// filtering, and management. Supports multiple categorization schemes and
+/// flexible taxonomy structures. {@link shopping_mall_channels}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channel_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for hierarchical organization. Enables nested category
+  /// trees. {@link shopping_mall_channel_categories.id}
+  parent_id String?
+  
+  /// Unique category identifier for system reference and API access.
+  code String
+  
+  /// Display name of the category shown to users and administrators.
+  name String
+  
+  /// Detailed description of the category's purpose and scope.
+  description String?
+  
+  /// Category icon image URL for visual representation.
+  icon_url String?
+  
+  /// Sort order for category display in listings and navigation.
+  display_order Int
+  
+  /// Indicates whether the category is currently active.
+  is_active Boolean
+  
+  /// Controls visibility of the category in public interfaces.
+  is_visible Boolean
+  
+  /// Type of category (e.g., product-based, regional, thematic).
+  category_type String
+  
+  /// JSON structured data for category-specific configurations.
+  metadata String?
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_channel_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_channel_categories[] @relation("recursive")
+  shopping_mall_channel_category_assignments shopping_mall_channel_category_assignments[]
+  
+  @@unique([code])
+  @@index([parent_id, display_order])
+  @@index([is_active, is_visible])
+  @@index([category_type])
+}
+
+/// Junction table for assigning channels to multiple categories. Enables
+/// flexible many-to-many relationships between channels and categories,
+/// supporting multiple categorization schemes and dynamic classification.
+/// {@link shopping_mall_channels} {@link shopping_mall_channel_categories}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channel_category_assignments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel being assigned to a category. {@link shopping_mall_channels.id}
+  shopping_mall_channel_id String
+  
+  /// Category receiving the channel assignment. {@link
+  /// shopping_mall_channel_categories.id}
+  shopping_mall_channel_category_id String
+  
+  /// Type of category assignment (primary, secondary, thematic).
+  assignment_type String
+  
+  /// Sort order for channel display within the category.
+  display_order Int
+  
+  /// Indicates if this is the primary category for the channel.
+  is_primary Boolean
+  
+  /// JSON structured data for assignment-specific configurations.
+  metadata String?
+  
+  /// Timestamp when the category assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when the assignment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the assignment was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  category shopping_mall_channel_categories @relation(fields: [shopping_mall_channel_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_channel_id, shopping_mall_channel_category_id], map: "shopping_mall_channel_category_assignments_shopping_ma_724eb3d7")
+  @@index([shopping_mall_channel_category_id, display_order], map: "shopping_mall_channel_category_assignments_shopping_ma_baa8b9c9")
+  @@index([is_primary])
+}
+
+/// System-wide and channel-specific configuration settings. Stores platform
+/// configuration parameters, feature flags, and operational settings that
+/// control system behavior across different scopes (global, channel,
+/// section). Supports configuration versioning and audit trails. {@link
+/// shopping_mall_channels} {@link shopping_mall_sections}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel scope for channel-specific configurations. Null for global
+  /// settings. {@link shopping_mall_channels.id}
+  shopping_mall_channel_id String?
+  
+  /// Section scope for section-specific configurations. Null for broader
+  /// scopes. {@link shopping_mall_sections.id}
+  shopping_mall_section_id String?
+  
+  /// Unique key identifying the configuration parameter.
+  configuration_key String
+  
+  /// Value of the configuration parameter in JSON format.
+  configuration_value String
+  
+  /// Data type of the configuration value (string, number, boolean, json).
+  data_type String
+  
+  /// Human-readable description of the configuration parameter.
+  description String?
+  
+  /// Indicates if the configuration value should be encrypted.
+  is_encrypted Boolean
+  
+  /// Marks system-critical configurations that cannot be modified by users.
+  is_system Boolean
+  
+  /// Configuration version for change tracking and rollback capabilities.
+  version Int
+  
+  /// Timestamp when the configuration becomes effective.
+  effective_from DateTime
+  
+  /// Timestamp when the configuration expires. Null for indefinite.
+  effective_until DateTime?
+  
+  /// JSON structured metadata for configuration management.
+  metadata String?
+  
+  /// Timestamp when the configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the configuration was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels? @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  section shopping_mall_sections? @relation(fields: [shopping_mall_section_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_section_id])
+  
+  @@unique([shopping_mall_channel_id, shopping_mall_section_id, configuration_key, version], map: "shopping_mall_configurations_shopping_mall_channel_id__f98a64da")
+  @@index([configuration_key])
+  @@index([effective_from, effective_until])
+  @@index([is_system])
+}

@@ -1,0 +1,143 @@
+/// Primary todo entity representing individual task items. Core business
+/// table for the Todo List Application where users create, read, update, and
+/// delete their personal todos. Each todo is independent, user-owned, and
+/// supports full CRUD operations. Contains essential todo properties: unique
+/// identifier, title/description, completion status, and lifecycle
+/// timestamps.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Todo title or short description of the task. Required field containing
+  /// 1-255 characters. Stores the user's task description exactly as entered.
+  title String
+  
+  /// Optional detailed description or notes about the todo. May be empty
+  /// string. Maximum 2000 characters.
+  description String?
+  
+  /// Completion status of the todo. True indicates completed task, false
+  /// indicates incomplete task. Defaults to false when todo is created.
+  is_completed Boolean
+  
+  /// Timestamp when the todo was created in UTC timezone. Immutable after
+  /// creation. Automatically set to current time on todo creation.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last modified in UTC timezone. Automatically
+  /// updated whenever any todo property changes. Initially equals created_at.
+  updated_at DateTime
+  
+  /// Timestamp indicating soft deletion. Null for active todos. Set to current
+  /// time when user deletes a todo. Enables recovery within 30-day window
+  /// before permanent deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_todo_status_history todo_app_todo_status_history[]
+  todo_app_todo_snapshots todo_app_todo_snapshots[]
+  
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+  @@index([is_completed, created_at])
+}
+
+/// Supporting table tracking status change history for todos. Records each
+/// transition between incomplete and completed states with timestamps.
+/// Enables audit trail capabilities and historical analysis of todo state
+/// changes. Subsidiary entity managed through parent todo operations.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_status_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent todo's {@link todo_app_todos.id}. Associates this
+  /// status change history record with the specific todo.
+  todo_app_todo_id String
+  
+  /// The completion status before this change. True if was completed, false if
+  /// was incomplete.
+  previous_status Boolean
+  
+  /// The completion status after this change. True if marked complete, false
+  /// if marked incomplete.
+  new_status Boolean
+  
+  /// Timestamp when the status change occurred in UTC timezone. Immutable
+  /// record of when transition happened.
+  changed_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  @@index([changed_at])
+  @@index([todo_app_todo_id, changed_at])
+}
+
+/// Snapshot table capturing point-in-time states of todos for audit trail
+/// and historical tracking. Records complete todo state (title, description,
+/// status) at specific moments. Implements snapshot pattern for version
+/// control and forensic capability. Each snapshot is immutable and
+/// represents the exact state at creation time.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original todo's {@link todo_app_todos.id}. Associates
+  /// this snapshot with the todo it captures.
+  todo_app_todo_id String
+  
+  /// Snapshot of todo title at time of capture. Denormalized copy of title
+  /// from parent todo for historical accuracy.
+  title String
+  
+  /// Snapshot of todo description at time of capture. Denormalized copy for
+  /// historical tracking of changes to description.
+  description String?
+  
+  /// Snapshot of completion status at time of capture. Records whether todo
+  /// was completed or incomplete at snapshot moment.
+  is_completed Boolean
+  
+  /// Timestamp when this snapshot was created in UTC timezone. Represents the
+  /// moment-in-time being captured by this snapshot record.
+  snapshot_created_at DateTime
+  
+  /// Original creation timestamp from parent todo at snapshot moment.
+  /// Preserved for historical reference.
+  original_created_at DateTime
+  
+  /// Last update timestamp from parent todo at snapshot moment. Shows when
+  /// parent was last modified.
+  original_updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  @@index([snapshot_created_at])
+  @@index([todo_app_todo_id, snapshot_created_at], map: "todo_app_todo_snapshots_todo_app_todo_id_snapshot_crea_c883d8a3")
+}

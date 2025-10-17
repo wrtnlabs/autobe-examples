@@ -1,0 +1,305 @@
+/// Core content posts that users create within communities, supporting
+/// multiple content types including text, links, and images with
+/// comprehensive editing capabilities and version control. Enhanced with
+/// proper soft delete handling and improved moderation status tracking.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's reddit_community_members.id
+  reddit_community_member_id String
+  
+  /// Belonged community's reddit_community_communities.id
+  reddit_community_id String
+  
+  /// URL-friendly identifier for the post, unique within the community
+  slug String
+  
+  /// Type of post: text, link, image, video, poll, or collection
+  type String
+  
+  /// Publication status: draft, published, scheduled, or archived
+  status String
+  
+  /// Visibility level: public, community_only, members_only, or private
+  visibility String
+  
+  /// Current moderation status: pending, approved, flagged, hidden, removed,
+  /// or deleted
+  moderation_status String
+  
+  /// Calculated score based on upvotes minus downvotes
+  score Int
+  
+  /// Whether the post is pinned to the top of the community feed
+  is_pinned Boolean?
+  
+  /// Whether comments are allowed on this post
+  allow_comments Boolean
+  
+  /// Whether voting is enabled for this post
+  allow_voting Boolean
+  
+  /// Total number of comments on this post
+  comment_count Int
+  
+  /// Timestamp when the post was created
+  created_at DateTime
+  
+  /// Timestamp when the post was last modified
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft deleted
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_post_snapshots reddit_community_post_snapshots[]
+  reddit_community_post_units reddit_community_post_units[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_community_votes reddit_community_community_votes[]
+  reddit_community_votes reddit_community_votes[]
+  reddit_community_karma_history reddit_community_karma_history[]
+  reddit_community_vote_snapshots reddit_community_vote_snapshots[]
+  reddit_community_comment_threads reddit_community_comment_threads?
+  reddit_community_content_discoveries reddit_community_content_discoveries[]
+  reddit_community_content_reports reddit_community_content_reports[]
+  reddit_community_violation_records reddit_community_violation_records[]
+  reddit_community_automated_moderation reddit_community_automated_moderation[]
+  
+  @@unique([reddit_community_id, slug])
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_posts_reddit_community_member_id_crea_b4877c90")
+  @@index([reddit_community_id, created_at])
+  @@index([type, status, visibility])
+  @@index([moderation_status, score, created_at])
+  @@index([score, is_pinned])
+}
+
+/// Historical snapshots capturing post content states at specific points in
+/// time, enabling rollback capabilities and content history tracking for
+/// version control.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original post's {@link reddit_community_posts.id}
+  reddit_community_posts_id String
+  
+  /// Snapshot of the post title at this point in time.
+  title String
+  
+  /// Snapshot of the post body/content at this point in time.
+  body String?
+  
+  /// Snapshot of the linked URL for link posts.
+  link_url String?
+  
+  /// JSON metadata for post content including image URLs, embedded media, or
+  /// structured data.
+  content_metadata String?
+  
+  /// Optional reason provided by the editor for this snapshot.
+  edit_reason String?
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_posts_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_community_posts_id, created_at], map: "reddit_community_post_snapshots_reddit_community_posts_e07e9bd5")
+}
+
+/// Individual units within multi-part posts, enabling structured content
+/// like series, albums, or step-by-step guides with proper sequencing and
+/// organization.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_units {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_community_posts.id}
+  reddit_community_posts_id String
+  
+  /// Parent unit for nested hierarchy {@link reddit_community_post_units.id}
+  parent_reddit_community_post_unit_id String?
+  
+  /// Display order of this unit within the post.
+  sequence_order Int
+  
+  /// Type of unit: text, image, video, link, poll, or embedded.
+  type String
+  
+  /// Title for this specific unit.
+  title String
+  
+  /// Brief summary or description of the unit content.
+  content_summary String?
+  
+  /// JSON data containing unit-specific content, URLs, or media references.
+  content_data String?
+  
+  /// Whether this unit must be completed or viewed.
+  is_required Boolean
+  
+  /// Timestamp when this unit was created.
+  created_at DateTime
+  
+  /// Timestamp when this unit was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_posts_id], references: [id], onDelete: Cascade)
+  parentUnit reddit_community_post_units? @relation("recursive", fields: [parent_reddit_community_post_unit_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_community_post_units[] @relation("recursive")
+  reddit_community_post_unit_options reddit_community_post_unit_options[]
+  
+  @@unique([reddit_community_posts_id, sequence_order], map: "reddit_community_post_units_reddit_community_posts_id__b6dd32e2")
+  @@index([reddit_community_posts_id, type])
+  @@index([parent_reddit_community_post_unit_id, created_at], map: "reddit_community_post_units_parent_reddit_community_po_67e02e51")
+}
+
+/// Configuration options for interactive post units, enabling features like
+/// poll choices, quiz answers, or interactive elements within multi-part
+/// content.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_unit_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent unit's {@link reddit_community_post_units.id}
+  reddit_community_post_units_id String
+  
+  /// Identifier for this option within the unit.
+  option_key String
+  
+  /// Display label for this option.
+  option_label String
+  
+  /// JSON data containing option configuration, values, or metadata.
+  option_data String?
+  
+  /// Display order of this option within the unit.
+  sequence_order Int
+  
+  /// Whether this option is correct (for quizzes).
+  is_correct Boolean?
+  
+  /// Timestamp when this option was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  unit reddit_community_post_units @relation(fields: [reddit_community_post_units_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_post_units_id, option_key], map: "reddit_community_post_unit_options_reddit_community_po_c86caeb1")
+  @@index([reddit_community_post_units_id, sequence_order], map: "reddit_community_post_unit_options_reddit_community_po_7e5329f6")
+}
+
+/// Individual comment entities with nested reply support up to 6 levels
+/// deep. Contains text content, author information, vote statistics, and
+/// hierarchical positioning for threaded discussions. Fixed unique
+/// constraint reference issue.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's reddit_community_posts.id
+  reddit_community_post_id String
+  
+  /// Parent comment's reddit_community_comments.id for nested replies
+  parent_id String?
+  
+  /// Target model's reddit_community_members.id
+  reddit_community_member_id String
+  
+  /// Comment text content up to 10,000 characters with full markdown support
+  content String
+  
+  /// Nesting depth level from 1-6 indicating reply chain position
+  depth Int
+  
+  /// Number of upvotes received for this comment
+  upvotes Int
+  
+  /// Number of downvotes received for this comment
+  downvotes Int
+  
+  /// Whether the comment has been soft-deleted by author
+  is_deleted Boolean
+  
+  /// Whether the comment was removed by moderators
+  is_moderator_removed Boolean
+  
+  /// Whether the comment is hidden due to low score or moderation
+  is_hidden Boolean
+  
+  /// Timestamp when comment was first created
+  created_at DateTime
+  
+  /// Timestamp when comment content was last edited
+  updated_at DateTime
+  
+  /// Timestamp when comment was soft-deleted if applicable
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  parent reddit_community_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_community_comments[] @relation("recursive")
+  reddit_community_votes reddit_community_votes[]
+  reddit_community_comment_votes reddit_community_comment_votes[]
+  reddit_community_content_reports reddit_community_content_reports[]
+  reddit_community_violation_records reddit_community_violation_records[]
+  reddit_community_automated_moderation reddit_community_automated_moderation[]
+  
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_comments_reddit_community_post_id_cre_7ea47a9e")
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_comments_reddit_community_member_id_c_8bfb2de5")
+  @@index([parent_id, depth])
+  @@index([created_at])
+  @@index([is_deleted])
+  @@index([is_moderator_removed])
+  @@index([is_hidden, created_at])
+}

@@ -1,0 +1,65 @@
+/// Junction table establishing many-to-many relationship between users and
+/// communities. This table tracks which communities each member subscribes
+/// to, enabling personalized content feeds prioritizing subscribed
+/// communities and enforcing subscription limits (max 1,000 per user). Each
+/// subscription represents a user's active preference to receive content
+/// from a community. Prohibited from duplicate subscriptions (unique
+/// constraint on user_id + community_id). This is a primary entity because
+/// users need to independently manage their subscriptions through profile
+/// interfaces, search for subscribed communities, and the platform must
+/// efficiently query "all communities subscribed to by user X" and "all
+/// users subscribed to community Y" for feed prioritization logic. This
+/// cannot be handled solely through parent entities - it requires dedicated
+/// CRUD operations and indexing strategy for performance.
+///
+/// References: {@link community_platform_member.id} and {@link
+/// community_platform_communities.id}
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the subscribing member. {@link community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// Reference to the subscribed community. {@link
+  /// community_platform_communities.id}.
+  community_platform_communities_id String
+  
+  /// Timestamp when the subscription was created. Used for sorting
+  /// subscriptions by recency.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was last updated. Used for tracking
+  /// changes to subscription state.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the subscription is considered inactive
+  /// and should be excluded from active feed queries. Null indicates an active
+  /// subscription.
+  deleted_at DateTime?
+  
+  /// Current status of the subscription. True when subscription is active and
+  /// user can receive content from the community. False when subscription has
+  /// been deactivated (usually by user request or system cleanup). This flag
+  /// enables efficient filtering without needing to check deleted_at.
+  active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_communities_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_member_id, community_platform_communities_id], map: "community_platform_subscriptions_community_platform_me_3d19688b")
+  @@unique([deleted_at, community_platform_member_id], map: "community_platform_subscriptions_deleted_at_community__2568304a")
+  @@index([community_platform_member_id], map: "community_platform_subscriptions_community_platform_me_f13779d7")
+  @@index([community_platform_communities_id], map: "community_platform_subscriptions_community_platform_co_f2dd5fb6")
+  @@index([active])
+  @@index([created_at])
+}

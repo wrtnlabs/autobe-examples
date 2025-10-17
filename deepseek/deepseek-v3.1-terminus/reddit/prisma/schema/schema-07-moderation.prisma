@@ -1,0 +1,454 @@
+/// User-generated content reports for moderation review. Users can report
+/// inappropriate content, spam, or guideline violations. Each report
+/// triggers a moderation workflow that may result in content removal, user
+/// warnings, or other actions. Reports are categorized by severity and type
+/// to prioritize moderator attention.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the report. {@link reddit_community_members.id}.
+  reporter_user_id String
+  
+  /// Content being reported (post or comment). {@link
+  /// reddit_community_posts.id} or {@link reddit_community_comments.id}.
+  reported_content_id String
+  
+  /// Community where the content was reported. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Moderator assigned to handle the report. {@link
+  /// reddit_community_moderators.id}.
+  moderator_id String?
+  
+  /// Category of the reported violation (spam, harassment, illegal, etc.).
+  report_type String
+  
+  /// Severity assessment of the reported content.
+  severity_level String
+  
+  /// Detailed explanation provided by the reporter.
+  description String?
+  
+  /// Current status of the report (pending, under_review, resolved, dismissed).
+  status String
+  
+  /// JSON array of evidence URLs provided by the reporter.
+  evidence_urls String?
+  
+  /// Calculated priority score based on severity and reporter credibility.
+  priority_score Int
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter reddit_community_members @relation(fields: [reporter_user_id], references: [id], onDelete: Cascade)
+  reportedContent reddit_community_posts @relation(fields: [reported_content_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  assignedModerator reddit_community_moderators? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  
+  @@index([reported_content_id])
+  @@index([moderator_id])
+  
+  @@unique([reporter_user_id, reported_content_id], map: "reddit_community_reports_reporter_user_id_reported_con_92a82cb7")
+  @@index([status, priority_score])
+  @@index([community_id, created_at])
+  @@index([report_type, severity_level])
+}
+
+/// Records of moderation actions taken by community moderators. Tracks all
+/// moderator interventions including content removal, user warnings,
+/// temporary bans, and guideline enforcement. Provides audit trail for
+/// moderator accountability and transparency.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link
+  /// reddit_community_moderators.id}.
+  moderator_id String
+  
+  /// User who was affected by the moderation action. {@link
+  /// reddit_community_members.id}.
+  target_user_id String
+  
+  /// Community where the action was taken. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Content that triggered the moderation action. {@link
+  /// reddit_community_posts.id} or {@link reddit_community_comments.id}.
+  related_content_id String?
+  
+  /// Report that led to this moderation action. {@link
+  /// reddit_community_reports.id}.
+  report_id String?
+  
+  /// Type of moderation action (remove_content, warn_user, temporary_ban,
+  /// permanent_ban, etc.).
+  action_type String
+  
+  /// Detailed explanation for the moderation action.
+  reason String
+  
+  /// Duration of temporary actions in minutes (null for permanent actions).
+  duration_minutes Int?
+  
+  /// Severity classification of the moderation action.
+  severity_level String
+  
+  /// Current status of the action (active, expired, revoked, appealed).
+  status String
+  
+  /// Whether the action was performed automatically by system.
+  automated Boolean
+  
+  /// Timestamp when the moderation action was taken.
+  created_at DateTime
+  
+  /// Timestamp when the action was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the action record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator reddit_community_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetUser reddit_community_members @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  relatedContent reddit_community_posts? @relation(fields: [related_content_id], references: [id], onDelete: Cascade)
+  report reddit_community_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_appeals reddit_community_appeals[]
+  
+  @@index([related_content_id])
+  @@index([report_id])
+  
+  @@index([moderator_id, created_at])
+  @@index([target_user_id, action_type], map: "reddit_community_moderation_actions_target_user_id_act_e16e3471")
+  @@index([community_id, action_type, created_at], map: "reddit_community_moderation_actions_community_id_actio_e46af331")
+  @@index([status, created_at])
+}
+
+/// Automated content flagging system that identifies potential guideline
+/// violations using pattern detection and machine learning. Flags are
+/// reviewed by moderators and may result in moderation actions. Reduces
+/// manual moderation workload by automatically identifying problematic
+/// content.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_content_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Content that was flagged by the automated system. {@link
+  /// reddit_community_posts.id} or {@link reddit_community_comments.id}.
+  content_id String
+  
+  /// Community where the content was posted. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Moderator who reviewed the automated flag. {@link
+  /// reddit_community_moderators.id}.
+  moderator_review_id String?
+  
+  /// Type of automated flag (spam_detection, hate_speech,
+  /// inappropriate_content, etc.).
+  flag_type String
+  
+  /// Machine learning confidence score for the flag (0.0 to 1.0).
+  confidence_score Float
+  
+  /// JSON array of patterns that triggered the flag.
+  triggered_patterns String
+  
+  /// Current status of the flag (pending, reviewed, action_taken, dismissed).
+  status String
+  
+  /// Notes from moderator review of the automated flag.
+  review_notes String?
+  
+  /// Whether the flag was a false positive (used for ML training).
+  false_positive Boolean?
+  
+  /// Timestamp when the content was automatically flagged.
+  created_at DateTime
+  
+  /// Timestamp when the flag was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the flag record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  content reddit_community_posts @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  reviewingModerator reddit_community_moderators? @relation(fields: [moderator_review_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_review_id])
+  
+  @@unique([content_id, flag_type])
+  @@index([community_id, status])
+  @@index([confidence_score, created_at])
+  @@index([flag_type, created_at])
+}
+
+/// Community-specific rules and guidelines that define acceptable behavior
+/// and content standards. Guidelines can be customized per community and
+/// support versioning for tracking changes over time. Moderators use these
+/// guidelines to make consistent enforcement decisions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guidelines {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that owns these guidelines. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Moderator who created or last updated the guidelines. {@link
+  /// reddit_community_moderators.id}.
+  created_by_moderator_id String
+  
+  /// Version identifier for tracking guideline changes.
+  guideline_version String
+  
+  /// Title of the guideline category or section.
+  title String
+  
+  /// Detailed description of the guideline rule.
+  description String
+  
+  /// Category of the guideline (content, behavior, spam, etc.).
+  category String
+  
+  /// Severity level for violations of this guideline.
+  severity_level String
+  
+  /// Recommended enforcement action for violations.
+  enforcement_action String
+  
+  /// Whether this guideline version is currently active.
+  active Boolean
+  
+  /// Whether users must acknowledge this guideline.
+  requires_acknowledgment Boolean
+  
+  /// Timestamp when the guideline was created.
+  created_at DateTime
+  
+  /// Timestamp when the guideline was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guideline was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  createdBy reddit_community_moderators @relation(fields: [created_by_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_by_moderator_id])
+  
+  @@unique([community_id, guideline_version, category], map: "reddit_community_guidelines_community_id_guideline_ver_0332d39b")
+  @@index([community_id, active])
+  @@index([category, severity_level])
+  @@index([created_at])
+}
+
+/// Historical record of user bans within communities. Tracks both temporary
+/// and permanent bans, including ban duration, reasons, and appeal status.
+/// Provides comprehensive audit trail for user moderation history and
+/// supports ban escalation policies.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_ban_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who was banned from the community. {@link
+  /// reddit_community_members.id}.
+  banned_user_id String
+  
+  /// Moderator who issued the ban. {@link reddit_community_moderators.id}.
+  moderator_id String
+  
+  /// Community from which the user was banned. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Appeal associated with this ban record. {@link
+  /// reddit_community_appeals.id}.
+  appeal_id String?
+  
+  /// Type of ban (temporary, permanent, shadow_ban).
+  ban_type String
+  
+  /// Detailed reason for the ban as provided by the moderator.
+  reason String
+  
+  /// Duration of the ban in days (null for permanent bans).
+  duration_days Int?
+  
+  /// Current status of the ban (active, expired, lifted, appealed).
+  status String
+  
+  /// Number of previous bans for this user in this community.
+  previous_ban_count Int
+  
+  /// Escalation level based on previous violations.
+  escalation_level String
+  
+  /// Timestamp when the ban period began.
+  ban_started_at DateTime
+  
+  /// Timestamp when the ban period ended or will end.
+  ban_ended_at DateTime?
+  
+  /// Timestamp when the ban record was created.
+  created_at DateTime
+  
+  /// Timestamp when the ban record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the ban record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  bannedUser reddit_community_members @relation(fields: [banned_user_id], references: [id], onDelete: Cascade)
+  issuingModerator reddit_community_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  appeal reddit_community_appeals? @relation(fields: [appeal_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id])
+  @@index([appeal_id])
+  
+  @@index([banned_user_id, community_id, ban_started_at], map: "reddit_community_ban_records_banned_user_id_community__fdcf309f")
+  @@index([community_id, status])
+  @@index([ban_type, created_at])
+  @@index([ban_started_at, ban_ended_at])
+}
+
+/// User appeal system for contesting moderation actions. Allows users to
+/// request review of content removal, warnings, or bans. Appeals are
+/// reviewed by moderators or administrators and can result in action
+/// reversals or modifications. Provides due process and transparency in
+/// moderation.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who is submitting the appeal. {@link reddit_community_members.id}.
+  appealing_user_id String
+  
+  /// Moderation action being appealed. {@link
+  /// reddit_community_moderation_actions.id}.
+  moderation_action_id String
+  
+  /// Community where the appeal is being submitted. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Moderator assigned to review the appeal. {@link
+  /// reddit_community_moderators.id}.
+  reviewing_moderator_id String?
+  
+  /// Type of appeal (content_removal, user_warning, ban_appeal, etc.).
+  appeal_type String
+  
+  /// User's explanation for why the moderation action should be reviewed.
+  appeal_reason String
+  
+  /// Current status of the appeal (submitted, under_review, approved, denied).
+  status String
+  
+  /// Explanation provided by moderator for the appeal decision.
+  resolution_reason String?
+  
+  /// Priority level for appeal review based on severity and impact.
+  priority_level String
+  
+  /// Timestamp when the appeal was submitted.
+  submitted_at DateTime
+  
+  /// Timestamp when the appeal was reviewed by a moderator.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the appeal record was created.
+  created_at DateTime
+  
+  /// Timestamp when the appeal record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the appeal record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  appealingUser reddit_community_members @relation(fields: [appealing_user_id], references: [id], onDelete: Cascade)
+  moderationAction reddit_community_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  reviewingModerator reddit_community_moderators? @relation(fields: [reviewing_moderator_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_ban_records reddit_community_ban_records[]
+  
+  @@index([moderation_action_id])
+  @@index([reviewing_moderator_id])
+  
+  @@unique([appealing_user_id, moderation_action_id], map: "reddit_community_appeals_appealing_user_id_moderation__9ba5c644")
+  @@index([community_id, status])
+  @@index([appeal_type, submitted_at])
+  @@index([priority_level, submitted_at])
+}

@@ -1,0 +1,43 @@
+/// Core todo items for personal task management. Stores individual todo
+/// tasks with their completion status and timestamps for the single-user
+/// Todo application. Users can create, read, update completion status, and
+/// delete todo items through basic CRUD operations.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The text content of the todo item. Limited to 500 characters as per
+  /// business requirements for task descriptions.
+  content String
+  
+  /// Completion status of the todo item. False indicates pending, true
+  /// indicates completed.
+  completed Boolean
+  
+  /// Timestamp when the todo item was marked as completed. Null if not
+  /// completed yet.
+  completed_at DateTime?
+  
+  /// Timestamp when the todo item was created.
+  created_at DateTime
+  
+  /// Timestamp when the todo item was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the todo item was soft deleted. Null indicates the todo is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+  @@index([completed, created_at])
+  @@index([deleted_at])
+}

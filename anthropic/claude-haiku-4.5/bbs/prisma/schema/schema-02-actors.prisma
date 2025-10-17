@@ -1,0 +1,347 @@
+/// Core user account entity representing all system participants (guests,
+/// members, moderators, administrators). Stores essential user identity
+/// information including email, username, account status, and role
+/// assignment. This is the primary entity that all other user-related tables
+/// reference. The separation of user account from authentication credentials
+/// allows flexible credential management and future support for multi-factor
+/// authentication. Users can have one or more roles through the user_roles
+/// junction table, enabling complex permission hierarchies.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's verified email address, used for authentication login and
+  /// communication. Must be unique across the system. Email verification is
+  /// required before account becomes active and can participate in
+  /// discussions.
+  email String
+  
+  /// Unique username for public display and @mentions. Must be 3-20
+  /// characters, alphanumeric with underscore allowed. Username is read-only
+  /// after account creation to prevent confusion in discussions and mentions.
+  username String
+  
+  /// Current account status: 'pending_verification' (email not verified),
+  /// 'active' (normal state), 'suspended' (temporary suspension), 'banned'
+  /// (permanent ban), 'deleted' (user-requested deletion, anonymized).
+  /// Controls whether user can access platform and create content.
+  account_status String
+  
+  /// Whether the user's email address has been verified. Unverified accounts
+  /// can view but cannot create discussions, post comments, or vote. Verified
+  /// during registration through email link.
+  email_verified Boolean
+  
+  /// Timestamp when user account was created. Server time (UTC). Used for
+  /// tracking account age and applying new-account restrictions.
+  created_at DateTime
+  
+  /// Timestamp of last account modification (status change, profile update,
+  /// etc.). Server time (UTC). Updated by system on any material change to
+  /// account.
+  updated_at DateTime
+  
+  /// Timestamp of user's most recent successful login. Server time (UTC). NULL
+  /// if user has never logged in. Used to detect inactive accounts and
+  /// suspicious access patterns.
+  last_login_at DateTime?
+  
+  /// Timestamp of user's most recent activity on the platform (post, comment,
+  /// vote, page view, etc.). Server time (UTC). Used to track engagement and
+  /// detect dormant accounts for optional cleanup.
+  last_activity_at DateTime?
+  
+  /// Timestamp when user requested account deletion. Server time (UTC). NULL
+  /// if account is not deleted. Set to deletion timestamp when user completes
+  /// deletion process. Marks soft-deletion boundary.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_user_roles discussion_board_user_roles[]
+  discussion_board_authentication discussion_board_authentication?
+  discussion_board_sessions discussion_board_sessions[]
+  discussion_board_user_profiles discussion_board_user_profiles?
+  discussion_board_user_preferences discussion_board_user_preferences?
+  discussion_board_user_notification_settings discussion_board_user_notification_settings?
+  discussion_board_discussions discussion_board_discussions[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_content_edits discussion_board_content_edits[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_vote_history discussion_board_vote_history[]
+  discussion_board_bookmarks discussion_board_bookmarks[]
+  discussion_board_follows discussion_board_follows[]
+  discussion_board_user_reputation discussion_board_user_reputation?
+  discussion_board_content_flags_of_reported_by_user_id discussion_board_content_flags[] @relation("discussion_board_content_flags_of_reported_by_user_id")
+  discussion_board_content_flags_of_user_id discussion_board_content_flags[] @relation("discussion_board_content_flags_of_user_id")
+  discussion_board_flag_reviews discussion_board_flag_reviews[]
+  discussion_board_moderation_actions_of_moderator_id discussion_board_moderation_actions[] @relation("discussion_board_moderation_actions_of_moderator_id")
+  discussion_board_moderation_actions_of_user_id discussion_board_moderation_actions[] @relation("discussion_board_moderation_actions_of_user_id")
+  discussion_board_user_warnings_of_user_id discussion_board_user_warnings[] @relation("discussion_board_user_warnings_of_user_id")
+  discussion_board_user_warnings_of_moderator_id discussion_board_user_warnings[] @relation("discussion_board_user_warnings_of_moderator_id")
+  discussion_board_user_suspensions_of_user_id discussion_board_user_suspensions[] @relation("discussion_board_user_suspensions_of_user_id")
+  discussion_board_user_suspensions_of_moderator_id discussion_board_user_suspensions[] @relation("discussion_board_user_suspensions_of_moderator_id")
+  discussion_board_user_bans_of_user_id discussion_board_user_bans[] @relation("discussion_board_user_bans_of_user_id")
+  discussion_board_user_bans_of_moderator_id discussion_board_user_bans[] @relation("discussion_board_user_bans_of_moderator_id")
+  discussion_board_appeals_of_user_id discussion_board_appeals[] @relation("discussion_board_appeals_of_user_id")
+  discussion_board_appeals_of_reviewed_by_moderator_id discussion_board_appeals[] @relation("discussion_board_appeals_of_reviewed_by_moderator_id")
+  discussion_board_moderation_logs_of_moderator_id discussion_board_moderation_logs[] @relation("discussion_board_moderation_logs_of_moderator_id")
+  discussion_board_moderation_logs_of_user_id discussion_board_moderation_logs[] @relation("discussion_board_moderation_logs_of_user_id")
+  discussion_board_security_logs discussion_board_security_logs[]
+  discussion_board_audit_logs discussion_board_audit_logs[]
+  discussion_board_login_attempts discussion_board_login_attempts[]
+  discussion_board_permission_changes_of_discussion_board_user_id discussion_board_permission_changes[] @relation("discussion_board_permission_changes_of_discussion_board_user_id")
+  discussion_board_permission_changes_of_modified_by_user_id discussion_board_permission_changes[] @relation("discussion_board_permission_changes_of_modified_by_user_id")
+  discussion_board_data_access_logs_of_accessing_user_id discussion_board_data_access_logs[] @relation("discussion_board_data_access_logs_of_accessing_user_id")
+  discussion_board_data_access_logs_of_subject_user_id discussion_board_data_access_logs[] @relation("discussion_board_data_access_logs_of_subject_user_id")
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([account_status])
+  @@index([email_verified])
+  @@index([created_at])
+  @@index([last_login_at])
+  @@index([deleted_at])
+}
+
+/// Role assignment mapping table implementing role-based access control
+/// (RBAC). Each user can be assigned multiple roles (member, moderator of
+/// multiple categories, administrator). Tracks when roles are assigned and
+/// by whom for audit compliance. Roles determine permissions for creating
+/// discussions, moderating content, and administrative functions. This
+/// junction table allows flexible role assignments without modifying the
+/// user table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user being assigned a role. {@link
+  /// discussion_board_users.id}. Foreign key relationship ensures role
+  /// assignments only exist for valid users.
+  user_id String
+  
+  /// Role identifier: 'guest' (unauthenticated, read-only), 'member' (full
+  /// participation), 'moderator' (content moderation), 'administrator' (full
+  /// system access). Determines permission level for API operations.
+  role String
+  
+  /// Optional scope for scoped roles. For moderator role, contains
+  /// category_id(s) that moderator has authority over. NULL for non-scoped
+  /// roles (member, guest, administrator). Allows granular permission
+  /// assignment at category level.
+  scope String?
+  
+  /// Timestamp when role was assigned to user. Server time (UTC). Used to
+  /// track role change history and audit trail.
+  assigned_at DateTime
+  
+  /// User ID of administrator who assigned this role. NULL for initial member
+  /// role automatically assigned at registration. Tracks who made permission
+  /// changes for audit purposes.
+  assigned_by String?
+  
+  /// Timestamp when role was revoked/removed from user. Server time (UTC).
+  /// NULL if role is currently active. Soft deletion allows history tracking
+  /// of role changes.
+  revoked_at DateTime?
+  
+  /// User ID of administrator who revoked this role. NULL if role is still
+  /// active or was auto-assigned. Tracks who removed permissions for
+  /// compliance.
+  revoked_by String?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, role, scope])
+  @@index([user_id, revoked_at])
+  @@index([role])
+  @@index([assigned_at])
+}
+
+/// User authentication credentials storage, separated from user account
+/// table for security and flexibility. Contains password hashes (never
+/// plaintext passwords), password change history for preventing reuse, email
+/// verification tokens, and password reset tokens. Separation from user
+/// table allows future support of multi-factor authentication and
+/// alternative authentication methods without schema changes. Password
+/// hashes use bcrypt with cost factor 12+.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_authentication {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to user account these credentials belong to. {@link
+  /// discussion_board_users.id}. One-to-one relationship: each user has
+  /// exactly one authentication record.
+  user_id String
+  
+  /// Bcrypt-hashed password (cost factor 12+). NEVER plaintext password.
+  /// Generated using bcrypt algorithm with unique salt. Updated when user
+  /// changes password or administrator resets password.
+  password_hash String
+  
+  /// Unique cryptographically random token for email verification during
+  /// registration. 32+ bytes, base64-encoded. NULL if email is already
+  /// verified. Expires 24 hours after generation. Single-use, invalidated upon
+  /// verification.
+  email_verification_token String?
+  
+  /// Expiration timestamp for email verification token. Server time (UTC).
+  /// NULL if email verified or no pending verification. Tokens expire 24 hours
+  /// after generation.
+  email_verification_token_expires_at DateTime?
+  
+  /// Unique token for password reset process. Generated when user requests
+  /// 'forgot password'. 32+ bytes, base64-encoded. NULL if no reset in
+  /// progress. Single-use, invalidated after one password reset.
+  password_reset_token String?
+  
+  /// Expiration timestamp for password reset token. Server time (UTC). NULL if
+  /// no reset in progress. Tokens expire 1 hour after generation to limit
+  /// reset window.
+  password_reset_token_expires_at DateTime?
+  
+  /// Count of consecutive failed login attempts for this user. Resets to 0 on
+  /// successful login. Used to implement brute-force attack protection.
+  /// Incremented on each failed password attempt.
+  failed_login_attempts Int
+  
+  /// Timestamp when account lock expires (if temporarily locked due to too
+  /// many failed logins). Server time (UTC). NULL if account is not locked.
+  /// Account auto-unlocks at this time, allowing login retry.
+  locked_until DateTime?
+  
+  /// Timestamp of most recent password change or initial password set at
+  /// registration. Server time (UTC). Used for forced password change policies
+  /// and detecting stale credentials.
+  password_last_changed_at DateTime
+  
+  /// Timestamp when authentication record was created (same as user
+  /// registration). Server time (UTC).
+  created_at DateTime
+  
+  /// Timestamp of last modification to this authentication record (password
+  /// change, token generation, etc.). Server time (UTC).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  
+  @@index([locked_until])
+  @@index([password_reset_token])
+  @@index([email_verification_token])
+}
+
+/// Active user session tracking for multi-session management, security
+/// monitoring, and session termination. Records JWT token information,
+/// device details, geographic location, and session lifecycle events.
+/// Enables detection of suspicious activity (impossible travel, unusual
+/// devices), concurrent session limits, and remote logout capabilities.
+/// Sessions are terminated when tokens expire, user logs out, or
+/// administrator action is taken.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to authenticated user owning this session. {@link
+  /// discussion_board_users.id}. A user can have multiple concurrent active
+  /// sessions (up to 5), each tracked separately.
+  user_id String
+  
+  /// JWT access token value for this session. Used to authenticate API
+  /// requests. Expires 15 minutes after session creation. Derived from JWT but
+  /// stored for session lookup and revocation.
+  session_token String
+  
+  /// JWT refresh token for obtaining new access tokens without
+  /// re-authentication. Expires 7 days after session creation. Single-use:
+  /// invalidated when used to generate new access token.
+  refresh_token String
+  
+  /// IPv4 or IPv6 address of client making the login request. Used for
+  /// security monitoring, brute-force detection, and geographic location
+  /// lookup. Recorded at session creation.
+  ip_address String
+  
+  /// User agent string from HTTP request (browser type, OS, version). Parsed
+  /// to identify device type (mobile, tablet, desktop). Used to detect unusual
+  /// login patterns and display active sessions list.
+  user_agent String?
+  
+  /// Human-readable device name derived from user agent. Examples: 'Chrome on
+  /// Windows', 'Safari on iOS'. Displayed to user when reviewing active
+  /// sessions.
+  device_name String?
+  
+  /// Geographic location (city, country) determined from IP address via GeoIP
+  /// lookup. Displayed to user and used to detect impossible travel patterns
+  /// and geographic anomalies.
+  geographic_location String?
+  
+  /// Timestamp when session was created (user logged in). Server time (UTC).
+  /// Used to calculate session age and auto-expiration.
+  created_at DateTime
+  
+  /// Timestamp of most recent API request from this session. Server time
+  /// (UTC). Initially set to created_at. Updated on each request to track
+  /// session activity.
+  last_activity_at DateTime
+  
+  /// Timestamp when session/refresh token expires and session becomes invalid.
+  /// Server time (UTC). Set to 7 days after created_at. Refresh tokens cannot
+  /// be used after this time.
+  expires_at DateTime
+  
+  /// Timestamp when session was manually terminated (user logout, password
+  /// change, admin action, etc.). Server time (UTC). NULL if session is still
+  /// active. After termination, session cannot be used for authentication.
+  terminated_at DateTime?
+  
+  /// Whether this session is currently active (true) or has been
+  /// terminated/expired (false). Redundant with terminated_at but provides
+  /// efficient query filtering. Set to false on termination.
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([session_token])
+  @@unique([refresh_token])
+  @@index([user_id, is_active])
+  @@index([expires_at])
+  @@index([created_at])
+  @@index([last_activity_at])
+}

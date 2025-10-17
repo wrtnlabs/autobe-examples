@@ -1,0 +1,143 @@
+/// Communities are the top-level spaces that organize posts and memberships.
+/// Each community has a globally unique handle stored in {name} (used in
+/// URLs) and a human-friendly {display_name}. This table persists community
+/// configuration required by business rules: visibility mode
+/// (public/restricted/private), NSFW labeling, quarantine state for safety,
+/// optional language/region defaults, and auto-archive window to lock old
+/// threads. Owners and moderators are managed via {@link
+/// community_platform_community_owners} and {@link
+/// community_platform_community_moderators}. Subscriptions are in {@link
+/// community_platform_subscriptions}. Posts in other components reference
+/// this model to attach content to a community.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Globally unique community handle (URL-safe identifier). Used for routing
+  /// and mentions. Must be unique across the platform.
+  name String
+  
+  /// Human-readable community title shown in UIs. Not required to be unique.
+  display_name String?
+  
+  /// Optional community description/about text used for discovery and policy
+  /// transparency.
+  description String?
+  
+  /// Community visibility mode. Allowed values: public | restricted | private.
+  /// Used by eligibility checks and feed assemblers.
+  visibility String
+  
+  /// Whether the community is labeled as NSFW. Enforces visibility gates and
+  /// default labeling for submissions.
+  nsfw Boolean
+  
+  /// Number of days after which posts auto-archive (>= 30 per business rules).
+  /// Feeds and editors enforce read-only behavior after archival.
+  auto_archive_days Int
+  
+  /// Optional default language code for community policy and discovery (e.g.,
+  /// en, ko).
+  language String?
+  
+  /// Optional default region code for community policy and discovery (e.g.,
+  /// KR, US).
+  region String?
+  
+  /// Whether the community is under quarantine per safety policy. Limits
+  /// discovery and requires user acknowledgement.
+  quarantined Boolean
+  
+  /// Timestamp when quarantine began. Null when not quarantined.
+  quarantined_at DateTime?
+  
+  /// Creation timestamp of the community.
+  created_at DateTime
+  
+  /// Last update timestamp of the community metadata.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the community is removed from general
+  /// listings.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_community_owners community_platform_community_owners[]
+  community_platform_community_moderators community_platform_community_moderators[]
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_posts community_platform_posts[]
+  
+  @@unique([name])
+  @@index([created_at])
+  @@index([visibility, created_at])
+  @@index([nsfw])
+  @@index([quarantined])
+}
+
+/// User-to-community subscription mapping representing follow state for feed
+/// inclusion. This table captures subscription lifecycle: status (e.g.,
+/// pending for private/restricted approvals, subscribed for active,
+/// banned/blocked where applicable) and mute state to suppress delivery
+/// without unsubscribing. References {@link community_platform_users} and
+/// {@link community_platform_communities}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscribed user reference. Target model's {@link
+  /// community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Target community reference. Target model's {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Subscription status. Allowed values (business semantics): pending |
+  /// subscribed | banned | blocked. Use deleted_at to represent unsubscribed.
+  status String
+  
+  /// Whether the user has muted this community (suppresses delivery in Home
+  /// while retaining subscription).
+  muted Boolean
+  
+  /// Timestamp when mute was applied. Null when not muted.
+  muted_at DateTime?
+  
+  /// Subscription creation timestamp (when the user subscribed or requested
+  /// join).
+  created_at DateTime
+  
+  /// Timestamp of the last update to this subscription record.
+  updated_at DateTime
+  
+  /// Soft deletion (unsubscribe) timestamp. When set, the subscription is
+  /// considered inactive for feed inclusion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id, community_platform_community_id], map: "community_platform_subscriptions_community_platform_us_bb5712f6")
+  @@index([community_platform_user_id, created_at], map: "community_platform_subscriptions_community_platform_us_4fc890fa")
+  @@index([community_platform_community_id, created_at], map: "community_platform_subscriptions_community_platform_co_1b9a6f7b")
+  @@index([community_platform_user_id, status, deleted_at], map: "community_platform_subscriptions_community_platform_us_a2713431")
+  @@index([community_platform_community_id, status, deleted_at], map: "community_platform_subscriptions_community_platform_co_6b32f729")
+  @@index([community_platform_user_id, muted, deleted_at], map: "community_platform_subscriptions_community_platform_us_f8a7a642")
+}

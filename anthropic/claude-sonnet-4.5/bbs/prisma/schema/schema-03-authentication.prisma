@@ -1,0 +1,296 @@
+/// Active user sessions for authenticated users. Each session represents a
+/// logged-in user on a specific device with an associated JWT access token.
+/// Sessions track device information, location, and activity for security
+/// monitoring. Users can view and revoke their own sessions across multiple
+/// devices. This is a PRIMARY stance table as users independently manage
+/// their active sessions.
+///
+/// @namespace Authentication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who owns this session. {@link
+  /// discussion_board_members.id}. Null if session belongs to moderator or
+  /// administrator.
+  discussion_board_member_id String?
+  
+  /// Reference to the moderator who owns this session. {@link
+  /// discussion_board_moderators.id}. Null if session belongs to member or
+  /// administrator.
+  discussion_board_moderator_id String?
+  
+  /// Reference to the administrator who owns this session. {@link
+  /// discussion_board_administrators.id}. Null if session belongs to member or
+  /// moderator.
+  discussion_board_administrator_id String?
+  
+  /// Hashed JWT access token identifier for secure token validation. Never
+  /// store plain tokens. Used to identify and validate active sessions.
+  access_token_hash String
+  
+  /// Type of device used for this session. Examples: Desktop, Mobile, Tablet.
+  /// Extracted from user agent string.
+  device_type String
+  
+  /// Browser name and version information extracted from user agent. Examples:
+  /// Chrome 120.0, Firefox 121.0, Safari 17.0.
+  browser_info String
+  
+  /// IP address from which the session was created. Used for security
+  /// monitoring and location approximation.
+  ip_address String
+  
+  /// Approximate geographic location based on IP address. City-level
+  /// precision. Example: New York, USA. May be null if location cannot be
+  /// determined.
+  location String?
+  
+  /// Whether this session is currently active. False when session is revoked
+  /// by user or invalidated by system (logout, password change, expiration).
+  is_active Boolean
+  
+  /// Timestamp when the access token expires. Access tokens expire after 30
+  /// minutes. Session must use refresh token to obtain new access token after
+  /// expiration.
+  expires_at DateTime
+  
+  /// Timestamp of the last activity in this session. Updated on each
+  /// authenticated request. Used to track session usage and identify inactive
+  /// sessions.
+  last_activity_at DateTime
+  
+  /// Timestamp when the session was created (user logged in).
+  created_at DateTime
+  
+  /// Timestamp when the session was revoked. Null if session is still active.
+  /// Sessions can be revoked by user logout, password change, or administrator
+  /// action.
+  revoked_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators? @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_refresh_tokens discussion_board_refresh_tokens?
+  
+  @@unique([access_token_hash])
+  @@index([discussion_board_member_id, is_active], map: "discussion_board_sessions_discussion_board_member_id_i_18d8f4f3")
+  @@index([discussion_board_moderator_id, is_active], map: "discussion_board_sessions_discussion_board_moderator_i_ef4e3a51")
+  @@index([discussion_board_administrator_id, is_active], map: "discussion_board_sessions_discussion_board_administrat_4e4228bd")
+  @@index([expires_at])
+  @@index([ip_address, created_at])
+}
+
+/// Refresh tokens for obtaining new access tokens without re-authentication.
+/// Each refresh token is associated with exactly one session and allows the
+/// client to request new access tokens when the current access token
+/// expires. Refresh tokens have longer expiration (7-30 days) than access
+/// tokens (30 minutes). This is a SUBSIDIARY stance table as tokens are
+/// managed automatically through the session lifecycle.
+///
+/// @namespace Authentication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_refresh_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the session this refresh token belongs to. {@link
+  /// discussion_board_sessions.id}. One-to-one relationship - each session has
+  /// exactly one refresh token.
+  discussion_board_session_id String
+  
+  /// Hashed refresh token for secure validation. Never store plain tokens.
+  /// Used to authenticate refresh token requests and issue new access tokens.
+  refresh_token_hash String
+  
+  /// Timestamp when the refresh token expires. Standard expiration is 7 days.
+  /// Extended to 30 days when user selects Remember Me option during login.
+  expires_at DateTime
+  
+  /// Whether this refresh token has been revoked. True when session ends, user
+  /// logs out, password changes, or token is compromised. Revoked tokens
+  /// cannot be used to obtain new access tokens.
+  is_revoked Boolean
+  
+  /// Timestamp when the refresh token was created (same as session creation).
+  created_at DateTime
+  
+  /// Timestamp when the refresh token was revoked. Null if token is still
+  /// valid. Set when session is terminated or security event occurs.
+  revoked_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  session discussion_board_sessions @relation(fields: [discussion_board_session_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_session_id], map: "discussion_board_refresh_tokens_discussion_board_sessi_91b88bac")
+  
+  @@unique([refresh_token_hash])
+  @@index([expires_at, is_revoked])
+}
+
+/// Comprehensive audit trail of all login attempts including successful
+/// logins and failed authentication attempts. Records device information, IP
+/// address, location, and failure reasons for security monitoring and breach
+/// detection. Used to implement account lockout after repeated failures and
+/// alert users to suspicious login activity. This is a SNAPSHOT stance table
+/// as it provides immutable historical audit data.
+///
+/// @namespace Authentication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_login_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account associated with this login attempt.
+  /// {@link discussion_board_members.id}. Null if login attempt was for
+  /// moderator or administrator account.
+  discussion_board_member_id String?
+  
+  /// Reference to the moderator account associated with this login attempt.
+  /// {@link discussion_board_moderators.id}. Null if login attempt was for
+  /// member or administrator account.
+  discussion_board_moderator_id String?
+  
+  /// Reference to the administrator account associated with this login
+  /// attempt. {@link discussion_board_administrators.id}. Null if login
+  /// attempt was for member or moderator account.
+  discussion_board_administrator_id String?
+  
+  /// Email address used in the login attempt. Stored even for failed attempts
+  /// to track brute force attacks and credential stuffing attempts.
+  email_attempted String
+  
+  /// Whether the login attempt was successful. True for successful
+  /// authentication, false for failed attempts (wrong password, account
+  /// locked, etc.).
+  is_successful Boolean
+  
+  /// Reason for login failure. Examples: incorrect_password, account_locked,
+  /// account_suspended, email_not_verified, account_not_found. Null for
+  /// successful logins.
+  failure_reason String?
+  
+  /// IP address from which the login attempt was made. Critical for security
+  /// monitoring and identifying suspicious patterns.
+  ip_address String
+  
+  /// Type of device used for login attempt. Examples: Desktop, Mobile, Tablet.
+  /// Extracted from user agent string.
+  device_type String
+  
+  /// Browser name and version information. Examples: Chrome 120.0, Firefox
+  /// 121.0. Used to identify login from new or unfamiliar devices.
+  browser_info String
+  
+  /// Approximate geographic location based on IP address. City-level
+  /// precision. Example: London, UK. May be null if location cannot be
+  /// determined.
+  location String?
+  
+  /// Timestamp when the login attempt occurred. Used for security analysis and
+  /// identifying attack patterns over time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators? @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_login_history_discussion_board_member_ed8d7329")
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_login_history_discussion_board_modera_11f12534")
+  @@index([discussion_board_administrator_id, created_at], map: "discussion_board_login_history_discussion_board_admini_4538adf4")
+  @@index([email_attempted, is_successful, created_at], map: "discussion_board_login_history_email_attempted_is_succ_4cb81c5e")
+  @@index([ip_address, created_at])
+  @@index([is_successful, created_at])
+}
+
+/// Temporary tokens for secure password reset workflow. When a user forgets
+/// their password, a unique reset token is generated and emailed to them.
+/// Tokens are single-use with 15-minute expiration for security. After
+/// successful password reset, the token is marked as used to prevent reuse.
+/// This is a SNAPSHOT stance table as password reset tokens capture
+/// historical security events in an append-only pattern.
+///
+/// @namespace Authentication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member requesting password reset. {@link
+  /// discussion_board_members.id}. Null if password reset is for moderator or
+  /// administrator account.
+  discussion_board_member_id String?
+  
+  /// Reference to the moderator requesting password reset. {@link
+  /// discussion_board_moderators.id}. Null if password reset is for member or
+  /// administrator account.
+  discussion_board_moderator_id String?
+  
+  /// Reference to the administrator requesting password reset. {@link
+  /// discussion_board_administrators.id}. Null if password reset is for member
+  /// or moderator account.
+  discussion_board_administrator_id String?
+  
+  /// Hashed password reset token for secure validation. Never store plain
+  /// tokens. Cryptographically random token (minimum 32 bytes) sent to user
+  /// email and validated when they submit new password.
+  reset_token_hash String
+  
+  /// Email address to which the reset token was sent. Used to verify the reset
+  /// request targets the correct account and prevent enumeration attacks.
+  email String
+  
+  /// Whether this reset token has been used to successfully reset the
+  /// password. True after password reset completes. Used tokens cannot be
+  /// reused even if still within expiration window.
+  is_used Boolean
+  
+  /// Timestamp when the reset token expires. Tokens are valid for 15 minutes
+  /// from creation for security. Expired tokens are rejected even if unused.
+  expires_at DateTime
+  
+  /// Timestamp when the password reset was requested and token was generated.
+  /// Used to enforce 15-minute expiration window.
+  created_at DateTime
+  
+  /// Timestamp when the reset token was successfully used to reset password.
+  /// Null if token has not been used yet. Set when user completes password
+  /// reset flow.
+  used_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators? @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reset_token_hash])
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_password_resets_discussion_board_memb_58cd095b")
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_password_resets_discussion_board_mode_f5c8ba8d")
+  @@index([discussion_board_administrator_id, created_at], map: "discussion_board_password_resets_discussion_board_admi_755c398f")
+  @@index([expires_at, is_used])
+  @@index([email, is_used, created_at])
+}

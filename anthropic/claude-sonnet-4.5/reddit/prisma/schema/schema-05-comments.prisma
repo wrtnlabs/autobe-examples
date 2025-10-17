@@ -1,0 +1,71 @@
+/// Comment system supporting nested threaded discussions on posts. Comments
+/// can be replies to other comments (nested up to 10 levels deep) or
+/// top-level comments. Each comment belongs to a post and has an author.
+/// Comments track vote scores, edit status, and support soft deletion to
+/// preserve thread structure. The parent-child relationship enables threaded
+/// conversations while maintaining clean data structure.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post where this comment was created. {@link reddit_like_posts.id}
+  reddit_like_post_id String
+  
+  /// Parent comment for nested threading. Null for top-level comments. {@link
+  /// reddit_like_comments.id}
+  reddit_like_parent_comment_id String?
+  
+  /// Author of this comment. {@link reddit_like_members.id}
+  reddit_like_member_id String
+  
+  /// Text content of the comment. Supports markdown formatting and up to
+  /// 10,000 characters.
+  content_text String
+  
+  /// Nesting level in comment tree. 0 for top-level comments, increments for
+  /// each reply level. Maximum depth of 10 enforced at application level.
+  depth Int
+  
+  /// Net vote score calculated as upvotes minus downvotes. Updated when votes
+  /// are cast via reddit_like_comment_votes table.
+  vote_score Int
+  
+  /// Whether this comment has been edited after initial creation. Set to true
+  /// when content_text is modified.
+  edited Boolean
+  
+  /// Timestamp when comment was created.
+  created_at DateTime
+  
+  /// Timestamp when comment was last modified (edit or vote update).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, comment content is hidden but thread
+  /// structure is preserved. Null for active comments.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_posts @relation(fields: [reddit_like_post_id], references: [id], onDelete: Cascade)
+  parentComment reddit_like_comments? @relation("recursive", fields: [reddit_like_parent_comment_id], references: [id], onDelete: Cascade)
+  author reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_like_comments[] @relation("recursive")
+  reddit_like_comment_votes reddit_like_comment_votes[]
+  reddit_like_karma_history reddit_like_karma_history[]
+  reddit_like_content_reports reddit_like_content_reports[]
+  reddit_like_moderation_actions reddit_like_moderation_actions[]
+  
+  @@index([reddit_like_post_id, created_at])
+  @@index([reddit_like_member_id, created_at])
+  @@index([reddit_like_parent_comment_id])
+  @@index([created_at])
+  @@index([vote_score, created_at])
+}

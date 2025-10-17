@@ -1,0 +1,315 @@
+/// User notifications for various platform events including replies,
+/// moderation actions, system updates, and content interactions. Users
+/// receive notifications when someone replies to their comments, when their
+/// content is moderated, or when system-wide announcements are made. {@link
+/// discussion_board_members.id} {@link discussion_board_topics.id} {@link
+/// discussion_board_comments.id}
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who receives the notification. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Related topic for topic-specific notifications. {@link
+  /// discussion_board_topics.id}
+  discussion_board_topic_id String?
+  
+  /// Related comment for reply notifications. {@link
+  /// discussion_board_comments.id}
+  discussion_board_comment_id String?
+  
+  /// Moderator who performed the action for moderation notifications. {@link
+  /// discussion_board_moderators.id}
+  discussion_board_moderator_id String?
+  
+  /// Type of notification (reply, moderation, system, mention, etc.).
+  notification_type String
+  
+  /// Notification title or subject line.
+  title String
+  
+  /// Notification message content.
+  message String
+  
+  /// Whether the notification has been read by the user.
+  is_read Boolean
+  
+  /// Whether the notification has been successfully delivered.
+  is_delivered Boolean
+  
+  /// URL for the user to take action on the notification.
+  action_url String?
+  
+  /// When the notification was created.
+  created_at DateTime
+  
+  /// When the notification was last updated.
+  updated_at DateTime
+  
+  /// When the notification was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  topic discussion_board_topics? @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_email_logs discussion_board_email_logs[]
+  
+  @@index([discussion_board_topic_id])
+  @@index([discussion_board_comment_id])
+  @@index([discussion_board_moderator_id], map: "discussion_board_notifications_discussion_board_modera_679755d8")
+  
+  @@index([discussion_board_member_id, is_read], map: "discussion_board_notifications_discussion_board_member_d6cf6068")
+  @@index([discussion_board_member_id, notification_type, created_at], map: "discussion_board_notifications_discussion_board_member_6c341888")
+  @@index([notification_type])
+  @@index([created_at])
+}
+
+/// User preferences for notification types and delivery methods. Users can
+/// configure which types of notifications they want to receive and how they
+/// want to receive them (email, push, in-app). {@link
+/// discussion_board_members.id}
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns these notification preferences. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Whether email notifications are enabled for this user.
+  email_notifications_enabled Boolean
+  
+  /// Whether push notifications are enabled for this user.
+  push_notifications_enabled Boolean
+  
+  /// Whether in-app notifications are enabled for this user.
+  in_app_notifications_enabled Boolean
+  
+  /// Whether to receive notifications for replies to comments.
+  receive_reply_notifications Boolean
+  
+  /// Whether to receive notifications when mentioned by other users.
+  receive_mention_notifications Boolean
+  
+  /// Whether to receive notifications for moderation actions.
+  receive_moderation_notifications Boolean
+  
+  /// Whether to receive system-wide announcements and updates.
+  receive_system_notifications Boolean
+  
+  /// Whether to receive notifications when followed by other users.
+  receive_follow_notifications Boolean
+  
+  /// When the notification preferences were created.
+  created_at DateTime
+  
+  /// When the notification preferences were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id], map: "discussion_board_notification_preferences_discussion_b_5a544372")
+  @@index([email_notifications_enabled], map: "discussion_board_notification_preferences_email_notifi_593b3e8c")
+  @@index([push_notifications_enabled], map: "discussion_board_notification_preferences_push_notific_899cc7e0")
+  @@index([in_app_notifications_enabled], map: "discussion_board_notification_preferences_in_app_notif_87da7a1e")
+}
+
+/// Direct messages between users for private communication. Users can send
+/// private messages to each other, creating conversation threads for ongoing
+/// discussions. {@link discussion_board_members.id} {@link
+/// discussion_board_message_threads.id}
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_messages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Thread that this message belongs to. {@link
+  /// discussion_board_message_threads.id}
+  discussion_board_message_thread_id String
+  
+  /// User who sent the message. {@link discussion_board_members.id}
+  discussion_board_sender_id String
+  
+  /// User who received the message. {@link discussion_board_members.id}
+  discussion_board_recipient_id String
+  
+  /// Message content text.
+  content String
+  
+  /// Whether the message has been read by the recipient.
+  is_read Boolean
+  
+  /// Whether the message has been successfully delivered.
+  is_delivered Boolean
+  
+  /// When the message was read by the recipient.
+  read_at DateTime?
+  
+  /// When the message was created.
+  created_at DateTime
+  
+  /// When the message was last updated.
+  updated_at DateTime
+  
+  /// When the message was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  thread discussion_board_message_threads @relation(fields: [discussion_board_message_thread_id], references: [id], onDelete: Cascade)
+  sender discussion_board_members @relation("discussion_board_messages_of_discussion_board_sender_id", fields: [discussion_board_sender_id], references: [id], onDelete: Cascade)
+  recipient discussion_board_members @relation("discussion_board_messages_of_discussion_board_recipient_id", fields: [discussion_board_recipient_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_message_thread_id, created_at], map: "discussion_board_messages_discussion_board_message_thr_535c9e93")
+  @@index([discussion_board_sender_id, created_at], map: "discussion_board_messages_discussion_board_sender_id_c_01914c50")
+  @@index([discussion_board_recipient_id, is_read], map: "discussion_board_messages_discussion_board_recipient_i_ed5cb7c8")
+  @@index([created_at])
+}
+
+/// Threads organizing private message conversations between users. Each
+/// thread represents a conversation between two users and contains multiple
+/// messages exchanged over time. {@link discussion_board_members.id}
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_message_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// First participant in the message thread. {@link
+  /// discussion_board_members.id}
+  discussion_board_participant_a_id String
+  
+  /// Second participant in the message thread. {@link
+  /// discussion_board_members.id}
+  discussion_board_participant_b_id String
+  
+  /// Thread subject or topic.
+  subject String?
+  
+  /// When the last message in this thread was sent.
+  last_message_at DateTime
+  
+  /// Total number of messages in this thread.
+  message_count Int
+  
+  /// Whether the thread has been archived by participants.
+  is_archived Boolean
+  
+  /// When the thread was created.
+  created_at DateTime
+  
+  /// When the thread was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  participantA discussion_board_members @relation("discussion_board_message_threads_of_discussion_board_p_31359818", fields: [discussion_board_participant_a_id], references: [id], onDelete: Cascade)
+  participantB discussion_board_members @relation("discussion_board_message_threads_of_discussion_board_p_1ae54e67", fields: [discussion_board_participant_b_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_messages discussion_board_messages[]
+  
+  @@index([discussion_board_participant_b_id], map: "discussion_board_message_threads_discussion_board_part_2aae2cd0")
+  
+  @@unique([discussion_board_participant_a_id, discussion_board_participant_b_id], map: "discussion_board_message_threads_discussion_board_part_b8ec5d6e")
+  @@index([last_message_at])
+  @@index([is_archived])
+  @@index([created_at])
+}
+
+/// Historical record of email deliveries for audit and tracking purposes.
+/// This table logs all email notifications sent to users, including delivery
+/// status, failures, and timestamps for debugging and compliance. {@link
+/// discussion_board_members.id} {@link discussion_board_notifications.id}
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_email_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who was the intended recipient of the email. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Notification that triggered this email. {@link
+  /// discussion_board_notifications.id}
+  discussion_board_notification_id String?
+  
+  /// Email address the message was sent to.
+  email_address String
+  
+  /// Email subject line.
+  subject String
+  
+  /// Email template used for this delivery.
+  template_name String
+  
+  /// Delivery status (sent, delivered, failed, bounced).
+  delivery_status String
+  
+  /// Reason for delivery failure if applicable.
+  failure_reason String?
+  
+  /// When the email was sent.
+  sent_at DateTime
+  
+  /// When the email was successfully delivered.
+  delivered_at DateTime?
+  
+  /// When the email was opened by the recipient.
+  opened_at DateTime?
+  
+  /// When links in the email were clicked.
+  clicked_at DateTime?
+  
+  /// When the email log entry was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  notification discussion_board_notifications? @relation(fields: [discussion_board_notification_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_notification_id], map: "discussion_board_email_logs_discussion_board_notificat_c548e346")
+  
+  @@index([discussion_board_member_id, sent_at], map: "discussion_board_email_logs_discussion_board_member_id_2e79115f")
+  @@index([delivery_status])
+  @@index([sent_at])
+  @@index([template_name])
+}

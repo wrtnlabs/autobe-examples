@@ -1,0 +1,283 @@
+/// Main order record representing a customer purchase transaction. Each
+/// order is tied to exactly one customer and contains multiple order items.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who placed this order. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// The seller who fulfilled this order. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique order number in format 'ORD-YYYYMMDD-XXXXX'.
+  order_number String
+  
+  /// Current status of the order. Must be one of: 'Created', 'Paid', 'Awaiting
+  /// Shipment', 'Shipped', 'Delivered', 'Completed', 'Canceled', 'Refunded'.
+  status String
+  
+  /// Total value of all order items before shipping and tax.
+  subtotal Float
+  
+  /// Cost of shipping for this order.
+  shipping_cost Float
+  
+  /// Total tax amount calculated for this order based on shipping address.
+  tax_amount Float
+  
+  /// Final total amount (subtotal + shipping + tax).
+  total_amount Float
+  
+  /// Currency code for this order (e.g., 'USD').
+  currency String
+  
+  /// Payment method used (e.g., 'Credit Card ending in 4242').
+  payment_method String
+  
+  /// Timestamp when the order was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the order was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when payment was successfully confirmed.
+  payment_confirmed_at DateTime?
+  
+  /// Timestamp when the order was marked as shipped by the seller.
+  shipped_at DateTime?
+  
+  /// Timestamp when the order was marked as delivered.
+  delivered_at DateTime?
+  
+  /// Timestamp when the order automatically transitioned to 'Completed' status
+  /// (48 hours after delivery).
+  completed_at DateTime?
+  
+  /// Timestamp when the order was canceled by customer or seller.
+  canceled_at DateTime?
+  
+  /// Timestamp when the order was fully refunded.
+  refunded_at DateTime?
+  
+  /// System-generated reason for cancellation ('customer', 'seller', 'admin').
+  cancelled_by String?
+  
+  /// Primary tracking number for the order overview (if available).
+  tracking_number String?
+  
+  /// Primary shipping carrier name for the order overview (if available).
+  carrier String?
+  
+  /// Any additional notes or special instructions for this order (e.g., 'Leave
+  /// at front door').
+  notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_shippings shopping_mall_order_shippings?
+  shopping_mall_order_payments shopping_mall_order_payments?
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_earnings_ledger shopping_mall_earnings_ledger[]
+  
+  @@index([order_number])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([shopping_mall_seller_id, created_at])
+  @@index([status, created_at])
+  @@index([created_at])
+  @@index([payment_confirmed_at])
+  @@index([shipped_at])
+  @@index([delivered_at])
+  @@index([completed_at])
+}
+
+/// Line items that make up a shopping_mall_order, representing each SKU
+/// purchased, with its specific pricing and quantities.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this item belongs to. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// The specific product SKU variant that was purchased. {@link
+  /// shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Number of units of this SKU purchased.
+  quantity Int
+  
+  /// Price per unit of this SKU at the time of purchase.
+  unit_price Float
+  
+  /// Total price for this line item (unit_price * quantity).
+  total_price Float
+  
+  /// Product name as it was at time of purchase for audit trail.
+  product_name String
+  
+  /// Product description as it was at time of purchase for audit trail.
+  product_description String?
+  
+  /// Timestamp when this order item was created.
+  created_at DateTime
+  
+  /// Timestamp when this order item was updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_returns shopping_mall_returns[]
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_product_sku_id])
+  @@index([created_at])
+}
+
+/// Shipping details associated with an order, capturing carrier and tracking
+/// information provided by seller at time of fulfillment.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_shippings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this shipping record belongs to. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// The shipping carrier name (e.g., 'UPS', 'FedEx').
+  carrier String
+  
+  /// The unique tracking number provided by the carrier.
+  tracking_number String
+  
+  /// Type of shipping selected: 'Standard', 'Expedited', 'Overnight'.
+  shipping_method String
+  
+  /// Estimated delivery date provided by the seller.
+  estimated_delivery DateTime?
+  
+  /// Actual date and time when the seller marked the order as shipped.
+  actual_shipping_date DateTime
+  
+  /// Any additional shipping instructions provided by seller.
+  notes String?
+  
+  /// Timestamp when this shipping record was created.
+  created_at DateTime
+  
+  /// Timestamp when this shipping record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  
+  @@index([shopping_mall_order_id])
+  @@index([tracking_number])
+  @@index([carrier])
+  @@index([actual_shipping_date])
+}
+
+/// Payment transaction records for each order, capturing details from the
+/// payment gateway for reconciliation.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this payment record belongs to. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Unique transaction ID from the external payment gateway.
+  gateway_transaction_id String
+  
+  /// The payment gateway provider used (e.g., 'Stripe', 'PayPal'), not
+  /// specified in business logic but captured for technical reconciliation.
+  payment_gateway String
+  
+  /// Status of the payment transaction: 'Pending', 'Approved', 'Declined',
+  /// 'Timeout', 'Unknown', 'Refunded'.
+  payment_status String
+  
+  /// Amount charged to the payment method for this transaction.
+  amount Float
+  
+  /// Currency code used for this payment transaction.
+  currency String
+  
+  /// Authorization code returned by the payment gateway if approved.
+  authorization_code String?
+  
+  /// Error code returned by the payment gateway in case of failure.
+  error_code String?
+  
+  /// Human-readable error message from the payment gateway.
+  error_message String?
+  
+  /// Type of payment method used: 'Credit Card', 'Debit Card', 'Digital
+  /// Wallet'.
+  payment_method_type String
+  
+  /// Last 4 digits of the payment method card number.
+  payment_method_last4 String?
+  
+  /// Timestamp when payment was captured (completed).
+  captured_at DateTime?
+  
+  /// Timestamp when this payment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this payment record was last updated.
+  updated_at DateTime
+  
+  /// Raw response JSON from the payment gateway for audit and debugging
+  /// purposes.
+  gateway_response_raw String?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  
+  @@index([shopping_mall_order_id])
+  @@index([gateway_transaction_id])
+  @@index([payment_status, created_at])
+  @@index([captured_at])
+}

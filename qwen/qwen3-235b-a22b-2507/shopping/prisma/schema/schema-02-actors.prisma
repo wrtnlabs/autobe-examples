@@ -1,0 +1,570 @@
+/// Customer user entity that represents registered users who purchase
+/// products through the shopping mall platform. Customers can browse
+/// products, make purchases, manage their shopping experience, and submit
+/// reviews for purchased products.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User profile information. {@link shopping_mall_user_profiles.id}.
+  shopping_mall_user_profile_id String?
+  
+  /// Unique email address used for authentication and communication.
+  email String
+  
+  /// Hashed password for secure authentication.
+  password_hash String
+  
+  /// Customer's first name.
+  first_name String
+  
+  /// Customer's last name.
+  last_name String
+  
+  /// Customer's contact phone number.
+  phone_number String?
+  
+  /// Timestamp when the customer account was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the customer account was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile shopping_mall_user_profiles? @relation(fields: [shopping_mall_user_profile_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_user_addresses shopping_mall_user_addresses[]
+  shopping_mall_user_sessions shopping_mall_user_sessions[]
+  shopping_mall_user_preferences shopping_mall_user_preferences?
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_cart_wishlist_transfer shopping_mall_cart_wishlist_transfer[]
+  shopping_mall_saved_carts shopping_mall_saved_carts[]
+  shopping_mall_abandoned_carts shopping_mall_abandoned_carts[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_history shopping_mall_order_history[]
+  shopping_mall_order_cancellations shopping_mall_order_cancellations[]
+  shopping_mall_order_returns shopping_mall_order_returns[]
+  shopping_mall_order_issues shopping_mall_order_issues[]
+  shopping_mall_payment_methods shopping_mall_payment_methods[]
+  shopping_mall_fraud_detection shopping_mall_fraud_detection[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_review_votes shopping_mall_review_votes[]
+  shopping_mall_review_moderation shopping_mall_review_moderation[]
+  shopping_mall_review_notifications shopping_mall_review_notifications[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_promotion_usage shopping_mall_promotion_usage[]
+  shopping_mall_promotion_redemptions shopping_mall_promotion_redemptions[]
+  
+  @@unique([shopping_mall_user_profile_id])
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+}
+
+/// Seller user entity that represents vendor accounts managing product
+/// listings and inventory within the marketplace. Sellers can create product
+/// listings, manage inventory levels, view sales reports, and respond to
+/// customer inquiries.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for authentication and communication.
+  email String
+  
+  /// Seller's business name.
+  business_name String
+  
+  /// Seller's business registration/identification number.
+  business_registration_number String
+  
+  /// Seller's contact person name.
+  contact_person_name String
+  
+  /// Seller's contact person phone number.
+  contact_person_phone String
+  
+  /// Timestamp when the seller account was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the seller account was deleted (soft delete).
+  deleted_at DateTime?
+  
+  /// Seller account status (active, inactive, suspended, under_review).
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  sellerEmail shopping_mall_sellers @relation("recursive", fields: [email], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_sellers? @relation("recursive")
+  shopping_mall_user_addresses shopping_mall_user_addresses[]
+  shopping_mall_user_sessions shopping_mall_user_sessions[]
+  shopping_mall_user_preferences shopping_mall_user_preferences?
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_status shopping_mall_order_status[]
+  shopping_mall_order_tracking shopping_mall_order_tracking[]
+  shopping_mall_order_returns shopping_mall_order_returns[]
+  shopping_mall_order_issues shopping_mall_order_issues[]
+  shopping_mall_inventory_of_shopping_seller_id shopping_mall_inventory[] @relation("shopping_mall_inventory_of_shopping_seller_id")
+  shopping_mall_inventory_of_shopping_mall_location_id shopping_mall_inventory[] @relation("shopping_mall_inventory_of_shopping_mall_location_id")
+  shopping_mall_inventory_of_shopping_mall_warehouse_id shopping_mall_inventory[] @relation("shopping_mall_inventory_of_shopping_mall_warehouse_id")
+  shopping_mall_inventory_snapshots shopping_mall_inventory_snapshots[]
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  shopping_mall_inventory_transfers_of_source_location_id shopping_mall_inventory_transfers[] @relation("shopping_mall_inventory_transfers_of_source_location_id")
+  shopping_mall_inventory_transfers_of_destination_location_id shopping_mall_inventory_transfers[] @relation("shopping_mall_inventory_transfers_of_destination_location_id")
+  shopping_mall_inventory_transfers_of_source_warehouse_id shopping_mall_inventory_transfers[] @relation("shopping_mall_inventory_transfers_of_source_warehouse_id")
+  shopping_mall_inventory_transfers_of_destination_warehouse_id shopping_mall_inventory_transfers[] @relation("shopping_mall_inventory_transfers_of_destination_warehouse_id")
+  shopping_mall_inventory_transfers_of_executed_by_wareh_262e92d2 shopping_mall_inventory_transfers[] @relation("shopping_mall_inventory_transfers_of_executed_by_wareh_262e92d2")
+  shopping_mall_seller_responses shopping_mall_seller_responses[]
+  shopping_mall_promotions shopping_mall_promotions[]
+  shopping_mall_flash_sales shopping_mall_flash_sales[]
+  
+  @@unique([email])
+  
+  @@unique([business_registration_number])
+  @@index([status])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+}
+
+/// Administrator user entity that represents system administrators with full
+/// access to manage all aspects of the shopping mall platform.
+/// Administrators can oversee user accounts, manage product listings,
+/// monitor orders, and configure system settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User profile information. {@link shopping_mall_user_profiles.id}.
+  shopping_mall_user_profile_id String?
+  
+  /// Unique email address used for authentication and communication.
+  email String
+  
+  /// Hashed password for secure authentication.
+  password_hash String
+  
+  /// Administrator's first name.
+  first_name String
+  
+  /// Administrator's last name.
+  last_name String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was deleted (soft delete).
+  deleted_at DateTime?
+  
+  /// Administrator role/position within the organization.
+  role String
+  
+  /// Administrator's contact phone number.
+  contact_phone String
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile shopping_mall_user_profiles? @relation(fields: [shopping_mall_user_profile_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_categories shopping_mall_categories[]
+  shopping_mall_category_hierarchy shopping_mall_category_hierarchy[]
+  shopping_mall_platform_settings shopping_mall_platform_settings[]
+  shopping_mall_search_terms shopping_mall_search_terms[]
+  shopping_mall_site_policies_of_approved_by_admin_id shopping_mall_site_policies[] @relation("shopping_mall_site_policies_of_approved_by_admin_id")
+  shopping_mall_site_policies_of_last_updated_by_admin_id shopping_mall_site_policies[] @relation("shopping_mall_site_policies_of_last_updated_by_admin_id")
+  shopping_mall_user_addresses shopping_mall_user_addresses[]
+  shopping_mall_user_sessions shopping_mall_user_sessions[]
+  shopping_mall_user_preferences shopping_mall_user_preferences?
+  shopping_mall_order_history shopping_mall_order_history[]
+  shopping_mall_order_cancellations shopping_mall_order_cancellations[]
+  shopping_mall_order_returns shopping_mall_order_returns[]
+  shopping_mall_order_issues shopping_mall_order_issues[]
+  shopping_mall_payment_gateways shopping_mall_payment_gateways[]
+  shopping_mall_payment_logs shopping_mall_payment_logs[]
+  shopping_mall_inventory_snapshots shopping_mall_inventory_snapshots[]
+  shopping_mall_inventory_adjustments_of_admin_id shopping_mall_inventory_adjustments[] @relation("shopping_mall_inventory_adjustments_of_admin_id")
+  shopping_mall_inventory_adjustments_of_suspended_by_admin_id shopping_mall_inventory_adjustments[] @relation("shopping_mall_inventory_adjustments_of_suspended_by_admin_id")
+  shopping_mall_inventory_adjustments_of_approver_admin_id shopping_mall_inventory_adjustments[] @relation("shopping_mall_inventory_adjustments_of_approver_admin_id")
+  shopping_mall_inventory_history shopping_mall_inventory_history[]
+  shopping_mall_inventory_thresholds_of_created_by_admin_id shopping_mall_inventory_thresholds[] @relation("shopping_mall_inventory_thresholds_of_created_by_admin_id")
+  shopping_mall_inventory_thresholds_of_last_modified_by_admin_id shopping_mall_inventory_thresholds[] @relation("shopping_mall_inventory_thresholds_of_last_modified_by_admin_id")
+  shopping_mall_inventory_transfers_of_prepared_by_admin_id shopping_mall_inventory_transfers[] @relation("shopping_mall_inventory_transfers_of_prepared_by_admin_id")
+  shopping_mall_inventory_transfers_of_approved_by_admin_id shopping_mall_inventory_transfers[] @relation("shopping_mall_inventory_transfers_of_approved_by_admin_id")
+  shopping_mall_inventory_transfers_of_canceled_by_admin_id shopping_mall_inventory_transfers[] @relation("shopping_mall_inventory_transfers_of_canceled_by_admin_id")
+  shopping_mall_inventory_writeoffs_of_written_off_by_admin_id shopping_mall_inventory_writeoffs[] @relation("shopping_mall_inventory_writeoffs_of_written_off_by_admin_id")
+  shopping_mall_inventory_writeoffs_of_approved_by_admin_id shopping_mall_inventory_writeoffs[] @relation("shopping_mall_inventory_writeoffs_of_approved_by_admin_id")
+  shopping_mall_inventory_writeoffs_of_suspended_by_admin_id shopping_mall_inventory_writeoffs[] @relation("shopping_mall_inventory_writeoffs_of_suspended_by_admin_id")
+  shopping_mall_review_moderation shopping_mall_review_moderation[]
+  shopping_mall_admin_actions shopping_mall_admin_actions[]
+  shopping_mall_admin_notes shopping_mall_admin_notes[]
+  shopping_mall_admin_alerts shopping_mall_admin_alerts[]
+  shopping_mall_admin_reports shopping_mall_admin_reports[]
+  shopping_mall_admin_dashboards shopping_mall_admin_dashboards?
+  shopping_mall_admin_audit_logs shopping_mall_admin_audit_logs[]
+  shopping_mall_admin_system_metrics shopping_mall_admin_system_metrics[]
+  shopping_mall_admin_health_checks shopping_mall_admin_health_checks[]
+  
+  @@unique([shopping_mall_user_profile_id])
+  
+  @@unique([email])
+  @@index([role])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+}
+
+/// Guest user entity that represents unauthenticated users browsing the
+/// shopping mall platform. Guests can browse products, view product details,
+/// and add products to a temporary shopping cart, with the option to convert
+/// to a registered customer during checkout.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User preferences for personalized experience. {@link
+  /// shopping_mall_user_preferences.id}.
+  shopping_mall_user_preferences_id String?
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest session was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest was last active.
+  last_active_at DateTime
+  
+  /// Guest's browser user agent string.
+  user_agent String?
+  
+  /// Guest's IP address.
+  ip_address String?
+  
+  /// Duration of the guest session in minutes.
+  session_duration Int?
+  
+  //----
+  // RELATIONS
+  //----
+  userPreferences shopping_mall_user_preferences? @relation(fields: [shopping_mall_user_preferences_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_user_preferences_id])
+  
+  @@unique([ip_address, user_agent])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([last_active_at])
+}
+
+/// User profile entity that stores profile information for all user types
+/// (customers, sellers, administrators). This table contains shared profile
+/// attributes that can be referenced by different user roles.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to profile picture. {@link shopping_mall_product_images.id}.
+  profile_picture_id String?
+  
+  /// User's biography or description.
+  bio String?
+  
+  /// User's personal or business website.
+  website String?
+  
+  /// JSON array of user's social media links.
+  social_media_links String?
+  
+  /// URL to user's avatar image.
+  avatar_url String?
+  
+  /// User's display name for public visibility.
+  display_name String?
+  
+  /// Timestamp when the user profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the user profile was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  profilePicture shopping_mall_product_images? @relation(fields: [profile_picture_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_customers shopping_mall_customers?
+  shopping_mall_administrators shopping_mall_administrators?
+  
+  @@index([profile_picture_id])
+  
+  @@unique([display_name])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// User address entity that stores shipping and billing address information
+/// for users. Supports multiple addresses per user with designation of
+/// primary address for order processing.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to customer. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String?
+  
+  /// Reference to seller. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// Reference to administrator. {@link shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String?
+  
+  /// Type of address (home, work, billing, shipping, other).
+  address_type String
+  
+  /// Name of the recipient at this address.
+  recipient_name String
+  
+  /// Street address line.
+  street_address String
+  
+  /// Additional street address line (apartment, suite, etc.).
+  street_address_line2 String?
+  
+  /// City name.
+  city String
+  
+  /// State or province name.
+  state String
+  
+  /// Postal or ZIP code.
+  postal_code String
+  
+  /// Country name.
+  country String
+  
+  /// Flag indicating if this is the primary address for the user.
+  is_primary Boolean
+  
+  /// Timestamp when the address was created.
+  created_at DateTime
+  
+  /// Timestamp when the address was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_customer_id, street_address, city, postal_code, country], map: "shopping_mall_user_addresses_shopping_mall_customer_id_56d0afec")
+  @@unique([shopping_mall_seller_id, street_address, city, postal_code, country], map: "shopping_mall_user_addresses_shopping_mall_seller_id_s_11e216da")
+  @@unique([shopping_mall_administrator_id, street_address, city, postal_code, country], map: "shopping_mall_user_addresses_shopping_mall_administrat_cc82cf4d")
+  @@index([city])
+  @@index([state])
+  @@index([postal_code])
+  @@index([country])
+  @@index([is_primary])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// User session entity that captures JWT token information and manages user
+/// authentication state securely. Stores session details including token,
+/// expiration, user agent, and IP address.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to customer. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String?
+  
+  /// Reference to seller. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// Reference to administrator. {@link shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String?
+  
+  /// JWT token for session authentication.
+  token String
+  
+  /// Refresh token for session renewal.
+  refresh_token String
+  
+  /// Timestamp when the session expires.
+  expires_at DateTime
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the session was last active.
+  last_active_at DateTime
+  
+  /// User's browser user agent string.
+  user_agent String
+  
+  /// User's IP address.
+  ip_address String
+  
+  /// Flag indicating if the session is currently active.
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  @@unique([refresh_token])
+  @@index([shopping_mall_customer_id, is_active], map: "shopping_mall_user_sessions_shopping_mall_customer_id__42d11b9c")
+  @@index([shopping_mall_seller_id, is_active], map: "shopping_mall_user_sessions_shopping_mall_seller_id_is_862bfac7")
+  @@index([shopping_mall_administrator_id, is_active], map: "shopping_mall_user_sessions_shopping_mall_administrato_f249cc5b")
+  @@index([expires_at])
+  @@index([last_active_at])
+}
+
+/// User preferences entity that stores user-specific preferences for
+/// personalized experience including language, theme, notification settings,
+/// and privacy preferences.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to customer. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String?
+  
+  /// Reference to seller. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// Reference to administrator. {@link shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String?
+  
+  /// User's preferred language code (e.g., en-US, ko-KR).
+  language String
+  
+  /// User's preferred theme (light, dark, system).
+  theme String
+  
+  /// User's preferred currency code (e.g., USD, KRW).
+  currency String
+  
+  /// User's preferred date format.
+  date_format String
+  
+  /// User's preferred time format (12h, 24h).
+  time_format String
+  
+  /// Flag indicating if user wants to receive email notifications.
+  email_notifications Boolean
+  
+  /// Flag indicating if user wants to receive push notifications.
+  push_notifications Boolean
+  
+  /// Flag indicating if user wants to receive marketing emails.
+  marketing_emails Boolean
+  
+  /// User's privacy preference level (public, friends, private, anonymous).
+  privacy_level String
+  
+  /// Timestamp when the preferences were created.
+  created_at DateTime
+  
+  /// Timestamp when the preferences were last updated.
+  updated_at DateTime
+  
+  /// Flag indicating if personalization features are enabled.
+  personalization_enabled Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_guests shopping_mall_guests?
+  
+  @@unique([shopping_mall_customer_id])
+  @@unique([shopping_mall_seller_id])
+  @@unique([shopping_mall_administrator_id], map: "shopping_mall_user_preferences_shopping_mall_administr_99fc6242")
+  @@index([language])
+  @@index([theme])
+  @@index([currency])
+  @@index([privacy_level])
+  @@index([created_at])
+  @@index([updated_at])
+}

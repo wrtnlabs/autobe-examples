@@ -1,0 +1,291 @@
+/// Records individual votes (upvotes/downvotes) cast by members on
+/// discussions and comments. Enables voting feature and tracks user
+/// engagement. Relationship with {@link discussion_board_users.id} and
+/// either {@link discussion_board_discussions.id} or {@link
+/// discussion_board_comments.id}. Vote counts are calculated from this data
+/// for content ranking and engagement metrics.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who cast the vote. Reference to {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Discussion being voted on (nullable if comment is being voted). Reference
+  /// to {@link discussion_board_discussions.id}.
+  discussion_board_discussion_id String?
+  
+  /// Comment being voted on (nullable if discussion is being voted). Reference
+  /// to {@link discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Direction of the vote: 'upvote' or 'downvote'. Determines whether vote
+  /// contributes +1 or -1 to content score.
+  vote_direction String
+  
+  /// Timestamp when vote was cast (server time, UTC). Used for vote history
+  /// and trend analysis.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  voter discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  votedDiscussion discussion_board_discussions? @relation(fields: [discussion_board_discussion_id], references: [id], onDelete: Cascade)
+  votedComment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_vote_history discussion_board_vote_history[]
+  
+  @@unique([discussion_board_user_id, discussion_board_discussion_id], map: "discussion_board_votes_discussion_board_user_id_discus_eb8b5981")
+  @@unique([discussion_board_user_id, discussion_board_comment_id], map: "discussion_board_votes_discussion_board_user_id_discus_e701ad9f")
+  @@index([discussion_board_discussion_id])
+  @@index([discussion_board_comment_id])
+  @@index([discussion_board_user_id])
+  @@index([created_at])
+}
+
+/// Complete historical record of all vote changes for audit trail and
+/// analytics. Tracks original votes, vote changes (upvote to downvote or
+/// removal), and provides immutable history of voting activity. Enables
+/// analysis of vote patterns and verification of vote counts. References
+/// {@link discussion_board_users.id}, {@link discussion_board_votes.id}, and
+/// either {@link discussion_board_discussions.id} or {@link
+/// discussion_board_comments.id}.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_vote_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who performed the vote action. Reference to {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Vote record that this history entry documents. Reference to {@link
+  /// discussion_board_votes.id}. Null if vote was removed/deleted.
+  discussion_board_vote_id String?
+  
+  /// Discussion that was voted on (nullable if comment). Reference to {@link
+  /// discussion_board_discussions.id}.
+  discussion_board_discussion_id String?
+  
+  /// Comment that was voted on (nullable if discussion). Reference to {@link
+  /// discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Type of voting action: 'vote_cast' (new vote), 'vote_changed' (upvote to
+  /// downvote or vice versa), 'vote_removed' (vote deleted). Enables
+  /// understanding vote change history.
+  action_type String
+  
+  /// Previous vote direction if this is a vote change. Null for new votes or
+  /// vote removals. Helps reconstruct vote history.
+  previous_vote_direction String?
+  
+  /// New vote direction after this action. Null if vote was removed. Captures
+  /// the result of the voting action.
+  new_vote_direction String?
+  
+  /// IP address from which vote was cast. Enables fraud detection and abuse
+  /// prevention analysis.
+  ip_address String?
+  
+  /// Browser/device information from voting request. Used for device tracking
+  /// and anomaly detection.
+  user_agent String?
+  
+  /// Timestamp of vote action (server time, UTC). Records when action occurred
+  /// for complete audit trail.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  voter discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  vote discussion_board_votes? @relation(fields: [discussion_board_vote_id], references: [id], onDelete: Cascade)
+  discussion discussion_board_discussions? @relation(fields: [discussion_board_discussion_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_vote_id])
+  
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_vote_history_discussion_board_user_id_3c26ec13")
+  @@index([discussion_board_discussion_id, created_at], map: "discussion_board_vote_history_discussion_board_discuss_1bf7432e")
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_vote_history_discussion_board_comment_f667cd83")
+  @@index([created_at])
+}
+
+/// Tracks discussions and comments that members have bookmarked/saved for
+/// later reference. Enables users to maintain personal collection of
+/// important or interesting content. Relationship with {@link
+/// discussion_board_users.id} and either {@link
+/// discussion_board_discussions.id} or {@link discussion_board_comments.id}.
+/// One bookmark per user per content item.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_bookmarks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who bookmarked the content. Reference to {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Discussion being bookmarked (nullable if comment is bookmarked).
+  /// Reference to {@link discussion_board_discussions.id}.
+  discussion_board_discussion_id String?
+  
+  /// Comment being bookmarked (nullable if discussion is bookmarked).
+  /// Reference to {@link discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Optional personal notes attached to bookmark. User can add custom notes
+  /// explaining why they bookmarked this content (maximum 500 characters).
+  notes String?
+  
+  /// Timestamp when bookmark was created (server time, UTC). Enables sorting
+  /// bookmarks by date.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  discussion discussion_board_discussions? @relation(fields: [discussion_board_discussion_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_user_id, discussion_board_discussion_id], map: "discussion_board_bookmarks_discussion_board_user_id_di_7aaea2ba")
+  @@unique([discussion_board_user_id, discussion_board_comment_id], map: "discussion_board_bookmarks_discussion_board_user_id_di_8d13b8c6")
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_bookmarks_discussion_board_user_id_cr_5856f1f7")
+  @@index([discussion_board_discussion_id])
+  @@index([discussion_board_comment_id])
+}
+
+/// Tracks discussions that members are following for activity notifications.
+/// When following a discussion, member receives notifications when new
+/// comments are posted. Enables community members to track interesting
+/// conversations. Relationship with {@link discussion_board_users.id} and
+/// {@link discussion_board_discussions.id}. One follow record per user per
+/// discussion.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_follows {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who is following the discussion. Reference to {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Discussion being followed. Reference to {@link
+  /// discussion_board_discussions.id}.
+  discussion_board_discussion_id String
+  
+  /// How follower wants to be notified: 'immediate' (instant notification per
+  /// comment), 'daily_digest' (daily summary), 'weekly_digest' (weekly
+  /// summary). Controls notification frequency.
+  notification_preference String
+  
+  /// Timestamp when follow relationship was created (server time, UTC).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  discussion discussion_board_discussions @relation(fields: [discussion_board_discussion_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_user_id, discussion_board_discussion_id], map: "discussion_board_follows_discussion_board_user_id_disc_239be98c")
+  @@index([discussion_board_user_id])
+  @@index([discussion_board_discussion_id])
+  @@index([created_at])
+}
+
+/// Aggregate user reputation/karma scores calculated from voting activity
+/// and moderation actions. Tracks member's standing in community based on
+/// quality of contributions. Scores increment with upvotes received and
+/// positive community feedback, decrement with downvotes and violations.
+/// Used for member ranking, trending algorithms, and moderator
+/// identification. Relationship with {@link discussion_board_users.id}. One
+/// record per user.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_reputation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose reputation is being tracked. Reference to {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Aggregate reputation score (karma) for the user. Calculated as sum of:
+  /// upvotes received on discussions (+10 per upvote) + upvotes on comments
+  /// (+2 per upvote) - downvotes on discussions (-5 per downvote) - downvotes
+  /// on comments (-1 per downvote) + bonuses for moderation, minus penalties
+  /// for violations.
+  total_reputation_score Int
+  
+  /// Total count of upvotes received on all user's discussions and comments
+  /// combined. Used for trending and user ranking.
+  total_upvotes_received Int
+  
+  /// Total count of downvotes received on all user's discussions and comments
+  /// combined. Indicator of content quality and community feedback.
+  total_downvotes_received Int
+  
+  /// Count of upvotes specifically on discussions authored by user. Weighted
+  /// more heavily in reputation calculation than comment upvotes.
+  discussion_upvotes_received Int
+  
+  /// Count of upvotes specifically on comments authored by user.
+  comment_upvotes_received Int
+  
+  /// Reputation bonus for moderation activities if user is a moderator (+1 per
+  /// flag resolved, +5 per warning issued, +10 per suspension executed).
+  /// Recognizes community service.
+  moderation_bonus Int
+  
+  /// Reputation penalty for guideline violations (-5 per warning, -25 per
+  /// suspension, -100 per permanent ban). Reflects community standing.
+  violation_penalty Int
+  
+  /// Timestamp of most recent reputation update (server time, UTC). When
+  /// reputation scores were last calculated.
+  updated_at DateTime
+  
+  /// Timestamp when reputation record was created for user (server time, UTC).
+  /// Usually same as user account creation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_user_id])
+  
+  @@index([total_reputation_score])
+  @@index([total_upvotes_received])
+  @@index([updated_at])
+}

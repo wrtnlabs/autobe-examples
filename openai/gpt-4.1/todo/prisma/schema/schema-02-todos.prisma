@@ -1,0 +1,50 @@
+/// Represents a single task in the user's todo list. Each todo item belongs
+/// to exactly one user, and all CRUD operations are scoped to the owner.
+/// Fields include required title (100 char max), optional description (500
+/// char max), completed status, timestamps for creation, last update, and
+/// completion. Enforces strict user ownership via foreign key to {@link
+/// todo_list_users.id}. Supports efficient retrieval by user and order of
+/// creation.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link todo_list_users.id}. Enforces per-user ownership
+  /// of each todo.
+  todo_list_user_id String
+  
+  /// Concise summary of the task. Required. 1-100 characters; validated by
+  /// application upon CRUD operations.
+  title String
+  
+  /// Optional detailed description of the task. Maximum 500 characters; may be
+  /// null if not provided.
+  description String?
+  
+  /// Whether the todo is currently marked as complete or not. Default is false
+  /// upon creation.
+  completed Boolean
+  
+  /// Timestamp of when the todo was created. Used for audit and list ordering.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the todo (including completion
+  /// toggle/edit).
+  updated_at DateTime
+  
+  /// Timestamp when the todo was marked completed. Null if not completed.
+  completed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+}

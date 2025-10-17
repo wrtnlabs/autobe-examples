@@ -1,0 +1,81 @@
+/// Tracks upvotes and downvotes on posts. Each vote is uniquely associated
+/// with a user and post, enabling accurate ranking algorithms and preventing
+/// duplicate voting.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who cast the vote. {@link community_platform_user_profiles.id}.
+  community_platform_user_id String
+  
+  /// The post being voted on. {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// The type of vote: 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified (e.g., flipped).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_user_profiles @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id, community_platform_post_id], map: "community_platform_post_votes_community_platform_user__694703a3")
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_votes_community_platform_post__80871491")
+  @@index([community_platform_user_id, created_at], map: "community_platform_post_votes_community_platform_user__00277ed4")
+  @@index([community_platform_post_id, vote_type], map: "community_platform_post_votes_community_platform_post__6071049b")
+  @@index([community_platform_user_id, vote_type], map: "community_platform_post_votes_community_platform_user__f60d129c")
+}
+
+/// Tracks upvotes and downvotes on comments. Each vote is uniquely
+/// associated with a user and comment, enabling accurate ranking and
+/// preventing duplicate voting.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who cast the vote. {@link community_platform_user_profiles.id}.
+  community_platform_user_id String
+  
+  /// The comment being voted on. {@link community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// The type of vote: 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified (e.g., flipped).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_user_profiles @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id, community_platform_comment_id], map: "community_platform_comment_votes_community_platform_us_29662574")
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_votes_community_platform_co_68a9b5f7")
+  @@index([community_platform_user_id, created_at], map: "community_platform_comment_votes_community_platform_us_f33e6829")
+  @@index([community_platform_comment_id, vote_type], map: "community_platform_comment_votes_community_platform_co_61fbd00c")
+  @@index([community_platform_user_id, vote_type], map: "community_platform_comment_votes_community_platform_us_c86bc39e")
+}

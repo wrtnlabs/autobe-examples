@@ -1,0 +1,38 @@
+/// Stores refresh tokens for user authentication sessions. These tokens
+/// allow users to obtain new access tokens without re-entering credentials
+/// when the refresh token is still valid. The table supports the JWT-based
+/// authentication system by maintaining long-lived tokens that can be
+/// invalidated as needed.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_refresh_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User reference. {@link todo_users.id}.
+  todo_user_id String
+  
+  /// The refresh token value as a secure string.
+  token String
+  
+  /// Timestamp when this refresh token expires.
+  expires_at DateTime
+  
+  /// Timestamp when this refresh token was created.
+  created_at DateTime
+  
+  /// Timestamp when this refresh token was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  @@index([todo_user_id, expires_at])
+}

@@ -1,0 +1,519 @@
+/// Core order entity representing a customer's purchase from a single
+/// seller. Multi-seller carts result in multiple order records, one per
+/// seller. Tracks complete order lifecycle from placement through delivery
+/// or cancellation. Orders snapshot critical data at checkout time (address,
+/// prices) to preserve historical accuracy even when products or addresses
+/// are later modified.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed this order. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Seller fulfilling this order. Multi-seller carts create separate orders
+  /// per seller. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Unique human-readable order identifier in format ORD-YYYYMMDD-NNNNNN
+  /// (e.g., ORD-20251013-000001) displayed to customers and sellers.
+  order_number String
+  
+  /// Groups orders created from the same checkout session. Multi-seller carts
+  /// result in multiple orders sharing the same checkout_transaction_id,
+  /// enabling display of 'orders from same purchase'.
+  checkout_transaction_id String
+  
+  /// Current order status: pending_payment, payment_confirmed,
+  /// awaiting_seller_confirmation, confirmed, processing, preparing_shipment,
+  /// shipped, in_transit, out_for_delivery, delivered, completed, cancelled,
+  /// refund_requested, refund_approved, refunded, failed.
+  status String
+  
+  /// Shipping method selected at checkout: standard (5-7 days), express (2-3
+  /// days), overnight (1 day), free_shipping. Required for shipping cost
+  /// calculation and delivery estimation.
+  shipping_method String
+  
+  /// Shipping fee for this order calculated based on shipping method and
+  /// destination.
+  shipping_cost Float
+  
+  /// Tax amount calculated based on delivery address jurisdiction.
+  tax_amount Float
+  
+  /// Final order total: sum of order_items subtotals + shipping_cost +
+  /// tax_amount. Calculated at checkout and preserved as snapshot.
+  total_amount Float
+  
+  /// ISO 4217 currency code for order amounts (e.g., USD, EUR, GBP).
+  currency String
+  
+  /// Recipient name snapshotted from delivery address at checkout. Preserved
+  /// for historical order display.
+  delivery_recipient_name String
+  
+  /// Delivery contact phone snapshotted from address at checkout.
+  delivery_phone String
+  
+  /// Primary street address snapshotted at checkout.
+  delivery_address_line1 String
+  
+  /// Secondary address information snapshotted at checkout (apartment, suite,
+  /// etc.).
+  delivery_address_line2 String?
+  
+  /// Delivery city snapshotted at checkout.
+  delivery_city String
+  
+  /// Delivery state/province snapshotted at checkout.
+  delivery_state_province String
+  
+  /// Delivery postal code snapshotted at checkout.
+  delivery_postal_code String
+  
+  /// Delivery country snapshotted at checkout.
+  delivery_country String
+  
+  /// Optional special instructions or notes from customer for order
+  /// fulfillment.
+  customer_notes String?
+  
+  /// IP address from which order was placed. Used for fraud detection and
+  /// security monitoring.
+  placed_from_ip String?
+  
+  /// Estimated delivery date based on shipping method and seller processing
+  /// time.
+  estimated_delivery_date DateTime?
+  
+  /// Timestamp when payment was successfully confirmed. Denormalized from
+  /// status history for efficient timeline queries.
+  payment_confirmed_at DateTime?
+  
+  /// Timestamp when seller confirmed they can fulfill the order. Required for
+  /// tracking 24-hour confirmation deadline. Null if seller hasn't confirmed
+  /// yet.
+  seller_confirmed_at DateTime?
+  
+  /// Timestamp when order was marked as shipped. Denormalized from status
+  /// history for efficient timeline display.
+  shipped_at DateTime?
+  
+  /// Timestamp when order was delivered to customer. Denormalized from status
+  /// history for performance.
+  delivered_at DateTime?
+  
+  /// Timestamp when order was marked as completed (customer confirmed receipt
+  /// or auto-completed after 7 days).
+  completed_at DateTime?
+  
+  /// Timestamp when order was cancelled.
+  cancelled_at DateTime?
+  
+  /// Timestamp when order was created (placed by customer).
+  created_at DateTime
+  
+  /// Timestamp when order was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for cancelled orders. Null indicates active order.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_transactions shopping_mall_inventory_transactions[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_cancellations shopping_mall_cancellations?
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  
+  @@unique([order_number])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([shopping_mall_seller_id, status, created_at], map: "shopping_mall_orders_shopping_mall_seller_id_status_cr_c0a44ef9")
+  @@index([status, created_at])
+  @@index([checkout_transaction_id])
+}
+
+/// Individual line items within an order representing specific SKUs
+/// purchased with quantities and prices at time of order. Snapshots product
+/// display information (name, variant details, images) to preserve
+/// historical accuracy even when products are updated or deleted. Enables
+/// partial fulfillment tracking and accurate order detail display.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order containing this item. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Product SKU variant that was ordered. Preserves SKU reference even if
+  /// product later discontinued. {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Product name snapshotted at time of purchase. Preserved for historical
+  /// order display even if seller later renames product.
+  product_name String
+  
+  /// SKU variant attributes as JSON (color, size, options) snapshotted at
+  /// purchase time. Example: {"color": "Navy Blue", "size": "Large"}. Enables
+  /// accurate historical variant display.
+  variant_attributes String?
+  
+  /// Primary product image URL snapshotted at purchase time for order history
+  /// display.
+  product_image_url String?
+  
+  /// Quantity of this SKU ordered by customer.
+  quantity Int
+  
+  /// Price per unit at time of order placement (captured from SKU price at
+  /// checkout).
+  unit_price Float
+  
+  /// Individual item status for partial fulfillment: pending, confirmed,
+  /// preparing, shipped, delivered, cancelled, refunded.
+  item_status String
+  
+  /// Timestamp when order item was created.
+  created_at DateTime
+  
+  /// Timestamp when order item was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_sku_id])
+  
+  @@index([shopping_mall_order_id, shopping_mall_sku_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_d6baab83")
+}
+
+/// Audit trail tracking all order status transitions with timestamps and
+/// actors. Implements snapshot pattern for compliance and order lifecycle
+/// visibility. Append-only table preserving complete order history.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_status_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order whose status changed. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Customer who triggered status change (if customer-initiated). {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String?
+  
+  /// Seller who triggered status change (if seller-initiated). {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// Admin who triggered status change (if admin-initiated). {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admin_id String?
+  
+  /// Order status before this change.
+  previous_status String?
+  
+  /// Order status after this change.
+  new_status String
+  
+  /// Explanation for status change (e.g., payment_confirmed, seller_shipped,
+  /// customer_cancelled).
+  change_reason String?
+  
+  /// Additional notes or details about the status change.
+  notes String?
+  
+  /// True if status change was automatic (e.g., payment gateway callback),
+  /// false if manually triggered by user.
+  is_system_generated Boolean
+  
+  /// Timestamp when status change occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id], map: "shopping_mall_order_status_history_shopping_mall_custo_514f39e6")
+  @@index([shopping_mall_seller_id])
+  @@index([shopping_mall_admin_id])
+  
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_status_history_shopping_mall_order_e30a1d11")
+}
+
+/// Shipping and tracking information for order fulfillment. Links orders to
+/// carriers and provides tracking capabilities. Created by sellers when
+/// marking orders as shipped. Tracks shipment status through carrier
+/// integration.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order being shipped. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Seller who created this shipment record and provided tracking
+  /// information. {@link shopping_mall_sellers.id}
+  created_by_seller_id String
+  
+  /// Shipping carrier name (e.g., FedEx, UPS, USPS, DHL).
+  carrier_name String
+  
+  /// Carrier tracking number for shipment tracking.
+  tracking_number String
+  
+  /// Shipping service level used: standard, express, overnight, free_shipping.
+  shipping_method String
+  
+  /// Current shipment status: label_created, picked_up, in_transit,
+  /// out_for_delivery, delivered, exception, failed_delivery.
+  shipment_status String
+  
+  /// Timestamp when seller marked order as shipped and handed to carrier.
+  shipped_at DateTime
+  
+  /// Carrier's estimated delivery date.
+  estimated_delivery_date DateTime?
+  
+  /// Actual delivery timestamp from carrier confirmation.
+  actual_delivery_date DateTime?
+  
+  /// Delivery signature or proof of delivery if provided by carrier.
+  delivery_signature String?
+  
+  /// Timestamp when shipment record was created.
+  created_at DateTime
+  
+  /// Timestamp when shipment information was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  createdBySeller shopping_mall_sellers @relation(fields: [created_by_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([tracking_number])
+  @@index([shopping_mall_order_id])
+  @@index([shipment_status, shipped_at])
+  @@index([created_by_seller_id, shipped_at])
+}
+
+/// Order cancellation requests and approvals. Tracks cancellation workflow
+/// including requester, reason, approval status, and refund processing.
+/// Supports customer, seller, and admin-initiated cancellations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order being cancelled. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Customer who requested cancellation (if customer-initiated). {@link
+  /// shopping_mall_customers.id}.
+  requester_customer_id String?
+  
+  /// Seller who requested cancellation (if seller-initiated). {@link
+  /// shopping_mall_sellers.id}.
+  requester_seller_id String?
+  
+  /// Admin who requested cancellation (if admin-initiated). {@link
+  /// shopping_mall_admins.id}.
+  requester_admin_id String?
+  
+  /// Seller who approved cancellation request (if approval required). {@link
+  /// shopping_mall_sellers.id}.
+  approver_seller_id String?
+  
+  /// Admin who approved cancellation request (if admin approval required).
+  /// {@link shopping_mall_admins.id}.
+  approver_admin_id String?
+  
+  /// Reason for cancellation: customer_changed_mind, found_better_price,
+  /// order_mistake, delivery_too_long, out_of_stock, pricing_error, other.
+  cancellation_reason String
+  
+  /// Additional details or explanation for cancellation.
+  cancellation_notes String?
+  
+  /// Cancellation workflow status: pending_approval, approved, rejected,
+  /// completed.
+  cancellation_status String
+  
+  /// Amount to be refunded to customer (typically full order total).
+  refund_amount Float
+  
+  /// True if refund payment has been processed to customer.
+  refund_processed Boolean
+  
+  /// Timestamp when cancellation was requested.
+  requested_at DateTime
+  
+  /// Timestamp when cancellation was approved.
+  approved_at DateTime?
+  
+  /// Timestamp when cancellation and refund were fully completed.
+  completed_at DateTime?
+  
+  /// Timestamp when cancellation record was created.
+  created_at DateTime
+  
+  /// Timestamp when cancellation record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  requesterCustomer shopping_mall_customers? @relation(fields: [requester_customer_id], references: [id], onDelete: Cascade)
+  requesterSeller shopping_mall_sellers? @relation("shopping_mall_cancellations_of_requester_seller_id", fields: [requester_seller_id], references: [id], onDelete: Cascade)
+  requesterAdmin shopping_mall_admins? @relation("shopping_mall_cancellations_of_requester_admin_id", fields: [requester_admin_id], references: [id], onDelete: Cascade)
+  approverSeller shopping_mall_sellers? @relation("shopping_mall_cancellations_of_approver_seller_id", fields: [approver_seller_id], references: [id], onDelete: Cascade)
+  approverAdmin shopping_mall_admins? @relation("shopping_mall_cancellations_of_approver_admin_id", fields: [approver_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  @@index([requester_customer_id])
+  @@index([requester_seller_id])
+  @@index([requester_admin_id])
+  @@index([approver_seller_id])
+  @@index([approver_admin_id])
+  
+  @@index([cancellation_status, requested_at], map: "shopping_mall_cancellations_cancellation_status_reques_0561b7e3")
+}
+
+/// Post-delivery refund requests from customers with approval workflow.
+/// Supports full and partial refunds with seller and admin review. Tracks
+/// refund reason, evidence, approval status, and payment processing.
+/// Customers and sellers need independent access to search and manage refund
+/// requests, requiring primary stance for dedicated API endpoints.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order for which refund is requested. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Customer requesting the refund. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Seller who reviewed the refund request. {@link shopping_mall_sellers.id}
+  reviewer_seller_id String?
+  
+  /// Admin who reviewed or overrode refund decision. {@link
+  /// shopping_mall_admins.id}
+  reviewer_admin_id String?
+  
+  /// Reason for refund request: defective_damaged, wrong_item,
+  /// does_not_match_description, changed_mind, found_better_price,
+  /// quality_not_expected, other.
+  refund_reason String
+  
+  /// Detailed explanation from customer about why refund is requested.
+  refund_description String
+  
+  /// Amount customer is requesting for refund.
+  refund_amount_requested Float
+  
+  /// Amount approved by seller or admin (can be partial refund).
+  refund_amount_approved Float?
+  
+  /// Refund workflow status: pending_review, pending_seller_response,
+  /// approved, rejected, processing, completed.
+  refund_status String
+  
+  /// True if customer must return product for refund to be processed.
+  return_required Boolean
+  
+  /// Tracking number for returned product shipment (if return required).
+  return_tracking_number String?
+  
+  /// Notes from seller or admin during refund review.
+  review_notes String?
+  
+  /// Timestamp when customer submitted refund request.
+  requested_at DateTime
+  
+  /// Deadline for seller to respond (3 business days from request).
+  /// Auto-approves if seller doesn't respond by this time.
+  seller_response_deadline DateTime
+  
+  /// Timestamp when seller or admin reviewed the request.
+  reviewed_at DateTime?
+  
+  /// Timestamp when refund payment was processed.
+  completed_at DateTime?
+  
+  /// Timestamp when refund request was created.
+  created_at DateTime
+  
+  /// Timestamp when refund request was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  reviewerSeller shopping_mall_sellers? @relation(fields: [reviewer_seller_id], references: [id], onDelete: Cascade)
+  reviewerAdmin shopping_mall_admins? @relation(fields: [reviewer_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_refunds shopping_mall_refunds[]
+  
+  @@index([reviewer_admin_id])
+  
+  @@index([shopping_mall_order_id, requested_at], map: "shopping_mall_refund_requests_shopping_mall_order_id_r_dafc84b5")
+  @@index([shopping_mall_customer_id, refund_status], map: "shopping_mall_refund_requests_shopping_mall_customer_i_02504654")
+  @@index([reviewer_seller_id, refund_status, requested_at], map: "shopping_mall_refund_requests_reviewer_seller_id_refun_8ce87584")
+  @@index([refund_status, seller_response_deadline], map: "shopping_mall_refund_requests_refund_status_seller_res_3043fe4b")
+}

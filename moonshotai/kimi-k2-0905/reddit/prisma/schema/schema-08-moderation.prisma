@@ -1,0 +1,508 @@
+/// User-submitted reports for content violations across posts, comments, and
+/// user profiles with priority scoring and anonymous reporter protection.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporter user's {@link reddit_community_members.id}
+  reporter_id String
+  
+  /// Author of reported content's {@link reddit_community_members.id}
+  content_author_id String
+  
+  /// Reported post's {@link reddit_community_posts.id} if applicable
+  post_id String?
+  
+  /// Reported comment's {@link reddit_community_comments.id} if applicable
+  comment_id String?
+  
+  /// Community where violation occurred {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Violation category (harassment_hate, spam_misleading, violence_threats,
+  /// inappropriate_nsfw, copyright_infringement, personal_info, impersonation,
+  /// community_rule)
+  report_category String
+  
+  /// Severity classification (level_1_minor, level_2_moderate,
+  /// level_3_serious, level_4_severe) for progressive discipline
+  severity_level String
+  
+  /// Specific violation type within the main category
+  violation_type String
+  
+  /// Detailed explanation of violation with minimum 30 characters for
+  /// community rule violations
+  description String
+  
+  /// Automated priority score (0-100) for queue ordering based on severity and
+  /// user patterns
+  priority_score Int
+  
+  /// Whether automatic escalation occurred due to pattern or threshold
+  auto_escalation_triggered Boolean
+  
+  /// Report status (submitted, under_review, resolved_approved,
+  /// resolved_rejected, escalated)
+  status String
+  
+  /// Reason for escalating to administrators if applicable
+  escalation_reason String?
+  
+  /// Internal notes from moderator review and resolution
+  resolution_notes String?
+  
+  /// Timestamp when report was submitted
+  created_at DateTime
+  
+  /// Timestamp of last status update
+  updated_at DateTime
+  
+  /// Timestamp when resolution was finalized
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter reddit_community_members @relation("reddit_community_content_reports_of_reporter_id", fields: [reporter_id], references: [id], onDelete: Cascade)
+  contentAuthor reddit_community_members @relation("reddit_community_content_reports_of_content_author_id", fields: [content_author_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_comment_moderation_queue reddit_community_comment_moderation_queue[]
+  reddit_community_moderation_queue reddit_community_moderation_queue[]
+  
+  @@index([post_id])
+  @@index([comment_id])
+  
+  @@unique([reporter_id, post_id, comment_id], map: "reddit_community_content_reports_reporter_id_post_id_c_3730b7b5")
+  @@index([priority_score, created_at])
+  @@index([status, created_at])
+  @@index([community_id, status])
+  @@index([content_author_id, created_at], map: "reddit_community_content_reports_content_author_id_cre_78347291")
+  @@index([reporter_id, community_id])
+  @@index([severity_level, auto_escalation_triggered], map: "reddit_community_content_reports_severity_level_auto_e_2b57a0f8")
+}
+
+/// Centralized moderation queue for content review workflows with SLA
+/// tracking and processing status for all moderation actions across
+/// communities.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderation_queue {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated report's {@link reddit_community_content_reports.id}
+  content_report_id String?
+  
+  /// Assigned moderator's {@link reddit_community_moderators.id}
+  assigned_moderator_id String
+  
+  /// Community where content exists {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Queue type (report_review, automated_flag, dmca_notice, legal_review,
+  /// appeal_review)
+  queue_type String
+  
+  /// SLA deadline based on violation severity (4h/24h/72h)
+  sla_deadline DateTime
+  
+  /// Priority classification (high, medium, low) for processing order
+  priority_level String
+  
+  /// Enforcement level (1-4) for progressive discipline framework
+  enforcement_level Int
+  
+  /// Moderator notes and decision rationale
+  review_notes String?
+  
+  /// Queue status (pending, in_review, approved, rejected, deferred, escalated)
+  status String
+  
+  /// Action taken (no_action, warning, content_removal, user_restriction,
+  /// user_ban, community_ban)
+  enforcement_action String?
+  
+  /// Duration in days for temporary restrictions (null for permanent or
+  /// warning)
+  enforcement_duration Int?
+  
+  /// Whether item was escalated to platform administrators
+  escalated_to_admin Boolean
+  
+  /// Deadline for user to submit appeal if applicable
+  appeal_deadline DateTime?
+  
+  /// Timestamp when item entered queue
+  created_at DateTime
+  
+  /// When moderator began review
+  started_review_at DateTime?
+  
+  /// When resolution was completed
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  contentReport reddit_community_content_reports? @relation(fields: [content_report_id], references: [id], onDelete: Cascade)
+  assignedModerator reddit_community_moderators @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([content_report_id, queue_type], map: "reddit_community_moderation_queue_content_report_id_qu_2b73b9bd")
+  @@index([sla_deadline, status])
+  @@index([assigned_moderator_id, status], map: "reddit_community_moderation_queue_assigned_moderator_i_b8bdb2cd")
+  @@index([community_id, priority_level, created_at], map: "reddit_community_moderation_queue_community_id_priorit_ffdb0d14")
+  @@index([status, priority_level, created_at], map: "reddit_community_moderation_queue_status_priority_leve_5832ba0f")
+  @@index([enforcement_level])
+  @@index([appeal_deadline, status])
+}
+
+/// Historical records of all policy violations and enforcement actions
+/// supporting progressive discipline through user behavior pattern tracking
+/// across communities and time periods.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_violation_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Violating user's {@link reddit_community_members.id}
+  user_id String
+  
+  /// Taking action moderator's {@link reddit_community_moderators.id}
+  moderator_id String
+  
+  /// Community where violation occurred {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Violating post's {@link reddit_community_posts.id} if applicable
+  related_post_id String?
+  
+  /// Violating comment's {@link reddit_community_comments.id} if applicable
+  related_comment_id String?
+  
+  /// Type of violation (harassment, spam, community_rule, content_policy, dmca)
+  violation_type String
+  
+  /// Severity classification (level_1_minor, level_2_moderate,
+  /// level_3_serious, level_4_severe)
+  severity_level String
+  
+  /// Action taken (warning, content_removal, posting_restriction,
+  /// temporary_ban, permanent_ban)
+  enforcement_action String
+  
+  /// Duration of restriction in days (null for warnings or permanent actions)
+  action_duration_days Int?
+  
+  /// Specific platform policy or community rule violated
+  policy_section String
+  
+  /// Detailed description of specific violation and evidence
+  violation_description String
+  
+  /// JSON containing screenshots/content excerpts as evidence
+  violating_content_evidence String?
+  
+  /// User's explanation or appeal submission
+  user_response String?
+  
+  /// Appeal status (none_pending, under_appeal, appeal_approved, appeal_denied)
+  appeal_status String
+  
+  /// Whether part of cross-community violation pattern
+  cross_community_pattern Boolean
+  
+  /// When temporary restrictions expire (null for permanent actions)
+  expires_at DateTime?
+  
+  /// Timestamp when violation was recorded
+  created_at DateTime
+  
+  /// When resolution was completed including appeals
+  resolved_at DateTime?
+  
+  /// Required justification from moderator taking action
+  moderator_justification String
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  moderator reddit_community_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  relatedPost reddit_community_posts? @relation(fields: [related_post_id], references: [id], onDelete: Cascade)
+  relatedComment reddit_community_comments? @relation(fields: [related_comment_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_appeals reddit_community_appeals[]
+  
+  @@index([moderator_id])
+  @@index([related_post_id])
+  @@index([related_comment_id])
+  
+  @@unique([user_id, community_id, violation_type, created_at], map: "reddit_community_violation_records_user_id_community_i_63f90f49")
+  @@index([user_id, created_at])
+  @@index([severity_level, created_at], map: "reddit_community_violation_records_severity_level_crea_f927799f")
+  @@index([appeal_status, created_at])
+  @@index([expires_at, appeal_status])
+  @@index([community_id, severity_level], map: "reddit_community_violation_records_community_id_severi_f6b3cff6")
+  @@index([cross_community_pattern, created_at], map: "reddit_community_violation_records_cross_community_pat_4474d723")
+}
+
+/// Automated content moderation results from AI/ML systems tracking content
+/// screening confidence scores, automated actions, and model performance for
+/// machine learning moderation workflows.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_automated_moderation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Screened post's {@link reddit_community_posts.id} if applicable
+  content_post_id String?
+  
+  /// Screened comment's {@link reddit_community_comments.id} if applicable
+  content_comment_id String?
+  
+  /// Community where content was posted {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Type of automated screening (text_analysis, image_recognition,
+  /// link_validation, pattern_detection)
+  screening_type String
+  
+  /// ML model confidence score (0.0-1.0) for violation prediction
+  confidence_score Float
+  
+  /// Detected violation types (harassment, spam, nsfw, copyright,
+  /// impersonation)
+  violation_flags String
+  
+  /// Automated action taken (immediate_removal, priority_review,
+  /// standard_queue, no_action)
+  automated_action String
+  
+  /// Confidence threshold that triggered automated action
+  action_threshold Float
+  
+  /// Version identifier of ML model used for screening
+  model_version String
+  
+  /// Processing time in milliseconds for performance monitoring
+  processing_time_ms Int
+  
+  /// Whether human review identified this as false positive
+  false_positive_flag Boolean
+  
+  /// Timestamp when automated screening completed
+  created_at DateTime
+  
+  /// Whether human review is required based on confidence level
+  human_review_required Boolean
+  
+  /// Reference to human review when escalated
+  cross_reference_id String?
+  
+  /// JSON containing model performance feedback for training improvement
+  model_accuracy_feedback String?
+  
+  //----
+  // RELATIONS
+  //----
+  contentPost reddit_community_posts? @relation(fields: [content_post_id], references: [id], onDelete: Cascade)
+  contentComment reddit_community_comments? @relation(fields: [content_comment_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([content_post_id])
+  @@index([content_comment_id])
+  
+  @@index([confidence_score, created_at], map: "reddit_community_automated_moderation_confidence_score_42e29cba")
+  @@index([automated_action, confidence_score], map: "reddit_community_automated_moderation_automated_action_4a4d7ebd")
+  @@index([community_id, screening_type], map: "reddit_community_automated_moderation_community_id_scr_cab0facf")
+  @@index([model_version, created_at], map: "reddit_community_automated_moderation_model_version_cr_074c215c")
+  @@index([false_positive_flag, created_at], map: "reddit_community_automated_moderation_false_positive_f_a038ed22")
+  @@index([screening_type, human_review_required], map: "reddit_community_automated_moderation_screening_type_h_b24a38f5")
+}
+
+/// User-level enforcement actions including temporary and permanent bans
+/// from individual communities, with appeal processes and rehabilitation
+/// tracking for progressive discipline.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Banned user's {@link reddit_community_members.id}
+  user_id String
+  
+  /// Community where ban is applied {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Banning moderator's {@link reddit_community_moderators.id}
+  moderator_id String
+  
+  /// Ban type: temporary, permanent, community_wide
+  ban_type String
+  
+  /// Duration in days (null for permanent bans)
+  ban_duration_days Int?
+  
+  /// Enforcement level (1-4) based on violation severity
+  ban_level Int
+  
+  /// Violation category that triggered the ban
+  reason_category String
+  
+  /// Detailed explanation of ban reason with evidence
+  reason_details String?
+  
+  /// When the ban becomes active
+  ban_effective_at DateTime
+  
+  /// When temporary ban expires (null for permanent)
+  ban_expires_at DateTime?
+  
+  /// Whether user can appeal this ban
+  is_appealable Boolean
+  
+  /// Deadline for submitting appeal
+  appeal_deadline DateTime?
+  
+  /// Number of prior violations used for progressive discipline
+  previous_violation_count Int
+  
+  /// Whether user must complete rehabilitation before appeal
+  rehabilitation_required Boolean
+  
+  /// When ban was imposed
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  bannedUser reddit_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  bannedBy reddit_community_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, community_id, ban_effective_at], map: "reddit_community_user_bans_user_id_community_id_ban_ef_b526a4c0")
+  @@index([community_id, ban_expires_at])
+  @@index([user_id, ban_effective_at])
+  @@index([ban_type, ban_level])
+  @@index([moderator_id, created_at])
+  @@index([is_appealable, ban_expires_at])
+}
+
+/// User-submitted appeals for moderation decisions with multi-level review
+/// hierarchy, transparent appeal tracking, and fair resolution process for
+/// all enforcement actions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original violation being appealed {@link
+  /// reddit_community_violation_records.id}
+  violation_record_id String
+  
+  /// User submitting appeal {@link reddit_community_members.id}
+  appellant_user_id String
+  
+  /// Reviewer handling appeal {@link reddit_community_moderators.id}
+  assigned_reviewer_id String?
+  
+  /// Detailed explanation of why violation decision should be overturned
+  appeal_reason String
+  
+  /// JSON containing new evidence, screenshots, or supporting documentation
+  new_evidence_provided String?
+  
+  /// Status: submitted, under_review, approved, rejected, escalated
+  appeal_status String
+  
+  /// Review level: initial, senior_moderator, community_council, admin_panel
+  review_level String
+  
+  /// Review notes from assigned reviewer
+  assigned_reviewer_notes String?
+  
+  /// Reviewer decision: uphold_original, modify_action, overturn_completely
+  review_decision String?
+  
+  /// Detailed explanation of appeal decision
+  decision_explanation String?
+  
+  /// Action resulting from appeal decision
+  final_action_taken String?
+  
+  /// Deadline for user to respond to reviewer questions
+  deadline_for_response DateTime?
+  
+  /// Deadline for reviewer to provide decision
+  deadline_for_decision DateTime
+  
+  /// Reason for escalating to higher review level
+  escalated_reason String?
+  
+  /// Whether any appeal fees were paid or waived
+  appeal_fees_paid Boolean
+  
+  /// When appeal was submitted
+  created_at DateTime
+  
+  /// When review process began
+  review_started_at DateTime?
+  
+  /// When final decision was made
+  resolved_at DateTime?
+  
+  /// When decision was implemented and finalized
+  finalized_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  violationRecord reddit_community_violation_records @relation(fields: [violation_record_id], references: [id], onDelete: Cascade)
+  appellant reddit_community_members @relation(fields: [appellant_user_id], references: [id], onDelete: Cascade)
+  assignedReviewer reddit_community_moderators? @relation(fields: [assigned_reviewer_id], references: [id], onDelete: Cascade)
+  
+  @@index([appellant_user_id, created_at])
+  @@index([assigned_reviewer_id, appeal_status])
+  @@index([violation_record_id, appeal_status])
+  @@index([deadline_for_decision, appeal_status], map: "reddit_community_appeals_deadline_for_decision_appeal__7b31a5c9")
+  @@index([review_level, appeal_status])
+}

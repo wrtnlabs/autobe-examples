@@ -1,0 +1,189 @@
+/// System-wide configuration settings and parameters for the Reddit-like
+/// platform. Stores key-value pairs for platform customization, feature
+/// flags, and operational parameters that control system behavior across all
+/// domains. {@link reddit_clone_users.id} {@link
+/// reddit_clone_communities.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who created this configuration. {@link reddit_clone_users.id}
+  created_by_id String?
+  
+  /// User who last updated this configuration. {@link reddit_clone_users.id}
+  updated_by_id String?
+  
+  /// Unique configuration key identifier.
+  key String
+  
+  /// Configuration value stored as string.
+  value String
+  
+  /// Data type of the configuration value (string, number, boolean, json).
+  data_type String
+  
+  /// Human-readable description of the configuration setting.
+  description String?
+  
+  /// Configuration category for organization (authentication, content,
+  /// community, etc.).
+  category String
+  
+  /// Whether this configuration setting is currently active.
+  is_active Boolean
+  
+  /// Timestamp when this configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  createdBy reddit_clone_users? @relation("reddit_clone_configurations_of_created_by_id", fields: [created_by_id], references: [id], onDelete: Cascade)
+  updatedBy reddit_clone_users? @relation("reddit_clone_configurations_of_updated_by_id", fields: [updated_by_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_by_id])
+  @@index([updated_by_id])
+  
+  @@unique([key])
+  @@index([category])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Comprehensive system logging for audit trails, error tracking, and
+/// operational monitoring. Captures user actions, system events, and
+/// security incidents across the entire platform. {@link
+/// reddit_clone_users.id} {@link reddit_clone_communities.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_system_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the action. {@link reddit_clone_users.id}
+  user_id String?
+  
+  /// Community where the action occurred. {@link reddit_clone_communities.id}
+  community_id String?
+  
+  /// Log level severity (INFO, WARNING, ERROR, DEBUG).
+  log_level String
+  
+  /// Type of event being logged (USER_LOGIN, POST_CREATED, VOTE_CAST, etc.).
+  event_type String
+  
+  /// Detailed log message describing the event.
+  message String
+  
+  /// IP address of the request that triggered the log entry.
+  ip_address String?
+  
+  /// User agent string from the client making the request.
+  user_agent String?
+  
+  /// HTTP request path that triggered the event.
+  request_path String?
+  
+  /// HTTP request method (GET, POST, PUT, DELETE).
+  request_method String?
+  
+  /// HTTP response status code.
+  response_status Int?
+  
+  /// Request execution time in milliseconds.
+  execution_time Int?
+  
+  /// Additional metadata about the event in JSON format.
+  metadata String?
+  
+  /// Timestamp when this log entry was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([log_level])
+  @@index([event_type])
+  @@index([created_at])
+  @@index([user_id, created_at])
+  @@index([community_id, created_at])
+}
+
+/// Platform-wide performance and usage metrics tracking. Collects key
+/// performance indicators, user engagement statistics, and system health
+/// metrics for monitoring and analytics. {@link reddit_clone_users.id}
+/// {@link reddit_clone_communities.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_platform_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User associated with this metric (if user-specific). {@link
+  /// reddit_clone_users.id}
+  user_id String?
+  
+  /// Community associated with this metric (if community-specific). {@link
+  /// reddit_clone_communities.id}
+  community_id String?
+  
+  /// Name of the metric being tracked (active_users, post_count, vote_count,
+  /// etc.).
+  metric_name String
+  
+  /// Numerical value of the metric.
+  metric_value Float
+  
+  /// Type of metric (COUNTER, GAUGE, HISTOGRAM, SUMMARY).
+  metric_type String
+  
+  /// Time aggregation bucket (HOURLY, DAILY, WEEKLY, MONTHLY).
+  time_bucket String
+  
+  /// Start timestamp of the time bucket for this metric.
+  bucket_start DateTime
+  
+  /// End timestamp of the time bucket for this metric.
+  bucket_end DateTime
+  
+  /// Additional dimensions for the metric in JSON format (user_role,
+  /// content_type, etc.).
+  dimensions String?
+  
+  /// Timestamp when this metric was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([metric_name, time_bucket, bucket_start], map: "reddit_clone_platform_metrics_metric_name_time_bucket__94ea47e4")
+  @@index([metric_name])
+  @@index([time_bucket])
+  @@index([bucket_start])
+  @@index([bucket_end])
+  @@index([user_id, metric_name, bucket_start], map: "reddit_clone_platform_metrics_user_id_metric_name_buck_67b14cfa")
+  @@index([community_id, metric_name, bucket_start], map: "reddit_clone_platform_metrics_community_id_metric_name_371b7eaa")
+}

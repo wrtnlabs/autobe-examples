@@ -1,0 +1,153 @@
+/// Guest users information who do not authenticate but may have session or
+/// visitor footprints. Used to track guest activity and enable browsing
+/// capabilities without login. This entity has minimal fields and no
+/// authentication credentials.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique session token to identify guest user session.
+  session_token String
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  /// Timestamp of the last guest session update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if guest session is invalidated.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_token])
+  @@index([created_at])
+}
+
+/// Registered members who can create discussion topics and replies. Members
+/// have authenticated sessions using email and password hash and can manage
+/// their profiles.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's unique email address for login and communication.
+  email String
+  
+  /// Hashed password for member authentication.
+  password_hash String
+  
+  /// Display name shown publicly in posts and replies.
+  display_name String
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the member account.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if the member account is deactivated.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_posts discussion_board_posts[]
+  discussion_board_replies discussion_board_replies[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Moderator users with elevated privileges to manage and moderate posts and
+/// replies. Moderators authenticate with email and password hash, and can
+/// perform editing and deletion actions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's unique email address for login and communication.
+  email String
+  
+  /// Hashed password for moderator authentication.
+  password_hash String
+  
+  /// Display name shown in moderation logs and actions.
+  display_name String
+  
+  /// Timestamp when the moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to the moderator account.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if the moderator account is deactivated.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Administrator users with full system privileges including user
+/// management, system configuration, and moderation oversight. Admins
+/// authenticate via email and password hash and have full control over
+/// system settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's unique email address for login and management.
+  email String
+  
+  /// Hashed password for administrator authentication.
+  password_hash String
+  
+  /// Display name for administrator identification in audit and management
+  /// logs.
+  display_name String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to the administrator account.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if the administrator account is deactivated.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([email])
+  @@index([created_at])
+}

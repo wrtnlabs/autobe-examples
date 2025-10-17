@@ -1,0 +1,471 @@
+/// Payment entity representing the financial transaction intent and
+/// lifecycle for an order. One payment is generally associated to one {@link
+/// shopping_mall_orders} and owned by a {@link shopping_mall_users}. It may
+/// reference a saved {@link shopping_mall_payment_methods}. Tracks provider,
+/// amount, currency, and status with idempotency and external references for
+/// reconciliation.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Owning user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional saved method {@link shopping_mall_payment_methods.id} used for
+  /// this payment.
+  shopping_mall_payment_method_id String?
+  
+  /// Payment provider/gateway identifier (e.g., stripe, toss, paypal).
+  provider String
+  
+  /// Business method type selected for this payment (e.g., card,
+  /// bank_transfer, wallet, cod).
+  method_type String
+  
+  /// Payment amount in minor currency units or decimal standardized per
+  /// platform; exact representation decided by implementation.
+  amount Float
+  
+  /// ISO currency code (e.g., KRW, USD).
+  currency String
+  
+  /// Current payment status (e.g., pending, authorized, confirmed, captured,
+  /// canceled, failed, refunded).
+  status String
+  
+  /// Business flow intent (e.g., authorize_then_capture, sale, cod).
+  intent String
+  
+  /// Idempotency key to ensure at-most-once creation/transition for checkout
+  /// confirmations.
+  idempotency_key String?
+  
+  /// External provider payment identifier for reconciliation.
+  provider_payment_id String?
+  
+  /// Client-supplied reference for duplicate-prevention and tracing (e.g.,
+  /// checkout token).
+  client_reference_id String?
+  
+  /// Whether additional step-up authentication or user action is required to
+  /// proceed.
+  requires_action Boolean
+  
+  /// Categorized failure code/reason when status is failed (e.g.,
+  /// do_not_honor, insufficient_funds).
+  failure_category String?
+  
+  /// Optional human-readable description/notes for finance review.
+  description String?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when applicable (UTC).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  user shopping_mall_users @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_payment_methods? @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_authorizations shopping_mall_payment_authorizations[]
+  shopping_mall_payment_captures shopping_mall_payment_captures[]
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  shopping_mall_payment_events shopping_mall_payment_events[]
+  
+  @@index([shopping_mall_payment_method_id])
+  
+  @@unique([shopping_mall_order_id])
+  @@unique([provider_payment_id])
+  @@unique([idempotency_key])
+  @@unique([client_reference_id])
+  @@index([shopping_mall_user_id, created_at])
+  @@index([status, created_at])
+  @@index([provider, created_at])
+}
+
+/// Authorization attempts and outcomes for a {@link shopping_mall_payments}.
+/// Each record represents a provider authorization attempt with lifecycle,
+/// timing, and idempotency for retries.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_authorizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent payment {@link shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// Authorized amount.
+  amount Float
+  
+  /// ISO currency code of the authorization.
+  currency String
+  
+  /// Authorization status (e.g., pending, approved, declined, expired).
+  status String
+  
+  /// Provider authorization reference/ID.
+  provider_reference String?
+  
+  /// Idempotency key for this authorization attempt.
+  idempotency_key String?
+  
+  /// Authorization approval timestamp (UTC).
+  authorized_at DateTime?
+  
+  /// Authorization expiry timestamp according to provider policy (UTC).
+  expires_at DateTime?
+  
+  /// Failure category/reason when declined or error occurred.
+  failure_category String?
+  
+  /// Whether step-up authentication (e.g., 3DS) is required.
+  step_up_required Boolean
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_events shopping_mall_payment_events[]
+  
+  @@unique([provider_reference])
+  @@unique([idempotency_key])
+  @@index([shopping_mall_payment_id, created_at], map: "shopping_mall_payment_authorizations_shopping_mall_pay_6b760e4f")
+  @@index([status, created_at])
+  @@index([expires_at])
+}
+
+/// Capture records for a {@link shopping_mall_payments}. Supports partial
+/// captures aligned to shipments. Each record stores provider reference,
+/// amount, status, and timing.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_captures {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent payment {@link shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// Optional shipment {@link shopping_mall_shipments.id} associated with this
+  /// capture portion.
+  shopping_mall_shipment_id String?
+  
+  /// Captured amount for this record.
+  amount Float
+  
+  /// ISO currency code of the capture.
+  currency String
+  
+  /// Capture status (e.g., pending, succeeded, failed).
+  status String
+  
+  /// Provider capture reference/ID.
+  provider_reference String?
+  
+  /// Idempotency key for capture execution.
+  idempotency_key String?
+  
+  /// Capture completion timestamp (UTC).
+  captured_at DateTime?
+  
+  /// Failure category/reason if the capture failed.
+  failure_category String?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  shipment shopping_mall_shipments? @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  shopping_mall_payment_events shopping_mall_payment_events[]
+  shopping_mall_seller_ledgers shopping_mall_seller_ledgers[]
+  shopping_mall_fees shopping_mall_fees[]
+  shopping_mall_chargebacks shopping_mall_chargebacks[]
+  
+  @@unique([provider_reference])
+  @@unique([idempotency_key])
+  @@index([shopping_mall_payment_id, created_at], map: "shopping_mall_payment_captures_shopping_mall_payment_i_a03e0abc")
+  @@index([shopping_mall_shipment_id, created_at], map: "shopping_mall_payment_captures_shopping_mall_shipment__a324fc22")
+  @@index([status, created_at])
+}
+
+/// Refund execution records for a {@link shopping_mall_payments}. May refer
+/// to a specific {@link shopping_mall_payment_captures} and an external
+/// {@link shopping_mall_refund_requests}. Stores amount, status, reasons,
+/// and provider references for reconciliation.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent payment {@link shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// Optional associated capture {@link shopping_mall_payment_captures.id}
+  /// this refund offsets.
+  shopping_mall_payment_capture_id String?
+  
+  /// Optional linked refund request {@link shopping_mall_refund_requests.id}.
+  shopping_mall_refund_request_id String?
+  
+  /// Refunded amount for this record.
+  amount Float
+  
+  /// ISO currency code of the refund.
+  currency String
+  
+  /// Refund status (e.g., pending, succeeded, failed).
+  status String
+  
+  /// Business reason category for refund (e.g., customer_canceled,
+  /// damaged_item, not_delivered).
+  reason_category String?
+  
+  /// Provider refund reference/ID.
+  provider_reference String?
+  
+  /// Idempotency key for refund execution.
+  idempotency_key String?
+  
+  /// Refund completion timestamp (UTC).
+  refunded_at DateTime?
+  
+  /// Failure category/reason if the refund failed.
+  failure_category String?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  capture shopping_mall_payment_captures? @relation(fields: [shopping_mall_payment_capture_id], references: [id], onDelete: Cascade)
+  refundRequest shopping_mall_refund_requests? @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_events shopping_mall_payment_events[]
+  shopping_mall_seller_ledgers shopping_mall_seller_ledgers[]
+  shopping_mall_fees shopping_mall_fees[]
+  
+  @@index([shopping_mall_payment_capture_id], map: "shopping_mall_payment_refunds_shopping_mall_payment_ca_80d0cb85")
+  
+  @@unique([provider_reference])
+  @@unique([idempotency_key])
+  @@index([shopping_mall_payment_id, created_at], map: "shopping_mall_payment_refunds_shopping_mall_payment_id_521a8b8f")
+  @@index([shopping_mall_refund_request_id, created_at], map: "shopping_mall_payment_refunds_shopping_mall_refund_req_f0772b5c")
+  @@index([status, created_at])
+}
+
+/// Saved payment methods (tokenized) owned by users. Methods are used for
+/// future payments and may reference a billing address. Enforces uniqueness
+/// by provider reference/fingerprint to prevent duplicates. Managed
+/// independently by users.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link shopping_mall_users.id}.
+  shopping_mall_user_id String
+  
+  /// Optional billing address {@link shopping_mall_user_addresses.id}.
+  shopping_mall_user_address_id String?
+  
+  /// Method type (e.g., card, bank_transfer, wallet).
+  method_type String
+  
+  /// User-visible label for the method (e.g., My Visa).
+  display_name String?
+  
+  /// Last 4 digits for card-like methods for display purposes only.
+  last4 String?
+  
+  /// Expiration month for card methods when applicable.
+  exp_month Int?
+  
+  /// Expiration year for card methods when applicable.
+  exp_year Int?
+  
+  /// Provider/device fingerprint to deduplicate identical instruments.
+  fingerprint String?
+  
+  /// External token/reference identifying the payment method at the provider.
+  provider_reference String
+  
+  /// Whether this method is the user's default method.
+  default_method Boolean
+  
+  /// Active state flag; inactive methods cannot be used.
+  active Boolean
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  billingAddress shopping_mall_user_addresses? @relation(fields: [shopping_mall_user_address_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payments shopping_mall_payments[]
+  
+  @@index([shopping_mall_user_address_id], map: "shopping_mall_payment_methods_shopping_mall_user_addre_97670522")
+  
+  @@unique([provider_reference])
+  @@unique([shopping_mall_user_id, fingerprint], map: "shopping_mall_payment_methods_shopping_mall_user_id_fi_1b5f4936")
+  @@index([shopping_mall_user_id, created_at], map: "shopping_mall_payment_methods_shopping_mall_user_id_cr_26aa679a")
+  @@index([method_type, created_at])
+  @@index([shopping_mall_user_id, default_method], map: "shopping_mall_payment_methods_shopping_mall_user_id_de_ae4522b4")
+}
+
+/// Normalized provider and internal payment-related events for {@link
+/// shopping_mall_payments}. May optionally reference a specific
+/// authorization, capture, or refund record for correlation. Used for
+/// idempotency, auditing, and reconciliation.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent payment {@link shopping_mall_payments.id}.
+  shopping_mall_payment_id String
+  
+  /// Optional related authorization {@link
+  /// shopping_mall_payment_authorizations.id}.
+  shopping_mall_payment_authorization_id String?
+  
+  /// Optional related capture {@link shopping_mall_payment_captures.id}.
+  shopping_mall_payment_capture_id String?
+  
+  /// Optional related refund {@link shopping_mall_payment_refunds.id}.
+  shopping_mall_payment_refund_id String?
+  
+  /// Canonical event type (e.g., authorization_approved, capture_succeeded,
+  /// refund_failed, webhook_received).
+  type String
+  
+  /// Provider event identifier for idempotency and correlation.
+  provider_event_id String?
+  
+  /// Idempotency key to deduplicate event processing.
+  idempotency_key String?
+  
+  /// Original provider event type/name before canonicalization.
+  raw_type String?
+  
+  /// Processing status (e.g., received, processed, failed).
+  status String?
+  
+  /// URI to persisted raw payload or attachment for large events.
+  payload_uri String?
+  
+  /// Timestamp of the event occurrence (provider or system time normalized to
+  /// UTC).
+  occurred_at DateTime
+  
+  /// Whether the event has been processed by internal handlers.
+  processed Boolean
+  
+  /// Categorized error when processing failed (used for analysis and retries).
+  error_category String?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (UTC).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  authorization shopping_mall_payment_authorizations? @relation(fields: [shopping_mall_payment_authorization_id], references: [id], onDelete: Cascade)
+  capture shopping_mall_payment_captures? @relation(fields: [shopping_mall_payment_capture_id], references: [id], onDelete: Cascade)
+  refund shopping_mall_payment_refunds? @relation(fields: [shopping_mall_payment_refund_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_payment_authorization_id], map: "shopping_mall_payment_events_shopping_mall_payment_aut_5423e022")
+  @@index([shopping_mall_payment_capture_id], map: "shopping_mall_payment_events_shopping_mall_payment_cap_b9429aca")
+  @@index([shopping_mall_payment_refund_id], map: "shopping_mall_payment_events_shopping_mall_payment_ref_7d46ad02")
+  
+  @@unique([provider_event_id])
+  @@unique([idempotency_key])
+  @@index([shopping_mall_payment_id, occurred_at], map: "shopping_mall_payment_events_shopping_mall_payment_id__89da4ecb")
+  @@index([type, occurred_at])
+  @@index([status, occurred_at])
+  @@index([processed, occurred_at])
+}

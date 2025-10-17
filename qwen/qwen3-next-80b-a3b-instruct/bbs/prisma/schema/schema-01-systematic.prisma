@@ -1,0 +1,46 @@
+/// System-defined topic categories for the economic/political discussion
+/// board. These are fixed, immutable categories that govern content
+/// organization and filtering across the platform. All posts must reference
+/// exactly one of these predefined topics.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The exact name of the topic category. Must be one of the seven predefined
+  /// system values: "Inflation", "Tax Policy", "Elections", "Global Trade",
+  /// "Monetary Policy", "Labor Markets", "Fiscal Policy".
+  name String
+  
+  /// Timestamp when this topic category was initially registered in the
+  /// system. Immutable after creation.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this topic's metadata. Always equal
+  /// to created_at since topic names are immutable after creation.
+  updated_at DateTime
+  
+  /// Indicates whether this topic is currently available for new post
+  /// creation. Topics may be deactivated if unused for 90+ days but historical
+  /// posts retain their original topic reference.
+  is_active Boolean
+  
+  /// Optional human-readable description explaining the scope and purpose of
+  /// this topic category.
+  description String?
+  
+  //----
+  // RELATIONS
+  //----
+  economic_board_posts economic_board_posts[]
+  
+  @@unique([name])
+  @@index([created_at])
+  @@index([is_active])
+  @@index([name, is_active])
+}

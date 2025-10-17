@@ -1,0 +1,458 @@
+/// Contains information about marketing promotions, including start/end
+/// dates, eligibility criteria, and status tracking.
+///
+/// @namespace Promotions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target description. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// The name of the promotion for display purposes.
+  name String
+  
+  /// Detailed description of the promotion terms and conditions.
+  description String
+  
+  /// When the promotion becomes active and available.
+  start_date DateTime
+  
+  /// When the promotion expires and is no longer available.
+  end_date DateTime
+  
+  /// Current state of the promotion (active, expired, cancelled, pending).
+  status String
+  
+  /// Timestamp of when the promotion was created.
+  created_at DateTime
+  
+  /// Timestamp of when the promotion was last updated.
+  updated_at DateTime
+  
+  /// Timestamp of when the promotion was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_discounts shopping_mall_discounts[]
+  shopping_mall_flash_sales shopping_mall_flash_sales[]
+  shopping_mall_promo_codes shopping_mall_promo_codes[]
+  shopping_mall_promotion_usage shopping_mall_promotion_usage[]
+  shopping_mall_promotion_redemptions shopping_mall_promotion_redemptions[]
+  shopping_mall_promotion_eligibility shopping_mall_promotion_eligibility[]
+  
+  @@index([shopping_mall_seller_id])
+  
+  @@unique([name])
+  @@index([start_date, end_date])
+  @@index([status])
+}
+
+/// Stores coupon details including discount amounts, usage limits, and
+/// expiration dates.
+///
+/// @namespace Promotions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target description. {<@link shopping_mall_promotions.id}.
+  shopping_mall_promotion_id String
+  
+  /// Target description. {<@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String?
+  
+  /// Unique alphanumeric code for the coupon.
+  code String
+  
+  /// Type of discount (amount, percentage, free_shipping).
+  discount_type String
+  
+  /// Value of the discount applied.
+  discount_value Float
+  
+  /// Minimum order value required to use the coupon.
+  minimum_order_value Float?
+  
+  /// Maximum number of times the coupon can be used.
+  usage_limit Int?
+  
+  /// Maximum times a single customer can use the coupon.
+  per_customer_limit Int?
+  
+  /// Date when the coupon expires.
+  expiration_date DateTime
+  
+  /// Timestamp of when the coupon was created.
+  created_at DateTime
+  
+  /// Timestamp of when the coupon was last updated.
+  updated_at DateTime
+  
+  /// Timestamp of when the coupon was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_promotion_redemptions shopping_mall_promotion_redemptions[]
+  
+  @@index([shopping_mall_promotion_id])
+  
+  @@unique([code])
+  @@index([expiration_date])
+  @@index([discount_type])
+  @@index([shopping_mall_customer_id])
+}
+
+/// Contains information about specific discounts applied to products or
+/// categories.
+///
+/// @namespace Promotions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_discounts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target description. {<@link shopping_mall_promotions.id}.
+  shopping_mall_promotion_id String
+  
+  /// The discount amount applied.
+  amount Float
+  
+  /// The discount percentage applied.
+  percentage Float?
+  
+  /// When the discount becomes active.
+  start_date DateTime
+  
+  /// When the discount expires.
+  end_date DateTime
+  
+  /// Minimum order value required for discount.
+  minimum_order_value Float?
+  
+  /// Maximum amount that can be discounted.
+  maximum_discount_amount Float?
+  
+  /// Timestamp of when the discount was created.
+  created_at DateTime
+  
+  /// Timestamp of when the discount was last updated.
+  updated_at DateTime
+  
+  /// Timestamp of when the discount was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_promotion_id])
+  @@index([start_date, end_date])
+  @@index([percentage])
+}
+
+/// Tracks flash sale events with specific start/end times and pricing.
+///
+/// @namespace Promotions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_flash_sales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target description. {<@link shopping_mall_promotions.id}.
+  shopping_mall_promotion_id String
+  
+  /// Target description. {<@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// When the flash sale begins.
+  start_time DateTime
+  
+  /// When the flash sale ends.
+  end_time DateTime
+  
+  /// Current state of the flash sale (scheduled, live, completed, cancelled).
+  status String
+  
+  /// The discount percentage offered during flash sale.
+  discount_percentage Float
+  
+  /// Maximum number of items available during flash sale.
+  maximum_quantity Int?
+  
+  /// Number of items sold during the flash sale.
+  sold_quantity Int
+  
+  /// Timestamp of when the flash sale was created.
+  created_at DateTime
+  
+  /// Timestamp of when the flash sale was last updated.
+  updated_at DateTime
+  
+  /// Timestamp of when the flash sale was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_seller_id])
+  
+  @@unique([shopping_mall_promotion_id])
+  @@index([start_time, end_time])
+  @@index([status])
+}
+
+/// Stores promotional code information for tracking and validation.
+///
+/// @namespace Promotions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promo_codes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target description. {<@link shopping_mall_promotions.id}.
+  shopping_mall_promotion_id String
+  
+  /// The actual promotional code used by customers.
+  code String
+  
+  /// Maximum number of times this promo code can be used.
+  max_uses Int?
+  
+  /// Number of times this promo code has been used.
+  current_uses Int
+  
+  /// When the promo code becomes active.
+  start_date DateTime
+  
+  /// When the promo code expires.
+  end_date DateTime
+  
+  /// Current state of the promo code (active, expired, cancelled).
+  status String
+  
+  /// Timestamp of when the promo code was created.
+  created_at DateTime
+  
+  /// Timestamp of when the promo code was last updated.
+  updated_at DateTime
+  
+  /// Timestamp of when the promo code was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_promotion_usage shopping_mall_promotion_usage[]
+  shopping_mall_promotion_redemptions shopping_mall_promotion_redemptions[]
+  
+  @@index([shopping_mall_promotion_id])
+  
+  @@unique([code])
+  @@index([start_date, end_date])
+  @@index([status])
+}
+
+/// Tracks how promotions are being used by customers.
+///
+/// @namespace Promotions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotion_usage {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target description. {<@link shopping_mall_promotions.id}.
+  shopping_mall_promotion_id String
+  
+  /// Target description. {<@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Target description. {<@link shopping_mall_orders.id}.
+  shopping_mall_order_id String?
+  
+  /// Target description. {<@link shopping_mall_promo_codes.id}.
+  shopping_mall_promo_code_id String?
+  
+  /// When the promotion was used.
+  usage_date DateTime
+  
+  /// Amount of discount applied by the promotion.
+  discount_amount Float
+  
+  /// Order value before promotion was applied.
+  original_order_value Float
+  
+  /// Order value after promotion was applied.
+  final_order_value Float
+  
+  /// Timestamp of when the usage record was created.
+  created_at DateTime
+  
+  /// Timestamp of when the usage record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  promoCode shopping_mall_promo_codes? @relation(fields: [shopping_mall_promo_code_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_promo_code_id])
+  
+  @@unique([shopping_mall_promotion_id, shopping_mall_customer_id, usage_date], map: "shopping_mall_promotion_usage_shopping_mall_promotion__725ca4a3")
+  @@index([usage_date])
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_order_id])
+}
+
+/// Tracks individual redemption events of promotions by customers.
+///
+/// @namespace Promotions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotion_redemptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target description. {@link shopping_mall_promotions.id}.
+  shopping_mall_promotion_id String
+  
+  /// Target description. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Target description. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Target description. {@link shopping_mall_coupons.id}.
+  shopping_mall_coupon_id String?
+  
+  /// Target description. {@link shopping_mall_promo_codes.id}.
+  shopping_mall_promo_code_id String?
+  
+  /// When the promotion was redeemed.
+  redemption_date DateTime
+  
+  /// Amount of discount applied.
+  discount_amount Float
+  
+  /// Order value before promotion.
+  original_order_value Float
+  
+  /// Order value after promotion.
+  final_order_value Float
+  
+  /// Current state of the redemption (completed, cancelled, refunded).
+  status String
+  
+  /// Timestamp of when the redemption record was created.
+  created_at DateTime
+  
+  /// Timestamp of when the redemption record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  coupon shopping_mall_coupons? @relation(fields: [shopping_mall_coupon_id], references: [id], onDelete: Cascade)
+  promoCode shopping_mall_promo_codes? @relation(fields: [shopping_mall_promo_code_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_coupon_id], map: "shopping_mall_promotion_redemptions_shopping_mall_coup_29563c97")
+  @@index([shopping_mall_promo_code_id], map: "shopping_mall_promotion_redemptions_shopping_mall_prom_39622425")
+  
+  @@unique([shopping_mall_promotion_id, shopping_mall_customer_id, shopping_mall_order_id, redemption_date], map: "shopping_mall_promotion_redemptions_shopping_mall_prom_3c5dc409")
+  @@index([redemption_date])
+  @@index([status])
+  @@index([shopping_mall_customer_id], map: "shopping_mall_promotion_redemptions_shopping_mall_cust_2a5ad25a")
+  @@index([final_order_value])
+}
+
+/// Contains rules for determining promotion eligibility.
+///
+/// @namespace Promotions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotion_eligibility {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target description. {@link shopping_mall_promotions.id}.
+  shopping_mall_promotion_id String
+  
+  /// Type of eligibility rule (customer_segment, product_category,
+  /// order_value, first_time_buyer).
+  eligibility_type String
+  
+  /// JSON containing specific eligibility criteria.
+  criteria String
+  
+  /// Order in which rules should be evaluated.
+  priority Int
+  
+  /// Whether this eligibility rule is mutually exclusive.
+  is_exclusive Boolean
+  
+  /// Timestamp of when the eligibility rule was created.
+  created_at DateTime
+  
+  /// Timestamp of when the eligibility rule was last updated.
+  updated_at DateTime
+  
+  /// Timestamp of when the eligibility rule was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_promotion_id, eligibility_type], map: "shopping_mall_promotion_eligibility_shopping_mall_prom_fa7e2d3e")
+  @@index([eligibility_type])
+  @@index([priority])
+  @@index([is_exclusive])
+}

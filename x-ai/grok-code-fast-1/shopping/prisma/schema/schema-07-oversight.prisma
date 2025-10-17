@@ -1,0 +1,182 @@
+/// Seller performance analytics dashboard providing key metrics for
+/// individual sellers including sales volume, revenue, customer ratings, and
+/// inventory status. This table aggregates performance data to support
+/// seller business operations and help them optimize their marketplace
+/// presence. Referenced by shopping_platform_sellers.id for seller-specific
+/// dashboards.
+///
+/// @namespace Oversight
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_seller_dashboards {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller's shopping_platform_sellers.id
+  shopping_platform_seller_id String
+  
+  /// Total number of units sold by this seller.
+  total_sales_volume Int
+  
+  /// Total revenue generated in USD.
+  total_revenue Float
+  
+  /// Average star rating from customer reviews.
+  average_rating Float?
+  
+  /// Number of currently active product listings.
+  active_listings_count Int
+  
+  /// Number of items with low inventory requiring attention.
+  inventory_alerts_count Int
+  
+  /// Name of the best-performing product.
+  top_product_name String?
+  
+  /// When the dashboard metrics were last recalculated.
+  last_updated_at DateTime
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_platform_sellers @relation(fields: [shopping_platform_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_platform_seller_id], map: "shopping_platform_seller_dashboards_shopping_platform__85bfdbe4")
+  @@index([last_updated_at])
+  @@index([total_revenue])
+  @@index([average_rating])
+}
+
+/// Tracking of administrative login attempts for security monitoring and
+/// compliance requirements. Records login events, IP addresses, and success
+/// status to detect suspicious activities and maintain audit trails.
+/// Referenced by shopping_platform_admins.id for admin-specific login
+/// history.
+///
+/// @namespace Oversight
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_admin_logins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged admin's shopping_platform_admins.id
+  shopping_platform_admin_id String
+  
+  /// When the login attempt occurred.
+  login_timestamp DateTime
+  
+  /// IP address from which the login attempt was made.
+  ip_address String
+  
+  /// Browser/user agent string for device identification.
+  user_agent String?
+  
+  /// Whether the login attempt was successful.
+  successful_login Boolean
+  
+  /// Reason for failure if unsuccessful (e.g., invalid credentials, account
+  /// locked).
+  failure_reason String?
+  
+  /// Duration of the session in minutes if login was successful.
+  session_duration Int?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_platform_admins @relation(fields: [shopping_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([login_timestamp])
+  @@index([successful_login])
+  @@index([shopping_platform_admin_id, login_timestamp], map: "shopping_platform_admin_logins_shopping_platform_admin_5150d929")
+}
+
+/// Comprehensive audit trail for all platform administrative actions and
+/// critical business events. Records changes, deletions, and significant
+/// system events for compliance, troubleshooting, and security monitoring.
+/// Referenced by shopping_platform_admins.id for admin actions traced to
+/// responsible administrators.
+///
+/// @namespace Oversight
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Responsible admin's shopping_platform_admins.id
+  shopping_platform_admin_id String
+  
+  /// ID of the entity that was modified (could be sale, seller, admin, user,
+  /// product, etc.). Generic UUID without specific table reference to support
+  /// auditing any platform entity.
+  affected_entity_id String?
+  
+  /// When the audited action occurred.
+  action_timestamp DateTime
+  
+  /// Type of action performed (CREATE, UPDATE, DELETE, LOGIN, etc.).
+  action_type String
+  
+  /// Type of entity affected (sale, seller, admin, buyer, product, etc.).
+  entity_type String
+  
+  /// Previous state of changed field in JSON format.
+  old_value String?
+  
+  /// New state of changed field in JSON format.
+  new_value String?
+  
+  /// IP address from which the action originated.
+  ip_address String
+  
+  /// Browser/user agent string at the time of action.
+  user_agent String?
+  
+  /// Human-readable description of the action performed.
+  description String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_platform_admins @relation(fields: [shopping_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([action_timestamp])
+  @@index([action_type])
+  @@index([entity_type])
+  @@index([shopping_platform_admin_id, action_timestamp], map: "shopping_platform_audit_logs_shopping_platform_admin_i_9e87f84a")
+}

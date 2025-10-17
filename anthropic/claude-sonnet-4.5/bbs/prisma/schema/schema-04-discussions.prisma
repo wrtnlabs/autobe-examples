@@ -1,0 +1,203 @@
+/// Discussion topics created by members on economic and political subjects.
+/// Represents the primary content entities that initiate conversations.
+/// Topics are organized by category, can have various states (active,
+/// locked, archived, deleted), and support pinning for important
+/// discussions. Tracks view counts and reply counts for engagement metrics.
+/// References category for organization and member for authorship.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category this topic belongs to. Target category's {@link
+  /// discussion_board_categories.id}.
+  discussion_board_category_id String
+  
+  /// Author who created this topic. Target member's {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Topic title between 10 and 200 characters. Displayed in topic listings
+  /// and search results.
+  title String
+  
+  /// Topic body content between 20 and 50,000 characters. Supports Markdown
+  /// formatting for rich text discussion content.
+  body String
+  
+  /// Current status of the topic: active (open for replies), locked (no new
+  /// replies allowed), archived (old inactive topic), or deleted (soft deleted
+  /// topic).
+  status String
+  
+  /// Number of times this topic has been viewed. Incremented once per user per
+  /// 24 hours to prevent artificial inflation.
+  view_count Int
+  
+  /// Total number of replies to this topic. Updated when replies are created
+  /// or deleted.
+  reply_count Int
+  
+  /// Whether this topic is pinned to the top of category listings by
+  /// moderators or administrators.
+  is_pinned Boolean
+  
+  /// Timestamp when the topic was created.
+  created_at DateTime
+  
+  /// Timestamp when the topic was last updated (edited or received new reply).
+  updated_at DateTime
+  
+  /// Timestamp when the topic was soft deleted. Null for active topics.
+  /// Supports 30-day recovery window.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_replies discussion_board_replies[]
+  discussion_board_favorites discussion_board_favorites[]
+  discussion_board_topic_tags discussion_board_topic_tags[]
+  discussion_board_watched_topics discussion_board_watched_topics[]
+  discussion_board_reports discussion_board_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_warnings discussion_board_warnings[]
+  discussion_board_notifications discussion_board_notifications[]
+  
+  @@index([discussion_board_category_id, created_at], map: "discussion_board_topics_discussion_board_category_id_c_2706e440")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_topics_discussion_board_member_id_cre_83b58038")
+  @@index([status, created_at])
+  @@index([is_pinned, created_at])
+}
+
+/// Threaded replies to discussion topics and other replies. Supports
+/// hierarchical conversations up to 10 levels deep. Each reply belongs to a
+/// topic and optionally references a parent reply for threading. Tracks
+/// depth level to enforce maximum nesting constraints. Content length ranges
+/// from 1 to 10,000 characters. References topic for the parent discussion
+/// and member for authorship. Self-referential parent relationship enables
+/// threaded discussion structure.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Topic this reply belongs to. Target topic's {@link
+  /// discussion_board_topics.id}.
+  discussion_board_topic_id String
+  
+  /// Member who authored this reply. Target member's {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Parent reply this is responding to for threaded conversations. Null for
+  /// top-level replies directly to the topic. Self-referential to {@link
+  /// discussion_board_replies.id}.
+  parent_reply_id String?
+  
+  /// Reply content between 1 and 10,000 characters. Supports Markdown
+  /// formatting.
+  content String
+  
+  /// Nesting depth of this reply in the thread hierarchy. 0 for top-level
+  /// replies to topic, increments for each nested level. Maximum depth is 10.
+  depth_level Int
+  
+  /// Timestamp when the reply was posted.
+  created_at DateTime
+  
+  /// Timestamp when the reply was last edited.
+  updated_at DateTime
+  
+  /// Timestamp when the reply was soft deleted. Null for active replies.
+  /// Supports recovery and maintains thread structure.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  topic discussion_board_topics @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  parent discussion_board_replies? @relation("recursive", fields: [parent_reply_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_replies[] @relation("recursive")
+  discussion_board_reports discussion_board_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_warnings discussion_board_warnings[]
+  discussion_board_notifications discussion_board_notifications[]
+  
+  @@index([discussion_board_topic_id, created_at], map: "discussion_board_replies_discussion_board_topic_id_cre_138920f9")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_replies_discussion_board_member_id_cr_24e37f2d")
+  @@index([parent_reply_id, created_at])
+}
+
+/// Audit trail tracking all edits to topics and replies for transparency and
+/// accountability. Captures snapshots of content before and after each
+/// modification. Polymorphic relationship through entity_type and entity_id
+/// fields allows tracking edits for both topics and replies. Records who
+/// made each edit and when. Optional edit_reason provides context for
+/// modifications. Implements append-only pattern for audit integrity.
+/// References member for editor identification.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_edit_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who performed this edit. Target member's {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Type of entity being edited: topic or reply. Used with entity_id to
+  /// reference the edited content.
+  entity_type String
+  
+  /// ID of the edited entity. References either discussion_board_topics.id or
+  /// discussion_board_replies.id based on entity_type.
+  entity_id String
+  
+  /// Snapshot of content before the edit. Preserves historical state for audit
+  /// and potential rollback.
+  previous_content String
+  
+  /// Snapshot of content after the edit. Shows what changed in this
+  /// modification.
+  new_content String
+  
+  /// Optional explanation for why the edit was made. Provides context for
+  /// content modifications.
+  edit_reason String?
+  
+  /// Timestamp when this edit occurred. Represents the moment the content was
+  /// modified.
+  created_at DateTime
+  
+  /// Timestamp if this edit history record is soft deleted. Normally null as
+  /// edit history is preserved.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  editor discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([entity_type, entity_id, created_at], map: "discussion_board_edit_history_entity_type_entity_id_cr_d4e65a1b")
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_edit_history_discussion_board_member__32d81aba")
+}

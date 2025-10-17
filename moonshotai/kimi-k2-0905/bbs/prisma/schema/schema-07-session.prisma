@@ -1,0 +1,356 @@
+/// User authentication sessions managing login state across the platform
+/// with enhanced security tracking and business logic support for the
+/// political discussion board's multi-tier user system.
+///
+/// @namespace Session
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user's {@link political_discussion_board_member.id} who owns this
+  /// session, supporting all user types through unified member model.
+  user_id String
+  
+  /// Cryptographically secure session token for authentication with high
+  /// entropy generation.
+  session_token String
+  
+  /// Browser or client user agent for device fingerprinting and security
+  /// analysis.
+  user_agent String?
+  
+  /// Timestamp when session expires, with automatic cleanup processes for
+  /// expired sessions.
+  expires_at DateTime
+  
+  /// Timestamp of last authenticated activity for session timeout management.
+  last_activity_at DateTime
+  
+  /// Whether session is currently valid for authentication, enabling session
+  /// revocation.
+  is_active Boolean
+  
+  /// Type of session: web, mobile, api, admin for different access patterns
+  /// and security levels.
+  session_type String
+  
+  /// Business status: active, suspended, expired, revoked for session
+  /// lifecycle management.
+  business_status String
+  
+  /// Authentication method used: password, oauth, mfa for security tracking
+  /// and compliance.
+  login_method String
+  
+  /// Timestamp when session was created for audit trails and session duration
+  /// tracking.
+  created_at DateTime
+  
+  /// Timestamp when session was last updated for activity monitoring and
+  /// security analysis.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user political_discussion_board_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_access_tokens political_discussion_board_access_tokens[]
+  
+  @@unique([session_token])
+  @@index([user_id, is_active])
+  @@index([expires_at, is_active])
+  @@index([last_activity_at, is_active], map: "political_discussion_board_sessions_last_activity_at_i_a59b9ebd")
+  @@index([session_type, business_status], map: "political_discussion_board_sessions_session_type_busin_3b7e14d3")
+}
+
+/// OAuth2-style access tokens for API authentication with enhanced security
+/// features and business logic support for premium authentication tiers.
+///
+/// @namespace Session
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_access_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member user's {@link political_discussion_board_member.id} who owns
+  /// this access token.
+  user_id String
+  
+  /// The session's {@link political_discussion_board_sessions.id} that this
+  /// access token is linked to for token lifecycle management.
+  session_id String?
+  
+  /// Hashed access token for secure storage and verification with
+  /// cryptographic hashing.
+  token_hash String
+  
+  /// Comma-separated permission scopes granted to this token for fine-grained
+  /// API access control.
+  scopes String
+  
+  /// Timestamp when access token expires with automatic cleanup and renewal
+  /// processes.
+  expires_at DateTime
+  
+  /// Whether token has been manually revoked before expiration for security
+  /// incident response.
+  is_revoked Boolean
+  
+  /// Token type: bearer, jwt for different authentication schemes and security
+  /// levels.
+  token_type String
+  
+  /// Business status: active, expired, revoked, suspended for token lifecycle
+  /// tracking.
+  business_status String
+  
+  /// API rate limiting tier (1-5) based on user subscription level for premium
+  /// feature support.
+  rate_limit_tier Int
+  
+  /// Timestamp when access token was created for security audits and token
+  /// lifecycle management.
+  created_at DateTime
+  
+  /// Timestamp when token was last used for activity monitoring and security
+  /// analysis.
+  last_used_at DateTime?
+  
+  /// Timestamp when token was last updated for revocation tracking and
+  /// security monitoring.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user political_discussion_board_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  session political_discussion_board_sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_refresh_tokens political_discussion_board_refresh_tokens?
+  
+  @@unique([token_hash])
+  @@index([user_id, is_revoked])
+  @@index([expires_at, is_revoked], map: "political_discussion_board_access_tokens_expires_at_is_e0b1bc5a")
+  @@index([session_id, is_revoked], map: "political_discussion_board_access_tokens_session_id_is_bebe21d4")
+  @@index([token_type, business_status], map: "political_discussion_board_access_tokens_token_type_bu_a7a26070")
+}
+
+/// OAuth2 refresh tokens for seamless re-authentication with enhanced
+/// security features and business logic support for premium user tiers.
+///
+/// @namespace Session
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_refresh_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The access token's {@link political_discussion_board_access_tokens.id}
+  /// that this refresh token is linked to for token lifecycle management.
+  access_token_id String
+  
+  /// The member user's {@link political_discussion_board_member.id} who owns
+  /// this refresh token for unified authentication.
+  user_id String
+  
+  /// Hashed refresh token for secure storage and verification with
+  /// cryptographic protection.
+  token_hash String
+  
+  /// Timestamp when refresh token expires with automatic cleanup and rotation
+  /// processes.
+  expires_at DateTime
+  
+  /// Whether refresh token has been manually revoked for security incident
+  /// response and user logout.
+  is_revoked Boolean
+  
+  /// Number of times this token has been rotated for security tracking and
+  /// token lifecycle management.
+  rotation_count Int
+  
+  /// Business status: active, rotated, revoked, expired for refresh token
+  /// lifecycle tracking.
+  business_status String
+  
+  /// Timestamp when refresh token was created for security audits and token
+  /// age tracking.
+  created_at DateTime
+  
+  /// Timestamp when refresh token was last updated for rotation tracking and
+  /// security monitoring.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  accessToken political_discussion_board_access_tokens @relation(fields: [access_token_id], references: [id], onDelete: Cascade)
+  user political_discussion_board_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([access_token_id])
+  
+  @@unique([token_hash])
+  @@index([user_id, is_revoked], map: "political_discussion_board_refresh_tokens_user_id_is_r_b19584d0")
+  @@index([expires_at, is_revoked], map: "political_discussion_board_refresh_tokens_expires_at_i_ee358882")
+  @@index([business_status, rotation_count], map: "political_discussion_board_refresh_tokens_business_sta_f73877f1")
+}
+
+/// Multi-factor authentication records for enhanced security with support
+/// for various 2FA methods including TOTP, SMS, and hardware tokens with
+/// business logic for premium user tiers.
+///
+/// @namespace Session
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_multi_factor_auth {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member user's {@link political_discussion_board_member.id} who owns
+  /// this MFA configuration for unified authentication.
+  user_id String
+  
+  /// Type of MFA method: totp, sms, hardware, backup_codes for different
+  /// security levels.
+  method_type String
+  
+  /// Encrypted secret key for TOTP or hardware token setup with secure
+  /// encryption.
+  secret_encrypted String?
+  
+  /// Phone number for SMS-based MFA stored in E.164 format with privacy
+  /// protection.
+  phone_number String?
+  
+  /// Comma-separated backup codes for account recovery with secure generation.
+  backup_codes String?
+  
+  /// Whether MFA is currently enabled for this user with immediate effect on
+  /// authentication.
+  is_enabled Boolean
+  
+  /// Whether the MFA method has been successfully verified through setup
+  /// process.
+  is_verified Boolean
+  
+  /// Number of verification attempts during setup process for security
+  /// monitoring.
+  verification_attempts Int
+  
+  /// Number of backup codes that have been consumed for security tracking and
+  /// account recovery.
+  backup_codes_used Int
+  
+  /// Timestamp when MFA was last used for activity monitoring and security
+  /// analysis.
+  last_used_at DateTime?
+  
+  /// Timestamp when MFA configuration was created for audit trails and setup
+  /// tracking.
+  created_at DateTime
+  
+  /// Timestamp when MFA configuration was last updated for status changes and
+  /// security monitoring.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user political_discussion_board_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([method_type, is_enabled], map: "political_discussion_board_multi_factor_auth_method_ty_98c77cc3")
+  @@index([is_verified, is_enabled], map: "political_discussion_board_multi_factor_auth_is_verifi_7c567fe9")
+}
+
+/// Security audit log of login attempts for account protection and intrusion
+/// detection. Tracks both successful and failed authentication attempts with
+/// detailed context for security analysis.
+///
+/// @namespace Session
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_login_attempts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member user's {@link political_discussion_board_members.id}
+  /// associated with this login attempt when identified.
+  user_id String?
+  
+  /// Reference to IP address configuration for security analysis and
+  /// geographic tracking.
+  ip_address_id String?
+  
+  /// Username or email attempted during login for failed attempt analysis and
+  /// account enumeration protection.
+  username_attempted String?
+  
+  /// IP address from which login attempt originated for security tracking and
+  /// rate limiting.
+  ip_address String
+  
+  /// Browser or client user agent string for device identification and
+  /// security fingerprinting.
+  user_agent String?
+  
+  /// Whether this login attempt was successful for security monitoring and
+  /// intrusion detection.
+  was_successful Boolean
+  
+  /// Reason for login failure: invalid_credentials, account_locked,
+  /// mfa_required for security analysis.
+  failure_reason String?
+  
+  /// Sequential attempt number for this IP/user combination for rate limiting
+  /// and security analysis.
+  attempt_number Int
+  
+  /// Geographic location derived from IP for security analysis and anomaly
+  /// detection.
+  geographic_location String?
+  
+  /// Security risk score (1-100) based on patterns, location, and attempt
+  /// characteristics.
+  risk_score Int
+  
+  /// Whether this attempt has been flagged as suspicious for security
+  /// monitoring and investigation.
+  is_suspicious Boolean
+  
+  /// Timestamp when login attempt was made for timeline analysis and rate
+  /// limiting.
+  attempted_at DateTime
+  
+  /// Additional JSON-encoded context for security analysis including device
+  /// fingerprinting data.
+  additional_context String?
+  
+  //----
+  // RELATIONS
+  //----
+  user political_discussion_board_member? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  ipAddress political_discussion_board_system_config? @relation(fields: [ip_address_id], references: [id], onDelete: Cascade)
+  
+  @@index([ip_address_id])
+  
+  @@index([user_id, attempted_at], map: "political_discussion_board_login_attempts_user_id_atte_2956857b")
+  @@index([ip_address, attempted_at], map: "political_discussion_board_login_attempts_ip_address_a_41c626e0")
+  @@index([was_successful, attempted_at], map: "political_discussion_board_login_attempts_was_successf_e9336aab")
+  @@index([is_suspicious, risk_score], map: "political_discussion_board_login_attempts_is_suspiciou_ef724a1e")
+  @@index([username_attempted, attempted_at], map: "political_discussion_board_login_attempts_username_att_da52fa11")
+}

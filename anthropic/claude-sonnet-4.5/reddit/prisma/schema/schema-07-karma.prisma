@@ -1,0 +1,156 @@
+/// Stores current karma scores for each user, tracking post karma and
+/// comment karma separately. Karma represents user reputation earned through
+/// community voting on their content. This table maintains the current state
+/// of each user's karma totals, which are updated in real-time as votes are
+/// cast on their posts and comments. Per business requirements, karma
+/// persists even when content is deleted, and can be negative without limit.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_user_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who owns this karma record. {@link
+  /// reddit_like_members.id}
+  reddit_like_member_id String
+  
+  /// Karma earned from votes on the user's posts. Calculated as sum of
+  /// (upvotes - downvotes) across all posts created by this user. Can be
+  /// negative if user's posts receive more downvotes than upvotes. Updated in
+  /// real-time as votes are cast.
+  post_karma Int
+  
+  /// Karma earned from votes on the user's comments. Calculated as sum of
+  /// (upvotes - downvotes) across all comments created by this user. Can be
+  /// negative if user's comments receive more downvotes than upvotes. Updated
+  /// in real-time as votes are cast.
+  comment_karma Int
+  
+  /// Timestamp when this karma record was created (when user account was
+  /// initialized).
+  created_at DateTime
+  
+  /// Timestamp when karma scores were last modified. Updated whenever
+  /// post_karma or comment_karma changes due to voting activity.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_member_id])
+  @@index([post_karma, comment_karma])
+}
+
+/// Audit trail tracking all karma changes over time. Each record represents
+/// a single karma modification event triggered by voting activity on user
+/// content. This history enables transparency, troubleshooting karma
+/// calculation issues, and provides users insight into how their reputation
+/// evolved. Records are retained for minimum 12 months per business
+/// requirements.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_karma_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user whose karma changed. {@link reddit_like_members.id}
+  reddit_like_member_id String
+  
+  /// Reference to the post that triggered this karma change (if applicable).
+  /// Null if karma change was from comment voting. {@link
+  /// reddit_like_posts.id}
+  reddit_like_post_id String?
+  
+  /// Reference to the comment that triggered this karma change (if
+  /// applicable). Null if karma change was from post voting. {@link
+  /// reddit_like_comments.id}
+  reddit_like_comment_id String?
+  
+  /// Type of karma that changed. Valid values: 'post' (change to post karma)
+  /// or 'comment' (change to comment karma). Indicates which karma counter was
+  /// affected by this event.
+  karma_type String
+  
+  /// Amount of karma change. Positive values (+1, +2) indicate karma increases
+  /// from upvotes. Negative values (-1, -2) indicate karma decreases from
+  /// downvotes or vote changes. Common values: +1 (upvote added), -1 (downvote
+  /// added or upvote removed), +2 (vote changed from downvote to upvote), -2
+  /// (vote changed from upvote to downvote).
+  change_amount Int
+  
+  /// Vote action that triggered this karma change. Valid values:
+  /// 'upvote_added', 'downvote_added', 'vote_removed',
+  /// 'vote_changed_to_upvote', 'vote_changed_to_downvote'. Provides context
+  /// for why karma changed.
+  triggered_by_vote_action String
+  
+  /// Timestamp when this karma change occurred. Matches the timestamp of the
+  /// vote action that triggered the change.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  post reddit_like_posts? @relation(fields: [reddit_like_post_id], references: [id], onDelete: Cascade)
+  comment reddit_like_comments? @relation(fields: [reddit_like_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_like_post_id])
+  @@index([reddit_like_comment_id])
+  
+  @@index([reddit_like_member_id, created_at])
+  @@index([created_at])
+}
+
+/// Materialized view for efficient karma calculation verification.
+/// Pre-calculates karma totals by aggregating votes from
+/// reddit_like_post_votes and reddit_like_comment_votes. Used to verify
+/// karma accuracy, detect discrepancies, and provide fast karma lookups
+/// without real-time vote aggregation. This is a denormalized performance
+/// optimization table refreshed periodically. Marked as @hidden in
+/// documentation per materialized view conventions.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_reddit_like_karma_calculations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user whose karma is calculated. {@link
+  /// reddit_like_members.id}
+  reddit_like_member_id String
+  
+  /// Calculated post karma by summing (upvotes - downvotes) across all posts
+  /// created by this user. This is a pre-computed aggregate value refreshed
+  /// periodically. Used for karma verification and discrepancy detection.
+  calculated_post_karma Int
+  
+  /// Calculated comment karma by summing (upvotes - downvotes) across all
+  /// comments created by this user. This is a pre-computed aggregate value
+  /// refreshed periodically. Used for karma verification and discrepancy
+  /// detection.
+  calculated_comment_karma Int
+  
+  /// Timestamp when this materialized view was last refreshed with current
+  /// vote data. Indicates the freshness of calculated karma values.
+  last_calculated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_member_id])
+}

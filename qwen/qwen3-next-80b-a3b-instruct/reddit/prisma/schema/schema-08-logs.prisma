@@ -1,0 +1,235 @@
+/// Audit logs capturing all administrative and system actions for compliance
+/// and forensic analysis. This table maintains an immutable record of all
+/// system-level changes including user role modifications, admin actions,
+/// and critical system events. Each log entry is associated with an actor
+/// (user or system) and includes context about the action performed.
+///
+/// @namespace Logs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who performed the action. {@link community_platform_member.id}
+  /// or {@link community_platform_admin.id}.
+  actor_user_id String?
+  
+  /// The user targeted by the action. {@link community_platform_member.id} or
+  /// {@link community_platform_admin.id}.
+  target_user_id String?
+  
+  /// The community targeted by the action. {@link
+  /// community_platform_communities.id}.
+  target_community_id String?
+  
+  /// The post targeted by the action. {@link community_platform_posts.id}.
+  target_post_id String?
+  
+  /// The comment targeted by the action. {@link
+  /// community_platform_comments.id}.
+  target_comment_id String?
+  
+  /// The report targeted by the action. {@link community_platform_reports.id}.
+  target_report_id String?
+  
+  /// The type of action performed. {@link
+  /// community_platform_report_categories.id}.
+  action_type_id String
+  
+  /// Human-readable description of the action performed. Example: 'User banned
+  /// from community' or 'Admin modified community settings'.
+  action_description String
+  
+  /// Client IP address from which the action was initiated. Used for security
+  /// analysis and geolocation tracking.
+  ip_address String
+  
+  /// User agent string from the client device that initiated the action. Helps
+  /// identify browser and device types.
+  user_agent String
+  
+  /// Timestamp when the audit log entry was created. Records the exact moment
+  /// the action occurred.
+  created_at DateTime
+  
+  /// Indicates whether the action was performed by the system (true) or by a
+  /// user (false). System actions include automated cleanup tasks, scheduled
+  /// maintenance, and automated moderation.
+  is_system_action Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  actorUser community_platform_member? @relation("community_platform_audit_logs_of_actor_user_id", fields: [actor_user_id], references: [id], onDelete: Cascade)
+  targetUser community_platform_member? @relation("community_platform_audit_logs_of_target_user_id", fields: [target_user_id], references: [id], onDelete: Cascade)
+  targetCommunity community_platform_communities? @relation(fields: [target_community_id], references: [id], onDelete: Cascade)
+  targetPost community_platform_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment community_platform_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  targetReport community_platform_reports? @relation(fields: [target_report_id], references: [id], onDelete: Cascade)
+  actionType community_platform_report_categories @relation(fields: [action_type_id], references: [id], onDelete: Cascade)
+  
+  @@index([target_post_id])
+  @@index([target_comment_id])
+  @@index([target_report_id])
+  
+  @@index([created_at])
+  @@index([actor_user_id, created_at])
+  @@index([target_user_id, created_at])
+  @@index([target_community_id, created_at], map: "community_platform_audit_logs_target_community_id_crea_b90548ab")
+  @@index([action_type_id, created_at])
+  @@index([is_system_action, created_at])
+}
+
+/// Security logs capturing authentication events, failed login attempts,
+/// session activities, and system security alerts. This table is critical
+/// for detecting unauthorized access attempts, brute force attacks, and
+/// potential security breaches. All security events are logged with high
+/// fidelity to support forensic investigations.
+///
+/// @namespace Logs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_security_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user associated with this security event. {@link
+  /// community_platform_member.id}. Null for guest sessions.
+  user_id String?
+  
+  /// The user session that triggered this event. {@link
+  /// community_platform_user_sessions.id}.
+  session_id String
+  
+  /// Type of security event. Enumerated values: 'login_attempt',
+  /// 'login_success', 'login_failure', 'session_created',
+  /// 'session_terminated', 'password_change', '2fa_enabled', '2fa_disabled'.
+  event_type String
+  
+  /// Detailed description of the security event including error codes, device
+  /// fingerprints, and authentication method used. Example: 'Invalid
+  /// password', '2FA code rejected', 'New device: iPhone 13'.
+  event_details String
+  
+  /// Client IP address from which the security event originated.
+  ip_address String
+  
+  /// User agent string from the client device that generated the security
+  /// event.
+  user_agent String
+  
+  /// Geographic location inferred from IP address (country, city) for security
+  /// context.
+  geolocation String?
+  
+  /// Timestamp when the security event occurred.
+  created_at DateTime
+  
+  /// Whether the security event was successful (true) or failed (false). For
+  /// login attempts: true = successful login, false = failed login.
+  success Boolean
+  
+  /// Action taken by the system in response to this security event (if any).
+  /// Example: 'account_locked', 'otp_sent', 'session_terminated', 'none'.
+  action_taken String?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_member? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  session community_platform_user_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  @@index([event_type, created_at])
+  @@index([user_id, created_at])
+  @@index([ip_address, created_at])
+  @@index([event_type, ip_address, created_at], map: "community_platform_security_logs_event_type_ip_address_07e61c0d")
+  @@index([session_id, created_at])
+  @@index([success, created_at])
+}
+
+/// API access logs recording every HTTP request made to the platform's REST
+/// API endpoints. This table is essential for monitoring API usage patterns,
+/// detecting abuse, and identifying performance bottlenecks. All external
+/// API calls are logged with complete request and response metadata.
+///
+/// @namespace Logs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_api_access_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The authenticated user who made the API request. {@link
+  /// community_platform_member.id} or {@link community_platform_admin.id}.
+  /// Null for unauthenticated requests.
+  user_id String?
+  
+  /// HTTP method used in the request (GET, POST, PUT, DELETE, PATCH).
+  method String
+  
+  /// API endpoint that was accessed, including path parameters. Example:
+  /// '/api/v1/communities/r/{community_name}/posts'.
+  endpoint String
+  
+  /// HTTP status code returned to the client (e.g., 200, 401, 403, 429).
+  status_code Int
+  
+  /// Time in milliseconds that the server took to process the request and
+  /// generate a response.
+  response_time_ms Int
+  
+  /// Size in bytes of the HTTP request body.
+  request_size_bytes Int
+  
+  /// Size in bytes of the HTTP response body.
+  response_size_bytes Int
+  
+  /// Client IP address that initiated the API request.
+  ip_address String
+  
+  /// User agent string from the client device making the API request.
+  user_agent String
+  
+  /// Timestamp when the API request was received by the server.
+  created_at DateTime
+  
+  /// Remaining requests allowed in the current rate limit window for this
+  /// user/IP combination. -1 indicates no rate limiting applied.
+  rate_limit_remaining Int
+  
+  /// Authentication method used: 'none', 'jwt', 'oauth', 'api_key'.
+  auth_method String
+  
+  /// String representation of the URL query parameters for the request.
+  /// Example: "sort=hot&limit=50".
+  query_params String?
+  
+  /// JSON string representation of key HTTP headers sent with the request,
+  /// excluding sensitive headers like Authorization.
+  headers String?
+  
+  /// Whether the API request included valid authentication credentials.
+  is_authenticated Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_member? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_at])
+  @@index([method, endpoint, created_at], map: "community_platform_api_access_logs_method_endpoint_cre_92740e39")
+  @@index([user_id, created_at])
+  @@index([status_code, created_at])
+  @@index([response_time_ms, created_at], map: "community_platform_api_access_logs_response_time_ms_cr_32af5246")
+  @@index([ip_address, created_at])
+  @@index([rate_limit_remaining, created_at], map: "community_platform_api_access_logs_rate_limit_remainin_a1b678c6")
+  @@index([is_authenticated, created_at], map: "community_platform_api_access_logs_is_authenticated_cr_ee4c1495")
+  @@index([auth_method, created_at])
+}

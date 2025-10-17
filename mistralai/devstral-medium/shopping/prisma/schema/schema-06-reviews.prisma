@@ -1,0 +1,77 @@
+/// Tracks moderation actions taken on product reviews. This table records
+/// each moderation event, including the administrator who performed the
+/// action, the type of action, reason, and timestamp. It supports the review
+/// approval workflow and audit trail.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_review_moderation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The review being moderated. {@link shopping_product_reviews.id}.
+  shopping_product_review_id String
+  
+  /// The administrator who performed the moderation action. {@link
+  /// shopping_administrators.id}.
+  shopping_administrator_id String
+  
+  /// Type of moderation action (approve, reject, flag).
+  action_type String
+  
+  /// Reason for the moderation action.
+  reason String?
+  
+  /// When the moderation action was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_product_reviews @relation(fields: [shopping_product_review_id], references: [id], onDelete: Cascade)
+  administrator shopping_administrators @relation(fields: [shopping_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_product_review_id, created_at], map: "shopping_review_moderation_shopping_product_review_id__cee1f633")
+  @@index([shopping_administrator_id, created_at], map: "shopping_review_moderation_shopping_administrator_id_c_756759fb")
+}
+
+/// Stores detailed rating breakdowns for product reviews. This table
+/// captures individual rating dimensions (quality, value, etc.) that
+/// contribute to the overall rating. It allows for granular analysis of
+/// review ratings across different aspects.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_review_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The review this rating belongs to. {@link shopping_product_reviews.id}.
+  shopping_product_review_id String
+  
+  /// Rating for product quality (1-5).
+  quality_rating Int
+  
+  /// Rating for product value (1-5).
+  value_rating Int
+  
+  /// Rating for service experience (1-5).
+  service_rating Int
+  
+  /// When the rating was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_product_reviews @relation(fields: [shopping_product_review_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_product_review_id])
+  @@index([shopping_product_review_id, created_at], map: "shopping_review_ratings_shopping_product_review_id_cre_096320ab")
+}

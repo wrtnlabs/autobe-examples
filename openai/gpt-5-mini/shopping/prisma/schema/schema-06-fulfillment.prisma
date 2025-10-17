@@ -1,0 +1,151 @@
+/// Per-order shipment records. Represents a fulfillment shipment created for
+/// an order or subset of order lines. References the parent order, the
+/// seller fulfilling the shipment, optional recipient customer and optional
+/// shipping address snapshot. Stores carrier and tracking metadata, current
+/// shipment status, and temporal audit fields. Designed as a subsidiary
+/// entity managed through order/fulfillment workflows.
+///
+/// @namespace Fulfillment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}. Reference to the parent
+  /// order header for this shipment.
+  shopping_mall_order_id String
+  
+  /// Owner seller's {@link shopping_mall_seller.id}. The seller responsible
+  /// for fulfilling this shipment.
+  shopping_mall_seller_id String
+  
+  /// Recipient customer reference. {@link shopping_mall_customer.id}. Nullable
+  /// for guest or external shipments.
+  shopping_mall_customer_id String?
+  
+  /// Shipping address snapshot reference. {@link shopping_mall_addresses.id}.
+  /// Stored for traceability to the address used at shipment time.
+  shopping_mall_address_id String?
+  
+  /// Carrier-provided tracking number for this shipment.
+  tracking_number String?
+  
+  /// Human-readable carrier name (e.g., 'AcmeExpress', 'LocalPost').
+  carrier_name String?
+  
+  /// Current shipment status (created, ready_for_pickup, in_transit,
+  /// out_for_delivery, delivered, exception, returned).
+  status String
+  
+  /// Timestamp when the shipment was marked as shipped by the seller (ISO 8601
+  /// KST).
+  shipped_at DateTime?
+  
+  /// Timestamp when carrier reported delivery or system confirmed delivery.
+  delivered_at DateTime?
+  
+  /// Optional shipment weight in platform-standard units. Nullable when
+  /// unknown.
+  weight Float?
+  
+  /// Number of packages in this shipment. Business expectation: at least 1.
+  package_count Int
+  
+  /// Operator-entered notes about the shipment; searchable via GIN index for
+  /// operational queries.
+  notes String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last-updated timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Nullable when not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  shippingAddress shopping_mall_addresses? @relation(fields: [shopping_mall_address_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_shipment_events shopping_mall_shipment_events[]
+  
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_address_id])
+  
+  @@unique([shopping_mall_order_id, shopping_mall_seller_id, tracking_number], map: "shopping_mall_shipments_shopping_mall_order_id_shoppin_4b057d4a")
+  @@index([shopping_mall_seller_id, created_at])
+  @@index([status, created_at])
+}
+
+/// Append-only, time-ordered shipment event timeline. Each row represents a
+/// single event reported by a carrier or created by system/support. Events
+/// are immutable snapshots used for tracking feeds and audit trails.
+/// References the parent shipment ({@link shopping_mall_shipments.id}) and
+/// optionally the support agent who created/triaged the event ({@link
+/// shopping_mall_supportagent.id}).
+///
+/// @namespace Fulfillment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged shipment's {@link shopping_mall_shipments.id}. Parent shipment
+  /// reference for the timeline event.
+  shopping_mall_shipment_id String
+  
+  /// Optional supportAgent who created or triaged this event. {@link
+  /// shopping_mall_supportagent.id}. Nullable for carrier-originated webhooks.
+  shopping_mall_supportagent_id String?
+  
+  /// Event classification (e.g., label_created, picked_up, in_transit,
+  /// out_for_delivery, delivered, exception).
+  event_type String
+  
+  /// Carrier-specific event code where available.
+  event_code String?
+  
+  /// Timestamp reported by carrier or system for the event (ISO 8601, KST for
+  /// business reporting).
+  event_time DateTime
+  
+  /// Optional location string reported with the event (city, facility).
+  location String?
+  
+  /// Human-readable event description. Indexed for search/triage.
+  description String?
+  
+  /// Carrier-provided status text; kept for preservation of original semantics.
+  carrier_status String?
+  
+  /// Raw webhook payload or serialized carrier event JSON for later replay and
+  /// debugging.
+  raw_payload String?
+  
+  /// Event record creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  supportAgent shopping_mall_supportagent? @relation(fields: [shopping_mall_supportagent_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_supportagent_id], map: "shopping_mall_shipment_events_shopping_mall_supportage_c8061508")
+  
+  @@unique([shopping_mall_shipment_id, event_time, event_type], map: "shopping_mall_shipment_events_shopping_mall_shipment_i_23772472")
+  @@index([shopping_mall_shipment_id, event_time], map: "shopping_mall_shipment_events_shopping_mall_shipment_i_e990a35a")
+  @@index([event_type, event_time])
+}

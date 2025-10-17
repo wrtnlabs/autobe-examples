@@ -1,0 +1,417 @@
+/// Core product review records capturing customer feedback after delivery.
+/// Stores verified purchase reviews with content, ratings, and moderation
+/// status. Each review represents one customer's experience with one product
+/// from one order, enabling comprehensive feedback management and social
+/// proof for the platform.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer's order for purchase verification. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Reference to the product being reviewed for aggregation and analytics.
+  /// {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Reference to the customer who wrote the review for reviewer tracking and
+  /// activity patterns. {@link shopping_mall_customer.id}
+  shopping_mall_customer_id String
+  
+  /// Star rating from 1 to 5. Whole numbers only representing customer
+  /// satisfaction level (1=Terrible, 5=Excellent). Used for average rating
+  /// calculation and product sorting.
+  rating Int
+  
+  /// Review title between 5 and 100 characters summarizing the review. Appears
+  /// in review lists and search results. Used for indexing and display.
+  title String
+  
+  /// Detailed review text between 10 and 2000 characters describing customer
+  /// experience. Can include product quality feedback, delivery experience,
+  /// and recommendations. Subject to content moderation before publication.
+  content String
+  
+  /// Current moderation status of the review. Values: DRAFT (initial
+  /// submission), PENDING_MODERATION (awaiting admin review), APPROVED
+  /// (published and visible), REJECTED (failed moderation), EDITED (customer
+  /// modified after approval). Determines visibility to other customers.
+  review_status String
+  
+  /// Whether this review is from a verified purchase verified by matching
+  /// order delivery. Always true for reviews in this table as unverified
+  /// reviews are rejected at submission. Used to display 'Verified Purchase'
+  /// badge to customers.
+  is_verified_purchase Boolean
+  
+  /// Number of customers who marked this review as helpful via voting system.
+  /// Used for sorting reviews by helpfulness. Updated when review votes are
+  /// added/removed.
+  helpful_count Int
+  
+  /// Number of customers who marked this review as unhelpful. Used to
+  /// calculate net helpfulness score. Updated when review votes change.
+  unhelpful_count Int
+  
+  /// Internal notes from moderators explaining approval, rejection, or edits
+  /// made to review content. Visible only to admins. Helps document moderation
+  /// decisions for compliance.
+  moderation_notes String?
+  
+  /// If rejected, the business reason for rejection (PROFANITY, HATE_SPEECH,
+  /// SPAM, CONTACT_INFO, OFF_TOPIC, etc.). Shown to customer to explain why
+  /// review was not published.
+  rejection_reason String?
+  
+  /// Timestamp when review was first submitted by customer in ISO 8601 format.
+  /// Immutable after creation. Used to enforce 365-day review window and sort
+  /// reviews chronologically.
+  created_at DateTime
+  
+  /// Timestamp when review was last modified by customer or moderator. Updated
+  /// when review content is edited or status changes. Helps track review
+  /// history.
+  updated_at DateTime
+  
+  /// Timestamp when review status changed to APPROVED and became visible to
+  /// customers. Null until approval. Used to track when review became part of
+  /// product rating.
+  published_at DateTime?
+  
+  /// Soft delete timestamp if review was removed. Null for active reviews.
+  /// Used for compliance and audit trails. Allows recovery if needed. Reviews
+  /// are soft-deleted, not permanently removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_moderation shopping_mall_review_moderation?
+  shopping_mall_seller_responses shopping_mall_seller_responses?
+  shopping_mall_review_votes shopping_mall_review_votes[]
+  shopping_mall_review_images shopping_mall_review_images[]
+  
+  @@unique([shopping_mall_order_id, shopping_mall_product_id, shopping_mall_customer_id], map: "shopping_mall_reviews_shopping_mall_order_id_shopping__fef4303e")
+  @@index([shopping_mall_product_id, review_status, published_at], map: "shopping_mall_reviews_shopping_mall_product_id_review__e7e48e52")
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([shopping_mall_order_id])
+  @@index([review_status])
+  @@index([created_at])
+}
+
+/// Aggregated rating statistics for products calculated from individual
+/// reviews. Stores pre-calculated average ratings, rating distribution, and
+/// review counts. Materialized quasi-view that updates when reviews are
+/// approved/rejected. Enables efficient product search sorting and rating
+/// display without expensive aggregation queries.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product these ratings aggregate. One rating record per
+  /// product. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Calculated average rating from all approved reviews (1-5 scale with 2
+  /// decimal places). Examples: 4.37, 3.82, 5.00. Updated atomically when
+  /// reviews are approved. Used for product sorting and display.
+  average_rating Float
+  
+  /// Total count of approved reviews for this product. Used for sorting by
+  /// popularity and displaying review count to customers (e.g., '506
+  /// reviews'). Updated when reviews are approved or rejected.
+  total_reviews Int
+  
+  /// Count of approved 5-star reviews. Part of rating distribution displayed
+  /// to customers. Updated atomically with review approvals.
+  five_star_count Int
+  
+  /// Count of approved 4-star reviews. Part of rating distribution bar chart.
+  four_star_count Int
+  
+  /// Count of approved 3-star reviews. Part of rating distribution.
+  three_star_count Int
+  
+  /// Count of approved 2-star reviews. Part of rating distribution.
+  two_star_count Int
+  
+  /// Count of approved 1-star reviews. Part of rating distribution.
+  one_star_count Int
+  
+  /// Percentage of 5-star reviews (0-100). Calculated as (five_star_count /
+  /// total_reviews * 100). Rounded to 2 decimal places. Used for display and
+  /// filtering.
+  rating_percentage_five_star Float
+  
+  /// Percentage of 4-star reviews.
+  rating_percentage_four_star Float
+  
+  /// Percentage of 3-star reviews.
+  rating_percentage_three_star Float
+  
+  /// Percentage of 2-star reviews.
+  rating_percentage_two_star Float
+  
+  /// Percentage of 1-star reviews.
+  rating_percentage_one_star Float
+  
+  /// Timestamp when ratings were last recalculated. Updated every time a
+  /// review is approved or rejected. Used to track freshness of aggregated
+  /// data.
+  last_updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_id])
+  @@index([average_rating, total_reviews])
+}
+
+/// Tracks the moderation workflow and approval status for reviews. Records
+/// which admin reviewed the review, what decision was made, and notes
+/// explaining the decision. Provides audit trail for content moderation
+/// compliance and enables tracking of moderation queue status.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_moderation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the review being moderated. Each review has at most one
+  /// moderation record. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Reference to the admin who performed the moderation decision. Tracks
+  /// which moderator approved or rejected. {@link shopping_mall_admin.id}
+  shopping_mall_admin_id String?
+  
+  /// Current status of moderation review. Values: PENDING (awaiting review),
+  /// APPROVED (content accepted), REJECTED (content failed policy), EDITED
+  /// (moderator modified content). Determines if review becomes visible.
+  moderation_status String
+  
+  /// Business reason for the moderation decision. For approvals: 'Content
+  /// approved' or specific reason. For rejections: PROFANITY, HATE_SPEECH,
+  /// SPAM, CONTACT_INFO, OFF_TOPIC, PLAGIARISM, UNSUBSTANTIATED_CLAIMS, OTHER.
+  decision_reason String
+  
+  /// Detailed internal notes from moderator explaining the decision, any
+  /// content issues found, or actions taken. Only visible to admins. Used for
+  /// compliance documentation.
+  moderator_notes String?
+  
+  /// If moderator edited review content, describes what changes were made
+  /// (e.g., 'Removed external URLs', 'Removed phone number'). Null if no
+  /// modifications made. Used to track content curation.
+  content_modifications String?
+  
+  /// Whether this review was automatically flagged by spam detection system or
+  /// manually reported by customer. True if automated system flagged for
+  /// review.
+  auto_flagged Boolean
+  
+  /// If auto-flagged, the specific reason from spam filter
+  /// (PROFANITY_DETECTED, SPAM_PATTERN, CONTACT_INFO_DETECTED, URL_DETECTED,
+  /// EXCESSIVE_CAPS, etc.). Null if manually reported.
+  flagged_reason String?
+  
+  /// Timestamp when review was submitted and entered moderation queue. Records
+  /// when moderation process started.
+  created_at DateTime
+  
+  /// Timestamp when moderator completed review and made decision. Null until
+  /// moderation completes. Used to track moderation SLA (should be <24 hours).
+  moderated_at DateTime?
+  
+  /// Deadline for customer to appeal rejection decision (typically 14 days
+  /// from rejection). After this date, rejection cannot be appealed. Null for
+  /// approved reviews.
+  appeal_deadline DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_admin_id])
+  
+  @@unique([shopping_mall_review_id])
+  @@index([moderation_status])
+  @@index([created_at, moderated_at])
+}
+
+/// Seller responses to customer reviews. Allows sellers to respond
+/// professionally to feedback within 30 days of review publication.
+/// Responses are publicly visible alongside reviews enabling seller
+/// accountability and customer trust building. Sellers can edit their
+/// responses anytime after initial submission.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the review being responded to. Each review can have at most
+  /// one seller response. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Reference to the seller providing the response. Sellers can only respond
+  /// to reviews of their own products. {@link shopping_mall_seller.id}
+  shopping_mall_seller_id String
+  
+  /// Seller's response text (maximum 1000 characters). Professional response
+  /// to customer feedback. Subject to content moderation. Used to show seller
+  /// accountability and address customer concerns.
+  response_content String
+  
+  /// Status of seller response. Values: DRAFT (unsaved), PUBLISHED (visible to
+  /// customers), DELETED (soft deleted by seller). Controls visibility.
+  response_status String
+  
+  /// Timestamp when seller first submitted response. Immutable. Used to
+  /// enforce 30-day response window from review publication.
+  created_at DateTime
+  
+  /// Timestamp when seller last edited response. Updated each time response
+  /// content changes. Shows customers if response was updated after initial
+  /// submission.
+  updated_at DateTime
+  
+  /// Timestamp when response status changed to PUBLISHED. Used to track when
+  /// response became visible to customers.
+  published_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id])
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_responses_shopping_mall_seller_id_f5680b43")
+  @@index([response_status])
+}
+
+/// Tracks whether customers found reviews helpful or unhelpful. Enables
+/// review community voting to identify most helpful reviews. One vote record
+/// per customer per review. Used to sort reviews by usefulness and calculate
+/// helpfulness metrics.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the review being voted on. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Reference to the customer casting the vote. Customers can vote only once
+  /// per review. {@link shopping_mall_customer.id}
+  shopping_mall_customer_id String
+  
+  /// Type of vote cast. Values: HELPFUL (found review useful), UNHELPFUL (did
+  /// not find useful), or null (vote removed/withdrawn). Determines whether
+  /// this vote increases helpful or unhelpful counts.
+  vote_type String?
+  
+  /// Timestamp when vote was first cast.
+  created_at DateTime
+  
+  /// Timestamp when vote was modified or removed. Used to track vote changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id, shopping_mall_customer_id], map: "shopping_mall_review_votes_shopping_mall_review_id_sho_8d6e07a3")
+  @@index([shopping_mall_review_id, vote_type], map: "shopping_mall_review_votes_shopping_mall_review_id_vot_a2037bbb")
+  @@index([shopping_mall_customer_id])
+}
+
+/// Product images attached to reviews as evidence or proof. Customers can
+/// upload 1-3 images per review showing product condition, packaging, or use
+/// case. Images are moderated before review publication. Helps other
+/// customers evaluate product quality based on real customer photos.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the review this image belongs to. Multiple images per review
+  /// allowed (maximum 3). {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// URL pointing to the uploaded product image. Images stored in cloud
+  /// storage (S3, CloudFront, etc.). Used to display photo evidence in review.
+  image_url String
+  
+  /// URL pointing to thumbnail version of the image for list view display.
+  /// Smaller file size for faster loading in review lists.
+  thumbnail_url String?
+  
+  /// Optional customer-provided description of what the image shows (max 200
+  /// characters). Examples: 'Product packaging', 'Item quality', 'In use'.
+  /// Helps other customers understand image context.
+  image_caption String?
+  
+  /// Display order of this image in the review (1, 2, or 3). Determines
+  /// sequence when showing review images to customers. Used for consistent
+  /// display order.
+  image_order Int
+  
+  /// Moderation status of the image. Values: PENDING (awaiting scan), APPROVED
+  /// (scanned and safe), REJECTED (policy violation). Images with explicit
+  /// content are rejected.
+  image_status String
+  
+  /// Timestamp when image was uploaded with review.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_review_id, image_order], map: "shopping_mall_review_images_shopping_mall_review_id_im_6b9c55df")
+  @@index([image_status])
+}

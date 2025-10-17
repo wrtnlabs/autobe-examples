@@ -1,0 +1,115 @@
+/// Represents the channels within the community platform. Each channel
+/// serves as a container for sections and configurations, enabling organized
+/// content management.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The name of the channel, which must be unique across the platform.
+  name String
+  
+  /// A detailed description of the channel's purpose and content.
+  description String?
+  
+  /// The timestamp when the channel was created.
+  created_at DateTime
+  
+  /// The timestamp when the channel was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the channel was deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_sections reddit_like_community_sections[]
+  
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Represents the sections within a channel. Each section organizes content
+/// into specific topics or categories, enhancing user navigation and content
+/// discovery.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The channel to which this section belongs. {@link
+  /// reddit_like_community_channels.id}
+  reddit_like_community_channel_id String
+  
+  /// The name of the section, which must be unique within the channel.
+  name String
+  
+  /// A detailed description of the section's purpose and content.
+  description String?
+  
+  /// The timestamp when the section was created.
+  created_at DateTime
+  
+  /// The timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the section was deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel reddit_like_community_channels @relation(fields: [reddit_like_community_channel_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_like_community_channel_id, name], map: "reddit_like_community_sections_reddit_like_community_c_b236ff1f")
+  @@index([created_at])
+}
+
+/// Stores configuration settings for the community platform. These settings
+/// define the behavior and appearance of the platform, ensuring a consistent
+/// user experience.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The unique key identifying the configuration setting.
+  key String
+  
+  /// The value of the configuration setting.
+  value String
+  
+  /// A detailed description of the configuration setting and its purpose.
+  description String?
+  
+  /// The timestamp when the configuration was created.
+  created_at DateTime
+  
+  /// The timestamp when the configuration was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the configuration was deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([created_at])
+}

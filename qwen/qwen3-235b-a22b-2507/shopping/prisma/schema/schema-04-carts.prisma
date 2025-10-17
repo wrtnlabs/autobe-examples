@@ -1,0 +1,427 @@
+/// Represents a user's shopping cart containing products they intend to
+/// purchase. Each customer has exactly one active cart at a time, which
+/// persists across sessions. The cart tracks items, quantities, prices, and
+/// other purchase details before checkout. This is a primary entity as users
+/// directly interact with their carts, managing items and proceeding to
+/// checkout independently.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns the cart. {@link shopping_mall_customers.id}.
+  shopping_customer_id String
+  
+  /// Current status of the cart (active, processing, completed, abandoned).
+  status String
+  
+  /// The total monetary value of all items in the cart.
+  total_amount Float
+  
+  /// The currency code for the cart's monetary values (e.g., USD).
+  currency String
+  
+  /// Timestamp when the cart was first created.
+  created_at DateTime
+  
+  /// Timestamp when the cart was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the cart was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_cart_snapshots shopping_mall_cart_snapshots[]
+  shopping_mall_saved_carts shopping_mall_saved_carts[]
+  shopping_mall_abandoned_carts shopping_mall_abandoned_carts[]
+  
+  @@unique([shopping_customer_id])
+  @@index([status, updated_at])
+}
+
+/// Represents individual items within a shopping cart. Contains the specific
+/// product/SKU, quantity, price at time of addition, and other details about
+/// each item in a cart. This is a supporting entity (subsidiary) as it
+/// exists to support the shopping_mall_carts table and has no independent
+/// management or API operations outside the context of its parent cart.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The cart to which this item belongs. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// The specific product variant (SKU) in this cart item. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// The number of units of this item in the cart.
+  quantity Int
+  
+  /// The price per unit at the time the item was added to the cart.
+  unit_price Float
+  
+  /// The calculated total price for this item (quantity × unit_price).
+  total_price Float
+  
+  /// Timestamp when this item was added to the cart.
+  created_at DateTime
+  
+  /// Timestamp when this item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this item was removed from the cart.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_wishlist_transfer_of_to_cart_item_id shopping_mall_cart_wishlist_transfer[] @relation("shopping_mall_cart_wishlist_transfer_of_to_cart_item_id")
+  shopping_mall_cart_wishlist_transfer_of_from_cart_item_id shopping_mall_cart_wishlist_transfer[] @relation("shopping_mall_cart_wishlist_transfer_of_from_cart_item_id")
+  
+  @@index([shopping_mall_product_variant_id])
+  
+  @@unique([shopping_mall_cart_id, shopping_mall_product_variant_id], map: "shopping_mall_cart_items_shopping_mall_cart_id_shoppin_0bb750f8")
+  @@index([shopping_mall_cart_id, created_at])
+}
+
+/// Represents a user's wishlist containing products they want to save for
+/// future purchase. Users can have multiple wishlists with different
+/// purposes (e.g., gifts, personal items). Wishlists are independent
+/// entities that users can create, rename, delete, and share. This is a
+/// primary entity as users independently manage their wishlists regardless
+/// of any single cart or product context.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns the wishlist. {@link shopping_mall_customers.id}.
+  shopping_customer_id String
+  
+  /// The name of the wishlist (e.g., 'Birthday Gifts', 'Home Renovation').
+  name String
+  
+  /// Optional description providing more details about the wishlist.
+  description String?
+  
+  /// Determines who can view the wishlist (public, private, shared).
+  visibility String
+  
+  /// Indicates if this is the user's default wishlist.
+  is_default Boolean
+  
+  /// Timestamp when the wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the wishlist was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_customer_id, name])
+  @@index([shopping_customer_id, is_default])
+}
+
+/// Represents individual items within a wishlist. Contains the specific
+/// product/SKU added to a wishlist and associated metadata. This is a
+/// supporting entity (subsidiary) as it exists solely to support the
+/// shopping_mall_wishlists table and has no independent management. Users
+/// manage wishlist items through their parent wishlist.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The wishlist to which this item belongs. {@link
+  /// shopping_mall_wishlists.id}.
+  shopping_mall_wishlist_id String
+  
+  /// The specific product variant (SKU) saved in this wishlist. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// User's personal notes about why they saved this item.
+  notes String?
+  
+  /// User's priority ranking for this wishlist item (1-5).
+  priority Int
+  
+  /// Timestamp when this item was added to the wishlist.
+  created_at DateTime
+  
+  /// Timestamp when this item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this item was removed from the wishlist.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_wishlist_transfer_of_from_wishlist_item_id shopping_mall_cart_wishlist_transfer[] @relation("shopping_mall_cart_wishlist_transfer_of_from_wishlist_item_id")
+  shopping_mall_cart_wishlist_transfer_of_to_wishlist_item_id shopping_mall_cart_wishlist_transfer[] @relation("shopping_mall_cart_wishlist_transfer_of_to_wishlist_item_id")
+  
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_wishlist_items_shopping_mall_product_var_964c74eb")
+  
+  @@unique([shopping_mall_wishlist_id, shopping_mall_product_variant_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_e2467ce3")
+  @@index([shopping_mall_wishlist_id, priority], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_3e30710a")
+}
+
+/// Tracks transfers of items between carts and wishlists. Records when users
+/// move items from their wishlist to cart or from cart to wishlist. This is
+/// a supporting entity (subsidiary) as it's system-maintained and used to
+/// analyze user behavior and preferences. It has no independent management
+/// by users or administrators.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_wishlist_transfer {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who performed the transfer. {@link shopping_mall_customers.id}.
+  shopping_customer_id String
+  
+  /// The wishlist item that was transferred. {@link
+  /// shopping_mall_wishlist_items.id}.
+  from_wishlist_item_id String?
+  
+  /// The resulting cart item after transfer. {@link
+  /// shopping_mall_cart_items.id}.
+  to_cart_item_id String?
+  
+  /// The cart item that was transferred. {@link shopping_mall_cart_items.id}.
+  from_cart_item_id String?
+  
+  /// The resulting wishlist item after transfer. {@link
+  /// shopping_mall_wishlist_items.id}.
+  to_wishlist_item_id String?
+  
+  /// Type of transfer (wishlist_to_cart, cart_to_wishlist).
+  transfer_type String
+  
+  /// Number of units transferred.
+  quantity Int
+  
+  /// When the transfer occurred.
+  timestamp DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  fromWishlistItem shopping_mall_wishlist_items? @relation("shopping_mall_cart_wishlist_transfer_of_from_wishlist_item_id", fields: [from_wishlist_item_id], references: [id], onDelete: Cascade)
+  toCartItem shopping_mall_cart_items? @relation("shopping_mall_cart_wishlist_transfer_of_to_cart_item_id", fields: [to_cart_item_id], references: [id], onDelete: Cascade)
+  fromCartItem shopping_mall_cart_items? @relation("shopping_mall_cart_wishlist_transfer_of_from_cart_item_id", fields: [from_cart_item_id], references: [id], onDelete: Cascade)
+  toWishlistItem shopping_mall_wishlist_items? @relation("shopping_mall_cart_wishlist_transfer_of_to_wishlist_item_id", fields: [to_wishlist_item_id], references: [id], onDelete: Cascade)
+  
+  @@index([from_wishlist_item_id])
+  @@index([to_cart_item_id])
+  @@index([from_cart_item_id])
+  @@index([to_wishlist_item_id])
+  
+  @@unique([timestamp, shopping_customer_id], map: "shopping_mall_cart_wishlist_transfer_timestamp_shoppin_11483b8e")
+  @@index([shopping_customer_id, transfer_type, timestamp], map: "shopping_mall_cart_wishlist_transfer_shopping_customer_5021c05f")
+}
+
+/// Captures point-in-time states of shopping carts for audit, recovery, and
+/// analytics purposes. Stores the complete cart state at specific moments,
+/// preserving product prices and availability as they existed at that time.
+/// This is a snapshot entity as it captures historical cart states, enabling
+/// cart recovery, price change analysis, and purchase behavior tracking.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The cart whose state is captured in this snapshot. {@link
+  /// shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Reason for the snapshot (periodic, checkout_attempt, before_clearing,
+  /// etc.).
+  snapshot_type String
+  
+  /// The total value of the cart at snapshot time.
+  total_amount Float
+  
+  /// Number of items in the cart at snapshot time.
+  item_count Int
+  
+  /// Cart status at the time of snapshot.
+  status String
+  
+  /// Serialized data containing complete cart state (items, prices,
+  /// quantities).
+  snapshot_data String
+  
+  /// Timestamp when the cart snapshot was created.
+  created_at DateTime
+  
+  /// When the user was notified of price changes (if applicable).
+  notified_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_cart_id, created_at], map: "shopping_mall_cart_snapshots_shopping_mall_cart_id_cre_74b66ae6")
+}
+
+/// Represents carts that users have explicitly saved for future purchase.
+/// Allows users to maintain multiple saved cart configurations for different
+/// purchase scenarios. This is a supporting entity (subsidiary) as it
+/// extends the functionality of shopping_mall_carts but is managed through
+/// the same interfaces. Saved carts are essentially named references to
+/// specific cart states.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_saved_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The original cart that was saved. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Customer who saved the cart. {@link shopping_mall_customers.id}.
+  shopping_customer_id String
+  
+  /// User-provided name for the saved cart (e.g., 'Office Supplies', 'Birthday
+  /// Gift').
+  name String
+  
+  /// Optional description explaining the purpose of this saved cart.
+  description String?
+  
+  /// When the cart was saved.
+  saved_at DateTime
+  
+  /// When the saved cart was last updated.
+  updated_at DateTime
+  
+  /// When the saved cart expires and should be cleaned up.
+  expires_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_cart_id])
+  
+  @@unique([shopping_customer_id, name])
+  @@index([shopping_customer_id, saved_at])
+}
+
+/// Tracks carts that were not completed through checkout. Used for cart
+/// recovery, marketing analysis, and understanding user behavior. This is a
+/// supporting entity (subsidiary) as it's automatically populated by the
+/// system and used for analytics and automated recovery campaigns. It has no
+/// direct user management interface.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_abandoned_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The abandoned cart. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Customer who abandoned the cart. {@link shopping_mall_customers.id}.
+  shopping_customer_id String
+  
+  /// When the cart was identified as abandoned.
+  abandoned_at DateTime
+  
+  /// Number of recovery attempts made for this abandoned cart.
+  recovery_attempts Int
+  
+  /// When the last recovery attempt was made.
+  last_recovery_attempt_at DateTime?
+  
+  /// When the cart was recovered through a recovery attempt.
+  recovered_at DateTime?
+  
+  /// Estimated value of items in the abandoned cart.
+  conversion_value Float
+  
+  /// Estimated value that could be recovered if the cart is completed.
+  estimated_recovery_value Float
+  
+  /// URL where the user left the checkout process.
+  exit_page String
+  
+  /// Device used when cart was abandoned (desktop, mobile, tablet).
+  device_type String
+  
+  /// How the user arrived at the site (direct, google, social_media).
+  referral_source String
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_cart_id])
+  @@index([shopping_customer_id, abandoned_at], map: "shopping_mall_abandoned_carts_shopping_customer_id_aba_ac53093c")
+}

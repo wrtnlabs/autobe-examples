@@ -1,0 +1,156 @@
+/// Category system for organizing economic and political discussion topics
+/// into themed groups, enabling filtered browsing and content organization.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category name for economic or political themes (e.g., 'Economics',
+  /// 'Politics', 'Policy').
+  name String
+  
+  /// Detailed description of the category's focus area and acceptable topics
+  /// within it.
+  description String?
+  
+  /// Unique business identifier for the category, used for URL generation and
+  /// API filtering.
+  code String
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the category.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for category removal without data loss.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_topics discussion_board_topics[]
+  
+  @@unique([name])
+  @@unique([code])
+  @@index([created_at])
+}
+
+/// Core discussion topics created by registered users, serving as containers
+/// for economic and political conversations that can be moderated and
+/// locked.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category this topic belongs to. {@link discussion_board_categories.id}.
+  discussion_board_category_id String
+  
+  /// Creator of this topic. {@link discussion_board_registered_users.id}.
+  discussion_board_registered_user_id String
+  
+  /// Topic title that summarizes the economic or political discussion.
+  title String
+  
+  /// Initial post content explaining the topic and starting the discussion.
+  body String
+  
+  /// Unique business identifier generated for the topic URL and referencing.
+  code String
+  
+  /// Current status of the topic (active/locked).
+  status String
+  
+  /// Timestamp when the topic was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the topic.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for topic removal without losing discussion history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  author discussion_board_registered_users @relation(fields: [discussion_board_registered_user_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_notifications discussion_board_notifications[]
+  
+  @@unique([code])
+  @@index([discussion_board_category_id, created_at], map: "discussion_board_topics_discussion_board_category_id_c_2706e440")
+  @@index([discussion_board_registered_user_id, created_at], map: "discussion_board_topics_discussion_board_registered_us_df30a1cc")
+  @@index([status, created_at])
+}
+
+/// Threaded responses to discussion topics, allowing registered users to
+/// participate in economic and political conversations with reply
+/// hierarchies.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Topic this comment belongs to. {@link discussion_board_topics.id}.
+  discussion_board_topic_id String
+  
+  /// Author of this comment. {@link discussion_board_registered_users.id}.
+  discussion_board_registered_user_id String
+  
+  /// Parent comment if this is a reply in the thread. {@link
+  /// discussion_board_comments.id}.
+  parent_discussion_board_comment_id String?
+  
+  /// Comment text content contributing to the discussion.
+  body String
+  
+  /// Unique business identifier for the comment, used for referencing and
+  /// permalinks.
+  code String
+  
+  /// Whether this comment is marked as deleted but preserved for discussion
+  /// context.
+  is_deleted Boolean
+  
+  /// Timestamp when the comment was posted.
+  created_at DateTime
+  
+  /// Timestamp of the last edit to the comment.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  topic discussion_board_topics @relation(fields: [discussion_board_topic_id], references: [id], onDelete: Cascade)
+  author discussion_board_registered_users @relation(fields: [discussion_board_registered_user_id], references: [id], onDelete: Cascade)
+  parent discussion_board_comments? @relation("recursive", fields: [parent_discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_comments[] @relation("recursive")
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_notifications discussion_board_notifications[]
+  
+  @@unique([code])
+  @@index([discussion_board_topic_id, created_at], map: "discussion_board_comments_discussion_board_topic_id_cr_71c789c8")
+  @@index([discussion_board_registered_user_id, created_at], map: "discussion_board_comments_discussion_board_registered__3a6dfa5d")
+  @@index([parent_discussion_board_comment_id, created_at], map: "discussion_board_comments_parent_discussion_board_comm_5112fd2a")
+  @@index([is_deleted, created_at])
+}

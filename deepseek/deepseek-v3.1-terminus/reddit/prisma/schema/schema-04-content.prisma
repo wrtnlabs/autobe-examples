@@ -1,0 +1,392 @@
+/// Core entity representing community posts that serve as the foundation for
+/// all content types. Contains basic post information, community context,
+/// and user attribution. This table maintains the lifecycle of posts across
+/// the platform, supporting various content formats through specialized
+/// subsidiary tables.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where this post is published. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Member who created this post. {@link reddit_community_members.id}.
+  author_id String
+  
+  /// Post title that appears in community feeds and search results.
+  title String
+  
+  /// Type of content contained in this post (text, link, image).
+  content_type String
+  
+  /// Current publication status of the post (draft, published, archived,
+  /// removed).
+  status String
+  
+  /// Indicates if this post contains Not Safe For Work content.
+  is_nsfw Boolean
+  
+  /// Indicates if this post contains spoiler content requiring warnings.
+  is_spoiler Boolean
+  
+  /// Indicates if this post is pinned to the top of its community.
+  is_pinned Boolean
+  
+  /// Indicates if comments are disabled for this post.
+  is_locked Boolean
+  
+  /// Custom flair text displayed alongside the post title.
+  flair_text String?
+  
+  /// CSS class for styling the post flair.
+  flair_css String?
+  
+  /// Timestamp when this post was initially created.
+  created_at DateTime
+  
+  /// Timestamp when this post was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this post was published to the community.
+  published_at DateTime?
+  
+  /// Timestamp when this post was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_text_posts reddit_community_text_posts?
+  reddit_community_link_posts reddit_community_link_posts?
+  reddit_community_image_posts reddit_community_image_posts?
+  reddit_community_content_metadata reddit_community_content_metadata?
+  reddit_community_post_revisions reddit_community_post_revisions[]
+  reddit_community_votes reddit_community_votes[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_comment_threads reddit_community_comment_threads[]
+  reddit_community_karma_records reddit_community_karma_records[]
+  reddit_community_user_reactions reddit_community_user_reactions[]
+  reddit_community_saved_content reddit_community_saved_content[]
+  reddit_community_trending_topics reddit_community_trending_topics[]
+  reddit_community_recommendations reddit_community_recommendations[]
+  reddit_community_search_index reddit_community_search_index?
+  reddit_community_reports reddit_community_reports[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  reddit_community_content_flags reddit_community_content_flags[]
+  reddit_community_user_activities reddit_community_user_activities[]
+  reddit_community_engagement_metrics reddit_community_engagement_metrics[]
+  
+  @@unique([community_id, title])
+  @@index([author_id, created_at])
+  @@index([community_id, created_at])
+  @@index([content_type, created_at])
+  @@index([status, published_at])
+  @@index([is_pinned, community_id])
+}
+
+/// Specialized content entity for text-based posts containing the actual
+/// textual content body. This table supports rich text formatting, character
+/// limits, and content moderation features specific to text content.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_text_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post that this text content belongs to. {@link
+  /// reddit_community_posts.id}.
+  post_id String
+  
+  /// Main text content of the post with markdown formatting support.
+  content String
+  
+  /// Short preview text for feed displays without loading full content.
+  content_preview String?
+  
+  /// Total number of words in the content for analytics and display
+  /// optimization.
+  word_count Int
+  
+  /// Total character count including whitespace for validation purposes.
+  character_count Int
+  
+  /// Timestamp when this text content was created.
+  created_at DateTime
+  
+  /// Timestamp when this text content was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  
+  @@index([post_id])
+  @@index([created_at])
+  @@index([word_count])
+}
+
+/// Specialized content entity for link-based posts containing URL references
+/// and metadata. This table supports link validation, preview generation,
+/// and external content referencing features.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_link_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post that this link content belongs to. {@link
+  /// reddit_community_posts.id}.
+  post_id String
+  
+  /// Full URL of the external content being linked.
+  url String
+  
+  /// Extracted domain name for categorization and filtering.
+  domain String
+  
+  /// Title extracted from the linked content for preview display.
+  title String?
+  
+  /// Description extracted from the linked content metadata.
+  description String?
+  
+  /// URL of the thumbnail image for the linked content.
+  thumbnail_url String?
+  
+  /// URL of the favicon for the linked domain.
+  favicon_url String?
+  
+  /// Indicates if the link has passed security verification checks.
+  is_verified Boolean
+  
+  /// Number of times this link has been clicked by users.
+  click_count Int
+  
+  /// Timestamp when the link was last verified for safety and validity.
+  last_verified_at DateTime?
+  
+  /// Timestamp when this link content was created.
+  created_at DateTime
+  
+  /// Timestamp when this link content was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  
+  @@index([post_id])
+  @@index([domain, created_at])
+  @@index([is_verified, created_at])
+  @@index([click_count])
+}
+
+/// Specialized content entity for image-based posts containing image files
+/// and metadata. This table supports multiple image formats, optimization,
+/// and responsive display features.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_image_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post that this image content belongs to. {@link
+  /// reddit_community_posts.id}.
+  post_id String
+  
+  /// Primary URL for the high-resolution image file.
+  image_url String
+  
+  /// URL for the optimized thumbnail version of the image.
+  thumbnail_url String
+  
+  /// Alternative text description for accessibility and SEO purposes.
+  alt_text String?
+  
+  /// Optional caption text displayed below the image.
+  caption String?
+  
+  /// Width of the original image in pixels.
+  image_width Int
+  
+  /// Height of the original image in pixels.
+  image_height Int
+  
+  /// Size of the image file in bytes for optimization tracking.
+  file_size Int
+  
+  /// Format of the image file (JPEG, PNG, GIF, WebP).
+  file_format String
+  
+  /// Calculated aspect ratio for responsive display optimization.
+  aspect_ratio Float
+  
+  /// Indicates if the image has been optimized and processed for delivery.
+  is_processed Boolean
+  
+  /// Timestamp when this image content was created.
+  created_at DateTime
+  
+  /// Timestamp when this image content was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  
+  @@index([post_id])
+  @@index([file_format, created_at])
+  @@index([aspect_ratio])
+  @@index([is_processed])
+}
+
+/// Supporting entity that stores additional metadata and analytics for
+/// community posts. This table enables content personalization,
+/// recommendation algorithms, and platform analytics without denormalizing
+/// the main post tables.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_content_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this metadata belongs to. {@link reddit_community_posts.id}.
+  post_id String
+  
+  /// Total number of times this post has been viewed by users.
+  view_count Int
+  
+  /// Number of times this post has been shared externally.
+  share_count Int
+  
+  /// Number of times users have saved this post for later reference.
+  save_count Int
+  
+  /// Average time users spend viewing this post in seconds.
+  avg_time_spent Float
+  
+  /// Percentage of users who view but don't engage with the post.
+  bounce_rate Float
+  
+  /// Calculated score based on various engagement metrics.
+  engagement_score Float
+  
+  /// Real-time score used for trending content algorithms.
+  trending_score Float
+  
+  /// Quality assessment score based on user feedback and moderation.
+  quality_score Float
+  
+  /// Timestamp when analytics metrics were last calculated.
+  last_analytics_update DateTime
+  
+  /// Timestamp when this metadata record was created.
+  created_at DateTime
+  
+  /// Timestamp when this metadata was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  
+  @@index([post_id])
+  @@index([engagement_score, last_analytics_update], map: "reddit_community_content_metadata_engagement_score_las_b6795e7c")
+  @@index([trending_score, last_analytics_update], map: "reddit_community_content_metadata_trending_score_last__4ffabe12")
+  @@index([quality_score])
+  @@index([view_count])
+}
+
+/// Historical snapshot entity that tracks all revisions and edits made to
+/// community posts. This table provides audit trails, content versioning,
+/// and moderation transparency for post modifications.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_revisions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original post that this revision belongs to. {@link
+  /// reddit_community_posts.id}.
+  post_id String
+  
+  /// Member who created this revision. {@link reddit_community_members.id}.
+  editor_id String
+  
+  /// Sequential revision number for version tracking.
+  revision_number Int
+  
+  /// Post title at the time of this revision.
+  title String
+  
+  /// Complete content snapshot for text posts at revision time.
+  content_snapshot String?
+  
+  /// JSON snapshot of post metadata and settings at revision time.
+  metadata_snapshot String
+  
+  /// User-provided description of what was changed in this revision.
+  change_description String?
+  
+  /// Indicates if this revision represents a rollback to previous version.
+  is_rollback Boolean
+  
+  /// Optional notes from moderators about the revision context.
+  moderator_notes String?
+  
+  /// Timestamp when this revision was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  editor reddit_community_members @relation(fields: [editor_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id, revision_number])
+  @@index([post_id, created_at])
+  @@index([editor_id, created_at])
+  @@index([is_rollback])
+}

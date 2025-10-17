@@ -1,0 +1,66 @@
+/// Business purpose and context: Stores category information for organizing
+/// discussions with proper metadata and lifecycle management. Supports
+/// platform's organization of content by topics like economic policy,
+/// foreign relations, and domestic issues as specified in requirements.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category hierarchy parent. {@link discussion_board_categories.id}.
+  parent_id String?
+  
+  /// Creator user reference. {@link discussion_board_registereduser.id}.
+  created_by_id String?
+  
+  /// Category name for organizing discussions (e.g., Fiscal Policy, Monetary
+  /// Policy, International Relations). Used for content categorization across
+  /// the platform.
+  name String
+  
+  /// Category description providing context and guidelines for appropriate
+  /// discussion topics within this category.
+  description String?
+  
+  /// URL-friendly identifier for the category used in routing and SEO.
+  /// Generated from the category name.
+  slug String
+  
+  /// Visual identification color code for the category in the UI (e.g.,
+  /// #FF5733) to help users distinguish categories.
+  color String?
+  
+  /// Category enabled status indicator. When false, new discussions cannot be
+  /// created in this category.
+  is_active Boolean
+  
+  /// Sorting priority for category display in UI. Lower numbers appear first
+  /// in category listings.
+  display_order Int
+  
+  /// Category creation timestamp for audit and display purposes.
+  created_at DateTime
+  
+  /// Category modification timestamp for tracking changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parent discussion_board_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  createdBy discussion_board_registereduser? @relation(fields: [created_by_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_categories[] @relation("recursive")
+  discussion_board_discussions discussion_board_discussions[]
+  
+  @@index([parent_id])
+  @@index([created_by_id])
+  
+  @@unique([slug])
+  @@index([is_active, display_order])
+}

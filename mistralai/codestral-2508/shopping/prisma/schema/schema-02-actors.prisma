@@ -1,0 +1,170 @@
+/// Represents unauthenticated users who can browse products and add items to
+/// cart.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the guest session.
+  session_id String
+  
+  /// Timestamp when the guest record was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_id])
+  @@index([created_at])
+}
+
+/// Represents authenticated users who can place orders, manage their
+/// profile, and view order history.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_member {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address of the member.
+  email String
+  
+  /// Hashed password for authentication.
+  password_hash String
+  
+  /// Full name of the member.
+  name String
+  
+  /// Phone number of the member.
+  phone String?
+  
+  /// Shipping address of the member.
+  address String?
+  
+  /// Timestamp when the member record was created.
+  created_at DateTime
+  
+  /// Timestamp when the member record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_carts shopping_carts[]
+  shopping_orders shopping_orders[]
+  shopping_coupon_usage shopping_coupon_usage[]
+  shopping_coins shopping_coins?
+  shopping_coin_transactions shopping_coin_transactions[]
+  shopping_inquiries shopping_inquiries[]
+  shopping_favorites shopping_favorites[]
+  shopping_article_comments shopping_article_comments[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Represents users who can manage their products, inventory, and view sales
+/// reports.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address of the seller.
+  email String
+  
+  /// Hashed password for authentication.
+  password_hash String
+  
+  /// Full name of the seller.
+  name String
+  
+  /// Phone number of the seller.
+  phone String?
+  
+  /// Business name of the seller.
+  business_name String
+  
+  /// Business address of the seller.
+  business_address String
+  
+  /// Timestamp when the seller record was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the seller record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Represents system administrators who can manage all users, products,
+/// orders, and system settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address of the admin.
+  email String
+  
+  /// Hashed password for authentication.
+  password_hash String
+  
+  /// Full name of the admin.
+  name String
+  
+  /// Phone number of the admin.
+  phone String?
+  
+  /// Role of the admin (e.g., superadmin, moderator).
+  role String
+  
+  /// Timestamp when the admin record was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the admin record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_inquiry_responses shopping_inquiry_responses[]
+  
+  @@unique([email])
+  @@index([created_at])
+}

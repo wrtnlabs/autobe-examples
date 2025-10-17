@@ -1,0 +1,332 @@
+/// Temporary guest session record used to persist guest carts and wishlists
+/// across sessions. Stores a guest token and session metadata. Not an
+/// authenticated user; intended for ephemeral guest state management and
+/// merges into customer accounts on registration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Opaque guest token used to associate temporary cart/wishlist sessions
+  /// with an unauthenticated visitor.
+  guest_token String
+  
+  /// Optional user-agent string captured at session creation for diagnostics.
+  user_agent String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp when guest session is expired or removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_addresses shopping_mall_addresses[]
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  
+  @@unique([guest_token])
+  @@index([guest_token, created_at])
+}
+
+/// Registered customer account. Stores authentication credentials, profile
+/// metadata and flags required for buyer flows. Customers may have addresses
+/// and persistent carts; this is an independent business entity (primary).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Login email address. Unique across customers.
+  email String
+  
+  /// Password hash for authentication (do not store raw passwords).
+  password_hash String
+  
+  /// Optional display or full name for customer-facing UX.
+  display_name String?
+  
+  /// Optional contact phone number.
+  phone String?
+  
+  /// Whether the customer's email address has been verified.
+  email_verified Boolean
+  
+  /// Timestamp of the last successful login event.
+  last_login_at DateTime?
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Account last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for deactivated accounts.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_addresses shopping_mall_addresses[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_payments shopping_mall_payments[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  
+  @@unique([email])
+  @@index([email_verified, created_at])
+}
+
+/// Seller (merchant) account that owns product listings and SKUs. Contains
+/// authentication credentials, business identity fields, and operational
+/// flags. Sellers are primary business entities responsible for inventory
+/// and fulfillment.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Login email for the seller account.
+  email String
+  
+  /// Password hash for seller authentication.
+  password_hash String
+  
+  /// Registered business or display name for the seller.
+  business_name String
+  
+  /// Primary contact phone number for the seller.
+  contact_phone String?
+  
+  /// Seller account status (e.g., pending_verification, active, suspended).
+  status String
+  
+  /// Reference to payout settings or external settlement profile.
+  payout_settings_uri String?
+  
+  /// Seller account creation timestamp.
+  created_at DateTime
+  
+  /// Seller account last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for deactivated sellers.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_addresses shopping_mall_addresses[]
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  
+  @@unique([email])
+  @@index([status, created_at])
+}
+
+/// Support agent account for platform customer service and dispute handling.
+/// Agents have credentials and profile metadata; actions must be auditable
+/// via separate audit logs (external).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_supportagent {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Login email for the support agent.
+  email String
+  
+  /// Password hash for support agent authentication.
+  password_hash String
+  
+  /// Human-readable name for the agent.
+  display_name String?
+  
+  /// Whether the support agent account is active.
+  is_active Boolean
+  
+  /// Agent account creation timestamp.
+  created_at DateTime
+  
+  /// Agent account last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for removed agent accounts.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_addresses shopping_mall_addresses[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_shipment_events shopping_mall_shipment_events[]
+  
+  @@unique([email])
+  @@index([is_active, created_at])
+}
+
+/// Platform administrator accounts with elevated privileges for governance
+/// and platform configuration. Admins are primary actors and all admin
+/// actions should be recorded in the system audit logs.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator login email.
+  email String
+  
+  /// Password hash for admin authentication.
+  password_hash String
+  
+  /// Administrator display name.
+  display_name String?
+  
+  /// Integer representing privilege tiers for admin accounts; higher value
+  /// implies broader privileges.
+  privilege_level Int
+  
+  /// Admin account creation timestamp.
+  created_at DateTime
+  
+  /// Admin account last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for deactivated admin accounts.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_addresses shopping_mall_addresses[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  
+  @@unique([email])
+  @@index([privilege_level, created_at])
+}
+
+/// Address records for all roles (customers, sellers, guests, agents,
+/// admins). Stores raw address fields used for shipping, billing, and
+/// address snapshots on orders. IMPORTANT: Owner foreign keys are
+/// intentionally nullable and must NOT cascade on owner deletion; they
+/// should be set to NULL (or left as-is) to preserve historical snapshots.
+/// Application-level archival / soft-delete must be used to retire actor
+/// accounts without deleting address history.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customer.id}. Nullable to
+  /// preserve address snapshots when customer is deleted.
+  shopping_mall_customer_id String?
+  
+  /// Belonged seller's {@link shopping_mall_seller.id}. Nullable to preserve
+  /// address snapshots when seller is deleted.
+  shopping_mall_seller_id String?
+  
+  /// Belonged support agent's {@link shopping_mall_supportagent.id}. Nullable
+  /// to preserve audit trail when agent account is removed.
+  shopping_mall_supportagent_id String?
+  
+  /// Belonged admin's {@link shopping_mall_admin.id}. Nullable to preserve
+  /// audit trail when admin account is removed.
+  shopping_mall_admin_id String?
+  
+  /// Belonged guest session {@link shopping_mall_guest.id}. Nullable to allow
+  /// guest cleanup without removing historical address rows referenced in
+  /// snapshots.
+  shopping_mall_guest_id String?
+  
+  /// Name of the recipient for deliveries.
+  recipient_name String
+  
+  /// Street address line 1.
+  line1 String
+  
+  /// Optional street address line 2 (apartment, suite).
+  line2 String?
+  
+  /// City or locality.
+  city String
+  
+  /// Postal or ZIP code.
+  postal_code String
+  
+  /// ISO country code or country name for display.
+  country String
+  
+  /// Contact phone number for deliveries.
+  phone String?
+  
+  /// Whether this address is the default for the owner. Application should
+  /// default to false.
+  is_default Boolean
+  
+  /// Address creation timestamp.
+  created_at DateTime
+  
+  /// Address last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for removed addresses.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  supportAgent shopping_mall_supportagent? @relation(fields: [shopping_mall_supportagent_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  guest shopping_mall_guest? @relation(fields: [shopping_mall_guest_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  
+  @@index([shopping_mall_supportagent_id])
+  @@index([shopping_mall_admin_id])
+  @@index([shopping_mall_guest_id])
+  
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_addresses_shopping_mall_customer_id_crea_7b9e294d")
+  @@index([shopping_mall_seller_id, created_at])
+}

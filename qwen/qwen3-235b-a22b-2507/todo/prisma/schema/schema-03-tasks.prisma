@@ -1,0 +1,44 @@
+/// Core entity representing a user's task in the Todo list application. This
+/// table stores all task-related information including title, status, and
+/// timestamps for audit purposes. Users can create, view, update, and delete
+/// their own tasks.
+///
+/// @namespace Tasks
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns this task. {@link todo_users.id}.
+  todo_user_id String
+  
+  /// The task description or title entered by the user. Limited to 500
+  /// characters as per requirements.
+  title String
+  
+  /// Current status of the task. Possible values: 'pending', 'completed'.
+  /// Tracks the task lifecycle.
+  status String
+  
+  /// Timestamp when the task was created. Used for sorting tasks
+  /// chronologically and audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when the task was last updated. Automatically updated on any
+  /// modification for audit trail.
+  updated_at DateTime
+  
+  /// Timestamp when the task was deleted. Used for soft delete functionality
+  /// and potential recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_user_id, status, created_at])
+}

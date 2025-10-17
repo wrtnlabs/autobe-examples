@@ -1,0 +1,154 @@
+/// Guest actor entity representing unauthenticated visitors of the
+/// discussion board system. Used for tracking browsing or search activity
+/// and potential auditing. Guests do not have login credentials, and do not
+/// author topics or replies. This table facilitates tracking session
+/// history, device fingerprinting, or future personalization without
+/// registration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Randomly generated anonymous token for tracking session or device
+  /// activity. Used for distinguishing unique guest sessions without revealing
+  /// personal data.
+  anonymous_token String
+  
+  /// Timestamp when the guest record is first created. Used for session and
+  /// analytics tracking.
+  created_at DateTime
+  
+  /// Timestamp for the last update of the guest record (e.g., session refresh).
+  updated_at DateTime
+  
+  /// Timestamp for soft-deletion of the guest record, if applicable. Null when
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([anonymous_token])
+  @@index([created_at])
+}
+
+/// Registered user (member) entity representing authenticated users of the
+/// discussion board. Members have login credentials, author topics and
+/// replies, and can be uniquely identified by email and username. This
+/// entity stores hashed password for authentication, and supports full audit
+/// and soft-delete tracking for compliance.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique business email address for member login and communication. Must be
+  /// verified via registration process.
+  email String
+  
+  /// Display name chosen by member, used in topics and replies. Must be unique
+  /// for identity within the discussion board.
+  username String
+  
+  /// Hashed password for secure login authentication. Never stored in plain
+  /// text. Required for authentication process.
+  password_hash String
+  
+  /// Indicates whether the member's email address has been verified via
+  /// confirmation link.
+  email_verified Boolean
+  
+  /// Timestamp when the member's registration was fully completed and email
+  /// verified. Used for audit and onboarding analytics.
+  registration_completed_at DateTime
+  
+  /// Timestamp when the member record is first created. Used for traceability
+  /// and analytics.
+  created_at DateTime
+  
+  /// Timestamp for the last update of the member record (e.g., profile or
+  /// password change).
+  updated_at DateTime
+  
+  /// Timestamp for soft-deletion of the member account. Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_topics discussion_board_topics[]
+  discussion_board_replies discussion_board_replies[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+}
+
+/// Administrator entity representing privileged users with management rights
+/// over the discussion board system. Admins require authentication and are
+/// granted system-level permissions such as user management and, if enabled,
+/// moderation. Designed as a standalone entity (not a member subtype) per
+/// business directive, supporting distinct audit trails and privilege
+/// separation.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for administrator login and communication. Must be
+  /// business-verified as part of privileged account control.
+  email String
+  
+  /// Display name selected by admin, used for identifying admin actions and
+  /// events.
+  username String
+  
+  /// Securely hashed password for administrator authentication. Never stored
+  /// as plain text.
+  password_hash String
+  
+  /// Indicates whether the admin's email has been verified via a confirmation
+  /// workflow.
+  email_verified Boolean
+  
+  /// Timestamp when the admin account has successfully completed verification
+  /// and is enabled for privileged access.
+  registration_completed_at DateTime
+  
+  /// Timestamp for account creation, establishing audit trail for admin
+  /// onboarding.
+  created_at DateTime
+  
+  /// Timestamp for the most recent administrative account update, such as
+  /// profile changes or security resets.
+  updated_at DateTime
+  
+  /// Timestamp for soft-deletion (optional) of the admin account, null for
+  /// active admins.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_topics discussion_board_topics[]
+  discussion_board_replies discussion_board_replies[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+}

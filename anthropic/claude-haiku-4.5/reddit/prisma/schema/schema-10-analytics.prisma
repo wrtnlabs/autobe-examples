@@ -1,0 +1,472 @@
+/// Aggregated user statistics for dashboard and profile display. Contains
+/// denormalized metrics (total posts, comments, karma, followers) calculated
+/// from operational data. Updated periodically (hourly or daily) via
+/// background jobs to avoid transactional impact. Enables rapid statistics
+/// access without expensive aggregations on every profile view.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_statistics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user whose statistics are tracked. {@link
+  /// community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Total number of posts created by this user across all communities
+  /// (lifetime count). Updated when posts are created or deleted.
+  total_posts_created Int
+  
+  /// Total number of comments posted by this user across all posts (lifetime
+  /// count). Updated when comments are created or deleted.
+  total_comments_posted Int
+  
+  /// Total cumulative karma score from all posts and comments. Can be
+  /// negative. Matches sum of upvotes minus downvotes on all user content.
+  total_karma_points Int
+  
+  /// Total number of users following this user. Derived from
+  /// community_platform_user_follows table where following_user_id = this
+  /// user.
+  followers_count Int
+  
+  /// Total number of users this user is following. Derived from
+  /// community_platform_user_follows table where follower_user_id = this user.
+  following_count Int
+  
+  /// Total number of communities this user has subscribed to. Derived from
+  /// community_platform_community_subscriptions.
+  communities_subscribed_count Int
+  
+  /// Total number of communities this user is a moderator for. Derived from
+  /// community_platform_moderators.
+  communities_moderated_count Int
+  
+  /// Karma earned specifically from posts (sum of net votes on posts). Subset
+  /// of total_karma_points.
+  post_karma Int
+  
+  /// Karma earned specifically from comments (sum of net votes on comments).
+  /// Subset of total_karma_points.
+  comment_karma Int
+  
+  /// Number of posts created in the last 30 days. Used for activity trending.
+  monthly_posts_count Int
+  
+  /// Number of comments posted in the last 30 days. Used for activity trending.
+  monthly_comments_count Int
+  
+  /// Net karma earned in the last 30 days (can be negative). Shows recent
+  /// engagement quality.
+  monthly_karma_earned Int
+  
+  /// Number of posts created in the last 7 days. Used for short-term activity
+  /// assessment.
+  weekly_posts_count Int
+  
+  /// Number of comments posted in the last 7 days. Used for short-term
+  /// activity assessment.
+  weekly_comments_count Int
+  
+  /// Average net karma earned per post (total_post_karma /
+  /// total_posts_created). Indicates post quality. 0 if no posts.
+  average_karma_per_post Float
+  
+  /// Average net karma earned per comment (total_comment_karma /
+  /// total_comments_posted). Indicates comment quality. 0 if no comments.
+  average_karma_per_comment Float
+  
+  /// Percentage of views that result in interactions (votes, comments). Ranges
+  /// 0-100. Calculated as (interactions / total_views) * 100.
+  engagement_rate Float
+  
+  /// Timestamp of user's most recent activity (post, comment, vote, login).
+  /// Used for activity status indication.
+  last_active_at DateTime?
+  
+  /// Timestamp when statistics record was first created (matches user account
+  /// creation).
+  created_at DateTime
+  
+  /// Timestamp of last statistics update. Updated by background jobs that
+  /// recalculate metrics (hourly or daily).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id], map: "community_platform_user_statistics_community_platform__f5b19668")
+  @@index([total_karma_points])
+  @@index([last_active_at])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Chronological log of user activities for activity feed and timeline
+/// display. Append-only pattern where new records are added but rarely
+/// modified or deleted. Tracks user actions (posts, comments, votes,
+/// follows, subscriptions) with full context. Optimized for displaying user
+/// activity history on profiles and in notification systems.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_activity_timeline {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the action. {@link community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Community where action occurred (if applicable). Null if action is not
+  /// community-specific. {@link community_platform_communities.id}
+  community_platform_community_id String?
+  
+  /// Other user involved in action if applicable (e.g., followed user in
+  /// follow action, mentioned user in mention action). Null if action only
+  /// involves self. {@link community_platform_users.id}
+  related_user_id String?
+  
+  /// Type of activity: 'post_created', 'comment_posted', 'comment_reply',
+  /// 'post_voted', 'comment_voted', 'user_followed', 'community_subscribed',
+  /// 'community_moderated', 'post_edited', 'comment_edited'. Used for
+  /// filtering and categorizing activities.
+  activity_type String
+  
+  /// ID of the content involved (post or comment ID). Null if activity doesn't
+  /// involve specific content (e.g., follow action).
+  content_id String?
+  
+  /// Type of content: 'post' or 'comment'. Null if activity doesn't involve
+  /// specific content.
+  content_type String?
+  
+  /// JSON object containing activity-specific metadata: for posts (title,
+  /// first 100 chars of body), for comments (first 100 chars), for votes
+  /// (vote_type: 'upvote'/'downvote'), for follows (followed_user_username).
+  /// Enables rich activity display without additional queries.
+  activity_data String?
+  
+  /// Timestamp when activity occurred (ISO 8601 UTC). Immutable after
+  /// creation. Used for chronological ordering and historical analysis.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation("community_platform_activity_timeline_of_community_plat_1638122b", fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  relatedUser community_platform_users? @relation("community_platform_activity_timeline_of_related_user_id", fields: [related_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([related_user_id])
+  
+  @@index([community_platform_user_id, created_at], map: "community_platform_activity_timeline_community_platfor_1cae949d")
+  @@index([community_platform_community_id, created_at], map: "community_platform_activity_timeline_community_platfor_53971d75")
+  @@index([activity_type, created_at], map: "community_platform_activity_timeline_activity_type_cre_289c1956")
+  @@index([created_at])
+}
+
+/// Aggregated engagement metrics for communities and time periods. Tracks
+/// engagement rates, participation patterns, and interaction quality. Used
+/// by discovery and recommendation systems to identify trending content and
+/// engaging communities. Updated periodically (every hour or daily) from
+/// vote and interaction data. Enables efficient trending queries without
+/// scanning millions of votes.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_engagement_statistics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community these engagement statistics apply to. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Time period for this aggregation: 'hourly', 'daily', 'weekly', 'monthly',
+  /// 'all_time'. Used to track trends across different time horizons.
+  time_period String
+  
+  /// Start timestamp of the time period covered by these statistics (ISO 8601
+  /// UTC). For 'all_time', this is community creation timestamp.
+  period_start_at DateTime
+  
+  /// End timestamp of the time period covered by these statistics (ISO 8601
+  /// UTC). For 'all_time', this is null.
+  period_end_at DateTime?
+  
+  /// Total posts created in community during this period. Used for growth
+  /// trending.
+  total_posts_in_period Int
+  
+  /// Total comments posted in community during this period. Used for
+  /// discussion activity metrics.
+  total_comments_in_period Int
+  
+  /// Total votes (upvotes + downvotes) cast on posts and comments in community
+  /// during period. Measures participation.
+  total_votes_in_period Int
+  
+  /// Total upvotes in community during period. Indicates approval/positive
+  /// sentiment.
+  total_upvotes_in_period Int
+  
+  /// Total downvotes in community during period. Indicates
+  /// disapproval/disagreement.
+  total_downvotes_in_period Int
+  
+  /// Number of unique users who posted in community during period. Indicates
+  /// community participation breadth.
+  unique_posters_count Int
+  
+  /// Number of unique users who commented in community during period. Shows
+  /// discussion participation.
+  unique_commenters_count Int
+  
+  /// Number of unique users who voted during period. Shows engagement
+  /// participation.
+  unique_voters_count Int
+  
+  /// Percentage of posts that received engagement (comments or votes):
+  /// (posts_with_engagement / total_posts) * 100. Ranges 0-100. Indicates post
+  /// quality and relevance.
+  post_engagement_rate Float
+  
+  /// Percentage of comments that received votes: (voted_comments /
+  /// total_comments) * 100. Ranges 0-100. Shows comment quality.
+  comment_engagement_rate Float
+  
+  /// Percentage of community members who voted during period: (unique_voters /
+  /// total_members) * 100. Ranges 0-100. High rates indicate engaged
+  /// community.
+  vote_participation_rate Float
+  
+  /// Average number of comments per post in period. Shows discussion depth. 0
+  /// if no posts.
+  average_replies_per_post Float
+  
+  /// Average upvote to total vote ratio: upvotes / (upvotes + downvotes).
+  /// Ranges 0-1. Indicates community sentiment positivity.
+  average_upvote_ratio Float
+  
+  /// Number of new community subscriptions during period. Shows community
+  /// growth.
+  new_subscribers_count Int
+  
+  /// Subscriber growth rate in period: (new_subscribers /
+  /// total_subscribers_at_period_start) * 100. Used for trending calculation.
+  growth_rate Float
+  
+  /// Calculated trending score combining growth rate, engagement rate, and
+  /// post velocity. Higher = more trending. Used for community
+  /// recommendations.
+  trending_score Float
+  
+  /// Timestamp when statistics record was created. Immutable.
+  created_at DateTime
+  
+  /// Timestamp of last update. Updated only when new period completes or
+  /// recalculation needed.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_community_id, time_period, period_start_at], map: "community_platform_engagement_statistics_community_pla_b2c34caf")
+  @@index([time_period, period_end_at], map: "community_platform_engagement_statistics_time_period_p_814a0cf9")
+  @@index([trending_score])
+  @@index([growth_rate])
+  @@index([created_at])
+}
+
+/// Performance metrics for individual posts and comments. Tracks views,
+/// engagement, and algorithmic scores (hot, top, controversial).
+/// Denormalized from votes and view data for efficient sorting and
+/// discovery. Updated as content receives votes or views. Enables ranking
+/// without recalculating scores on every query.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_content_statistics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ID of the post or comment these statistics apply to. Non-nullable.
+  /// References either community_platform_posts or
+  /// community_platform_comments.
+  content_id String
+  
+  /// Type of content: 'post' or 'comment'. Indicates which table content_id
+  /// references.
+  content_type String
+  
+  /// Total number of times this content has been viewed by unique users.
+  /// Incremented when content detail page is loaded.
+  total_views Int
+  
+  /// Number of views in last 24 hours. Used for trending and velocity
+  /// calculation.
+  views_last_24h Int
+  
+  /// Number of views in last 7 days. Shows content longevity and continued
+  /// interest.
+  views_last_7d Int
+  
+  /// Total upvotes received. Core metric for ranking and recommendation.
+  total_upvotes Int
+  
+  /// Total downvotes received. Indicates disapproval or low quality.
+  total_downvotes Int
+  
+  /// Calculated: upvotes - downvotes. Primary ranking metric for top and
+  /// controversial sorts.
+  net_votes Int
+  
+  /// Ratio of upvotes to total votes: upvotes / (upvotes + downvotes). Ranges
+  /// 0-1. Shows community sentiment.
+  upvote_ratio Float
+  
+  /// Total number of comments/replies on this content. Shows discussion
+  /// activity.
+  total_comments Int
+  
+  /// Number of new comments in last 24 hours. Shows ongoing engagement.
+  comments_last_24h Int
+  
+  /// Cached hot algorithm score: (net_votes / hours_old^1.8) *
+  /// engagement_multiplier. Used for ranking in hot sort without
+  /// recalculation.
+  hot_score Float
+  
+  /// Cached controversial algorithm score: min(upvotes, downvotes) * 2 +
+  /// abs(upvotes - downvotes). High when votes are polarized.
+  controversial_score Float
+  
+  /// Total engagement: upvotes + downvotes + comments. Measures total
+  /// interaction.
+  engagement_count Int
+  
+  /// Engagement per hour since creation: engagement_count /
+  /// hours_since_creation. High velocity indicates trending/viral potential.
+  engagement_velocity Float
+  
+  /// Number of reports filed on this content. Indicates potential violations
+  /// or quality issues.
+  report_count Int
+  
+  /// Timestamp when statistics record was created (typically matches content
+  /// creation).
+  created_at DateTime
+  
+  /// Timestamp of last statistics update. Updated when votes, views, or
+  /// comments change.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([content_id])
+  @@index([content_type, created_at], map: "community_platform_content_statistics_content_type_cre_9f6b102b")
+  @@index([hot_score])
+  @@index([net_votes])
+  @@index([controversial_score])
+  @@index([engagement_velocity])
+  @@index([total_views])
+  @@index([updated_at])
+}
+
+/// Detailed event log for analytics and BI system integration. Immutable
+/// append-only event records tracking user interactions (posts, votes,
+/// comments, follows, subscriptions). Each row represents a single user
+/// action. Designed for data warehouse ingestion, historical analysis, and
+/// trending detection. Never updated or deleted (except hard delete for
+/// GDPR). Enables replaying user activity timeline and computing custom
+/// analytics metrics.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_engagement_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the engagement action. {@link
+  /// community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Community where engagement occurred (if applicable). Null for user
+  /// actions that aren't community-specific (e.g., user follow). {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String?
+  
+  /// Type of engagement event: 'post_created', 'comment_posted',
+  /// 'post_upvoted', 'post_downvoted', 'comment_upvoted', 'comment_downvoted',
+  /// 'user_followed', 'community_subscribed', 'mention_sent',
+  /// 'report_submitted', 'content_viewed'. Used for filtering and categorizing
+  /// events.
+  event_type String
+  
+  /// ID of content involved (post or comment). Null if event doesn't involve
+  /// specific content.
+  content_id String?
+  
+  /// Type of content: 'post', 'comment', or null if not applicable.
+  content_type String?
+  
+  /// ID of other user involved in event (e.g., followed user in follow event,
+  /// mentioned user in mention event). Null if only one user involved. {@link
+  /// community_platform_users.id}
+  related_user_id String?
+  
+  /// Numeric value associated with event if applicable. For votes: 1 (upvote)
+  /// or -1 (downvote). For views: 1 per view. For karma changes: actual karma
+  /// delta. 0 or null if not applicable.
+  event_value Int?
+  
+  /// JSON object containing additional context: for posts (title, preview),
+  /// for votes (vote_type), for follows (followed_username), for reports
+  /// (report_reason). Enables rich event analysis without additional queries.
+  event_metadata String?
+  
+  /// IP address of user when event occurred. Used for fraud detection and user
+  /// behavior analysis. Masked for privacy (last octet zero).
+  user_ip_address String?
+  
+  /// Exact timestamp when engagement event occurred (ISO 8601 UTC). Immutable.
+  /// Used for precise event ordering and time-series analysis.
+  event_timestamp DateTime
+  
+  /// Timestamp when event record was created in database (may be shortly after
+  /// event_timestamp). Immutable.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_user_id, event_timestamp], map: "community_platform_user_engagement_events_community_pl_1c9597c9")
+  @@index([event_type, event_timestamp], map: "community_platform_user_engagement_events_event_type_e_f11e6b1c")
+  @@index([community_platform_community_id, event_timestamp], map: "community_platform_user_engagement_events_community_pl_c65a6c6c")
+  @@index([event_timestamp])
+  @@index([content_type, content_id], map: "community_platform_user_engagement_events_content_type_1cad4dcd")
+}

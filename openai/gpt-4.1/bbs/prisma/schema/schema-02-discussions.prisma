@@ -1,0 +1,110 @@
+/// Discussion board topics representing main discussion threads for economic
+/// and political conversations. Each topic is authored by a member or admin
+/// and contains a subject/title, content/body, and timestamps for auditing.
+/// Supports many topics per member/admin. Links to discussion_board_members
+/// or discussion_board_admins (via author foreign key), enforcing that only
+/// authenticated users can create topics. Forms the primary entity for all
+/// board discussions, supporting full CRUD and search capabilities. Related
+/// entity: {@link discussion_board_replies} for topic replies.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {@link discussion_board_members.id}. Used when the author is a
+  /// standard member. One and only one of author_member_id or author_admin_id
+  /// must be set.
+  author_member_id String?
+  
+  /// Author's {@link discussion_board_admins.id}. Used when the author is an
+  /// admin. One and only one of author_member_id or author_admin_id must be
+  /// set.
+  author_admin_id String?
+  
+  /// Subject or title of the discussion topic. Minimum 5, maximum 120
+  /// characters, required.
+  subject String
+  
+  /// Main body/content of the topic. Minimum 10, maximum 4000 characters,
+  /// required.
+  content String
+  
+  /// Timestamp when the topic was created.
+  created_at DateTime
+  
+  /// Timestamp when the topic was last edited or updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  authorMember discussion_board_members? @relation(fields: [author_member_id], references: [id], onDelete: Cascade)
+  authorAdmin discussion_board_admins? @relation(fields: [author_admin_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_replies discussion_board_replies[]
+  
+  @@unique([subject, author_member_id, created_at])
+  @@unique([subject, author_admin_id, created_at])
+  @@index([created_at])
+  @@index([author_member_id])
+  @@index([author_admin_id])
+}
+
+/// Replies to discussion board topics, representing user-generated
+/// contributions to threads. Each reply must reference its parent topic
+/// ({@link discussion_board_topics}), link to an author (member or admin),
+/// and include reply content and timestamps. Many replies per topic, many
+/// replies per author. Designed for independent retrieval: enables finding
+/// all replies by user or by topic. Essential for interaction between users
+/// in the discussion board. No moderation, voting, or extra metadata
+/// included at this phase.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The topic that this reply is attached to. References {@link
+  /// discussion_board_topics.id}. Every reply must belong to a valid topic.
+  topic_id String
+  
+  /// Reply author's {@link discussion_board_members.id}. Used when reply is by
+  /// a member. One and only one of author_member_id or author_admin_id must be
+  /// set.
+  author_member_id String?
+  
+  /// Reply author's {@link discussion_board_admins.id}. Used when reply is by
+  /// an admin. One and only one of author_member_id or author_admin_id must be
+  /// set.
+  author_admin_id String?
+  
+  /// Content/body of the reply. Minimum 3, maximum 2000 characters, required.
+  content String
+  
+  /// Timestamp when the reply was created.
+  created_at DateTime
+  
+  /// Timestamp when the reply was last edited or updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  topic discussion_board_topics @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  authorMember discussion_board_members? @relation(fields: [author_member_id], references: [id], onDelete: Cascade)
+  authorAdmin discussion_board_admins? @relation(fields: [author_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([topic_id])
+  @@index([author_member_id])
+  @@index([author_admin_id])
+  @@index([created_at])
+}

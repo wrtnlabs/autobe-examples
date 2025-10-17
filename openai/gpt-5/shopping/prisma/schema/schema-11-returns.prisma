@@ -1,0 +1,350 @@
+/// Represents a customer- or staff-initiated request to cancel an order
+/// before shipment. Used by support and operations to enforce policy windows
+/// and maker-checker approvals. Links to the target {@link
+/// shopping_mall_orders} and records both requester and approver users via
+/// {@link shopping_mall_users}. Cancellation execution (void/release) is
+/// handled by payment entities in other components. This is a primary
+/// business entity for audit and workflow management across the marketplace.
+///
+/// @namespace Returns
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order to be canceled. Target model's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// User who created the cancellation request. Target model's {@link
+  /// shopping_mall_users.id}
+  requested_by_user_id String
+  
+  /// Approver user for maker-checker or staff approval where required. Target
+  /// model's {@link shopping_mall_users.id}
+  approved_by_user_id String?
+  
+  /// Unique human-readable identifier for the cancellation request used in
+  /// operations (e.g., "CAN-20251007-000123").
+  cancellation_request_number String
+  
+  /// Business status of the cancellation request (e.g., pending, approved,
+  /// rejected, withdrawn, executed).
+  status String
+  
+  /// Categorized reason code for the cancellation (e.g., buyer_changed_mind,
+  /// address_issue, pricing_error).
+  reason_code String
+  
+  /// Free-text note elaborating on the cancellation reason, provided by
+  /// customer or staff.
+  reason_note String?
+  
+  /// Timestamp when the request was approved/rejected, if applicable.
+  decided_at DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recovery and audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  requestedBy shopping_mall_users @relation("shopping_mall_cancellation_requests_of_requested_by_user_id", fields: [requested_by_user_id], references: [id], onDelete: Cascade)
+  approvedBy shopping_mall_users? @relation("shopping_mall_cancellation_requests_of_approved_by_user_id", fields: [approved_by_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([approved_by_user_id])
+  
+  @@unique([cancellation_request_number], map: "shopping_mall_cancellation_requests_cancellation_reque_4ff22de2")
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_orde_abb70de8")
+  @@index([requested_by_user_id, created_at], map: "shopping_mall_cancellation_requests_requested_by_user__2faefd52")
+  @@index([status, created_at])
+}
+
+/// Represents an RMA request raised after shipment/delivery for items to be
+/// returned and potentially refunded. Tied to the buyer and original {@link
+/// shopping_mall_orders}, optionally linked to the original {@link
+/// shopping_mall_shipments}. Approval outcomes govern downstream refund
+/// processing in payment subsystems. Acts as the parent for {@link
+/// shopping_mall_return_items} and {@link shopping_mall_return_shipments}.
+///
+/// @namespace Returns
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_return_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related order's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// User who submitted the RMA/return request. {@link shopping_mall_users.id}
+  requested_by_user_id String
+  
+  /// Original shipment associated with the return when applicable. {@link
+  /// shopping_mall_shipments.id}
+  original_shipment_id String?
+  
+  /// Unique RMA code used to track the return process (e.g.,
+  /// "RMA-20251007-000045").
+  rma_code String
+  
+  /// Return workflow state (e.g., pending, approved, rejected,
+  /// in_transit_back, received, closed).
+  status String
+  
+  /// Categorized reason for return (e.g., defective, damaged_in_transit,
+  /// wrong_item, not_as_described).
+  reason_code String
+  
+  /// Free-text explanation supporting the reason and evidence context.
+  reason_note String?
+  
+  /// Timestamp when the return request was approved/rejected.
+  decided_at DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit/recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  requestedBy shopping_mall_users @relation(fields: [requested_by_user_id], references: [id], onDelete: Cascade)
+  originalShipment shopping_mall_shipments? @relation(fields: [original_shipment_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_return_shipments shopping_mall_return_shipments[]
+  shopping_mall_return_items shopping_mall_return_items[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  
+  @@index([original_shipment_id])
+  
+  @@unique([rma_code])
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_return_requests_shopping_mall_order_id_c_7e7a4291")
+  @@index([requested_by_user_id, created_at], map: "shopping_mall_return_requests_requested_by_user_id_cre_809af053")
+  @@index([status, created_at])
+}
+
+/// Line-level items under a return request capturing exact {@link
+/// shopping_mall_order_items} being returned, requested and approved
+/// quantities, condition/inspection outcomes, and refundable assessments.
+/// Managed through the parent {@link shopping_mall_return_requests}.
+///
+/// @namespace Returns
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_return_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent return request's {@link shopping_mall_return_requests.id}
+  shopping_mall_return_request_id String
+  
+  /// Returned order line's {@link shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// Quantity requested to return for the referenced order item.
+  requested_quantity Int
+  
+  /// Quantity approved after review/inspection; may be less than requested.
+  approved_quantity Int?
+  
+  /// Condition assessment on receipt (e.g., new, opened, used, damaged).
+  received_condition String?
+  
+  /// Inspection workflow state (e.g., pending, in_review, accepted, rejected).
+  inspection_status String?
+  
+  /// Optional inspection notes captured by staff.
+  inspection_note String?
+  
+  /// Free-text comment on item condition provided by customer or staff.
+  condition_note String?
+  
+  /// Monetary amount considered refundable for this line based on policy
+  /// outcomes.
+  refundable_amount Float?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  returnRequest shopping_mall_return_requests @relation(fields: [shopping_mall_return_request_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_return_request_id, shopping_mall_order_item_id], map: "shopping_mall_return_items_shopping_mall_return_reques_83dd201b")
+  @@index([shopping_mall_return_request_id, created_at], map: "shopping_mall_return_items_shopping_mall_return_reques_1ba118ef")
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_return_items_shopping_mall_order_item_id_89ba413e")
+  @@index([inspection_status, created_at])
+}
+
+/// Represents a request to refund funds (full or partial) tied to an {@link
+/// shopping_mall_orders} snapshot, optionally originating from an approved
+/// {@link shopping_mall_return_requests}. This entity precedes actual
+/// payment refunds (executed in existing {@link
+/// shopping_mall_payment_refunds}) and supports maker-checker approvals and
+/// finance thresholds.
+///
+/// @namespace Returns
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order to which the refund applies. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// User who created the refund request. {@link shopping_mall_users.id}
+  requested_by_user_id String
+  
+  /// Approver user where thresholds require maker-checker. {@link
+  /// shopping_mall_users.id}
+  approved_by_user_id String?
+  
+  /// Linked return request when the refund originates from returns. {@link
+  /// shopping_mall_return_requests.id}
+  shopping_mall_return_request_id String?
+  
+  /// Unique reference number for this refund request (e.g.,
+  /// "RR-20251007-000321").
+  refund_request_number String
+  
+  /// Workflow state (e.g., pending, approved, rejected, executed, canceled).
+  status String
+  
+  /// Categorized reason for refund (e.g., not_received, damaged,
+  /// service_issue, goodwill).
+  reason_code String
+  
+  /// Free-text note supporting the reason and decision context.
+  reason_note String?
+  
+  /// Total amount requested for refund across all lines prior to
+  /// fees/adjustments.
+  total_requested_amount Float
+  
+  /// Amount approved after finance review; may be less than requested.
+  approved_amount Float?
+  
+  /// ISO currency code (e.g., KRW, USD) used for the requested and approved
+  /// amounts.
+  currency String
+  
+  /// Timestamp when the refund request was approved/rejected.
+  decided_at DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  requestedBy shopping_mall_users @relation("shopping_mall_refund_requests_of_requested_by_user_id", fields: [requested_by_user_id], references: [id], onDelete: Cascade)
+  approvedBy shopping_mall_users? @relation("shopping_mall_refund_requests_of_approved_by_user_id", fields: [approved_by_user_id], references: [id], onDelete: Cascade)
+  returnRequest shopping_mall_return_requests? @relation(fields: [shopping_mall_return_request_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  shopping_mall_refund_items shopping_mall_refund_items[]
+  
+  @@index([approved_by_user_id])
+  
+  @@unique([refund_request_number])
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_order_id_c_fc29405e")
+  @@index([requested_by_user_id, created_at], map: "shopping_mall_refund_requests_requested_by_user_id_cre_71d093a6")
+  @@index([status, created_at])
+  @@index([shopping_mall_return_request_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_return_req_5a250243")
+}
+
+/// Per-line breakdown for a {@link shopping_mall_refund_requests},
+/// optionally tied to an {@link shopping_mall_order_items} when refunding a
+/// specific SKU line. Supports partial quantities and non-item adjustments
+/// (shipping, fees) by allowing a null order item reference.
+///
+/// @namespace Returns
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent refund request's {@link shopping_mall_refund_requests.id}
+  shopping_mall_refund_request_id String
+  
+  /// Associated order item for itemized refunds. {@link
+  /// shopping_mall_order_items.id}
+  shopping_mall_order_item_id String?
+  
+  /// Quantity affected for the refund line; null for non-item adjustments like
+  /// shipping/fees.
+  quantity Int?
+  
+  /// Amount requested/approved for this line in the refund currency; sign
+  /// reflects refund direction (positive refund to buyer).
+  amount Float
+  
+  /// Categorized reason for this refund line (e.g., damaged, wrong_item,
+  /// shipping_fee_adjustment).
+  reason_code String
+  
+  /// Line-level approval status when managed separately from the header (e.g.,
+  /// pending, approved, rejected).
+  approval_status String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_refund_request_id, shopping_mall_order_item_id, reason_code], map: "shopping_mall_refund_items_shopping_mall_refund_reques_51a60264")
+  @@index([shopping_mall_refund_request_id, created_at], map: "shopping_mall_refund_items_shopping_mall_refund_reques_39f3ad3e")
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_refund_items_shopping_mall_order_item_id_70aeac5f")
+  @@index([approval_status, created_at])
+}

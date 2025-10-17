@@ -1,0 +1,222 @@
+import { Controller } from "@nestjs/common";
+import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
+import typia, { tags } from "typia";
+import { postDiscussionBoardAdministratorModerationActions } from "../../../../providers/postDiscussionBoardAdministratorModerationActions";
+import { AdministratorAuth } from "../../../../decorators/AdministratorAuth";
+import { AdministratorPayload } from "../../../../decorators/payload/AdministratorPayload";
+import { patchDiscussionBoardAdministratorModerationActions } from "../../../../providers/patchDiscussionBoardAdministratorModerationActions";
+import { getDiscussionBoardAdministratorModerationActionsModerationActionId } from "../../../../providers/getDiscussionBoardAdministratorModerationActionsModerationActionId";
+
+import { IDiscussionBoardModerationAction } from "../../../../api/structures/IDiscussionBoardModerationAction";
+import { IPageIDiscussionBoardModerationAction } from "../../../../api/structures/IPageIDiscussionBoardModerationAction";
+
+@Controller("/discussionBoard/administrator/moderationActions")
+export class DiscussionboardAdministratorModerationactionsController {
+  /**
+   * Create a new moderation action record documenting moderator or
+   * administrator enforcement.
+   *
+   * Create a comprehensive moderation action record when a moderator or
+   * administrator takes enforcement action against content or a user account on
+   * the discussion board platform. This operation records the complete details
+   * of moderation decisions including content removal, user warnings,
+   * suspensions, bans, content restoration, and report dismissals.
+   *
+   * The operation operates on the discussion_board_moderation_actions table
+   * from the Prisma schema and is invoked as part of the moderation workflow.
+   * When a moderator reviews reported content in the moderation queue and
+   * determines that action is necessary, or when an administrator takes direct
+   * enforcement action, this operation creates the permanent audit record of
+   * that decision.
+   *
+   * Required information includes the action_type (hide_content,
+   * delete_content, issue_warning, suspend_user, ban_user, restore_content, or
+   * dismiss_report), the target_member_id identifying the user affected by the
+   * action, and a detailed reason explaining the decision (minimum 20
+   * characters for accountability). The operation also captures which moderator
+   * or administrator performed the action, the violation category if
+   * applicable, the related report that triggered the review (if action
+   * resulted from a report), and the specific content (topic or reply) that was
+   * moderated.
+   *
+   * Critically, the operation preserves a content_snapshot field that captures
+   * the exact state of the content at the time of moderation action. This
+   * immutable snapshot ensures that even if the user subsequently edits or
+   * deletes the content, the moderation decision can be reviewed and appealed
+   * based on what the content actually said at the time of the violation. This
+   * supports the appeals process and ensures moderation accountability.
+   *
+   * The operation integrates with related moderation systems by creating the
+   * foundational moderation_action record that warnings, suspensions, and bans
+   * reference through their moderation_action_id foreign keys. This establishes
+   * the complete chain of evidence from initial report through moderation
+   * decision to enforcement action and potential appeal.
+   *
+   * Security considerations include strict role-based access control where only
+   * users with moderator or administrator roles can create moderation actions.
+   * The operation validates that the acting user has permission to moderate
+   * content and that the target user and content exist before creating the
+   * record. All moderation actions are immediately logged to the moderation
+   * audit trail for oversight.
+   *
+   * The response returns the complete moderation action record with all fields
+   * populated, timestamps recorded, and relationships established. This allows
+   * the calling code to immediately create related records (warnings,
+   * suspensions) or trigger notifications to the affected user explaining what
+   * action was taken and why.
+   *
+   * Validation rules enforced include verifying the action_type is one of the
+   * allowed values, ensuring the reason meets minimum length requirements,
+   * confirming at least one of moderator_id or administrator_id is provided
+   * (identifying who performed the action), validating that content references
+   * exist if content-specific action is taken, and preserving accurate content
+   * snapshots for topics or replies being moderated.
+   *
+   * @param connection
+   * @param body Moderation action creation data including action type, target
+   *   user and content, violation details, and moderator reasoning
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @AdministratorAuth()
+    administrator: AdministratorPayload,
+    @TypedBody()
+    body: IDiscussionBoardModerationAction.ICreate,
+  ): Promise<IDiscussionBoardModerationAction> {
+    try {
+      return await postDiscussionBoardAdministratorModerationActions({
+        administrator,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve filtered and paginated moderation queue for moderator review.
+   *
+   * Retrieve a filtered and paginated list of content reports and moderation
+   * actions from the moderation queue. This operation provides moderators and
+   * administrators with comprehensive access to reports requiring review,
+   * including advanced filtering by status (pending, under_review, resolved,
+   * dismissed), severity level (critical, high, medium, low), violation
+   * category, assigned moderator, and date ranges. The operation supports
+   * complex search criteria to help moderators efficiently find and prioritize
+   * reports.
+   *
+   * This operation queries the discussion_board_reports table from the Prisma
+   * schema, joining with related tables to provide complete context including
+   * reported content previews, reporter information, and existing moderation
+   * actions. The moderation queue displays reports with fields such as
+   * violation_category, severity_level, status, reporter_explanation,
+   * assigned_moderator_id, and resolution details. The system prioritizes
+   * critical severity violations (hate speech, threats, doxxing) at the top of
+   * the queue, followed by high severity violations, then reports with multiple
+   * flags from different users.
+   *
+   * Security considerations ensure only authenticated moderators and
+   * administrators can access the moderation queue. Moderators see all
+   * unassigned reports plus reports assigned to them, while administrators see
+   * all reports across all moderators. The operation implements the moderation
+   * workflow requirements where reports progress from pending to under_review
+   * when assigned, then to resolved or dismissed based on moderator decisions.
+   *
+   * This operation integrates closely with PUT /reports/{reportId} which
+   * moderators use to update individual reports after reviewing them in this
+   * queue. The pagination and filtering capabilities ensure moderators can
+   * efficiently process high volumes of reports while prioritizing urgent
+   * violations. Response includes report metadata, content snapshots, reporter
+   * context, and suggested actions based on violation patterns.
+   *
+   * @param connection
+   * @param body Search criteria, filters, and pagination parameters for
+   *   moderation queue retrieval
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @AdministratorAuth()
+    administrator: AdministratorPayload,
+    @TypedBody()
+    body: IDiscussionBoardModerationAction.IRequest,
+  ): Promise<IPageIDiscussionBoardModerationAction> {
+    try {
+      return await patchDiscussionBoardAdministratorModerationActions({
+        administrator,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific moderation action by ID.
+   *
+   * Retrieve comprehensive details about a specific moderation action
+   * identified by its unique moderationActionId parameter. This operation
+   * provides complete visibility into moderation decisions made by moderators
+   * and administrators across the discussion board platform.
+   *
+   * The operation returns detailed information from the
+   * discussion_board_moderation_actions table including the moderator or
+   * administrator who performed the action, the member who was targeted, the
+   * type of action taken (hide_content, delete_content, issue_warning,
+   * suspend_user, ban_user, restore_content, or dismiss_report), the reason and
+   * justification provided, the violation category, and timestamps tracking
+   * when the action occurred and whether it was subsequently reversed.
+   *
+   * This operation is critical for moderation transparency and accountability.
+   * Users who receive moderation actions can view the details to understand
+   * what guideline was violated and why the action was taken. Moderators use
+   * this to review their own past decisions and ensure consistency in
+   * enforcement. Administrators access this information when reviewing appeals
+   * or investigating moderation patterns.
+   *
+   * The response includes related entities such as the related report that
+   * triggered the action (if applicable), the specific content (topic or reply)
+   * that was moderated with preserved content snapshots, and information about
+   * any subsequent reversal if the action was overturned on appeal or
+   * administrative review.
+   *
+   * Security considerations include role-based access control where regular
+   * members can only view moderation actions that directly affect them or their
+   * content, moderators can view all moderation actions they performed or that
+   * occurred in their queue, and administrators have unrestricted access to all
+   * moderation action records for oversight and audit purposes.
+   *
+   * This operation integrates with the appeals system where users reviewing
+   * moderation actions can initiate appeals if they believe the decision was
+   * unfair. It also supports the audit trail requirements by providing
+   * transparent access to the complete moderation action record including
+   * preserved content snapshots that cannot be altered after the fact.
+   *
+   * @param connection
+   * @param moderationActionId Unique identifier of the moderation action to
+   *   retrieve
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":moderationActionId")
+  public async at(
+    @AdministratorAuth()
+    administrator: AdministratorPayload,
+    @TypedParam("moderationActionId")
+    moderationActionId: string & tags.Format<"uuid">,
+  ): Promise<IDiscussionBoardModerationAction> {
+    try {
+      return await getDiscussionBoardAdministratorModerationActionsModerationActionId(
+        {
+          administrator,
+          moderationActionId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

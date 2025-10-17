@@ -1,0 +1,78 @@
+/// User account for the Todo application. Represents individual users who
+/// can create and manage their personal todo items. {@link todo_app_todos}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for authentication and notifications. Must be unique
+  /// across all users.
+  email String
+  
+  /// Hashed password for user authentication. Never store plain passwords.
+  password_hash String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_admins todo_app_admins?
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Administrator account for the Todo application. Admins have system-wide
+/// access and can perform maintenance operations. {@link todo_app_users}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the base user account. {@link todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Administrator privilege level (e.g., 'super_admin', 'system_admin').
+  admin_level String
+  
+  /// Comma-separated list of system permissions granted to this admin.
+  permissions String
+  
+  /// Timestamp when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the admin account was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_user_id])
+  @@index([admin_level])
+  @@index([created_at])
+  @@index([deleted_at])
+}

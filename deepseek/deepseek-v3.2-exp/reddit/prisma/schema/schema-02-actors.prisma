@@ -1,0 +1,352 @@
+/// Base user entity containing authentication and core profile information.
+/// This table serves as the foundation for all user roles in the platform,
+/// storing common authentication data and basic profile details. {@link
+/// reddit_clone_guests}, {@link reddit_clone_members}, {@link
+/// reddit_clone_moderators}, {@link reddit_clone_administrators}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for the user account.
+  username String
+  
+  /// User's email address for authentication and notifications.
+  email String
+  
+  /// Hashed password for user authentication using bcrypt.
+  password_hash String
+  
+  /// Whether the user's email address has been verified.
+  email_verified Boolean
+  
+  /// Current status of the user account (active, suspended, banned).
+  status String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_clone_configurations_of_created_by_id reddit_clone_configurations[] @relation("reddit_clone_configurations_of_created_by_id")
+  reddit_clone_configurations_of_updated_by_id reddit_clone_configurations[] @relation("reddit_clone_configurations_of_updated_by_id")
+  reddit_clone_system_logs reddit_clone_system_logs[]
+  reddit_clone_platform_metrics reddit_clone_platform_metrics[]
+  reddit_clone_guests reddit_clone_guests?
+  reddit_clone_members reddit_clone_members?
+  reddit_clone_moderators reddit_clone_moderators?
+  reddit_clone_administrators reddit_clone_administrators?
+  reddit_clone_user_sessions reddit_clone_user_sessions[]
+  reddit_clone_user_preferences reddit_clone_user_preferences?
+  reddit_clone_communities reddit_clone_communities[]
+  reddit_clone_posts reddit_clone_posts[]
+  reddit_clone_comments reddit_clone_comments[]
+  reddit_clone_post_votes reddit_clone_post_votes[]
+  reddit_clone_comment_votes reddit_clone_comment_votes[]
+  reddit_clone_user_karma reddit_clone_user_karma?
+  reddit_clone_vote_history reddit_clone_vote_history[]
+  reddit_clone_subscriptions reddit_clone_subscriptions[]
+  reddit_clone_user_feeds reddit_clone_user_feeds[]
+  reddit_clone_content_reports reddit_clone_content_reports[]
+  reddit_clone_moderation_actions reddit_clone_moderation_actions[]
+  reddit_clone_user_bans reddit_clone_user_bans[]
+  reddit_clone_moderation_logs reddit_clone_moderation_logs[]
+  reddit_clone_user_profiles reddit_clone_user_profiles?
+  reddit_clone_user_activity reddit_clone_user_activity[]
+  reddit_clone_user_statistics reddit_clone_user_statistics?
+  reddit_clone_reputation_metrics reddit_clone_reputation_metrics?
+  reddit_clone_achievements reddit_clone_achievements[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([status])
+  @@index([email_verified])
+  @@index([created_at])
+}
+
+/// Guest user role extending the base user entity with limited platform
+/// access. Guests have restricted permissions compared to registered
+/// members. {@link reddit_clone_users}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the base user entity. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Timestamp when the guest role was assigned.
+  created_at DateTime
+  
+  /// Timestamp when the guest role was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest role was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  
+  @@index([user_id])
+}
+
+/// Member user role extending the base user entity with full platform
+/// access. Members can create content, vote, and participate in communities.
+/// {@link reddit_clone_users}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the base user entity. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Timestamp when the user became a member.
+  joined_at DateTime
+  
+  /// Timestamp when the member role was created.
+  created_at DateTime
+  
+  /// Timestamp when the member role was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member role was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  
+  @@index([user_id])
+  @@index([joined_at])
+}
+
+/// Moderator user role extending the base user entity with community
+/// moderation privileges. Moderators can manage content and users within
+/// their assigned communities. {@link reddit_clone_users}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the base user entity. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Timestamp when the user became a moderator.
+  moderator_since DateTime
+  
+  /// Timestamp when the moderator role was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator role was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator role was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_content_reports reddit_clone_content_reports[]
+  reddit_clone_moderation_actions reddit_clone_moderation_actions[]
+  reddit_clone_user_bans reddit_clone_user_bans[]
+  reddit_clone_moderation_logs reddit_clone_moderation_logs[]
+  
+  @@unique([user_id])
+  
+  @@index([user_id])
+  @@index([moderator_since])
+}
+
+/// Administrator user role extending the base user entity with platform-wide
+/// administrative privileges. Administrators have system-level access and
+/// can manage all communities and users. {@link reddit_clone_users}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the base user entity. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Timestamp when the user became an administrator.
+  admin_since DateTime
+  
+  /// Timestamp when the administrator role was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator role was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator role was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  
+  @@index([user_id])
+  @@index([admin_since])
+}
+
+/// User authentication sessions for maintaining login state and security.
+/// Stores JWT tokens and session metadata for authenticated users. {@link
+/// reddit_clone_users}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who owns this session. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// JWT access token for session authentication.
+  access_token String
+  
+  /// JWT refresh token for session renewal.
+  refresh_token String
+  
+  /// Timestamp when the session expires.
+  expires_at DateTime
+  
+  /// Information about the device used for this session.
+  device_info String?
+  
+  /// IP address from which the session was created.
+  ip_address String?
+  
+  /// Session status: active, expired, revoked.
+  status String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the session was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([access_token])
+  @@unique([refresh_token])
+  @@index([user_id])
+  @@index([expires_at])
+  @@index([status])
+}
+
+/// User preferences and settings for personalization and platform behavior
+/// customization. Stores user-specific configuration options. {@link
+/// reddit_clone_users}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who owns these preferences. {@link
+  /// reddit_clone_users.id}
+  user_id String
+  
+  /// User interface theme preference (light, dark, auto).
+  theme String?
+  
+  /// Preferred language for the platform interface.
+  language String?
+  
+  /// Whether the user wants to receive email notifications.
+  email_notifications Boolean
+  
+  /// Whether the user wants to receive push notifications.
+  push_notifications Boolean
+  
+  /// Whether the user wants to see NSFW content.
+  nsfw_content Boolean
+  
+  /// Whether media should auto-play for this user.
+  auto_play_media Boolean
+  
+  /// Content visibility preference: show_all, hide_nsfw, hide_spoilers.
+  content_visibility String
+  
+  /// Default content sorting preference: hot, new, top, controversial.
+  default_sort String
+  
+  /// Whether to open links in new browser tabs.
+  open_links_in_new_tab Boolean
+  
+  /// Timestamp when the preferences were created.
+  created_at DateTime
+  
+  /// Timestamp when the preferences were last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the preferences were soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  
+  @@index([user_id])
+}

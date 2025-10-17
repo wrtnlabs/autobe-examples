@@ -1,0 +1,439 @@
+/// User subscription relationships with communities including subscription
+/// status, preferences, and engagement tracking. Supports subscription
+/// management, feed customization, and community relationship analytics.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user's {@link reddit_community_user_profiles.id}
+  user_id String
+  
+  /// Target community's {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Active subscription status: active, inactive, pending_approval
+  subscription_status String
+  
+  /// Type of subscription: standard, priority, muted
+  subscription_type String
+  
+  /// Timestamp when user joined the community
+  joined_at DateTime
+  
+  /// Last time user engaged with community content
+  last_engagement_at DateTime?
+  
+  /// Calculated engagement level based on interactions
+  engagement_score Float
+  
+  /// Preferred notification frequency: real_time, daily_digest, weekly_digest,
+  /// none
+  notification_frequency String
+  
+  /// Whether this is a primary subscription for feed priority
+  is_primary_subscription Boolean
+  
+  /// Priority level for feed sorting (higher = more important)
+  subscription_priority Int
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record update timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp for subscription history
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_subscription_preferences reddit_community_subscription_preferences?
+  
+  @@unique([user_id, community_id])
+  @@index([user_id, subscription_status], map: "reddit_community_user_subscriptions_user_id_subscripti_a9bd2da9")
+  @@index([community_id, subscription_status], map: "reddit_community_user_subscriptions_community_id_subsc_e57bcdc2")
+  @@index([last_engagement_at, subscription_status], map: "reddit_community_user_subscriptions_last_engagement_at_c21b3a3b")
+  @@index([subscription_priority, last_engagement_at], map: "reddit_community_user_subscriptions_subscription_prior_b80819bf")
+}
+
+/// Individual subscription preferences and settings for personalized user
+/// experience. Controls notification settings, display preferences, and feed
+/// customization options for each subscription relationship.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_subscription_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target subscription's {@link reddit_community_user_subscriptions.id}
+  subscription_id String
+  
+  /// Feed priority weight (0-100) for algorithm calculations
+  feed_priority Int
+  
+  /// Whether to show NSFW content from this community
+  show_nsfw_content Boolean
+  
+  /// Whether to show spoiler content from this community
+  show_spoiler_content Boolean
+  
+  /// Content type filter: all, text_only, link_only, media_only
+  content_type_filter String
+  
+  /// Default sorting: hot, new, top, controversial, rising
+  sorting_preference String
+  
+  /// Time filter preference: today, week, month, year, all_time
+  time_filter String
+  
+  /// Whether feed auto-refresh is enabled
+  auto_refresh_enabled Boolean
+  
+  /// Whether desktop notifications are enabled
+  desktop_notifications Boolean
+  
+  /// Whether push notifications are enabled
+  push_notifications Boolean
+  
+  /// Whether email notifications are enabled
+  email_notifications Boolean
+  
+  /// Keywords for smart notification filtering (comma-separated)
+  notification_keywords String?
+  
+  /// Temporarily mute all notifications from this community
+  mute_community Boolean
+  
+  /// End date for community muting
+  mute_until DateTime?
+  
+  /// Preference creation timestamp
+  created_at DateTime
+  
+  /// Preference update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  subscription reddit_community_user_subscriptions @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+  
+  @@unique([subscription_id])
+  
+  @@index([subscription_id, feed_priority], map: "reddit_community_subscription_preferences_subscription_101d228b")
+  @@index([subscription_id, sorting_preference, time_filter], map: "reddit_community_subscription_preferences_subscription_77835656")
+}
+
+/// Feed algorithm configurations for personalized content delivery. Defines
+/// sorting weights, recommendation factors, and machine learning model
+/// parameters for individual users.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_feed_algorithms {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user's {@link reddit_community_user_profiles.id}
+  user_id String
+  
+  /// Algorithm type: collaborative, content_based, popularity_based,
+  /// social_graph
+  algorithm_type String
+  
+  /// Weight for collaborative filtering (0.0-1.0)
+  collaborative_weight Float
+  
+  /// Content similarity weight in recommendations
+  content_similarity_weight Float
+  
+  /// Popularity score weight for trend content
+  popularity_weight Float
+  
+  /// Social network relationship weight
+  social_graph_weight Float
+  
+  /// Content age weight (newer = higher)
+  recency_weight Float
+  
+  /// Engagement rate weight (comments + votes)
+  engagement_weight Float
+  
+  /// User-specific interest category weights
+  user_interest_weight Float
+  
+  /// Ensures recommendation diversity (0.1-1.0)
+  diversity_factor Float
+  
+  /// Maximum content age in hours for fresh feed
+  freshness_threshold Int
+  
+  /// Number of candidate items per recommendation batch
+  recommendation_pool_size Int
+  
+  /// Overall personalization intensity (0.0-1.0)
+  personalization_strength Float
+  
+  /// ML model learning rate for adaptive algorithms
+  learning_rate Float
+  
+  /// Strategy for new users (popular, diverse, social)
+  cold_start_strategy String
+  
+  /// Current ML model version identifier
+  model_version String
+  
+  /// Last time algorithm was retrained
+  last_trained_at DateTime?
+  
+  /// Algorithm creation timestamp
+  created_at DateTime
+  
+  /// Algorithm update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_content_discoveries reddit_community_content_discoveries[]
+  
+  @@unique([user_id])
+  
+  @@index([user_id, algorithm_type])
+  @@index([created_at, algorithm_type])
+}
+
+/// Content discovery history and recommendations including viewed content,
+/// clicked suggestions, and discovery effectiveness metrics. Tracks user
+/// behavior for improving recommendation algorithms and feed
+/// personalization.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_content_discoveries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user's {@link reddit_community_user_profiles.id}
+  user_id String
+  
+  /// Content item ID (post, comment, or community ID)
+  content_id String
+  
+  /// Community where discovery originated {@link
+  /// reddit_community_communities.id}
+  source_community_id String?
+  
+  /// Feed algorithm or recommendation source {@link
+  /// reddit_community_feed_algorithms.id}
+  recommendation_source_id String?
+  
+  /// Type of content: post, comment, community, user
+  content_type String
+  
+  /// Discovery source: feed, search, recommendation, trending, social
+  discovery_method String
+  
+  /// Context of discovery: hot_list, new_list, recommendation_card,
+  /// search_result
+  discovery_context String
+  
+  /// User's interaction: viewed, clicked, upvoted, downvoted, commented
+  user_interaction String
+  
+  /// Duration of interaction in seconds
+  interaction_duration Int?
+  
+  /// Algorithm confidence score when recommended
+  recommendation_confidence Float?
+  
+  /// Whether user appeared satisfied (clicked/upvoted)
+  user_satisfaction Boolean?
+  
+  /// Non-recommendation natural discovery
+  is_organic_discovery Boolean
+  
+  /// Position in feed or recommendation list
+  rank_position Int?
+  
+  /// Time between display and interaction in seconds
+  time_to_interaction Int?
+  
+  /// Discovery timestamp for analytics
+  discovered_at DateTime
+  
+  /// User interaction timestamp if applicable
+  interaction_at DateTime?
+  
+  /// User session identifier for correlation
+  session_id String
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  contentItem reddit_community_posts @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  sourceCommunity reddit_community_communities? @relation(fields: [source_community_id], references: [id], onDelete: Cascade)
+  recommendationSource reddit_community_feed_algorithms? @relation(fields: [recommendation_source_id], references: [id], onDelete: Cascade)
+  
+  @@index([source_community_id])
+  
+  @@unique([user_id, content_id, discovery_method, discovered_at], map: "reddit_community_content_discoveries_user_id_content_i_29abb8a7")
+  @@index([user_id, discovered_at])
+  @@index([content_id, user_interaction], map: "reddit_community_content_discoveries_content_id_user_i_703b3c10")
+  @@index([discovery_method, user_satisfaction], map: "reddit_community_content_discoveries_discovery_method__87e5103d")
+  @@index([recommendation_source_id, user_interaction], map: "reddit_community_content_discoveries_recommendation_so_cb2ca48a")
+}
+
+/// Materialized view for subscription analytics including engagement scores,
+/// subscription patterns, and feed optimization metrics. Supports real-time
+/// feed personalization and subscription recommendation systems.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_reddit_community_user_subscription_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user's {@link reddit_community_user_profiles.id}
+  user_id String
+  
+  /// Target community's {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Total number of user subscriptions
+  total_subscriptions Int
+  
+  /// Number of currently active subscriptions
+  active_subscriptions Int
+  
+  /// Average engagement score across all communities
+  avg_engagement_score Float
+  
+  /// Total posts viewed across all subscriptions
+  total_posts_viewed Int
+  
+  /// Total comments posted across all communities
+  total_comments_made Int
+  
+  /// Total votes cast across all communities
+  total_votes_cast Int
+  
+  /// Timestamp of most recent subscription
+  last_subscription_added_at DateTime?
+  
+  /// Average feed refresh frequency in minutes
+  feed_refresh_frequency Int
+  
+  /// Rate at which recommendations are clicked
+  recommendation_click_rate Float
+  
+  /// Rate of subscription cancellations
+  subscription_churn_rate Float
+  
+  /// Most engaged content category
+  most_active_category String?
+  
+  /// Analytics calculation timestamp
+  calculated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile reddit_community_user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_id], map: "mv_reddit_community_user_subscription_analytics_commun_a2c08665")
+  
+  @@unique([user_id, community_id], map: "mv_reddit_community_user_subscription_analytics_user_i_a52c100c")
+  @@index([avg_engagement_score, active_subscriptions], map: "mv_reddit_community_user_subscription_analytics_avg_en_deb16d8f")
+  @@index([subscription_churn_rate, total_subscriptions], map: "mv_reddit_community_user_subscription_analytics_subscr_72e21309")
+  @@index([last_subscription_added_at], map: "mv_reddit_community_user_subscription_analytics_last_s_a271224a")
+}
+
+/// Materialized view tracking most popular community subscriptions with
+/// engagement metrics. Used for trending community discovery and popular
+/// feed generation based on subscription patterns and engagement quality.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_reddit_community_popular_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target community's {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Total number of subscribed users
+  total_subscribers Int
+  
+  /// Number of active subscribers in past 30 days
+  active_subscribers Int
+  
+  /// Number of new subscribers last 7 days
+  new_subscribers_last_week Int
+  
+  /// Community engagement score based on interactions
+  engagement_score Float
+  
+  /// Average user subscription duration in days
+  avg_subscription_duration Float
+  
+  /// Growth percentage over past month
+  subscription_growth_rate Float
+  
+  /// User unsubscribing rate percentage
+  churn_rate Float
+  
+  /// Top sources of community discovery
+  top_discovery_methods String?
+  
+  /// Peak hour for community engagement
+  peak_engagement_hour Int?
+  
+  /// Calculated content quality score
+  content_quality_score Float
+  
+  /// Current trending score for discovery rankings
+  trending_score Float
+  
+  /// Analytics calculation timestamp
+  calculated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id])
+  
+  @@index([engagement_score, active_subscribers], map: "mv_reddit_community_popular_subscriptions_engagement_s_728a7389")
+  @@index([subscription_growth_rate, total_subscribers], map: "mv_reddit_community_popular_subscriptions_subscription_8d5a696f")
+  @@index([trending_score, active_subscribers], map: "mv_reddit_community_popular_subscriptions_trending_sco_945ca871")
+}

@@ -1,0 +1,242 @@
+/// Central system configuration table storing platform-wide settings and
+/// parameters. This table contains all configurable aspects of the
+/// Reddit-like community platform including feature flags, limits, and
+/// global behavior settings. The configurations are referenced by multiple
+/// domains but maintain system-level independence.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier used for system references.
+  config_key String
+  
+  /// Configuration value stored as string for flexibility.
+  config_value String
+  
+  /// Data type of the configuration value (boolean, integer, string, json).
+  config_type String
+  
+  /// Human-readable description explaining the configuration purpose.
+  description String?
+  
+  /// Configuration category grouping similar settings (authentication,
+  /// content, performance).
+  category String
+  
+  /// Whether this configuration is currently active and being used.
+  is_active Boolean
+  
+  /// Configuration version for tracking changes and updates.
+  version Int
+  
+  /// Timestamp when this configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this configuration was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key])
+  @@index([category, is_active])
+  @@index([created_at])
+}
+
+/// Community channel management table defining communication channels and
+/// their configurations. Each channel represents a distinct communication
+/// pathway within the community platform, supporting different types of
+/// content and interaction patterns.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name identifier for the communication channel.
+  channel_name String
+  
+  /// Human-readable display name for the channel.
+  display_name String
+  
+  /// Type of channel (discussion, announcement, support, general).
+  channel_type String
+  
+  /// Description explaining the channel's purpose and guidelines.
+  description String?
+  
+  /// Whether the channel is publicly accessible or requires permissions.
+  is_public Boolean
+  
+  /// Maximum number of members allowed in this channel.
+  max_members Int?
+  
+  /// JSON string containing channel-specific content rules and restrictions.
+  content_rules String?
+  
+  /// JSON string containing moderation configuration for this channel.
+  moderation_settings String?
+  
+  /// Whether this channel is currently active and accepting content.
+  is_active Boolean
+  
+  /// Timestamp when this channel was created.
+  created_at DateTime
+  
+  /// Timestamp when this channel was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this channel was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([channel_name])
+  @@index([channel_type, is_active])
+  @@index([created_at])
+  @@index([is_public, is_active])
+}
+
+/// System performance metrics tracking table capturing platform performance
+/// indicators. This table stores historical performance data for monitoring
+/// system health, identifying bottlenecks, and capacity planning. The
+/// metrics support operational decision-making and performance optimization.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_performance_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the performance metric being tracked.
+  metric_name String
+  
+  /// Numeric value of the performance metric.
+  metric_value Float
+  
+  /// Unit of measurement for the metric value (ms, req/s, MB, etc.).
+  metric_unit String
+  
+  /// Category grouping related metrics (database, api, network, system).
+  metric_category String
+  
+  /// System component being measured (authentication, posts, comments, voting).
+  component String
+  
+  /// Time interval for which this metric was measured (minute, hour, day).
+  measurement_interval String
+  
+  /// Minimum acceptable value for this metric.
+  threshold_min Float?
+  
+  /// Maximum acceptable value for this metric.
+  threshold_max Float?
+  
+  /// Whether this metric has breached defined thresholds.
+  is_breached Boolean
+  
+  /// Identifier for the server instance where this metric was collected.
+  server_instance String?
+  
+  /// Timestamp when this performance metric was collected.
+  collected_at DateTime
+  
+  /// Timestamp when this metric record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([metric_category, collected_at], map: "reddit_community_performance_metrics_metric_category_c_d945014f")
+  @@index([component, collected_at])
+  @@index([collected_at])
+  @@index([is_breached])
+}
+
+/// Comprehensive audit trail table capturing all significant system
+/// activities and changes. This table provides complete visibility into
+/// platform operations for security monitoring, compliance reporting, and
+/// troubleshooting. Audit logs maintain immutable records of system state
+/// changes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of action performed (create, update, delete, login, access).
+  action_type String
+  
+  /// Type of resource being acted upon (user, post, comment, community,
+  /// config).
+  resource_type String
+  
+  /// ID of the specific resource affected by this action.
+  resource_id String?
+  
+  /// ID of the user who performed this action if applicable.
+  user_id String?
+  
+  /// IP address from which the action was performed.
+  user_ip String?
+  
+  /// User agent string of the client used for this action.
+  user_agent String?
+  
+  /// JSON string containing previous state values before the change.
+  previous_values String?
+  
+  /// JSON string containing new state values after the change.
+  new_values String?
+  
+  /// Human-readable description of the action performed.
+  description String
+  
+  /// Severity level of this audit event (info, warning, error, critical).
+  severity String
+  
+  /// Whether the action was completed successfully.
+  is_successful Boolean
+  
+  /// Error message if the action failed.
+  error_message String?
+  
+  /// ID of the session during which this action was performed.
+  session_id String?
+  
+  /// Timestamp when this audit event occurred.
+  occurred_at DateTime
+  
+  /// Timestamp when this audit log record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([action_type, occurred_at])
+  @@index([resource_type, occurred_at])
+  @@index([user_id, occurred_at])
+  @@index([occurred_at])
+  @@index([severity])
+}

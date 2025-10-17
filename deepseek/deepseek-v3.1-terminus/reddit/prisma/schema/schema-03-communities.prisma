@@ -1,0 +1,301 @@
+/// Core community entity representing user-created communities on the
+/// platform. Each community has unique name, access type
+/// (public/restricted/private), and moderation settings. Communities serve
+/// as containers for posts and discussions, with customizable rules and
+/// member management capabilities. {@link reddit_community_memberships.id}
+/// {@link reddit_community_settings.id} {@link
+/// reddit_community_moderator_assignments.id}
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated community category for organization and discovery. {@link
+  /// reddit_community_categories.id}.
+  reddit_community_category_id String?
+  
+  /// Unique community name used for identification and URL generation. Must be
+  /// 3-21 characters, alphanumeric with underscores.
+  name String
+  
+  /// Human-readable community title displayed to users. Max 50 characters.
+  display_title String
+  
+  /// Community description explaining purpose and guidelines. Optional, max
+  /// 500 characters.
+  description String?
+  
+  /// Community access level: public (anyone can join), restricted (approval
+  /// required), or private (invite only).
+  access_type String
+  
+  /// Current number of active community members. Updated automatically.
+  member_count Int
+  
+  /// Total number of posts published in this community. Tracked for activity
+  /// metrics.
+  post_count Int
+  
+  /// Community status: active, suspended, archived, or deleted.
+  status String
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp of last community information update.
+  updated_at DateTime
+  
+  /// Timestamp when community was soft-deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category reddit_community_categories? @relation(fields: [reddit_community_category_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_memberships reddit_community_memberships[]
+  reddit_community_moderator_assignments reddit_community_moderator_assignments[]
+  reddit_community_settings reddit_community_settings?
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_feeds reddit_community_feeds[]
+  reddit_community_trending_topics reddit_community_trending_topics[]
+  reddit_community_recommendations reddit_community_recommendations[]
+  reddit_community_search_index reddit_community_search_index[]
+  reddit_community_reports reddit_community_reports[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  reddit_community_content_flags reddit_community_content_flags[]
+  reddit_community_guidelines reddit_community_guidelines[]
+  reddit_community_ban_records reddit_community_ban_records[]
+  reddit_community_appeals reddit_community_appeals[]
+  reddit_community_user_activities reddit_community_user_activities[]
+  reddit_community_engagement_metrics reddit_community_engagement_metrics[]
+  reddit_community_business_metrics reddit_community_business_metrics[]
+  reddit_community_audience_analytics reddit_community_audience_analytics[]
+  
+  @@unique([name])
+  @@index([access_type, status])
+  @@index([reddit_community_category_id, member_count], map: "reddit_community_communities_reddit_community_category_d2f9696e")
+  @@index([created_at])
+}
+
+/// Tracks user membership in communities, including join dates, status, and
+/// permissions. Supports public, restricted, and private community access
+/// models with appropriate approval workflows. {@link
+/// reddit_community_communities.id} {@link reddit_community_members.id}
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_memberships {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that the user is member of. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// User who is member of the community. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Membership status: pending, approved, suspended, or banned.
+  membership_status String
+  
+  /// Timestamp when user joined or was approved for membership.
+  joined_at DateTime
+  
+  /// Timestamp when user left community, null if still active member.
+  left_at DateTime?
+  
+  /// Member-specific permissions within the community.
+  permissions String?
+  
+  /// Timestamp of last community visit by this member.
+  last_visited_at DateTime?
+  
+  /// Number of posts and comments contributed to this community.
+  contribution_count Int
+  
+  /// Timestamp when membership record was created.
+  created_at DateTime
+  
+  /// Timestamp of last membership status update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  user reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_community_id, reddit_community_member_id], map: "reddit_community_memberships_reddit_community_communit_9fb7b911")
+  @@index([reddit_community_member_id, membership_status], map: "reddit_community_memberships_reddit_community_member_i_0b32a2aa")
+  @@index([reddit_community_community_id, joined_at], map: "reddit_community_memberships_reddit_community_communit_e2e585cc")
+  @@index([last_visited_at])
+}
+
+/// Tracks moderator assignments and permissions within communities. Each
+/// assignment specifies moderator authority level, scope, and assignment
+/// details for community governance. {@link reddit_community_communities.id}
+/// {@link reddit_community_members.id}
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderator_assignments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where user serves as moderator. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// User assigned as community moderator. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Moderator role level: primary, secondary, or junior with different
+  /// permissions.
+  role_level String
+  
+  /// Timestamp when moderator assignment was made.
+  assigned_at DateTime
+  
+  /// Specific moderation permissions granted to this moderator.
+  permissions String
+  
+  /// Assignment status: active, suspended, or removed.
+  status String
+  
+  /// Timestamp of last moderation activity by this user.
+  last_active_at DateTime?
+  
+  /// Timestamp when moderator assignment was created.
+  created_at DateTime
+  
+  /// Timestamp of last assignment update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  moderator reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_community_id, reddit_community_member_id], map: "reddit_community_moderator_assignments_reddit_communit_eeca21a0")
+  @@index([reddit_community_member_id, status], map: "reddit_community_moderator_assignments_reddit_communit_5fb027bb")
+  @@index([reddit_community_community_id, role_level], map: "reddit_community_moderator_assignments_reddit_communit_a03e97be")
+  @@index([assigned_at])
+}
+
+/// Community-specific configuration and settings that define posting rules,
+/// content guidelines, and moderation policies. Each community has one
+/// settings record that controls its operational parameters. {@link
+/// reddit_community_communities.id}
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that these settings belong to. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// Community-specific posting guidelines and content restrictions.
+  posting_rules String?
+  
+  /// Detailed moderation policy and enforcement procedures.
+  moderation_policy String?
+  
+  /// Types of content that require moderation or are prohibited.
+  content_flags String?
+  
+  /// Automated content filtering rules and thresholds.
+  automated_filters String?
+  
+  /// Requirements for community membership approval.
+  member_requirements String?
+  
+  /// Community appearance and theme customization options.
+  theme_settings String?
+  
+  /// Timestamp when settings were created.
+  created_at DateTime
+  
+  /// Timestamp of last settings modification.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_community_id])
+  
+  @@index([created_at])
+}
+
+/// Community categorization system for organizing communities by topic,
+/// interest, or theme. Supports hierarchical category structures and
+/// community discovery through category-based browsing. Used for content
+/// organization and user navigation.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for hierarchical organization, null for top-level
+  /// categories. {@link reddit_community_categories.id}.
+  parent_id String?
+  
+  /// Unique category name used for identification and display.
+  name String
+  
+  /// Category description explaining purpose and scope.
+  description String?
+  
+  /// Number of communities currently assigned to this category.
+  community_count Int
+  
+  /// Sort order for category display in listings and navigation.
+  display_order Int
+  
+  /// Category status: active, archived, or hidden.
+  status String
+  
+  /// Timestamp when category was created.
+  created_at DateTime
+  
+  /// Timestamp of last category update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parent reddit_community_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_communities reddit_community_communities[]
+  recursive reddit_community_categories[] @relation("recursive")
+  
+  @@unique([name])
+  @@index([parent_id, display_order])
+  @@index([status, community_count])
+  @@index([created_at])
+}

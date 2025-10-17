@@ -1,0 +1,82 @@
+/// Shopping carts represent temporary holding areas for items that users
+/// intend to purchase. Each cart is associated with a specific user and
+/// contains multiple cart items. The cart system supports session-based
+/// interactions, allowing users to accumulate items before proceeding to
+/// checkout. The cart maintains temporal fields for tracking creation and
+/// updates, and includes a status field to manage its lifecycle.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link shopping_mall_member.id}.
+  shopping_mall_member_id String
+  
+  /// Status of the shopping cart.
+  status String
+  
+  /// Creation timestamp of the shopping cart.
+  created_at DateTime
+  
+  /// Last update timestamp of the shopping cart.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member shopping_mall_member @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  shopping_cart_items shopping_cart_items[]
+  
+  @@index([shopping_mall_member_id])
+}
+
+/// Shopping cart items represent individual products or product variants
+/// that users have added to their shopping carts. Each cart item is
+/// associated with a specific cart and product variant, and includes details
+/// such as quantity and price. The cart item system supports session-based
+/// interactions, allowing users to manage their selections before checkout.
+/// The cart item maintains temporal fields for tracking creation and
+/// updates.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged cart's {@link shopping_carts.id}.
+  shopping_cart_id String
+  
+  /// Belonged sale unit's {@link shopping_sale_units.id}.
+  shopping_sale_unit_id String
+  
+  /// Quantity of the product variant in the cart.
+  quantity Int
+  
+  /// Price of the product variant at the time of adding to the cart.
+  price Float
+  
+  /// Creation timestamp of the cart item.
+  created_at DateTime
+  
+  /// Last update timestamp of the cart item.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_carts @relation(fields: [shopping_cart_id], references: [id], onDelete: Cascade)
+  saleUnit shopping_sale_units @relation(fields: [shopping_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_cart_id])
+  @@index([shopping_sale_unit_id])
+}

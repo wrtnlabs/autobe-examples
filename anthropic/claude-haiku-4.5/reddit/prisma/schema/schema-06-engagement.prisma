@@ -1,0 +1,283 @@
+/// Core voting records tracking all upvotes and downvotes on posts and
+/// comments. This is the primary source of truth for community engagement
+/// voting. Each record represents one user's vote on one piece of content
+/// (post or comment). Users can change their vote (upvote to downvote) or
+/// remove their vote entirely. Votes drive karma calculation and content
+/// ranking algorithms (hot, top, controversial). The {@link
+/// community_platform_users.id} user who votes, the voteable_type and
+/// voteable_id identify what content received the vote.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast this vote. References {@link community_platform_users.id}.
+  voter_id String
+  
+  /// Type of content being voted on: 'post' or 'comment'. Determines whether
+  /// voteable_id references a post or comment.
+  voteable_type String
+  
+  /// ID of the post or comment receiving the vote. Paired with voteable_type
+  /// to identify exact content.
+  voteable_id String
+  
+  /// Vote direction: 1 for upvote, -1 for downvote. Enables sorting by vote
+  /// direction and calculating net scores.
+  vote_type Int
+  
+  /// When this vote was cast (ISO 8601 UTC). Used for vote velocity
+  /// calculations in hot algorithm.
+  created_at DateTime
+  
+  /// When this vote was last updated (changed or revoked). Tracks vote change
+  /// history.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  voter community_platform_users @relation(fields: [voter_id], references: [id], onDelete: Cascade)
+  
+  community_platform_vote_history community_platform_vote_history[]
+  
+  @@unique([voter_id, voteable_type, voteable_id])
+  @@index([voteable_type, voteable_id])
+  @@index([voter_id])
+  @@index([created_at])
+}
+
+/// Complete audit trail of all vote lifecycle events including creation,
+/// changes (upvote to downvote conversions), and revocations. Enables
+/// tracking of voting patterns, detecting manipulation, and providing
+/// complete historical record. Records are append-only (never deleted). Each
+/// entry captures the state at a point in time. {@link
+/// community_platform_votes.id} is the current vote being tracked, and this
+/// history preserves every change to it.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the vote being tracked in history. Links to {@link
+  /// community_platform_votes.id}.
+  vote_id String
+  
+  /// Type of event: 'created', 'changed', 'revoked'. Indicates what happened
+  /// to the vote.
+  event_type String
+  
+  /// Vote type before this event (null for creation, 1/-1 for changes,
+  /// previous value for revocation). Enables detecting vote manipulation
+  /// patterns.
+  previous_vote_type Int?
+  
+  /// Vote type after this event (1/-1 for creation/change, null for
+  /// revocation). Null indicates vote was removed.
+  new_vote_type Int?
+  
+  /// When this history event was recorded (ISO 8601 UTC). Preserves complete
+  /// timeline of vote changes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  vote community_platform_votes @relation(fields: [vote_id], references: [id], onDelete: Cascade)
+  
+  @@index([vote_id])
+  @@index([created_at])
+}
+
+/// Immutable transaction log of all karma changes for every user. Each entry
+/// records one karma transaction: when user earns/loses karma, from what
+/// source, and by how much. This is the authoritative source for calculating
+/// user karma balances. Transactions are append-only (never deleted).
+/// Enables accurate karma recalculation, identifies karma anomalies, and
+/// provides audit trail. {@link community_platform_users.id} identifies the
+/// user whose karma changed.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_ledger {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who earned or lost karma. References {@link
+  /// community_platform_users.id}.
+  user_id String
+  
+  /// Source of karma change: 'upvote_received', 'downvote_received',
+  /// 'post_deleted', 'comment_deleted', 'achievement', 'milestone',
+  /// 'admin_adjustment'. Indicates why karma changed.
+  transaction_type String
+  
+  /// Amount of karma gained (positive) or lost (negative). Can be positive or
+  /// negative values.
+  amount Int
+  
+  /// ID of related object (post_id, comment_id, achievement_id, etc.)
+  /// depending on transaction_type. Enables tracing karma to source event.
+  reference_id String?
+  
+  /// Type of referenced object: 'post', 'comment', 'achievement', 'milestone',
+  /// 'adjustment'. Clarifies what reference_id refers to.
+  reference_type String?
+  
+  /// When this karma transaction occurred (ISO 8601 UTC). Enables sequencing
+  /// transactions and identifying when karma changes occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([created_at])
+  @@index([transaction_type])
+}
+
+/// Point-in-time snapshots of user karma states, typically captured daily.
+/// Preserves user's total karma value at specific moments, enabling
+/// historical karma tracking, trend analysis, and reputation level history.
+/// Snapshots are read-only after creation. {@link
+/// community_platform_users.id} identifies the user whose karma was
+/// snapshotted. Enables detection of rapid karma changes and analysis of
+/// user activity patterns over time.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose karma is being snapshotted. References {@link
+  /// community_platform_users.id}.
+  user_id String
+  
+  /// User's total karma at snapshot time. Sum of all karma ledger entries up
+  /// to snapshot_at timestamp.
+  total_karma Int
+  
+  /// Karma earned/lost from posts only. Sum of karma changes from
+  /// upvotes/downvotes on user's posts.
+  post_karma Int
+  
+  /// Karma earned/lost from comments only. Sum of karma changes from
+  /// upvotes/downvotes on user's comments.
+  comment_karma Int
+  
+  /// User's reputation level at snapshot time based on total_karma: Newcomer
+  /// (1-99), Contributor (100-499), Active Member (500-2499), Community Leader
+  /// (2500-9999), Respected Elder (10000-49999), Legend (50000+).
+  reputation_level String
+  
+  /// When this snapshot was taken (ISO 8601 UTC). Typically once daily.
+  /// Enables tracking karma changes over time and detecting anomalies.
+  snapshot_at DateTime
+  
+  /// When snapshot record was created. Same as snapshot_at for regular
+  /// snapshots.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, snapshot_at])
+  @@index([user_id])
+  @@index([snapshot_at])
+}
+
+/// Aggregated engagement statistics calculated daily from source events.
+/// Tracks engagement metrics per user, per community, and per post for
+/// efficient reporting and analytics. Includes vote statistics, activity
+/// levels, growth metrics. Pre-calculated metrics enable fast analytics
+/// queries without expensive aggregations. Records are refreshed daily, not
+/// updated in-place. Used for trending algorithms, recommendations, and
+/// engagement reports. {@link community_platform_users.id} for user metrics,
+/// community_id for community metrics, voteable_id for post metrics.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_engagement_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of metric: 'user_engagement', 'community_engagement',
+  /// 'post_engagement'. Indicates what entity this metric measures.
+  metric_type String
+  
+  /// ID of entity being measured: user_id, community_id, or post_id.
+  /// Identifies what this metric applies to.
+  entity_id String
+  
+  /// Number of posts created (user) or published (community). For posts, this
+  /// is always 1 (the post itself).
+  posts_created Int
+  
+  /// Number of comments posted. For posts, total comments on the post. For
+  /// users, total comments by user. For communities, total comments in
+  /// community.
+  comments_created Int
+  
+  /// Total upvotes received on all user's posts/comments, or on community's
+  /// posts, or on this post.
+  upvotes_received Int
+  
+  /// Total downvotes received on all user's posts/comments, or on community's
+  /// posts, or on this post.
+  downvotes_received Int
+  
+  /// Number of upvotes user has cast. Only populated for user_engagement type.
+  upvotes_given Int
+  
+  /// Number of downvotes user has cast. Only populated for user_engagement
+  /// type.
+  downvotes_given Int
+  
+  /// Number of times post was viewed. Only populated for post_engagement type.
+  views_count Int
+  
+  /// Calculated engagement metric: (upvotes * 1.0 + comments * 2.0 + views *
+  /// 0.1) / (age_in_days + 1). Higher score indicates more engagement.
+  engagement_score Float
+  
+  /// Date this metric represents (start of day in UTC). Metrics are calculated
+  /// daily.
+  period_date DateTime
+  
+  /// When this metric record was created (ISO 8601 UTC). Typically daily at
+  /// midnight UTC.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([metric_type, entity_id, period_date], map: "community_platform_engagement_metrics_metric_type_enti_90e06958")
+  @@index([metric_type])
+  @@index([entity_id])
+  @@index([period_date])
+  @@index([engagement_score])
+}

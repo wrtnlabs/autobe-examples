@@ -1,0 +1,178 @@
+/// Centralized moderation queue for comment content review with SLA tracking
+/// and processing status for all moderation actions across communities.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_moderation_queue {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Associated report's {@link reddit_community_content_reports.id}
+  content_report_id String?
+  
+  /// Assigned moderator's {@link reddit_community_moderators.id}
+  assigned_moderator_id String
+  
+  /// Community where content exists {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Target model's {@link reddit_community_comments.id}
+  reddit_community_comment_id String
+  
+  /// Queue type (report_review, automated_flag, dmca_notice, legal_review,
+  /// appeal_review)
+  queue_type String
+  
+  /// SLA deadline based on violation severity (4h/24h/72h)
+  sla_deadline DateTime
+  
+  /// Priority classification (high, medium, low) for processing order
+  priority_level String
+  
+  /// Status (pending, in_review, approved, rejected, deferred, escalated)
+  status String
+  
+  /// Moderator notes and decision rationale
+  review_notes String?
+  
+  /// Action taken (no_action, warning, content_removal, user_restriction,
+  /// user_ban, community_ban)
+  enforcement_action String?
+  
+  /// Status pending/reviewed/approved/removed/appealed
+  moderation_status String
+  
+  /// Priority level high/medium/low for review urgency
+  priority String
+  
+  /// Detailed explanation of reported violation
+  reason_detail String?
+  
+  /// Whether item was escalated to platform administrators
+  escalated_to_admin Boolean
+  
+  /// When item entered queue
+  created_at DateTime
+  
+  /// When moderator began review
+  started_review_at DateTime?
+  
+  /// When resolution was completed
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  contentReport reddit_community_content_reports? @relation(fields: [content_report_id], references: [id], onDelete: Cascade)
+  assignedModerator reddit_community_moderators @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([content_report_id], map: "reddit_community_comment_moderation_queue_content_repo_9846d335")
+  
+  @@index([priority_level, status], map: "reddit_community_comment_moderation_queue_priority_lev_d57f0ccc")
+  @@index([assigned_moderator_id, status], map: "reddit_community_comment_moderation_queue_assigned_mod_c4c6234e")
+  @@index([community_id, priority_level, created_at], map: "reddit_community_comment_moderation_queue_community_id_16ad8cda")
+  @@index([status, priority_level, created_at], map: "reddit_community_comment_moderation_queue_status_prior_4c27b735")
+}
+
+/// Voting records for individual comments tracking upvotes and downvotes
+/// with user identification and timestamps. Enables anti-manipulation
+/// measures and karma calculations.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's {@link reddit_community_comments.id}
+  reddit_community_comment_id String
+  
+  /// Target model's {@link reddit_community_members.id}
+  reddit_community_member_id String
+  
+  /// Type of vote either 'upvote' or 'downvote'
+  vote_type String
+  
+  /// Karma weight multiplier based on user reputation
+  weight Float
+  
+  /// Timestamp when the vote was cast
+  created_at DateTime
+  
+  /// IP address of voting user for anti-manipulation
+  ip_address String?
+  
+  /// Browser user agent string for fraud detection
+  user_agent String?
+  
+  //----
+  // RELATIONS
+  //----
+  comment reddit_community_comments @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_comment_id, reddit_community_member_id], map: "reddit_community_comment_votes_reddit_community_commen_e0d6b53c")
+  @@index([reddit_community_comment_id])
+  @@index([reddit_community_member_id])
+  @@index([created_at])
+  @@index([vote_type, created_at])
+}
+
+/// Thread structure management for nested comment discussions supporting up
+/// to 6 levels deep. Maintains parent-child relationships and thread state
+/// for display optimization.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's {@link reddit_community_posts.id}
+  reddit_community_post_id String
+  
+  /// Maximum nesting depth achieved in this thread
+  max_depth_reached Int
+  
+  /// Total number of comments in the thread
+  comment_count Int
+  
+  /// Number of comments hidden due to low scores
+  hidden_count Int
+  
+  /// Default sorting mode best/new/controversial/old
+  sort_default String
+  
+  /// Whether new comments are disabled for this thread
+  is_locked Boolean
+  
+  /// Timestamp when thread was first created
+  created_at DateTime
+  
+  /// Timestamp of last structural change
+  updated_at DateTime
+  
+  /// Timestamp of most recent comment activity
+  last_activity DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_post_id])
+  @@index([last_activity])
+  @@index([is_locked])
+  @@index([comment_count])
+  @@index([max_depth_reached])
+}

@@ -1,0 +1,175 @@
+/// Hierarchical category taxonomy for the shoppingMall catalog. Categories
+/// support optional parent-child nesting for multi-level organization. Used
+/// by product listing, search, and navigation. Contains canonical business
+/// identity (slug) and temporal audit fields. Related entity references:
+/// {@link shopping_mall_product_categories}.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Self-referential parent category reference. {@link
+  /// shopping_mall_categories.id}.
+  parent_id String?
+  
+  /// Human-friendly category name used in navigation and search.
+  name String
+  
+  /// Unique URL-friendly identifier for the category (business key).
+  slug String
+  
+  /// Optional textual description for the category used in admin and SEO.
+  description String?
+  
+  /// Record creation timestamp (Asia/Seoul timezone interpretation).
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_product_categories shopping_mall_product_categories[]
+  
+  @@index([parent_id])
+  
+  @@unique([slug])
+  @@index([name, created_at])
+}
+
+/// Junction table linking products to categories. Represents M:N
+/// relationship between shopping_mall_products and shopping_mall_categories.
+/// Enforces uniqueness per product/category pair to avoid duplicate
+/// assignments. Managed as subsidiary data from product/category
+/// administration flows.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Belonged category's {@link shopping_mall_categories.id}.
+  shopping_mall_category_id String
+  
+  /// When the product was assigned to the category.
+  created_at DateTime
+  
+  /// Actor who created the assignment (nullable; may reference admin or system
+  /// user).
+  created_by String?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_category_id])
+  
+  @@unique([shopping_mall_product_id, shopping_mall_category_id], map: "shopping_mall_product_categories_shopping_mall_product_b5030199")
+  @@index([shopping_mall_product_id, shopping_mall_category_id, created_at], map: "shopping_mall_product_categories_shopping_mall_product_f70f052c")
+}
+
+/// Append-only audit and event log for platform-level critical actions
+/// (admin operations, moderation events, system escalations). Designed for
+/// immutable historical records, forensic queries, and admin reporting.
+/// Entries are append-only and include free-text details for later
+/// investigation.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Identifier of the actor that caused the event (user/admin/system). May
+  /// reference other user tables; nullable for system events.
+  actor_id String?
+  
+  /// Short action code or verb (e.g., 'product_publish', 'refund_approved').
+  action String
+  
+  /// Target entity type (e.g., 'product','order','review').
+  entity String
+  
+  /// Identifier of the affected entity (if applicable).
+  entity_id String?
+  
+  /// Human-readable or structured details about the event (JSON-as-string or
+  /// text).
+  details String?
+  
+  /// Event timestamp (immutable).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([entity, entity_id, created_at])
+}
+
+/// Append-only inventory event stream capturing SKU-level inventory changes
+/// (adjustments, reservations, commits, releases). Each event ties to a SKU
+/// and optionally to an order or actor. Used for inventory audit,
+/// reconciliation, and prevention of oversells.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Affected SKU reference. {@link shopping_mall_skus.id}.
+  shopping_mall_sku_id String
+  
+  /// Signed quantity change (positive for inbound, negative for outbound).
+  delta Int
+  
+  /// Reason for the inventory change (e.g., 'sale', 'adjustment', 'return',
+  /// 'reservation_expiry').
+  reason String?
+  
+  /// Optional order id associated with this event (if applicable). {@link
+  /// shopping_mall_orders.id}.
+  reference_order_id String?
+  
+  /// Actor who performed the change (seller/admin/system).
+  actor_id String?
+  
+  /// Event timestamp (append-only).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory shopping_mall_inventory[]
+  
+  @@index([shopping_mall_sku_id, created_at], map: "shopping_mall_inventory_events_shopping_mall_sku_id_cr_730de2f1")
+}

@@ -1,0 +1,121 @@
+/// System-level user roles that define access control and permissions across
+/// the entire platform. Represents the four core role types: Guest
+/// (unauthenticated), Member (authenticated user), Moderator (community
+/// manager), and Admin (platform administrator). These roles form the
+/// foundation of the platform's authorization system and are referenced
+/// throughout all domains.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Name of the platform role (Guest, Member, Moderator, Admin). Unique
+  /// identifier for the role that is referenced in access control decisions
+  /// throughout the platform.
+  role_name String
+  
+  /// Detailed description of the role's purpose, capabilities, and use case.
+  /// Explains what actions users in this role can perform and what actions are
+  /// restricted.
+  role_description String?
+  
+  /// Display order for role listings in administrative interfaces. Used to
+  /// present roles in hierarchical order (Guest=1, Member=2, Moderator=3,
+  /// Admin=4) for UI presentation.
+  display_order Int
+  
+  /// Whether this role is currently active and available for assignment to
+  /// users. Inactive roles cannot be assigned to new users but may be retained
+  /// on existing accounts for data integrity.
+  is_active Boolean
+  
+  /// Timestamp when this role definition was created in the system (ISO 8601
+  /// UTC format). Used for audit trail and role history tracking.
+  created_at DateTime
+  
+  /// Timestamp when this role definition was last modified (ISO 8601 UTC
+  /// format). Updated whenever role description, permissions, or status
+  /// changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_role_permissions community_platform_role_permissions[]
+  
+  @@unique([role_name])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Platform-level permissions that define what actions each role can perform
+/// across the system. Establishes granular access control by mapping role
+/// IDs to specific permissions (create_post, vote, moderate_content,
+/// manage_users, etc.). This is the core authorization table that enforces
+/// platform-wide security policies and role-based access control.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Reference to the platform role this permission applies to. Foreign key to
+  /// {@link community_platform_roles.id} that establishes which role is
+  /// granted this specific permission.
+  community_platform_role_id String
+  
+  /// Machine-readable identifier for the permission (e.g., 'create_post',
+  /// 'vote_on_content', 'moderate_community', 'manage_users'). Used in
+  /// application code to check if a user has permission for an action.
+  permission_key String
+  
+  /// Human-readable display name for this permission (e.g., 'Create Posts',
+  /// 'Vote on Content', 'Moderate Communities', 'Manage User Accounts'). Used
+  /// in administrative interfaces and documentation.
+  permission_name String
+  
+  /// Detailed description of what this permission allows the role to do.
+  /// Explains the specific actions, scope, and any limitations or conditions
+  /// for this permission.
+  permission_description String?
+  
+  /// Category grouping related permissions (e.g., 'content_creation',
+  /// 'voting', 'moderation', 'user_management', 'system_administration').
+  /// Helps organize permissions in administrative interfaces.
+  permission_category String?
+  
+  /// Whether this permission is currently active and enforced. Inactive
+  /// permissions cannot be checked but remain in database for audit trail and
+  /// historical records.
+  is_active Boolean
+  
+  /// Timestamp when this permission was created or assigned to the role (ISO
+  /// 8601 UTC format). Used for audit trail and tracking permission
+  /// assignments.
+  created_at DateTime
+  
+  /// Timestamp when this permission assignment was last updated (ISO 8601 UTC
+  /// format). Modified when permission is activated/deactivated or its
+  /// definition changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  role community_platform_roles @relation(fields: [community_platform_role_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_role_id, permission_key], map: "community_platform_role_permissions_community_platform_69370446")
+  @@index([community_platform_role_id], map: "community_platform_role_permissions_community_platform_8ba57335")
+  @@index([permission_key])
+  @@index([permission_category])
+  @@index([is_active])
+}

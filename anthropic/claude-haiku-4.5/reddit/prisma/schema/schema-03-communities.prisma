@@ -1,0 +1,343 @@
+/// Represents individual communities on the platform. Each community is a
+/// distinct space where members can create posts, comments, and engage in
+/// discussions around a specific topic or theme. Communities have owners
+/// (the creator), can be public or private, and contain metadata about their
+/// purpose, rules, and settings.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the creator/owner of this community. The creator's {@link
+  /// community_platform_users.id}.
+  community_creator_id String
+  
+  /// Reference to the category this community belongs to. The category's
+  /// {@link community_platform_community_categories.id}.
+  community_category_id String?
+  
+  /// Unique community name (slug for URL). 3-32 characters, alphanumeric with
+  /// hyphens and underscores. Used in URLs like /c/community-name.
+  name String
+  
+  /// Human-readable community name displayed to users. Can differ from the
+  /// slug (name field). Max 60 characters.
+  display_name String
+  
+  /// Community description explaining its purpose and topic. 10-500
+  /// characters. Displayed on community page and in search results.
+  description String
+  
+  /// Whether the community is public (visible to all, membership automatic) or
+  /// private (hidden, requires approval to join). Defaults to true.
+  is_public Boolean
+  
+  /// URL to community icon/logo image. Optional visual identifier for the
+  /// community.
+  icon_url String?
+  
+  /// URL to community banner image. Optional header image displayed on
+  /// community page.
+  banner_url String?
+  
+  /// Denormalized count of total subscribers to this community. Updated when
+  /// members subscribe/unsubscribe. Used for sorting and trending
+  /// calculations.
+  subscriber_count Int
+  
+  /// Denormalized count of total posts created in this community. Updated when
+  /// posts are created/deleted. Used for community statistics.
+  post_count Int
+  
+  /// Timestamp when this community was created. ISO 8601 UTC format.
+  created_at DateTime
+  
+  /// Timestamp when this community was last updated (settings changed, etc.).
+  /// ISO 8601 UTC format.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  creator community_platform_users @relation(fields: [community_creator_id], references: [id], onDelete: Cascade)
+  category community_platform_community_categories? @relation(fields: [community_category_id], references: [id], onDelete: Cascade)
+  
+  community_platform_community_settings community_platform_community_settings?
+  community_platform_community_rules community_platform_community_rules[]
+  community_platform_moderators community_platform_moderators[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_community_members community_platform_community_members[]
+  community_platform_community_blocks community_platform_community_blocks[]
+  community_platform_join_requests community_platform_join_requests[]
+  community_platform_posts community_platform_posts[]
+  community_platform_reports community_platform_reports[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_content_removals community_platform_content_removals[]
+  community_platform_user_warnings community_platform_user_warnings[]
+  community_platform_activity_timeline community_platform_activity_timeline[]
+  community_platform_engagement_statistics community_platform_engagement_statistics[]
+  community_platform_user_engagement_events community_platform_user_engagement_events[]
+  
+  @@unique([name])
+  @@index([community_creator_id, created_at], map: "community_platform_communities_community_creator_id_cr_b271321f")
+  @@index([community_category_id])
+  @@index([created_at])
+  @@index([is_public])
+}
+
+/// Stores configurable settings for each community including post type
+/// restrictions, commenting policies, member requirements, and archival
+/// settings. Allows moderators to customize how their community operates and
+/// what content is allowed.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community these settings apply to. The community's
+  /// {@link community_platform_communities.id}.
+  community_id String
+  
+  /// Whether text posts are allowed in this community. Default true.
+  allow_text_posts Boolean
+  
+  /// Whether link/URL posts are allowed in this community. Default true.
+  allow_link_posts Boolean
+  
+  /// Whether image posts are allowed in this community. Default true.
+  allow_image_posts Boolean
+  
+  /// Whether comments are enabled on posts in this community. Default true.
+  allow_comments Boolean
+  
+  /// Whether new posts must be approved by moderators before appearing.
+  /// Default false.
+  require_post_approval Boolean
+  
+  /// Whether new comments must be approved by moderators before appearing.
+  /// Default false.
+  require_comment_approval Boolean
+  
+  /// Minimum karma required for members to create posts in this community. 0
+  /// means no requirement. Default 0.
+  min_karma_to_post Int
+  
+  /// Minimum account age in days required to post in this community. 0 means
+  /// no requirement. Default 0.
+  min_account_age_days_to_post Int
+  
+  /// Minimum karma required for members to comment in this community. 0 means
+  /// no requirement. Default 0.
+  min_karma_to_comment Int
+  
+  /// Minimum account age in days required to comment in this community. 0
+  /// means no requirement. Default 0.
+  min_account_age_days_to_comment Int
+  
+  /// Number of days after which posts become read-only (archived). Posts older
+  /// than this cannot receive votes or new comments. Default 180 (6 months).
+  post_archive_age_days Int
+  
+  /// Spam filter sensitivity level. Values: 'low', 'medium', 'high'. Default
+  /// 'medium'. Controls automated spam detection.
+  spam_filter_sensitivity String
+  
+  /// Timestamp when these settings were created. ISO 8601 UTC format.
+  created_at DateTime
+  
+  /// Timestamp when these settings were last updated. ISO 8601 UTC format.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id])
+  
+  @@index([community_id])
+}
+
+/// Stores community-specific rules that define content standards and member
+/// conduct expectations. Moderators create and manage rules to ensure
+/// community standards are followed. Rules are displayed to members when
+/// joining and referenced in moderation decisions.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community these rules apply to. The community's {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Ordinal position of this rule (1, 2, 3, etc.). Used for displaying rules
+  /// in consistent order.
+  rule_number Int
+  
+  /// Short title of the rule (5-50 characters). Example: 'No harassment' or
+  /// 'Off-topic content prohibited'.
+  title String
+  
+  /// Detailed description of the rule (10-500 characters). Explains what
+  /// behavior is prohibited and why.
+  description String
+  
+  /// Default enforcement approach for this rule. Values: 'warning',
+  /// 'temporary_removal', 'permanent_removal'. Can be overridden by
+  /// moderators.
+  enforcement_level String
+  
+  /// Timestamp when this rule was created. ISO 8601 UTC format.
+  created_at DateTime
+  
+  /// Timestamp when this rule was last updated. ISO 8601 UTC format.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, rule_number])
+  @@index([community_id])
+}
+
+/// Predefined categories that communities can be tagged with for
+/// organization and discovery. System maintains a fixed list of categories
+/// (Technology, Gaming, Sports, etc.) that help users find communities by
+/// topic area.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category name (e.g., 'Technology', 'Gaming', 'Science'). 3-32 characters,
+  /// unique across all categories.
+  name String
+  
+  /// Brief description of what communities belong in this category. Max 200
+  /// characters.
+  description String
+  
+  /// Display order for presenting categories in UI lists. Lower numbers appear
+  /// first. Used for sorting category dropdowns.
+  display_order Int
+  
+  /// Optional URL to category icon/image for visual identification.
+  icon_url String?
+  
+  /// Timestamp when this category was created. ISO 8601 UTC format.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_communities community_platform_communities[]
+  
+  @@unique([name])
+  @@index([display_order])
+}
+
+/// Tracks which users have moderator roles in which communities. Moderators
+/// have elevated permissions to manage content, enforce rules, and maintain
+/// community standards. Supports hierarchical roles (Moderator, Senior
+/// Moderator, Community Owner) with different permission levels.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community this moderator manages. The community's {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Reference to the user who is a moderator. The user's {@link
+  /// community_platform_users.id}.
+  user_id String
+  
+  /// Moderator role level within this community. Values: 'moderator'
+  /// (standard), 'senior_moderator' (enhanced), 'community_owner' (full
+  /// control). Determines permissions.
+  role String
+  
+  /// Timestamp when this user was appointed as moderator in this community.
+  /// ISO 8601 UTC format.
+  appointed_at DateTime
+  
+  /// User ID of the moderator who appointed this moderator. Tracks who made
+  /// the decision for audit purposes.
+  appointed_by_id String?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, user_id])
+  @@index([community_id])
+  @@index([user_id])
+  @@index([role])
+}
+
+/// Defines what specific actions moderators with each role level can
+/// perform. Maps moderator roles (moderator, senior_moderator,
+/// community_owner) to specific permissions they have. Enables fine-grained
+/// role-based access control.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderator_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator role this permission applies to. Values: 'moderator',
+  /// 'senior_moderator', 'community_owner'. Determines who can perform this
+  /// action.
+  role String
+  
+  /// Specific permission name. Examples: 'remove_post', 'warn_user',
+  /// 'ban_user', 'lock_thread', 'pin_post', 'edit_community_settings',
+  /// 'assign_moderator'. Controls what actions the role can take.
+  permission String
+  
+  /// Human-readable description of what this permission allows. Used for
+  /// documentation and UI display.
+  description String
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([role, permission])
+  @@index([role])
+  @@index([permission])
+}

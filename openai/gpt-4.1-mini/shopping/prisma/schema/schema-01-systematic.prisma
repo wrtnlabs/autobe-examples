@@ -1,0 +1,96 @@
+/// Product categories in the shopping mall's hierarchical catalog. Enables
+/// product classification and navigation via parent-child relationships
+/// forming a tree structure. Supports category codes and display order for
+/// UI sorting. Includes soft delete support and audit timestamps.
+/// Self-referencing foreign key for parent-child linkage.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category's {@link shopping_mall_categories.id}. Nullable for root
+  /// categories.
+  parent_id String?
+  
+  /// Unique code identifying the category.
+  code String
+  
+  /// Category display name.
+  name String
+  
+  /// Optional detailed description of the category.
+  description String?
+  
+  /// Display order for sorting categories.
+  display_order Int
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_products shopping_mall_products[]
+  
+  @@unique([code])
+  @@index([parent_id, display_order])
+}
+
+/// System-wide configuration parameters and settings for the shopping mall
+/// platform. Stores key-value pairs defining various operational parameters.
+/// Supports categorization, description, and status flags. Enables soft
+/// deletion and tracks creation and update timestamps.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key.
+  key String
+  
+  /// Configuration value as a string.
+  value String
+  
+  /// Optional category grouping for configurations.
+  category String?
+  
+  /// Description of the configuration parameter.
+  description String?
+  
+  /// Flag indicating if the configuration is active.
+  enabled Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last updated timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([category])
+}

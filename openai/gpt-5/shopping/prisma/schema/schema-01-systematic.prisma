@@ -1,0 +1,257 @@
+/// Key-value configuration registry for platform-wide settings. Each record
+/// represents a single configuration entry optionally scoped to an
+/// environment or region. Consumed by various services for feature behavior,
+/// thresholds, and defaults. Managed by administrators with audit through
+/// timestamps. No denormalized data; values stored as raw strings with
+/// optional description for operator clarity.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Business configuration key identifier. Unique within an optional scope to
+  /// prevent collisions across environments or regions.
+  key String
+  
+  /// Raw configuration value stored as string; interpretation is handled by
+  /// application (e.g., JSON string, numeric string, boolean string).
+  value String
+  
+  /// Optional scope label to partition configurations by environment (e.g.,
+  /// prod, staging) or region (e.g., KR, US).
+  scope String?
+  
+  /// Human-readable explanation of the configuration’s purpose and acceptable
+  /// values.
+  description String?
+  
+  /// Creation timestamp for the configuration entry.
+  created_at DateTime
+  
+  /// Last update timestamp for the configuration entry.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recoverability; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key, scope])
+  @@index([created_at])
+  @@index([scope, key])
+}
+
+/// Feature flag registry controlling conditional behaviors and progressive
+/// rollouts. Flags can be toggled, scheduled with effective windows, and
+/// optionally ramped by percentage. Used by application services to gate
+/// features and experiments. Managed by operations/admin teams.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_feature_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code identifier for the feature flag (e.g., checkout_risk_hold_v2).
+  code String
+  
+  /// Human-friendly flag name for console display and search.
+  name String
+  
+  /// Operator-facing description of the flag’s purpose and scope.
+  description String?
+  
+  /// Whether the flag is globally enabled (subject to optional schedule and
+  /// rollout settings).
+  enabled Boolean
+  
+  /// Optional progressive rollout percentage (0–100). When null, no
+  /// percentage-based rollout applies.
+  rollout_percentage Int?
+  
+  /// Optional audience or segment key used by application to target subsets
+  /// (e.g., locale=ko-KR, seller_tier=gold). Purely informational here.
+  segment String?
+  
+  /// Optional start datetime for when the flag becomes effective.
+  starts_at DateTime?
+  
+  /// Optional end datetime after which the flag is no longer effective.
+  ends_at DateTime?
+  
+  /// Creation timestamp for the feature flag record.
+  created_at DateTime
+  
+  /// Last update timestamp for the feature flag record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@index([enabled, updated_at])
+  @@index([enabled, starts_at, ends_at])
+}
+
+/// Top-level policy definitions governing business behaviors (e.g., returns,
+/// cancellations, pricing floors). This table represents the policy
+/// container and metadata. Concrete business rules and effective-dated terms
+/// are captured in {@link shopping_mall_policy_versions}.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique human-readable policy code (e.g., RETURNS_GENERAL,
+  /// REFUND_HIGH_VALUE).
+  code String
+  
+  /// Policy title for administrative display and search.
+  title String
+  
+  /// High-level grouping (e.g., returns, refunds, payouts, catalog,
+  /// moderation).
+  category String
+  
+  /// Lifecycle state of the policy (e.g., draft, active, retired).
+  status String
+  
+  /// Optional summary describing policy intent and scope (detailed terms live
+  /// in versions).
+  description String?
+  
+  /// Creation timestamp for the policy container.
+  created_at DateTime
+  
+  /// Last update timestamp for the policy container.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_policy_versions shopping_mall_policy_versions[]
+  
+  @@unique([code])
+  @@index([category, status])
+}
+
+/// Effective-dated, append-only snapshots of policy content for audit and
+/// grandfathering. Each version belongs to a {@link shopping_mall_policies}
+/// record, carries a semantic version label, effective window, and change
+/// notes. Serves as the historical source of truth for policy evaluations at
+/// a given time.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_policy_versions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent policy reference. Target model's {@link shopping_mall_policies.id}.
+  shopping_mall_policy_id String
+  
+  /// Semantic or sequential version label (e.g., 1.0.0, 2025-01).
+  version String
+  
+  /// Start datetime when this policy version becomes effective.
+  effective_from DateTime
+  
+  /// Optional end datetime after which the version is no longer effective
+  /// (open-ended when null).
+  effective_to DateTime?
+  
+  /// Summary of changes for operators and auditors.
+  change_notes String?
+  
+  /// Whether this version is approved through maker-checker or equivalent
+  /// governance.
+  approved Boolean
+  
+  /// Creation timestamp for the policy version record.
+  created_at DateTime
+  
+  /// Last update timestamp for the policy version record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  policy shopping_mall_policies @relation(fields: [shopping_mall_policy_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_policy_id, version], map: "shopping_mall_policy_versions_shopping_mall_policy_id__2a57d6a0")
+  @@index([shopping_mall_policy_id, effective_from], map: "shopping_mall_policy_versions_shopping_mall_policy_id__2fd07eb2")
+  @@index([shopping_mall_policy_id, approved, effective_from], map: "shopping_mall_policy_versions_shopping_mall_policy_id__60d9eaa5")
+}
+
+/// Locale registry of supported languages/regions for the platform. Provides
+/// BCP 47-style codes with activation flags. Used by frontends and
+/// notifications to determine formatting and language fallback logic.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_locales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique locale code (e.g., en-US, ko-KR) used across services for
+  /// localization.
+  code String
+  
+  /// English display name of the locale (e.g., English (United States), Korean
+  /// (Korea)).
+  name String
+  
+  /// Locale’s self-referential name in its own language/script (e.g.,
+  /// 한국어(대한민국)).
+  native_name String?
+  
+  /// Whether the locale is right-to-left (true) or left-to-right (false).
+  rtl Boolean
+  
+  /// Whether the locale is currently enabled for use in the platform.
+  active Boolean
+  
+  /// Creation timestamp for the locale record.
+  created_at DateTime
+  
+  /// Last update timestamp for the locale record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@index([active, code])
+}

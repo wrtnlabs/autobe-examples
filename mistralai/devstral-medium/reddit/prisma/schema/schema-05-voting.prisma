@@ -1,0 +1,77 @@
+/// Tracks user votes on posts in the Reddit-like community platform. This
+/// table records each user's vote (upvote or downvote) on specific posts,
+/// ensuring data integrity through composite primary keys and enforcing that
+/// users can only vote once per post. The table supports the core voting
+/// functionality and enables features like vote counting, user vote history,
+/// and content ranking.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_clone_member.id}.
+  user_id String
+  
+  /// Post that received the vote. {@link reddit_clone_posts.id}.
+  post_id String
+  
+  /// Type of vote (upvote or downvote).
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_clone_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, post_id])
+  @@index([post_id, created_at])
+  @@index([user_id, created_at])
+}
+
+/// Tracks user votes on comments in the Reddit-like community platform. This
+/// table records each user's vote (upvote or downvote) on specific comments,
+/// ensuring data integrity through composite primary keys and enforcing that
+/// users can only vote once per comment. The table supports nested comment
+/// voting and enables features like comment ranking, user vote history, and
+/// reputation systems.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_clone_member.id}.
+  user_id String
+  
+  /// Comment that received the vote. {@link reddit_clone_comments.id}.
+  comment_id String
+  
+  /// Type of vote (upvote or downvote).
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  comment reddit_clone_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, comment_id])
+  @@index([comment_id, created_at])
+  @@index([user_id, created_at])
+}

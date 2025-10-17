@@ -1,0 +1,690 @@
+/// Core inventory tracking entity that maintains current stock levels for
+/// all product variants (SKUs) in the e-commerce platform. This table is the
+/// primary source of truth for inventory availability and prevents
+/// overselling by ensuring real-time stock accuracy. Each record represents
+/// the current state of inventory for a specific SKU.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product variant (SKU) being tracked. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_product_variant_id String
+  
+  /// The seller responsible for this inventory. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_seller_id String
+  
+  /// The physical or virtual location where inventory is stored. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_location_id String
+  
+  /// The warehouse managing this inventory. {@link shopping_mall_sellers.id}.
+  shopping_mall_warehouse_id String
+  
+  /// Current stock count for this SKU. Must be a non-negative integer
+  /// reflecting available inventory.
+  quantity Int
+  
+  /// Quantity of inventory reserved for pending orders that have not yet been
+  /// confirmed. Prevents overselling.
+  reserved_quantity Int
+  
+  /// Calculated field representing quantity available for sale (quantity -
+  /// reserved_quantity).
+  available_quantity Int
+  
+  /// Current inventory status (in_stock, low_stock, out_of_stock) used for
+  /// business logic and user interface.
+  business_status String
+  
+  /// Per-unit cost price of the inventory for accounting and profit
+  /// calculation purposes.
+  cost_price Float
+  
+  /// Date and time when the physical inventory count was last performed for
+  /// accuracy verification.
+  last_count_date DateTime?
+  
+  /// Percentage accuracy rating of the current inventory count based on recent
+  /// physical audits.
+  count_accuracy Float?
+  
+  /// Minimum quantity level that triggers automatic restocking alerts.
+  reorder_point Int
+  
+  /// Timestamp when this inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when this inventory record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, this inventory is considered deactivated
+  /// but retains history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation("shopping_mall_inventory_of_shopping_seller_id", fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  location shopping_mall_sellers @relation("shopping_mall_inventory_of_shopping_mall_location_id", fields: [shopping_mall_location_id], references: [id], onDelete: Cascade)
+  warehouse shopping_mall_sellers @relation("shopping_mall_inventory_of_shopping_mall_warehouse_id", fields: [shopping_mall_warehouse_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_snapshots shopping_mall_inventory_snapshots[]
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  shopping_mall_inventory_history shopping_mall_inventory_history[]
+  shopping_mall_inventory_thresholds shopping_mall_inventory_thresholds[]
+  shopping_mall_inventory_transfers shopping_mall_inventory_transfers[]
+  shopping_mall_inventory_writeoffs shopping_mall_inventory_writeoffs[]
+  
+  @@index([shopping_mall_location_id])
+  @@index([shopping_mall_warehouse_id])
+  
+  @@unique([shopping_product_variant_id, shopping_seller_id, shopping_mall_location_id], map: "shopping_mall_inventory_shopping_product_variant_id_sh_f981ba20")
+  @@index([business_status, updated_at])
+  @@index([shopping_seller_id, updated_at])
+}
+
+/// Historical snapshot table that captures point-in-time states of inventory
+/// records for audit, reporting, and recovery purposes. Each snapshot
+/// preserves the complete state of an inventory record at a specific moment,
+/// allowing the system to reconstruct inventory levels at any previous date
+/// and track changes over time.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The inventory record this snapshot is capturing. {@link
+  /// shopping_mall_inventory.id}.
+  shopping_mall_inventory_id String
+  
+  /// The administrator who created or triggered this snapshot. {@link
+  /// shopping_mall_administrators.id}.
+  created_by_admin_id String?
+  
+  /// The seller who created or triggered this snapshot. {@link
+  /// shopping_mall_sellers.id}.
+  created_by_seller_id String?
+  
+  /// Stock count at the time of snapshot.
+  quantity Int
+  
+  /// Reserved quantity at the time of snapshot.
+  reserved_quantity Int
+  
+  /// Available quantity at the time of snapshot.
+  available_quantity Int
+  
+  /// Inventory status at the time of snapshot.
+  business_status String
+  
+  /// Cost price at the time of snapshot.
+  cost_price Float
+  
+  /// Reorder point at the time of snapshot.
+  reorder_point Int
+  
+  /// Type of snapshot created: scheduled, manual, adjustment, transfer,
+  /// writeoff, audit.
+  snapshot_type String
+  
+  /// Source of the snapshot: UI, API, batch process, import, system trigger.
+  source String
+  
+  /// Timestamp when this snapshot was created, which is the point-in-time
+  /// being captured.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  createdByAdmin shopping_mall_administrators? @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  createdBySeller shopping_mall_sellers? @relation(fields: [created_by_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_inventory_id, created_at], map: "shopping_mall_inventory_snapshots_shopping_mall_invent_f1ede7d1")
+  @@index([created_at, snapshot_type])
+  @@index([created_by_admin_id, created_at], map: "shopping_mall_inventory_snapshots_created_by_admin_id__30bf6b3f")
+  @@index([created_by_seller_id, created_at], map: "shopping_mall_inventory_snapshots_created_by_seller_id_4a326f9e")
+}
+
+/// Table that records manual inventory adjustments made by administrators,
+/// warehouse managers, or automated processes. These adjustments account for
+/// discrepancies between system records and physical counts, handling
+/// scenarios like received shipments, damaged goods, and stock corrections.
+/// Each adjustment represents a delta change to inventory levels.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_adjustments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The inventory record being adjusted. {@link shopping_mall_inventory.id}.
+  shopping_mall_inventory_id String
+  
+  /// The administrator who authorized this adjustment. {@link
+  /// shopping_mall_administrators.id}.
+  admin_id String?
+  
+  /// The administrator who suspended or reverted this adjustment. {@link
+  /// shopping_mall_administrators.id}.
+  suspended_by_admin_id String?
+  
+  /// The warehouse manager responsible for this adjustment. {@link
+  /// shopping_mall_sellers.id}.
+  warehouse_manager_id String?
+  
+  /// The administrator who approved this adjustment. {@link
+  /// shopping_mall_administrators.id}.
+  approver_admin_id String?
+  
+  /// Inventory quantity before the adjustment was applied.
+  previous_quantity Int
+  
+  /// Inventory quantity after the adjustment was applied.
+  new_quantity Int
+  
+  /// Change in inventory quantity (new_quantity - previous_quantity).
+  quantity_delta Int
+  
+  /// Type of adjustment: positive, negative, or transfer_out.
+  type String
+  
+  /// Justification for the adjustment (received_shipment, physical_count,
+  /// damage, counting_error, expired).
+  reason String
+  
+  /// Detailed explanation of why the adjustment was necessary.
+  description String?
+  
+  /// Date and time when the actual physical adjustment occurred.
+  adjustment_date DateTime
+  
+  /// Current status of the adjustment: pending, approved, rejected, completed.
+  adjustment_status String
+  
+  /// Date and time when the adjustment was approved by the administrator.
+  approval_date DateTime?
+  
+  /// Reason why this adjustment was suspended or reverted.
+  suspension_reason String?
+  
+  /// Date and time when this adjustment was suspended.
+  suspension_date DateTime?
+  
+  /// Source of the adjustment: manual, automated, import, system.
+  adjustment_source String
+  
+  /// Timestamp when this adjustment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this adjustment record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_administrators? @relation("shopping_mall_inventory_adjustments_of_admin_id", fields: [admin_id], references: [id], onDelete: Cascade)
+  suspendedByAdmin shopping_mall_administrators? @relation("shopping_mall_inventory_adjustments_of_suspended_by_admin_id", fields: [suspended_by_admin_id], references: [id], onDelete: Cascade)
+  warehouseManager shopping_mall_sellers? @relation(fields: [warehouse_manager_id], references: [id], onDelete: Cascade)
+  approverAdmin shopping_mall_administrators? @relation("shopping_mall_inventory_adjustments_of_approver_admin_id", fields: [approver_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_history shopping_mall_inventory_history[]
+  
+  @@index([admin_id])
+  @@index([suspended_by_admin_id])
+  @@index([warehouse_manager_id])
+  @@index([approver_admin_id])
+  
+  @@unique([shopping_mall_inventory_id, adjustment_date, reason], map: "shopping_mall_inventory_adjustments_shopping_mall_inve_2b7a190f")
+  @@index([adjustment_date, adjustment_status], map: "shopping_mall_inventory_adjustments_adjustment_date_ad_22fae616")
+  @@index([type, adjustment_status, adjustment_date], map: "shopping_mall_inventory_adjustments_type_adjustment_st_9a661317")
+}
+
+/// Subsidiary table that maintains a complete historical record of all
+/// changes to inventory levels over time. This table aggregates data from
+/// inventory snapshots, adjustments, transfers, write-offs, and other
+/// inventory movements to provide a comprehensive audit trail of stock
+/// changes. It is designed to support reporting, analytics, and inventory
+/// trend analysis.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The inventory record this history entry relates to. {@link
+  /// shopping_mall_inventory.id}.
+  shopping_mall_inventory_id String
+  
+  /// The specific inventory adjustment that caused this change. {@link
+  /// shopping_mall_inventory_adjustments.id}.
+  shopping_mall_inventory_adjustment_id String?
+  
+  /// The inventory transfer that caused this change. {@link
+  /// shopping_mall_inventory_transfers.id}.
+  shopping_mall_inventory_transfer_id String?
+  
+  /// The inventory write-off that caused this change. {@link
+  /// shopping_mall_inventory_writeoffs.id}.
+  shopping_mall_inventory_writeoff_id String?
+  
+  /// The administrator who initiated or approved the change. {@link
+  /// shopping_mall_administrators.id}.
+  created_by_admin_id String?
+  
+  /// Inventory quantity before the change occurred.
+  quantity_before Int
+  
+  /// Inventory quantity after the change was applied.
+  quantity_after Int
+  
+  /// Net change in inventory quantity for this event.
+  quantity_delta Int
+  
+  /// Type of inventory change: adjustment, transfer_in, transfer_out,
+  /// writeoff, sale, restock.
+  change_type String
+  
+  /// Source of the change: system, user, API, import, batch.
+  change_source String
+  
+  /// Reason for the change, corresponding to the specific event that caused it.
+  change_reason String
+  
+  /// Previous location for transfer events. {@link shopping_mall_locations.id}.
+  location_from String?
+  
+  /// New location for transfer events. {@link shopping_mall_locations.id}.
+  location_to String?
+  
+  /// Previous warehouse for transfer events. {@link
+  /// shopping_mall_warehouses.id}.
+  warehouse_from String?
+  
+  /// New warehouse for transfer events. {@link shopping_mall_warehouses.id}.
+  warehouse_to String?
+  
+  /// Inventory status after the change was applied.
+  business_status String
+  
+  /// Indicates if this change reverses a previous inventory event.
+  is_reversal Boolean
+  
+  /// Reference to the inventory history record being reversed. {@link
+  /// shopping_mall_inventory_history.id}.
+  reversal_for_id String?
+  
+  /// Timestamp when this change was recorded in the system.
+  created_at DateTime
+  
+  /// Timestamp when this history record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this change was processed and reflected in inventory
+  /// counts.
+  processed_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  inventoryAdjustment shopping_mall_inventory_adjustments? @relation(fields: [shopping_mall_inventory_adjustment_id], references: [id], onDelete: Cascade)
+  inventoryTransfer shopping_mall_inventory_transfers? @relation(fields: [shopping_mall_inventory_transfer_id], references: [id], onDelete: Cascade)
+  inventoryWriteoff shopping_mall_inventory_writeoffs? @relation(fields: [shopping_mall_inventory_writeoff_id], references: [id], onDelete: Cascade)
+  createdByAdmin shopping_mall_administrators? @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_inventory_adjustment_id], map: "shopping_mall_inventory_history_shopping_mall_inventor_45e0e0bc")
+  @@index([shopping_mall_inventory_transfer_id], map: "shopping_mall_inventory_history_shopping_mall_inventor_b3e0199b")
+  @@index([shopping_mall_inventory_writeoff_id], map: "shopping_mall_inventory_history_shopping_mall_inventor_70129a7d")
+  @@index([created_by_admin_id])
+  
+  @@unique([shopping_mall_inventory_id, created_at, change_type], map: "shopping_mall_inventory_history_shopping_mall_inventor_2ace6632")
+  @@index([change_type, created_at, change_source], map: "shopping_mall_inventory_history_change_type_created_at_ac8c7b76")
+  @@index([shopping_mall_inventory_id, processed_at], map: "shopping_mall_inventory_history_shopping_mall_inventor_9359add0")
+}
+
+/// Table that defines configurable thresholds for inventory levels that
+/// trigger automated alerts and business workflows. These thresholds
+/// represent the business rules for when inventory should be monitored or
+/// action should be taken, such as low-stock alerts, reorder triggers, and
+/// high-stock warnings. Each threshold is associated with a specific
+/// inventory record.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_thresholds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The inventory record this threshold applies to. {@link
+  /// shopping_mall_inventory.id}.
+  shopping_mall_inventory_id String
+  
+  /// The administrator who created this threshold. {@link
+  /// shopping_mall_administrators.id}.
+  created_by_admin_id String?
+  
+  /// The administrator who last modified this threshold. {@link
+  /// shopping_mall_administrators.id}.
+  last_modified_by_admin_id String?
+  
+  /// Minimum quantity level that triggers low-stock alerts.
+  low_stock_threshold Int
+  
+  /// Quantity level that triggers automatic reorder processes.
+  reorder_threshold Int
+  
+  /// Maximum quantity level that triggers high-stock alerts to prevent
+  /// overstocking.
+  high_stock_threshold Int
+  
+  /// Comma-separated list of email addresses or user IDs to notify when
+  /// thresholds are crossed.
+  alert_recipients String
+  
+  /// Preferred method for threshold alerts: email, in_app, both.
+  notification_method String
+  
+  /// Whether this threshold configuration is currently active and being
+  /// monitored.
+  is_active Boolean
+  
+  /// How often to send alerts after threshold is crossed: once, hourly, daily,
+  /// weekly.
+  alert_frequency String
+  
+  /// Timestamp until which alerts for this threshold should be suspended.
+  alert_snooze_until DateTime?
+  
+  /// Severity level for alerts (1-5), determining escalation path and response
+  /// time requirements.
+  escalation_level Int
+  
+  /// Timestamp when this threshold record was created.
+  created_at DateTime
+  
+  /// Timestamp when this threshold record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  createdByAdmin shopping_mall_administrators? @relation("shopping_mall_inventory_thresholds_of_created_by_admin_id", fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  lastModifiedByAdmin shopping_mall_administrators? @relation("shopping_mall_inventory_thresholds_of_last_modified_by_admin_id", fields: [last_modified_by_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_by_admin_id])
+  @@index([last_modified_by_admin_id], map: "shopping_mall_inventory_thresholds_last_modified_by_ad_3c01cd08")
+  
+  @@unique([shopping_mall_inventory_id], map: "shopping_mall_inventory_thresholds_shopping_mall_inven_efb939d8")
+  @@index([low_stock_threshold, reorder_threshold, high_stock_threshold], map: "shopping_mall_inventory_thresholds_low_stock_threshold_c252e46e")
+}
+
+/// Table that documents planned and completed transfers of inventory between
+/// locations, warehouses, or storage units. This supports the logistics of
+/// moving stock between different physical or conceptual locations within
+/// the fulfillment network. Transfers include information about the quantity
+/// moved, source and destination, and fulfillment status.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_transfers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The inventory record being transferred. {@link
+  /// shopping_mall_inventory.id}.
+  shopping_mall_inventory_id String
+  
+  /// The location where inventory is being transferred from. {@link
+  /// shopping_mall_sellers.id}.
+  source_location_id String
+  
+  /// The location where inventory is being transferred to. {@link
+  /// shopping_mall_sellers.id}.
+  destination_location_id String
+  
+  /// The warehouse where inventory is being transferred from. {@link
+  /// shopping_mall_sellers.id}.
+  source_warehouse_id String
+  
+  /// The warehouse where inventory is being transferred to. {@link
+  /// shopping_mall_sellers.id}.
+  destination_warehouse_id String
+  
+  /// The administrator who prepared this transfer request. {@link
+  /// shopping_mall_administrators.id}.
+  prepared_by_admin_id String
+  
+  /// The administrator who approved this transfer. {@link
+  /// shopping_mall_administrators.id}.
+  approved_by_admin_id String?
+  
+  /// The warehouse manager who executed this transfer. {@link
+  /// shopping_mall_sellers.id}.
+  executed_by_warehouse_manager_id String?
+  
+  /// The administrator who cancelled this transfer. {@link
+  /// shopping_mall_administrators.id}.
+  canceled_by_admin_id String?
+  
+  /// Number of units being transferred.
+  quantity Int
+  
+  /// Quantity remaining to be fulfilled for this transfer.
+  current_quantity_remaining Int
+  
+  /// Type of transfer: internal, external, replenishment, redistribution.
+  transfer_type String
+  
+  /// Current status of the transfer process: requested, approved, in_transit,
+  /// partially_received, completed, cancelled.
+  transfer_status String
+  
+  /// Transfer priority level (low, normal, high, urgent) affecting fulfillment
+  /// scheduling.
+  priority String
+  
+  /// Method used to transport inventory: truck, courier, hand_carry,
+  /// own_vehicle.
+  shipping_method String
+  
+  /// Expected number of days for the transfer to complete.
+  estimated_transit_days Int
+  
+  /// Transport tracking identifier for the physical shipment.
+  tracking_number String?
+  
+  /// Shipping carrier responsible for the transfer.
+  carrier String?
+  
+  /// Date and time when this transfer was prepared and approved.
+  prepared_at DateTime
+  
+  /// Date and time when inventory was dispatched from the source location.
+  dispatched_at DateTime?
+  
+  /// Date and time when inventory was confirmed to be in transit.
+  in_transit_at DateTime?
+  
+  /// Expected date and time of arrival at the destination.
+  estimated_arrival_at DateTime
+  
+  /// Date and time when inventory was received at the destination.
+  received_at DateTime?
+  
+  /// Date and time when this transfer was cancelled.
+  canceled_at DateTime?
+  
+  /// Reason why this transfer was cancelled.
+  cancellation_reason String?
+  
+  /// Notes about transfer completion, including any discrepancies or issues.
+  completion_notes String?
+  
+  /// Whether the transfer requires signature upon receipt.
+  requires_signature Boolean
+  
+  /// Whether the transfer requires temperature-controlled transport.
+  temperature_controlled Boolean
+  
+  /// Timestamp when this transfer record was created.
+  created_at DateTime
+  
+  /// Timestamp when this transfer record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  sourceLocation shopping_mall_sellers @relation("shopping_mall_inventory_transfers_of_source_location_id", fields: [source_location_id], references: [id], onDelete: Cascade)
+  destinationLocation shopping_mall_sellers @relation("shopping_mall_inventory_transfers_of_destination_location_id", fields: [destination_location_id], references: [id], onDelete: Cascade)
+  sourceWarehouse shopping_mall_sellers @relation("shopping_mall_inventory_transfers_of_source_warehouse_id", fields: [source_warehouse_id], references: [id], onDelete: Cascade)
+  destinationWarehouse shopping_mall_sellers @relation("shopping_mall_inventory_transfers_of_destination_warehouse_id", fields: [destination_warehouse_id], references: [id], onDelete: Cascade)
+  preparedByAdmin shopping_mall_administrators @relation("shopping_mall_inventory_transfers_of_prepared_by_admin_id", fields: [prepared_by_admin_id], references: [id], onDelete: Cascade)
+  approvedByAdmin shopping_mall_administrators? @relation("shopping_mall_inventory_transfers_of_approved_by_admin_id", fields: [approved_by_admin_id], references: [id], onDelete: Cascade)
+  executedByWarehouseManager shopping_mall_sellers? @relation("shopping_mall_inventory_transfers_of_executed_by_wareh_262e92d2", fields: [executed_by_warehouse_manager_id], references: [id], onDelete: Cascade)
+  canceledByAdmin shopping_mall_administrators? @relation("shopping_mall_inventory_transfers_of_canceled_by_admin_id", fields: [canceled_by_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_history shopping_mall_inventory_history[]
+  
+  @@index([shopping_mall_inventory_id], map: "shopping_mall_inventory_transfers_shopping_mall_invent_345699c2")
+  @@index([destination_location_id])
+  @@index([source_warehouse_id])
+  @@index([destination_warehouse_id])
+  @@index([prepared_by_admin_id])
+  @@index([approved_by_admin_id])
+  @@index([executed_by_warehouse_manager_id], map: "shopping_mall_inventory_transfers_executed_by_warehous_d1182d60")
+  @@index([canceled_by_admin_id])
+  
+  @@unique([tracking_number])
+  @@index([transfer_status, prepared_at], map: "shopping_mall_inventory_transfers_transfer_status_prep_f93201aa")
+  @@index([source_location_id, destination_location_id, prepared_at], map: "shopping_mall_inventory_transfers_source_location_id_d_37d28d5a")
+  @@index([transfer_type, priority])
+}
+
+/// Table that records the formal write-off of inventory due to damage,
+/// expiration, loss, or other reasons that make stock unsellable. This
+/// represents the permanent removal of inventory from available stock and is
+/// a business-critical operation that requires proper documentation,
+/// authorization, and accounting treatment.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_writeoffs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The inventory record being written off. {@link
+  /// shopping_mall_inventory.id}.
+  shopping_mall_inventory_id String
+  
+  /// The administrator who authorized this write-off. {@link
+  /// shopping_mall_administrators.id}.
+  written_off_by_admin_id String?
+  
+  /// The administrator who approved this write-off. {@link
+  /// shopping_mall_administrators.id}.
+  approved_by_admin_id String?
+  
+  /// The administrator who suspended or reversed this write-off. {@link
+  /// shopping_mall_administrators.id}.
+  suspended_by_admin_id String?
+  
+  /// Number of units being written off (removed from inventory).
+  quantity Int
+  
+  /// Category of write-off: damaged, expired, lost, obsolete, recalled.
+  writeoff_type String
+  
+  /// Detailed reason for the write-off, providing context for the business
+  /// decision.
+  writeoff_reason String
+  
+  /// Current status of the write-off process: requested, approved, completed,
+  /// suspended, reversed.
+  writeoff_status String
+  
+  /// Estimated monetary value of the inventory being written off for
+  /// accounting purposes.
+  estimated_value Float
+  
+  /// Date and time when this write-off was approved.
+  approved_at DateTime?
+  
+  /// Date and time when the write-off was physically executed.
+  executed_at DateTime
+  
+  /// Date and time when this write-off was suspended.
+  suspended_at DateTime?
+  
+  /// Reason why this write-off was suspended or reversed.
+  suspension_reason String?
+  
+  /// File path or URI to supporting documentation for this write-off (photos,
+  /// reports, forms).
+  documentation_file_path String?
+  
+  /// Potential impact on regulatory compliance due to this write-off.
+  regulatory_impact String?
+  
+  /// Tax consequences of this write-off, important for accounting departments.
+  tax_implications String?
+  
+  /// Timestamp when this write-off record was created.
+  created_at DateTime
+  
+  /// Timestamp when this write-off record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  writtenOffByAdmin shopping_mall_administrators? @relation("shopping_mall_inventory_writeoffs_of_written_off_by_admin_id", fields: [written_off_by_admin_id], references: [id], onDelete: Cascade)
+  approvedByAdmin shopping_mall_administrators? @relation("shopping_mall_inventory_writeoffs_of_approved_by_admin_id", fields: [approved_by_admin_id], references: [id], onDelete: Cascade)
+  suspendedByAdmin shopping_mall_administrators? @relation("shopping_mall_inventory_writeoffs_of_suspended_by_admin_id", fields: [suspended_by_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_history shopping_mall_inventory_history[]
+  
+  @@index([written_off_by_admin_id])
+  @@index([approved_by_admin_id])
+  @@index([suspended_by_admin_id])
+  
+  @@unique([shopping_mall_inventory_id, executed_at, writeoff_type], map: "shopping_mall_inventory_writeoffs_shopping_mall_invent_2b2112e9")
+  @@index([writeoff_type, writeoff_status, executed_at], map: "shopping_mall_inventory_writeoffs_writeoff_type_writeo_97ea1db3")
+  @@index([created_at, executed_at])
+}

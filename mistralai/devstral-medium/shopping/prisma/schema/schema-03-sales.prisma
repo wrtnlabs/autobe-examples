@@ -1,0 +1,264 @@
+/// Core product information for the e-commerce platform. Contains all
+/// essential details about products including name, description, pricing,
+/// and categorization. Serves as the primary entity for product management
+/// and is referenced by variants, inventory, and reviews.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category this product belongs to. {@link shopping_categories.id}.
+  shopping_category_id String?
+  
+  /// Name of the product.
+  name String
+  
+  /// Detailed description of the product.
+  description String?
+  
+  /// Base price of the product.
+  price Float
+  
+  /// Stock Keeping Unit - unique identifier for the product.
+  sku String
+  
+  /// Timestamp when the product was created.
+  created_at DateTime
+  
+  /// Timestamp when the product was last updated.
+  updated_at DateTime
+  
+  /// Securely hashed password for authentication.
+  password_hash String
+  
+  /// Business-specific status for workflow management.
+  business_status String?
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_categories? @relation(fields: [shopping_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_product_variants shopping_product_variants[]
+  shopping_inventory shopping_inventory[]
+  shopping_product_reviews shopping_product_reviews[]
+  shopping_seller_products shopping_seller_products[]
+  
+  @@unique([sku])
+  @@index([shopping_category_id])
+  @@index([created_at])
+  @@index([price])
+}
+
+/// Product variants representing different options (colors, sizes,
+/// materials) for products. Each variant has its own SKU and inventory
+/// tracking. References the main product and contains variant-specific
+/// details.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main product this variant belongs to. {@link shopping_products.id}.
+  shopping_product_id String
+  
+  /// Stock Keeping Unit - unique identifier for this variant.
+  sku String
+  
+  /// Name of the variant option (e.g., Color, Size).
+  option_name String
+  
+  /// Value of the variant option (e.g., Red, Large).
+  option_value String
+  
+  /// Price adjustment for this variant from base price.
+  price_adjustment Float?
+  
+  /// Timestamp when the variant was created.
+  created_at DateTime
+  
+  /// Timestamp when the variant was last updated.
+  updated_at DateTime
+  
+  /// Business-specific status for workflow management.
+  business_status String?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_inventory shopping_inventory?
+  shopping_order_items shopping_order_items[]
+  shopping_cart_items shopping_cart_items[]
+  shopping_seller_inventory shopping_seller_inventory[]
+  
+  @@unique([sku])
+  @@index([shopping_product_id])
+  @@index([created_at])
+  @@index([option_name])
+  @@index([option_value])
+}
+
+/// Product categorization hierarchy for organizing products. Categories can
+/// have parent-child relationships to create a hierarchical structure.
+/// Products are assigned to categories for better organization and
+/// filtering.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category if this is a subcategory. {@link shopping_categories.id}.
+  parent_id String?
+  
+  /// Name of the category.
+  name String
+  
+  /// Description of the category.
+  description String?
+  
+  /// Unique code for the category.
+  code String
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Business-specific status for workflow management.
+  business_status String?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  shopping_products shopping_products[]
+  recursive shopping_categories[] @relation("recursive")
+  
+  @@unique([code])
+  @@index([parent_id])
+  @@index([created_at])
+}
+
+/// Inventory tracking for product variants. Monitors stock levels,
+/// reservations, and availability status for each product variant. Critical
+/// for order fulfillment and stock management.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product variant this inventory tracks. {@link
+  /// shopping_product_variants.id}.
+  shopping_product_variant_id String
+  
+  /// Product this inventory belongs to. {@link shopping_products.id}.
+  shopping_product_id String
+  
+  /// Current available quantity.
+  quantity Int
+  
+  /// Quantity reserved for pending orders.
+  reserved_quantity Int
+  
+  /// Threshold for low stock alerts.
+  low_stock_threshold Int?
+  
+  /// Timestamp of last stock update.
+  last_stock_update DateTime?
+  
+  /// Timestamp when the inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when the inventory record was last updated.
+  updated_at DateTime
+  
+  /// Business-specific status for workflow management.
+  business_status String?
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_product_variant_id])
+  
+  @@index([shopping_product_variant_id])
+  @@index([shopping_product_id])
+  @@index([last_stock_update])
+}
+
+/// Customer reviews for products. Contains rating, text, and metadata about
+/// customer feedback on products. Critical for building trust and providing
+/// social proof.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product this review is for. {@link shopping_products.id}.
+  shopping_product_id String
+  
+  /// Customer who left the review. {@link shopping_customers.id}.
+  shopping_customer_id String
+  
+  /// Rating score (1-5).
+  rating Int
+  
+  /// Title of the review.
+  title String?
+  
+  /// Main content of the review.
+  content String
+  
+  /// Timestamp when the review was created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last updated.
+  updated_at DateTime
+  
+  /// Business-specific status for workflow management.
+  business_status String?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  customer shopping_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_review_moderation shopping_review_moderation[]
+  shopping_review_ratings shopping_review_ratings[]
+  
+  @@index([shopping_product_id])
+  @@index([shopping_customer_id])
+  @@index([created_at])
+}

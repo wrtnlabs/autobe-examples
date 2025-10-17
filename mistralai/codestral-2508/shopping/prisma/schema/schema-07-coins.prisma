@@ -1,0 +1,77 @@
+/// Tracks user coin balances and financial information. Represents the
+/// current state of a user's coin account.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_coins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link shopping_mall_member.id}.
+  shopping_mall_member_id String
+  
+  /// Current coin balance.
+  balance Float
+  
+  /// When the coin account was created.
+  created_at DateTime
+  
+  /// When the coin account was last updated.
+  updated_at DateTime
+  
+  /// When the coin account was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member shopping_mall_member @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_member_id])
+  @@index([balance])
+}
+
+/// Records all financial activities related to coin usage. Captures every
+/// transaction for audit and tracking purposes.
+///
+/// @namespace Coins
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_coin_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link shopping_mall_member.id}.
+  shopping_mall_member_id String
+  
+  /// Belonged order's {@link shopping_orders.id}.
+  shopping_order_id String?
+  
+  /// Amount of coins involved in the transaction.
+  amount Float
+  
+  /// Type of transaction (e.g., 'purchase', 'refund', 'earn').
+  transaction_type String
+  
+  /// Description of the transaction.
+  description String?
+  
+  /// When the transaction occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member shopping_mall_member @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  order shopping_orders? @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_member_id])
+  @@index([shopping_order_id])
+  @@index([transaction_type])
+  @@index([created_at])
+}

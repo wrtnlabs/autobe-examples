@@ -1,0 +1,352 @@
+/// Community (subreddit) entities that serve as the primary organizational
+/// units for content and discussions. Communities can be public, restricted,
+/// or private, and support custom themes, rules, and member management with
+/// comprehensive moderation and analytics capabilities.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creator user's {@link reddit_community_user_profiles.id}
+  creator_id String
+  
+  /// Primary category for community discovery {@link
+  /// reddit_community_content_categories.id}
+  primary_category_id String
+  
+  /// Unique community name (3-21 characters, alphanumeric and underscores only)
+  name String
+  
+  /// Display title of the community
+  title String
+  
+  /// Community description and purpose
+  description String?
+  
+  /// Community access type: public, restricted, or private
+  community_type String
+  
+  /// Current operational status: active, archived, suspended, under_review
+  business_status String
+  
+  /// Whether community contains NSFW content requiring age verification
+  nsfw Boolean
+  
+  /// Current number of community members
+  member_count Int
+  
+  /// Total number of posts in the community
+  post_count Int
+  
+  /// Community creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for community removal
+  deleted_at DateTime?
+  
+  /// URL of community header image
+  header_image String?
+  
+  /// Primary color for community theme
+  banner_color String?
+  
+  //----
+  // RELATIONS
+  //----
+  creator reddit_community_user_profiles @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  primaryCategory reddit_community_content_categories @relation(fields: [primary_category_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_moderators reddit_community_moderators[]
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_communities_subscriptions reddit_community_communities_subscriptions[]
+  reddit_community_community_moderators reddit_community_community_moderators[]
+  reddit_community_community_classifications reddit_community_community_classifications[]
+  reddit_community_community_polls reddit_community_community_polls[]
+  reddit_community_community_votes reddit_community_community_votes[]
+  reddit_community_comment_moderation_queue reddit_community_comment_moderation_queue[]
+  reddit_community_user_subscriptions reddit_community_user_subscriptions[]
+  reddit_community_content_discoveries reddit_community_content_discoveries[]
+  mv_reddit_community_user_subscription_analytics mv_reddit_community_user_subscription_analytics[]
+  mv_reddit_community_popular_subscriptions mv_reddit_community_popular_subscriptions?
+  reddit_community_content_reports reddit_community_content_reports[]
+  reddit_community_moderation_queue reddit_community_moderation_queue[]
+  reddit_community_violation_records reddit_community_violation_records[]
+  reddit_community_automated_moderation reddit_community_automated_moderation[]
+  reddit_community_user_bans reddit_community_user_bans[]
+  
+  @@unique([name])
+  @@index([primary_category_id, member_count], map: "reddit_community_communities_primary_category_id_membe_d9f64c82")
+  @@index([creator_id])
+  @@index([business_status, created_at])
+  @@index([deleted_at])
+}
+
+/// User subscriptions to communities with join/leave functionality,
+/// notification preferences, and subscription metadata for feed
+/// personalization.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_communities_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscribed community's {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Subscribing user's {@link reddit_community_members.id}
+  member_id String
+  
+  /// Timestamp when user joined the community
+  joined_at DateTime
+  
+  /// Whether user wants notifications for community activity
+  notification_enabled Boolean
+  
+  /// Whether subscription is visible in user's public profile
+  show_in_profile Boolean
+  
+  /// Type of subscription: regular, premium, or founder
+  subscription_type String
+  
+  /// Last time user visited this community
+  last_visit DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, member_id], map: "reddit_community_communities_subscriptions_community_i_8f8dc2b9")
+  @@index([member_id, joined_at], map: "reddit_community_communities_subscriptions_member_id_j_84c5d7a4")
+  @@index([community_id, notification_enabled], map: "reddit_community_communities_subscriptions_community_i_3e67f367")
+  @@index([last_visit])
+}
+
+/// Moderators assigned to communities with hierarchical permissions (head,
+/// senior, junior) and granular control over community management functions.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderated community's {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Moderator user's {@link reddit_community_members.id}
+  member_id String
+  
+  /// Member who appointed this moderator {@link reddit_community_members.id}
+  appointed_by_id String
+  
+  /// Moderator hierarchy level: head, senior, or junior
+  moderator_level String
+  
+  /// When this user became a moderator
+  appointed_at DateTime
+  
+  /// Permission to remove posts and comments
+  can_remove_content Boolean
+  
+  /// Permission to ban community members
+  can_ban_users Boolean
+  
+  /// Permission to modify community settings
+  can_edit_settings Boolean
+  
+  /// Permission to appoint other moderators
+  can_add_moderators Boolean
+  
+  /// Whether moderator is currently active
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation("reddit_community_community_moderators_of_member_id", fields: [member_id], references: [id], onDelete: Cascade)
+  appointedBy reddit_community_members @relation("reddit_community_community_moderators_of_appointed_by_id", fields: [appointed_by_id], references: [id], onDelete: Cascade)
+  
+  @@index([appointed_by_id])
+  
+  @@unique([community_id, member_id], map: "reddit_community_community_moderators_community_id_mem_aa6b3759")
+  @@index([community_id, moderator_level], map: "reddit_community_community_moderators_community_id_mod_b49eed43")
+  @@index([member_id])
+  @@index([appointed_at])
+}
+
+/// Community classification system for discovery and categorization,
+/// supporting multiple categories per community and hierarchical topic
+/// organization for better content discovery.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_classifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Classified community's {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Classification category {@link reddit_community_content_categories.id}
+  category_id String
+  
+  /// Whether this is the primary classification for the community
+  is_primary Boolean
+  
+  /// When classification was assigned
+  assigned_at DateTime
+  
+  /// Classification weight for sorting and recommendation
+  weight Int
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  category reddit_community_content_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, category_id], map: "reddit_community_community_classifications_community_i_4c63e345")
+  @@index([category_id, is_primary], map: "reddit_community_community_classifications_category_id_29853f37")
+  @@index([community_id, weight], map: "reddit_community_community_classifications_community_i_47a9c104")
+  @@index([assigned_at])
+}
+
+/// Democratic governance polls for community decisions including rule
+/// changes, moderator appointments, and policy modifications with
+/// configurable voting periods and participation requirements.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_polls {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community holding the poll {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Member who created the poll {@link reddit_community_members.id}
+  creator_id String
+  
+  /// Poll question or title
+  title String
+  
+  /// Detailed explanation of the poll and its implications
+  description String?
+  
+  /// Type of poll: rule_change, moderator_addition, policy_modification, or
+  /// general
+  poll_type String
+  
+  /// When voting period begins
+  starts_at DateTime
+  
+  /// When voting period ends
+  ends_at DateTime
+  
+  /// Minimum number of votes required for valid poll
+  min_participation Int
+  
+  /// Percentage of votes needed for approval (0.0-1.0)
+  approval_threshold Float
+  
+  /// Current status: draft, active, completed, or cancelled
+  status String
+  
+  /// Poll creation timestamp
+  created_at DateTime
+  
+  /// Whether results have been published to community
+  results_published Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  creator reddit_community_members @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, title])
+  @@index([community_id, status])
+  @@index([starts_at])
+  @@index([ends_at])
+  @@index([creator_id])
+}
+
+/// Individual vote records for posts and comments within communities,
+/// serving as real-time mechanism for content ranking and community
+/// engagement metrics. Provides integration between community content and
+/// voting system with audit trail capabilities.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community content being voted on {@link reddit_community_posts.id}
+  community_post_id String
+  
+  /// Community member casting vote {@link reddit_community_members.id}
+  community_member_id String
+  
+  /// Target community {@link reddit_community_communities.id}
+  community_id String
+  
+  /// Type of vote: upvote or downvote
+  vote_type String
+  
+  /// Weighted score multiplier based on voter reputation
+  vote_weight Float
+  
+  /// Whether this vote affects community popularity calculations
+  affects_community_score Boolean
+  
+  /// Confidence score for anti-manipulation detection
+  confidence_score Float
+  
+  /// IP address of voter for fraud detection
+  ip_address String
+  
+  /// Timestamp when vote was cast
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  communityPost reddit_community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  communityVoter reddit_community_members @relation(fields: [community_member_id], references: [id], onDelete: Cascade)
+  targetCommunity reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_post_id])
+  
+  @@unique([community_member_id, community_post_id], map: "reddit_community_community_votes_community_member_id_c_646a823f")
+  @@index([community_id, created_at])
+  @@index([vote_type, confidence_score])
+  @@index([affects_community_score])
+}

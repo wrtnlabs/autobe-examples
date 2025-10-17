@@ -1,0 +1,53 @@
+/// User karma representing the reputation accumulated from voting activity
+/// on posts and comments. Includes total karma and subcomponent values.
+/// Belongs to a single user (member). Maintains created, updated, and
+/// soft-deleted timestamps for lifecycle management and auditing. Uniquely
+/// identified by user to enforce one karma record per member. Integral to
+/// the Karma domain and used for reputation-based features.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link reddit_community_members.id} whose karma this
+  /// represents.
+  reddit_community_member_id String
+  
+  /// Karma points from upvotes on user's posts.
+  post_upvotes_karma Int
+  
+  /// Karma points deducted from downvotes on user's posts.
+  post_downvotes_karma Int
+  
+  /// Karma points from upvotes on user's comments.
+  comment_upvotes_karma Int
+  
+  /// Karma points deducted from downvotes on user's comments.
+  comment_downvotes_karma Int
+  
+  /// Total karma sum from posts and comments karma components.
+  total_karma Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last updated timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null means record is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_user_profiles reddit_community_user_profiles?
+  
+  @@unique([reddit_community_member_id])
+}

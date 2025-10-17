@@ -1,0 +1,84 @@
+/// Temporarily stores a customer's shopping cart before checkout. Each user
+/// has at most one active cart. This table serves as a container for cart
+/// items and is cleared upon successful purchase. Maintains session state
+/// across devices but is not intended for long-term persistence or auditing.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the customer who owns this cart. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Timestamp when the cart was first created.
+  created_at DateTime
+  
+  /// Timestamp when the cart was last modified (added/removed items).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  
+  @@unique([shopping_mall_customer_id])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Stores individual product variants (SKUs) added to a customer's cart.
+/// Each row represents one product quantity in the cart. This table is
+/// exclusively managed through its parent cart and has no direct user-facing
+/// API. Cart items are cleared upon order completion.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent cart that contains this item. {@link
+  /// shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// References the specific product variant (SKU) in this cart item. {@link
+  /// shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Number of units of this SKU in the cart. Must be greater than zero.
+  quantity Int
+  
+  /// Timestamp when this item was added to the cart.
+  created_at DateTime
+  
+  /// Timestamp when this item's quantity was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_cart_id])
+  @@index([shopping_mall_product_sku_id])
+  @@index([created_at])
+  @@index([updated_at])
+}

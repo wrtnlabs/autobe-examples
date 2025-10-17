@@ -1,0 +1,35 @@
+/// System configuration settings for the Reddit-like community platform.
+/// Stores platform-wide settings, feature flags, and system parameters that
+/// control platform behavior.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Configuration key identifier.
+  key String
+  
+  /// Configuration value.
+  value String
+  
+  /// Description of the configuration setting.
+  description String?
+  
+  /// Timestamp when the configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([created_at])
+  @@index([updated_at])
+}

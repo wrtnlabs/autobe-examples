@@ -1,0 +1,195 @@
+/// System-wide configuration settings that control operational parameters
+/// and feature toggles across the political discussion board platform. These
+/// key-value pairs define system behavior and are referenced by other
+/// domains.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_system_config {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who last updated this configuration setting {@link
+  /// political_discussion_board_admin.id}
+  updated_by_admin_id String?
+  
+  /// Administrator who created this configuration setting {@link
+  /// political_discussion_board_admin.id}
+  created_by_admin_id String
+  
+  /// Unique identifier for the configuration parameter (e.g.,
+  /// 'max_post_length', 'voting_threshold')
+  config_key String
+  
+  /// Value for the configuration parameter, stored as string and parsed by
+  /// application logic
+  config_value String
+  
+  /// Business description explaining the purpose and usage of this
+  /// configuration parameter
+  description String
+  
+  /// Functional category grouping for related settings (e.g., 'security',
+  /// 'limits', 'features')
+  category String
+  
+  /// Timestamp when this configuration was first created
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last updated
+  updated_at DateTime
+  
+  /// Whether this configuration setting is currently active and should be
+  /// applied by the system
+  is_active Boolean
+  
+  /// Data type hint for parsing the config_value (string, integer, boolean,
+  /// json)
+  data_type String
+  
+  //----
+  // RELATIONS
+  //----
+  updatedByAdmin political_discussion_board_admin? @relation("political_discussion_board_system_config_of_updated_by_admin_id", fields: [updated_by_admin_id], references: [id], onDelete: Cascade)
+  createdByAdmin political_discussion_board_admin @relation("political_discussion_board_system_config_of_created_by_admin_id", fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_login_attempts political_discussion_board_login_attempts[]
+  
+  @@unique([config_key])
+  @@index([category])
+  @@index([created_by_admin_id], map: "political_discussion_board_system_config_created_by_ad_da3aec15")
+  @@index([updated_by_admin_id], map: "political_discussion_board_system_config_updated_by_ad_b4c6ec6e")
+}
+
+/// Comprehensive audit trail capturing all significant user actions and
+/// system events for compliance, security monitoring, and moderation
+/// workflows across the entire platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_audit_log {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related post that was affected by this action {@link
+  /// political_discussion_board_posts.id}
+  target_post_id String?
+  
+  /// Related reply that was affected by this action {@link
+  /// political_discussion_board_replies.id}
+  target_reply_id String?
+  
+  /// User who performed this action, if applicable {@link
+  /// political_discussion_board_member.id}
+  user_id String?
+  
+  /// Type of action performed (login, post_create, reply_edit, vote,
+  /// moderation_action)
+  action_type String
+  
+  /// Detailed description of what action was taken and relevant context
+  description String
+  
+  /// IP address from which the action originated for security monitoring
+  ip_address String
+  
+  /// Browser or client user agent string for device tracking and security
+  /// analysis
+  user_agent String
+  
+  /// Exact timestamp when this action occurred for chronological audit trail
+  action_timestamp DateTime
+  
+  /// Additional JSON metadata about the action, such as changes made or system
+  /// state
+  metadata String?
+  
+  /// Type of user who performed the action (guest, member, moderator, admin)
+  user_type String?
+  
+  //----
+  // RELATIONS
+  //----
+  targetPost political_discussion_board_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetReply political_discussion_board_replies? @relation(fields: [target_reply_id], references: [id], onDelete: Cascade)
+  user political_discussion_board_member? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([target_post_id])
+  @@index([target_reply_id])
+  
+  @@index([ip_address])
+  @@index([user_id, action_timestamp], map: "political_discussion_board_audit_log_user_id_action_ti_4d30da92")
+  @@index([action_timestamp])
+  @@index([action_type])
+}
+
+/// Application error tracking system for monitoring system reliability,
+/// debugging issues, and maintaining platform stability. Captures technical
+/// errors and system failures for operational excellence.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_error_log {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who encountered this error, if applicable {@link
+  /// political_discussion_board_member.id}
+  user_id String?
+  
+  /// Category of error (authentication_error, validation_error,
+  /// database_error, server_error)
+  error_type String
+  
+  /// Detailed error message or exception description for debugging purposes
+  error_message String
+  
+  /// Machine-readable error code for programmatic handling and categorization
+  error_code String?
+  
+  /// Severity level (low, medium, high, critical) indicating impact on system
+  /// functionality
+  severity String
+  
+  /// Stack trace or function call chain where the error originated for
+  /// developer debugging
+  stack_trace String?
+  
+  /// URL or endpoint where the error occurred for request tracking and analysis
+  request_url String?
+  
+  /// HTTP request method (GET, POST, PUT, DELETE) used when the error occurred
+  request_method String?
+  
+  /// Timestamp when the error occurred for timeline analysis and debugging
+  timestamp DateTime
+  
+  /// Timestamp when this error was resolved, if applicable for tracking
+  /// resolution time
+  resolved_at DateTime?
+  
+  /// Notes about how this error was resolved for future reference and
+  /// documentation
+  resolution_notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  user political_discussion_board_member? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([timestamp])
+  @@index([error_type, severity])
+  @@index([error_code])
+  @@index([user_id])
+  @@index([severity, timestamp])
+  @@index([resolved_at])
+}

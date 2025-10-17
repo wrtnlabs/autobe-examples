@@ -1,0 +1,447 @@
+/// Core product entity representing individual products in the shopping mall
+/// catalog. Each product is a distinct offering with metadata, category
+/// assignment, seller ownership, and status tracking. Products progress
+/// through lifecycle states from DRAFT (initial creation) through ACTIVE
+/// (published and available for purchase) to INACTIVE (temporarily hidden)
+/// or ARCHIVED (historical record). This is the main product table that
+/// anchors all variant, image, specification, and approval data. Products
+/// are distinct from shopping_mall_product_variants which represent specific
+/// SKU combinations with independent pricing.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller who owns and manages this product. References the seller's {@link
+  /// shopping_mall_seller.id} account.
+  shopping_mall_seller_id String
+  
+  /// Primary category assignment for product organization and browsing.
+  /// References {@link shopping_mall_categories.id}. Required for catalog
+  /// organization.
+  shopping_mall_category_id String
+  
+  /// Display name of the product for catalog and search. Required field
+  /// between 3-255 characters. Examples: 'Premium Cotton T-Shirt', 'Wireless
+  /// Bluetooth Headphones'.
+  product_name String
+  
+  /// Detailed product description and usage information provided by seller.
+  /// Required field between 10-5000 characters. HTML formatting allowed but
+  /// sanitized for XSS prevention. Should include material composition, care
+  /// instructions, and key features.
+  product_description String
+  
+  /// Product brand or manufacturer name. Optional field between 1-100
+  /// characters. Examples: 'Nike', 'Samsung', 'Apple'. Used for brand-based
+  /// filtering in catalog.
+  brand String?
+  
+  /// Base/default price for the product in platform currency (typically USD).
+  /// Stored with exactly 2 decimal places. Minimum $0.01, maximum $999,999.99.
+  /// Individual variant SKUs may have different prices. Used as default when
+  /// variant-specific pricing not defined.
+  base_price Float
+  
+  /// Product weight in kilograms (kg) for shipping cost calculation. Used in
+  /// logistics and fulfillment operations. Optional field. Example: 0.5 for
+  /// 500 grams.
+  weight Float?
+  
+  /// Lifecycle status of the product: 'DRAFT' (being created, not visible),
+  /// 'ACTIVE' (published and available for purchase), 'INACTIVE' (temporarily
+  /// hidden but data preserved), 'ARCHIVED' (permanently historical record, no
+  /// new orders). Status determines search visibility and purchase
+  /// eligibility.
+  product_status String
+  
+  /// Optional prefix for auto-generated SKU identifiers for this product's
+  /// variants. Examples: 'TSHIRT', 'HEADPHONE'. Used in variant SKU generation
+  /// for easier identification of product families.
+  sku_prefix String?
+  
+  /// Timestamp when product was initially created. ISO 8601 format in UTC.
+  /// Immutable field set at creation. Used for sorting and audit trails.
+  created_at DateTime
+  
+  /// Timestamp of last product information modification. ISO 8601 format in
+  /// UTC. Auto-updated whenever product details change. Used for change
+  /// tracking and freshness indicators.
+  updated_at DateTime
+  
+  /// Timestamp when product was soft-deleted. NULL if product is active. ISO
+  /// 8601 format in UTC. Enables data recovery and audit trail of deletions.
+  /// Used for implementing soft delete pattern.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_product_specifications shopping_mall_product_specifications[]
+  shopping_mall_product_tags shopping_mall_product_tags[]
+  shopping_mall_product_approvals shopping_mall_product_approvals[]
+  shopping_mall_return_items shopping_mall_return_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_review_ratings shopping_mall_review_ratings?
+  
+  @@unique([shopping_mall_seller_id, product_name])
+  @@index([shopping_mall_seller_id])
+  @@index([shopping_mall_category_id, product_status], map: "shopping_mall_products_shopping_mall_category_id_produ_1f195d10")
+  @@index([product_status])
+  @@index([created_at])
+}
+
+/// Product variant entities representing specific SKU (Stock Keeping Unit)
+/// combinations with distinct variant attributes (color, size, material,
+/// etc.), independent pricing, and inventory tracking. Each variant is a
+/// purchasable unit with its own SKU identifier, price, and inventory record
+/// in the shopping_mall_inventory_skus table. Multiple variants of the same
+/// product enable customers to select specific attribute combinations (e.g.,
+/// Blue Size-M vs Red Size-L). Variants inherit basic information from
+/// parent product but have independent operational characteristics. Each
+/// variant maps to exactly one inventory SKU record for stock tracking.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product that this variant belongs to. References {@link
+  /// shopping_mall_products.id}. All variants of a product share the same
+  /// parent product record.
+  shopping_mall_product_id String
+  
+  /// Globally unique Stock Keeping Unit identifier for this specific variant
+  /// combination. Format typically: {PRODUCT_PREFIX}-{VARIANT_CODE} (e.g.,
+  /// 'TSHIRT-BLU-M' for Blue Medium T-Shirt). Must be unique across entire
+  /// platform and immutable after creation. Used for inventory tracking, order
+  /// fulfillment, and customer reference.
+  sku String
+  
+  /// Machine-readable identifier for variant attribute combination. Encodes
+  /// the specific combination of variant options like color+size. Examples:
+  /// 'blue-large', 'red-small-cotton'. Used for programmatic variant
+  /// identification and grouping.
+  variant_combination_code String
+  
+  /// Price specific to this variant, overriding the product base price if set.
+  /// Stored with exactly 2 decimal places. Minimum $0.01, maximum $999,999.99.
+  /// If null, base product price is used. Enables premium pricing for larger
+  /// sizes or special colors.
+  variant_price Float?
+  
+  /// Display sequence for ordering variants on product detail page. Lower
+  /// numbers display first. Used to highlight popular variants or organize
+  /// presentation logically. Default: 0 (sequential order if not specified).
+  variant_display_order Int?
+  
+  /// Whether this specific variant is available for purchase. False to hide
+  /// variant without deleting data. Used to temporarily disable variants while
+  /// preserving order history and inventory records.
+  is_active Boolean
+  
+  /// Timestamp when variant was created. ISO 8601 format in UTC. Immutable
+  /// field. Used for audit trail and variant lifecycle tracking.
+  created_at DateTime
+  
+  /// Timestamp of last variant modification. ISO 8601 format in UTC.
+  /// Auto-updated on changes to pricing, status, or variant attributes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variant_options shopping_mall_product_variant_options[]
+  shopping_mall_inventory_skus shopping_mall_inventory_skus?
+  shopping_mall_shopping_cart_items shopping_mall_shopping_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@unique([sku])
+  @@unique([shopping_mall_product_id, variant_combination_code], map: "shopping_mall_product_variants_shopping_mall_product_i_64cf2320")
+  @@index([shopping_mall_product_id])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Individual variant attribute values that compose product variants. Each
+/// record represents an atomic variant attribute (e.g., Color='Blue',
+/// Size='Large', Material='Cotton'). Multiple variant_options combine to
+/// form a complete variant combination. For example, a T-shirt variant
+/// 'TSHIRT-BLU-M' is composed of: variant_option(Color=Blue),
+/// variant_option(Size=Medium). These options enable flexible variant
+/// definition and searchable attribute filtering in product catalog.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variant_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent variant that contains this option. References {@link
+  /// shopping_mall_product_variants.id}. Multiple variant_options belong to
+  /// each variant.
+  shopping_mall_product_variant_id String
+  
+  /// Type/category of variant attribute. Standard types: 'color'
+  /// (Color/Finish), 'size' (Size dimension), 'material' (Material
+  /// composition), 'style' (Alternative style), 'pattern' (Visual pattern),
+  /// 'configuration' (Product-specific config). Used for organizing variant
+  /// attributes logically.
+  option_type String
+  
+  /// Specific value for this variant attribute. Examples for color: 'Blue',
+  /// 'Red', 'Black'; for size: 'Small', 'Medium', 'Large'; for material:
+  /// 'Cotton', 'Polyester'. Used for customer-facing variant selection display
+  /// and filtering.
+  option_value String
+  
+  /// Display sequence for ordering this option within its type. Lower numbers
+  /// display first. Used to highlight preferred options or organize
+  /// presentation. Default: 0.
+  option_display_order Int?
+  
+  /// Timestamp when variant option was created. ISO 8601 format in UTC.
+  /// Immutable field used for audit trail.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_variant_id, option_type, option_value], map: "shopping_mall_product_variant_options_shopping_mall_pr_992def4e")
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_product_variant_options_shopping_mall_pr_f96e70b7")
+  @@index([option_type])
+}
+
+/// Product images for visual catalog presentation. Each image represents a
+/// single product photo with ordering for display sequencing on product
+/// detail pages. Exactly one image per product should be marked as primary
+/// (used as thumbnail in search results and category listings). Images are
+/// stored as URI references to external image storage (CDN) rather than as
+/// BLOB data in database. Soft deletion is implemented through status
+/// changes rather than hard deletion to preserve order history references.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that this image belongs to. References {@link
+  /// shopping_mall_products.id}. Multiple images can belong to single product.
+  shopping_mall_product_id String
+  
+  /// URL/URI pointing to the actual image file stored in CDN or external
+  /// storage. Should be a direct HTTP(S) link to the image file. Examples:
+  /// 'https://cdn.example.com/products/img123.jpg',
+  /// 'https://storage.example.com/images/product456.png'. Never stored as BLOB
+  /// in database.
+  image_url String
+  
+  /// Whether this image is the primary/thumbnail image for the product. Only
+  /// one image per product should have is_primary=true. Used in search
+  /// results, category listings, and product cards. Used for determining which
+  /// image to display when full gallery not available.
+  is_primary Boolean
+  
+  /// Display sequence for image ordering in product gallery. Lower numbers
+  /// display first. Used to show product photos in seller-preferred order.
+  /// Typically: primary image first (order 0), then additional angles/details.
+  image_display_order Int
+  
+  /// Accessibility alt text describing image content for screen readers.
+  /// Should clearly describe what the image shows. Example: 'Blue cotton
+  /// t-shirt worn by model, showing front design'. Used for accessibility
+  /// compliance and SEO.
+  alt_text String?
+  
+  /// Timestamp when image record was created. ISO 8601 format in UTC.
+  /// Immutable field used for audit trail.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_id, is_primary], map: "shopping_mall_product_images_shopping_mall_product_id__36ad223d")
+  @@index([image_display_order])
+}
+
+/// Product specifications and detailed attribute information stored as
+/// flexible key-value pairs. Specifications include technical details like
+/// dimensions, weight, material composition, care instructions, battery
+/// life, processor specs, etc. This model provides extensible attribute
+/// storage without requiring schema changes for new specification types.
+/// Unlike rigid structured fields, specifications allow sellers to define
+/// arbitrary attributes relevant to their product categories.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_specifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that this specification describes. References {@link
+  /// shopping_mall_products.id}. Multiple specifications can describe single
+  /// product.
+  shopping_mall_product_id String
+  
+  /// Specification attribute name/key. Examples: 'material', 'dimensions',
+  /// 'weight', 'battery_life', 'processor', 'memory', 'color',
+  /// 'warranty_period'. Seller-defined keys allow flexible attribute
+  /// representation without schema modifications.
+  spec_key String
+  
+  /// Specification attribute value. Examples: 'Cotton 100%', '10cm x 5cm x
+  /// 2cm', '250g', '20 hours', 'Intel i7', '16GB', 'Care: Hand wash only, dry
+  /// flat'. Can store complex specification details as text.
+  spec_value String
+  
+  /// Display sequence for specification on product detail page. Lower numbers
+  /// display first. Organizes specifications in logical groupings (e.g.,
+  /// material specs before care specs).
+  spec_display_order Int?
+  
+  /// Timestamp when specification was added. ISO 8601 format in UTC. Immutable
+  /// field used for audit trail.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_id], map: "shopping_mall_product_specifications_shopping_mall_pro_3cb2f6f6")
+  @@index([spec_key])
+}
+
+/// Searchable tags for product categorization, SEO optimization, and
+/// enhanced product discovery beyond the hierarchical category system. Tags
+/// enable cross-category product finding and flexible organization. Unlike
+/// rigid category hierarchies, tags allow multiple overlapping
+/// classifications (e.g., 'outdoor', 'waterproof', 'summer-collection',
+/// 'trending' on same product). Tags are indexed for full-text search
+/// enabling customers to find products by multiple faceted attributes.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that this tag is applied to. References {@link
+  /// shopping_mall_products.id}. Multiple tags can be applied to single
+  /// product.
+  shopping_mall_product_id String
+  
+  /// Searchable tag keyword for product discovery. Examples: 'eco-friendly',
+  /// 'bestseller', 'new-arrival', 'premium', 'outdoor', 'waterproof',
+  /// 'organic'. Tags enable flexible faceted search and product filtering
+  /// beyond category hierarchy. Should be lowercase, hyphen-separated for
+  /// consistency.
+  tag_name String
+  
+  /// Timestamp when tag was applied to product. ISO 8601 format in UTC.
+  /// Immutable field used for audit trail.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_id, tag_name], map: "shopping_mall_product_tags_shopping_mall_product_id_ta_c2a49fb8")
+  @@index([shopping_mall_product_id])
+}
+
+/// Audit trail and approval workflow history for product submissions and
+/// modifications. Captures all product approval decisions made by
+/// administrators including approval/rejection decisions, timestamps, and
+/// admin notes. This snapshot/audit table preserves complete product
+/// lifecycle history tracking when products were submitted, approved,
+/// rejected, and why. Each approval record is immutable, creating a complete
+/// accountability record for product catalog governance. Multiple approval
+/// records per product track submission iterations (e.g., initial rejection,
+/// resubmission, approval).
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_approvals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that was approved or rejected. References {@link
+  /// shopping_mall_products.id}. Multiple approval records track approval
+  /// history for single product.
+  shopping_mall_product_id String
+  
+  /// Administrator who made the approval decision. References {@link
+  /// shopping_mall_admin.id}. Tracks accountability for approval decisions.
+  shopping_mall_admin_id String
+  
+  /// Decision on product approval: 'PENDING' (awaiting admin review),
+  /// 'APPROVED' (product published to catalog), 'REJECTED' (product not
+  /// approved, returned for corrections). Tracks product submission outcomes.
+  approval_status String
+  
+  /// Administrative notes explaining approval decision or rejection reason.
+  /// For approvals: general comments. For rejections: specific issues
+  /// requiring correction (e.g., 'Image resolution too low - minimum
+  /// 1000x1000px required', 'Product description contains prohibited
+  /// keywords'). Max 2000 characters for detailed feedback.
+  admin_notes String?
+  
+  /// Timestamp when approval decision was made. ISO 8601 format in UTC.
+  /// Records exact moment of approval/rejection decision. Immutable field used
+  /// for accountability and audit trail.
+  decision_timestamp DateTime
+  
+  /// Timestamp when approval record was created. ISO 8601 format in UTC.
+  /// Typically matches decision_timestamp but may differ if retroactive
+  /// recording occurs. Immutable audit field.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([approval_status])
+  @@index([shopping_mall_admin_id])
+  @@index([shopping_mall_product_id, decision_timestamp], map: "shopping_mall_product_approvals_shopping_mall_product__342904df")
+}

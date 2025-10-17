@@ -1,0 +1,174 @@
+/// Main categories for organizing discussion topics. Categories represent
+/// broad economic and political discussion areas like Economics, Politics,
+/// International Relations, etc. Each category can have multiple
+/// subcategories and is managed by assigned moderators. Categories serve as
+/// the primary organizational structure for the discussion board. {@link
+/// discussion_board_subcategories} {@link
+/// discussion_board_category_moderators}
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the category. Should be descriptive and unique across all
+  /// categories.
+  name String
+  
+  /// Detailed description explaining the category's purpose and scope. Helps
+  /// users understand what discussions belong in this category.
+  description String?
+  
+  /// URL-friendly identifier for the category. Used in routing and
+  /// SEO-friendly URLs. Must be unique.
+  slug String
+  
+  /// Numerical order for displaying categories in lists. Lower numbers appear
+  /// first.
+  display_order Int
+  
+  /// Current status of the category. Controls visibility and functionality.
+  /// Values: active, inactive, archived.
+  status String
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_subcategories discussion_board_subcategories[]
+  discussion_board_category_moderators discussion_board_category_moderators[]
+  discussion_board_topics discussion_board_topics[]
+  
+  @@unique([slug])
+  @@unique([name])
+  @@index([display_order])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Subcategories that belong to parent categories, providing finer-grained
+/// organization. Subcategories allow for more specific topic classification
+/// within broader categories. For example, Economics category might have
+/// Macroeconomics, Microeconomics, etc. as subcategories. {@link
+/// discussion_board_categories}
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_subcategories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category that this subcategory belongs to. {@link
+  /// discussion_board_categories.id}
+  discussion_board_category_id String
+  
+  /// Display name of the subcategory. Should be unique within its parent
+  /// category context.
+  name String
+  
+  /// URL-friendly identifier for the subcategory. Used in routing and must be
+  /// unique within parent category context.
+  slug String
+  
+  /// Numerical order for displaying subcategories within their parent
+  /// category. Lower numbers appear first.
+  display_order Int
+  
+  /// Current status of the subcategory. Values: active, inactive, archived.
+  status String
+  
+  /// Timestamp when the subcategory was created.
+  created_at DateTime
+  
+  /// Timestamp when the subcategory was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the subcategory was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_category_id, slug], map: "discussion_board_subcategories_discussion_board_catego_bdf75720")
+  @@unique([discussion_board_category_id, name], map: "discussion_board_subcategories_discussion_board_catego_ad905653")
+  @@index([discussion_board_category_id, display_order], map: "discussion_board_subcategories_discussion_board_catego_715623d3")
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Junction table linking categories to their assigned moderators. Each
+/// category can have multiple moderators, and moderators can manage multiple
+/// categories. This relationship enables proper content moderation and
+/// management at the category level. {@link discussion_board_categories}
+/// {@link discussion_board_moderators}
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_category_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category that the moderator is assigned to. {@link
+  /// discussion_board_categories.id}
+  discussion_board_category_id String
+  
+  /// User with moderator privileges assigned to this category. {@link
+  /// discussion_board_moderators.id}
+  discussion_board_moderator_id String
+  
+  /// Specific moderation role within the category. Defines the level of
+  /// permissions and responsibilities. Values: lead_moderator, moderator,
+  /// assistant_moderator.
+  role String
+  
+  /// Timestamp when the moderator was assigned to this category.
+  assigned_at DateTime
+  
+  /// JSON string containing specific permission settings for this
+  /// moderator-category relationship.
+  permissions String?
+  
+  /// Current status of the moderator assignment. Values: active, inactive,
+  /// suspended.
+  status String
+  
+  /// Timestamp when the moderator assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator assignment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator assignment was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_category_id, discussion_board_moderator_id], map: "discussion_board_category_moderators_discussion_board__66189f4f")
+  @@index([discussion_board_category_id, status], map: "discussion_board_category_moderators_discussion_board__3fb943f4")
+  @@index([discussion_board_moderator_id, status], map: "discussion_board_category_moderators_discussion_board__603f207f")
+  @@index([assigned_at])
+}

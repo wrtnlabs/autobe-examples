@@ -1,0 +1,370 @@
+/// Platform-wide performance metrics and system health indicators collected
+/// for monitoring and capacity planning. Includes daily aggregation of user
+/// counts, post volume, system uptime, and resource utilization metrics.
+/// Used by administrators for decision-making and infrastructure planning.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_platform_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the channel being monitored. {@link
+  /// discussion_board_channels.id}.
+  discussion_board_channel_id String?
+  
+  /// Date for which metrics are aggregated. Typically represents daily
+  /// collection intervals.
+  metric_date DateTime
+  
+  /// Type of platform metric being recorded (e.g., 'user_activity',
+  /// 'system_performance', 'content_growth').
+  metric_type String
+  
+  /// Numerical value of the collected metric, stored as floating-point for
+  /// precision.
+  metric_value Float
+  
+  /// Unit of measurement for the metric value (e.g., 'users', 'posts',
+  /// 'percentage', 'milliseconds').
+  metric_unit String?
+  
+  /// Timestamp when this metric data point was collected by the system.
+  collected_at DateTime
+  
+  /// Time period over which metrics are aggregated (e.g., 'daily', 'hourly',
+  /// 'weekly').
+  aggregation_period String
+  
+  /// Confidence score for the accuracy of collected metrics (0.0 to 1.0 scale).
+  data_quality_score Float?
+  
+  /// Timestamp when this metric record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this metric record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  channel discussion_board_channels? @relation(fields: [discussion_board_channel_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_channel_id], map: "discussion_board_platform_metrics_discussion_board_cha_5310ebd0")
+  
+  @@unique([metric_date, metric_type, discussion_board_channel_id], map: "discussion_board_platform_metrics_metric_date_metric_t_747e64cb")
+  @@index([metric_date, metric_type])
+  @@index([collected_at])
+  @@index([aggregation_period, metric_date], map: "discussion_board_platform_metrics_aggregation_period_m_fd55611d")
+}
+
+/// Comprehensive user behavior analytics tracking engagement patterns,
+/// activity levels, and participation metrics. Supports user segmentation,
+/// retention analysis, and personalized content recommendations based on
+/// behavioral data.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user being analyzed. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Date for which user analytics are calculated and stored.
+  analysis_date DateTime
+  
+  /// Number of user sessions recorded during the analysis period.
+  session_count Int
+  
+  /// Count of posts created by the user during the period.
+  posts_created Int
+  
+  /// Number of comments posted by the user during the period.
+  comments_posted Int
+  
+  /// Calculated engagement score based on activity frequency and quality
+  /// (0-100 scale).
+  engagement_score Float
+  
+  /// User retention classification (e.g., 'new', 'active', 'at_risk',
+  /// 'churned').
+  retention_status String
+  
+  /// Comma-separated list of categories where user shows highest engagement.
+  preferred_categories String?
+  
+  /// Average time spent per session in seconds.
+  average_session_duration Int
+  
+  /// Quality assessment score based on post/comment reception and moderator
+  /// feedback.
+  content_quality_score Float
+  
+  /// Date of user's most recent platform activity.
+  last_activity_date DateTime
+  
+  /// Timestamp when these analytics were calculated and stored.
+  calculated_at DateTime
+  
+  /// Timestamp when this analytics record was created.
+  created_at DateTime
+  
+  /// Timestamp when this analytics record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_member_id, analysis_date], map: "discussion_board_user_analytics_discussion_board_membe_48396460")
+  @@index([analysis_date, retention_status], map: "discussion_board_user_analytics_analysis_date_retentio_5af56736")
+  @@index([engagement_score])
+  @@index([last_activity_date])
+  @@index([calculated_at])
+}
+
+/// Performance metrics tracking for individual posts and comments, including
+/// engagement rates, view counts, and user interaction patterns. Used for
+/// content recommendation algorithms and quality assessment.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_performance {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post being analyzed. {@link discussion_board_posts.id}.
+  discussion_board_post_id String?
+  
+  /// Reference to the comment being analyzed. {@link
+  /// discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Reference to the content category for segmentation. {@link
+  /// discussion_board_categories.id}.
+  discussion_board_category_id String?
+  
+  /// Time period for performance measurement (e.g., 'first_24_hours',
+  /// 'weekly', 'monthly').
+  measurement_period String
+  
+  /// Cumulative view count during the measurement period.
+  total_views Int
+  
+  /// Count of distinct users who viewed the content.
+  unique_viewers Int
+  
+  /// Number of comments generated in response to the content.
+  comment_count Int
+  
+  /// Percentage of viewers who interacted with the content (comments,
+  /// reactions, shares).
+  engagement_rate Float
+  
+  /// Average time spent reading the content in seconds.
+  average_read_time Int?
+  
+  /// Number of times content was shared externally.
+  social_shares Int
+  
+  /// Ratio of positive to negative reactions received.
+  upvote_ratio Float?
+  
+  /// Algorithmic score assessing content quality and value.
+  content_quality_score Float
+  
+  /// Score indicating how rapidly content is gaining popularity.
+  trending_score Float
+  
+  /// End date of the performance measurement period.
+  measurement_end_date DateTime
+  
+  /// Timestamp when performance metrics were calculated.
+  calculated_at DateTime
+  
+  /// Timestamp when this performance record was created.
+  created_at DateTime
+  
+  /// Timestamp when this performance record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts? @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  category discussion_board_categories? @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_post_id, measurement_period, measurement_end_date], map: "discussion_board_content_performance_discussion_board__6a44727a")
+  @@unique([discussion_board_comment_id, measurement_period, measurement_end_date], map: "discussion_board_content_performance_discussion_board__8473bcaa")
+  @@index([measurement_end_date, engagement_rate], map: "discussion_board_content_performance_measurement_end_d_7dacce31")
+  @@index([trending_score])
+  @@index([content_quality_score])
+  @@index([discussion_board_category_id, measurement_end_date], map: "discussion_board_content_performance_discussion_board__74f08939")
+}
+
+/// Real-time tracking of trending discussion topics and popular content
+/// categories. Supports discovery features and content recommendation
+/// systems by identifying emerging patterns and viral content.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_trending_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the trending category. {@link
+  /// discussion_board_categories.id}.
+  discussion_board_category_id String?
+  
+  /// Reference to specific trending topic tag. {@link
+  /// discussion_board_topic_tags.id}.
+  discussion_board_topic_tag_id String?
+  
+  /// Date when the trending pattern was identified.
+  trend_date DateTime
+  
+  /// Time window for trend calculation (e.g., 'hourly', 'daily', 'weekly').
+  trend_period String
+  
+  /// Numerical score representing the strength and velocity of the trend.
+  trend_score Float
+  
+  /// Measure of whether trend is accelerating or decelerating.
+  momentum_indicator Float
+  
+  /// Highest level of activity recorded during the trend period.
+  peak_activity_level Int
+  
+  /// Number of unique users participating in the trending topic.
+  participant_count Int
+  
+  /// Total number of posts and comments in the trending topic.
+  content_volume Int
+  
+  /// JSON representation of geographic participation patterns.
+  geographic_distribution String?
+  
+  /// Average sentiment analysis score for the trending topic.
+  sentiment_score Float?
+  
+  /// Estimated duration of the trend in hours.
+  trend_duration Int?
+  
+  /// Timestamp when the trend was first detected by the system.
+  detected_at DateTime
+  
+  /// Timestamp when trend metrics were last recalculated.
+  last_updated DateTime
+  
+  /// Timestamp when this trend record was created.
+  created_at DateTime
+  
+  /// Timestamp when this trend record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories? @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  topicTag discussion_board_topic_tags? @relation(fields: [discussion_board_topic_tag_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_category_id], map: "discussion_board_trending_topics_discussion_board_cate_377b5a12")
+  @@index([discussion_board_topic_tag_id], map: "discussion_board_trending_topics_discussion_board_topi_b6a65582")
+  
+  @@unique([trend_date, discussion_board_category_id, trend_period], map: "discussion_board_trending_topics_trend_date_discussion_cebad883")
+  @@unique([trend_date, discussion_board_topic_tag_id, trend_period], map: "discussion_board_trending_topics_trend_date_discussion_907d37b2")
+  @@index([trend_date, trend_score])
+  @@index([momentum_indicator])
+  @@index([detected_at])
+  @@index([trend_period, trend_date])
+}
+
+/// Comprehensive audit trail capturing all significant platform events,
+/// administrative actions, and system changes. Supports compliance, security
+/// monitoring, and historical analysis of platform operations.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator who performed the action. {@link
+  /// discussion_board_administrators.id}.
+  discussion_board_administrator_id String?
+  
+  /// Reference to the member affected by the action. {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String?
+  
+  /// Category of audit event (e.g., 'user_management', 'content_moderation',
+  /// 'system_config').
+  event_type String
+  
+  /// Specific action that was taken during the event.
+  action_performed String
+  
+  /// Identifier of the resource that was modified or accessed.
+  resource_affected String
+  
+  /// JSON-formatted details containing complete event context and changes.
+  event_details String
+  
+  /// IP address from which the action was performed.
+  ip_address String?
+  
+  /// Client user agent string for the action source.
+  user_agent String?
+  
+  /// Result of the action (e.g., 'success', 'failure', 'partial').
+  outcome_status String
+  
+  /// Importance level of the audit event (e.g., 'info', 'warning', 'critical').
+  severity_level String
+  
+  /// Reference to relevant compliance requirements or policies.
+  compliance_reference String?
+  
+  /// Designated retention period for this audit record.
+  retention_period String
+  
+  /// Exact timestamp when the audited event occurred.
+  event_timestamp DateTime
+  
+  /// Timestamp when this audit record was created in the system.
+  logged_at DateTime
+  
+  /// Timestamp when this audit record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator discussion_board_administrators? @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([event_timestamp, event_type])
+  @@index([discussion_board_administrator_id, event_timestamp], map: "discussion_board_audit_logs_discussion_board_administr_aaf62cd7")
+  @@index([discussion_board_member_id, event_timestamp], map: "discussion_board_audit_logs_discussion_board_member_id_7bab58a0")
+  @@index([severity_level, event_timestamp])
+  @@index([outcome_status, event_timestamp])
+}

@@ -1,0 +1,1 @@
+The content of the requirement document should be detailed, clear, and comprehensive. It should include all necessary sections and follow the EARS format for requirements. The document should also include Mermaid diagrams where appropriate to illustrate processes and workflows.

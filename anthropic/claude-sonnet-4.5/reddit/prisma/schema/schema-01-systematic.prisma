@@ -1,0 +1,60 @@
+/// Platform-wide configuration settings stored as key-value pairs. This
+/// table contains system parameters that control platform behavior, such as
+/// content limits, rate limiting rules, feature toggles, and other
+/// configurable aspects of the system. Settings can be categorized and
+/// marked as public or internal-only. Values are stored as strings with a
+/// type indicator for proper deserialization.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the setting (e.g., 'max_post_length',
+  /// 'rate_limit_posts_per_hour'). This key is used to retrieve the setting
+  /// value throughout the application.
+  key String
+  
+  /// The setting value stored as a string. Complex values (objects, arrays)
+  /// can be stored as JSON strings. The value_type field indicates how to
+  /// deserialize this value.
+  value String
+  
+  /// Human-readable description explaining what this setting controls and its
+  /// purpose. Helps administrators understand the impact of changing this
+  /// setting.
+  description String?
+  
+  /// Indicates the data type of the value for proper deserialization. Common
+  /// values: 'string', 'int', 'double', 'boolean', 'json'. This helps the
+  /// application correctly parse the value string.
+  value_type String
+  
+  /// Grouping category for organizing related settings (e.g., 'content',
+  /// 'moderation', 'performance', 'features'). Allows filtering and grouping
+  /// settings in admin interfaces.
+  category String?
+  
+  /// Whether this setting can be exposed via public API or is internal-only.
+  /// Public settings may be displayed to users (e.g., max post length), while
+  /// internal settings are admin-only (e.g., API keys, security parameters).
+  is_public Boolean
+  
+  /// Timestamp when this setting was first created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this setting was last modified. Updated whenever the value
+  /// or other fields change. Provides audit trail for configuration changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([category])
+  @@index([is_public])
+}

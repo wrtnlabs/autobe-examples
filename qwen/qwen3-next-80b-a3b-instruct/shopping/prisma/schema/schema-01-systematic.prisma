@@ -1,0 +1,170 @@
+/// Stores the hierarchical category structure used to organize products in
+/// the catalog. Categories form the taxonomy that enables navigation and
+/// filtering in the frontend. This table enables parent-child relationships
+/// for multi-level category trees, such as 'Electronics > Computers >
+/// Laptops'. Each category has its own display name, URL slug, and active
+/// status. This model is referenced by shopping_mall_product_categories but
+/// is never directly manipulated by end-users.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category in hierarchical tree. {@link shopping_mall_categories.id}.
+  parent_id String?
+  
+  /// Display name of the category as shown to customers. Example:
+  /// 'Electronics'.
+  name String
+  
+  /// URL-friendly identifier for the category. Used in routing and SEO. Must
+  /// be unique. Example: 'electronics'.
+  slug String
+  
+  /// Nesting level of the category in the hierarchy. Root categories have
+  /// depth 0, children have depth 1+.
+  depth Int
+  
+  /// Indicates whether the category is active and visible to customers.
+  /// Inactive categories are hidden but preserved for historical reference.
+  is_active Boolean
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_sales_analytics shopping_mall_sales_analytics[]
+  
+  @@unique([slug])
+  @@unique([parent_id, name])
+  @@index([parent_id])
+  @@index([is_active])
+  @@index([depth])
+}
+
+/// Defines UI sections used across the platform for layout configuration.
+/// Sections represent content areas on pages such as 'hero-banner',
+/// 'featured-products', 'recommendations'. Each section has a unique
+/// identifier for programmatic reference, a display name, priority for
+/// ordering, and position for placement. Admins configure these sections to
+/// control page layouts, but customers never interact with them directly.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the section for admin interface. Example: 'Hero Banner
+  /// Section'.
+  name String
+  
+  /// Unique system identifier used in code and templates to reference this
+  /// section. Must be unique. Example: 'hero-banner'.
+  identifier String
+  
+  /// Ordering priority for displaying sections on a page. Higher values appear
+  /// first.
+  priority Int
+  
+  /// Location where this section should be rendered. Examples: 'top',
+  /// 'sidebar', 'footer', 'middle'.
+  position String
+  
+  /// Controls whether the section is active and rendered on pages. Inactive
+  /// sections are hidden from display.
+  is_active Boolean
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft-deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([identifier])
+  @@index([is_active])
+  @@index([priority])
+  @@index([position])
+}
+
+/// Stores global system configuration parameters that control platform
+/// behavior. Configuration values are stored as JSON strings to support
+/// complex structures while maintaining a simple key-value schema. This
+/// table enables dynamic configuration changes without code deployment.
+/// Values are consumed by application services and admin tools. Key examples
+/// include 'payment_gateway_settings', 'refund_policy_defaults',
+/// 'review_auto_moderation_rules'. This table is managed exclusively by
+/// system administrators via backend interfaces.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique system-wide key identifying the configuration parameter. Must be
+  /// unique. Example: 'payment_gateway_fee_percent'.
+  key String
+  
+  /// JSON-encoded value of the configuration parameter. Supports strings,
+  /// numbers, booleans, arrays, and objects. Must be valid JSON.
+  value String
+  
+  /// Type classification of the configuration value. Used for validation and
+  /// UI rendering. Allowed values: 'string', 'int', 'boolean', 'json'.
+  type String
+  
+  /// Human-readable description explaining the purpose and expected format of
+  /// this configuration parameter.
+  description String
+  
+  /// Indicates if the configuration is currently active. Inactive
+  /// configurations are ignored by system processes.
+  is_active Boolean
+  
+  /// Timestamp when the configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the configuration was soft-deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_sales_analytics shopping_mall_sales_analytics[]
+  
+  @@unique([key])
+  @@index([is_active])
+  @@index([type])
+}

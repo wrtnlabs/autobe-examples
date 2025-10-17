@@ -1,0 +1,91 @@
+/// Represents a discussion thread in the economic/political discussion
+/// board. This table captures the essential information for a thread,
+/// including its title, content, and status. It serves as the primary entity
+/// for user interactions and content management.
+///
+/// @namespace Threads
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The channel to which this thread belongs. {@link
+  /// economic_political_discussion_board_channels.id}
+  economic_political_discussion_board_channel_id String
+  
+  /// The category to which this thread belongs. {@link
+  /// economic_political_discussion_board_categories.id}
+  economic_political_discussion_board_category_id String
+  
+  /// The title of the thread.
+  title String
+  
+  /// The content of the thread.
+  content String
+  
+  /// The status of the thread (e.g., open, closed, locked).
+  status String
+  
+  /// The timestamp when the thread was created.
+  created_at DateTime
+  
+  /// The timestamp when the thread was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the thread was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel economic_political_discussion_board_channels @relation(fields: [economic_political_discussion_board_channel_id], references: [id], onDelete: Cascade)
+  category economic_political_discussion_board_categories @relation(fields: [economic_political_discussion_board_category_id], references: [id], onDelete: Cascade)
+  
+  economic_political_discussion_board_thread_snapshots economic_political_discussion_board_thread_snapshots[]
+  economic_political_discussion_board_comments economic_political_discussion_board_comments[]
+  economic_political_discussion_board_reports economic_political_discussion_board_reports[]
+  
+  @@index([economic_political_discussion_board_channel_id, created_at], map: "economic_political_discussion_board_threads_economic_p_813af20d")
+  @@index([economic_political_discussion_board_category_id, created_at], map: "economic_political_discussion_board_threads_economic_p_8abec909")
+}
+
+/// Represents a snapshot of a discussion thread at a specific point in time.
+/// This table captures the historical states of threads, allowing for audit
+/// trails and change tracking. It is used for historical data access and
+/// audit trail queries.
+///
+/// @namespace Threads
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_thread_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The thread to which this snapshot belongs. {@link
+  /// economic_political_discussion_board_threads.id}
+  economic_political_discussion_board_thread_id String
+  
+  /// The title of the thread at the time of the snapshot.
+  title String
+  
+  /// The content of the thread at the time of the snapshot.
+  content String
+  
+  /// The status of the thread at the time of the snapshot.
+  status String
+  
+  /// The timestamp when the snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  thread economic_political_discussion_board_threads @relation(fields: [economic_political_discussion_board_thread_id], references: [id], onDelete: Cascade)
+  
+  @@index([economic_political_discussion_board_thread_id, created_at], map: "economic_political_discussion_board_thread_snapshots_e_717c13fb")
+}

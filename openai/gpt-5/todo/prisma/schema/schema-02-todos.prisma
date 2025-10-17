@@ -1,0 +1,50 @@
+/// Core Todo items for the minimal personal task list. Each record belongs
+/// to exactly one member (owner) and represents a single task with a
+/// required title and a simple completion state. Business operations include
+/// create, list (scoped to owner), update title, toggle complete/uncomplete,
+/// and delete. Completion timestamp is recorded when a Todo transitions to
+/// completed and cleared when uncompleted. No soft deletion is used in
+/// minimal scope; created_at/updated_at track lifecycle changes.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner member's {@link todo_list_todo_members.id}. Establishes strict
+  /// per-owner scoping for all Todo operations.
+  todo_list_todo_member_id String
+  
+  /// Required single-line task title. Application enforces trimming and length
+  /// policy (e.g., 1–100 chars) and disallows newline characters per business
+  /// rules.
+  title String
+  
+  /// Completion state of the Todo. Defaults to false on creation; toggled
+  /// explicitly by the user.
+  is_completed Boolean
+  
+  /// Timestamp recorded when the Todo transitions to completed. Cleared when
+  /// the Todo is marked active (uncompleted).
+  completed_at DateTime?
+  
+  /// Creation timestamp for the Todo. Set once at creation and never modified
+  /// thereafter.
+  created_at DateTime
+  
+  /// Last modification timestamp. Updated whenever mutable fields change
+  /// (title or completion state).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  owner todo_list_todo_members @relation(fields: [todo_list_todo_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_todo_member_id, created_at])
+  @@index([todo_list_todo_member_id, is_completed, created_at], map: "todo_list_todos_todo_list_todo_member_id_is_completed__cfbc087a")
+}

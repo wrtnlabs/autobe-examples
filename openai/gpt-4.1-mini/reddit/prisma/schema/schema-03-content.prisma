@@ -1,0 +1,130 @@
+/// Posts created by users within communities, supporting text, link, or
+/// single image content. Each post is authored by a member or guest, belongs
+/// to a single community, and includes metadata for creation, editing,
+/// status, and soft deletion. Relationships link posts to their authors and
+/// parent communities. Supports business workflows via status fields and
+/// tracks vote and comment counts externally.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Authoring member's {@link reddit_community_members.id}.
+  author_member_id String?
+  
+  /// Authoring guest's {@link reddit_community_guests.id}.
+  author_guest_id String?
+  
+  /// Target community's {@link reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// Type of the post content: text, link, or image.
+  post_type String
+  
+  /// Title of the post, max 300 characters.
+  title String
+  
+  /// Text content for text posts.
+  body_text String?
+  
+  /// URL for link posts.
+  link_url String?
+  
+  /// URL to the image file for image posts.
+  image_url String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  /// Status representing lifecycle or workflow state.
+  status String?
+  
+  /// Business-specific status or lifecycle state.
+  business_status String?
+  
+  //----
+  // RELATIONS
+  //----
+  authorMember reddit_community_members? @relation(fields: [author_member_id], references: [id], onDelete: Cascade)
+  authorGuest reddit_community_guests? @relation(fields: [author_guest_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_post_votes reddit_community_post_votes[]
+  reddit_community_reports reddit_community_reports[]
+  
+  @@index([author_guest_id])
+  
+  @@unique([reddit_community_community_id, title])
+  @@index([reddit_community_community_id, created_at], map: "reddit_community_posts_reddit_community_community_id_c_ede20472")
+  @@index([author_member_id, created_at])
+}
+
+/// Comments on posts within the redditCommunity platform allowing nested
+/// replies with unlimited depth. Each comment is authored by a member or
+/// guest user and references its parent post and optionally a parent comment
+/// for nesting. Supports soft deletion and tracks creation and modification
+/// timestamps. Voting data and karma calculations are maintained externally.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// Parent comment for nested replies. Nullable for root comments.
+  parent_comment_id String?
+  
+  /// Authoring member's {@link reddit_community_members.id}.
+  author_member_id String?
+  
+  /// Authoring guest's {@link reddit_community_guests.id}.
+  author_guest_id String?
+  
+  /// Text content of the comment limited to 2,000 characters.
+  body_text String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  parentComment reddit_community_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  authorMember reddit_community_members? @relation(fields: [author_member_id], references: [id], onDelete: Cascade)
+  authorGuest reddit_community_guests? @relation(fields: [author_guest_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_community_comments[] @relation("recursive")
+  reddit_community_comment_votes reddit_community_comment_votes[]
+  reddit_community_reports reddit_community_reports[]
+  
+  @@index([parent_comment_id])
+  @@index([author_guest_id])
+  
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_comments_reddit_community_post_id_cre_7ea47a9e")
+  @@index([author_member_id, created_at])
+}

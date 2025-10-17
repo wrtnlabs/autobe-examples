@@ -1,0 +1,432 @@
+/// Handles payment processing for orders within the shopping mall e-commerce
+/// platform
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Payment method used. {@link shopping_mall_payment_methods.id}.
+  shopping_mall_payment_methods_id String
+  
+  /// Associated order for this payment.
+  order_id String
+  
+  /// Payment amount in the specified currency.
+  amount Float
+  
+  /// Currency code (e.g., USD, EUR, KRW).
+  currency String
+  
+  /// Payment status (e.g., pending, confirmed, failed).
+  status String
+  
+  /// Timestamp when payment was initiated.
+  created_at DateTime
+  
+  /// Timestamp of last payment status update.
+  updated_at DateTime
+  
+  /// Timestamp when payment was deleted or canceled.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  paymentMethod shopping_mall_payment_methods @relation(fields: [shopping_mall_payment_methods_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_orders shopping_mall_orders?
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  shopping_mall_fraud_detection shopping_mall_fraud_detection[]
+  shopping_mall_payment_logs shopping_mall_payment_logs[]
+  
+  @@unique([order_id])
+  @@index([status, created_at])
+  @@index([shopping_mall_payment_methods_id])
+}
+
+/// Records individual transactions for payment processing and reconciliation
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Payment this transaction belongs to. {@link shopping_mall_payments.id}.
+  shopping_mall_payments_id String
+  
+  /// External transaction identifier from payment processor.
+  transaction_id String
+  
+  /// Transaction amount.
+  amount Float
+  
+  /// Currency code for transaction.
+  currency String
+  
+  /// Type of transaction (authorization, capture, refund, etc.).
+  transaction_type String
+  
+  /// Transaction status (success, failed, pending).
+  status String
+  
+  /// Response code from payment gateway.
+  response_code String
+  
+  /// Human-readable response message from gateway.
+  response_message String
+  
+  /// Timestamp when transaction was processed.
+  created_at DateTime
+  
+  /// Timestamp of last transaction update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payments_id], references: [id], onDelete: Cascade)
+  
+  @@unique([transaction_id])
+  @@index([shopping_mall_payments_id, transaction_type], map: "shopping_mall_payment_transactions_shopping_mall_payme_22522c5c")
+  @@index([status, created_at])
+}
+
+/// Stores available payment methods for customers to use in the shopping mall
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this payment method. {@link shopping_mall_customers.id}.
+  shopping_mall_customers_id String
+  
+  /// Payment method type (credit_card, debit_card, digital_wallet,
+  /// bank_transfer).
+  type String
+  
+  /// Payment provider (Visa, MasterCard, PayPal, etc.).
+  provider String
+  
+  /// Masked account number or token for the payment method.
+  account_reference String
+  
+  /// Expiry date for card-based payment methods.
+  expiry_date DateTime?
+  
+  /// Billing address associated with this payment method.
+  billing_address String?
+  
+  /// Whether this is the default payment method for the customer.
+  is_default Boolean
+  
+  /// Payment method status (active, inactive, expired).
+  status String
+  
+  /// Timestamp when payment method was added.
+  created_at DateTime
+  
+  /// Timestamp of last payment method update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customers_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payments shopping_mall_payments[]
+  
+  @@unique([account_reference])
+  @@index([shopping_mall_customers_id, is_default], map: "shopping_mall_payment_methods_shopping_mall_customers__b85e5683")
+  @@index([type, provider])
+}
+
+/// Handles refund processing for canceled orders and returned items
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Payment being refunded. {@link shopping_mall_payments.id}.
+  shopping_mall_payments_id String
+  
+  /// Order associated with this refund. {@link shopping_mall_orders.id}.
+  shopping_mall_orders_id String
+  
+  /// Amount being refunded.
+  refund_amount Float
+  
+  /// Currency code for refund.
+  currency String
+  
+  /// Reason for refund (cancellation, return, warranty, etc.).
+  reason String
+  
+  /// Refund status (pending, processing, completed, failed).
+  status String
+  
+  /// Administrator or system that processed the refund.
+  processed_by String
+  
+  /// Timestamp when refund was requested.
+  created_at DateTime
+  
+  /// Timestamp of last refund status update.
+  updated_at DateTime
+  
+  /// Timestamp when refund was canceled.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payments_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_orders_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_refund_transactions shopping_mall_refund_transactions[]
+  shopping_mall_payment_logs shopping_mall_payment_logs[]
+  
+  @@unique([shopping_mall_payments_id])
+  @@index([status, created_at])
+  @@index([shopping_mall_orders_id])
+}
+
+/// Records individual transactions for refund processing and reconciliation
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Refund this transaction belongs to. {@link shopping_mall_refunds.id}.
+  shopping_mall_refunds_id String
+  
+  /// External transaction identifier from payment processor.
+  transaction_id String
+  
+  /// Refund transaction amount.
+  amount Float
+  
+  /// Currency code for transaction.
+  currency String
+  
+  /// Transaction status (success, failed, pending).
+  status String
+  
+  /// Response code from payment gateway.
+  response_code String
+  
+  /// Human-readable response message from gateway.
+  response_message String
+  
+  /// Timestamp when refund transaction was processed.
+  created_at DateTime
+  
+  /// Timestamp of last transaction update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refund shopping_mall_refunds @relation(fields: [shopping_mall_refunds_id], references: [id], onDelete: Cascade)
+  
+  @@unique([transaction_id])
+  @@index([shopping_mall_refunds_id, created_at], map: "shopping_mall_refund_transactions_shopping_mall_refund_d82c059b")
+  @@index([status, created_at])
+}
+
+/// System for detecting and preventing fraudulent payment activities
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_fraud_detection {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Payment being evaluated for fraud. {@link shopping_mall_payments.id}.
+  shopping_mall_payments_id String
+  
+  /// Customer associated with this fraud detection. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customers_id String
+  
+  /// Calculated risk score (0-1) for potential fraud.
+  risk_score Float
+  
+  /// Comma-separated list of fraud detection rules triggered.
+  detection_rules String
+  
+  /// IP address from payment request.
+  ip_address String
+  
+  /// Unique identifier for customer's device.
+  device_fingerprint String?
+  
+  /// Geolocation information from IP address.
+  geolocation_data String?
+  
+  /// Number of transactions from this customer in defined period.
+  transaction_velocity Int
+  
+  /// Fraud detection status (pending, cleared, flagged, blocked).
+  status String
+  
+  /// Administrator who reviewed this fraud detection.
+  reviewed_by String?
+  
+  /// Timestamp when fraud detection was triggered.
+  created_at DateTime
+  
+  /// Timestamp of last fraud detection status update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payments_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customers_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_payments_id])
+  @@index([status, risk_score])
+  @@index([shopping_mall_customers_id, created_at], map: "shopping_mall_fraud_detection_shopping_mall_customers__a19963c6")
+}
+
+/// Stores information about available payment gateway integrations
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_gateways {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who configured this gateway. {@link
+  /// shopping_mall_administrators.id}.
+  configured_by String
+  
+  /// Name of the payment gateway (Stripe, PayPal, etc.).
+  gateway_name String
+  
+  /// API key for gateway integration.
+  api_key String
+  
+  /// Secret key for secure gateway communication.
+  secret_key String
+  
+  /// URL for gateway webhook notifications.
+  webhook_url String
+  
+  /// Gateway status (active, inactive, testing).
+  status String
+  
+  /// JSON array of supported currencies.
+  supported_currencies String
+  
+  /// JSON array of supported payment methods.
+  supported_methods String
+  
+  /// Transaction fee percentage charged by this gateway.
+  transaction_fee_rate Float
+  
+  /// Timestamp when gateway was configured.
+  created_at DateTime
+  
+  /// Timestamp of last gateway configuration update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  configurer shopping_mall_administrators @relation(fields: [configured_by], references: [id], onDelete: Cascade)
+  
+  @@index([configured_by])
+  
+  @@unique([gateway_name])
+  @@index([status])
+}
+
+/// Detailed logging of all payment system activities for auditing and debugging
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Payment associated with this log entry. {@link shopping_mall_payments.id}.
+  shopping_mall_payments_id String?
+  
+  /// Refund associated with this log entry. {@link shopping_mall_refunds.id}.
+  shopping_mall_refunds_id String?
+  
+  /// User or system that initiated the payment activity. {@link
+  /// shopping_mall_administrators.id}.
+  initiated_by String?
+  
+  /// Severity level of log (debug, info, warning, error).
+  log_level String
+  
+  /// Log message describing the activity.
+  message String
+  
+  /// Component that generated the log (gateway, fraud_detection, etc.).
+  source String
+  
+  /// Additional JSON details about the log event.
+  details String?
+  
+  /// IP address from which the activity originated.
+  ip_address String?
+  
+  /// User agent string from client request.
+  user_agent String?
+  
+  /// Timestamp when log entry was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments? @relation(fields: [shopping_mall_payments_id], references: [id], onDelete: Cascade)
+  refund shopping_mall_refunds? @relation(fields: [shopping_mall_refunds_id], references: [id], onDelete: Cascade)
+  initiator shopping_mall_administrators? @relation(fields: [initiated_by], references: [id], onDelete: Cascade)
+  
+  @@index([initiated_by])
+  
+  @@unique([created_at, source])
+  @@index([log_level, created_at])
+  @@index([source])
+  @@index([shopping_mall_payments_id])
+  @@index([shopping_mall_refunds_id])
+}

@@ -1,0 +1,10 @@
+export * as categories from "./categories/index";
+export * as administrator from "./administrator/index";
+export * as featureFlags from "./featureFlags/index";
+export * as tags from "./tags/index";
+export * as threads from "./threads/index";
+export * as registeredUser from "./registeredUser/index";
+export * as moderator from "./moderator/index";
+export * as posts from "./posts/index";
+export * as reports from "./reports/index";
+export * as users from "./users/index";

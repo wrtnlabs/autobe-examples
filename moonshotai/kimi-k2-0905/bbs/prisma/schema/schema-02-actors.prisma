@@ -1,0 +1,412 @@
+/// Guest user accounts with limited read-only access to public political
+/// discussions. These users can browse content but cannot participate in
+/// discussions or access premium features.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's {@link political_discussion_board_user_profiles.id}.
+  /// Optional link to detailed profile information.
+  user_profile_id String?
+  
+  /// Unique username for guest identification. Used for session tracking and
+  /// browsing history.
+  username String
+  
+  /// Email address for account tracking and optional registration prompts.
+  /// Must be valid format for potential future conversion.
+  email String
+  
+  /// Hashed password for guest account security. Required even for limited
+  /// access accounts to maintain security standards.
+  password_hash String
+  
+  /// Whether the email address has been verified through confirmation process.
+  /// False for most guest accounts unless converted.
+  email_verified Boolean
+  
+  /// Account status indicating whether the guest account is currently active
+  /// and allowed to browse content.
+  is_active Boolean
+  
+  /// Timestamp of the most recent login to track guest engagement and session
+  /// management.
+  last_login_at DateTime?
+  
+  /// Account creation timestamp for tracking guest user acquisition and
+  /// analytics.
+  created_at DateTime
+  
+  /// Last modification timestamp for account information changes like password
+  /// updates.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for guest accounts that have been removed or
+  /// expired due to inactivity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile political_discussion_board_user_profiles? @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_profile_id])
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([last_login_at])
+  @@index([created_at])
+  @@index([is_active, last_login_at])
+}
+
+/// Registered member users with authentication capabilities. These users
+/// form the core community with full participation rights, voting
+/// privileges, and reputation-based features essential for quality political
+/// discourse.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_member {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related profile information containing personal and professional details
+  /// {@link political_discussion_board_user_profiles.id}
+  user_profile_id String
+  
+  /// Unique username for community identification
+  username String
+  
+  /// Email address for account recovery and notifications
+  email String
+  
+  /// Hashed password using bcrypt with salt for secure authentication
+  password_hash String
+  
+  /// Whether email has been verified through confirmation process
+  email_verified Boolean
+  
+  /// Community reputation score from 0-10000 based on quality contributions
+  reputation_score Int
+  
+  /// Account activation status for security and suspension
+  is_active Boolean
+  
+  /// Last login timestamp for activity tracking and engagement metrics
+  last_login_at DateTime
+  
+  /// Registration timestamp for user lifecycle analytics
+  created_at DateTime
+  
+  /// Account modification timestamp for tracking changes
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for account suspension/termination
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile political_discussion_board_user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_audit_log political_discussion_board_audit_log[]
+  political_discussion_board_error_log political_discussion_board_error_log[]
+  political_discussion_board_moderator political_discussion_board_moderator[]
+  political_discussion_board_admin political_discussion_board_admin[]
+  political_discussion_board_posts political_discussion_board_posts[]
+  political_discussion_board_replies political_discussion_board_replies[]
+  political_discussion_board_votes political_discussion_board_votes[]
+  political_discussion_board_search_history political_discussion_board_search_history[]
+  political_discussion_board_content_reports_of_reporter_id political_discussion_board_content_reports[] @relation("political_discussion_board_content_reports_of_reporter_id")
+  political_discussion_board_content_reports_of_content_author_id political_discussion_board_content_reports[] @relation("political_discussion_board_content_reports_of_content_author_id")
+  political_discussion_board_moderation_actions political_discussion_board_moderation_actions[]
+  political_discussion_board_appeals political_discussion_board_appeals[]
+  political_discussion_board_attachments political_discussion_board_attachments[]
+  political_discussion_board_sessions political_discussion_board_sessions[]
+  political_discussion_board_access_tokens political_discussion_board_access_tokens[]
+  political_discussion_board_refresh_tokens political_discussion_board_refresh_tokens[]
+  political_discussion_board_multi_factor_auth political_discussion_board_multi_factor_auth?
+  political_discussion_board_login_attempts political_discussion_board_login_attempts[]
+  
+  @@index([user_profile_id])
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([reputation_score])
+  @@index([last_login_at])
+  @@index([is_active, reputation_score], map: "political_discussion_board_member_is_active_reputation_2a117f15")
+  @@index([email_verified])
+}
+
+/// Trusted community moderators with special privileges to manage content,
+/// enforce policies, and maintain civil discourse standards in political
+/// discussions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_moderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's {@link political_discussion_board_member.id} Reference to
+  /// the underlying member account that grants basic permissions.
+  member_id String
+  
+  /// Target model's {@link political_discussion_board_user_profiles.id}
+  /// Redundant but convenient reference to profile information.
+  user_profile_id String
+  
+  /// Moderator hierarchy level (1-5) indicating scope of responsibilities and
+  /// escalation authority. Higher levels have more permissions.
+  moderator_level Int
+  
+  /// Date when the user was granted moderator privileges. Used for tenure
+  /// tracking and responsibility assignment.
+  appointed_at DateTime
+  
+  /// Current moderation status: active, training, review, suspended. Controls
+  /// access to moderation tools.
+  moderator_status String
+  
+  /// Comma-separated list of political, economic, or policy areas where the
+  /// moderator has special knowledge.
+  areas_of_expertise String?
+  
+  /// Total number of moderation actions taken (approvals, rejections,
+  /// warnings). Tracks moderator activity and effectiveness.
+  total_moderations Int
+  
+  /// Percentage rate of moderation decisions upheld on appeal. Quality metric
+  /// for moderator performance evaluation.
+  accuracy_rate Float
+  
+  /// Timestamp of most recent moderation action for activity monitoring and
+  /// workload distribution.
+  last_moderation_at DateTime?
+  
+  /// Moderator role creation timestamp for tracking community governance
+  /// development.
+  created_at DateTime
+  
+  /// Last update timestamp for moderator status changes, level modifications,
+  /// or performance reviews.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member political_discussion_board_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  userProfile political_discussion_board_user_profiles @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_moderation_actions political_discussion_board_moderation_actions[]
+  political_discussion_board_appeals political_discussion_board_appeals[]
+  political_discussion_board_moderation_queue political_discussion_board_moderation_queue[]
+  
+  @@index([user_profile_id])
+  
+  @@unique([member_id])
+  @@index([moderator_level])
+  @@index([moderator_status])
+  @@index([appointed_at])
+  @@index([last_moderation_at])
+  @@index([accuracy_rate])
+}
+
+/// System administrators with comprehensive platform management privileges
+/// including user management, system configuration, and emergency response
+/// capabilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target model's {@link political_discussion_board_member.id} Reference to
+  /// the underlying member account that forms the base of administrative
+  /// privileges.
+  member_id String
+  
+  /// Administrator hierarchy level (1-10) indicating system access scope.
+  /// Level 10 provides complete system control.
+  admin_level Int
+  
+  /// Whether the admin can create, modify, or delete user accounts and manage
+  /// user permissions across the platform.
+  can_manage_users Boolean
+  
+  /// Whether the admin can edit, hide, or remove any content including posts,
+  /// replies, and user-generated material.
+  can_manage_content Boolean
+  
+  /// Whether the admin can modify system configuration, platform settings, and
+  /// global preferences.
+  can_manage_system Boolean
+  
+  /// Whether the admin can view platform analytics, user statistics, and
+  /// performance metrics.
+  can_access_analytics Boolean
+  
+  /// Whether the admin can appoint, train, supervise, and remove community
+  /// moderators.
+  can_manage_moderators Boolean
+  
+  /// Whether this administrator has unlimited privileges across all platform
+  /// functions and data access.
+  is_super_admin Boolean
+  
+  /// Date when the user was granted administrative privileges for
+  /// authorization tracking and audit compliance.
+  appointed_at DateTime
+  
+  /// Timestamp of most recent administrative action for security monitoring
+  /// and activity tracking.
+  last_admin_action_at DateTime?
+  
+  /// Administrator role creation timestamp for system governance tracking and
+  /// role management.
+  created_at DateTime
+  
+  /// Last update timestamp for permission changes, level modifications, or
+  /// administrative reviews.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member political_discussion_board_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  political_discussion_board_system_config_of_updated_by_admin_id political_discussion_board_system_config[] @relation("political_discussion_board_system_config_of_updated_by_admin_id")
+  political_discussion_board_system_config_of_created_by_admin_id political_discussion_board_system_config[] @relation("political_discussion_board_system_config_of_created_by_admin_id")
+  political_discussion_board_categories_of_created_by_admin_id political_discussion_board_categories[] @relation("political_discussion_board_categories_of_created_by_admin_id")
+  political_discussion_board_categories_of_updated_by_admin_id political_discussion_board_categories[] @relation("political_discussion_board_categories_of_updated_by_admin_id")
+  
+  @@unique([member_id])
+  @@index([admin_level])
+  @@index([is_super_admin])
+  @@index([appointed_at])
+  @@index([last_admin_action_at])
+}
+
+/// Comprehensive user profile information containing personal details,
+/// professional background, interests, and preferences for personalized user
+/// experience and community engagement.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_discussion_board_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of user account this profile belongs to: guest, member, moderator,
+  /// admin. Determines which user entity references this profile.
+  user_type String
+  
+  /// Foreign key reference to the specific user account (guest, member,
+  /// moderator, or admin ID) that this profile describes.
+  user_id String
+  
+  /// Public display name shown throughout the platform and in community
+  /// interactions. Can be different from username.
+  display_name String
+  
+  /// Personal biography or description of interests, expertise, and background
+  /// for community introduction and credibility.
+  biography String?
+  
+  /// Geographic location information (city, state, country) for regional
+  /// community building and local issue discussions.
+  location String?
+  
+  /// Professional background or current occupation relevant to political and
+  /// economic discussions for credibility establishment.
+  profession String?
+  
+  /// Highest level of education completed for community context and discussion
+  /// credibility purposes.
+  education_level String?
+  
+  /// Self-identified political affiliation or ideology for transparent
+  /// community discourse. Optional to encourage diverse participation.
+  political_affiliation String?
+  
+  /// Comma-separated list of political, economic, or policy interests for
+  /// content recommendations and community matching.
+  interests String?
+  
+  /// URL to profile image or avatar for visual identification in community
+  /// interactions and user interface.
+  profile_image_url String?
+  
+  /// Personal website or professional URL for additional information about the
+  /// user's background or expertise.
+  website_url String?
+  
+  /// Twitter or social media handle for cross-platform identity verification
+  /// and extended community connections.
+  twitter_handle String?
+  
+  /// Profile visibility setting: public, members_only, private. Controls who
+  /// can view detailed profile information.
+  profile_visibility String
+  
+  /// Whether the profile has been verified through identity confirmation or
+  /// professional credential validation.
+  is_verified Boolean
+  
+  /// Internal notes about the verification process including verification
+  /// method, date, and verifying administrator.
+  verification_notes String?
+  
+  /// JSON configuration for privacy preferences including notification
+  /// settings, data sharing options, and visibility controls.
+  privacy_settings String
+  
+  /// JSON configuration for email and in-app notification preferences
+  /// including frequency, topics, and delivery methods.
+  notification_preferences String
+  
+  /// Profile creation timestamp for tracking user onboarding and profile
+  /// completion analytics.
+  created_at DateTime
+  
+  /// Last modification timestamp for profile information updates including
+  /// biography, interests, or privacy changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  political_discussion_board_guest political_discussion_board_guest[]
+  political_discussion_board_member political_discussion_board_member[]
+  political_discussion_board_moderator political_discussion_board_moderator[]
+  political_discussion_board_notifications_of_political__93e206b7 political_discussion_board_notifications[] @relation("political_discussion_board_notifications_of_political__93e206b7")
+  political_discussion_board_notifications_of_sender_user_id political_discussion_board_notifications[] @relation("political_discussion_board_notifications_of_sender_user_id")
+  political_discussion_board_user_follows_of_political_d_6b685a8f political_discussion_board_user_follows[] @relation("political_discussion_board_user_follows_of_political_d_6b685a8f")
+  political_discussion_board_user_follows_of_political_d_c41b293d political_discussion_board_user_follows[] @relation("political_discussion_board_user_follows_of_political_d_c41b293d")
+  political_discussion_board_bookmarks political_discussion_board_bookmarks[]
+  
+  @@unique([user_type, user_id])
+  @@unique([display_name])
+  @@index([user_type])
+  @@index([profile_visibility])
+  @@index([created_at])
+}

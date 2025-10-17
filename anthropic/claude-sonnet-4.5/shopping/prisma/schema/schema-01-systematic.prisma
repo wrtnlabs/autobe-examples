@@ -1,0 +1,239 @@
+/// Global platform configuration settings and operational parameters. Stores
+/// key-value pairs for system-wide settings including feature toggles,
+/// business thresholds, default values, and platform behavior controls. This
+/// table provides centralized configuration management for the entire
+/// e-commerce platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier using dot notation (e.g.,
+  /// 'platform.commission.default_rate', 'order.cancellation.window_hours').
+  /// Used to retrieve specific configuration values.
+  config_key String
+  
+  /// Configuration value stored as string. Can represent various data types
+  /// (numbers, booleans, JSON) that are parsed by the application layer based
+  /// on the config_key.
+  config_value String
+  
+  /// Data type indicator for the config_value (e.g., 'string', 'integer',
+  /// 'decimal', 'boolean', 'json'). Helps application layer parse the value
+  /// correctly.
+  data_type String
+  
+  /// Human-readable description explaining the purpose and usage of this
+  /// configuration setting. Helps administrators understand what the setting
+  /// controls.
+  description String
+  
+  /// Configuration category for grouping related settings (e.g., 'platform',
+  /// 'payment', 'shipping', 'notification', 'security'). Enables organized
+  /// configuration management.
+  category String
+  
+  /// Whether this configuration can be modified through admin interface.
+  /// System-critical configurations are marked as non-editable to prevent
+  /// accidental changes.
+  is_editable Boolean
+  
+  /// Timestamp when this configuration entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration entry was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key])
+  @@index([category, created_at])
+}
+
+/// Sales channels and marketplace segmentation configuration. Represents
+/// different distribution channels through which products are sold (e.g.,
+/// web platform, mobile app, regional marketplaces, partner channels).
+/// Channels allow segmentation of products, customers, and orders for
+/// business analytics and operational management.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique channel identifier code (e.g., 'WEB', 'MOBILE_APP', 'US_MARKET',
+  /// 'EU_MARKET'). Used as short reference in application logic and analytics.
+  channel_code String
+  
+  /// Human-readable channel name displayed in admin dashboard and reports
+  /// (e.g., 'Web Platform', 'Mobile Application', 'United States Market').
+  channel_name String
+  
+  /// Detailed description of the channel's purpose, target audience, and
+  /// operational scope. Helps administrators understand channel segmentation
+  /// strategy.
+  description String
+  
+  /// Channel classification type (e.g., 'platform', 'regional', 'partner',
+  /// 'mobile'). Used for grouping and filtering channels by operational
+  /// category.
+  channel_type String
+  
+  /// Whether this channel is currently active and accepting orders. Inactive
+  /// channels are hidden from customer-facing interfaces but data is retained.
+  is_active Boolean
+  
+  /// Default currency code for this channel following ISO 4217 standard (e.g.,
+  /// 'USD', 'EUR', 'GBP'). Used for pricing display and transaction
+  /// processing.
+  default_currency String
+  
+  /// Default language code for this channel following ISO 639-1 standard
+  /// (e.g., 'en', 'es', 'fr'). Used for content localization and communication
+  /// templates.
+  default_language String
+  
+  /// Channel timezone identifier in IANA format (e.g., 'America/New_York',
+  /// 'Europe/London'). Used for displaying dates/times and scheduling
+  /// operations.
+  timezone String
+  
+  /// Platform commission rate for this channel as decimal percentage (e.g.,
+  /// 0.10 for 10%). Channel-specific commission overrides global platform
+  /// defaults.
+  commission_rate Float
+  
+  /// Channel-specific configuration settings stored as JSON. Contains
+  /// customizable parameters like shipping methods, payment gateways, feature
+  /// flags specific to this channel.
+  settings_json String?
+  
+  /// Timestamp when this channel was created.
+  created_at DateTime
+  
+  /// Timestamp when this channel configuration was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the channel is marked as deleted but
+  /// data is retained for historical orders and analytics.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_email_templates shopping_mall_email_templates[]
+  
+  @@unique([channel_code])
+  @@index([is_active, created_at])
+  @@index([channel_type, is_active])
+}
+
+/// Email template management for transactional and marketing communications.
+/// Stores reusable email templates with dynamic content placeholders for
+/// order confirmations, shipping notifications, account verification,
+/// password reset, and promotional campaigns. Supports multi-language and
+/// channel-specific customization.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_email_templates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional channel association. {@link shopping_mall_channels.id}. When
+  /// set, this template is specific to a channel; null indicates platform-wide
+  /// template.
+  shopping_mall_channel_id String?
+  
+  /// Unique template identifier code (e.g., 'ORDER_CONFIRMATION',
+  /// 'SHIPMENT_NOTIFICATION', 'PASSWORD_RESET', 'WELCOME_EMAIL'). Used by
+  /// application to select appropriate template.
+  template_code String
+  
+  /// Human-readable template name displayed in admin interface (e.g., 'Order
+  /// Confirmation Email', 'Shipping Notification').
+  template_name String
+  
+  /// Description of template purpose, usage context, and available variables.
+  /// Helps administrators understand when this template is sent.
+  description String
+  
+  /// Template category for organization (e.g., 'transactional', 'marketing',
+  /// 'authentication', 'notification'). Enables filtering and management by
+  /// business function.
+  category String
+  
+  /// Language code for template content following ISO 639-1 standard (e.g.,
+  /// 'en', 'es', 'fr'). Supports multi-language email communications.
+  language_code String
+  
+  /// Email subject line with support for variable placeholders (e.g., 'Your
+  /// Order {{order_number}} has been confirmed'). Placeholders are replaced
+  /// with actual values when email is sent.
+  subject String
+  
+  /// HTML email body content with variable placeholders and styling. Used for
+  /// rich-formatted email display in modern email clients supporting HTML.
+  body_html String
+  
+  /// Plain text email body content with variable placeholders. Used as
+  /// fallback for email clients that don't support HTML or for accessibility.
+  body_text String
+  
+  /// JSON array of available template variables with descriptions (e.g.,
+  /// [{"key": "order_number", "description": "Order ID"}, {"key":
+  /// "customer_name", "description": "Customer full name"}]). Documents
+  /// available placeholders for template customization.
+  variables_json String?
+  
+  /// Sender email address for this template (e.g., 'noreply@shoppingmall.com',
+  /// 'support@shoppingmall.com'). Overrides default platform sender if
+  /// specified.
+  from_email String?
+  
+  /// Sender name displayed to recipients (e.g., 'Shopping Mall Support',
+  /// 'Order Team'). Provides friendly sender identification.
+  from_name String?
+  
+  /// Reply-to email address if different from sender. Allows customers to
+  /// respond to specific departments or support channels.
+  reply_to_email String?
+  
+  /// Whether this template is active and can be used for sending emails.
+  /// Inactive templates are retained but not available for selection.
+  is_active Boolean
+  
+  /// Template version number incremented on each update. Enables version
+  /// tracking and rollback capability for template changes.
+  version Int
+  
+  /// Timestamp when this template was created.
+  created_at DateTime
+  
+  /// Timestamp when this template was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels? @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_channel_id])
+  
+  @@unique([template_code, language_code, shopping_mall_channel_id], map: "shopping_mall_email_templates_template_code_language_c_6cf47296")
+  @@index([category, is_active])
+  @@index([language_code, is_active])
+}

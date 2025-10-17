@@ -1,0 +1,101 @@
+/// Categories for organizing discussions by topic. Users can categorize
+/// discussions into different topics like economics, politics, etc. This
+/// table represents the main discussion categories that help organize
+/// content.
+///
+/// @namespace ContentOrganization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the category (e.g., 'Economics', 'Politics', 'General').
+  name String
+  
+  /// Description of the category's purpose and scope.
+  description String?
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_discussions discussion_board_discussions[]
+  
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Tags for categorizing and searching discussions. Users can apply multiple
+/// tags to discussions for better organization and discovery. This table
+/// represents the tag entities that can be applied to discussions.
+///
+/// @namespace ContentOrganization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the tag (e.g., 'Tax Policy', 'Election 2024', 'Inflation').
+  name String
+  
+  /// Timestamp when the tag was created.
+  created_at DateTime
+  
+  /// Timestamp when the tag was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_discussion_tags discussion_board_discussion_tags[]
+  
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Junction table connecting discussions and tags. This table enables the
+/// many-to-many relationship between discussions and tags, allowing multiple
+/// tags to be applied to each discussion and each tag to be used on multiple
+/// discussions.
+///
+/// @namespace ContentOrganization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_discussion_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The discussion this tag is applied to. {@link
+  /// discussion_board_discussions.id}.
+  discussion_board_discussion_id String
+  
+  /// The tag applied to the discussion. {@link discussion_board_tags.id}.
+  discussion_board_tag_id String
+  
+  /// Timestamp when the tag was applied to the discussion.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  discussion discussion_board_discussions @relation(fields: [discussion_board_discussion_id], references: [id], onDelete: Cascade)
+  tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_tag_id])
+  
+  @@unique([discussion_board_discussion_id, discussion_board_tag_id], map: "discussion_board_discussion_tags_discussion_board_disc_fca7c6c9")
+  @@index([discussion_board_discussion_id, created_at], map: "discussion_board_discussion_tags_discussion_board_disc_745ca8a4")
+}

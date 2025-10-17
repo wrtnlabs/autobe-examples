@@ -1,0 +1,156 @@
+/// Payment records for all transactions in the shopping mall platform. This
+/// table stores information about each payment made by customers, including
+/// payment method, amount, status, and related order information. It serves
+/// as the central record for all financial transactions in the system.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who made the payment. {@link shopping_customers.id}.
+  shopping_customer_id String
+  
+  /// Order associated with this payment. {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Payment method used for this transaction. {@link
+  /// shopping_payment_methods.id}.
+  payment_method_id String
+  
+  /// Total amount paid in this transaction.
+  amount Float
+  
+  /// Currency used for the payment (e.g., USD, EUR).
+  currency String
+  
+  /// Current status of the payment (e.g., pending, completed, failed,
+  /// refunded).
+  status String
+  
+  /// External transaction ID from payment gateway.
+  transaction_id String?
+  
+  /// Date and time when the payment was processed.
+  payment_date DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  shopping_payment_transactions shopping_payment_transactions[]
+  
+  @@unique([transaction_id])
+  @@index([shopping_customer_id, created_at])
+  @@index([shopping_order_id, created_at])
+  @@index([payment_date])
+}
+
+/// Available payment methods in the shopping mall platform. This table
+/// defines all supported payment methods that customers can use to make
+/// purchases, including credit cards, digital wallets, bank transfers, etc.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the payment method (e.g., Credit Card, PayPal, Apple Pay).
+  method_name String
+  
+  /// Type of payment method (e.g., card, digital_wallet, bank_transfer).
+  method_type String
+  
+  /// Payment provider name (e.g., Stripe, PayPal, Visa).
+  provider String?
+  
+  /// Whether this payment method is currently active and available.
+  is_active Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([method_name])
+  @@index([method_type])
+  @@index([provider])
+}
+
+/// Detailed records of individual payment transactions. This table captures
+/// all the detailed information about each payment transaction, including
+/// authorization, capture, refund, and chargeback information.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_payment_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Payment record this transaction belongs to. {@link shopping_payments.id}.
+  shopping_payment_id String
+  
+  /// Type of transaction (e.g., authorization, capture, refund, chargeback).
+  transaction_type String
+  
+  /// Amount involved in this transaction.
+  amount Float
+  
+  /// Currency used for this transaction.
+  currency String
+  
+  /// Current status of this transaction.
+  status String
+  
+  /// Raw response from payment gateway.
+  gateway_response String?
+  
+  /// Date and time when this transaction occurred.
+  transaction_date DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_payments @relation(fields: [shopping_payment_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_payment_id, transaction_date], map: "shopping_payment_transactions_shopping_payment_id_tran_6c883fbd")
+  @@index([transaction_type, status])
+}

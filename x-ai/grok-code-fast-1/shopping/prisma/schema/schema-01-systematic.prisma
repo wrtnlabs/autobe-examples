@@ -1,0 +1,124 @@
+/// Shopping platform channels representing different marketplace segments or
+/// regions that merchants can operate in. These are core business entities
+/// that organize the platform structure and allow targeted shopping
+/// experiences.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code identifier for the channel, used for URL routing and
+  /// categorization.
+  code String
+  
+  /// Human-readable name of the channel displayed to users.
+  name String
+  
+  /// Detailed description explaining the channel's purpose and target audience.
+  description String?
+  
+  /// Timestamp when the channel was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the channel.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for channel deactivation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_platform_sections shopping_platform_sections[]
+  shopping_platform_channel_categories shopping_platform_channel_categories[]
+  
+  @@unique([code])
+}
+
+/// Sections within shopping channels that organize products into logical
+/// groupings, supporting the channel's hierarchical structure.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged channel's shopping_platform_channels.id
+  shopping_platform_channel_id String
+  
+  /// Unique code within the channel for URL routing and organization.
+  code String
+  
+  /// Human-readable name of the section displayed to users.
+  name String
+  
+  /// Explanation of what products or services belong in this section.
+  description String?
+  
+  /// Display order among other sections within the same channel.
+  sort_order Int
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the section.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for section deactivation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_platform_channels @relation(fields: [shopping_platform_channel_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_platform_channel_id, code], map: "shopping_platform_sections_shopping_platform_channel_i_2ad02389")
+  @@index([shopping_platform_channel_id, sort_order], map: "shopping_platform_sections_shopping_platform_channel_i_2330a8d7")
+}
+
+/// Junction table connecting shopping channels to platform categories,
+/// enabling multi-category association for flexible catalog organization.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_channel_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged channel's shopping_platform_channels.id
+  shopping_platform_channel_id String
+  
+  /// Belonged category's shopping_platform_categories.id
+  shopping_platform_category_id String
+  
+  /// Timestamp when the channel-category association was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this association.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for association deactivation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_platform_channels @relation(fields: [shopping_platform_channel_id], references: [id], onDelete: Cascade)
+  category shopping_platform_categories @relation(fields: [shopping_platform_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_platform_channel_id, shopping_platform_category_id], map: "shopping_platform_channel_categories_shopping_platform_532cf908")
+  @@index([shopping_platform_channel_id], map: "shopping_platform_channel_categories_shopping_platform_7d3fc3c7")
+  @@index([shopping_platform_category_id], map: "shopping_platform_channel_categories_shopping_platform_ab906aaf")
+}

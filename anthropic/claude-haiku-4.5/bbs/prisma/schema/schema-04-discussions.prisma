@@ -1,0 +1,206 @@
+/// Core discussion topics/threads that form the main conversational
+/// containers. Users create discussions within categories to start
+/// conversations. Each discussion contains metadata about engagement,
+/// moderation status, and lifecycle (active, closed, archived, hidden). This
+/// table is the primary reference point for all discussion-related queries
+/// and serves as the anchor for comments, votes, flags, and moderation
+/// actions.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_discussions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the category this discussion belongs to. {@link
+  /// discussion_board_categories.id}. Each discussion must be in exactly one
+  /// category for logical organization.
+  discussion_board_category_id String
+  
+  /// Reference to the user who created this discussion. {@link
+  /// discussion_board_users.id}. Tracks original author for attribution and
+  /// permissions.
+  discussion_board_user_id String
+  
+  /// Discussion topic title/heading displayed in discussion lists. 5-200
+  /// characters. Searchable field for discoverability. Clear, descriptive
+  /// titles help users understand discussion topic at a glance.
+  title String
+  
+  /// Main discussion content/body text containing the discussion starter's
+  /// message. 20-5000 characters. Searchable full-text field. Can be edited by
+  /// creator within 24 hours or by moderators anytime.
+  description String
+  
+  /// Discussion lifecycle status. Values: 'active' (open for comments),
+  /// 'closed' (no new comments allowed), 'archived' (moved to archive),
+  /// 'hidden' (removed from public view due to violations). Controls what
+  /// actions users can take on the discussion.
+  status String
+  
+  /// Total number of times this discussion has been viewed/opened. Used for
+  /// engagement metrics and trending calculations. Incremented each time
+  /// someone opens the discussion.
+  view_count Int
+  
+  /// Denormalized count of comments/replies on this discussion. Provides fast
+  /// access for UI without requiring aggregate query. Must be kept in sync
+  /// with actual comment count through triggers or application logic.
+  comment_count Int
+  
+  /// Net vote count (upvotes minus downvotes) on this discussion. Positive
+  /// value indicates more upvotes, negative indicates more downvotes. Used for
+  /// ranking discussions by popularity.
+  vote_count Int
+  
+  /// Timestamp of the most recent comment or reply in this discussion. Used to
+  /// identify active discussions and sort by 'most active' queries. Updates
+  /// whenever new comment is posted.
+  last_activity_at DateTime
+  
+  /// Whether this discussion is pinned to top of its category by moderator.
+  /// Pinned discussions display above unpinned discussions in category
+  /// browsing. Used for highlighting important or exemplary discussions.
+  is_pinned Boolean
+  
+  /// Whether new comments are prevented on this discussion. Locked discussions
+  /// remain visible but prevent further participation. Used by moderators to
+  /// close discussions while preserving content.
+  is_locked Boolean
+  
+  /// Number of times the discussion description has been edited by creator or
+  /// moderators. Incremented each time edit is saved. Audit trail indicator
+  /// showing if content has been modified.
+  edit_count Int
+  
+  /// Timestamp when discussion was created. Server time (UTC). Immutable; set
+  /// at creation and never changed. Used for sorting discussions
+  /// chronologically.
+  created_at DateTime
+  
+  /// Timestamp when discussion was last modified (content edited, status
+  /// changed, etc.). Server time (UTC). Updated whenever discussion record is
+  /// modified. Shows freshness of discussion.
+  updated_at DateTime
+  
+  /// Timestamp when discussion was soft-deleted. NULL if discussion is active.
+  /// When set, discussion is archived/hidden from normal queries but preserved
+  /// in database for recovery/audit. Enables 'undo delete' functionality.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  creator discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_discussion_metadata discussion_board_discussion_metadata?
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_comment_threads discussion_board_comment_threads[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_vote_history discussion_board_vote_history[]
+  discussion_board_bookmarks discussion_board_bookmarks[]
+  discussion_board_follows discussion_board_follows[]
+  discussion_board_content_flags discussion_board_content_flags[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  
+  @@index([discussion_board_category_id, created_at], map: "discussion_board_discussions_discussion_board_category_4e44f043")
+  @@index([discussion_board_category_id, vote_count], map: "discussion_board_discussions_discussion_board_category_407d63fa")
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_discussions_discussion_board_user_id__84ca984c")
+  @@index([status, created_at])
+  @@index([is_locked, is_pinned, created_at])
+  @@index([last_activity_at])
+  @@index([created_at])
+}
+
+/// Extended metadata and analytics for discussions, supporting the snapshot
+/// pattern for historical tracking. Stores analytics data, engagement
+/// metrics, and metadata separate from main discussion table to keep core
+/// table lean and performant. Maintains 1:1 relationship with
+/// discussion_board_discussions. Contains immutable snapshots of engagement
+/// at creation time, engagement scores, and moderation metrics for trend
+/// analysis and performance optimization.
+///
+/// @namespace Discussions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_discussion_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the discussion this metadata describes. {@link
+  /// discussion_board_discussions.id}. One-to-one relationship: each
+  /// discussion has exactly one metadata record. Unique constraint enforces
+  /// 1:1 cardinality.
+  discussion_board_discussion_id String
+  
+  /// Immutable snapshot of comment count at time discussion was created
+  /// (always 0). Preserved for historical comparison to show how discussion
+  /// engagement grew over time.
+  initial_comment_count Int
+  
+  /// Immutable snapshot of vote count at time discussion was created (always
+  /// 0). Preserved for historical comparison to track vote acquisition
+  /// patterns.
+  initial_vote_count Int
+  
+  /// Date/time when this discussion reached its peak daily activity/engagement
+  /// (most comments or votes in a single day). NULL if no peak has been
+  /// recorded yet. Used to identify when discussion was most active.
+  peak_engagement_date DateTime?
+  
+  /// Calculated composite engagement metric combining comments and votes:
+  /// (comment_count * 1.0) + (vote_count * 0.5). Used for ranking discussions
+  /// by overall engagement without sorting by single metric.
+  engagement_score Float
+  
+  /// Average character length of comments in this discussion. Calculated as:
+  /// total_characters_in_comments / comment_count. Indicates discussion
+  /// depth/thoughtfulness (longer comments often indicate more substantive
+  /// debate).
+  average_comment_length Float?
+  
+  /// Number of unique users who have participated in this discussion (created
+  /// comments). Does not include discussion creator if they haven't replied.
+  /// Shows discussion breadth/inclusiveness.
+  unique_participant_count Int
+  
+  /// Number of times this discussion has been reviewed by moderators (flagged
+  /// and review completed). Indicates discussion was reviewed for policy
+  /// violations. Higher count suggests moderator attention to this discussion.
+  moderator_review_count Int
+  
+  /// Total number of times content in this discussion (discussion or comments)
+  /// has been flagged/reported by users. Indicates community concern about
+  /// discussion quality or appropriateness.
+  flag_count Int
+  
+  /// Reason why discussion was closed or archived, if applicable. NULL if
+  /// discussion still active. Examples: 'duplicate', 'off-topic', 'resolved',
+  /// 'policy-violation', 'spam'. Explains to users why discussion was closed.
+  closure_reason String?
+  
+  /// Timestamp when metadata record was created (same as parent discussion
+  /// creation). Server time (UTC). Immutable; set once at creation.
+  created_at DateTime
+  
+  /// Timestamp when metadata was last updated (engagement metrics
+  /// recalculated, flags updated, etc.). Server time (UTC). Updated whenever
+  /// metadata values change (metrics updated, closure reason set, etc.).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  discussion discussion_board_discussions @relation(fields: [discussion_board_discussion_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_discussion_id], map: "discussion_board_discussion_metadata_discussion_board__2a991a69")
+  @@index([engagement_score])
+  @@index([unique_participant_count], map: "discussion_board_discussion_metadata_unique_participan_4e8f7af8")
+  @@index([flag_count])
+}

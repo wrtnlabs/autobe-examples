@@ -1,0 +1,97 @@
+/// Represents posts created by community members. This model captures the
+/// core content of the platform, including text, links, and images. It
+/// establishes relationships with communities, users, and snapshots for
+/// comprehensive content management.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community to which this post belongs. {@link
+  /// reddit_like_community_communities.id}
+  reddit_like_community_community_id String
+  
+  /// The member who created this post. {@link reddit_like_community_member.id}
+  reddit_like_community_member_id String
+  
+  /// The title of the post.
+  title String
+  
+  /// The content of the post, which can be text, a link, or an image.
+  content String
+  
+  /// The type of the post (text, link, image).
+  post_type String
+  
+  /// The timestamp when the post was created.
+  created_at DateTime
+  
+  /// The timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the post was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  member reddit_like_community_member @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_community_comments reddit_like_community_comments[]
+  reddit_like_community_post_votes reddit_like_community_post_votes[]
+  reddit_like_community_content_reports reddit_like_community_content_reports[]
+  
+  @@index([reddit_like_community_community_id, created_at], map: "reddit_like_community_posts_reddit_like_community_comm_f0ca9a01")
+  @@index([reddit_like_community_member_id, created_at], map: "reddit_like_community_posts_reddit_like_community_memb_f2dd8f7b")
+}
+
+/// Represents comments created by community members on posts. This model
+/// captures user interactions and discussions, establishing relationships
+/// with posts, users, and snapshots for comprehensive comment management.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post to which this comment belongs. {@link
+  /// reddit_like_community_posts.id}
+  reddit_like_community_post_id String
+  
+  /// The member who created this comment. {@link
+  /// reddit_like_community_member.id}
+  reddit_like_community_member_id String
+  
+  /// The content of the comment.
+  content String
+  
+  /// The timestamp when the comment was created.
+  created_at DateTime
+  
+  /// The timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the comment was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  member reddit_like_community_member @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_community_comment_votes reddit_like_community_comment_votes[]
+  
+  @@index([reddit_like_community_post_id, created_at], map: "reddit_like_community_comments_reddit_like_community_p_6ef0e18f")
+  @@index([reddit_like_community_member_id, created_at], map: "reddit_like_community_comments_reddit_like_community_m_29d25dc3")
+}

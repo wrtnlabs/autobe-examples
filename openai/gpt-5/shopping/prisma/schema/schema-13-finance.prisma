@@ -1,0 +1,463 @@
+/// Seller ledger entries recording financial debits and credits per seller.
+/// Entries are used for reconciliation, payouts composition,
+/// reserves/fees/refunds mapping, and audit. May reference orders, payment
+/// captures/refunds, and chargebacks. {@link shopping_mall_payout_items}
+/// links these entries to {@link shopping_mall_payouts} when settled.
+///
+/// @namespace Finance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_ledgers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Related order's {@link shopping_mall_orders.id}. Optional for generic
+  /// adjustments.
+  shopping_mall_order_id String?
+  
+  /// Related payment capture's {@link shopping_mall_payment_captures.id}.
+  shopping_mall_payment_capture_id String?
+  
+  /// Related payment refund's {@link shopping_mall_payment_refunds.id}.
+  shopping_mall_payment_refund_id String?
+  
+  /// Related chargeback's {@link shopping_mall_chargebacks.id}.
+  shopping_mall_chargeback_id String?
+  
+  /// Financial direction of the entry. Expected values like "credit" or
+  /// "debit" based on business rules.
+  entry_type String
+  
+  /// Business source of the entry (e.g., order_capture, refund, fee,
+  /// reserve_hold, reserve_release, adjustment, chargeback_debit).
+  source_type String
+  
+  /// External or business reference identifier for the source (e.g., capture
+  /// reference, refund reference).
+  source_reference String?
+  
+  /// ISO 4217 currency code of the entry amount.
+  currency String
+  
+  /// Signed amount of the ledger entry in currency minor units where
+  /// applicable (business rounding rules apply).
+  amount Float
+  
+  /// Seller running balance immediately after this entry is applied (snapshot).
+  balance_after Float?
+  
+  /// Timestamp when the business event occurred (e.g., capture time), used for
+  /// reconciliation windows.
+  occurred_at DateTime
+  
+  /// Optional descriptive note for the ledger entry.
+  note String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recoverability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  paymentCapture shopping_mall_payment_captures? @relation(fields: [shopping_mall_payment_capture_id], references: [id], onDelete: Cascade)
+  paymentRefund shopping_mall_payment_refunds? @relation(fields: [shopping_mall_payment_refund_id], references: [id], onDelete: Cascade)
+  chargeback shopping_mall_chargebacks? @relation(fields: [shopping_mall_chargeback_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payout_items shopping_mall_payout_items[]
+  
+  @@index([shopping_mall_payment_capture_id], map: "shopping_mall_seller_ledgers_shopping_mall_payment_cap_c23f1a14")
+  @@index([shopping_mall_payment_refund_id], map: "shopping_mall_seller_ledgers_shopping_mall_payment_ref_a33e1d66")
+  @@index([shopping_mall_chargeback_id])
+  
+  @@unique([shopping_mall_seller_id, source_type, source_reference], map: "shopping_mall_seller_ledgers_shopping_mall_seller_id_s_51f7bc26")
+  @@index([shopping_mall_seller_id, occurred_at], map: "shopping_mall_seller_ledgers_shopping_mall_seller_id_o_920dc708")
+  @@index([shopping_mall_order_id, occurred_at], map: "shopping_mall_seller_ledgers_shopping_mall_order_id_oc_89d75491")
+}
+
+/// Payout batches to sellers summarizing captured funds less refunds, fees,
+/// and reserves. Managed by finance for scheduling, processing, and
+/// reconciliation. Each payout is linked to a seller and destination payout
+/// account. Line-level composition is captured by {@link
+/// shopping_mall_payout_items}.
+///
+/// @namespace Finance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payouts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Destination account's {@link shopping_mall_seller_payout_accounts.id}.
+  shopping_mall_seller_payout_account_id String
+  
+  /// Immutable business identifier for payout (e.g., "PO-YYYYMMDD-NNNNNN").
+  payout_number String
+  
+  /// Current payout status (e.g., scheduled, processing, paid, failed,
+  /// canceled).
+  status String
+  
+  /// ISO 4217 currency used for all amounts in the payout.
+  currency String
+  
+  /// Start of earnings window included in this payout (inclusive).
+  period_start DateTime?
+  
+  /// End of earnings window included in this payout (inclusive).
+  period_end DateTime?
+  
+  /// Datetime when payout is planned to be executed.
+  scheduled_for DateTime?
+  
+  /// Datetime when payout was processed by the provider/platform.
+  processed_at DateTime?
+  
+  /// Total gross amount of included positive entries before deductions.
+  gross_amount Float
+  
+  /// Total fees deducted in this payout.
+  fees_amount Float
+  
+  /// Amount withheld due to reserves in this payout.
+  reserve_withheld Float
+  
+  /// Net amount disbursed to the seller (gross − fees − reserves).
+  net_amount Float
+  
+  /// Optional finance note for the payout.
+  note String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recoverability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  payoutAccount shopping_mall_seller_payout_accounts @relation(fields: [shopping_mall_seller_payout_account_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payout_items shopping_mall_payout_items[]
+  shopping_mall_reserves shopping_mall_reserves[]
+  shopping_mall_fees shopping_mall_fees[]
+  shopping_mall_chargebacks shopping_mall_chargebacks[]
+  
+  @@index([shopping_mall_seller_payout_account_id], map: "shopping_mall_payouts_shopping_mall_seller_payout_acco_c20c85a8")
+  
+  @@unique([payout_number])
+  @@index([shopping_mall_seller_id, period_start, period_end], map: "shopping_mall_payouts_shopping_mall_seller_id_period_s_81c3256a")
+  @@index([status, scheduled_for])
+}
+
+/// Line-level composition for payouts mapping seller ledger entries to a
+/// payout with the settled amount. Enforces that each ledger entry can be
+/// settled at most once across all payouts for financial integrity.
+///
+/// @namespace Finance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payout_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent payout's {@link shopping_mall_payouts.id}.
+  shopping_mall_payout_id String
+  
+  /// Included ledger entry's {@link shopping_mall_seller_ledgers.id}.
+  shopping_mall_seller_ledger_id String
+  
+  /// Amount of this ledger entry settled in the payout currency.
+  amount Float
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recoverability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  payout shopping_mall_payouts @relation(fields: [shopping_mall_payout_id], references: [id], onDelete: Cascade)
+  sellerLedger shopping_mall_seller_ledgers @relation(fields: [shopping_mall_seller_ledger_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_payout_id, shopping_mall_seller_ledger_id], map: "shopping_mall_payout_items_shopping_mall_payout_id_sho_cfd03fdd")
+  @@unique([shopping_mall_seller_ledger_id])
+  @@index([shopping_mall_payout_id, created_at], map: "shopping_mall_payout_items_shopping_mall_payout_id_cre_2d91f33c")
+}
+
+/// Reserve holds applied to seller balances per policy (e.g., rolling
+/// reserves, case-specific holds). Tracks hold basis, amounts/percent,
+/// lifecycle status, and releases. May be linked to orders and releases via
+/// payouts. Association to chargebacks is maintained only via the
+/// chargebacks table referencing this reserve to avoid dual/cyclic linkage.
+///
+/// @namespace Finance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reserves {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Affected seller's {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Related order's {@link shopping_mall_orders.id} when reserve is
+  /// case-based.
+  shopping_mall_order_id String?
+  
+  /// Payout's {@link shopping_mall_payouts.id} through which the reserve was
+  /// released, if applicable.
+  released_shopping_mall_payout_id String?
+  
+  /// Type of reserve (e.g., rolling, case_hold).
+  reserve_type String
+  
+  /// Policy/configuration reference justifying this reserve.
+  policy_reference String?
+  
+  /// Human-readable reason for applying the reserve.
+  reason String?
+  
+  /// Percent of sales to hold (0–100). Used for rolling reserves.
+  hold_percent Float?
+  
+  /// Fixed amount held for the case or initial hold.
+  hold_amount Float?
+  
+  /// ISO 4217 currency for amounts tracked by this reserve.
+  currency String
+  
+  /// Lifecycle status (e.g., active, released, canceled).
+  status String
+  
+  /// When the reserve starts being applied.
+  start_at DateTime
+  
+  /// Planned or actual release time of the reserve.
+  release_at DateTime?
+  
+  /// Amount released from reserve (snapshot at release time).
+  released_amount Float?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recoverability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  releasedPayout shopping_mall_payouts? @relation(fields: [released_shopping_mall_payout_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_chargebacks shopping_mall_chargebacks[]
+  
+  @@index([shopping_mall_order_id])
+  
+  @@index([shopping_mall_seller_id, status, release_at], map: "shopping_mall_reserves_shopping_mall_seller_id_status__41bac08e")
+  @@index([released_shopping_mall_payout_id])
+}
+
+/// Fee assessments charged to sellers (e.g., platform fees, dispute fees,
+/// payout fees). Can relate to orders, captures/refunds, or be
+/// settlement-time fees. Used by finance for governance and audit, and
+/// reflected in {@link shopping_mall_seller_ledgers} entries.
+///
+/// @namespace Finance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_fees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Charged seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Related order's {@link shopping_mall_orders.id} when applicable.
+  shopping_mall_order_id String?
+  
+  /// Related payment capture's {@link shopping_mall_payment_captures.id} when
+  /// fee is capture-related.
+  shopping_mall_payment_capture_id String?
+  
+  /// Related payment refund's {@link shopping_mall_payment_refunds.id} when
+  /// fee is refund-related.
+  shopping_mall_payment_refund_id String?
+  
+  /// Related payout's {@link shopping_mall_payouts.id} when fee is assessed at
+  /// settlement.
+  shopping_mall_payout_id String?
+  
+  /// Business category of fee (e.g., platform, payment_processing, dispute,
+  /// payout).
+  fee_type String
+  
+  /// Basis for fee calculation (e.g., fixed, percentage_of_capture, per_order).
+  basis String?
+  
+  /// Percentage rate applied when basis is percent-based.
+  rate_percent Float?
+  
+  /// Assessed fee amount in currency units.
+  amount Float
+  
+  /// ISO 4217 currency code of the fee.
+  currency String
+  
+  /// Human-readable explanation of the fee assessment.
+  description String?
+  
+  /// Timestamp when the fee was assessed.
+  assessed_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recoverability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  paymentCapture shopping_mall_payment_captures? @relation(fields: [shopping_mall_payment_capture_id], references: [id], onDelete: Cascade)
+  paymentRefund shopping_mall_payment_refunds? @relation(fields: [shopping_mall_payment_refund_id], references: [id], onDelete: Cascade)
+  payout shopping_mall_payouts? @relation(fields: [shopping_mall_payout_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_payment_capture_id])
+  @@index([shopping_mall_payment_refund_id])
+  
+  @@index([shopping_mall_seller_id, assessed_at])
+  @@index([shopping_mall_payout_id, assessed_at])
+}
+
+/// Chargeback cases raised by payment providers against a captured payment.
+/// Tracks lifecycle, reasons, and amounts for reconciliation. May be
+/// associated with reserves and payouts and impacts seller ledger entries.
+///
+/// @namespace Finance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_chargebacks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Affected seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Related order's {@link shopping_mall_orders.id}. Optional if only capture
+  /// reference is known.
+  shopping_mall_order_id String?
+  
+  /// Disputed payment capture's {@link shopping_mall_payment_captures.id}.
+  shopping_mall_payment_capture_id String
+  
+  /// Related reserve's {@link shopping_mall_reserves.id} when a case hold is
+  /// applied.
+  shopping_mall_reserve_id String?
+  
+  /// Related payout's {@link shopping_mall_payouts.id} when financial impact
+  /// is settled in a payout.
+  shopping_mall_payout_id String?
+  
+  /// Payment provider's dispute/chargeback reference identifier.
+  provider_reference String
+  
+  /// Chargeback status (e.g., open, under_review, won, lost, reversed,
+  /// canceled).
+  status String
+  
+  /// Provider reason category (e.g., fraud, not_received, not_as_described).
+  reason_category String?
+  
+  /// Disputed amount.
+  amount Float
+  
+  /// ISO 4217 currency code of the disputed amount.
+  currency String
+  
+  /// Datetime when the chargeback was opened.
+  opened_at DateTime
+  
+  /// Datetime when the platform responded to the dispute.
+  responded_at DateTime?
+  
+  /// Datetime when the chargeback was closed/resolved.
+  closed_at DateTime?
+  
+  /// Internal notes for the case and evidence context.
+  notes String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recoverability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  paymentCapture shopping_mall_payment_captures @relation(fields: [shopping_mall_payment_capture_id], references: [id], onDelete: Cascade)
+  reserve shopping_mall_reserves? @relation(fields: [shopping_mall_reserve_id], references: [id], onDelete: Cascade)
+  payout shopping_mall_payouts? @relation(fields: [shopping_mall_payout_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_seller_ledgers shopping_mall_seller_ledgers[]
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_reserve_id])
+  @@index([shopping_mall_payout_id])
+  
+  @@unique([provider_reference])
+  @@index([shopping_mall_seller_id, status, opened_at], map: "shopping_mall_chargebacks_shopping_mall_seller_id_stat_ebaefc65")
+  @@index([shopping_mall_payment_capture_id, opened_at], map: "shopping_mall_chargebacks_shopping_mall_payment_captur_3999635c")
+}

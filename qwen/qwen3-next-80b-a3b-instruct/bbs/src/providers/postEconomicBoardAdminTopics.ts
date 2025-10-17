@@ -1,0 +1,38 @@
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+import { MyGlobal } from "../MyGlobal";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+import { IEconomicBoardTopic } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardTopic";
+import { AdminPayload } from "../decorators/payload/AdminPayload";
+
+export async function postEconomicBoardAdminTopics(props: {
+  admin: AdminPayload;
+  body: IEconomicBoardTopic.ICreate;
+}): Promise<IEconomicBoardTopic> {
+  const now = toISOStringSafe(new Date());
+
+  const topic = await MyGlobal.prisma.economic_board_topics.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      name: props.body.name,
+      created_at: now,
+      updated_at: now,
+      is_active: true,
+      description: props.body.description ?? undefined,
+    },
+  });
+
+  return {
+    id: topic.id,
+    name: topic.name,
+    created_at: toISOStringSafe(topic.created_at),
+    updated_at: toISOStringSafe(topic.updated_at),
+    is_active: topic.is_active,
+    description: topic.description,
+  };
+}

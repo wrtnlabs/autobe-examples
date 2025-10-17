@@ -1,0 +1,333 @@
+/// Lightweight guest identity record for unauthenticated or ephemeral
+/// visitors. Guests can browse and may file reports but cannot create
+/// persistent content. Stored to support anonymous or limited interactions
+/// and moderation traceability. Linked content references should point to
+/// specific actor tables when applicable. This table is primarily for
+/// tracking ephemeral identities and basic metadata.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional display nickname provided by the guest for ephemeral
+  /// identification in a session. Not verified.
+  nickname String?
+  
+  /// User-agent string captured at first interaction for basic device/context
+  /// information.
+  user_agent String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for the guest record.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at, nickname])
+}
+
+/// Primary persistent registered user account. Contains authentication and
+/// profile fields used throughout the platform. Supports email/password or
+/// external auth (password_hash nullable). Includes verification and lockout
+/// fields to support email verification, account lockout policies, and basic
+/// security telemetry. Uniqueness enforced on username and email.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_registereduser {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique account username used for login and display (normalized).
+  username String
+  
+  /// Verified email address for account recovery and notifications.
+  email String
+  
+  /// Password hash for local authentication. Nullable for accounts created via
+  /// external OAuth providers.
+  password_hash String?
+  
+  /// Optional display name shown publicly; may differ from username.
+  display_name String?
+  
+  /// Optional short biography or profile description.
+  bio String?
+  
+  /// URI to user's avatar image (may be proxied via CDN).
+  avatar_uri String?
+  
+  /// Flag indicating whether the account is currently banned.
+  is_banned Boolean
+  
+  /// Optional suspension expiry timestamp when temporarily banned.
+  banned_until DateTime?
+  
+  /// Whether the account's email has been verified (true) or not (false).
+  email_verified Boolean
+  
+  /// Timestamp when the account's email was verified; null if not verified.
+  verified_at DateTime?
+  
+  /// Rolling counter of recent failed login attempts used to enforce temporary
+  /// lockouts.
+  failed_login_attempts Int
+  
+  /// If present, authentication is blocked until this timestamp as part of
+  /// lockout policy.
+  locked_until DateTime?
+  
+  /// Most recent successful login timestamp for security analytics.
+  last_login_at DateTime?
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Last profile update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for account deletion requests or anonymization.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  econ_political_forum_moderator econ_political_forum_moderator?
+  econ_political_forum_administrator econ_political_forum_administrator?
+  econ_political_forum_sessions econ_political_forum_sessions[]
+  econ_political_forum_password_resets econ_political_forum_password_resets[]
+  econ_political_forum_threads econ_political_forum_threads[]
+  econ_political_forum_posts econ_political_forum_posts[]
+  econ_political_forum_post_revisions econ_political_forum_post_revisions[]
+  econ_political_forum_votes econ_political_forum_votes[]
+  econ_political_forum_bookmarks econ_political_forum_bookmarks[]
+  econ_political_forum_thread_follows econ_political_forum_thread_follows[]
+  econ_political_forum_reports econ_political_forum_reports[]
+  econ_political_forum_notifications_of_registereduser_id econ_political_forum_notifications[] @relation("econ_political_forum_notifications_of_registereduser_id")
+  econ_political_forum_notifications_of_actor_registereduser_id econ_political_forum_notifications[] @relation("econ_political_forum_notifications_of_actor_registereduser_id")
+  econ_political_forum_notification_preferences econ_political_forum_notification_preferences?
+  econ_political_forum_audit_logs econ_political_forum_audit_logs[]
+  econ_political_forum_legal_holds econ_political_forum_legal_holds[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at, username])
+  @@index([display_name, updated_at])
+  @@index([failed_login_attempts, locked_until], map: "econ_political_forum_registereduser_failed_login_attem_b02c5ec3")
+}
+
+/// Moderator role record linking back to a registered user. Stores
+/// moderator-specific metadata such as assignment, active status, and
+/// moderation scope. The registereduser_id is unique enforcing a 1:1
+/// relationship between a moderator record and the registered user identity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_moderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Linked registered user identity. {@link
+  /// econ_political_forum_registereduser.id}.
+  registereduser_id String
+  
+  /// Whether the moderator is active and assigned to triage duties.
+  is_active Boolean
+  
+  /// Timestamp when moderator privileges were granted or assigned.
+  assigned_at DateTime?
+  
+  /// Optional notes describing moderator scope or jurisdiction (e.g.,
+  /// categories assigned).
+  scope_notes String?
+  
+  /// Moderator record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for moderator metadata.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp if moderator privileges are revoked and record
+  /// retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registereduser econ_political_forum_registereduser @relation(fields: [registereduser_id], references: [id], onDelete: Cascade)
+  
+  econ_political_forum_reports econ_political_forum_reports[]
+  econ_political_forum_moderation_logs econ_political_forum_moderation_logs[]
+  econ_political_forum_moderation_cases econ_political_forum_moderation_cases[]
+  econ_political_forum_audit_logs econ_political_forum_audit_logs[]
+  
+  @@unique([registereduser_id])
+  @@index([is_active, assigned_at])
+}
+
+/// Administrator role record linking to a registered user. Stores
+/// admin-specific metadata and flags for global privileges. This enforces a
+/// 1:1 mapping to a registered user to centralize identity while separating
+/// admin attributes and auditability.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_administrator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Linked registered user identity. {@link
+  /// econ_political_forum_registereduser.id}.
+  registereduser_id String
+  
+  /// Flag indicating whether the administrator has full (super) privileges.
+  is_super Boolean
+  
+  /// Optional administrative notes for audit or delegation purposes.
+  notes String?
+  
+  /// Administrator record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for admin metadata.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp used when admin privileges are revoked while
+  /// preserving audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registereduser econ_political_forum_registereduser @relation(fields: [registereduser_id], references: [id], onDelete: Cascade)
+  
+  econ_political_forum_moderation_logs econ_political_forum_moderation_logs[]
+  econ_political_forum_moderation_cases econ_political_forum_moderation_cases[]
+  
+  @@unique([registereduser_id])
+  @@index([is_super, created_at])
+}
+
+/// Session records for registered users. Stores session tokens, expiration,
+/// client metadata, and last activity to enable session revocation and
+/// rotation. This is a subsidiary table managed through the registered user
+/// lifecycle APIs and is not a primary business entity by itself.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning registered user. {@link econ_political_forum_registereduser.id}.
+  registereduser_id String
+  
+  /// Opaque session token or token identifier used for session validation.
+  /// Should be unique per active session.
+  session_token String
+  
+  /// Hash of refresh token for rotation and verification; storing hash
+  /// improves security.
+  refresh_token_hash String?
+  
+  /// IP address observed at session creation for risk analysis and security
+  /// logs.
+  ip_address String?
+  
+  /// User agent string captured at session creation.
+  user_agent String?
+  
+  /// Timestamp of the last observed activity for the session.
+  last_active_at DateTime?
+  
+  /// Session expiry timestamp.
+  expires_at DateTime
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for session record.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for revoked sessions retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registereduser econ_political_forum_registereduser @relation(fields: [registereduser_id], references: [id], onDelete: Cascade)
+  
+  @@unique([session_token])
+  @@index([registereduser_id, created_at])
+  @@index([expires_at, last_active_at])
+}
+
+/// Password reset requests for registered users. Stores a single-use reset
+/// token (or its hash), expiry, usage flag, and timestamps. This is a
+/// subsidiary table used by account recovery flows and is managed through
+/// registered user lifecycle operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_political_forum_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target registered user for the password reset request. {@link
+  /// econ_political_forum_registereduser.id}.
+  registereduser_id String
+  
+  /// Hash of the single-use reset token. Storing a hash avoids storing
+  /// plaintext tokens.
+  reset_token_hash String
+  
+  /// Expiry timestamp for the reset token.
+  expires_at DateTime
+  
+  /// Flag indicating whether the reset token has been consumed.
+  used Boolean
+  
+  /// Timestamp when the token was consumed, if applicable.
+  used_at DateTime?
+  
+  /// Creation timestamp for the password reset request.
+  created_at DateTime
+  
+  /// Soft-delete timestamp for expired or revoked reset requests kept for
+  /// audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registereduser econ_political_forum_registereduser @relation(fields: [registereduser_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reset_token_hash])
+  @@index([registereduser_id, created_at], map: "econ_political_forum_password_resets_registereduser_id_8a44b135")
+}

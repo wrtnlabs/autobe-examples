@@ -1,0 +1,550 @@
+/// Core user account records representing authenticated members of the
+/// platform. Stores essential authentication credentials, account status,
+/// and creation metadata. Each user is the foundation for all platform
+/// activities including posting, commenting, voting, and community
+/// participation. This is the primary identity entity from which all other
+/// user-related records reference.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address used for account login and communication. Must be in
+  /// valid RFC 5322 format and unique across the platform. This is the primary
+  /// authentication identifier.
+  email String
+  
+  /// Bcrypt-hashed password with salt rounds of 10 minimum. Never stores plain
+  /// text password. Used for authentication during login.
+  password_hash String
+  
+  /// Unique display name for the user (3-32 characters, alphanumeric with
+  /// underscore/hyphen). Used in @mentions and user profiles. Case-insensitive
+  /// uniqueness constraint enforced.
+  username String
+  
+  /// Current status of the account. Valid values: 'active' (normal state),
+  /// 'suspended' (temporarily restricted by moderation), 'banned' (permanently
+  /// restricted), 'deleted' (user-requested deletion). Determines login and
+  /// posting eligibility.
+  account_status String
+  
+  /// Whether user has completed email verification. Required to be true before
+  /// accessing full posting/voting features. Users can still view content
+  /// while email_verified is false.
+  email_verified Boolean
+  
+  /// Timestamp when user completed email verification (UTC ISO 8601 format).
+  /// Null if email not yet verified. Used for audit trail and verification
+  /// tracking.
+  email_verified_at DateTime?
+  
+  /// Account creation timestamp in UTC ISO 8601 format. Immutable after
+  /// creation. Used for account age calculations and activity history.
+  created_at DateTime
+  
+  /// Last modification timestamp in UTC ISO 8601 format. Updated whenever any
+  /// user record is modified. Used for audit trail tracking.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when user account was marked for deletion. Null if
+  /// account is active or non-deleted. Enables account recovery within grace
+  /// period (30 days).
+  deleted_at DateTime?
+  
+  /// Timestamp of the user's most recent successful login. Null if user has
+  /// never logged in. Used to track activity and identify stale accounts.
+  last_login_at DateTime?
+  
+  /// Counter of consecutive failed login attempts (resets to 0 after
+  /// successful login). Used for account lockout after 5 failed attempts in 15
+  /// minutes.
+  failed_login_attempts Int
+  
+  /// Timestamp when account lockout expires (resets to null when user logs in
+  /// successfully or lockout period expires). Prevents login attempts during
+  /// lockout window.
+  locked_until DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_user_emails community_platform_user_emails[]
+  community_platform_user_sessions community_platform_user_sessions[]
+  community_platform_user_profiles community_platform_user_profiles?
+  community_platform_user_karma community_platform_user_karma?
+  community_platform_user_reputation_levels community_platform_user_reputation_levels?
+  community_platform_user_badges community_platform_user_badges[]
+  community_platform_user_activity_history community_platform_user_activity_history[]
+  community_platform_communities community_platform_communities[]
+  community_platform_moderators community_platform_moderators[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_community_members community_platform_community_members[]
+  community_platform_community_blocks_of_community_platf_416743f6 community_platform_community_blocks[] @relation("community_platform_community_blocks_of_community_platf_416743f6")
+  community_platform_community_blocks_of_community_platf_116dadc7 community_platform_community_blocks[] @relation("community_platform_community_blocks_of_community_platf_116dadc7")
+  community_platform_join_requests_of_community_platform_user_id community_platform_join_requests[] @relation("community_platform_join_requests_of_community_platform_user_id")
+  community_platform_join_requests_of_reviewed_by_user_id community_platform_join_requests[] @relation("community_platform_join_requests_of_reviewed_by_user_id")
+  community_platform_posts community_platform_posts[]
+  community_platform_comments community_platform_comments[]
+  community_platform_content_views community_platform_content_views[]
+  community_platform_votes community_platform_votes[]
+  community_platform_karma_ledger community_platform_karma_ledger[]
+  community_platform_karma_snapshots community_platform_karma_snapshots[]
+  community_platform_user_follows_of_follower_id community_platform_user_follows[] @relation("community_platform_user_follows_of_follower_id")
+  community_platform_user_follows_of_following_id community_platform_user_follows[] @relation("community_platform_user_follows_of_following_id")
+  community_platform_user_blocks_of_blocker_id community_platform_user_blocks[] @relation("community_platform_user_blocks_of_blocker_id")
+  community_platform_user_blocks_of_blocked_id community_platform_user_blocks[] @relation("community_platform_user_blocks_of_blocked_id")
+  community_platform_mentions_of_mentioned_user_id community_platform_mentions[] @relation("community_platform_mentions_of_mentioned_user_id")
+  community_platform_mentions_of_mentioning_user_id community_platform_mentions[] @relation("community_platform_mentions_of_mentioning_user_id")
+  community_platform_notifications_of_recipient_id community_platform_notifications[] @relation("community_platform_notifications_of_recipient_id")
+  community_platform_notifications_of_trigger_user_id community_platform_notifications[] @relation("community_platform_notifications_of_trigger_user_id")
+  community_platform_notification_preferences community_platform_notification_preferences?
+  community_platform_reports community_platform_reports[]
+  community_platform_moderation_actions_of_moderator_id community_platform_moderation_actions[] @relation("community_platform_moderation_actions_of_moderator_id")
+  community_platform_moderation_actions_of_affected_user_id community_platform_moderation_actions[] @relation("community_platform_moderation_actions_of_affected_user_id")
+  community_platform_content_removals community_platform_content_removals[]
+  community_platform_user_warnings_of_user_id community_platform_user_warnings[] @relation("community_platform_user_warnings_of_user_id")
+  community_platform_user_warnings_of_moderator_id community_platform_user_warnings[] @relation("community_platform_user_warnings_of_moderator_id")
+  community_platform_moderation_appeals_of_appellant_id community_platform_moderation_appeals[] @relation("community_platform_moderation_appeals_of_appellant_id")
+  community_platform_moderation_appeals_of_appeal_reviewer_id community_platform_moderation_appeals[] @relation("community_platform_moderation_appeals_of_appeal_reviewer_id")
+  community_platform_moderation_audit_log community_platform_moderation_audit_log[]
+  community_platform_user_statistics community_platform_user_statistics?
+  community_platform_activity_timeline_of_community_plat_1638122b community_platform_activity_timeline[] @relation("community_platform_activity_timeline_of_community_plat_1638122b")
+  community_platform_activity_timeline_of_related_user_id community_platform_activity_timeline[] @relation("community_platform_activity_timeline_of_related_user_id")
+  community_platform_user_engagement_events community_platform_user_engagement_events[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+  @@index([account_status])
+  @@index([deleted_at])
+}
+
+/// Email address records for users supporting email verification and
+/// communication tracking. Stores verification tokens and status for email
+/// confirmation workflow. Each user can have multiple email records for
+/// managing email changes and verification history.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_emails {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user this email belongs to. {@link
+  /// community_platform_users.id}
+  user_id String
+  
+  /// Email address being verified. Must be in valid RFC 5322 format. Stored
+  /// for tracking multiple email addresses per user.
+  email String
+  
+  /// Whether this email address has been verified by the user clicking
+  /// verification link. False until user confirms ownership.
+  verified Boolean
+  
+  /// SHA-256 hash of the verification token (never stores raw token). Used to
+  /// validate verification link clicks. Null after email is verified.
+  verification_token_hash String?
+  
+  /// Timestamp when verification token expires (24 hours after generation).
+  /// Null if email already verified. Prevents use of expired tokens.
+  verification_token_expires_at DateTime?
+  
+  /// Timestamp when email verification was completed (user clicked
+  /// verification link). Null until verified. Used for audit trail.
+  verified_at DateTime?
+  
+  /// Whether this is the primary email for the user account. Only one email
+  /// per user should have is_primary=true. Used for login and communication.
+  is_primary Boolean
+  
+  /// Timestamp when email record was created in UTC ISO 8601 format. Used for
+  /// tracking email history.
+  created_at DateTime
+  
+  /// Last modification timestamp in UTC ISO 8601 format. Updated when
+  /// verification status changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([email])
+  @@index([user_id])
+  @@index([verified])
+}
+
+/// User session records tracking active login sessions and authentication
+/// tokens. Each session represents one login instance across devices. Used
+/// for session management, logout, and detecting concurrent logins. Sessions
+/// expire automatically after 30 days of inactivity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the authenticated user. {@link community_platform_users.id}
+  user_id String
+  
+  /// Current session status. Valid values: 'active' (session is valid and can
+  /// be used), 'terminated' (user logged out), 'expired' (session timeout
+  /// after 30 days). Determines whether session can be used.
+  status String
+  
+  /// SHA-256 hash of the refresh token (never stores raw token). Used to
+  /// validate refresh token claims and prevent token reuse.
+  refresh_token_hash String
+  
+  /// IP address from which session was created. Stored for security audit
+  /// trail and fraud detection. Used to identify suspicious access patterns.
+  ip_address String?
+  
+  /// User-Agent header from the login request. Identifies browser/device used
+  /// for login. Stored for security tracking and device identification.
+  user_agent String?
+  
+  /// Timestamp when session was created (login occurred) in UTC ISO 8601
+  /// format. Used for session age calculation.
+  created_at DateTime
+  
+  /// Timestamp when session will automatically expire (30 days after
+  /// creation). Sessions are automatically invalidated at this time. Used for
+  /// session timeout enforcement.
+  expires_at DateTime
+  
+  /// Timestamp of the last user activity in this session. Updated on each
+  /// request. Used to detect idle sessions and calculate inactivity duration.
+  last_activity_at DateTime
+  
+  /// Timestamp when session was explicitly terminated by user logout or admin
+  /// action. Null while session is active. Enables session termination
+  /// tracking.
+  terminated_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([status])
+  @@index([expires_at])
+}
+
+/// Extended user profile information including display name, biography,
+/// avatar, and preference settings. Each user has one profile record
+/// containing personalization data and account preferences. This is the main
+/// profile entity that displays on user profile pages and in user info cards
+/// throughout the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user account. {@link community_platform_users.id}
+  user_id String
+  
+  /// User's preferred display name (0-50 characters). Can differ from username
+  /// and may contain spaces/punctuation. Shown on profile and posts. Optional
+  /// field defaults to username if not set.
+  display_name String?
+  
+  /// User's biography or about section (0-500 characters). Markdown formatting
+  /// supported. Displayed on user profile. Optional self-description field.
+  bio String?
+  
+  /// URL to user's profile avatar image. Stored as URI. Null if no avatar
+  /// uploaded (shows default placeholder). Image should be 200x200 pixels for
+  /// optimal display.
+  avatar_url String?
+  
+  /// URL to small thumbnail version of avatar (50x50 pixels) for efficient
+  /// loading in lists and comments. Null if no avatar. Generated automatically
+  /// from uploaded avatar.
+  avatar_thumbnail_url String?
+  
+  /// Optional personal/professional website URL. Stored as URI and displayed
+  /// as clickable link on profile. User-provided, must start with http:// or
+  /// https://.
+  website_url String?
+  
+  /// User's location as free text (0-100 characters). Optional field for
+  /// geographic identification. May contain city, region, or country
+  /// information.
+  location String?
+  
+  /// Profile visibility setting. Valid values: 'public' (visible to all
+  /// users), 'members_only' (visible to registered members only), 'private'
+  /// (visible only to self and admins). Controls who can view profile
+  /// information.
+  profile_visibility String
+  
+  /// Timestamp when profile record was created in UTC ISO 8601 format. Usually
+  /// same as user creation time.
+  created_at DateTime
+  
+  /// Last modification timestamp in UTC ISO 8601 format. Updated whenever
+  /// profile information changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([created_at])
+}
+
+/// User karma tracking and calculation records. Stores cumulative karma
+/// scores, breakdown by posts vs comments, and historical karma changes.
+/// Karma represents community-assigned reputation reflecting content
+/// quality. This is the core reputation metric determining user status and
+/// privileges on the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user earning karma. {@link community_platform_users.id}
+  user_id String
+  
+  /// Total cumulative karma points earned by user (can be negative).
+  /// Calculated as sum of all post karma and comment karma. Updated in
+  /// real-time as votes arrive. No upper or lower limit.
+  total_karma Int
+  
+  /// Cumulative karma earned from posts only. Calculated as sum of (upvotes -
+  /// downvotes) on all user's posts. Updated when post votes change.
+  post_karma Int
+  
+  /// Cumulative karma earned from comments only. Calculated as sum of (upvotes
+  /// - downvotes) on all user's comments. Updated when comment votes change.
+  comment_karma Int
+  
+  /// Karma earned in the current calendar month (rolling monthly total). Reset
+  /// to zero on first day of each month. Trend metric for activity tracking.
+  karma_this_month Int
+  
+  /// Karma earned in the current calendar year (rolling yearly total). Reset
+  /// to zero on January 1st. Long-term activity metric.
+  karma_this_year Int
+  
+  /// Timestamp when karma totals were last recalculated in UTC ISO 8601
+  /// format. Used to identify when karma calculations should be refreshed.
+  karma_last_updated_at DateTime
+  
+  /// Timestamp when karma record was created (same as user creation) in UTC
+  /// ISO 8601 format.
+  created_at DateTime
+  
+  /// Last modification timestamp in UTC ISO 8601 format. Updated when karma
+  /// values change.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([total_karma])
+  @@index([karma_this_month])
+}
+
+/// User reputation level tiers based on karma achievements. Tracks which
+/// reputation level badge the user has earned based on cumulative karma.
+/// Reputation levels provide recognition and visual status on profiles and
+/// posts. This is a denormalized view calculated from karma scores for
+/// display efficiency.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_reputation_levels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user with this reputation level. {@link
+  /// community_platform_users.id}
+  user_id String
+  
+  /// Current reputation level badge earned by user. Valid values: 'newcomer'
+  /// (1-99 karma), 'contributor' (100-499), 'active_member' (500-2499),
+  /// 'community_leader' (2500-9999), 'respected_elder' (10000-49999), 'legend'
+  /// (50000+). Automatically assigned based on total_karma.
+  current_level String
+  
+  /// Timestamp when user first achieved current reputation level. Used to
+  /// track when level was reached and for achievement notifications.
+  level_achieved_at DateTime
+  
+  /// Previous reputation level before current. Null if this is first level
+  /// achieved. Used to detect level progression and send achievement
+  /// notifications.
+  previous_level String?
+  
+  /// Percentage progress toward next reputation level (0-100). Calculated as
+  /// (current_karma - level_floor) / (level_ceiling - level_floor) * 100. Used
+  /// for progress bars on profile.
+  level_progress_percentage Float
+  
+  /// Timestamp when reputation level record was created in UTC ISO 8601 format.
+  created_at DateTime
+  
+  /// Last modification timestamp in UTC ISO 8601 format. Updated when karma
+  /// changes cause level changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([current_level])
+}
+
+/// Achievement badges earned by users for specific accomplishments. Users
+/// can earn multiple badges for milestones like first post, high engagement,
+/// moderator status, or expert contributions. Badges are displayed on user
+/// profiles and posts for recognition. This tracks earned achievements
+/// beyond reputation levels.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_badges {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who earned this badge. {@link
+  /// community_platform_users.id}
+  user_id String
+  
+  /// Type/name of the badge earned. Valid values: 'verified_email',
+  /// 'first_post', 'commenter', 'post_master', 'discussion_star',
+  /// 'content_creator', 'decade_member', 'helpful', 'moderator', 'admin'.
+  /// Identifies which achievement was earned.
+  badge_type String
+  
+  /// Human-readable display name for badge (e.g., 'Verified Contributor',
+  /// 'Post Master'). Shown to users on profiles and in achievement lists.
+  badge_name String
+  
+  /// Description of what the badge represents and how to earn it (0-200
+  /// characters). Displayed in tooltip/hover information.
+  badge_description String?
+  
+  /// URL to badge icon/image. Displayed next to badge name on profiles and
+  /// posts. Standard size 32x32 pixels.
+  badge_icon_url String?
+  
+  /// Timestamp when user earned this badge in UTC ISO 8601 format. Used to
+  /// display achievement date and ordering on profiles.
+  earned_at DateTime
+  
+  /// Timestamp when badge record was created in UTC ISO 8601 format.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, badge_type])
+  @@index([user_id])
+  @@index([badge_type])
+}
+
+/// Complete audit trail of user actions on the platform. Records all user
+/// activities including posts created, comments posted, votes cast,
+/// communities joined, etc. This is a comprehensive activity log for user
+/// statistics, timeline generation, and behavior analysis. Used to generate
+/// user profile activity feeds and engagement metrics.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_activity_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user performing the activity. {@link
+  /// community_platform_users.id}
+  user_id String
+  
+  /// Type of activity performed. Valid values: 'post_created',
+  /// 'comment_posted', 'vote_cast', 'community_subscribed', 'user_followed',
+  /// 'content_reported', 'account_login', 'password_changed', 'email_changed',
+  /// 'profile_updated'. Categorizes the activity.
+  activity_type String
+  
+  /// Type of content involved in activity (if applicable). Valid values:
+  /// 'post', 'comment', 'community', 'user', 'vote', null. Null for
+  /// non-content activities like login. Identifies what was acted upon.
+  content_type String?
+  
+  /// ID of the content involved in the activity (if applicable). Null for
+  /// activities not involving specific content. Used to link activity to
+  /// actual content for context.
+  content_id String?
+  
+  /// ID of the community context for the activity (if applicable). Null for
+  /// non-community activities. Used to group activities by community.
+  community_id String?
+  
+  /// Additional JSON details about the activity. Examples: vote type
+  /// (upvote/downvote), old/new values, action details. Stores structured
+  /// activity metadata.
+  details String?
+  
+  /// IP address from which activity originated. Stored for security audit
+  /// trail and fraud detection.
+  ip_address String?
+  
+  /// Timestamp when activity occurred in UTC ISO 8601 format. Used for
+  /// chronological ordering of activity timeline.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+  @@index([activity_type])
+  @@index([community_id])
+}

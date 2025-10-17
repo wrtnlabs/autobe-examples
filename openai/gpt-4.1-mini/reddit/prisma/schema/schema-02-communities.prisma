@@ -1,0 +1,40 @@
+/// Community entities representing user-created communities. Each community
+/// has a unique name, description, creator reference (via other domain
+/// tables), and timestamps. Supports soft delete. Serves as the primary
+/// domain for community management.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique community name adhering to naming rules (3-50
+  /// alphanumeric/underscore characters).
+  name String
+  
+  /// Optional community description text.
+  description String?
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_community_moderators reddit_community_community_moderators[]
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_community_subscriptions reddit_community_community_subscriptions[]
+  
+  @@unique([name])
+  @@index([created_at])
+}

@@ -1,0 +1,414 @@
+/// Master record for platform promotions/discount programs. Managed by
+/// operations/admins and referenced during cart recalculation and checkout.
+/// Promotions define discount characteristics (percentage/fixed), lifecycle
+/// windows, exclusivity/stacking, and redemption limits. Related
+/// eligibility/benefit constraints are modeled in {@link
+/// shopping_mall_promotion_rules}. Applications on carts/orders are recorded
+/// in {@link shopping_mall_promotion_applications}.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable promotion name used in admin tools and reporting.
+  name String
+  
+  /// Optional long-form description and business notes for operators.
+  description String?
+  
+  /// Lifecycle status (e.g., draft, active, paused, expired, archived). Used
+  /// for governance and visibility control.
+  status String
+  
+  /// Business priority used in conflict resolution when multiple promotions
+  /// are eligible. Higher number = higher priority.
+  priority Int
+  
+  /// Whether this promotion is exclusive (non-stackable) with other
+  /// promotions/coupons.
+  exclusive Boolean
+  
+  /// Whether the promotion auto-applies when eligible (no code required).
+  auto_apply Boolean
+  
+  /// Promo discount type, such as percentage, fixed_amount, shipping_free, or
+  /// other configured types.
+  discount_type String
+  
+  /// Percentage value when discount_type is percentage. Null when not
+  /// applicable.
+  discount_percentage Float?
+  
+  /// Fixed discount amount when discount_type is fixed_amount. Null when not
+  /// applicable.
+  discount_amount Float?
+  
+  /// ISO 4217 currency code for fixed amount promotions, when applicable.
+  currency String?
+  
+  /// UTC start time when the promotion becomes eligible.
+  starts_at DateTime
+  
+  /// UTC end time when the promotion expires. Null for open-ended.
+  ends_at DateTime?
+  
+  /// Optional cap for total redemptions across all customers.
+  max_redemptions_total Int?
+  
+  /// Optional cap for redemptions per individual customer.
+  max_redemptions_per_customer Int?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for recoverability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_promotion_rules shopping_mall_promotion_rules[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_promotion_applications shopping_mall_promotion_applications[]
+  
+  @@index([status, starts_at])
+  @@index([starts_at])
+  @@index([ends_at])
+}
+
+/// Rule records that define eligibility filters and benefit scoping for a
+/// {@link shopping_mall_promotions}. Each row expresses a normalized
+/// condition (attribute/operator/value) and optional targeting to catalog
+/// entities (category/product/SKU) or seller. Keeps promo core in 3NF and
+/// enables granular audit of what made a cart/order eligible.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotion_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged promotion's {@link shopping_mall_promotions.id}
+  shopping_mall_promotion_id String
+  
+  /// Optional category scoping. Target model's {@link
+  /// shopping_mall_categories.id}
+  shopping_mall_category_id String?
+  
+  /// Optional product scoping. Target model's {@link shopping_mall_products.id}
+  shopping_mall_product_id String?
+  
+  /// Optional SKU scoping. Target model's {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String?
+  
+  /// Optional seller scoping. Target model's {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// Type of rule (e.g., eligibility, benefit_scope).
+  rule_type String
+  
+  /// Attribute key this rule evaluates (e.g., order_subtotal, category,
+  /// product, sku, customer_segment).
+  attribute String
+  
+  /// Comparison operator (e.g., eq, neq, gte, lte, in).
+  operator String
+  
+  /// String value for the comparison when applicable (e.g., customer segment).
+  value_string String?
+  
+  /// Integer value for the comparison when applicable (e.g., min quantity).
+  value_int Int?
+  
+  /// Double value for the comparison when applicable (e.g., min subtotal).
+  value_double Float?
+  
+  /// Optional minimum order/item subtotal condition used by certain rules.
+  min_subtotal Float?
+  
+  /// Optional minimum quantity condition used by certain rules.
+  min_quantity Int?
+  
+  /// Optional business segment label for eligibility targeting.
+  customer_segment String?
+  
+  /// Whether eligibility requires a new customer.
+  new_customer_only Boolean?
+  
+  /// Whether eligibility requires the customer's first order.
+  first_order_only Boolean?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for rules management.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories? @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus? @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_seller_id])
+  
+  @@index([shopping_mall_promotion_id, attribute], map: "shopping_mall_promotion_rules_shopping_mall_promotion__930d5ffc")
+  @@index([shopping_mall_category_id, shopping_mall_promotion_id], map: "shopping_mall_promotion_rules_shopping_mall_category_i_87914c42")
+  @@index([shopping_mall_product_id, shopping_mall_promotion_id], map: "shopping_mall_promotion_rules_shopping_mall_product_id_2c8ac279")
+  @@index([shopping_mall_sku_id, shopping_mall_promotion_id], map: "shopping_mall_promotion_rules_shopping_mall_sku_id_sho_e672fbec")
+}
+
+/// Coupon definitions, optionally linked to a {@link
+/// shopping_mall_promotions}. Each coupon carries a unique code and
+/// lifecycle, with optional assignment to a specific customer. Redemptions
+/// are logged in {@link shopping_mall_coupon_redemptions} and concrete
+/// order/cart applications in {@link shopping_mall_promotion_applications}.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional linked promotion's {@link shopping_mall_promotions.id}
+  /// (benefits/eligibility).
+  shopping_mall_promotion_id String?
+  
+  /// Optional assigned customer's {@link shopping_mall_customer.id} for
+  /// targeted issuance.
+  shopping_mall_customer_id String?
+  
+  /// Unique coupon code (case-insensitive semantics handled at application
+  /// layer).
+  code String
+  
+  /// Lifecycle status (e.g., draft, active, paused, expired, archived).
+  status String
+  
+  /// UTC time the coupon was issued or created.
+  issued_at DateTime
+  
+  /// UTC expiration time if any.
+  expires_at DateTime?
+  
+  /// Optional cap for the total number of redemptions for this coupon.
+  max_redemptions_total Int?
+  
+  /// Optional cap for redemptions per customer for this coupon.
+  max_redemptions_per_customer Int?
+  
+  /// Whether this coupon may be redeemed only once in its lifetime.
+  single_use Boolean
+  
+  /// Whether this coupon can be applied only once per order.
+  one_per_order Boolean
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for recoverability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions? @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coupon_redemptions shopping_mall_coupon_redemptions[]
+  shopping_mall_promotion_applications shopping_mall_promotion_applications[]
+  shopping_mall_cart_coupons shopping_mall_cart_coupons[]
+  
+  @@index([shopping_mall_customer_id])
+  
+  @@unique([code])
+  @@index([shopping_mall_promotion_id, status])
+  @@index([expires_at])
+}
+
+/// Immutable log of coupon redemption attempts/outcomes. Links a coupon to a
+/// cart/order context and optionally a customer. Guards against duplicates
+/// with composite unique constraints and supports refund reconciliation
+/// through applied amounts and timestamps.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupon_redemptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Redeemed coupon's {@link shopping_mall_coupons.id}
+  shopping_mall_coupon_id String
+  
+  /// Optional actor customer's {@link shopping_mall_customer.id}
+  shopping_mall_customer_id String?
+  
+  /// Optional associated order's {@link shopping_mall_orders.id} once placed.
+  shopping_mall_order_id String?
+  
+  /// Optional associated cart's {@link shopping_mall_carts.id} for pre-order
+  /// redemptions.
+  shopping_mall_cart_id String?
+  
+  /// UTC timestamp when redemption was processed.
+  redeemed_at DateTime
+  
+  /// Amount applied from the coupon at redemption time, if applicable.
+  amount_applied Float?
+  
+  /// ISO 4217 currency code of the applied amount when applicable.
+  currency String?
+  
+  /// Outcome of the redemption (e.g., approved, rejected, revoked).
+  status String
+  
+  /// UTC timestamp when redemption was revoked (if revoked).
+  revoked_at DateTime?
+  
+  /// Human-readable reason category/details for rejection or revocation when
+  /// applicable.
+  reason String?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp (rarely used; kept for administrative corrections).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  coupon shopping_mall_coupons @relation(fields: [shopping_mall_coupon_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  cart shopping_mall_carts? @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_cart_id])
+  
+  @@unique([shopping_mall_coupon_id, shopping_mall_order_id], map: "shopping_mall_coupon_redemptions_shopping_mall_coupon__a3e47612")
+  @@unique([shopping_mall_coupon_id, shopping_mall_cart_id], map: "shopping_mall_coupon_redemptions_shopping_mall_coupon__317b7755")
+  @@index([shopping_mall_coupon_id, redeemed_at], map: "shopping_mall_coupon_redemptions_shopping_mall_coupon__c2a3e4e3")
+  @@index([shopping_mall_customer_id, redeemed_at], map: "shopping_mall_coupon_redemptions_shopping_mall_custome_b8c3aa86")
+  @@index([status, redeemed_at])
+}
+
+/// Immutable records of concrete promotion application instances on carts,
+/// orders, or specific line items. Used for audit, analytics, and refund
+/// pro‑rata logic. May reference a {@link shopping_mall_coupons} when the
+/// promotion was code-triggered.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotion_applications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Applied promotion's {@link shopping_mall_promotions.id}
+  shopping_mall_promotion_id String
+  
+  /// Optional coupon that triggered the promotion. {@link
+  /// shopping_mall_coupons.id}
+  shopping_mall_coupon_id String?
+  
+  /// Optional cart context. {@link shopping_mall_carts.id}
+  shopping_mall_cart_id String?
+  
+  /// Optional order context. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String?
+  
+  /// Optional line-level order context. {@link shopping_mall_order_items.id}
+  shopping_mall_order_item_id String?
+  
+  /// Optional line-level cart context. {@link shopping_mall_cart_items.id}
+  shopping_mall_cart_item_id String?
+  
+  /// Optional seller context where benefits are constrained to a seller.
+  /// {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// UTC timestamp when the application occurred.
+  applied_at DateTime
+  
+  /// Application scope (e.g., order, order_item, shipping).
+  scope String
+  
+  /// Discount amount applied for this instance. For percentage discounts, this
+  /// is the computed value at time of application.
+  amount_applied Float?
+  
+  /// ISO 4217 currency code of the applied amount where applicable.
+  currency String?
+  
+  /// Optional reason or note describing why/how this promotion was applied.
+  reason String?
+  
+  /// UTC timestamp if this application was reversed (e.g., upon return/refund).
+  reversed_at DateTime?
+  
+  /// Idempotency key to deduplicate and ensure at-most-once recording of a
+  /// promotion application event across retries.
+  idempotency_key String?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for administrative corrections.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  coupon shopping_mall_coupons? @relation(fields: [shopping_mall_coupon_id], references: [id], onDelete: Cascade)
+  cart shopping_mall_carts? @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  cartItem shopping_mall_cart_items? @relation(fields: [shopping_mall_cart_item_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id], map: "shopping_mall_promotion_applications_shopping_mall_ord_2bd71143")
+  @@index([shopping_mall_order_item_id], map: "shopping_mall_promotion_applications_shopping_mall_ord_6a337273")
+  @@index([shopping_mall_cart_item_id], map: "shopping_mall_promotion_applications_shopping_mall_car_db14d5fd")
+  @@index([shopping_mall_seller_id], map: "shopping_mall_promotion_applications_shopping_mall_sel_84976b67")
+  
+  @@unique([idempotency_key])
+  @@index([shopping_mall_promotion_id, shopping_mall_order_id, applied_at], map: "shopping_mall_promotion_applications_shopping_mall_pro_d8dee127")
+  @@index([shopping_mall_coupon_id, applied_at], map: "shopping_mall_promotion_applications_shopping_mall_cou_64fdfba2")
+  @@index([shopping_mall_cart_id, applied_at], map: "shopping_mall_promotion_applications_shopping_mall_car_6ecb1df2")
+}

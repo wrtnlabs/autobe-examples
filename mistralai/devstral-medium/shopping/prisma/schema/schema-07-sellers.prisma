@@ -1,0 +1,165 @@
+/// Products managed by sellers, including product details and
+/// seller-specific information. This table represents the products that
+/// sellers offer on the platform, with a relationship to the main products
+/// table.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_seller_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller who owns this product. {@link
+  /// shopping_sellers.id}.
+  shopping_seller_id String
+  
+  /// Reference to the main product in the catalog. {@link
+  /// shopping_products.id}.
+  shopping_product_id String
+  
+  /// Seller-specific product code for internal management.
+  seller_product_code String
+  
+  /// Seller's price for the product.
+  price Float
+  
+  /// Current available quantity for this product.
+  quantity_available Int
+  
+  /// Status of the product (e.g., active, draft, archived).
+  status String
+  
+  /// Business-specific status for workflow management.
+  business_status String?
+  
+  /// Timestamp when the seller product was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller product was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the seller product was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_seller_inventory shopping_seller_inventory[]
+  
+  @@index([shopping_product_id])
+  
+  @@unique([shopping_seller_id, seller_product_code], map: "shopping_seller_products_shopping_seller_id_seller_pro_4cbbccb3")
+  @@index([created_at])
+  @@index([status])
+}
+
+/// Inventory tracking for seller products, including stock levels and
+/// management details. This table represents the inventory information that
+/// sellers manage for their products.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_seller_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller product. {@link shopping_seller_products.id}.
+  shopping_seller_product_id String
+  
+  /// Reference to the specific product variant. {@link
+  /// shopping_product_variants.id}.
+  shopping_product_variant_id String
+  
+  /// Current stock quantity for this inventory item.
+  stock_quantity Int
+  
+  /// Threshold for low stock alerts.
+  low_stock_threshold Int?
+  
+  /// Status of the inventory item (e.g., in_stock, low_stock, out_of_stock).
+  status String
+  
+  /// Business-specific status for workflow management.
+  business_status String?
+  
+  /// Timestamp when the inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when the inventory record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the inventory record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sellerProduct shopping_seller_products @relation(fields: [shopping_seller_product_id], references: [id], onDelete: Cascade)
+  productVariant shopping_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_product_variant_id])
+  
+  @@unique([shopping_seller_product_id, shopping_product_variant_id], map: "shopping_seller_inventory_shopping_seller_product_id_s_22ae8a5d")
+  @@index([created_at])
+  @@index([status])
+}
+
+/// Orders managed by sellers, including order details and seller-specific
+/// information. This table represents the orders that sellers need to
+/// fulfill and manage.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_seller_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller who owns this order. {@link shopping_sellers.id}.
+  shopping_seller_id String
+  
+  /// Reference to the main order. {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Seller-specific order code for internal management.
+  seller_order_code String
+  
+  /// Current fulfillment status of the order (e.g., pending, processing,
+  /// shipped, delivered).
+  fulfillment_status String
+  
+  /// Business-specific status for workflow management.
+  business_status String?
+  
+  /// Timestamp when the seller order was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller order was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the seller order was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_id])
+  
+  @@unique([shopping_seller_id, seller_order_code])
+  @@index([created_at])
+  @@index([fulfillment_status])
+}

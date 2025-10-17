@@ -1,0 +1,40 @@
+/// Tracks subscriptions of members to communities, enabling personalized
+/// feed generation and access control in the Reddit-like community platform.
+/// References membership to existing members and communities, supporting
+/// soft deletes and audit timestamps. Allows each member to subscribe to
+/// multiple communities and each community to have multiple subscribers.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Belonged community's {@link reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// Timestamp when the subscription was created.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the subscription was soft-deleted (logical deletion).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_community_member_id, reddit_community_community_id], map: "reddit_community_community_subscriptions_reddit_commun_acf3a97e")
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_community_subscriptions_reddit_commun_3b59131f")
+  @@index([reddit_community_community_id, created_at], map: "reddit_community_community_subscriptions_reddit_commun_88c843b1")
+}

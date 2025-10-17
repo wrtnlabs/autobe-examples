@@ -1,0 +1,413 @@
+/// Represents unauthenticated visitors to the discussion board platform.
+/// Guests can browse public content but cannot create topics, post replies,
+/// or vote. Tracked for analytics, conversion metrics, and potential
+/// newsletter signups. Guest sessions are temporary and may convert to
+/// member accounts upon registration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Temporary session identifier for tracking guest browsing activity during
+  /// their visit. Must be unique across all guest sessions.
+  session_id String
+  
+  /// Optional email address if guest subscribes to newsletter or creates
+  /// account later. Used for conversion tracking and marketing outreach. Not
+  /// unique - same email may be entered across different guest sessions.
+  email String?
+  
+  /// IP address of the guest for analytics, abuse prevention, and geographic
+  /// tracking. IPv4 or IPv6 format.
+  ip_address String?
+  
+  /// Browser user agent string for device type identification and
+  /// compatibility analysis.
+  user_agent String?
+  
+  /// Timestamp of the guest's first visit to the platform for conversion
+  /// funnel analysis.
+  first_visit DateTime
+  
+  /// Timestamp of the guest's most recent activity on the platform. Updated on
+  /// each page view.
+  last_visit DateTime
+  
+  /// Count of pages viewed during all guest sessions for engagement metrics.
+  page_views Int
+  
+  /// Timestamp when this guest record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this guest record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for guest session termination. Preserves historical
+  /// analytics data while marking session as ended. Null for active guest
+  /// sessions.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_id])
+  @@index([first_visit])
+  @@index([last_visit])
+  @@index([ip_address, created_at])
+  @@index([email, created_at])
+}
+
+/// Represents registered, authenticated users who are the core participants
+/// of the discussion board. Members can create topics, post replies, vote on
+/// content, customize their profiles, report violations, and manage
+/// preferences. This is the primary user role after email verification.
+/// Members accumulate reputation through quality contributions and can
+/// progress to moderator status when appointed by administrators.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username chosen during registration, immutable after account
+  /// creation. 3-30 characters, alphanumeric with hyphens and underscores.
+  /// Used for @mentions and profile URLs.
+  username String
+  
+  /// Email address for authentication, notifications, and account recovery.
+  /// Must be verified before full platform access.
+  email String
+  
+  /// Cryptographically hashed password using bcrypt with minimum cost factor
+  /// 12. Never stored in plain text.
+  password_hash String
+  
+  /// User's preferred public display name, can differ from username. 1-50
+  /// characters, supports Unicode, can be changed anytime.
+  display_name String?
+  
+  /// User biography or about me section. Maximum 500 characters, plain text
+  /// with auto-detected links.
+  bio String?
+  
+  /// URL to user's profile picture. Either uploaded image or default avatar
+  /// generated from username.
+  avatar_url String?
+  
+  /// Optional geographic location (country/city) displayed on user profile.
+  /// Maximum 100 characters.
+  location String?
+  
+  /// Optional personal website or blog URL displayed on user profile. Must be
+  /// valid HTTP/HTTPS URL.
+  website String?
+  
+  /// Whether the user has verified their email address by clicking
+  /// verification link. Required for full posting privileges.
+  email_verified Boolean
+  
+  /// Timestamp when email verification was completed. Null if not yet verified.
+  email_verified_at DateTime?
+  
+  /// Current operational status of the account: active (normal operation),
+  /// pending_verification (email not verified), suspended (temporary
+  /// restriction), banned (permanent block), or deactivated (user-initiated).
+  /// Provides single source of truth for account state.
+  account_status String
+  
+  /// Privacy setting for profile page: public (visible to all), members_only
+  /// (authenticated users), or private (hidden from search).
+  profile_visibility String
+  
+  /// Privacy setting for activity history: public, members_only, or private.
+  /// Independent from profile visibility.
+  activity_visibility String
+  
+  /// Timestamp when the member account was created (registration date).
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated (profile changes,
+  /// settings modifications).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, account is marked for deletion but
+  /// retained for 30-day recovery period. Null for active accounts.
+  deleted_at DateTime?
+  
+  /// Timestamp of the user's most recent successful login for activity
+  /// tracking and retention analysis.
+  last_login_at DateTime?
+  
+  /// Timestamp of the user's most recent platform activity (any authenticated
+  /// action). Used for accurate engagement tracking and identifying truly
+  /// active users versus dormant accounts.
+  last_activity_at DateTime?
+  
+  /// User's preferred timezone for displaying timestamps. Standard timezone
+  /// identifier (e.g., 'America/New_York', 'Europe/London').
+  timezone String?
+  
+  /// User's preferred interface language. ISO 639-1 language code (e.g., 'en',
+  /// 'es', 'de').
+  language String?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_sessions discussion_board_sessions[]
+  discussion_board_login_history discussion_board_login_history[]
+  discussion_board_password_resets discussion_board_password_resets[]
+  discussion_board_topics discussion_board_topics[]
+  discussion_board_replies discussion_board_replies[]
+  discussion_board_edit_history discussion_board_edit_history[]
+  discussion_board_votes discussion_board_votes[]
+  discussion_board_favorites discussion_board_favorites[]
+  discussion_board_followed_tags discussion_board_followed_tags[]
+  discussion_board_watched_topics discussion_board_watched_topics[]
+  discussion_board_blocked_users_of_blocker_id discussion_board_blocked_users[] @relation("discussion_board_blocked_users_of_blocker_id")
+  discussion_board_blocked_users_of_blocked_id discussion_board_blocked_users[] @relation("discussion_board_blocked_users_of_blocked_id")
+  discussion_board_user_reputation discussion_board_user_reputation?
+  mv_discussion_board_user_reputation mv_discussion_board_user_reputation?
+  discussion_board_reports discussion_board_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_warnings discussion_board_warnings[]
+  discussion_board_suspensions discussion_board_suspensions[]
+  discussion_board_bans discussion_board_bans?
+  discussion_board_appeals discussion_board_appeals[]
+  discussion_board_notifications_of_user_id discussion_board_notifications[] @relation("discussion_board_notifications_of_user_id")
+  discussion_board_notifications_of_triggering_member_id discussion_board_notifications[] @relation("discussion_board_notifications_of_triggering_member_id")
+  discussion_board_notification_preferences discussion_board_notification_preferences?
+  discussion_board_notification_batches discussion_board_notification_batches[]
+  discussion_board_audit_logs discussion_board_audit_logs[]
+  discussion_board_security_logs discussion_board_security_logs[]
+  discussion_board_moderation_audit_logs discussion_board_moderation_audit_logs[]
+  discussion_board_search_history discussion_board_search_history[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([account_status, created_at])
+  @@index([email_verified, created_at])
+  @@index([deleted_at])
+  @@index([last_activity_at])
+}
+
+/// Represents trusted community members elevated to help maintain discourse
+/// standards and enforce community guidelines. Moderators can review
+/// reported content, hide or remove inappropriate posts, issue warnings,
+/// temporarily suspend users, lock discussions, and feature quality topics.
+/// Appointed by administrators based on contribution history, reputation,
+/// and demonstrated understanding of guidelines. All moderator actions are
+/// logged for accountability and administrator review.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who appointed this user as moderator. References {@link
+  /// discussion_board_administrators.id}.
+  appointed_by_admin_id String
+  
+  /// Unique username for the moderator account. 3-30 characters, alphanumeric
+  /// with hyphens and underscores.
+  username String
+  
+  /// Email address for moderator authentication and official communications
+  /// about moderation duties.
+  email String
+  
+  /// Cryptographically hashed password using bcrypt with minimum cost factor
+  /// 12. Never stored in plain text.
+  password_hash String
+  
+  /// Moderator's preferred public display name shown on moderation actions and
+  /// communications.
+  display_name String?
+  
+  /// Moderator biography or description. May include areas of expertise or
+  /// moderation focus.
+  bio String?
+  
+  /// URL to moderator's profile picture with moderator badge overlay.
+  avatar_url String?
+  
+  /// Whether the moderator has verified their email address. Required for
+  /// moderation duties.
+  email_verified Boolean
+  
+  /// Current operational status of the moderator account: active (normal
+  /// moderation duties), suspended (temporarily restricted), or deactivated
+  /// (no longer serving as moderator). Provides single source of truth for
+  /// moderator account state.
+  account_status String
+  
+  /// Timestamp when the moderator account was initially created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this user was promoted to moderator role by an
+  /// administrator. May differ from created_at if account existed before
+  /// moderator appointment.
+  appointed_at DateTime
+  
+  /// Internal notes about this moderator's appointment, performance, or areas
+  /// of responsibility. Visible only to administrators.
+  moderation_notes String?
+  
+  /// Whether this moderator account is currently active and has moderation
+  /// privileges. False if temporarily suspended from moderation duties.
+  is_active Boolean
+  
+  /// Timestamp when the moderator account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, moderator privileges are revoked but
+  /// account history is retained for audit purposes.
+  deleted_at DateTime?
+  
+  /// Timestamp of the moderator's most recent login for activity monitoring.
+  last_login_at DateTime?
+  
+  /// Timestamp of the moderator's most recent platform activity including
+  /// moderation actions. Used for tracking moderator engagement and
+  /// identifying inactive moderators.
+  last_activity_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  appointedByAdmin discussion_board_administrators @relation(fields: [appointed_by_admin_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_sessions discussion_board_sessions[]
+  discussion_board_login_history discussion_board_login_history[]
+  discussion_board_password_resets discussion_board_password_resets[]
+  discussion_board_reports discussion_board_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_suspensions discussion_board_suspensions[]
+  discussion_board_notifications discussion_board_notifications[]
+  discussion_board_moderation_audit_logs discussion_board_moderation_audit_logs[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([appointed_at])
+  @@index([account_status, is_active])
+  @@index([email_verified, created_at])
+  @@index([appointed_by_admin_id, appointed_at], map: "discussion_board_moderators_appointed_by_admin_id_appo_1dd2486a")
+  @@index([deleted_at])
+  @@index([last_activity_at])
+}
+
+/// Represents platform operators with full system control and ultimate
+/// authority over all operations. Administrators can appoint and remove
+/// moderators, permanently ban users, manage categories and site-wide
+/// settings, access all audit logs, configure platform parameters, and
+/// override any moderation decisions. This role is limited to platform
+/// owners and senior staff. All administrator actions are logged for
+/// security and accountability.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for the administrator account. 3-30 characters,
+  /// alphanumeric with hyphens and underscores.
+  username String
+  
+  /// Email address for administrator authentication and critical system
+  /// notifications.
+  email String
+  
+  /// Cryptographically hashed password using bcrypt with minimum cost factor
+  /// 12. Never stored in plain text.
+  password_hash String
+  
+  /// Administrator's preferred public display name shown on administrative
+  /// communications and actions.
+  display_name String?
+  
+  /// Administrator biography or description. May include role and
+  /// responsibilities.
+  bio String?
+  
+  /// URL to administrator's profile picture with administrator badge overlay.
+  avatar_url String?
+  
+  /// Whether the administrator has verified their email address. Required for
+  /// administrative operations.
+  email_verified Boolean
+  
+  /// Current operational status of the administrator account: active (normal
+  /// operations), suspended (temporarily restricted), or deactivated (no
+  /// longer serving as administrator). Provides single source of truth for
+  /// admin account state.
+  account_status String
+  
+  /// Whether this administrator has super admin privileges (platform owner).
+  /// Super admins can create other administrators and have unrestricted
+  /// access.
+  is_super_admin Boolean
+  
+  /// Timestamp when the administrator account was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, administrative privileges are revoked
+  /// but account is retained for complete audit trail.
+  deleted_at DateTime?
+  
+  /// Timestamp of the administrator's most recent login for security
+  /// monitoring and activity tracking.
+  last_login_at DateTime?
+  
+  /// Timestamp of the administrator's most recent platform activity including
+  /// administrative actions. Used for tracking administrator engagement and
+  /// security monitoring.
+  last_activity_at DateTime?
+  
+  /// Administrator's preferred timezone for displaying timestamps in admin
+  /// interfaces. Standard timezone identifier.
+  timezone String?
+  
+  /// Administrator's preferred interface language. ISO 639-1 language code.
+  language String?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_moderators discussion_board_moderators[]
+  discussion_board_sessions discussion_board_sessions[]
+  discussion_board_login_history discussion_board_login_history[]
+  discussion_board_password_resets discussion_board_password_resets[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_suspensions discussion_board_suspensions[]
+  discussion_board_bans discussion_board_bans[]
+  discussion_board_appeals discussion_board_appeals[]
+  discussion_board_notifications discussion_board_notifications[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([is_super_admin])
+  @@index([account_status, created_at])
+  @@index([email_verified, created_at])
+  @@index([deleted_at])
+  @@index([last_activity_at])
+}

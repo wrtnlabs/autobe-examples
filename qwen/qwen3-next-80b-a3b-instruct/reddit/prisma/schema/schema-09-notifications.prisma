@@ -1,0 +1,221 @@
+/// Records all notifications sent to users, serving as an audit trail of
+/// communication events. This table stores the core notification data
+/// including type, content, recipient, and delivery status. It links to
+/// existing user accounts through user_id and supports historical review of
+/// all communications. Referenced by
+/// community_platform_notification_preferences and
+/// community_platform_notification_queue for processing and preference
+/// management. {@link community_platform_member.id} and {@link
+/// community_platform_admin.id} provide the user context.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user's {@link community_platform_member.id} or {@link
+  /// community_platform_admin.id}.
+  user_id String
+  
+  /// Reference to the post that triggered this notification, if applicable.
+  /// {@link community_platform_posts.id}.
+  related_post_id String?
+  
+  /// Reference to the comment that triggered this notification, if applicable.
+  /// {@link community_platform_comments.id}.
+  related_comment_id String?
+  
+  /// Reference to the report that triggered this notification, if applicable.
+  /// {@link community_platform_reports.id}.
+  related_report_id String?
+  
+  /// Reference to the community related to this notification, if applicable.
+  /// {@link community_platform_communities.id}.
+  related_community_id String?
+  
+  /// Notification type category (e.g., 'reply', 'karma_increase',
+  /// 'moderation_action', 'system_alert').
+  type String
+  
+  /// Short summary or subject line of the notification.
+  title String
+  
+  /// Full message content of the notification, which may include
+  /// HTML/formatted text for display.
+  content String
+  
+  /// Delivery status of the notification: 'pending', 'sent', 'failed',
+  /// 'delivery_failed', 'read'. This enables tracking of delivery state for
+  /// system quality control and retry logic.
+  status String
+  
+  /// Method used to deliver this notification: 'in_app', 'email', 'push', or
+  /// 'sms'. Corresponds to integration requirements in external integration
+  /// spec.
+  delivery_method String
+  
+  /// Timestamp when the notification was generated and queued for delivery.
+  created_at DateTime
+  
+  /// Timestamp of last update to the notification record (e.g., status change,
+  /// read status update).
+  updated_at DateTime
+  
+  /// Soft delete timestamp for archival purposes. When null, the notification
+  /// is active.
+  deleted_at DateTime?
+  
+  /// JSON string containing additional context data for the notification
+  /// (e.g., reply_count, karma_change_amount, reason_code, priority_level).
+  metadata String?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [related_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [related_comment_id], references: [id], onDelete: Cascade)
+  report community_platform_reports? @relation(fields: [related_report_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [related_community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_notification_queue community_platform_notification_queue?
+  
+  @@index([user_id, created_at])
+  @@index([status, delivery_method])
+  @@index([type, user_id])
+  @@index([related_post_id])
+  @@index([related_comment_id])
+  @@index([related_report_id])
+  @@index([related_community_id])
+  @@index([deleted_at])
+}
+
+/// Manages user-specific preferences for notification delivery and types.
+/// This table allows users to opt-in or opt-out of specific notification
+/// categories and delivery methods. It serves as the authoritative source
+/// for determining whether a notification should be generated and delivered.
+/// Referenced by the notification system to filter which notifications to
+/// send to each user. {@link community_platform_member.id} and {@link
+/// community_platform_admin.id} identify the user whose preferences are
+/// being stored.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user's {@link community_platform_member.id} or {@link
+  /// community_platform_admin.id}.
+  user_id String
+  
+  /// Type of notification this preference applies to (e.g., 'reply',
+  /// 'karma_increase', 'moderation_action', 'system_alert').
+  notification_type String
+  
+  /// Flag indicating whether this notification type is enabled for this user
+  /// (true) or disabled (false).
+  enabled Boolean
+  
+  /// Delivery method to which this preference applies: 'in_app', 'email',
+  /// 'push', 'sms'. Allows fine-grained control per delivery channel.
+  delivery_method String
+  
+  /// Timestamp when this preference was created or first set.
+  created_at DateTime
+  
+  /// Timestamp of last update to this preference.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for archival purposes. When null, the preference is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  
+  @@unique([user_id, notification_type, delivery_method], map: "community_platform_notification_preferences_user_id_no_85a75cd6")
+  @@index([user_id])
+  @@index([notification_type], map: "community_platform_notification_preferences_notificati_5be88d86")
+  @@index([delivery_method])
+  @@index([enabled])
+  @@index([deleted_at])
+}
+
+/// Manages the notification delivery queue for asynchronous processing. This
+/// subsidiary table tracks notifications that have been generated but not
+/// yet delivered, including retry attempts and failure handling. It is
+/// processed by background workers that pop items from the queue and attempt
+/// delivery through configured channels (email, push, etc.). Status changes
+/// are handled in this table, while final delivery status is recorded in
+/// community_platform_notifications. This table is not directly managed by
+/// users but is essential for the notification pipeline. Used by the
+/// notification delivery system to ensure reliability and retry logic.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_queue {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the notification record that is being processed. {@link
+  /// community_platform_notifications.id}.
+  notification_id String
+  
+  /// Queue state: 'pending', 'processing', 'failed', 'retrying'. Represents
+  /// the delivery queue status during processing.
+  status String
+  
+  /// Number of attempts made to deliver this notification. Starts at 0 and
+  /// increments with each retry.
+  retry_count Int
+  
+  /// Maximum number of retry attempts allowed before marking as permanently
+  /// failed. Standard value is 3 per integration spec.
+  max_retries Int
+  
+  /// Timestamp when the next retry attempt should be made. Uses exponential
+  /// backoff based on retry_count.
+  next_retry_at DateTime
+  
+  /// Detailed reason for delivery failure, stored when status is 'failed'. May
+  /// include error codes from external services like SendGrid or Firebase.
+  failure_reason String?
+  
+  /// Timestamp when this queue item was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to this queue item (e.g., retry count increase,
+  /// status change).
+  updated_at DateTime
+  
+  /// Timestamp when this item was successfully processed and removed from the
+  /// queue.
+  processed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  notification community_platform_notifications @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+  
+  @@unique([notification_id])
+  @@index([status])
+  @@index([next_retry_at])
+  @@index([retry_count])
+  @@index([created_at])
+  @@index([processed_at])
+}

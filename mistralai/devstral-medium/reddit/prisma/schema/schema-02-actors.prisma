@@ -1,0 +1,144 @@
+/// Guest users who can view public content and register/login. This table
+/// stores temporary session information for unauthenticated users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address for registration (optional for guests).
+  email String?
+  
+  /// Password hash for login (optional for guests).
+  password_hash String?
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest session was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Authenticated members who can create content, vote, and manage their
+/// profile. This table stores all regular user accounts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_member {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for authentication.
+  email String
+  
+  /// Secure password hash for login.
+  password_hash String
+  
+  /// Unique username for display.
+  username String
+  
+  /// User's karma score based on votes.
+  karma Int
+  
+  /// Timestamp when the account was created.
+  created_at DateTime
+  
+  /// Timestamp when the account was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_clone_moderator reddit_clone_moderator[]
+  reddit_clone_admin reddit_clone_admin[]
+  reddit_clone_communities reddit_clone_communities[]
+  reddit_clone_community_subscriptions reddit_clone_community_subscriptions[]
+  reddit_clone_posts reddit_clone_posts[]
+  reddit_clone_comments reddit_clone_comments[]
+  reddit_clone_post_votes reddit_clone_post_votes[]
+  reddit_clone_comment_votes reddit_clone_comment_votes[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+}
+
+/// Users with moderation privileges in specific communities. This table
+/// stores moderator-specific information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_moderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account. {@link reddit_clone_member.id}.
+  member_id String
+  
+  /// Community where the user is a moderator. {@link
+  /// reddit_clone_communities.id}.
+  community_id String
+  
+  /// Timestamp when moderator privileges were granted.
+  created_at DateTime
+  
+  /// Timestamp when moderator privileges were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_clone_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_id])
+  
+  @@unique([member_id, community_id])
+  @@index([created_at])
+}
+
+/// System administrators with full access to manage all users and
+/// communities. This table stores admin-specific information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account. {@link reddit_clone_member.id}.
+  member_id String
+  
+  /// Timestamp when admin privileges were granted.
+  created_at DateTime
+  
+  /// Timestamp when admin privileges were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_clone_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id])
+  @@index([created_at])
+}

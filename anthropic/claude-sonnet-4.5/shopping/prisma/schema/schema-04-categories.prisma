@@ -1,0 +1,69 @@
+/// Product category hierarchy supporting unlimited depth parent-child
+/// relationships. Categories organize the product catalog with
+/// self-referential structure enabling breadcrumb navigation, taxonomy
+/// management, and flexible product organization. Root categories have null
+/// parent_id, and each category can have multiple children.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category's {@link shopping_mall_categories.id}. Null for
+  /// root-level categories. Creates hierarchical tree structure enabling
+  /// unlimited depth taxonomy.
+  parent_id String?
+  
+  /// Category name displayed to users (e.g., 'Electronics', 'Laptops', 'Gaming
+  /// Laptops'). Required for category identification and navigation.
+  name String
+  
+  /// Optional detailed description of the category explaining what products
+  /// belong here. Helps customers understand category scope and improves SEO.
+  description String?
+  
+  /// URL-friendly unique identifier for category (e.g., 'gaming-laptops').
+  /// Used in category page URLs and routing. Must be globally unique across
+  /// all categories.
+  slug String
+  
+  /// Sort order for displaying categories at the same hierarchy level. Lower
+  /// numbers appear first. Used to control category presentation order in
+  /// navigation and listings.
+  display_order Int
+  
+  /// Whether the category is active and visible to customers. Inactive
+  /// categories are hidden but preserved for historical product associations.
+  /// Allows toggling visibility without deletion.
+  is_active Boolean
+  
+  /// Soft deletion timestamp. When set, category is considered deleted but
+  /// data preserved for audit trail and historical product-category
+  /// relationships. Null indicates active category.
+  deleted_at DateTime?
+  
+  /// Timestamp when the category was created. Used for audit trail and
+  /// chronological tracking of category additions.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified. Updated whenever category
+  /// properties change. Used for audit trail and change tracking.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_products shopping_mall_products[]
+  
+  @@unique([slug])
+  @@index([parent_id, display_order])
+  @@index([is_active])
+  @@index([deleted_at])
+}

@@ -1,0 +1,415 @@
+/// Core sales transaction records tracking all marketplace purchases. Each
+/// sale represents a completed transaction between a customer and seller,
+/// including pricing, commission calculations, and fulfillment status. Sales
+/// records are essential for revenue tracking, seller payments, and business
+/// analytics.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who made the purchase. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Seller who received the payment. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Reference to the original order. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Total sale amount before any discounts or commissions.
+  sale_amount Float
+  
+  /// Total discount applied to the sale.
+  discount_amount Float
+  
+  /// Commission percentage applied to the sale.
+  commission_rate Float
+  
+  /// Calculated commission amount deducted from sale.
+  commission_amount Float
+  
+  /// Final amount payable to seller after commissions.
+  net_amount Float
+  
+  /// Currency code for the transaction (e.g., USD, EUR).
+  currency String
+  
+  /// Current status of the sale (pending, completed, refunded, cancelled).
+  sale_status String
+  
+  /// Timestamp when payment was successfully received.
+  payment_received_at DateTime?
+  
+  /// Timestamp when seller payment was processed.
+  seller_paid_at DateTime?
+  
+  /// Timestamp when the sale record was created.
+  created_at DateTime
+  
+  /// Timestamp when the sale record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([shopping_mall_seller_id, created_at])
+  @@index([sale_status])
+  @@index([created_at])
+}
+
+/// Flexible pricing tier structure supporting different customer segments,
+/// volume discounts, and promotional pricing. Pricing tiers can be applied
+/// to products, categories, or customer groups with configurable rules and
+/// conditions.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_pricing_tiers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product this pricing tier applies to. {@link shopping_mall_products.id}
+  shopping_mall_product_id String?
+  
+  /// Product category this pricing tier applies to. {@link
+  /// shopping_mall_product_categories.id}
+  shopping_mall_product_category_id String?
+  
+  /// Specific customer this pricing tier applies to. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Descriptive name for this pricing tier.
+  tier_name String
+  
+  /// Type of pricing tier (volume, customer_group, promotional, seasonal).
+  tier_type String
+  
+  /// Minimum quantity required to qualify for this tier.
+  minimum_quantity Int?
+  
+  /// Maximum quantity allowed for this tier.
+  maximum_quantity Int?
+  
+  /// Type of price adjustment (percentage, fixed_amount, override).
+  price_adjustment_type String
+  
+  /// Value of the price adjustment.
+  price_adjustment_value Float
+  
+  /// Priority level for tier application (higher numbers take precedence).
+  priority Int
+  
+  /// Start date when this pricing tier becomes active.
+  valid_from DateTime
+  
+  /// End date when this pricing tier expires.
+  valid_until DateTime?
+  
+  /// Whether this pricing tier is currently active.
+  is_active Boolean
+  
+  /// Timestamp when the pricing tier was created.
+  created_at DateTime
+  
+  /// Timestamp when the pricing tier was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  productCategory shopping_mall_product_categories? @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id])
+  
+  @@index([shopping_mall_product_id, valid_from, valid_until], map: "shopping_mall_pricing_tiers_shopping_mall_product_id_v_cc452f0c")
+  @@index([shopping_mall_product_category_id, valid_from, valid_until], map: "shopping_mall_pricing_tiers_shopping_mall_product_cate_8506b0bd")
+  @@index([tier_type, is_active])
+  @@index([valid_from, valid_until])
+  @@index([priority])
+}
+
+/// Promotional campaigns and marketing initiatives with configurable rules,
+/// targeting, and performance tracking. Promotions can include discounts,
+/// free shipping, gifts, or other incentives to drive sales.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Descriptive name for the promotion campaign.
+  promotion_name String
+  
+  /// Type of promotion (percentage_discount, fixed_discount, free_shipping,
+  /// bundle, gift).
+  promotion_type String
+  
+  /// Detailed description of the promotion terms and conditions.
+  description String?
+  
+  /// Optional promotion code for manual entry.
+  promotion_code String?
+  
+  /// Target audience for the promotion (all_customers, new_customers, VIP,
+  /// specific_segment).
+  target_audience String
+  
+  /// Minimum order value required to qualify for promotion.
+  minimum_order_value Float?
+  
+  /// Maximum discount amount allowed per order.
+  maximum_discount_amount Float?
+  
+  /// Maximum number of times a customer can use this promotion.
+  usage_limit_per_customer Int?
+  
+  /// Maximum total number of times this promotion can be used.
+  total_usage_limit Int?
+  
+  /// Date and time when the promotion becomes active.
+  start_date DateTime
+  
+  /// Date and time when the promotion expires.
+  end_date DateTime
+  
+  /// Whether the promotion is currently active.
+  is_active Boolean
+  
+  /// Timestamp when the promotion was created.
+  created_at DateTime
+  
+  /// Timestamp when the promotion was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_discounts shopping_mall_discounts[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  
+  @@unique([promotion_code])
+  @@index([promotion_type, is_active])
+  @@index([start_date, end_date])
+  @@index([target_audience])
+  @@index([created_at])
+}
+
+/// Discount rules and calculations applied to products, categories, or
+/// orders. Discounts can be automatic (based on conditions) or manual
+/// (applied by customers or admins) with various calculation methods.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_discounts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Promotion that this discount belongs to. {@link
+  /// shopping_mall_promotions.id}
+  shopping_mall_promotion_id String?
+  
+  /// Product this discount applies to. {@link shopping_mall_products.id}
+  shopping_mall_product_id String?
+  
+  /// Product category this discount applies to. {@link
+  /// shopping_mall_product_categories.id}
+  shopping_mall_product_category_id String?
+  
+  /// Type of discount (percentage, fixed_amount, free_shipping, buy_x_get_y).
+  discount_type String
+  
+  /// Value of the discount (percentage or fixed amount).
+  discount_value Float
+  
+  /// Minimum quantity required to qualify for discount.
+  minimum_quantity Int?
+  
+  /// Maximum discount amount that can be applied.
+  maximum_discount_amount Float?
+  
+  /// What the discount applies to (product, category, order, shipping).
+  apply_to String
+  
+  /// Whether this discount can be combined with other discounts.
+  stackable Boolean
+  
+  /// Whether discount applies automatically when conditions are met.
+  auto_apply Boolean
+  
+  /// Timestamp when the discount was created.
+  created_at DateTime
+  
+  /// Timestamp when the discount was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions? @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  productCategory shopping_mall_product_categories? @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_promotion_id])
+  @@index([shopping_mall_product_id, discount_type], map: "shopping_mall_discounts_shopping_mall_product_id_disco_fa0a0e6b")
+  @@index([shopping_mall_product_category_id, discount_type], map: "shopping_mall_discounts_shopping_mall_product_category_8fb1f6c9")
+  @@index([discount_type, auto_apply])
+  @@index([created_at])
+}
+
+/// Coupon code management system with unique codes, usage tracking, and
+/// validation rules. Coupons provide customers with special discounts or
+/// offers that can be applied during checkout.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Promotion associated with this coupon. {@link shopping_mall_promotions.id}
+  shopping_mall_promotion_id String?
+  
+  /// Specific customer this coupon was issued to. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Unique coupon code that customers enter during checkout.
+  coupon_code String
+  
+  /// Type of coupon (percentage, fixed_amount, free_shipping, gift).
+  coupon_type String
+  
+  /// Discount value (percentage or fixed amount).
+  discount_value Float
+  
+  /// Minimum order amount required to use this coupon.
+  minimum_order_amount Float?
+  
+  /// Maximum discount amount that can be applied.
+  maximum_discount Float?
+  
+  /// Maximum number of times this coupon can be used.
+  usage_limit Int?
+  
+  /// Number of times this coupon has been used.
+  times_used Int
+  
+  /// Date and time when the coupon becomes valid.
+  valid_from DateTime
+  
+  /// Date and time when the coupon expires.
+  valid_until DateTime
+  
+  /// Whether the coupon is currently active and valid.
+  is_active Boolean
+  
+  /// Timestamp when the coupon was created.
+  created_at DateTime
+  
+  /// Timestamp when the coupon was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions? @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([coupon_code])
+  @@index([shopping_mall_promotion_id])
+  @@index([shopping_mall_customer_id])
+  @@index([coupon_type, is_active])
+  @@index([valid_from, valid_until])
+  @@index([times_used, usage_limit])
+}
+
+/// Commission rate structures defining platform fees for different sellers,
+/// product categories, and transaction types. Supports tiered commission
+/// models based on sales volume, product category, and seller performance.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_commission_rates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller this commission rate applies to. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// Product category this commission rate applies to. {@link
+  /// shopping_mall_product_categories.id}
+  shopping_mall_product_category_id String?
+  
+  /// Descriptive name for this commission rate structure.
+  rate_name String
+  
+  /// Type of commission (percentage, fixed_amount, tiered).
+  commission_type String
+  
+  /// Commission rate value (percentage or fixed amount).
+  commission_rate Float
+  
+  /// Minimum sales amount required for this rate to apply.
+  minimum_sales_amount Float?
+  
+  /// Maximum sales amount for this rate tier.
+  maximum_sales_amount Float?
+  
+  /// Date when this commission rate becomes effective.
+  effective_from DateTime
+  
+  /// Date when this commission rate expires.
+  effective_until DateTime?
+  
+  /// Whether this commission rate is currently active.
+  is_active Boolean
+  
+  /// Timestamp when the commission rate was created.
+  created_at DateTime
+  
+  /// Timestamp when the commission rate was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  productCategory shopping_mall_product_categories? @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_seller_id, effective_from, effective_until], map: "shopping_mall_commission_rates_shopping_mall_seller_id_ff4d2be4")
+  @@index([shopping_mall_product_category_id, effective_from, effective_until], map: "shopping_mall_commission_rates_shopping_mall_product_c_bd684d1d")
+  @@index([commission_type, is_active])
+  @@index([effective_from, effective_until], map: "shopping_mall_commission_rates_effective_from_effectiv_b1433ae6")
+  @@index([minimum_sales_amount, maximum_sales_amount], map: "shopping_mall_commission_rates_minimum_sales_amount_ma_7614ce93")
+}

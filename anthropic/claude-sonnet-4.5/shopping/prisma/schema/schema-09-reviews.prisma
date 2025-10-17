@@ -1,0 +1,242 @@
+/// Customer product reviews with star ratings and optional written feedback.
+/// Reviews can only be submitted by verified purchasers (customers who
+/// completed an order for the product). Each customer can submit one review
+/// per product. Reviews support text content, star ratings (1-5), and
+/// optional customer-uploaded images. All reviews go through moderation
+/// workflow before publication. Customers can edit reviews within 30 days
+/// and delete at any time. Admins can moderate and remove policy-violating
+/// reviews. The review system builds marketplace trust through verified
+/// purchase badges and helpfulness voting.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who wrote this review (reviewer). {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Product being reviewed. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Specific SKU variant reviewed (optional, if customer wants to review
+  /// specific color/size). {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String?
+  
+  /// Order that enabled this verified purchase review. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Star rating from 1 to 5 stars (required). 5=Excellent, 4=Good, 3=Average,
+  /// 2=Poor, 1=Terrible.
+  rating Int
+  
+  /// Optional review title or short summary (maximum 100 characters).
+  title String?
+  
+  /// Optional detailed review text (minimum 10 characters, maximum 5000
+  /// characters). Customer can submit rating-only reviews without text.
+  review_text String?
+  
+  /// Whether this review is from a verified purchase through the platform.
+  /// Always true since only verified purchasers can review.
+  verified_purchase Boolean
+  
+  /// Review moderation status: pending_moderation (awaiting approval),
+  /// approved (published and visible), rejected (violates policies). Reviews
+  /// go through moderation before publication.
+  status String
+  
+  /// Count of helpful votes (customers who found this review helpful).
+  /// Aggregated from shopping_mall_review_helpfulness_votes where is_helpful
+  /// is true.
+  helpful_count Int
+  
+  /// Count of not-helpful votes (tracked internally, not publicly displayed).
+  /// Aggregated from shopping_mall_review_helpfulness_votes where is_helpful
+  /// is false.
+  not_helpful_count Int
+  
+  /// Timestamp when the review was originally submitted.
+  created_at DateTime
+  
+  /// Timestamp when the review was last edited. Reviews can be edited within
+  /// 30 days of submission. Shows 'edited' badge to customers.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Reviews can be deleted by customer (any time) or
+  /// removed by admin (policy violations). Null if review is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus? @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_images shopping_mall_review_images[]
+  shopping_mall_review_helpfulness_votes shopping_mall_review_helpfulness_votes[]
+  shopping_mall_seller_responses shopping_mall_seller_responses?
+  
+  @@index([shopping_mall_sku_id])
+  @@index([shopping_mall_order_id])
+  
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_reviews_shopping_mall_customer_id_shoppi_1d91afcf")
+  @@index([shopping_mall_product_id, status, created_at], map: "shopping_mall_reviews_shopping_mall_product_id_status__de82b820")
+  @@index([status, created_at])
+  @@index([shopping_mall_customer_id])
+}
+
+/// Customer-uploaded images attached to product reviews. Customers can
+/// upload up to 5 images per review (JPEG, PNG, WebP formats, 5MB max per
+/// image). Images provide visual evidence and context for the review,
+/// especially valuable for defective/damaged product claims in refund
+/// requests. Images are displayed in review gallery and included in
+/// moderation review. Managed entirely through the parent review lifecycle
+/// (subsidiary entity).
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent review containing this image. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Storage path or URL for the uploaded review image. System generates
+  /// thumbnails and optimized versions for display.
+  image_url String
+  
+  /// Display order of this image in the review image gallery (1-based index).
+  /// Customer can reorder images when editing review.
+  display_order Int
+  
+  /// Timestamp when the image was uploaded with the review.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_review_id, display_order], map: "shopping_mall_review_images_shopping_mall_review_id_di_7584b1ce")
+}
+
+/// Customer votes on whether reviews were helpful. Any customer (including
+/// non-purchasers) can vote 'Helpful' or 'Not Helpful' on reviews. One vote
+/// per customer per review. Customers can change their vote (updates
+/// existing record). Reviewers cannot vote on their own reviews. Helpful
+/// vote counts are displayed publicly with reviews and influence 'Most
+/// Helpful' sorting. Not-helpful counts are tracked internally but not
+/// publicly displayed to avoid negative sentiment. Subsidiary entity managed
+/// entirely through review context.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_helpfulness_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being voted on. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Customer who cast this vote. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Whether the customer found this review helpful. True = Helpful vote,
+  /// False = Not Helpful vote. Customer can update this value to change their
+  /// vote.
+  is_helpful Boolean
+  
+  /// Timestamp when the vote was originally cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last changed (if customer changed from
+  /// helpful to not helpful or vice versa).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id], map: "shopping_mall_review_helpfulness_votes_shopping_mall_c_2c096f33")
+  
+  @@unique([shopping_mall_review_id, shopping_mall_customer_id], map: "shopping_mall_review_helpfulness_votes_shopping_mall_r_59991166")
+  @@index([shopping_mall_review_id], map: "shopping_mall_review_helpfulness_votes_shopping_mall_r_f8feeca1")
+}
+
+/// Seller responses to customer reviews on their products. Sellers can post
+/// one response per review to address customer concerns, provide
+/// explanations, or thank customers for positive feedback. Responses are
+/// limited to 2000 characters. All seller responses require admin moderation
+/// before publication. Sellers can edit responses within 7 days of
+/// submission. After 7 days, responses become locked and cannot be modified.
+/// Sellers can delete their responses at any time (soft delete). Seller
+/// responses are displayed directly below the customer review with clear
+/// visual distinction. Independent management entity requiring dedicated
+/// CRUD operations and moderation workflows.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer review being responded to. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Seller who posted this response (must be the seller of the reviewed
+  /// product). {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller's response text (maximum 2000 characters). Should be professional,
+  /// address customer concerns, and avoid promotional content or requests to
+  /// remove reviews.
+  response_text String
+  
+  /// Moderation status: pending_moderation (awaiting admin approval), approved
+  /// (published and visible), rejected (violates response guidelines). All
+  /// responses require admin approval before publication.
+  status String
+  
+  /// Timestamp when the response was originally submitted.
+  created_at DateTime
+  
+  /// Timestamp when the response was last edited. Responses can be edited
+  /// within 7 days of creation, after which they become locked.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Sellers can delete their responses at any time.
+  /// Null if response is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id])
+  
+  @@index([shopping_mall_seller_id, status], map: "shopping_mall_seller_responses_shopping_mall_seller_id_43507e0d")
+  @@index([status, created_at])
+}

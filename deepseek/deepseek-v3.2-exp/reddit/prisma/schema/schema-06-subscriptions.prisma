@@ -1,0 +1,214 @@
+/// Manages user subscriptions to communities. This table represents the
+/// many-to-many relationship between users and communities, tracking when
+/// users join communities and their subscription status. Each subscription
+/// enables personalized content delivery and community-specific
+/// notifications. {@link reddit_clone_users.id} {@link
+/// reddit_clone_communities.id}
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscribing user's identifier. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Community being subscribed to. {@link reddit_clone_communities.id}
+  community_id String
+  
+  /// Timestamp when the user subscribed to the community.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the subscription was canceled (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_subscription_preferences reddit_clone_subscription_preferences?
+  reddit_clone_notification_settings reddit_clone_notification_settings?
+  
+  @@unique([user_id, community_id])
+  @@index([user_id])
+  @@index([community_id])
+  @@index([created_at])
+}
+
+/// Stores user-specific preferences for each community subscription. These
+/// preferences control how content is displayed and what notifications are
+/// received for subscribed communities. This table extends subscription
+/// behavior with personalized settings. {@link
+/// reddit_clone_subscriptions.id}
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_subscription_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated subscription record. {@link reddit_clone_subscriptions.id}
+  subscription_id String
+  
+  /// Whether to show NSFW (Not Safe For Work) content from this community.
+  show_nsfw_content Boolean
+  
+  /// Whether to automatically expand media content from this community.
+  auto_expand_media Boolean
+  
+  /// Preferred thumbnail display setting (e.g., 'always', 'never', 'default').
+  thumbnail_preference String
+  
+  /// Preferred sorting algorithm for this community's content in feed (e.g.,
+  /// 'hot', 'new', 'top').
+  feed_sort_order String
+  
+  /// Preferred post display density (e.g., 'compact', 'card', 'classic').
+  post_density String
+  
+  /// Timestamp when the preference record was created.
+  created_at DateTime
+  
+  /// Timestamp when the preference record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  subscription reddit_clone_subscriptions @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+  
+  @@unique([subscription_id])
+  @@index([show_nsfw_content])
+  @@index([feed_sort_order])
+}
+
+/// Stores aggregated feed data for users based on their community
+/// subscriptions. This table enables efficient delivery of personalized
+/// content by pre-aggregating posts from subscribed communities. The feed is
+/// updated as new content is published. {@link reddit_clone_users.id} {@link
+/// reddit_clone_posts.id} {@link reddit_clone_communities.id}
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_feeds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User receiving the feed content. {@link reddit_clone_users.id}
+  user_id String
+  
+  /// Post included in the user's feed. {@link reddit_clone_posts.id}
+  post_id String
+  
+  /// Community where the post originated. {@link reddit_clone_communities.id}
+  community_id String
+  
+  /// Position of this post in the user's personalized feed ranking.
+  feed_position Int
+  
+  /// Calculated ranking score used for feed ordering (based on votes, time,
+  /// etc.).
+  ranking_score Float
+  
+  /// Timestamp when the user viewed this post in their feed.
+  seen_at DateTime?
+  
+  /// Timestamp when the user dismissed this post from their feed.
+  dismissed_at DateTime?
+  
+  /// Timestamp when this post was added to the user's feed.
+  created_at DateTime
+  
+  /// Timestamp when the feed entry was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_clone_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_clone_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([post_id])
+  
+  @@unique([user_id, post_id])
+  @@index([user_id, feed_position])
+  @@index([user_id, ranking_score])
+  @@index([community_id])
+  @@index([created_at])
+  @@index([seen_at])
+}
+
+/// Manages user notification preferences for subscribed communities.
+/// Controls what types of notifications users receive and how they are
+/// delivered for each community subscription. Enables granular control over
+/// notification frequency and delivery methods. {@link
+/// reddit_clone_subscriptions.id}
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_notification_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated subscription record. {@link reddit_clone_subscriptions.id}
+  subscription_id String
+  
+  /// Whether to receive notifications for new posts in this community.
+  notify_new_posts Boolean
+  
+  /// Whether to receive notifications for comments on posts the user has
+  /// engaged with.
+  notify_comments_on_posts Boolean
+  
+  /// Whether to receive notifications for replies to the user's comments.
+  notify_replies_to_comments Boolean
+  
+  /// Whether to receive notifications for community announcements and updates.
+  notify_community_announcements Boolean
+  
+  /// Preferred notification frequency (e.g., 'immediate', 'daily_digest',
+  /// 'weekly_summary').
+  notification_frequency String
+  
+  /// Whether push notifications are enabled for this community.
+  push_notifications_enabled Boolean
+  
+  /// Whether email notifications are enabled for this community.
+  email_notifications_enabled Boolean
+  
+  /// Timestamp when the notification settings were created.
+  created_at DateTime
+  
+  /// Timestamp when the notification settings were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  subscription reddit_clone_subscriptions @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+  
+  @@unique([subscription_id])
+  @@index([notify_new_posts])
+  @@index([notification_frequency])
+  @@index([push_notifications_enabled], map: "reddit_clone_notification_settings_push_notifications__01bfd14d")
+  @@index([email_notifications_enabled], map: "reddit_clone_notification_settings_email_notifications_2a58d835")
+}

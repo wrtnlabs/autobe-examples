@@ -1,0 +1,188 @@
+/// Record of refund requests initiated by customers after order delivery.
+/// Each request is tied to an order and specifies items, reason, and
+/// requested amount for financial reversal. This is a primary table allowing
+/// independent lookup, filtering, and management by customer support agents.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order for which the refund is being requested. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// The customer who initiated the refund request. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// The seller whose product is being returned. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Current status of the refund request. Values: 'requested', 'approved',
+  /// 'denied', 'auto-approved', 'completed'.
+  status String
+  
+  /// Category reason for refund selection from predefined list: 'Damaged
+  /// items', 'Incorrect item', 'Item not as described', 'Didn't receive',
+  /// 'Changed mind'.
+  reason String
+  
+  /// Type of refund: 'full' or 'partial'.
+  refund_type String
+  
+  /// Amount of money requested for refund in USD. Must be positive and cannot
+  /// exceed order value.
+  requested_amount Float
+  
+  /// Comma-separated list of order_item_ids being refunded. Format:
+  /// 'uuid,uuid,uuid'.
+  refund_item_ids String
+  
+  /// Additional explanation provided by customer regarding the refund reason.
+  /// Not required.
+  refund_reason_detail String?
+  
+  /// Timestamp when the refund request was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the refund request was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_refund_approvals shopping_mall_refund_approvals?
+  shopping_mall_returns shopping_mall_returns?
+  shopping_mall_earnings_ledger shopping_mall_earnings_ledger[]
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_customer_id])
+  @@index([status])
+  @@index([created_at])
+  @@index([shopping_mall_seller_id, status], map: "shopping_mall_refund_requests_shopping_mall_seller_id__904df65f")
+}
+
+/// Audit trail of actions taken on refund requests by sellers or
+/// administrators. Records approval/denial decisions, timestamps, and notes.
+/// This is a subsidiary table managed solely through the refund_request
+/// workflow, not directly by end users.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_approvals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The refund request being approved or denied. {@link
+  /// shopping_mall_refund_requests.id}.
+  shopping_mall_refund_request_id String
+  
+  /// The seller who approved or denied this refund request. Null if approved
+  /// by admin. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// The admin who approved or denied this refund request. Null if approved by
+  /// seller. {@link shopping_mall_administrators.id}.
+  shopping_mall_admin_id String?
+  
+  /// Final status of approval: 'approved', 'denied', 'auto-approved'.
+  status String
+  
+  /// Type of entity who made the decision: 'seller' or 'admin'.
+  approver_type String
+  
+  /// Optional reason or justification provided by the approver for
+  /// approval/denial.
+  approval_notes String?
+  
+  /// Timestamp when the decision was made.
+  approved_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_administrators? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_refund_request_id], map: "shopping_mall_refund_approvals_shopping_mall_refund_re_55c9233b")
+  
+  @@index([shopping_mall_refund_request_id], map: "shopping_mall_refund_approvals_shopping_mall_refund_re_6e146ffc")
+  @@index([approved_at])
+  @@index([approver_type])
+  @@index([shopping_mall_seller_id, status], map: "shopping_mall_refund_approvals_shopping_mall_seller_id_46bd9c7a")
+  @@index([shopping_mall_admin_id, status], map: "shopping_mall_refund_approvals_shopping_mall_admin_id__3fb4ed3f")
+}
+
+/// Track return logistics for approved refund requests. Stores return
+/// shipping details, tracking, and physical item receipt status. This is a
+/// subsidiary table triggered by refund approval and managed by fulfillment
+/// logistics, not by end users or sellers.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_returns {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The refund request that triggered this return. {@link
+  /// shopping_mall_refund_requests.id}.
+  shopping_mall_refund_request_id String
+  
+  /// The specific order item being returned. {@link
+  /// shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Generated return shipping label ID or URL used for customer return.
+  return_label String
+  
+  /// Current return logistics status: 'label_generated', 'shipped',
+  /// 'received', 'rejected', 'canceled'.
+  return_status String
+  
+  /// Tracking number provided by customer when shipping item back. Optional
+  /// unless 'shipped' status.
+  return_tracking_number String?
+  
+  /// Date when seller physically received the returned item. Null until
+  /// received.
+  return_received_date DateTime?
+  
+  /// Whether returned item quantity has been restored to seller's inventory.
+  /// True = restored.
+  inventory_restored Boolean
+  
+  /// Reason seller rejected returned item (e.g., 'not as described', 'damaged
+  /// during return', 'wrong item').
+  reason_for_rejection String?
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_refund_request_id])
+  
+  @@index([shopping_mall_refund_request_id])
+  @@index([return_status])
+  @@index([return_received_date])
+  @@index([inventory_restored])
+  @@index([shopping_mall_order_item_id])
+}

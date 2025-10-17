@@ -1,0 +1,161 @@
+/// Shopping cart for customers. Each customer has one active cart that
+/// persists across sessions. Carts are soft-deleted when cleared but
+/// retained for analytics. The cart serves as a container for cart items and
+/// enables customers to collect products before checkout.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this cart. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Timestamp when the cart was created.
+  created_at DateTime
+  
+  /// Timestamp when the cart was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null means cart is active, non-null means cart
+  /// was cleared or abandoned.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  
+  @@unique([shopping_mall_customer_id, deleted_at])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Individual items within a shopping cart. Each item represents a specific
+/// SKU with quantity and price snapshot. Customers manage cart items by
+/// adding, updating quantities, or removing items. Price is snapshotted at
+/// addition time to track price changes.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Cart that contains this item. {@link shopping_mall_carts.id}
+  shopping_mall_cart_id String
+  
+  /// Product SKU being added to cart. {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Quantity of this SKU in the cart. Must be positive integer.
+  quantity Int
+  
+  /// Price per unit at the time item was added to cart. Snapshot for price
+  /// change tracking.
+  unit_price Float
+  
+  /// Timestamp when the item was added to cart.
+  created_at DateTime
+  
+  /// Timestamp when the item was last updated (quantity or price change).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_cart_id, shopping_mall_sku_id], map: "shopping_mall_cart_items_shopping_mall_cart_id_shoppin_b4d582b2")
+  @@index([shopping_mall_cart_id, created_at])
+  @@index([shopping_mall_sku_id])
+}
+
+/// Customer wishlists for saving products for future purchase. Customers can
+/// create multiple named wishlists to organize products (e.g., 'Holiday
+/// Gifts', 'Favorites', 'Birthday Ideas'). Wishlists are soft-deleted when
+/// removed but retained for analytics.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this wishlist. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Name of the wishlist for organization (e.g., 'Favorites', 'Holiday
+  /// Gifts', 'Birthday Ideas').
+  name String
+  
+  /// Timestamp when the wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null means wishlist is active, non-null means
+  /// wishlist was deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_wishlists_shopping_mall_customer_id_crea_13b2d35f")
+  @@index([updated_at])
+}
+
+/// Individual items within a wishlist. Each item represents a specific SKU
+/// that the customer wants to save for future purchase. Customers can add
+/// items to wishlist from product pages and later move them to cart when
+/// ready to buy.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Wishlist that contains this item. {@link shopping_mall_wishlists.id}
+  shopping_mall_wishlist_id String
+  
+  /// Product SKU saved in the wishlist. {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Timestamp when the item was added to wishlist.
+  created_at DateTime
+  
+  /// Timestamp when the item was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_wishlist_id, shopping_mall_sku_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_745f462f")
+  @@index([shopping_mall_wishlist_id, created_at], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_57e5e679")
+  @@index([shopping_mall_sku_id])
+}

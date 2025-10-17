@@ -1,0 +1,165 @@
+/// Shopping carts containing selected items for checkout, managed
+/// independently by buyers. {@link shopping_platform_buyers.id} Allows
+/// multiple active carts per user with temporal auditing for cart management
+/// history.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged buyer's {@link shopping_platform_buyers.id}
+  shopping_platform_buyer_id String
+  
+  /// Custom cart name for organization purposes.
+  name String?
+  
+  /// Creation timestamp for auditing cart lifecycle.
+  created_at DateTime
+  
+  /// Last modification timestamp for cart changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for recoverable cart removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  buyer shopping_platform_buyers @relation(fields: [shopping_platform_buyer_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_cart_items shopping_platform_cart_items[]
+  shopping_platform_orders shopping_platform_orders[]
+  
+  @@index([shopping_platform_buyer_id])
+}
+
+/// Individual items within shopping carts, tracking quantity and product
+/// variants. {@link shopping_platform_carts.id} Provides detailed cart
+/// contents with foreign key references for effective inventory validation.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged cart's {@link shopping_platform_carts.id}
+  shopping_platform_cart_id String
+  
+  /// Referenced product variant's {@link shopping_platform_sale_units.id}
+  shopping_platform_sale_unit_id String
+  
+  /// Quantity of this item in the cart.
+  quantity Int
+  
+  /// Addition timestamp for item tracking.
+  created_at DateTime
+  
+  /// Last update timestamp for quantity changes.
+  updated_at DateTime
+  
+  /// Soft deletion for item removal from cart.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_platform_carts @relation(fields: [shopping_platform_cart_id], references: [id], onDelete: Cascade)
+  saleUnit shopping_platform_sale_units @relation(fields: [shopping_platform_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_platform_sale_unit_id], map: "shopping_platform_cart_items_shopping_platform_sale_un_7034328d")
+  
+  @@unique([shopping_platform_cart_id, shopping_platform_sale_unit_id], map: "shopping_platform_cart_items_shopping_platform_cart_id_fd016daf")
+}
+
+/// Wishlists for saving desired products without inventory reservation,
+/// managed independently by buyers. {@link shopping_platform_buyers.id}
+/// Supports multiple wishlists per user for organization and
+/// personalization.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged buyer's {@link shopping_platform_buyers.id}
+  shopping_platform_buyer_id String
+  
+  /// Custom wishlist name for categorization.
+  name String?
+  
+  /// Optional description for wishlist purpose.
+  description String?
+  
+  /// Creation timestamp for wishlist tracking.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion for wishlist removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  buyer shopping_platform_buyers @relation(fields: [shopping_platform_buyer_id], references: [id], onDelete: Cascade)
+  
+  shopping_platform_wishlist_items shopping_platform_wishlist_items[]
+  
+  @@index([shopping_platform_buyer_id])
+}
+
+/// Items saved in user wishlists, linking buyers to desired product
+/// variants. {@link shopping_platform_wishlists.id} Enables wishful
+/// purchasing tracking without purchase commitment.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_platform_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged wishlist's {@link shopping_platform_wishlists.id}
+  shopping_platform_wishlist_id String
+  
+  /// Referenced product variant's {@link shopping_platform_sale_units.id}
+  shopping_platform_sale_unit_id String
+  
+  /// Desired quantity for future purchase.
+  quantity Int
+  
+  /// Addition timestamp to wishlist.
+  created_at DateTime
+  
+  /// Last update timestamp for changes.
+  updated_at DateTime
+  
+  /// Soft deletion for item removal from wishlist.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_platform_wishlists @relation(fields: [shopping_platform_wishlist_id], references: [id], onDelete: Cascade)
+  saleUnit shopping_platform_sale_units @relation(fields: [shopping_platform_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_platform_sale_unit_id], map: "shopping_platform_wishlist_items_shopping_platform_sal_95d6e17e")
+  
+  @@unique([shopping_platform_wishlist_id, shopping_platform_sale_unit_id], map: "shopping_platform_wishlist_items_shopping_platform_wis_27ae3d41")
+}

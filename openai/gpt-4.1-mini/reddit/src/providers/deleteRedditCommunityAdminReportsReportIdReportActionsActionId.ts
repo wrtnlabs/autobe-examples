@@ -1,0 +1,36 @@
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+import { MyGlobal } from "../MyGlobal";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+import { AdminPayload } from "../decorators/payload/AdminPayload";
+
+export async function deleteRedditCommunityAdminReportsReportIdReportActionsActionId(props: {
+  admin: AdminPayload;
+  reportId: string & tags.Format<"uuid">;
+  actionId: string & tags.Format<"uuid">;
+}): Promise<void> {
+  const { admin, reportId, actionId } = props;
+
+  const reportAction =
+    await MyGlobal.prisma.reddit_community_report_actions.findFirst({
+      where: {
+        id: actionId,
+        report_id: reportId,
+      },
+    });
+
+  if (reportAction === null) {
+    throw new HttpException("Report action not found", 404);
+  }
+
+  await MyGlobal.prisma.reddit_community_report_actions.delete({
+    where: {
+      id: actionId,
+    },
+  });
+}

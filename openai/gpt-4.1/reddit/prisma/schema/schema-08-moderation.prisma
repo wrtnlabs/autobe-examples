@@ -1,0 +1,330 @@
+/// Stores individual content reports filed by members against posts or
+/// comments, including the category, reason, reporting member, status,
+/// moderation review, and timestamps. Connects members, content, categories,
+/// and moderation workflow. Tracks status from submission to moderation
+/// resolution. Core of community safety and abuse workflow.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting user's {@link community_platform_members.id}. Links report to
+  /// the member who filed it.
+  reporting_member_id String
+  
+  /// Target post's {@link community_platform_posts.id}. Set if the reported
+  /// content is a post.
+  post_id String?
+  
+  /// Target comment's {@link community_platform_comments.id}. Set if the
+  /// reported content is a comment.
+  comment_id String?
+  
+  /// Report category {@link community_platform_report_categories.id}.
+  report_category_id String
+  
+  /// Optional free-form explanation provided by the reporting user (required
+  /// if category is 'other').
+  reason_text String?
+  
+  /// Current workflow status (pending, under_review, resolved, escalated,
+  /// dismissed).
+  status String
+  
+  /// Result or action taken by moderator upon resolving the report (e.g.,
+  /// removed, warning, no_action, banned, escalated).
+  moderation_result String?
+  
+  /// Moderator/admin who handled the report. References admin or moderator
+  /// tables as appropriate.
+  moderated_by_id String?
+  
+  /// Timestamp when report was filed.
+  created_at DateTime
+  
+  /// Timestamp when report was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reportingMember community_platform_members @relation(fields: [reporting_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  reportCategory community_platform_report_categories @relation(fields: [report_category_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_queues community_platform_moderation_queues?
+  community_platform_ban_histories community_platform_ban_histories[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_escalation_logs community_platform_escalation_logs?
+  
+  @@unique([reporting_member_id, post_id, comment_id], map: "community_platform_reports_reporting_member_id_post_id_e004a151")
+  @@index([status])
+  @@index([post_id])
+  @@index([comment_id])
+  @@index([created_at])
+  @@index([report_category_id])
+}
+
+/// Defines available reporting categories (e.g., spam, abuse, hate,
+/// off-topic, NSFW, harassment), as referenced by content reports. Maintains
+/// canonical mapping of categories and whether they allow free-text
+/// descriptions. Useful for reporting UI and policy enforcement.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique, human-readable name of the report category (e.g., 'spam',
+  /// 'harassment').
+  name String
+  
+  /// Whether reporters can/must specify details in free text for this category.
+  allow_free_text Boolean
+  
+  /// Category creation timestamp.
+  created_at DateTime
+  
+  /// Category last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_reports community_platform_reports[]
+  
+  @@unique([name])
+}
+
+/// Moderation work queue, holding triaged and open reports pending
+/// moderator/admin review per community. Connects communities, referenced
+/// report, and assigns to an (optional) moderator/admin acting. Allows
+/// monitoring pending, in-progress, and resolved moderation workload.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_queues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target community's {@link community_platform_communities.id}.
+  community_id String
+  
+  /// Associated report's {@link community_platform_reports.id}.
+  report_id String
+  
+  /// Moderator/admin currently reviewing this queue entry. Nullable if
+  /// unassigned.
+  assigned_moderator_id String?
+  
+  /// Workflow status (pending, in_progress, resolved, escalated).
+  status String
+  
+  /// Priority of moderation queue entry (low, normal, high, urgent).
+  priority String
+  
+  /// Queue entry creation timestamp.
+  created_at DateTime
+  
+  /// Queue entry last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  report community_platform_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  assignedModerator community_platform_moderators? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([report_id])
+  @@index([community_id, status])
+  @@index([assigned_moderator_id])
+}
+
+/// Tracks member bans at the community or platform level, including the
+/// moderator/admin who issued the ban, banned member, duration, and reason.
+/// Provides a historical record for appeals, escalation, and audit purposes.
+/// Each ban is linked to its report (if triggered by one).
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_ban_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The ID of the banned member {@link community_platform_members.id}.
+  banned_member_id String
+  
+  /// Moderator/admin who issued the ban. References admin or moderator tables
+  /// as appropriate.
+  issued_by_id String
+  
+  /// Community affected by the ban. Nullable if platform-wide ban. {@link
+  /// community_platform_communities.id}.
+  community_id String?
+  
+  /// Report that triggered the ban. Nullable if manual ban. {@link
+  /// community_platform_reports.id}.
+  triggering_report_id String?
+  
+  /// Text description of the ban reason as entered by moderator/admin.
+  reason String
+  
+  /// Type of ban (temporary, permanent).
+  ban_type String
+  
+  /// Ban start time.
+  ban_start_at DateTime
+  
+  /// Ban end time, nullable for permanent bans.
+  ban_end_at DateTime?
+  
+  /// If the ban is currently active.
+  is_active Boolean
+  
+  /// Ban record creation timestamp.
+  created_at DateTime
+  
+  /// Ban record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  bannedMember community_platform_members @relation(fields: [banned_member_id], references: [id], onDelete: Cascade)
+  issuedBy community_platform_admins @relation(fields: [issued_by_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  triggeringReport community_platform_reports? @relation(fields: [triggering_report_id], references: [id], onDelete: Cascade)
+  
+  @@index([issued_by_id])
+  @@index([triggering_report_id])
+  
+  @@index([banned_member_id, is_active])
+  @@index([community_id])
+}
+
+/// Logs all moderation actions performed on reports, posts, or comments,
+/// including moderator/admin actor, action type, content target,
+/// description, and timestamps. Enables full audit trail of safety
+/// interventions, for compliance, analytics, and review.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ID of moderator/admin who performed this action. References respective
+  /// actor table.
+  actor_id String
+  
+  /// Post affected by moderation action. Nullable if comment or member ban
+  /// affected. {@link community_platform_posts.id}.
+  target_post_id String?
+  
+  /// Comment affected by moderation action. Nullable if post or member ban
+  /// affected. {@link community_platform_comments.id}.
+  target_comment_id String?
+  
+  /// Related report, if any. Nullable for manual actions. {@link
+  /// community_platform_reports.id}.
+  report_id String?
+  
+  /// Type of moderation action (remove_post, remove_comment, pin, warn_user,
+  /// ban_user, escalate, dismiss, edit_content, other).
+  action_type String
+  
+  /// Free-form text describing the action taken.
+  description String?
+  
+  /// Timestamp when the moderation action was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  actor community_platform_admins @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  targetPost community_platform_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment community_platform_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  report community_platform_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_id])
+  @@index([action_type])
+  @@index([report_id])
+  @@index([target_post_id])
+  @@index([target_comment_id])
+}
+
+/// Captures audit of all escalations in the moderation workflow, e.g.,
+/// unresolved reports or moderator conflicts sent to admin review. Tracks
+/// escalation initiator, destination (role/admin), original report or action
+/// affected, reason, status, and resolution timestamps. Essential for
+/// transparency and compliance in difficult moderation cases.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_escalation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member or moderator/admin who initiated escalation. References
+  /// appropriate role table.
+  initiator_id String
+  
+  /// Admin to whom this escalation is assigned. {@link
+  /// community_platform_admins.id}.
+  destination_admin_id String?
+  
+  /// Report at the root of this escalation. {@link
+  /// community_platform_reports.id}.
+  report_id String
+  
+  /// Free-form escalation reason/summary entered by initiator.
+  escalation_reason String
+  
+  /// Escalation workflow status (pending, in_review, resolved, closed).
+  status String
+  
+  /// Summary of how the escalation was resolved (if applicable).
+  resolution_summary String?
+  
+  /// Timestamp when the escalation log was created.
+  created_at DateTime
+  
+  /// Timestamp when the escalation log was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  initiator community_platform_members @relation(fields: [initiator_id], references: [id], onDelete: Cascade)
+  destinationAdmin community_platform_admins? @relation(fields: [destination_admin_id], references: [id], onDelete: Cascade)
+  report community_platform_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  @@unique([report_id])
+  @@index([initiator_id])
+  @@index([destination_admin_id])
+  @@index([status])
+}

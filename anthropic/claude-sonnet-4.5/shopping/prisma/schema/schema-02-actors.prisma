@@ -1,0 +1,518 @@
+/// Customer accounts representing individual shoppers on the platform.
+/// Customers can browse products, manage shopping carts and wishlists, place
+/// orders, write reviews, and manage delivery addresses. This is a primary
+/// user role with independent account management and full e-commerce
+/// capabilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's email address used for authentication and communication. Must
+  /// be unique across all customers.
+  email String
+  
+  /// Hashed password for customer authentication. Stored using bcrypt or
+  /// Argon2, never in plain text.
+  password_hash String
+  
+  /// Customer's full name for profile display and order processing.
+  name String
+  
+  /// Customer's phone number for order delivery contact and account
+  /// verification.
+  phone String?
+  
+  /// Current status of the customer account. Values: active (normal
+  /// operation), suspended (temporary restriction due to policy violations),
+  /// deleted (account deactivated by customer or admin). Controls access to
+  /// platform features.
+  account_status String
+  
+  /// Whether the customer has verified their email address. Unverified
+  /// accounts have restricted access to features like purchasing and
+  /// reviewing.
+  email_verified Boolean
+  
+  /// Unique token sent to customer email for account verification. Expires
+  /// after 24 hours.
+  email_verification_token String?
+  
+  /// Timestamp when the verification email was last sent. Used for rate
+  /// limiting resend requests.
+  email_verification_sent_at DateTime?
+  
+  /// Unique token for password reset requests. Expires after 1 hour.
+  password_reset_token String?
+  
+  /// Expiration timestamp for the password reset token.
+  password_reset_expires_at DateTime?
+  
+  /// Count of consecutive failed login attempts. Resets to zero on successful
+  /// login. Account locks after 5 failed attempts.
+  failed_login_attempts Int
+  
+  /// Timestamp when the current failed login attempt window started. Used to
+  /// implement the 15-minute window rule: account locks after 5 failures
+  /// within 15 minutes. Reset when window expires or login succeeds.
+  failed_login_window_start_at DateTime?
+  
+  /// Timestamp until which the account is locked due to failed login attempts.
+  /// Automatically unlocks after 30 minutes.
+  account_locked_until DateTime?
+  
+  /// Timestamp of the last password change. Used for security auditing and
+  /// password age policies.
+  password_changed_at DateTime?
+  
+  /// JSON array storing hashes of the last 5 passwords to prevent password
+  /// reuse. Format: [{"hash": "bcrypt_hash", "changed_at": "timestamp"}].
+  /// Enforces password history policy.
+  password_history String?
+  
+  /// Timestamp when the customer account was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the account is marked as deleted but
+  /// data is retained for legal and audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_sessions shopping_mall_sessions[]
+  shopping_mall_addresses shopping_mall_addresses[]
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_cancellations shopping_mall_cancellations[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  shopping_mall_payment_methods shopping_mall_payment_methods[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_review_helpfulness_votes shopping_mall_review_helpfulness_votes[]
+  
+  @@unique([email])
+  @@index([account_status, email_verified])
+  @@index([created_at])
+}
+
+/// Seller accounts representing vendors who list and manage products on the
+/// platform. Sellers can create product listings, manage inventory per SKU,
+/// process orders, access sales analytics, and configure shipping and payout
+/// settings. This is a primary business user role requiring verification and
+/// approval.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who approved this seller account. {@link shopping_mall_admins.id}.
+  /// Null for pending or rejected sellers. SET NULL on admin deletion to
+  /// preserve seller account while losing approval reference.
+  approved_by_admin_id String?
+  
+  /// Seller's email address used for authentication, business communication,
+  /// and notifications. Must be unique across all sellers.
+  email String
+  
+  /// Hashed password for seller authentication. Stored using bcrypt or Argon2,
+  /// never in plain text.
+  password_hash String
+  
+  /// Legal business name or store name publicly displayed to customers.
+  business_name String
+  
+  /// Type of business entity. Values: individual, LLC, corporation,
+  /// partnership.
+  business_type String
+  
+  /// Government-issued business registration number or business license number
+  /// for verification purposes.
+  business_registration_number String?
+  
+  /// Tax identification number (EIN or SSN) for tax reporting and payout
+  /// processing.
+  tax_id String
+  
+  /// Full name of the primary contact person for the seller account.
+  contact_person_name String
+  
+  /// Business phone number for customer service and platform communication.
+  phone String
+  
+  /// Physical business address for verification and legal compliance.
+  business_address String
+  
+  /// Bank account number for seller payouts. Stored encrypted for security.
+  bank_account_number String?
+  
+  /// Bank routing number for payout transfers.
+  bank_routing_number String?
+  
+  /// Name on the bank account, must match business name for verification.
+  bank_account_holder_name String?
+  
+  /// Unique URL slug for the seller's store page. Customizable by seller, must
+  /// be unique across platform.
+  store_url_slug String?
+  
+  /// Seller's store description and about information displayed on store page.
+  store_description String?
+  
+  /// URL to the seller's store logo image. JPEG, PNG, or WebP format, maximum
+  /// 500KB.
+  store_logo_url String?
+  
+  /// URL to the seller's store banner image for store page header. JPEG, PNG,
+  /// or WebP format, maximum 2MB.
+  store_banner_url String?
+  
+  /// Current status of the seller account. Values: pending_approval
+  /// (application submitted, awaiting admin verification), active (approved
+  /// and can sell), suspended (temporary restriction due to policy violations
+  /// or performance issues), banned (permanent removal), on_hold (account
+  /// frozen pending investigation). Controls ability to list products and
+  /// receive orders.
+  account_status String
+  
+  /// Whether the seller has verified their email address. Required before
+  /// account approval.
+  email_verified Boolean
+  
+  /// Unique token sent to seller email for account verification. Expires after
+  /// 24 hours.
+  email_verification_token String?
+  
+  /// Timestamp when the verification email was last sent. Used for rate
+  /// limiting resend requests (max 1 per 5 minutes).
+  email_verification_sent_at DateTime?
+  
+  /// Whether admin has verified business documents (registration, tax ID, bank
+  /// info). Required for account activation.
+  documents_verified Boolean
+  
+  /// Timestamp when the seller account was approved by admin.
+  approved_at DateTime?
+  
+  /// Platform commission rate for this seller as decimal (0.10 = 10%). Can be
+  /// customized per seller, default is platform standard rate.
+  commission_rate Float
+  
+  /// Minimum order value for free shipping offered by this seller. Null if
+  /// seller does not offer free shipping.
+  free_shipping_threshold Float?
+  
+  /// Seller's return and refund policy text displayed to customers.
+  return_policy String?
+  
+  /// Seller's shipping policy including processing times and shipping methods
+  /// offered.
+  shipping_policy String?
+  
+  /// Unique token for password reset requests. Expires after 1 hour.
+  password_reset_token String?
+  
+  /// Expiration timestamp for the password reset token.
+  password_reset_expires_at DateTime?
+  
+  /// Count of consecutive failed login attempts. Resets to zero on successful
+  /// login. Account locks after 5 failed attempts within 15-minute window.
+  failed_login_attempts Int
+  
+  /// Timestamp when the current failed login attempt window started. Used to
+  /// implement the 15-minute window rule. Reset when window expires or login
+  /// succeeds.
+  failed_login_window_start_at DateTime?
+  
+  /// Timestamp until which the account is locked due to failed login attempts.
+  /// Automatically unlocks after 30 minutes.
+  account_locked_until DateTime?
+  
+  /// Timestamp of the last password change. Used for security auditing and
+  /// password age policies.
+  password_changed_at DateTime?
+  
+  /// JSON array storing hashes of the last 5 passwords to prevent password
+  /// reuse. Format: [{"hash": "bcrypt_hash", "changed_at": "timestamp"}].
+  /// Enforces password history policy.
+  password_history String?
+  
+  /// Timestamp when the seller account was created and application was
+  /// submitted.
+  created_at DateTime
+  
+  /// Timestamp when the seller account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the seller account is marked as deleted
+  /// but data is retained for order history and compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  approvedByAdmin shopping_mall_admins? @relation(fields: [approved_by_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sessions shopping_mall_sessions[]
+  shopping_mall_addresses shopping_mall_addresses[]
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_inventory_transactions shopping_mall_inventory_transactions[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_cancellations_of_requester_seller_id shopping_mall_cancellations[] @relation("shopping_mall_cancellations_of_requester_seller_id")
+  shopping_mall_cancellations_of_approver_seller_id shopping_mall_cancellations[] @relation("shopping_mall_cancellations_of_approver_seller_id")
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  shopping_mall_seller_payouts shopping_mall_seller_payouts[]
+  shopping_mall_seller_responses shopping_mall_seller_responses[]
+  
+  @@index([approved_by_admin_id])
+  
+  @@unique([email])
+  @@unique([store_url_slug])
+  @@index([account_status, documents_verified])
+  @@index([created_at])
+}
+
+/// Administrator accounts with platform-wide management capabilities. Admins
+/// can manage all orders, products, users, sellers, approve refunds,
+/// moderate content, and configure system settings. Admin accounts cannot be
+/// self-registered and must be created by existing admins. This is a primary
+/// privileged user role with full platform access.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who created this admin account. Self-referential foreign key.
+  /// {@link shopping_mall_admins.id}
+  created_by_admin_id String?
+  
+  /// Admin's email address used for authentication and platform notifications.
+  /// Must be unique across all admins.
+  email String
+  
+  /// Hashed password for admin authentication. Stored using bcrypt or Argon2,
+  /// never in plain text. Requires strong password policy.
+  password_hash String
+  
+  /// Admin's full name for identification in audit logs and admin interface.
+  name String
+  
+  /// Admin role defining permission level. Values: super_admin (full platform
+  /// access, can create other admins), order_manager (order and refund
+  /// management only), content_moderator (product and review moderation only),
+  /// support_admin (customer service and basic operations). Roles are
+  /// hierarchical with super_admin having all permissions.
+  role_level String
+  
+  /// Whether the admin account is currently active. Inactive admins cannot log
+  /// in or perform administrative actions.
+  is_active Boolean
+  
+  /// Whether the admin has verified their email address. Required before
+  /// granting admin access.
+  email_verified Boolean
+  
+  /// Unique token sent to admin email for account verification. Expires after
+  /// 24 hours.
+  email_verification_token String?
+  
+  /// Timestamp when the verification email was last sent. Used for rate
+  /// limiting resend requests.
+  email_verification_sent_at DateTime?
+  
+  /// Whether multi-factor authentication is enabled for this admin account.
+  /// Required for super_admin role.
+  mfa_enabled Boolean
+  
+  /// Encrypted MFA secret key for TOTP-based two-factor authentication.
+  mfa_secret String?
+  
+  /// Timestamp of the admin's most recent successful login.
+  last_login_at DateTime?
+  
+  /// IP address from which the admin last logged in. Used for security
+  /// monitoring.
+  last_login_ip String?
+  
+  /// Unique token for password reset requests. Expires after 1 hour.
+  password_reset_token String?
+  
+  /// Expiration timestamp for the password reset token.
+  password_reset_expires_at DateTime?
+  
+  /// Count of consecutive failed login attempts. Resets to zero on successful
+  /// login. Account locks after 5 failed attempts within 15-minute window.
+  failed_login_attempts Int
+  
+  /// Timestamp when the current failed login attempt window started. Used to
+  /// implement the 15-minute window rule. Reset when window expires or login
+  /// succeeds.
+  failed_login_window_start_at DateTime?
+  
+  /// Timestamp until which the account is locked due to failed login attempts.
+  /// Automatically unlocks after 30 minutes.
+  account_locked_until DateTime?
+  
+  /// Timestamp of the last password change. Used for security auditing and
+  /// enforcing password rotation policies.
+  password_changed_at DateTime?
+  
+  /// JSON array storing hashes of the last 5 passwords to prevent password
+  /// reuse. Format: [{"hash": "bcrypt_hash", "changed_at": "timestamp"}].
+  /// Enforces password history policy.
+  password_history String?
+  
+  /// Timestamp when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  createdByAdmin shopping_mall_admins? @relation("recursive", fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sellers shopping_mall_sellers[]
+  recursive shopping_mall_admins[] @relation("recursive")
+  shopping_mall_sessions shopping_mall_sessions[]
+  shopping_mall_addresses shopping_mall_addresses[]
+  shopping_mall_inventory_transactions shopping_mall_inventory_transactions[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_cancellations_of_requester_admin_id shopping_mall_cancellations[] @relation("shopping_mall_cancellations_of_requester_admin_id")
+  shopping_mall_cancellations_of_approver_admin_id shopping_mall_cancellations[] @relation("shopping_mall_cancellations_of_approver_admin_id")
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  
+  @@index([created_by_admin_id])
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// User session records for authentication and session management across all
+/// user types (customers, sellers, admins). Tracks active sessions with JWT
+/// refresh tokens, device information, and activity monitoring. Sessions
+/// support multi-device login and provide security features like session
+/// revocation and timeout. This is a subsidiary entity managed by the
+/// authentication system.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this session. Null if session belongs to seller or
+  /// admin. {@link shopping_mall_customers.id}
+  customer_id String?
+  
+  /// Seller who owns this session. Null if session belongs to customer or
+  /// admin. {@link shopping_mall_sellers.id}
+  seller_id String?
+  
+  /// Admin who owns this session. Null if session belongs to customer or
+  /// seller. {@link shopping_mall_admins.id}
+  admin_id String?
+  
+  /// Type of user this session belongs to. Values: customer, seller, admin.
+  /// Used as discriminator to determine which foreign key (customer_id,
+  /// seller_id, admin_id) is populated. Must be kept in sync with populated
+  /// foreign key.
+  user_type String
+  
+  /// JWT refresh token for generating new access tokens. Unique per session,
+  /// used for token refresh flow.
+  refresh_token String
+  
+  /// Expiration timestamp for the refresh token. Typically 30 days from
+  /// session creation.
+  refresh_token_expires_at DateTime
+  
+  /// IP address from which the session was initiated. Used for security
+  /// monitoring and fraud detection.
+  ip_address String
+  
+  /// Browser user agent string for device identification and session display
+  /// to users.
+  user_agent String
+  
+  /// Detected device type. Values: mobile, tablet, desktop. Parsed from user
+  /// agent.
+  device_type String?
+  
+  /// User-friendly device name for session display (e.g., 'Chrome on Windows',
+  /// 'Safari on iPhone'). Shown to users in active sessions list.
+  device_name String?
+  
+  /// Browser name parsed from user agent (Chrome, Firefox, Safari, etc.).
+  browser_name String?
+  
+  /// Operating system parsed from user agent (Windows, macOS, iOS, Android,
+  /// Linux).
+  operating_system String?
+  
+  /// Approximate geographic location based on IP address (e.g., 'New York,
+  /// US', 'London, UK'). Used for security monitoring and session display.
+  approximate_location String?
+  
+  /// Whether this session has been manually revoked by the user or admin.
+  /// Revoked sessions cannot be used for token refresh.
+  is_revoked Boolean
+  
+  /// Timestamp when the session was revoked. Null if session is still active.
+  revoked_at DateTime?
+  
+  /// Timestamp of the last activity in this session. Updated on each token
+  /// refresh or important action. Sessions auto-expire after 30 days of
+  /// inactivity.
+  last_activity_at DateTime
+  
+  /// Timestamp when the session was created (user logged in).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([customer_id])
+  @@index([seller_id])
+  @@index([admin_id])
+  
+  @@unique([refresh_token])
+  @@index([user_type, customer_id])
+  @@index([user_type, seller_id])
+  @@index([user_type, admin_id])
+  @@index([refresh_token_expires_at, is_revoked])
+  @@index([created_at])
+}

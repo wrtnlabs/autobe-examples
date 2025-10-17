@@ -1,0 +1,85 @@
+/// Main wishlist entity that represents a user's personal collection of
+/// items they wish to purchase in the future. Each wishlist belongs to a
+/// single customer and contains multiple wishlist items. This model serves
+/// as the container for wishlist_items and connects user identity with
+/// product interest data.
+///
+/// @namespace Wishlists
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belongs to the customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Timestamp when this wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when this wishlist was last updated.
+  updated_at DateTime
+  
+  /// Display name of the wishlist. Defaults to 'My Wishlist' for standard user
+  /// wishlists.
+  name String
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_mall_customer_id])
+  
+  @@index([shopping_mall_customer_id])
+  @@index([created_at])
+}
+
+/// Individual items saved in a customer's wishlist. Each item represents a
+/// specific product variant (SKU) that a customer has expressed interest in
+/// for future purchase. This table links wishlists to specific product SKUs
+/// and maintains user-specific product interest data.
+///
+/// @namespace Wishlists
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belongs to the wishlist {@link shopping_mall_wishlists.id}.
+  shopping_mall_wishlist_id String
+  
+  /// References the specific product variant (SKU) that is saved in this
+  /// wishlist {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Timestamp when this item was added to the wishlist.
+  created_at DateTime
+  
+  /// Optional private note from the customer about this wishlist item (e.g.,
+  /// 'Gift for birthday','Looking for sale').
+  note String?
+  
+  /// Customer-defined priority level for this item (1-5, where 5 is highest
+  /// interest). Default is 3 (medium priority).
+  priority Int
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_wishlist_id, shopping_mall_product_sku_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_22da2d8e")
+  @@index([shopping_mall_wishlist_id])
+  @@index([shopping_mall_product_sku_id])
+  @@index([created_at])
+  @@index([priority])
+}

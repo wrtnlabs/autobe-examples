@@ -1,0 +1,192 @@
+/// Captures every upvote or downvote made by a member on a post. Each record
+/// represents a single vote action (up or down) by a member on a post.
+/// Enforces one vote per member per post. Used for calculating post rankings
+/// and user karma. Includes audit fields for vote time, status
+/// (active/revoked archival), and supports historical analysis. References
+/// {@link community_platform_posts.id} and {@link
+/// community_platform_members.id}.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voted post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Voter member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Vote value indicating upvote (1) or downvote (-1).
+  vote_value Int
+  
+  /// Timestamp when the vote action was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the vote action.
+  updated_at DateTime
+  
+  /// Soft delete field. Vote is considered revoked or obsolete if set.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_post_id, community_platform_member_id], map: "community_platform_post_votes_community_platform_post__67424e40")
+  @@index([created_at])
+  @@index([community_platform_member_id, created_at], map: "community_platform_post_votes_community_platform_membe_59eaad49")
+}
+
+/// Stores upvote or downvote events by members on individual comments.
+/// Ensures members can only vote once per comment, with audit and reversal
+/// supported. Used in comment ranking, controversial scoring, and karma
+/// calculation. References {@link community_platform_comments.id} and {@link
+/// community_platform_members.id}.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voted comment's {@link community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Member who voted on the comment's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Vote value, upvote (1) or downvote (-1).
+  vote_value Int
+  
+  /// Timestamp when the comment vote was added.
+  created_at DateTime
+  
+  /// Time of the last status update for this vote.
+  updated_at DateTime
+  
+  /// Soft delete field if vote is revoked or reversed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_comment_id, community_platform_member_id], map: "community_platform_comment_votes_community_platform_co_c5f3e82e")
+  @@index([created_at])
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_votes_community_platform_me_2c59b90a")
+}
+
+/// Materialized/performance-oriented table to track and cache controversial
+/// scores for posts and comments, including their last computed value and
+/// supporting real-time sorting. Not independently managed by users, but
+/// updated and referenced by content and ranking algorithms. Denormalized
+/// for hot/controversial listing purposes.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_controversial_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated post's {@link community_platform_posts.id} (nullable if
+  /// representing a comment).
+  community_platform_post_id String?
+  
+  /// Associated comment's {@link community_platform_comments.id} (nullable if
+  /// representing a post).
+  community_platform_comment_id String?
+  
+  /// Cached controversial score value for the item (calculated via algorithm;
+  /// used for sorted listing).
+  controversial_score Float
+  
+  /// Timestamp for last time the controversial score was computed or updated.
+  score_updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_post_id], map: "community_platform_controversial_scores_community_plat_878ee84d")
+  @@unique([community_platform_comment_id], map: "community_platform_controversial_scores_community_plat_895699f7")
+  @@index([score_updated_at])
+}
+
+/// Audit log for all voting-related actions (post and comment), capturing
+/// user intent, system responses, IP or device fingerprint, and additional
+/// metadata for anti-abuse, forensics, and historical query. Used for
+/// investigations and reports, not directly manipulated by users.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member whose action this vote log entry refers to. {@link
+  /// community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Post being voted on (if relevant). Nullable for comment votes. {@link
+  /// community_platform_posts.id}.
+  community_platform_post_id String?
+  
+  /// Comment being voted on (if relevant). Nullable for post votes. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String?
+  
+  /// "post" or "comment" — type of the vote action logged.
+  vote_type String
+  
+  /// Action performed: upvote (1), downvote (-1), or zero (0) for revocation.
+  vote_value Int
+  
+  /// Optional anonymized IP address or device fingerprint for abuse or
+  /// anti-bot analysis.
+  ip_fingerprint String?
+  
+  /// Optional user agent string for device/user analysis.
+  user_agent String?
+  
+  /// Result of attempted voting action (e.g., "success", "duplicate",
+  /// "revoked", "error").
+  action_status String
+  
+  /// Human-readable message for the audit log, describing action outcome or
+  /// error.
+  action_message String?
+  
+  /// Time this action was logged.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_platform_member_id, created_at], map: "community_platform_vote_logs_community_platform_member_b348e88d")
+  @@index([community_platform_post_id, created_at], map: "community_platform_vote_logs_community_platform_post_i_9fd855b1")
+  @@index([community_platform_comment_id, created_at], map: "community_platform_vote_logs_community_platform_commen_ea0374a7")
+}

@@ -1,0 +1,268 @@
+/// Customer reviews for products and sellers. Stores detailed feedback
+/// including title, content, and verification status. Reviews are linked to
+/// specific purchases to ensure authenticity and prevent fake reviews.
+/// {@link shopping_mall_products.id} {@link shopping_mall_customers.id}
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who wrote the review. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Product being reviewed. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Seller of the product being reviewed. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Review title summarizing the customer feedback.
+  title String
+  
+  /// Detailed review content describing the customer experience.
+  content String
+  
+  /// Whether the review is from a verified purchase. Prevents fake reviews.
+  is_verified_purchase Boolean
+  
+  /// Number of users who found this review helpful.
+  helpful_votes Int
+  
+  /// Number of times this review has been reported for abuse.
+  report_count Int
+  
+  /// Review status: pending, approved, rejected, flagged. Enables moderation
+  /// workflow.
+  status String
+  
+  /// When the review was created.
+  created_at DateTime
+  
+  /// When the review was last updated.
+  updated_at DateTime
+  
+  /// When the review was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_ratings shopping_mall_ratings?
+  shopping_mall_review_comments shopping_mall_review_comments[]
+  shopping_mall_review_moderation shopping_mall_review_moderation[]
+  
+  @@index([shopping_mall_product_id])
+  
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_reviews_shopping_mall_customer_id_shoppi_1d91afcf")
+  @@index([status])
+  @@index([shopping_mall_seller_id])
+  @@index([created_at])
+  @@index([helpful_votes])
+}
+
+/// Numerical ratings (1-5 stars) for products and sellers. Supports detailed
+/// rating breakdown by category when products have specific attributes.
+/// {@link shopping_mall_reviews.id} {@link shopping_mall_products.id} {@link
+/// shopping_mall_sellers.id}
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated review that contains this rating. {@link
+  /// shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Product being rated. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Seller being rated. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Overall rating from 1 to 5 stars.
+  overall_rating Int
+  
+  /// Specific rating for product quality, if applicable.
+  quality_rating Int?
+  
+  /// Specific rating for value for money, if applicable.
+  value_rating Int?
+  
+  /// Specific rating for seller service, if applicable.
+  service_rating Int?
+  
+  /// Specific rating for delivery experience, if applicable.
+  delivery_rating Int?
+  
+  /// When the rating was created.
+  created_at DateTime
+  
+  /// When the rating was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id])
+  @@index([overall_rating])
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_seller_id])
+  @@index([created_at])
+}
+
+/// Comments and responses on reviews, including seller responses and
+/// customer follow-up comments. Enables discussion and clarification around
+/// reviews. {@link shopping_mall_reviews.id} {@link
+/// shopping_mall_customers.id} {@link shopping_mall_sellers.id}
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent review being commented on. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Customer who wrote the comment, if applicable. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Seller who wrote the response, if applicable. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// Parent comment for threaded discussions, if applicable. {@link
+  /// shopping_mall_review_comments.id}
+  parent_comment_id String?
+  
+  /// Comment content text.
+  content String
+  
+  /// Whether this comment is an official seller response.
+  is_seller_response Boolean
+  
+  /// Number of users who found this comment helpful.
+  helpful_votes Int
+  
+  /// Number of times this comment has been reported for abuse.
+  report_count Int
+  
+  /// Comment status: pending, approved, rejected, flagged.
+  status String
+  
+  /// When the comment was created.
+  created_at DateTime
+  
+  /// When the comment was last updated.
+  updated_at DateTime
+  
+  /// When the comment was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_review_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_review_comments[] @relation("recursive")
+  shopping_mall_review_moderation shopping_mall_review_moderation[]
+  
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_seller_id])
+  
+  @@index([shopping_mall_review_id])
+  @@index([is_seller_response])
+  @@index([status])
+  @@index([created_at])
+  @@index([parent_comment_id])
+}
+
+/// Review and comment moderation workflow tracking. Records moderation
+/// actions, automated flags, and manual review decisions. {@link
+/// shopping_mall_reviews.id} {@link shopping_mall_review_comments.id} {@link
+/// shopping_mall_administrators.id}
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_moderation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being moderated, if applicable. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String?
+  
+  /// Comment being moderated, if applicable. {@link
+  /// shopping_mall_review_comments.id}
+  shopping_mall_review_comment_id String?
+  
+  /// Administrator who performed the moderation, if manual. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String?
+  
+  /// Type of moderation: automated, manual, appeal, escalation.
+  moderation_type String
+  
+  /// Action taken: approve, reject, flag, edit, delete.
+  action_taken String
+  
+  /// Reason for the moderation action.
+  reason String
+  
+  /// Specific automated flag reason if applicable (profanity, spam, etc.).
+  automated_flag_reason String?
+  
+  /// Whether this moderation decision has been appealed.
+  is_appealed Boolean
+  
+  /// Resolution of any appeal: overturned, upheld, modified.
+  appeal_resolution String?
+  
+  /// When the moderation action was recorded.
+  created_at DateTime
+  
+  /// When the moderation was resolved, if applicable.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews? @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  comment shopping_mall_review_comments? @relation(fields: [shopping_mall_review_comment_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_review_comment_id], map: "shopping_mall_review_moderation_shopping_mall_review_c_0ff9094a")
+  @@index([shopping_mall_administrator_id], map: "shopping_mall_review_moderation_shopping_mall_administ_b102d542")
+  
+  @@index([moderation_type])
+  @@index([action_taken])
+  @@index([created_at])
+  @@index([shopping_mall_review_id, shopping_mall_review_comment_id], map: "shopping_mall_review_moderation_shopping_mall_review_i_5ddabc16")
+}

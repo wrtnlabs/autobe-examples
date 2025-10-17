@@ -1,0 +1,373 @@
+/// Core product entity representing items available for sale in the
+/// marketplace. Each product can have multiple variants (SKUs) with
+/// different color, size, and option combinations. Products are owned by
+/// sellers and organized into categories. Supports complete product
+/// lifecycle from draft to discontinued states with soft deletion
+/// capability.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product category assignment. {@link shopping_mall_categories.id}
+  shopping_mall_category_id String
+  
+  /// Seller who owns and manages this product. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Product name displayed to customers. Must be between 3-200 characters.
+  name String
+  
+  /// Detailed product description with minimum 20 characters, maximum 5000
+  /// characters. Supports rich text formatting.
+  description String
+  
+  /// Base product price in USD. Individual SKU variants may have different
+  /// prices. Must be positive number greater than zero.
+  base_price Float
+  
+  /// Product lifecycle status: draft (being created), active (published and
+  /// visible), inactive (temporarily hidden), out_of_stock (all variants
+  /// unavailable), discontinued (permanently removed).
+  status String
+  
+  /// Brand or manufacturer name. Optional branding information.
+  brand String?
+  
+  /// Comma-separated keywords for improved searchability and filtering.
+  /// Examples: waterproof, eco-friendly, bestseller.
+  tags String?
+  
+  /// Technical details in JSON format storing key-value pairs like weight,
+  /// dimensions, materials, etc.
+  specifications String?
+  
+  /// Timestamp when product was created.
+  created_at DateTime
+  
+  /// Timestamp when product was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, product is hidden but preserved for
+  /// order history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_skus shopping_mall_skus[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  
+  @@unique([shopping_mall_seller_id, name])
+  @@index([shopping_mall_seller_id, status, created_at], map: "shopping_mall_products_shopping_mall_seller_id_status__07ff26cd")
+  @@index([status, created_at])
+  @@index([shopping_mall_category_id, status])
+}
+
+/// Stock Keeping Unit representing a specific product variant with unique
+/// combination of attributes (color, size, options). Each SKU has
+/// independent pricing and inventory tracking. The actual purchasable unit
+/// in orders and carts.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_skus {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product this SKU variant belongs to. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Color variant attribute if applicable. {@link shopping_mall_sku_colors.id}
+  shopping_mall_sku_color_id String?
+  
+  /// Size variant attribute if applicable. {@link shopping_mall_sku_sizes.id}
+  shopping_mall_sku_size_id String?
+  
+  /// Custom option variant attribute if applicable (storage, material, etc.).
+  /// {@link shopping_mall_sku_options.id}
+  shopping_mall_sku_option_id String?
+  
+  /// Unique SKU identifier code combining product ID and variant attributes.
+  /// Must be unique platform-wide.
+  sku_code String
+  
+  /// SKU-specific price which may differ from base product price. Positive
+  /// number greater than zero.
+  price Float
+  
+  /// Current stock available for purchase. Non-negative integer.
+  available_quantity Int
+  
+  /// Stock reserved for pending orders and active carts. Non-negative integer.
+  reserved_quantity Int
+  
+  /// Inventory level that triggers low stock alerts to seller. Default 10
+  /// units.
+  low_stock_threshold Int
+  
+  /// Whether this SKU variant is currently available for purchase. Inactive
+  /// SKUs are hidden from customers.
+  is_active Boolean
+  
+  /// Timestamp when SKU was created.
+  created_at DateTime
+  
+  /// Timestamp when SKU was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  color shopping_mall_sku_colors? @relation(fields: [shopping_mall_sku_color_id], references: [id], onDelete: Cascade)
+  size shopping_mall_sku_sizes? @relation(fields: [shopping_mall_sku_size_id], references: [id], onDelete: Cascade)
+  option shopping_mall_sku_options? @relation(fields: [shopping_mall_sku_option_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_transactions shopping_mall_inventory_transactions[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  
+  @@index([shopping_mall_sku_color_id])
+  @@index([shopping_mall_sku_size_id])
+  @@index([shopping_mall_sku_option_id])
+  
+  @@unique([sku_code])
+  @@unique([shopping_mall_product_id, shopping_mall_sku_color_id, shopping_mall_sku_size_id, shopping_mall_sku_option_id], map: "shopping_mall_skus_shopping_mall_product_id_shopping_m_40c7664b")
+  @@index([shopping_mall_product_id, is_active])
+  @@index([is_active, available_quantity])
+}
+
+/// Color variant attribute for SKUs. Stores color name and optional hex code
+/// for visual representation. Used to differentiate product variants by
+/// color.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_colors {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Color name displayed to customers. Examples: Navy Blue, Forest Green,
+  /// Crimson Red.
+  name String
+  
+  /// Optional hex color code for visual swatch display. Format: #RRGGBB.
+  hex_code String?
+  
+  /// Timestamp when color was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_skus shopping_mall_skus[]
+  
+  @@unique([name])
+}
+
+/// Size variant attribute for SKUs. Stores size value and optional category
+/// for different sizing systems (US, EU, One Size, etc.).
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_sizes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Size value displayed to customers. Examples: Small, Medium, Large, 38,
+  /// 40, 42.
+  value String
+  
+  /// Size category or system. Examples: US Sizes, EU Sizes, One Size, Numeric.
+  category String?
+  
+  /// Timestamp when size was created.
+  created_at DateTime
+  
+  /// Timestamp when size was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_skus shopping_mall_skus[]
+  
+  @@unique([value, category])
+}
+
+/// Custom option variant attribute for SKUs. Stores seller-defined product
+/// options beyond color and size, such as storage capacity, material type,
+/// package quantity, subscription period, etc.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the custom option. Examples: Storage Capacity, Material Type,
+  /// Package Quantity.
+  option_name String
+  
+  /// Value of the custom option. Examples: 128GB, Cotton, 12-Pack.
+  option_value String
+  
+  /// Timestamp when option was created.
+  created_at DateTime
+  
+  /// Timestamp when option was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_skus shopping_mall_skus[]
+  
+  @@unique([option_name, option_value])
+}
+
+/// Complete audit trail of all inventory changes for SKUs. Records every
+/// inventory movement including sales, restocks, adjustments, returns, and
+/// cancellations with timestamp, reason, and actor tracking. Append-only
+/// historical data for compliance and reconciliation.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// SKU whose inventory changed. {@link shopping_mall_skus.id}
+  shopping_mall_sku_id String
+  
+  /// Related order if transaction is due to sale or cancellation. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String?
+  
+  /// Seller who initiated the inventory change if manual adjustment. {@link
+  /// shopping_mall_sellers.id}
+  actor_seller_id String?
+  
+  /// Admin who initiated the inventory change if administrative action. {@link
+  /// shopping_mall_admins.id}
+  actor_admin_id String?
+  
+  /// Type of inventory transaction: sale, restock, adjustment, damage_loss,
+  /// return, cancellation.
+  transaction_type String
+  
+  /// Quantity change - positive for additions (restock, return), negative for
+  /// reductions (sale, damage).
+  quantity_change Int
+  
+  /// Resulting available quantity after this transaction. For audit
+  /// verification.
+  quantity_after Int
+  
+  /// Processing status of the inventory transaction: pending (reservation),
+  /// completed (permanent allocation), reversed (cancellation/refund).
+  /// Critical for tracking concurrent inventory operations and order state.
+  transaction_status String
+  
+  /// Explanation or reason for the inventory change. Required for adjustments
+  /// and corrections.
+  reason String?
+  
+  /// Additional notes or details about the transaction.
+  notes String?
+  
+  /// Timestamp when inventory transaction occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  actorSeller shopping_mall_sellers? @relation(fields: [actor_seller_id], references: [id], onDelete: Cascade)
+  actorAdmin shopping_mall_admins? @relation(fields: [actor_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id], map: "shopping_mall_inventory_transactions_shopping_mall_ord_6bcb09fc")
+  @@index([actor_seller_id])
+  @@index([actor_admin_id])
+  
+  @@index([shopping_mall_sku_id, created_at], map: "shopping_mall_inventory_transactions_shopping_mall_sku_7c909787")
+  @@index([transaction_type, transaction_status, created_at], map: "shopping_mall_inventory_transactions_transaction_type__f7adc95d")
+}
+
+/// Product images for visual display in catalog and detail pages. Supports
+/// multiple images per product with ordering for gallery display. Includes
+/// variant-specific images when applicable.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product this image belongs to. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Specific SKU variant this image represents, if variant-specific. {@link
+  /// shopping_mall_skus.id}
+  shopping_mall_sku_id String?
+  
+  /// URL to the stored product image. JPEG, PNG, or WebP format, minimum
+  /// 800x800 pixels.
+  image_url String
+  
+  /// Order position for image gallery display. Lower numbers appear first.
+  /// First image (0) is main product image.
+  display_order Int
+  
+  /// Whether this is the primary/main product image shown in listings. Only
+  /// one image per product should be primary.
+  is_primary Boolean
+  
+  /// Alternative text for accessibility and SEO. Describes the image content.
+  alt_text String?
+  
+  /// Timestamp when image was uploaded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus? @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_id, display_order], map: "shopping_mall_product_images_shopping_mall_product_id__1e493e13")
+  @@index([shopping_mall_sku_id, display_order], map: "shopping_mall_product_images_shopping_mall_sku_id_disp_80a23eb3")
+}

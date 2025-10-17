@@ -1,0 +1,38 @@
+/// User accounts managing authentication and task ownership in the todo
+/// application. Each user maintains exclusive control over their personal
+/// todo tasks with secure login capabilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for authentication. Must be unique across all users.
+  email String
+  
+  /// Securely hashed password for user authentication and login functionality.
+  password_hash String
+  
+  /// Timestamp when the user account was initially created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent user account update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for user account deactivation. Null indicates
+  /// active account.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_tasks todo_list_tasks[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([updated_at])
+}

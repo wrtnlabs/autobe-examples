@@ -1,0 +1,433 @@
+/// Core inventory management system tracking SKU-level stock quantities,
+/// locations, and supplier relationships. This table maintains real-time
+/// inventory visibility across all product variants and supports
+/// multi-location inventory management with automatic low-stock alerts and
+/// reorder point tracking.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated product variant for inventory tracking. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Physical storage location for this inventory item. {@link
+  /// shopping_mall_inventory_locations.id}
+  shopping_mall_inventory_location_id String
+  
+  /// Primary supplier for this inventory item. {@link
+  /// shopping_mall_suppliers.id}
+  shopping_mall_supplier_id String?
+  
+  /// Real-time available stock quantity for this SKU.
+  current_quantity Int
+  
+  /// Quantity reserved for pending orders but not yet shipped.
+  reserved_quantity Int
+  
+  /// Minimum threshold that triggers low-stock alerts.
+  minimum_stock_level Int
+  
+  /// Maximum capacity for this inventory item.
+  maximum_stock_level Int
+  
+  /// Stock level at which automatic reordering should occur.
+  reorder_point Int
+  
+  /// Current inventory status (in_stock, low_stock, out_of_stock, backordered).
+  stock_status String
+  
+  /// Whether backorders are allowed when stock is depleted.
+  allow_backorders Boolean
+  
+  /// Per-unit cost price for inventory valuation.
+  cost_price Float
+  
+  /// Timestamp of last inventory replenishment.
+  last_restocked_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  location shopping_mall_inventory_locations @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  supplier shopping_mall_suppliers? @relation(fields: [shopping_mall_supplier_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_stock_movements shopping_mall_stock_movements[]
+  shopping_mall_inventory_alerts shopping_mall_inventory_alerts[]
+  
+  @@index([shopping_mall_inventory_location_id], map: "shopping_mall_inventory_shopping_mall_inventory_locati_3547e5eb")
+  
+  @@unique([shopping_mall_product_variant_id, shopping_mall_inventory_location_id], map: "shopping_mall_inventory_shopping_mall_product_variant__07316016")
+  @@index([stock_status])
+  @@index([current_quantity])
+  @@index([last_restocked_at])
+  @@index([shopping_mall_supplier_id])
+}
+
+/// Physical storage locations for inventory management, supporting
+/// multi-location warehouse operations. This includes warehouse zones,
+/// shelves, bins, and other storage organizational structures with capacity
+/// tracking.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_locations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent location for hierarchical organization (zones within warehouses).
+  /// {@link shopping_mall_inventory_locations.id}
+  parent_location_id String?
+  
+  /// Unique identifier code for this location (e.g., WH-A-ZONE1-BIN5).
+  location_code String
+  
+  /// Descriptive name for the location (e.g., Main Warehouse - Zone A).
+  location_name String
+  
+  /// Type of location (warehouse, store, distribution_center, returns).
+  location_type String
+  
+  /// Primary address line for physical location.
+  address_line_1 String?
+  
+  /// Secondary address line for physical location.
+  address_line_2 String?
+  
+  /// City where location is situated.
+  city String?
+  
+  /// State or province for location address.
+  state String?
+  
+  /// Postal or ZIP code for location.
+  postal_code String?
+  
+  /// Country code for location address.
+  country String?
+  
+  /// Contact phone number for location management.
+  contact_phone String?
+  
+  /// Whether this location is currently active for inventory operations.
+  is_active Boolean
+  
+  /// Maximum inventory capacity for this location.
+  capacity_limit Int?
+  
+  /// Current inventory quantity in this location.
+  current_utilization Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for location deactivation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_inventory_locations? @relation("recursive", fields: [parent_location_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory shopping_mall_inventory[]
+  recursive shopping_mall_inventory_locations[] @relation("recursive")
+  shopping_mall_stock_movements_of_source_location_id shopping_mall_stock_movements[] @relation("shopping_mall_stock_movements_of_source_location_id")
+  shopping_mall_stock_movements_of_destination_location_id shopping_mall_stock_movements[] @relation("shopping_mall_stock_movements_of_destination_location_id")
+  
+  @@index([parent_location_id])
+  
+  @@unique([location_code])
+  @@index([location_type])
+  @@index([is_active])
+  @@index([country, state])
+  @@index([current_utilization])
+}
+
+/// Complete audit trail of all inventory transactions and stock movements.
+/// This snapshot table records every inventory change for auditing,
+/// reporting, and historical analysis purposes, including purchases, sales,
+/// adjustments, and transfers.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_stock_movements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Inventory item affected by this movement. {@link
+  /// shopping_mall_inventory.id}
+  shopping_mall_inventory_id String
+  
+  /// Associated order if movement is related to sales. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String?
+  
+  /// Source location for transfers. {@link
+  /// shopping_mall_inventory_locations.id}
+  source_location_id String?
+  
+  /// Destination location for transfers. {@link
+  /// shopping_mall_inventory_locations.id}
+  destination_location_id String?
+  
+  /// Type of stock movement (purchase, sale, adjustment, transfer, return).
+  movement_type String
+  
+  /// Net quantity change (positive for additions, negative for deductions).
+  quantity_change Int
+  
+  /// Stock quantity before this movement occurred.
+  previous_quantity Int
+  
+  /// Stock quantity after this movement was applied.
+  new_quantity Int
+  
+  /// External reference number (PO number, adjustment code, etc.).
+  reference_number String?
+  
+  /// Reason code for the movement (damage, count_error, etc.).
+  reason_code String?
+  
+  /// Cost per unit at time of movement for valuation.
+  unit_cost Float?
+  
+  /// Total monetary value of this movement.
+  total_value Float?
+  
+  /// Effective date of the stock movement.
+  movement_date DateTime
+  
+  /// Identifier of person/system that processed this movement.
+  processed_by String?
+  
+  /// Additional notes or comments about this movement.
+  notes String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  sourceLocation shopping_mall_inventory_locations? @relation("shopping_mall_stock_movements_of_source_location_id", fields: [source_location_id], references: [id], onDelete: Cascade)
+  destinationLocation shopping_mall_inventory_locations? @relation("shopping_mall_stock_movements_of_destination_location_id", fields: [destination_location_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([source_location_id])
+  @@index([destination_location_id])
+  
+  @@index([movement_type])
+  @@index([movement_date])
+  @@index([shopping_mall_inventory_id, movement_date], map: "shopping_mall_stock_movements_shopping_mall_inventory__db03f08d")
+  @@index([reference_number])
+  @@index([reason_code])
+}
+
+/// Automated alert system for inventory management, tracking low stock
+/// levels, expiration dates, and other inventory-related notifications. This
+/// system ensures timely replenishment and prevents stockouts through
+/// configurable alert thresholds.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Inventory item that triggered this alert. {@link
+  /// shopping_mall_inventory.id}
+  shopping_mall_inventory_id String
+  
+  /// Seller who owns the inventory item. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Type of alert (low_stock, out_of_stock, overstock, expiration).
+  alert_type String
+  
+  /// Severity level (info, warning, critical, emergency).
+  alert_severity String
+  
+  /// Stock quantity that triggered this alert.
+  trigger_quantity Int
+  
+  /// Configured threshold quantity for this alert type.
+  threshold_quantity Int
+  
+  /// Detailed alert message with context and recommendations.
+  alert_message String
+  
+  /// Whether this alert has been acknowledged by responsible party.
+  is_acknowledged Boolean
+  
+  /// User who acknowledged this alert.
+  acknowledged_by String?
+  
+  /// Timestamp when alert was acknowledged.
+  acknowledged_at DateTime?
+  
+  /// Whether the underlying issue has been resolved.
+  is_resolved Boolean
+  
+  /// User who resolved this alert.
+  resolved_by String?
+  
+  /// Timestamp when alert was resolved.
+  resolved_at DateTime?
+  
+  /// Notes about how the alert was resolved.
+  resolution_notes String?
+  
+  /// Whether notification has been sent to relevant parties.
+  notification_sent Boolean
+  
+  /// Timestamp of last notification attempt.
+  last_notification_sent_at DateTime?
+  
+  /// Alert creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inventory shopping_mall_inventory @relation(fields: [shopping_mall_inventory_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_inventory_id])
+  
+  @@index([alert_type])
+  @@index([alert_severity])
+  @@index([is_acknowledged])
+  @@index([is_resolved])
+  @@index([shopping_mall_seller_id])
+  @@index([created_at])
+}
+
+/// Supplier management system for inventory procurement, tracking vendor
+/// relationships, contact information, performance metrics, and procurement
+/// terms. This enables efficient supplier management and ensures reliable
+/// inventory supply chain operations.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_suppliers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique supplier identifier code for internal reference.
+  supplier_code String
+  
+  /// Legal company name of the supplier.
+  company_name String
+  
+  /// Primary contact person at the supplier.
+  contact_name String?
+  
+  /// Primary contact email address.
+  contact_email String
+  
+  /// Primary contact phone number.
+  contact_phone String?
+  
+  /// Supplier company website URL.
+  website String?
+  
+  /// Primary business address line.
+  address_line_1 String
+  
+  /// Secondary business address line.
+  address_line_2 String?
+  
+  /// City of business location.
+  city String
+  
+  /// State or province of business location.
+  state String
+  
+  /// Postal or ZIP code of business location.
+  postal_code String
+  
+  /// Country of business location.
+  country String
+  
+  /// Business tax identification number.
+  tax_id String?
+  
+  /// Standard payment terms (Net 30, Net 60, etc.).
+  payment_terms String?
+  
+  /// Average lead time for order fulfillment in days.
+  lead_time_days Int
+  
+  /// Minimum order amount required by supplier.
+  minimum_order_amount Float?
+  
+  /// Performance rating based on delivery and quality metrics.
+  supplier_rating Float?
+  
+  /// Whether this supplier is currently active for procurement.
+  is_active Boolean
+  
+  /// Whether this supplier is preferred for automatic ordering.
+  preferred_supplier Boolean
+  
+  /// Additional notes or comments about the supplier.
+  notes String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for supplier deactivation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_inventory shopping_mall_inventory[]
+  
+  @@unique([supplier_code])
+  @@unique([contact_email])
+  @@index([company_name])
+  @@index([country, state])
+  @@index([is_active])
+  @@index([preferred_supplier])
+  @@index([supplier_rating])
+}
