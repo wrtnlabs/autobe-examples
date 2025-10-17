@@ -4,28 +4,28 @@
 
 AI Model | Total Score | Status 
 :--------|------------:|:-------
-anthropic/claude-sonnet-4.5 | 100 | 🟢
-openai/gpt-4.1 | 100 | 🟢
-openai/gpt-4.1-mini | 100 | 🟢
-openai/gpt-5 | 82.5 | 🟢
-openai/gpt-5-mini | 82.5 | 🟢
-qwen/qwen3-next-80b-a3b-instruct | 82.5 | 🟢
-deepseek/deepseek-v3.1-terminus | 47.5 | 🟡
-mistralai/codestral-2508 | 47.5 | 🟡
-moonshotai/kimi-k2-0905 | 47.5 | 🟡
-anthropic/claude-haiku-4.5 | 42.5 | 🟡
-meta-llama/llama-4-maverick | 30 | 🟡
-mistralai/devstral-medium | 30 | ❌
-x-ai/grok-code-fast-1 | 30 | ❌
-deepseek/deepseek-v3.2-exp | 25 | ❌
-qwen/qwen3-235b-a22b-2507 | 25 | ❌
-qwen/qwen3-30b-a3b-instruct-2507 | 12.5 | ❌
-qwen/qwen3-coder | 10 | ❌
-meta-llama/llama-3.3-70b-instruct | 7.5 | ❌
-meta-llama/llama-4-scout | 5 | ❌
-z-ai/glm-4.6 | 2.5 | ❌
+[`anthropic/claude-sonnet-4.5`](#anthropic-claude-sonnet-4.5) | 100 | 🟢
+[`openai/gpt-4.1`](#openai-gpt-4.1) | 100 | 🟢
+[`openai/gpt-4.1-mini`](#openai-gpt-4.1-mini) | 100 | 🟢
+[`openai/gpt-5`](#openai-gpt-5) | 82.5 | 🟢
+[`openai/gpt-5-mini`](#openai-gpt-5-mini) | 82.5 | 🟢
+[`qwen/qwen3-next-80b-a3b-instruct`](#qwen-qwen3-next-80b-a3b-instruct) | 82.5 | 🟢
+[`deepseek/deepseek-v3.1-terminus`](#deepseek-deepseek-v3.1-terminus) | 47.5 | 🟡
+[`mistralai/codestral-2508`](#mistralai-codestral-2508) | 47.5 | 🟡
+[`moonshotai/kimi-k2-0905`](#moonshotai-kimi-k2-0905) | 47.5 | 🟡
+[`anthropic/claude-haiku-4.5`](#anthropic-claude-haiku-4.5) | 42.5 | 🟡
+[`meta-llama/llama-4-maverick`](#meta-llama-llama-4-maverick) | 30 | 🟡
+[`mistralai/devstral-medium`](#mistralai-devstral-medium) | 30 | ❌
+[`x-ai/grok-code-fast-1`](#x-ai-grok-code-fast-1) | 30 | ❌
+[`deepseek/deepseek-v3.2-exp`](#deepseek-deepseek-v3.2-exp) | 25 | ❌
+[`qwen/qwen3-235b-a22b-2507`](#qwen-qwen3-235b-a22b-2507) | 25 | ❌
+[`qwen/qwen3-30b-a3b-instruct-2507`](#qwen-qwen3-30b-a3b-instruct-2507) | 12.5 | ❌
+[`qwen/qwen3-coder`](#qwen-qwen3-coder) | 10 | ❌
+[`meta-llama/llama-3.3-70b-instruct`](#meta-llama-llama-3.3-70b-instruct) | 7.5 | ❌
+[`meta-llama/llama-4-scout`](#meta-llama-llama-4-scout) | 5 | ❌
+[`z-ai/glm-4.6`](#z-ai-glm-4.6) | 2.5 | ❌
 
-## 🟢 `anthropic/claude-sonnet-4.5`
+## `anthropic/claude-sonnet-4.5`
 
 Project | Score | Status
 :-------|------:|:------
@@ -34,7 +34,7 @@ Project | Score | Status
 [`reddit`](./anthropic/claude-sonnet-4.5/reddit/) | 100 | 🟢
 [`shopping`](./anthropic/claude-sonnet-4.5/shopping/) | 100 | 🟢
 
-## 🟢 `openai/gpt-4.1`
+## `openai/gpt-4.1`
 
 Project | Score | Status
 :-------|------:|:------
@@ -43,7 +43,7 @@ Project | Score | Status
 [`reddit`](./openai/gpt-4.1/reddit/) | 100 | 🟢
 [`shopping`](./openai/gpt-4.1/shopping/) | 100 | 🟢
 
-## 🟢 `openai/gpt-4.1-mini`
+## `openai/gpt-4.1-mini`
 
 Project | Score | Status
 :-------|------:|:------
@@ -52,7 +52,7 @@ Project | Score | Status
 [`reddit`](./openai/gpt-4.1-mini/reddit/) | 100 | 🟢
 [`shopping`](./openai/gpt-4.1-mini/shopping/) | 100 | 🟢
 
-## 🟢 `openai/gpt-5`
+## `openai/gpt-5`
 
 Project | Score | Status
 :-------|------:|:------
@@ -61,7 +61,7 @@ Project | Score | Status
 [`reddit`](./openai/gpt-5/reddit/) | 100 | 🟢
 [`shopping`](./openai/gpt-5/shopping/) | 30 | ❌
 
-## 🟢 `openai/gpt-5-mini`
+## `openai/gpt-5-mini`
 
 Project | Score | Status
 :-------|------:|:------
@@ -70,7 +70,7 @@ Project | Score | Status
 [`reddit`](./openai/gpt-5-mini/reddit/) | 100 | 🟢
 [`shopping`](./openai/gpt-5-mini/shopping/) | 30 | ❌
 
-## 🟢 `qwen/qwen3-next-80b-a3b-instruct`
+## `qwen/qwen3-next-80b-a3b-instruct`
 
 Project | Score | Status
 :-------|------:|:------
@@ -79,7 +79,7 @@ Project | Score | Status
 [`reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/) | 100 | 🟢
 [`shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/) | 30 | ❌
 
-## 🟡 `deepseek/deepseek-v3.1-terminus`
+## `deepseek/deepseek-v3.1-terminus`
 
 Project | Score | Status
 :-------|------:|:------
@@ -88,7 +88,7 @@ Project | Score | Status
 [`reddit`](./deepseek/deepseek-v3.1-terminus/reddit/) | 30 | ❌
 [`shopping`](./deepseek/deepseek-v3.1-terminus/shopping/) | 30 | ❌
 
-## 🟡 `mistralai/codestral-2508`
+## `mistralai/codestral-2508`
 
 Project | Score | Status
 :-------|------:|:------
@@ -97,7 +97,7 @@ Project | Score | Status
 [`reddit`](./mistralai/codestral-2508/reddit/) | 30 | ❌
 [`shopping`](./mistralai/codestral-2508/shopping/) | 30 | ❌
 
-## 🟡 `moonshotai/kimi-k2-0905`
+## `moonshotai/kimi-k2-0905`
 
 Project | Score | Status
 :-------|------:|:------
@@ -106,7 +106,7 @@ Project | Score | Status
 [`reddit`](./moonshotai/kimi-k2-0905/reddit/) | 30 | ❌
 [`shopping`](./moonshotai/kimi-k2-0905/shopping/) | 30 | ❌
 
-## 🟡 `anthropic/claude-haiku-4.5`
+## `anthropic/claude-haiku-4.5`
 
 Project | Score | Status
 :-------|------:|:------
@@ -115,7 +115,7 @@ Project | Score | Status
 [`reddit`](./anthropic/claude-haiku-4.5/reddit/) | 30 | ❌
 [`shopping`](./anthropic/claude-haiku-4.5/shopping/) | 30 | ❌
 
-## 🟡 `meta-llama/llama-4-maverick`
+## `meta-llama/llama-4-maverick`
 
 Project | Score | Status
 :-------|------:|:------
@@ -124,7 +124,7 @@ Project | Score | Status
 [`reddit`](./meta-llama/llama-4-maverick/reddit/) | 10 | ❌
 [`shopping`](./meta-llama/llama-4-maverick/shopping/) | 10 | ❌
 
-## ❌ `mistralai/devstral-medium`
+## `mistralai/devstral-medium`
 
 Project | Score | Status
 :-------|------:|:------
@@ -133,7 +133,7 @@ Project | Score | Status
 [`reddit`](./mistralai/devstral-medium/reddit/) | 30 | ❌
 [`shopping`](./mistralai/devstral-medium/shopping/) | 30 | ❌
 
-## ❌ `x-ai/grok-code-fast-1`
+## `x-ai/grok-code-fast-1`
 
 Project | Score | Status
 :-------|------:|:------
@@ -142,7 +142,7 @@ Project | Score | Status
 [`reddit`](./x-ai/grok-code-fast-1/reddit/) | 30 | ❌
 [`shopping`](./x-ai/grok-code-fast-1/shopping/) | 30 | ❌
 
-## ❌ `deepseek/deepseek-v3.2-exp`
+## `deepseek/deepseek-v3.2-exp`
 
 Project | Score | Status
 :-------|------:|:------
@@ -151,7 +151,7 @@ Project | Score | Status
 [`reddit`](./deepseek/deepseek-v3.2-exp/reddit/) | 30 | ❌
 [`shopping`](./deepseek/deepseek-v3.2-exp/shopping/) | 10 | ❌
 
-## ❌ `qwen/qwen3-235b-a22b-2507`
+## `qwen/qwen3-235b-a22b-2507`
 
 Project | Score | Status
 :-------|------:|:------
@@ -160,7 +160,7 @@ Project | Score | Status
 [`reddit`](./qwen/qwen3-235b-a22b-2507/reddit/) | 10 | ❌
 [`shopping`](./qwen/qwen3-235b-a22b-2507/shopping/) | 30 | ❌
 
-## ❌ `qwen/qwen3-30b-a3b-instruct-2507`
+## `qwen/qwen3-30b-a3b-instruct-2507`
 
 Project | Score | Status
 :-------|------:|:------
@@ -169,7 +169,7 @@ Project | Score | Status
 [`reddit`](./qwen/qwen3-30b-a3b-instruct-2507/reddit/) | 10 | ❌
 `shopping` | 0 | ❌
 
-## ❌ `qwen/qwen3-coder`
+## `qwen/qwen3-coder`
 
 Project | Score | Status
 :-------|------:|:------
@@ -178,7 +178,7 @@ Project | Score | Status
 [`reddit`](./qwen/qwen3-coder/reddit/) | 10 | ❌
 [`shopping`](./qwen/qwen3-coder/shopping/) | 10 | ❌
 
-## ❌ `meta-llama/llama-3.3-70b-instruct`
+## `meta-llama/llama-3.3-70b-instruct`
 
 Project | Score | Status
 :-------|------:|:------
@@ -187,7 +187,7 @@ Project | Score | Status
 [`reddit`](./meta-llama/llama-3.3-70b-instruct/reddit/) | 10 | ❌
 [`shopping`](./meta-llama/llama-3.3-70b-instruct/shopping/) | 10 | ❌
 
-## ❌ `meta-llama/llama-4-scout`
+## `meta-llama/llama-4-scout`
 
 Project | Score | Status
 :-------|------:|:------
@@ -196,7 +196,7 @@ Project | Score | Status
 `reddit` | 0 | ❌
 `shopping` | 0 | ❌
 
-## ❌ `z-ai/glm-4.6`
+## `z-ai/glm-4.6`
 
 Project | Score | Status
 :-------|------:|:------
