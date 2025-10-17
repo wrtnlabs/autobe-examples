@@ -34,6 +34,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`reddit`](./anthropic/claude-sonnet-4.5/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`shopping`](./anthropic/claude-sonnet-4.5/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 
+![](https://autobe.dev/images/demonstrate/replay-anthropic-claude-sonnet-4.5.png)
+
 ## `openai/gpt-4.1`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -42,6 +44,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`bbs`](./openai/gpt-4.1/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`reddit`](./openai/gpt-4.1/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`shopping`](./openai/gpt-4.1/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+
+![](https://autobe.dev/images/demonstrate/replay-openai-gpt-4.1.png)
 
 ## `openai/gpt-4.1-mini`
 
@@ -52,6 +56,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`reddit`](./openai/gpt-4.1-mini/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`shopping`](./openai/gpt-4.1-mini/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 
+![](https://autobe.dev/images/demonstrate/replay-openai-gpt-4.1-mini.png)
+
 ## `openai/gpt-5`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -60,6 +66,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`bbs`](./openai/gpt-5/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`reddit`](./openai/gpt-5/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`shopping`](./openai/gpt-5/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+
+![](https://autobe.dev/images/demonstrate/replay-openai-gpt-5.png)
 
 ## `openai/gpt-5-mini`
 
@@ -70,6 +78,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`reddit`](./openai/gpt-5-mini/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`shopping`](./openai/gpt-5-mini/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 
+![](https://autobe.dev/images/demonstrate/replay-openai-gpt-5-mini.png)
+
 ## `qwen/qwen3-next-80b-a3b-instruct`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -78,6 +88,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`bbs`](./qwen/qwen3-next-80b-a3b-instruct/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+
+![](https://autobe.dev/images/demonstrate/replay-qwen-qwen3-next-80b-a3b-instruct.png)
 
 ## `deepseek/deepseek-v3.1-terminus`
 
@@ -88,6 +100,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`reddit`](./deepseek/deepseek-v3.1-terminus/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`shopping`](./deepseek/deepseek-v3.1-terminus/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 
+![](https://autobe.dev/images/demonstrate/replay-deepseek-deepseek-v3.1-terminus.png)
+
 ## `mistralai/codestral-2508`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -96,6 +110,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`bbs`](./mistralai/codestral-2508/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`reddit`](./mistralai/codestral-2508/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`shopping`](./mistralai/codestral-2508/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+
+![](https://autobe.dev/images/demonstrate/replay-mistralai-codestral-2508.png)
 
 ## `moonshotai/kimi-k2-0905`
 
@@ -106,6 +122,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`reddit`](./moonshotai/kimi-k2-0905/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`shopping`](./moonshotai/kimi-k2-0905/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 
+![](https://autobe.dev/images/demonstrate/replay-moonshotai-kimi-k2-0905.png)
+
 ## `anthropic/claude-haiku-4.5`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -114,6 +132,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`bbs`](./anthropic/claude-haiku-4.5/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`reddit`](./anthropic/claude-haiku-4.5/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`shopping`](./anthropic/claude-haiku-4.5/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+
+![](https://autobe.dev/images/demonstrate/replay-anthropic-claude-haiku-4.5.png)
 
 ## `meta-llama/llama-4-maverick`
 
@@ -124,6 +144,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`reddit`](./meta-llama/llama-4-maverick/reddit/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 [`shopping`](./meta-llama/llama-4-maverick/shopping/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 
+![](https://autobe.dev/images/demonstrate/replay-meta-llama-llama-4-maverick.png)
+
 ## `mistralai/devstral-medium`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -132,6 +154,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`bbs`](./mistralai/devstral-medium/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`reddit`](./mistralai/devstral-medium/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`shopping`](./mistralai/devstral-medium/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
+
+![](https://autobe.dev/images/demonstrate/replay-mistralai-devstral-medium.png)
 
 ## `x-ai/grok-code-fast-1`
 
@@ -142,6 +166,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`reddit`](./x-ai/grok-code-fast-1/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`shopping`](./x-ai/grok-code-fast-1/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 
+![](https://autobe.dev/images/demonstrate/replay-x-ai-grok-code-fast-1.png)
+
 ## `deepseek/deepseek-v3.2-exp`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -150,6 +176,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`bbs`](./deepseek/deepseek-v3.2-exp/bbs/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`reddit`](./deepseek/deepseek-v3.2-exp/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 [`shopping`](./deepseek/deepseek-v3.2-exp/shopping/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
+
+![](https://autobe.dev/images/demonstrate/replay-deepseek-deepseek-v3.2-exp.png)
 
 ## `qwen/qwen3-235b-a22b-2507`
 
@@ -160,6 +188,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`reddit`](./qwen/qwen3-235b-a22b-2507/reddit/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 [`shopping`](./qwen/qwen3-235b-a22b-2507/shopping/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
 
+![](https://autobe.dev/images/demonstrate/replay-qwen-qwen3-235b-a22b-2507.png)
+
 ## `qwen/qwen3-30b-a3b-instruct-2507`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -168,6 +198,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`bbs`](./qwen/qwen3-30b-a3b-instruct-2507/bbs/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 [`reddit`](./qwen/qwen3-30b-a3b-instruct-2507/reddit/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 `shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+
+![](https://autobe.dev/images/demonstrate/replay-qwen-qwen3-30b-a3b-instruct-2507.png)
 
 ## `qwen/qwen3-coder`
 
@@ -178,6 +210,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`reddit`](./qwen/qwen3-coder/reddit/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 [`shopping`](./qwen/qwen3-coder/shopping/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 
+![](https://autobe.dev/images/demonstrate/replay-qwen-qwen3-coder.png)
+
 ## `meta-llama/llama-3.3-70b-instruct`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -186,6 +220,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 [`bbs`](./meta-llama/llama-3.3-70b-instruct/bbs/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 [`reddit`](./meta-llama/llama-3.3-70b-instruct/reddit/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
 [`shopping`](./meta-llama/llama-3.3-70b-instruct/shopping/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
+
+![](https://autobe.dev/images/demonstrate/replay-meta-llama-llama-3.3-70b-instruct.png)
 
 ## `meta-llama/llama-4-scout`
 
@@ -196,6 +232,8 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 `reddit` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
 `shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
 
+![](https://autobe.dev/images/demonstrate/replay-meta-llama-llama-4-scout.png)
+
 ## `z-ai/glm-4.6`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -204,3 +242,5 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 `bbs` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
 `reddit` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
 `shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
+
+![](https://autobe.dev/images/demonstrate/replay-z-ai-glm-4.6.png)
