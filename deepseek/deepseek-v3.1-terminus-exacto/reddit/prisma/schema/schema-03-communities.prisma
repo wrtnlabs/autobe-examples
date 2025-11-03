@@ -1,0 +1,260 @@
+/// Core community entities representing subreddit-like communities where
+/// users can post content and engage in discussions. Each community has
+/// unique settings, rules, and categorization. Communities are created by
+/// members and managed by moderators.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community creator's member identifier. {@link reddit_clone_members.id}
+  created_by_member_id String
+  
+  /// Primary moderator responsible for community management. {@link
+  /// reddit_clone_moderators.id}
+  moderated_by_moderator_id String
+  
+  /// Primary category classification for the community. {@link
+  /// reddit_clone_community_categories.id}
+  category_id String?
+  
+  /// Unique community name displayed to users (e.g., 'programming', 'gaming').
+  name String
+  
+  /// Human-readable display name for the community.
+  display_name String
+  
+  /// Detailed description explaining the community's purpose and focus.
+  description String
+  
+  /// URL-friendly identifier used in community URLs (e.g., 'r/programming').
+  url_slug String
+  
+  /// Community icon image URL for visual representation.
+  icon_url String?
+  
+  /// Community banner image URL for header display.
+  banner_url String?
+  
+  /// Whether the community is publicly visible or requires approval to join.
+  is_public Boolean
+  
+  /// Whether the community contains Not Safe For Work content.
+  is_nsfw Boolean
+  
+  /// Current number of subscribers to the community.
+  subscriber_count Int
+  
+  /// Current number of posts in the community.
+  post_count Int
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  createdByMember reddit_clone_members @relation(fields: [created_by_member_id], references: [id], onDelete: Cascade)
+  primaryModerator reddit_clone_moderators @relation(fields: [moderated_by_moderator_id], references: [id], onDelete: Cascade)
+  primaryCategory reddit_clone_community_categories? @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_community_settings reddit_clone_community_settings?
+  reddit_clone_community_rules reddit_clone_community_rules[]
+  reddit_clone_posts reddit_clone_posts[]
+  reddit_clone_subscriptions reddit_clone_subscriptions[]
+  reddit_clone_user_bans reddit_clone_user_bans[]
+  reddit_clone_user_activity reddit_clone_user_activity[]
+  reddit_clone_platform_analytics reddit_clone_platform_analytics[]
+  
+  @@unique([name])
+  @@unique([url_slug])
+  @@unique([display_name])
+  @@index([created_by_member_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([moderated_by_moderator_id, created_at], map: "reddit_clone_communities_moderated_by_moderator_id_cre_cb02e8a6")
+  @@index([category_id, created_at])
+  @@index([is_public, created_at])
+  @@index([is_nsfw, created_at])
+  @@index([subscriber_count, created_at])
+}
+
+/// Community-specific settings and configurations that control community
+/// behavior, moderation rules, and display preferences. Each community has
+/// exactly one settings record.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that these settings belong to. {@link
+  /// reddit_clone_communities.id}
+  community_id String
+  
+  /// Whether text posts are allowed in this community.
+  allow_text_posts Boolean
+  
+  /// Whether link posts are allowed in this community.
+  allow_link_posts Boolean
+  
+  /// Whether image posts are allowed in this community.
+  allow_image_posts Boolean
+  
+  /// Whether posts must have flair assigned.
+  require_post_flair Boolean
+  
+  /// Whether comments must have flair assigned.
+  require_comment_flair Boolean
+  
+  /// Whether crossposting from other communities is allowed.
+  allow_crossposting Boolean
+  
+  /// Whether voting is anonymous in this community.
+  allow_anonymous_voting Boolean
+  
+  /// Whether spoiler tags are enabled for content.
+  enable_spoiler_tags Boolean
+  
+  /// Whether NSFW content filtering is enabled.
+  enable_nsfw_filtering Boolean
+  
+  /// Community moderation strictness level (relaxed, standard, strict).
+  moderation_level String
+  
+  /// Whether posts require moderator approval before publication.
+  approval_required Boolean
+  
+  /// Timestamp when the settings were created.
+  created_at DateTime
+  
+  /// Timestamp when the settings were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id])
+  // spellchecker: ignore-next-line
+  @@index([moderation_level, approval_required], map: "reddit_clone_community_settings_moderation_level_appro_4e6bd231")
+  @@index([approval_required])
+}
+
+/// Community-specific rules and guidelines that members must follow. Each
+/// community can have multiple rules with specific enforcement levels.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that this rule belongs to. {@link reddit_clone_communities.id}
+  community_id String
+  
+  /// Sequential rule number for ordering and reference.
+  rule_number Int
+  
+  /// Short title summarizing the rule.
+  title String
+  
+  /// Detailed description explaining the rule and its purpose.
+  description String
+  
+  /// Rule enforcement strictness (warning, removal, ban).
+  enforcement_level String
+  
+  /// Whether this rule applies to posts.
+  applies_to_posts Boolean
+  
+  /// Whether this rule applies to comments.
+  applies_to_comments Boolean
+  
+  /// Whether this rule is currently active and enforced.
+  is_active Boolean
+  
+  /// Timestamp when the rule was created.
+  created_at DateTime
+  
+  /// Timestamp when the rule was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the rule was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, rule_number])
+  @@index([community_id, is_active])
+  @@index([enforcement_level, is_active])
+  // spellchecker: ignore-next-line
+  @@index([applies_to_posts, applies_to_comments], map: "reddit_clone_community_rules_applies_to_posts_applies__568fa7e9")
+}
+
+/// Category classification system for organizing communities by topic or
+/// theme. Categories help users discover relevant communities.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique category name (e.g., 'Technology', 'Gaming', 'Sports').
+  name String
+  
+  /// Description explaining the category's focus and scope.
+  description String
+  
+  /// Category icon image URL for visual representation.
+  icon_url String?
+  
+  /// Whether this category is active and available for use.
+  is_active Boolean
+  
+  /// Display order for category listing (lower numbers appear first).
+  sort_order Int
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_clone_communities reddit_clone_communities[]
+  
+  @@unique([name])
+  @@index([is_active, sort_order])
+  @@index([sort_order])
+}

@@ -1,0 +1,533 @@
+/// Core system channels representing different seller communities or market
+/// segments. Channels organize the overall marketplace structure and enable
+/// multiple independent market communities to operate within the platform.
+/// Each channel has its own configuration for commission rates, policies,
+/// and branding.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique channel identifier code in format like CHANNEL_PRIMARY,
+  /// CHANNEL_LUXURY, etc. Used in URLs and system references. Maximum 50
+  /// characters.
+  channel_code String
+  
+  /// Display name for the channel shown to customers and sellers. Example:
+  /// 'Primary Marketplace', 'Premium Store', 'Local Sellers'. Maximum 100
+  /// characters.
+  channel_name String
+  
+  /// Detailed description of the channel's purpose and positioning. Helps
+  /// sellers understand which channel suits their business. Maximum 1000
+  /// characters.
+  description String?
+  
+  /// Default commission percentage (0-100) charged to sellers in this channel.
+  /// Example: 10.5 means 10.5% commission. Specific product categories can
+  /// override this.
+  base_commission_rate Float
+  
+  /// Minimum order value in platform currency required for orders in this
+  /// channel. Prevents very small orders. Example: 100.00
+  min_order_value Float
+  
+  /// Whether this channel is currently active and accepting new sellers and
+  /// orders. Inactive channels may have read-only access.
+  is_active Boolean
+  
+  /// Sort order for displaying channels in user interfaces. Lower numbers
+  /// appear first. Used for UI ordering, not business logic.
+  display_order Int
+  
+  /// Timestamp when this channel was created in the system. ISO 8601 format
+  /// with timezone.
+  created_at DateTime
+  
+  /// Timestamp when this channel was last updated. Updated whenever any
+  /// channel field changes. ISO 8601 format with timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_sections shopping_mall_sections[]
+  
+  @@unique([channel_code])
+  @@index([is_active, display_order])
+}
+
+/// Organizational sections within channels that group related product
+/// categories. Sections provide a second-level organization hierarchy
+/// between channels and specific product categories. Enables structured
+/// navigation for customers browsing products. Example sections:
+/// Electronics, Clothing, Home & Garden.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent channel this section belongs to. {@link
+  /// shopping_mall_channels.id}
+  shopping_mall_channel_id String
+  
+  /// Unique section identifier code within a channel. Format:
+  /// SECTION_ELECTRONICS, SECTION_FASHION. Maximum 50 characters.
+  section_code String
+  
+  /// Display name for the section shown in navigation and category browsing.
+  /// Example: 'Electronics & Gadgets'. Maximum 100 characters.
+  section_name String
+  
+  /// Detailed description of the section's scope and types of products
+  /// included. Helps customers understand what products are in this section.
+  /// Maximum 500 characters.
+  description String?
+  
+  /// URL to an image/icon representing this section for visual display in
+  /// category navigation. Optional visual identifier.
+  section_image_url String?
+  
+  /// Sort order for displaying sections within parent channel. Lower numbers
+  /// appear first in UI navigation.
+  display_order Int
+  
+  /// Whether this section is currently active. Inactive sections are hidden
+  /// from customer view but preserved for historical data.
+  is_active Boolean
+  
+  /// Timestamp when this section was created. ISO 8601 format with timezone.
+  created_at DateTime
+  
+  /// Timestamp when this section was last updated. ISO 8601 format with
+  /// timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_channel_id, section_code], map: "shopping_mall_sections_shopping_mall_channel_id_sectio_060f4d00")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_channel_id, display_order], map: "shopping_mall_sections_shopping_mall_channel_id_displa_d6778c49")
+  @@index([is_active])
+}
+
+/// Product categories that organize the product catalog into hierarchical
+/// browsing structure. Categories enable customers to navigate and discover
+/// products. Categories can be nested in a tree structure where each
+/// category may have a parent category. Examples: Smartphones, Laptops,
+/// Clothing, Shoes, Accessories. Used for both customer browsing and seller
+/// product organization.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to parent category in hierarchical structure for nested
+  /// categories. Null if this is a top-level category. {@link
+  /// shopping_mall_categories.id}
+  parent_category_id String?
+  
+  /// Unique category identifier code used internally. Format: CAT_ELECTRONICS,
+  /// CAT_SMARTPHONES, etc. Maximum 50 characters.
+  category_code String
+  
+  /// Display name for the category shown in navigation and product listings.
+  /// Example: 'Smartphones', 'Laptop Computers'. Maximum 100 characters.
+  category_name String
+  
+  /// URL-friendly slug for SEO and navigation URLs. Lowercase alphanumeric
+  /// with hyphens. Example: 'smartphones', 'laptop-computers'. Maximum 100
+  /// characters.
+  category_slug String
+  
+  /// Detailed description of products in this category. Displayed on category
+  /// landing page. Maximum 1000 characters.
+  description String?
+  
+  /// URL to an image/icon representing this category for visual display in
+  /// navigation and category pages.
+  category_image_url String?
+  
+  /// Sort order for displaying categories at same hierarchy level. Lower
+  /// numbers appear first in navigation.
+  display_order Int
+  
+  /// Denormalized count of active products in this category (includes products
+  /// in subcategories). Updated when products are added/removed from category.
+  /// Used for display efficiency.
+  product_count Int
+  
+  /// Whether this category is currently visible to customers. Inactive
+  /// categories are hidden but preserved for historical data and existing
+  /// product references.
+  is_active Boolean
+  
+  /// Timestamp when this category was created. ISO 8601 format with timezone.
+  created_at DateTime
+  
+  /// Timestamp when this category was last updated. ISO 8601 format with
+  /// timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parentCategory shopping_mall_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_category_attributes shopping_mall_category_attributes[]
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_product_categories_mapping shopping_mall_product_categories_mapping[]
+  shopping_mall_commission_rates shopping_mall_commission_rates?
+  
+  @@unique([category_code])
+  @@unique([category_slug])
+  @@index([parent_category_id, display_order])
+  @@index([is_active])
+}
+
+/// Configurable attributes that products in a specific category can have.
+/// Attributes define the possible variants (colors, sizes, materials, etc.)
+/// that products in a category can use. Enables structured product variant
+/// management and customer filtering. Example: In Clothing category,
+/// attributes might be Color, Size, Material, Style.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_category_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the category these attributes are available for. {@link
+  /// shopping_mall_categories.id}
+  shopping_mall_category_id String
+  
+  /// Unique identifier for this attribute within the category. Format:
+  /// ATTR_COLOR, ATTR_SIZE, ATTR_MATERIAL. Maximum 50 characters.
+  attribute_code String
+  
+  /// Display name for the attribute. Example: 'Color', 'Size', 'Material'.
+  /// Maximum 100 characters.
+  attribute_name String
+  
+  /// Data type of attribute values: 'text' (free text), 'number' (numeric
+  /// values), 'selection' (predefined options from attribute_values),
+  /// 'boolean' (true/false toggle). Determines how attribute values are
+  /// managed and displayed.
+  attribute_type String
+  
+  /// JSON array of predefined values for selection-type attributes. Example:
+  /// ["Red", "Blue", "Green"] for color. Null for text/number types. Stored as
+  /// JSON string.
+  attribute_values String?
+  
+  /// Whether products in this category MUST specify a value for this attribute
+  /// when creating variants. Mandatory attributes for variant definition.
+  is_required_for_variant Boolean
+  
+  /// Whether customers can filter products by this attribute in category view.
+  /// Affects customer-facing filtering options.
+  is_filterable Boolean
+  
+  /// Sort order for displaying attributes in variant selector and product
+  /// forms. Lower numbers appear first.
+  display_order Int
+  
+  /// Timestamp when this attribute was created. ISO 8601 format with timezone.
+  created_at DateTime
+  
+  /// Timestamp when this attribute was last updated. ISO 8601 format with
+  /// timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_category_id, attribute_code], map: "shopping_mall_category_attributes_shopping_mall_catego_2c50110b")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_category_id, display_order], map: "shopping_mall_category_attributes_shopping_mall_catego_a30c8d9a")
+  @@index([is_filterable])
+}
+
+/// Global platform configuration settings for feature toggles, system
+/// behavior, and operational policies. Single-purpose configuration table
+/// storing key-value pairs that control platform-wide behavior. Examples:
+/// enable/disable review system, enable/disable wishlist feature, maximum
+/// cart items, etc.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier. Format: 'feature_reviews_enabled',
+  /// 'feature_wishlist_enabled', 'max_cart_items',
+  /// 'default_order_timeout_minutes'. Maximum 100 characters. Used as primary
+  /// identifier for lookups.
+  config_key String
+  
+  /// Configuration value as string. Interpretations: 'true'/'false' for
+  /// boolean flags, numeric strings for numbers, JSON for complex objects.
+  /// Stored as text for flexibility. Maximum 5000 characters.
+  config_value String
+  
+  /// Data type indicator: 'boolean', 'integer', 'decimal', 'string', 'json'.
+  /// Helps with value interpretation and validation.
+  config_type String
+  
+  /// Human-readable description of this configuration's purpose and expected
+  /// values. Helps admins understand what each setting controls. Maximum 500
+  /// characters.
+  description String?
+  
+  /// Whether admins can modify this configuration from the admin panel. Some
+  /// system-critical configs may be read-only. Controls admin UI visibility.
+  is_editable Boolean
+  
+  /// Timestamp when this configuration was created. ISO 8601 format with
+  /// timezone.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last updated. ISO 8601 format with
+  /// timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key])
+  @@index([is_editable])
+}
+
+/// System-wide operational settings for business rules, policies, and
+/// limits. Stores global business settings like minimum order values,
+/// maximum product price, commission structures, default timeouts, and
+/// policy parameters. Unlike configurations which are feature toggles,
+/// settings are business rule values.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Identifier for this setting. Format: 'minimum_order_value',
+  /// 'maximum_product_price', 'default_commission_rate',
+  /// 'payment_timeout_minutes', 'order_cancellation_window_hours'. Maximum 100
+  /// characters.
+  setting_name String
+  
+  /// Value for this setting as string. Numeric settings stored as numeric
+  /// strings, currency amounts include decimal point. Maximum 1000 characters.
+  setting_value String
+  
+  /// Unit of measurement if applicable. Examples: 'currency', 'minutes',
+  /// 'hours', 'days', 'percentage', 'units'. Helps interpret numeric values.
+  /// Maximum 50 characters.
+  setting_unit String?
+  
+  /// Explanation of what this setting controls and why it matters. Helps
+  /// admins understand business impact. Maximum 500 characters.
+  description String?
+  
+  /// Minimum allowed value for this setting if numeric. Used for validation
+  /// when setting is updated. Null for non-numeric settings.
+  min_value Float?
+  
+  /// Maximum allowed value for this setting if numeric. Used for validation
+  /// when setting is updated. Null for non-numeric settings.
+  max_value Float?
+  
+  /// Timestamp when this setting was created. ISO 8601 format with timezone.
+  created_at DateTime
+  
+  /// Timestamp when this setting was last updated. ISO 8601 format with
+  /// timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([setting_name])
+}
+
+/// Registry of countries supported by the platform for shipping, tax, and
+/// regulatory purposes. Defines which countries are available for customer
+/// addresses, seller registration, and shipping destinations. Each country
+/// entry includes tax rates, shipping info, and operational flags.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_supported_countries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB', 'IN', 'JP'). Used for
+  /// all country references throughout the system. Exactly 2 uppercase
+  /// letters.
+  country_code String
+  
+  /// Full country name as displayed to users (e.g., 'United States', 'United
+  /// Kingdom', 'India'). Maximum 100 characters.
+  country_name String
+  
+  /// ISO 4217 currency code for this country (e.g., 'USD', 'GBP', 'INR'). Used
+  /// for pricing and financial transactions. Exactly 3 uppercase letters.
+  currency_code String
+  
+  /// Default VAT/sales tax rate as percentage (0-100). Example: 15.5 for 15.5%
+  /// tax. Applied to orders shipping to this country unless category-specific
+  /// rate exists.
+  tax_rate Float
+  
+  /// Regular expression pattern for validating postal codes in this country.
+  /// Example: '^[0-9]{5}(-[0-9]{4})?$' for US zip codes. Used in address
+  /// validation.
+  postal_code_format String?
+  
+  /// Whether the platform can ship orders to this country. Used to determine
+  /// available shipping destinations for customers.
+  is_shipping_available Boolean
+  
+  /// Whether sellers can register and operate from this country. May be false
+  /// for countries with regulatory restrictions.
+  is_seller_registration_allowed Boolean
+  
+  /// Whether this country is currently active on the platform. Inactive
+  /// countries are hidden from selection but historical data is preserved.
+  is_active Boolean
+  
+  /// Timestamp when this country was added to the system. ISO 8601 format with
+  /// timezone.
+  created_at DateTime
+  
+  /// Timestamp when this country configuration was last updated. ISO 8601
+  /// format with timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([country_code])
+  @@index([is_active])
+  @@index([is_shipping_available])
+  // spellchecker: ignore-next-line
+  @@index([is_seller_registration_allowed], map: "shopping_mall_supported_countries_is_seller_registrati_a7424513")
+}
+
+/// Shipping carriers available on the platform for order fulfillment.
+/// Registry of carrier integrations including courier services, postal
+/// services, and logistics providers. Stores carrier information, API
+/// endpoints, tracking URL formats, and operational details for carrier
+/// integration.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_carriers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for this carrier used in system references. Format:
+  /// 'CARRIER_FEDEX', 'CARRIER_UPS', 'CARRIER_DHL'. Maximum 50 characters.
+  /// Used for internal references, not display.
+  carrier_code String
+  
+  /// Display name of the shipping carrier shown to customers and sellers.
+  /// Example: 'FedEx', 'UPS', 'DHL Express'. Maximum 100 characters.
+  carrier_name String
+  
+  /// API endpoint URL for carrier tracking and rate queries. Used by system to
+  /// integrate with carrier systems. Example: 'https://api.fedex.com/v1/'. May
+  /// be null for manual carriers.
+  api_endpoint String?
+  
+  /// Encrypted API key or credentials for carrier API authentication. Stored
+  /// encrypted in database. Decrypted only when needed for API calls. Null if
+  /// no API integration.
+  api_key String?
+  
+  /// URL template for customer tracking pages. Format:
+  /// 'https://tracking.fedex.com/tracking?tracknumbers={TRACKING_NUMBER}'.
+  /// {TRACKING_NUMBER} is placeholder for actual tracking number.
+  tracking_url_format String?
+  
+  /// JSON array of ISO country codes this carrier operates in. Example:
+  /// '["US", "CA", "MX"]'. Used to filter available carriers by destination.
+  supported_countries_json String
+  
+  /// JSON array of service types offered (Standard, Express, Overnight, etc.).
+  /// Format: '["Standard", "Express", "Overnight"]'. Used for service
+  /// selection during shipping.
+  service_types String?
+  
+  /// Whether this carrier is currently available for shipping. Inactive
+  /// carriers are hidden from seller selections.
+  is_active Boolean
+  
+  /// Whether carrier has active API integration for tracking and rate quotes.
+  /// False means manual tracking number entry required.
+  is_api_integrated Boolean
+  
+  /// Frequency (in minutes) to poll carrier API for tracking updates. Example:
+  /// 120 = check every 2 hours. Null or 0 means no automatic syncing.
+  sync_interval_minutes Int
+  
+  /// Timestamp when this carrier was added to the system. ISO 8601 format with
+  /// timezone.
+  created_at DateTime
+  
+  /// Timestamp when this carrier configuration was last updated. ISO 8601
+  /// format with timezone.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_shipping_labels shopping_mall_shipping_labels[]
+  shopping_mall_carrier_integrations shopping_mall_carrier_integrations?
+  shopping_mall_tracking_updates shopping_mall_tracking_updates[]
+  shopping_mall_return_shipments shopping_mall_return_shipments[]
+  
+  @@unique([carrier_code])
+  @@index([is_active])
+  @@index([is_api_integrated])
+}

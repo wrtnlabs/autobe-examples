@@ -16,23 +16,64 @@ export async function patchDiscussionBoardAdminAdmins(props: {
   admin: AdminPayload;
   body: IDiscussionBoardAdmin.IRequest;
 }): Promise<IPageIDiscussionBoardAdmin.ISummary> {
-  const { admin, body } = props;
-  // 1. Authorization: forced by presence of admin param
-
-  // 2. Pagination params (default page 1, limit 20)
+  const body = props.body;
   const page = body.page ?? 1;
-  const limit = body.limit ?? 20;
-  const skip = (Number(page) - 1) * Number(limit);
+  let limit = body.limit ?? 20;
+  if (limit > 100) limit = 100;
+  const skip = (page - 1) * limit;
 
-  // 3. Sorting: allowed fields only
+  const where = {
+    ...(body.email !== undefined && { email: body.email }),
+    ...(body.is_locked !== undefined && { is_locked: body.is_locked }),
+    ...(body.deleted_at !== undefined
+      ? body.deleted_at === null
+        ? { deleted_at: null }
+        : { deleted_at: body.deleted_at }
+      : {}),
+    ...(body.display_name !== undefined &&
+      body.display_name !== null &&
+      body.display_name !== "" && {
+        display_name: { contains: body.display_name },
+      }),
+    ...(body.search !== undefined &&
+      body.search !== null &&
+      body.search !== "" && {
+        OR: [
+          { email: { contains: body.search } },
+          { display_name: { contains: body.search } },
+        ],
+      }),
+    ...(body.created_at_start !== undefined || body.created_at_end !== undefined
+      ? {
+          created_at: {
+            ...(body.created_at_start !== undefined &&
+              body.created_at_start !== null && { gte: body.created_at_start }),
+            ...(body.created_at_end !== undefined &&
+              body.created_at_end !== null && { lte: body.created_at_end }),
+          },
+        }
+      : {}),
+    ...(body.updated_at_start !== undefined || body.updated_at_end !== undefined
+      ? {
+          updated_at: {
+            ...(body.updated_at_start !== undefined &&
+              body.updated_at_start !== null && { gte: body.updated_at_start }),
+            ...(body.updated_at_end !== undefined &&
+              body.updated_at_end !== null && { lte: body.updated_at_end }),
+          },
+        }
+      : {}),
+  };
+
   const allowedSortFields = [
-    "email",
-    "username",
-    "registration_completed_at",
     "created_at",
-  ] as const;
-  const sortField =
-    body.sort_by && allowedSortFields.includes(body.sort_by)
+    "email",
+    "display_name",
+    "is_locked",
+    "deleted_at",
+  ];
+  const sortBy =
+    body.sort_by !== undefined && allowedSortFields.includes(body.sort_by)
       ? body.sort_by
       : "created_at";
   const sortOrder =
@@ -40,56 +81,22 @@ export async function patchDiscussionBoardAdminAdmins(props: {
       ? body.sort_order
       : "desc";
 
-  // 4. Build Prisma where clause
-  const where = {
-    deleted_at: null,
-    ...(body.email !== undefined &&
-      body.email !== null && {
-        email: { contains: body.email },
-      }),
-    ...(body.username !== undefined &&
-      body.username !== null && {
-        username: { contains: body.username },
-      }),
-    ...(body.email_verified !== undefined &&
-      body.email_verified !== null && {
-        email_verified: body.email_verified,
-      }),
-    ...((body.registration_completed_at_start !== undefined &&
-      body.registration_completed_at_start !== null) ||
-    (body.registration_completed_at_end !== undefined &&
-      body.registration_completed_at_end !== null)
-      ? {
-          registration_completed_at: {
-            ...(body.registration_completed_at_start !== undefined &&
-              body.registration_completed_at_start !== null && {
-                gte: body.registration_completed_at_start,
-              }),
-            ...(body.registration_completed_at_end !== undefined &&
-              body.registration_completed_at_end !== null && {
-                lte: body.registration_completed_at_end,
-              }),
-          },
-        }
-      : {}),
-  };
-
-  // 5. Query Prisma
-  const [records, total] = await Promise.all([
+  const [admins, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_admins.findMany({
       where,
-      orderBy: {
-        [sortField]: sortOrder,
-      },
+      orderBy: { [sortBy]: sortOrder },
+      skip,
+      take: limit,
       select: {
         id: true,
         email: true,
-        username: true,
-        email_verified: true,
-        registration_completed_at: true,
+        display_name: true,
+        avatar_url: true,
+        is_locked: true,
+        deleted_at: true,
+        created_at: true,
+        updated_at: true,
       },
-      skip,
-      take: Number(limit),
     }),
     MyGlobal.prisma.discussion_board_admins.count({ where }),
   ]);
@@ -101,14 +108,21 @@ export async function patchDiscussionBoardAdminAdmins(props: {
       records: total,
       pages: Math.ceil(total / Number(limit)),
     },
-    data: records.map((record) => ({
-      id: record.id,
-      email: record.email,
-      username: record.username,
-      email_verified: record.email_verified,
-      registration_completed_at: toISOStringSafe(
-        record.registration_completed_at,
-      ),
+    data: admins.map((admin) => ({
+      id: admin.id,
+      email: admin.email,
+      display_name: admin.display_name,
+      avatar_url:
+        admin.avatar_url !== null && admin.avatar_url !== undefined
+          ? admin.avatar_url
+          : undefined,
+      is_locked: admin.is_locked,
+      deleted_at:
+        admin.deleted_at !== null && admin.deleted_at !== undefined
+          ? toISOStringSafe(admin.deleted_at)
+          : null,
+      created_at: toISOStringSafe(admin.created_at),
+      updated_at: toISOStringSafe(admin.updated_at),
     })),
   };
 }

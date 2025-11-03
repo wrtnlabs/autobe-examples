@@ -1,0 +1,273 @@
+/// Guest users who can browse content without authentication. Guests have
+/// limited access rights and are tracked for analytics purposes. {@link
+/// discussion_board_members.id} for comparison with authenticated users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// IP address of the guest user for tracking and analytics.
+  ip_address String
+  
+  /// Browser user agent string for device identification.
+  user_agent String
+  
+  /// Timestamp of the guest's last activity on the platform.
+  last_active DateTime
+  
+  /// Number of sessions initiated by this guest.
+  session_count Int
+  
+  /// Timestamp when the guest record was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([ip_address, last_active])
+  @@index([created_at])
+}
+
+/// Registered member users who can create posts, comment, and participate in
+/// discussions. Members require authentication and have full participation
+/// rights. {@link discussion_board_moderators.id} for administrative
+/// hierarchy.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for public identification.
+  username String
+  
+  /// Email address for account verification and communication.
+  email String
+  
+  /// Hashed password for authentication security.
+  password_hash String
+  
+  /// Public display name shown to other users.
+  display_name String
+  
+  /// Account status: active, pending, suspended, or banned.
+  status String
+  
+  /// Timestamp of the member's last successful login.
+  last_login DateTime?
+  
+  /// Total number of successful logins.
+  login_count Int
+  
+  /// Number of consecutive failed login attempts.
+  failed_login_attempts Int
+  
+  /// Whether the account has been verified via email.
+  account_verified Boolean
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_member_sessions discussion_board_member_sessions[]
+  discussion_board_posts discussion_board_posts[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_user_warnings discussion_board_user_warnings[]
+  discussion_board_suspensions discussion_board_suspensions[]
+  discussion_board_user_profiles discussion_board_user_profiles?
+  discussion_board_file_uploads discussion_board_file_uploads[]
+  discussion_board_user_following_of_follower_member_id discussion_board_user_following[] @relation("discussion_board_user_following_of_follower_member_id")
+  discussion_board_user_following_of_followed_member_id discussion_board_user_following[] @relation("discussion_board_user_following_of_followed_member_id")
+  discussion_board_content_views discussion_board_content_views[]
+  discussion_board_user_engagement discussion_board_user_engagement[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([status])
+  @@index([last_login])
+  @@index([created_at])
+}
+
+/// Authentication sessions for member users. Tracks login sessions for
+/// security and audit purposes. {@link discussion_board_members.id} for
+/// member relationship.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's session relationship. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// IP address of the connection.
+  ip String
+  
+  /// Connection URL.
+  href String
+  
+  /// Referrer URL.
+  referrer String
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session end time.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_file_uploads discussion_board_file_uploads[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_336fc309")
+}
+
+/// Administrative moderator users with enhanced permissions for content
+/// management and user administration. Moderators have all member
+/// capabilities plus administrative tools. {@link
+/// discussion_board_members.id} for comparison with regular members.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for moderator identification.
+  username String
+  
+  /// Email address for administrative communications.
+  email String
+  
+  /// Hashed password for authentication security.
+  password_hash String
+  
+  /// Public display name shown to users.
+  display_name String
+  
+  /// Moderator permission level: junior, senior, or admin.
+  moderator_level String
+  
+  /// JSON string of specific moderator permissions.
+  permissions String
+  
+  /// Account status: active, suspended, or inactive.
+  status String
+  
+  /// Timestamp of the moderator's last successful login.
+  last_login DateTime?
+  
+  /// Total number of successful logins.
+  login_count Int
+  
+  /// Number of consecutive failed login attempts.
+  failed_login_attempts Int
+  
+  /// Whether the moderator account has been verified.
+  account_verified Boolean
+  
+  /// Timestamp when the moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator account was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_moderator_sessions discussion_board_moderator_sessions[]
+  discussion_board_posts discussion_board_posts[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_user_warnings discussion_board_user_warnings[]
+  discussion_board_suspensions discussion_board_suspensions[]
+  discussion_board_file_uploads discussion_board_file_uploads[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([moderator_level])
+  @@index([status])
+  @@index([last_login])
+  @@index([created_at])
+}
+
+/// Authentication sessions for moderator users. Tracks administrative login
+/// sessions for security auditing. {@link discussion_board_moderators.id}
+/// for moderator relationship.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's session relationship. {@link discussion_board_moderators.id}
+  discussion_board_moderator_id String
+  
+  /// IP address of the connection.
+  ip String
+  
+  /// Connection URL.
+  href String
+  
+  /// Referrer URL.
+  referrer String
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session end time.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderators @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_file_uploads discussion_board_file_uploads[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_moderator_sessions_discussion_board_m_086f6f8b")
+}

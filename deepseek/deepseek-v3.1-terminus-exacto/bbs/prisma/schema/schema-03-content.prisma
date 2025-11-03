@@ -1,0 +1,222 @@
+/// Main discussion posts created by members or moderators. Contains the core
+/// content of economic/political discussions including titles, bodies, and
+/// status information. Posts can be created in specific channels and
+/// sections for organized content management. {@link
+/// discussion_board_members.id} {@link discussion_board_moderators.id}
+/// {@link discussion_board_channels.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who created the post. {@link discussion_board_members.id}
+  discussion_board_member_id String?
+  
+  /// Moderator who created the post. {@link discussion_board_moderators.id}
+  discussion_board_moderator_id String?
+  
+  /// Channel where the post is published. {@link discussion_board_channels.id}
+  discussion_board_channel_id String
+  
+  /// Section within the channel. {@link discussion_board_sections.id}
+  discussion_board_section_id String?
+  
+  /// Post title summarizing the discussion topic.
+  title String
+  
+  /// Main content of the post with discussion details.
+  body String
+  
+  /// Current status of the post (draft, published, locked, archived).
+  status String
+  
+  /// Timestamp when the post was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  channel discussion_board_channels @relation(fields: [discussion_board_channel_id], references: [id], onDelete: Cascade)
+  section discussion_board_sections? @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_post_attachments discussion_board_post_attachments[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_content_report_of_posts discussion_board_content_report_of_posts[]
+  discussion_board_moderation_action_of_posts discussion_board_moderation_action_of_posts[]
+  discussion_board_search_index discussion_board_search_index[]
+  discussion_board_trending_content discussion_board_trending_content[]
+  discussion_board_content_views discussion_board_content_views[]
+  
+  @@index([discussion_board_section_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_channel_id, created_at], map: "discussion_board_posts_discussion_board_channel_id_cre_c4184281")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_posts_discussion_board_member_id_crea_df884d20")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_posts_discussion_board_moderator_id_c_8ada0b7a")
+  @@index([status, created_at])
+}
+
+/// Files and images attached to discussion posts. Supports evidence-based
+/// discussions with document uploads including PDFs, images, and data files.
+/// Each attachment is linked to a specific post and includes file metadata.
+/// {@link discussion_board_posts.id} {@link
+/// discussion_board_file_uploads.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_post_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this attachment belongs to. {@link discussion_board_posts.id}
+  discussion_board_post_id String
+  
+  /// File upload record containing the actual file data. {@link
+  /// discussion_board_file_uploads.id}
+  discussion_board_file_upload_id String
+  
+  /// Timestamp when the attachment was linked to the post.
+  created_at DateTime
+  
+  /// Timestamp when the attachment was removed from the post.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  fileUpload discussion_board_file_uploads @relation(fields: [discussion_board_file_upload_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_file_upload_id], map: "discussion_board_post_attachments_discussion_board_fil_3e10c48b")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_post_id, created_at], map: "discussion_board_post_attachments_discussion_board_pos_2886a87c")
+}
+
+/// Comments made on discussion posts. Supports threaded conversations with
+/// reply functionality and engagement tracking. Comments can be created by
+/// members or moderators and support the discussion lifecycle. {@link
+/// discussion_board_posts.id} {@link discussion_board_members.id} {@link
+/// discussion_board_moderators.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this comment belongs to. {@link discussion_board_posts.id}
+  discussion_board_post_id String
+  
+  /// Member who created the comment. {@link discussion_board_members.id}
+  discussion_board_member_id String?
+  
+  /// Moderator who created the comment. {@link discussion_board_moderators.id}
+  discussion_board_moderator_id String?
+  
+  /// Parent comment for threaded replies. {@link discussion_board_comments.id}
+  parent_id String?
+  
+  /// Content of the comment.
+  body String
+  
+  /// Current status of the comment (published, hidden, deleted).
+  status String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post discussion_board_posts @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  parent discussion_board_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_comments[] @relation("recursive")
+  discussion_board_comment_attachments discussion_board_comment_attachments[]
+  discussion_board_content_report_of_comments discussion_board_content_report_of_comments[]
+  discussion_board_moderation_action_of_comments discussion_board_moderation_action_of_comments[]
+  discussion_board_search_index discussion_board_search_index[]
+  discussion_board_trending_content discussion_board_trending_content[]
+  discussion_board_content_views discussion_board_content_views[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_post_id, created_at], map: "discussion_board_comments_discussion_board_post_id_cre_571d2d84")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_comments_discussion_board_member_id_c_c3eff834")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_comments_discussion_board_moderator_i_8998e260")
+  @@index([parent_id, created_at])
+  @@index([status, created_at])
+}
+
+/// Files and images attached to discussion comments. Enables evidence-based
+/// commenting with supporting documents and images. Each attachment is
+/// linked to a specific comment and includes file metadata. {@link
+/// discussion_board_comments.id} {@link discussion_board_file_uploads.id}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment that this attachment belongs to. {@link
+  /// discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// File upload record containing the actual file data. {@link
+  /// discussion_board_file_uploads.id}
+  discussion_board_file_upload_id String
+  
+  /// Timestamp when the attachment was linked to the comment.
+  created_at DateTime
+  
+  /// Timestamp when the attachment was removed from the comment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  fileUpload discussion_board_file_uploads @relation(fields: [discussion_board_file_upload_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_file_upload_id], map: "discussion_board_comment_attachments_discussion_board__b569ba87")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_attachments_discussion_board__afb72a94")
+}

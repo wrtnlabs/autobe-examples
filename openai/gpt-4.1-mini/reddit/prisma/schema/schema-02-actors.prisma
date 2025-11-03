@@ -1,0 +1,275 @@
+/// Guest users who can browse public communities without authentication.
+/// This table stores guest actor identities for audit and tracking purposes.
+/// Guests have read-only access privileges and do not require authentication
+/// credentials.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_guest_sessions reddit_community_guest_sessions[]
+}
+
+/// Sessions of guest users tracking connection metadata for audit. Each
+/// session belongs to one guest. Session data excludes authentication tokens
+/// and stores connection IP, referer, and URL for security and analytics.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest's {@link reddit_community_guest.id}.
+  reddit_community_guest_id String
+  
+  /// IP address of the session.
+  ip String
+  
+  /// Request URL string.
+  href String
+  
+  /// Referrer URL string.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  redditCommunityGuest reddit_community_guest @relation(fields: [reddit_community_guest_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_guest_id, created_at], map: "reddit_community_guest_sessions_reddit_community_guest_5d5f834a")
+}
+
+/// Registered users with authentication credentials who can create
+/// communities, post content, vote, comment, subscribe, and report. Stores
+/// essential user identity data for login and permission management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User email address for login and communication.
+  email String
+  
+  /// Hash of the user's password for authentication.
+  password_hash String
+  
+  /// User account creation timestamp.
+  created_at DateTime
+  
+  /// User account last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_user_sessions reddit_community_user_sessions[]
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_post_votes reddit_community_post_votes[]
+  reddit_community_comment_votes reddit_community_comment_votes[]
+  reddit_community_subscriptions reddit_community_subscriptions[]
+  reddit_community_content_reports reddit_community_content_reports[]
+  
+  @@unique([email])
+}
+
+/// Active login sessions associated with registered users. Records
+/// connection metadata excluding sensitive tokens, supporting secure session
+/// management and auditing. One user can have multiple concurrent sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link reddit_community_user.id}.
+  reddit_community_user_id String
+  
+  /// IP address of the session.
+  ip String
+  
+  /// Request URL string.
+  href String
+  
+  /// Referrer URL string.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  redditCommunityUser reddit_community_user @relation(fields: [reddit_community_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_user_id, created_at], map: "reddit_community_user_sessions_reddit_community_user_i_00c5d209")
+}
+
+/// Community moderators are users with elevated permissions to moderate
+/// content within assigned communities. This table stores moderator actor
+/// identities and permission metadata for audit and access control.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Corresponding registered user ID for this moderator.
+  user_id String
+  
+  /// Moderator actor creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_moderator_sessions reddit_community_moderator_sessions[]
+  reddit_community_community_moderators reddit_community_community_moderators[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+}
+
+/// Sessions of community moderators capturing connection context for
+/// security and auditing. Links to the moderator actor table. Sessions
+/// exclude authentication tokens and preserve IP, referrer, and accessed URL
+/// data.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged moderator's {@link reddit_community_moderator.id}.
+  reddit_community_moderator_id String
+  
+  /// IP address of the session.
+  ip String
+  
+  /// Request URL string.
+  href String
+  
+  /// Referrer URL string.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  redditCommunityModerator reddit_community_moderator @relation(fields: [reddit_community_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_moderator_id, created_at], map: "reddit_community_moderator_sessions_reddit_community_m_d8858d02")
+}
+
+/// System administrators with full platform-wide permissions to manage
+/// users, communities, and content moderation. Stores admin identity and
+/// essential auditing information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Corresponding registered user ID for this admin.
+  user_id String
+  
+  /// Admin actor creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_admin_sessions reddit_community_admin_sessions[]
+}
+
+/// Sessions of system administrators capturing connection metadata for
+/// secure audit trails. Sessions link to admin actors and store IP,
+/// referrer, and URL information. No authentication tokens stored in this
+/// table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged admin's {@link reddit_community_admin.id}.
+  reddit_community_admin_id String
+  
+  /// IP address of the session.
+  ip String
+  
+  /// Request URL string.
+  href String
+  
+  /// Referrer URL string.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  redditCommunityAdmin reddit_community_admin @relation(fields: [reddit_community_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_admin_id, created_at], map: "reddit_community_admin_sessions_reddit_community_admin_14a73f9a")
+}

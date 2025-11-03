@@ -1,93 +1,48 @@
-## Authentication Requirements Document
+## Community Management Requirements
 
-### Introduction
-This document outlines the authentication requirements for the community platform, detailing the necessary features and security measures to ensure proper user access control.
+### Community Creation
+1. **Community Name**: Unique identifier for the community
+2. **Description**: Brief overview of the community's purpose
+3. **Rules**: Community-specific guidelines for users
+4. **Moderators**: Initial moderators appointed by the community creator
 
-### User Registration Process
-1. Registration Form Requirements
-   - Email address
-   - Password (with strength requirements)
-   - Additional profile information (optional)
+### Moderation Tools
+1. **Post Approval/Rejection**: Moderators can approve or reject posts before they become visible
+2. **Content Removal**: Ability to remove inappropriate content or comments
+3. **User Bans**: Temporary or permanent bans for users violating community rules
+4. **Moderator Management**: Ability to add/remove moderators
 
-2. Validation Rules
-   - Email format validation
-   - Password strength validation (minimum length, character types)
-   - Duplicate email detection
+### Community Settings
+1. **Public/Private**: Control whether the community is publicly visible or restricted
+2. **NSFW Setting**: Option to mark community content as Not Safe For Work
+3. **Community Themes**: Customization options for community appearance
+4. **Subscriber Management**: Tools to manage community subscribers
 
-3. Registration Workflow
-   - User submits registration form
-   - System validates input data
-   - Verification email is sent to provided email address
-   - Account is created in pending state
+## Functional Requirements
 
-### EARS Requirements for Registration
-1. WHEN a user submits registration information, THE system SHALL validate email format and password strength within 2 seconds.
-2. IF registration is successful, THEN THE system SHALL send a verification email to the provided email address.
-3. WHILE the email is unverified, THE system SHALL keep the account in pending state.
+### EARS Format Requirements
+1. WHEN a user creates a new community, THEN the system SHALL validate the community name for uniqueness.
+2. THE community description SHALL be limited to 500 characters.
+3. WHILE a user is creating a community, THE system SHALL provide real-time validation for required fields.
+4. IF a user attempts to create a community with a duplicate name, THEN the system SHALL display an error message.
+5. WHERE a community is marked NSFW, THE system SHALL display appropriate warnings to users before entering.
 
-### Login Mechanisms
-1. Login Form Requirements
-   - Email address
-   - Password
-   - Optional CAPTCHA for brute-force protection
+## Business Rules
+1. Communities must have at least one moderator
+2. Community names must be unique across the platform
+3. Moderators can manage all content within their communities
+4. Community rules must be displayed prominently during the joining process
 
-2. Authentication Workflow
-   - User submits login credentials
-   - System validates credentials
-   - If valid, creates a new session
-   - If invalid, increments failed login count
+## Performance Requirements
+1. Community listing pages SHALL load within 2 seconds
+2. Community subscription/unsubscription SHALL be processed instantly
+3. Moderation actions SHALL be reflected across the platform within 5 seconds
 
-3. EARS Requirements for Login
-   - WHEN a user attempts to log in, THE system SHALL validate credentials within 2 seconds.
-   - IF login fails three times consecutively, THEN THE system SHALL temporarily lock the account for 30 minutes.
-   - WHILE a user is logged in, THE system SHALL maintain session state securely using JWT tokens.
+## Error Handling
+1. IF a user attempts to create a community without required information, THEN the system SHALL display specific error messages.
+2. IF a moderator attempts to remove their own moderator privileges, THEN the system SHALL prevent this action and display a warning.
 
-### Session Management
-1. Session Characteristics
-   - Session timeout after 30 minutes of inactivity
-   - Automatic session refresh mechanism
-   - Secure storage of session data
-
-2. EARS Requirements for Sessions
-   - WHEN a user is inactive for 30 minutes, THE system SHALL terminate the session.
-   - WHILE a session is active, THE system SHALL refresh the session token every 15 minutes.
-
-### Security Considerations
-1. Password Storage
-   - Passwords shall be stored using industry-standard hashing algorithms
-   - Salted hashing shall be used to prevent rainbow table attacks
-
-2. Token Management
-   - JWT (JSON Web Tokens) shall be used for authentication tokens
-   - Tokens shall be signed with a secure key
-   - Tokens shall contain user ID, role, and expiration time
-
-3. Rate Limiting
-   - Login attempts shall be rate-limited to prevent brute-force attacks
-   - Excessive failed login attempts shall trigger account lockout
-
-### Mermaid Diagram: Authentication Flow
-```mermaid
-graph LR
-    subgraph "Registration Process"
-        A["User Submits Registration"] --> B{"Input Validation"}
-        B -->|"Valid"| C["Create Pending Account"]
-        B -->|"Invalid"| D["Show Error Message"]
-        C --> E["Send Verification Email"]
-    end
-
-    subgraph "Login Process"
-        F["User Submits Login"] --> G{"Credential Validation"}
-        G -->|"Valid"| H["Create Session"]
-        G -->|"Invalid"| I["Show Login Error"]
-    end
-
-    subgraph "Session Management"
-        J["User Active"] --> K{"Session Active?"}
-        K -->|"Yes"| L["Refresh Session"]
-        K -->|"No"| M["Terminate Session"]
-    end
-```
-
-### Conclusion
-The authentication system for the community platform must balance security with user convenience. By implementing these requirements, we can ensure a robust authentication mechanism that protects user accounts while providing a smooth user experience.
+## Security Considerations
+1. Community moderators SHALL have access to moderation tools
+2. Community settings SHALL be protected against unauthorized changes
+3. Sensitive community information SHALL be restricted based on user roles

@@ -15,190 +15,129 @@ export async function postAuthMemberLogin(props: {
 }): Promise<IDiscussionBoardMember.IAuthorized> {
   const { body } = props;
 
-  // Find member by email (case-insensitive search)
+  // Phase 1: Validate member credentials
   const member = await MyGlobal.prisma.discussion_board_members.findFirst({
     where: {
-      email: body.email,
-      deleted_at: null,
+      OR: [
+        { username: body.username_or_email },
+        { email: body.username_or_email },
+      ],
     },
   });
 
-  // Generic error message to prevent account enumeration
   if (!member) {
-    throw new HttpException("Invalid email or password", 401);
-  }
-
-  // Check for account lockout before password verification (5 failed attempts in last 15 minutes)
-  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-  const recentFailedAttempts =
-    await MyGlobal.prisma.discussion_board_login_history.count({
-      where: {
-        discussion_board_member_id: member.id,
-        is_successful: false,
-        created_at: {
-          gte: toISOStringSafe(fifteenMinutesAgo),
-        },
-      },
-    });
-
-  if (recentFailedAttempts >= 5) {
-    throw new HttpException(
-      "Account temporarily locked due to multiple failed login attempts. Please try again in 30 minutes.",
-      403,
-    );
+    throw new HttpException("Invalid credentials", 401);
   }
 
   // Verify password using PasswordUtil
-  const isPasswordValid = await PasswordUtil.verify(
+  const isValid = await PasswordUtil.verify(
     body.password,
     member.password_hash,
   );
-
-  if (!isPasswordValid) {
-    // Record failed login attempt
-    await MyGlobal.prisma.discussion_board_login_history.create({
-      data: {
-        id: v4() as string & tags.Format<"uuid">,
-        discussion_board_member_id: member.id,
-        email_attempted: body.email,
-        is_successful: false,
-        failure_reason: "incorrect_password",
-        ip_address: "0.0.0.0",
-        device_type: "Unknown",
-        browser_info: "Unknown",
-        location: null,
-        created_at: toISOStringSafe(new Date()),
-      },
-    });
-
-    throw new HttpException("Invalid email or password", 401);
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
   }
 
-  // Check email verification status
+  // Check email verification
   if (!member.email_verified) {
     throw new HttpException(
-      "Email address not verified. Please check your email for verification link.",
+      "Email verification required. Please verify your email before logging in.",
       403,
     );
   }
 
   // Check account status
-  if (member.account_status !== "active") {
-    const statusMessages = {
-      suspended: "Account is currently suspended",
-      banned: "Account has been banned",
-      deactivated: "Account has been deactivated",
-      pending_verification: "Account is pending verification",
-    };
-
-    const message =
-      statusMessages[member.account_status as keyof typeof statusMessages] ||
-      "Account is not active";
-    throw new HttpException(message, 403);
+  if (member.status !== "active") {
+    if (member.status === "suspended") {
+      throw new HttpException("Account is suspended", 403);
+    }
+    if (member.status === "deleted") {
+      throw new HttpException("Account has been deleted", 403);
+    }
+    throw new HttpException("Account is not active", 403);
   }
 
-  // Generate JWT tokens
-  const now = new Date();
-  const accessTokenExpiry = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes
-  const refreshTokenExpiry = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  // Prepare timestamps
+  const now = toISOStringSafe(new Date());
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpiresStr = toISOStringSafe(accessExpires);
+  const refreshExpiresStr = toISOStringSafe(refreshExpires);
 
-  // Create access token with member payload
-  const accessToken = jwt.sign(
-    {
-      id: member.id,
-      type: "member",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "30m",
-      issuer: "autobe",
-    },
-  );
-
-  // Create refresh token
-  const refreshToken = jwt.sign(
-    {
-      id: member.id,
-      type: "member",
-      tokenType: "refresh",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-
-  // Create session record
-  const sessionId = v4() as string & tags.Format<"uuid">;
-  const nowISO = toISOStringSafe(now);
-  const accessExpiryISO = toISOStringSafe(accessTokenExpiry);
-  const refreshExpiryISO = toISOStringSafe(refreshTokenExpiry);
-
-  await MyGlobal.prisma.discussion_board_sessions.create({
-    data: {
-      id: sessionId,
-      discussion_board_member_id: member.id,
-      access_token_hash: accessToken,
-      device_type: "Unknown",
-      browser_info: "Unknown",
-      ip_address: "0.0.0.0",
-      location: null,
-      is_active: true,
-      expires_at: accessExpiryISO,
-      last_activity_at: nowISO,
-      created_at: nowISO,
-      revoked_at: null,
-    },
-  });
-
-  // Create refresh token record
-  await MyGlobal.prisma.discussion_board_refresh_tokens.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      discussion_board_session_id: sessionId,
-      refresh_token_hash: refreshToken,
-      expires_at: refreshExpiryISO,
-      is_revoked: false,
-      created_at: nowISO,
-      revoked_at: null,
-    },
-  });
-
-  // Update member's last login and activity timestamps
+  // Update last login timestamp
   await MyGlobal.prisma.discussion_board_members.update({
     where: { id: member.id },
     data: {
-      last_login_at: nowISO,
-      last_activity_at: nowISO,
-      updated_at: nowISO,
+      last_login_at: now,
     },
   });
 
-  // Record successful login in history
-  await MyGlobal.prisma.discussion_board_login_history.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      discussion_board_member_id: member.id,
-      email_attempted: body.email,
-      is_successful: true,
-      failure_reason: null,
-      ip_address: "0.0.0.0",
-      device_type: "Unknown",
-      browser_info: "Unknown",
-      location: null,
-      created_at: nowISO,
+  // Phase 2: Create NEW session record
+  const session = await MyGlobal.prisma.discussion_board_member_sessions.create(
+    {
+      data: {
+        id: v4(),
+        discussion_board_member_id: member.id,
+        ip: body.ip ?? "0.0.0.0",
+        href: body.href,
+        referrer: body.referrer,
+        created_at: now,
+        expired_at: accessExpiresStr,
+      },
     },
-  });
+  );
 
-  // Return authorized member with tokens
+  // Phase 3: Generate JWT tokens with exact payload structure
+  const token = {
+    access: jwt.sign(
+      {
+        type: "member",
+        id: member.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "member",
+        id: member.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpiresStr,
+    refreshable_until: refreshExpiresStr,
+  };
+
+  // Return authorized member with token
   return {
-    id: member.id as string & tags.Format<"uuid">,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiryISO,
-      refreshable_until: refreshExpiryISO,
-    },
+    id: member.id,
+    username: member.username,
+    email: member.email,
+    display_name: member.display_name ?? null,
+    bio: member.bio ?? null,
+    location: member.location ?? null,
+    website_url: member.website_url ?? null,
+    profile_picture_url: member.profile_picture_url ?? null,
+    email_verified: member.email_verified,
+    status: member.status,
+    profile_visibility: member.profile_visibility,
+    activity_visibility: member.activity_visibility,
+    last_login_at: now,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
+    deleted_at: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
+    token,
   };
 }

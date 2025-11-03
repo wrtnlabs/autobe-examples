@@ -1,0 +1,410 @@
+/// Core product entity representing items listed for sale. Contains
+/// product-level information including name, description, category
+/// assignment, and seller ownership. Each product can have multiple variants
+/// (SKUs) with different prices, colors, sizes, and other options. Products
+/// are the primary discovery unit for customers and serve as containers for
+/// variant-specific inventory and pricing management.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller who owns and manages this product. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Reference to the primary product category. {@link
+  /// shopping_mall_categories.id}
+  shopping_mall_category_id String
+  
+  /// Unique product code identifier assigned by seller (business identifier,
+  /// not same as SKU which is variant-specific)
+  code String
+  
+  /// Product name or title displayed to customers (3-200 characters)
+  name String
+  
+  /// Brief product summary displayed in listings (up to 255 characters)
+  short_description String?
+  
+  /// Complete product description with detailed information (up to 5000
+  /// characters)
+  description String?
+  
+  /// Manufacturer or brand name (up to 100 characters)
+  brand String?
+  
+  /// ISO 3166-1 alpha-2 country code where product is manufactured
+  country_of_origin String?
+  
+  /// Product status: active (visible to customers), inactive (hidden), draft
+  /// (not yet published), discontinued (permanently removed from sale)
+  status String
+  
+  /// Base product price in platform currency (can be overridden by
+  /// variant-specific pricing)
+  base_price Float?
+  
+  /// Product weight in kilograms (for shipping calculations)
+  weight Float?
+  
+  /// Warranty or guarantee information provided by seller (up to 500
+  /// characters)
+  warranty_info String?
+  
+  /// Timestamp when product was created
+  created_at DateTime
+  
+  /// Timestamp when product information was last modified
+  updated_at DateTime
+  
+  /// Soft delete timestamp - product can be restored if deleted within grace
+  /// period
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_product_specifications shopping_mall_product_specifications[]
+  shopping_mall_product_categories_mapping shopping_mall_product_categories_mapping[]
+  shopping_mall_product_pricing_history shopping_mall_product_pricing_history[]
+  shopping_mall_product_snapshots shopping_mall_product_snapshots[]
+  shopping_mall_shopping_cart_items shopping_mall_shopping_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_line_items shopping_mall_order_line_items[]
+  
+  @@unique([shopping_mall_seller_id, code])
+  @@index([shopping_mall_seller_id])
+  @@index([shopping_mall_category_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Product variant (SKU) entities representing specific product options like
+/// color, size, material combinations. Each variant has its own price,
+/// inventory tracking, and unique SKU identifier. Variants enable customers
+/// to select specific product configurations while maintaining normalized
+/// data structure (prevents nullable field explosion in main product table).
+/// Each product can have multiple variants with independent pricing and
+/// inventory.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to parent product containing this variant. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Unique Stock Keeping Unit identifier (6-50 alphanumeric characters with
+  /// hyphens/underscores, globally unique across all sellers)
+  sku String
+  
+  /// Variant descriptive name (e.g., 'Red - Size M' or 'Blue - 256GB', 3-100
+  /// characters)
+  name String
+  
+  /// JSON object storing variant attribute key-value pairs (e.g., {"color":
+  /// "Red", "size": "M", "material": "Cotton"})
+  attributes_json String?
+  
+  /// Variant-specific price (overrides product base_price if set)
+  price Float?
+  
+  /// Seller's cost for this variant (for profitability tracking, not displayed
+  /// to customers)
+  cost_price Float?
+  
+  /// Current inventory quantity available for this variant (non-negative
+  /// integer)
+  quantity_on_hand Int
+  
+  /// Variant-specific weight in kilograms (overrides product weight if set)
+  weight Float?
+  
+  /// Variant status: active (available for sale), inactive (hidden),
+  /// discontinued (no longer sold)
+  status String
+  
+  /// Timestamp when variant was created
+  created_at DateTime
+  
+  /// Timestamp when variant was last modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_pricing_history shopping_mall_product_pricing_history[]
+  shopping_mall_inventory_skus shopping_mall_inventory_skus?
+  shopping_mall_shopping_cart_items shopping_mall_shopping_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_line_items shopping_mall_order_line_items[]
+  shopping_mall_shipment_items shopping_mall_shipment_items[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_review_moderation_queue shopping_mall_review_moderation_queue[]
+  shopping_mall_product_ratings_summary shopping_mall_product_ratings_summary?
+  shopping_mall_restocking_inventory shopping_mall_restocking_inventory[]
+  
+  @@unique([sku])
+  @@index([shopping_mall_product_id])
+  @@index([status])
+}
+
+/// Product image metadata and references for display in product catalogs and
+/// detail pages. Stores image URLs, metadata, and display order. Multiple
+/// images per product enable comprehensive product visualization from
+/// different angles and contexts. Images are essential for customer product
+/// discovery and decision-making.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product this image belongs to. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// URL or path to the product image file (stored in CDN or cloud storage)
+  image_url String
+  
+  /// URL to optimized thumbnail version of the image for listings
+  thumbnail_url String?
+  
+  /// Sequence order for displaying images (primary image is typically
+  /// display_order = 1)
+  display_order Int
+  
+  /// Alternative text for accessibility and SEO (describes image content)
+  alt_text String?
+  
+  /// Timestamp when image was uploaded
+  uploaded_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_id])
+  @@index([display_order])
+}
+
+/// Flexible key-value product specifications storing technical and
+/// functional details (e.g., processor type, RAM, color options, materials).
+/// Enables products with diverse attributes without schema modification.
+/// Specifications are displayed on product detail pages to help customers
+/// understand detailed product features and make informed purchasing
+/// decisions.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_specifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product these specifications belong to. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Specification name/key (e.g., 'Color', 'Material', 'Processor', 'Memory',
+  /// 'Resolution')
+  spec_key String
+  
+  /// Specification value (e.g., 'Red', 'Cotton', 'Intel i7', '16GB',
+  /// '1920x1080')
+  spec_value String
+  
+  /// Data type of specification: text, number, boolean, selection (for
+  /// filtering and display purposes)
+  spec_type String?
+  
+  /// Order in which specification is displayed on product detail page
+  display_order Int
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id], map: "shopping_mall_product_specifications_shopping_mall_pro_3cb2f6f6")
+  @@index([spec_key])
+}
+
+/// Junction table managing many-to-many relationship between products and
+/// categories. Enables a product to belong to multiple categories for
+/// improved discoverability (primary category + up to 4 secondary
+/// categories). Supports category hierarchy navigation and advanced
+/// filtering in product search and browse experiences.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories_mapping {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product in this category mapping. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Reference to the category this product is assigned to. {@link
+  /// shopping_mall_categories.id}
+  shopping_mall_category_id String
+  
+  /// Flag indicating if this is the product's primary category (only one
+  /// primary per product)
+  is_primary Boolean
+  
+  /// Order in which category should be displayed in category
+  /// navigation/breadcrumbs
+  display_order Int
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, shopping_mall_category_id], map: "shopping_mall_product_categories_mapping_shopping_mall_0203e069")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id], map: "shopping_mall_product_categories_mapping_shopping_mall_4fb4324e")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_category_id], map: "shopping_mall_product_categories_mapping_shopping_mall_df6c2176")
+}
+
+/// Historical audit trail of all product price changes tracking when prices
+/// were modified, what they changed to, and who initiated the change.
+/// Enables price trend analysis, seller pricing behavior tracking, and
+/// dispute resolution by providing complete pricing history. Supports
+/// business intelligence on pricing strategies and market dynamics.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_pricing_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product whose price changed. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Reference to specific variant if price change is variant-specific
+  /// (optional, null if product-level change). {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String?
+  
+  /// Price before the change
+  previous_price Float?
+  
+  /// Price after the change
+  new_price Float
+  
+  /// Reason for price change (e.g., 'promotion', 'cost_adjustment',
+  /// 'competitor_response', 'manual_adjustment')
+  change_reason String?
+  
+  /// Identity of who initiated the price change ('seller', 'admin', 'system')
+  changed_by String
+  
+  /// Timestamp when price change was applied
+  changed_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_product_variants? @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_product_pricing_history_shopping_mall_pr_2857d239")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id], map: "shopping_mall_product_pricing_history_shopping_mall_pr_b7f2464c")
+  @@index([changed_at])
+}
+
+/// Point-in-time historical snapshots of complete product state capturing
+/// product details, prices, specifications, and variant information at
+/// specific moments. Used for audit trails, price history tracking, and
+/// dispute resolution. Enables reconstruction of exact product state at any
+/// past date. Snapshots preserve product data even after product is modified
+/// or deleted.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product this snapshot captures. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Product name at snapshot time
+  product_name String
+  
+  /// Product description at snapshot time
+  product_description String?
+  
+  /// Product base price at snapshot time
+  base_price Float?
+  
+  /// Product status at snapshot time (active, inactive, draft, discontinued)
+  status String
+  
+  /// Complete product data serialized as JSON (includes all details, variants,
+  /// specifications) for historical preservation
+  product_data_json String?
+  
+  /// Reason snapshot was created (e.g., 'price_change', 'description_update',
+  /// 'status_change', 'pre_order', 'dispute_evidence')
+  snapshot_reason String?
+  
+  /// Timestamp when snapshot was captured (represents the moment in time this
+  /// snapshot documents)
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_id])
+  @@index([created_at])
+}

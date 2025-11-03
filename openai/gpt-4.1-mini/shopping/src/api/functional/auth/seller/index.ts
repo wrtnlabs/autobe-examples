@@ -6,20 +6,24 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallSeller } from "../../../structures/IShoppingMallSeller";
 
 /**
- * Create new seller account and issue authentication token based on
- * shopping_mall_sellers.
+ * Registers a new seller account in the shopping mall system using the
+ * 'shopping_mall_sellers' table.
  *
- * Creates a new seller account with unique email and password credentials,
- * assigning the initial status and issuing authentication JWT tokens upon
- * successful registration. Utilizes fields such as `email` and `password_hash`
- * from the shopping_mall_sellers table as core identity attributes. Includes
- * optional fields like company_name, contact_name, phone_number, and status
- * with default 'active'. Enables secure seller onboarding compatible with the
- * shoppingMall platform authentication requirements.
+ * This join operation allows a prospective seller to create an account by
+ * providing necessary information such as email, password, and store name. The
+ * operation ensures the uniqueness of the email address per seller account by
+ * checking the 'email' field in the 'shopping_mall_sellers' table. On success,
+ * a new seller record is created with hashed password stored in
+ * 'password_hash'. The system emits JWT tokens for authentication and
+ * authorization. This endpoint provides a public entry point for user
+ * onboarding into the seller actor category. Security considerations include
+ * enforcing strong password hashing and validation before user creation.
+ * Related operations include login and token refresh for continuous
+ * authentication management.
  *
  * @param props.connection
- * @param props.body Seller registration information including email, password
- *   hash, and optional company details
+ * @param props.body Request body for creating a new seller account with
+ *   registration information.
  * @setHeader token.access Authorization
  *
  * @path /auth/seller/join
@@ -55,8 +59,8 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Seller registration information including email, password hash, and
-     * optional company details
+     * Request body for creating a new seller account with registration
+     * information.
      */
     body: IShoppingMallSeller.ICreate;
   };
@@ -105,16 +109,19 @@ export namespace join {
 }
 
 /**
- * Seller login with email and password to issue JWT tokens based on
- * shopping_mall_sellers.
+ * Authenticates a seller and issues JWT tokens for authorization using the
+ * 'shopping_mall_sellers' table.
  *
- * Seller login authenticates email and password credentials and issues JWT
- * tokens, using the email and password_hash fields in shopping_mall_sellers.
- * Enables secure authentication with rate limiting and session management
- * consistent with the shoppingMall platform's security policies.
+ * Sellers provide their login email and password to authenticate and gain
+ * access to protected resources. The login operation verifies that the 'email'
+ * exists and the password matches the securely stored 'password_hash'. On
+ * successful authentication, JWT tokens are issued to maintain session state.
+ * Security policies such as account lockout on multiple failed attempts are
+ * enforced via business logic integrating with the 'shopping_mall_sellers'
+ * entity. Related to seller registration and token refresh endpoints.
  *
  * @param props.connection
- * @param props.body Seller login credentials including email and password
+ * @param props.body Request body containing seller login credentials.
  * @setHeader token.access Authorization
  *
  * @path /auth/seller/login
@@ -149,7 +156,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Seller login credentials including email and password */
+    /** Request body containing seller login credentials. */
     body: IShoppingMallSeller.ILogin;
   };
   export type Body = IShoppingMallSeller.ILogin;
@@ -197,19 +204,20 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for authenticated sellers based on shopping_mall_sellers
- * identity.
+ * Refreshes JWT access token for a seller using a valid refresh token linked to
+ * the 'shopping_mall_sellers' table.
  *
- * Refresh valid JWT tokens for authenticated seller users to maintain session
- * continuity without password reentry. Requires a valid refresh token and
- * issues new JWT tokens upon successful validation, conforming to the
- * shoppingMall platform's authentication security model. The seller identity is
- * confirmed implicitly via token payloads referencing shopping_mall_sellers
- * records.
+ * A seller uses a valid refresh token to obtain a new JWT access token,
+ * extending their authenticated session without re-authentication. This
+ * operation validates the refresh token and issues fresh tokens upon success.
+ * This improves security by limiting exposure of long-lived tokens. The
+ * operation interacts with the 'shopping_mall_sellers' entity to confirm valid
+ * seller sessions. This endpoint complements the join and login endpoints in
+ * the authentication lifecycle.
  *
  * @param props.connection
- * @param props.body Refresh token request payload for authenticated seller
- *   users
+ * @param props.body Request body containing the refresh token for token
+ *   renewal.
  * @setHeader token.access Authorization
  *
  * @path /auth/seller/refresh
@@ -244,7 +252,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token request payload for authenticated seller users */
+    /** Request body containing the refresh token for token renewal. */
     body: IShoppingMallSeller.IRefresh;
   };
   export type Body = IShoppingMallSeller.IRefresh;

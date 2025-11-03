@@ -13,53 +13,92 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthAdminJoin(props: {
   body: ICommunityPlatformAdmin.ICreate;
 }): Promise<ICommunityPlatformAdmin.IAuthorized> {
-  const { email, password, superuser } = props.body;
-
-  // Check for duplicate email
-  const existing = await MyGlobal.prisma.community_platform_admins.findUnique({
-    where: { email },
+  // Step 1: Enforce unique email
+  const exists = await MyGlobal.prisma.community_platform_admins.findFirst({
+    where: { email: props.body.email },
   });
-  if (existing) {
-    throw new HttpException("Admin with that email already exists", 409);
+  if (exists) {
+    throw new HttpException("Email already registered as admin", 409);
   }
 
-  // Hash password
-  const passwordHash = await PasswordUtil.hash(password);
+  // Step 2: Secure password hash
+  const password_hash = await PasswordUtil.hash(props.body.password);
   const now = toISOStringSafe(new Date());
-  const id = v4();
+  const admin_id = v4();
 
-  const created = await MyGlobal.prisma.community_platform_admins.create({
+  // Step 3: Create new admin
+  const admin = await MyGlobal.prisma.community_platform_admins.create({
     data: {
-      id: id,
-      email: email,
-      password_hash: passwordHash,
-      superuser: superuser ?? false,
-      status: "active",
+      id: admin_id,
+      email: props.body.email,
+      password_hash: password_hash,
+      display_name: props.body.display_name,
       created_at: now,
       updated_at: now,
       deleted_at: null,
     },
   });
 
-  // Token expiries as ISO string (never use Date type outside conversion)
-  const accessTokenExpiry = toISOStringSafe(
+  // Step 4: Issue verification token
+  const verification_token = v4();
+  const verification_expires = toISOStringSafe(
+    new Date(Date.now() + 24 * 60 * 60 * 1000),
+  );
+  await MyGlobal.prisma.community_platform_admin_verification_tokens.create({
+    data: {
+      id: v4(),
+      community_platform_admin_id: admin.id,
+      token: verification_token,
+      expires_at: verification_expires,
+      consumed: false,
+      created_at: now,
+      consumed_at: null,
+    },
+  });
+
+  // Step 5: Create admin session
+  const session_id = v4();
+  const access_expires_at = toISOStringSafe(
     new Date(Date.now() + 60 * 60 * 1000),
   );
-  const refreshTokenExpiry = toISOStringSafe(
+  const refresh_expires_at = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
+  await MyGlobal.prisma.community_platform_admin_sessions.create({
+    data: {
+      id: session_id,
+      community_platform_admin_id: admin.id,
+      ip: props.body.ip ?? "",
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: now,
+      expired_at: access_expires_at,
+    },
+  });
 
-  // JWT tokens
-  const accessToken = jwt.sign(
-    { id: created.id, type: "admin" },
+  // Step 6: Generate JWTs
+  const access = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session_id,
+      created_at: now,
+    },
     MyGlobal.env.JWT_SECRET_KEY,
     {
       expiresIn: "1h",
       issuer: "autobe",
     },
   );
-  const refreshToken = jwt.sign(
-    { id: created.id, type: "admin", tokenType: "refresh" },
+
+  const refresh = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session_id,
+      tokenType: "refresh",
+      created_at: now,
+    },
     MyGlobal.env.JWT_SECRET_KEY,
     {
       expiresIn: "7d",
@@ -67,20 +106,26 @@ export async function postAuthAdminJoin(props: {
     },
   );
 
+  // Step 7: Build response per IAuthorized
   return {
-    id: created.id,
-    email: created.email,
-    superuser: created.superuser,
-    status: created.status,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
+    id: admin.id,
+    email: admin.email,
+    display_name: admin.display_name,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
     deleted_at:
-      created.deleted_at === null ? null : toISOStringSafe(created.deleted_at),
+      admin.deleted_at !== null && admin.deleted_at !== undefined
+        ? toISOStringSafe(admin.deleted_at)
+        : null,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessTokenExpiry,
-      refreshable_until: refreshTokenExpiry,
+      access,
+      refresh,
+      expired_at: access_expires_at,
+      refreshable_until: refresh_expires_at,
+    },
+    admin: {
+      id: admin.id,
+      display_name: admin.display_name,
     },
   };
 }

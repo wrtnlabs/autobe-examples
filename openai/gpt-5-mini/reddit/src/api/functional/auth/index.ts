@@ -1,4 +1,3 @@
-export * as guest from "./guest/index";
-export * as member from "./member/index";
-export * as moderator from "./moderator/index";
-export * as admin from "./admin/index";
+export * as visitor from "./visitor/index";
+export * as communityMember from "./communityMember/index";
+export * as systemAdmin from "./systemAdmin/index";

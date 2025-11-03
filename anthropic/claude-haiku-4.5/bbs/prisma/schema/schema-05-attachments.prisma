@@ -1,0 +1,117 @@
+/// Attachment metadata and file references for articles and comments.
+/// Supports polymorphic ownership (can attach to articles OR comments).
+/// Tracks file metadata, security validation status, and storage
+/// information. Separate from content entities to enable independent file
+/// management, security scanning, and storage lifecycle. Soft delete support
+/// for recovery while hiding from users.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who uploaded the attachment. Reference to {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Article this attachment belongs to if attachable_type is 'article'. NULL
+  /// if this is a comment attachment. Reference to {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String?
+  
+  /// Comment this attachment belongs to if attachable_type is 'comment'. NULL
+  /// if this is an article attachment. Reference to {@link
+  /// discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Type of parent content: 'article' or 'comment'. Discriminator indicating
+  /// which foreign key is active. Validation at application layer ensures this
+  /// matches the non-NULL FK field.
+  attachable_type String
+  
+  /// Original filename provided by uploader. Used for display and download.
+  /// Sanitized to remove path traversal sequences and special characters.
+  filename String
+  
+  /// MIME type of the file (e.g., 'image/jpeg', 'application/pdf'). Validated
+  /// during upload against supported types. Used for security classification
+  /// and display handling.
+  file_type String
+  
+  /// File extension without dot (e.g., 'jpg', 'pdf'). Extracted from filename
+  /// and validated against list of 19 supported extensions. Must match
+  /// file_type MIME classification.
+  file_extension String
+  
+  /// Size of file in bytes. Validated against limits during upload: images
+  /// 10MB max, documents 20MB max, archives 50MB max. Stored for audit trail
+  /// and quota tracking.
+  file_size Int
+  
+  /// Unique internal path where file is stored on server or cloud storage.
+  /// UUID or hash-based to guarantee uniqueness. Used for retrieval and
+  /// deletion. Never exposed to users.
+  storage_path String
+  
+  /// Image width in pixels if attachment is an image file. NULL for non-image
+  /// types (documents, archives). Extracted during image processing and
+  /// validation.
+  image_width Int?
+  
+  /// Image height in pixels if attachment is an image file. NULL for non-image
+  /// types. Used for rendering and responsive image handling.
+  image_height Int?
+  
+  /// Security validation status: 'pending_scan' (awaiting malware scan),
+  /// 'safe' (scan passed), 'infected' (malware detected), 'quarantined'
+  /// (isolated due to violation). Tracks antivirus scan results and security
+  /// clearance status.
+  security_status String
+  
+  /// Detailed result from antivirus/malware scanning if performed. NULL if
+  /// scan pending or not performed. Contains specific threat information from
+  /// scanner (e.g., 'detected: trojan.xyz'). Only populated when scan is
+  /// completed.
+  malware_scan_result String?
+  
+  /// Timestamp when attachment was uploaded (ISO 8601 UTC). Used for audit
+  /// trail and storage lifecycle tracking.
+  created_at DateTime
+  
+  /// Timestamp when attachment metadata was last updated, especially when
+  /// security scan results change. Critical for tracking when files became
+  /// safe or were flagged as threats.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. NULL if attachment is active and visible. Set when
+  /// attachment is deleted by user or parent content is deleted. Allows
+  /// recovery and maintains audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  uploader discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles? @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_article_id])
+  @@index([discussion_board_comment_id])
+  
+  @@unique([storage_path])
+  // spellchecker: ignore-next-line
+  @@index([attachable_type, discussion_board_article_id], map: "discussion_board_attachments_attachable_type_discussio_955e7781")
+  // spellchecker: ignore-next-line
+  @@index([attachable_type, discussion_board_comment_id], map: "discussion_board_attachments_attachable_type_discussio_cb5afbb3")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_attachments_discussion_board_member_i_36ff0f55")
+  @@index([created_at])
+  @@index([security_status, created_at])
+  @@index([deleted_at, created_at])
+  @@index([file_extension])
+  @@index([file_size])
+}

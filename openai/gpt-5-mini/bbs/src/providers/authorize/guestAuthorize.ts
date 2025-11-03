@@ -1,13 +1,12 @@
 // File path: src/providers/authorize/guestAuthorize.ts
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 
 import { MyGlobal } from "../../MyGlobal";
-import { jwtAuthorize } from "./jwtAuthorize"; // correct same-directory import
+import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
 
 /**
- * Guest authorization provider.
- * Verifies JWT, ensures role is 'guest', and checks the guest record is active.
+ * Verify JWT and ensure the guest actor exists and is active (not soft-deleted).
  */
 export async function guestAuthorize(request: {
   headers: {
@@ -20,14 +19,12 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains the top-level guest table ID
-  // Query guest table using top-level id field
-  const guest = await MyGlobal.prisma.econ_political_forum_guest.findFirst({
+  // payload.id is the top-level guest id per JWT contract
+  const guest = await MyGlobal.prisma.discussion_board_guest.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
     },
-    // Only the authorization model is queried — no includes
   });
 
   if (guest === null) {

@@ -1,0 +1,492 @@
+/// Payment transaction records capturing all payment processing activities
+/// for customer orders. Each transaction represents a payment attempt or
+/// successful payment processed through the payment gateway. Supports
+/// complete financial audit trails and reconciliation with payment gateway
+/// records. References {@link shopping_mall_orders} for order association.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order associated with this payment transaction. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Customer who initiated the payment transaction. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Type of payment transaction (payment, authorization, capture, void).
+  /// Indicates the nature of the payment operation.
+  transaction_type String
+  
+  /// Payment method used for this transaction (credit_card, debit_card,
+  /// paypal, apple_pay, google_pay, bank_transfer). Identifies how the
+  /// customer paid.
+  payment_method String
+  
+  /// Payment gateway provider used to process this transaction (stripe,
+  /// paypal, square, etc.). Identifies the external payment processor.
+  payment_gateway String
+  
+  /// Unique transaction identifier from the payment gateway. Used for
+  /// reconciliation with external payment records.
+  gateway_transaction_id String
+  
+  /// Total payment amount in the transaction currency. Represents the monetary
+  /// value processed.
+  amount Float
+  
+  /// Currency code for the transaction amount (USD, EUR, GBP, etc.). ISO 4217
+  /// currency code.
+  currency String
+  
+  /// Current status of the payment transaction (pending, processing,
+  /// completed, failed, cancelled, refunded). Tracks payment lifecycle state.
+  status String
+  
+  /// Tokenized payment method reference from payment gateway. Secure token for
+  /// saved payment methods, never raw card numbers.
+  payment_token String?
+  
+  /// Last four digits of card number for customer reference. Only stored
+  /// portion of card number for display purposes.
+  last_four_digits String?
+  
+  /// Card brand or network (Visa, Mastercard, Amex, Discover). Identifies the
+  /// card type used for payment.
+  card_brand String?
+  
+  /// Billing address street line 1. Snapshot of billing address for this
+  /// transaction.
+  billing_address_line1 String
+  
+  /// Billing address street line 2 (apartment, suite, unit). Optional
+  /// additional address information.
+  billing_address_line2 String?
+  
+  /// Billing address city. City where the payment method is registered.
+  billing_city String
+  
+  /// Billing address state or province. State/province for billing address.
+  billing_state String
+  
+  /// Billing address postal or ZIP code. Postal code for billing address.
+  billing_postal_code String
+  
+  /// Billing address country. ISO country code for billing address.
+  billing_country String
+  
+  /// Response code from payment gateway. Gateway-specific code indicating
+  /// transaction result.
+  gateway_response_code String?
+  
+  /// Response message from payment gateway. Human-readable message from
+  /// gateway about transaction result.
+  gateway_response_message String?
+  
+  /// Timestamp when payment gateway processed the transaction. Records exact
+  /// processing time from gateway.
+  processed_at DateTime?
+  
+  /// Transaction creation timestamp. Records when the payment transaction was
+  /// initiated.
+  created_at DateTime
+  
+  /// Transaction last update timestamp. Tracks when transaction status or
+  /// details were last modified.
+  updated_at DateTime
+  
+  /// Transaction soft deletion timestamp. For audit trail purposes, financial
+  /// records are never physically deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_refunds shopping_mall_payment_refunds[]
+  
+  @@unique([gateway_transaction_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_payment_transactions_shopping_mall_order_1b7d748b")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_payment_transactions_shopping_mall_custo_8a98902e")
+  @@index([status, created_at])
+  @@index([processed_at])
+}
+
+/// Refund transaction records for processing customer refunds on completed
+/// payments. Each refund represents a monetary return to the customer,
+/// either full or partial. Links to the original payment transaction and the
+/// order being refunded. Supports complete refund workflow from request
+/// through completion. References {@link shopping_mall_payment_transactions}
+/// and {@link shopping_mall_orders}.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original payment transaction being refunded. {@link
+  /// shopping_mall_payment_transactions.id}.
+  shopping_mall_payment_transaction_id String
+  
+  /// Order for which the refund is being processed. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Administrator who initiated the refund if admin-processed. {@link
+  /// shopping_mall_admins.id}.
+  initiated_by_admin_id String?
+  
+  /// Type of refund (full_refund, partial_refund, cancellation_refund,
+  /// return_refund). Categorizes the refund reason and scope.
+  refund_type String
+  
+  /// Amount being refunded to the customer. Monetary value to be returned.
+  refund_amount Float
+  
+  /// Currency code for the refund amount (USD, EUR, GBP, etc.). ISO 4217
+  /// currency code.
+  currency String
+  
+  /// Reason for the refund (customer_request, order_cancelled,
+  /// product_defective, seller_out_of_stock, admin_resolution, etc.).
+  /// Documents why the refund was issued.
+  refund_reason String
+  
+  /// Additional notes or details about the refund. Optional context for the
+  /// refund transaction.
+  refund_notes String?
+  
+  /// Current refund processing status (pending, processing, completed, failed,
+  /// cancelled). Tracks refund lifecycle.
+  status String
+  
+  /// Refund transaction identifier from payment gateway. Used for
+  /// reconciliation with gateway refund records.
+  gateway_refund_id String?
+  
+  /// Response code from payment gateway for refund processing.
+  /// Gateway-specific code for refund result.
+  gateway_response_code String?
+  
+  /// Response message from payment gateway. Human-readable message about
+  /// refund processing result.
+  gateway_response_message String?
+  
+  /// Timestamp when the refund was successfully processed by payment gateway.
+  /// Records exact refund completion time.
+  processed_at DateTime?
+  
+  /// Refund request creation timestamp. Records when the refund was initiated.
+  created_at DateTime
+  
+  /// Refund record last update timestamp. Tracks when refund status or details
+  /// were modified.
+  updated_at DateTime
+  
+  /// Refund record soft deletion timestamp. For audit purposes, refund records
+  /// are never physically deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  paymentTransaction shopping_mall_payment_transactions @relation(fields: [shopping_mall_payment_transaction_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  initiatedByAdmin shopping_mall_admins? @relation(fields: [initiated_by_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([initiated_by_admin_id])
+  
+  @@unique([gateway_refund_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_transaction_id, created_at], map: "shopping_mall_payment_refunds_shopping_mall_payment_tr_4da63887")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_payment_refunds_shopping_mall_order_id_c_3e9cd319")
+  @@index([status, created_at])
+  @@index([processed_at])
+}
+
+/// Seller payment settlement records representing batched payouts to sellers
+/// for their fulfilled orders. Each payout aggregates multiple order
+/// payments over a settlement period (weekly, bi-weekly, monthly) and
+/// transfers net amounts to seller bank accounts after platform commission
+/// deductions. Supports complete payout workflow from calculation through
+/// bank transfer completion. References {@link shopping_mall_sellers}.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_payouts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller receiving this payout settlement. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Administrator who processed the payout if manually triggered. {@link
+  /// shopping_mall_admins.id}.
+  processed_by_admin_id String?
+  
+  /// Start date of the settlement period covered by this payout. Defines the
+  /// beginning of the timeframe for included orders.
+  payout_period_start DateTime
+  
+  /// End date of the settlement period covered by this payout. Defines the end
+  /// of the timeframe for included orders.
+  payout_period_end DateTime
+  
+  /// Total gross amount from all orders in this payout period before
+  /// commission deductions. Sum of all order values.
+  total_order_amount Float
+  
+  /// Total platform commission deducted from seller earnings. Sum of all
+  /// commission charges for included orders.
+  total_commission_amount Float
+  
+  /// Total amount refunded during this period that reduces seller earnings.
+  /// Sum of all refunds processed.
+  total_refund_amount Float
+  
+  /// Net amount to be paid to seller after all deductions. Calculated as
+  /// total_order_amount - total_commission_amount - total_refund_amount.
+  net_payout_amount Float
+  
+  /// Currency code for all amounts in this payout (USD, EUR, GBP, etc.). ISO
+  /// 4217 currency code.
+  currency String
+  
+  /// Number of individual order items included in this payout. Count of payout
+  /// items for this settlement.
+  item_count Int
+  
+  /// Current payout processing status (pending, ready_for_payout,
+  /// payout_initiated, completed, failed, cancelled). Tracks payout lifecycle
+  /// state.
+  status String
+  
+  /// Last four digits of seller bank account receiving the payout. Snapshot
+  /// for verification and audit purposes.
+  bank_account_last_four String?
+  
+  /// Bank transfer reference number or transaction ID. External reference for
+  /// bank transfer tracking.
+  bank_transfer_reference String?
+  
+  /// Additional notes or comments about the payout. Optional context for
+  /// special handling or issues.
+  payout_notes String?
+  
+  /// Scheduled date for payout bank transfer. When the payout is planned to be
+  /// executed.
+  scheduled_payout_date DateTime?
+  
+  /// Timestamp when the payout was successfully completed and funds
+  /// transferred. Records actual payout completion time.
+  completed_at DateTime?
+  
+  /// Payout record creation timestamp. Records when the payout batch was
+  /// calculated and created.
+  created_at DateTime
+  
+  /// Payout record last update timestamp. Tracks when payout status or details
+  /// were modified.
+  updated_at DateTime
+  
+  /// Payout record soft deletion timestamp. For audit purposes, payout records
+  /// are never physically deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  processedByAdmin shopping_mall_admins? @relation(fields: [processed_by_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_seller_payout_items shopping_mall_seller_payout_items[]
+  
+  @@index([processed_by_admin_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, payout_period_start], map: "shopping_mall_seller_payouts_shopping_mall_seller_id_p_d6c288ae")
+  @@index([status, scheduled_payout_date])
+  @@index([created_at])
+}
+
+/// Individual order items included in a seller payout batch. Each item
+/// represents a single order's contribution to the seller's payout
+/// settlement, detailing the order amount, commission deducted, and net
+/// earning from that specific order. Provides detailed breakdown of payout
+/// calculations for transparency and reconciliation. References {@link
+/// shopping_mall_seller_payouts} and {@link shopping_mall_orders}.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_payout_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent payout batch containing this item. {@link
+  /// shopping_mall_seller_payouts.id}.
+  shopping_mall_seller_payout_id String
+  
+  /// Order that generated earnings for this payout item. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Total order amount before commission deduction. Gross revenue from this
+  /// order for the seller.
+  order_total_amount Float
+  
+  /// Platform commission deducted from this order. Amount retained by platform
+  /// from this order.
+  commission_amount Float
+  
+  /// Commission percentage rate applied to this order (e.g., 0.15 for 15%).
+  /// Snapshot of rate at time of order for audit.
+  commission_rate Float
+  
+  /// Refund amount deducted from seller earnings for this order. Amount
+  /// returned to customer that reduces seller payout.
+  refund_amount Float
+  
+  /// Net amount earned by seller from this order after commission and refunds.
+  /// Calculated as order_total_amount - commission_amount - refund_amount.
+  net_amount Float
+  
+  /// Currency code for all amounts in this payout item (USD, EUR, GBP, etc.).
+  /// ISO 4217 currency code.
+  currency String
+  
+  /// Date when the original order was placed. Snapshot for payout item
+  /// tracking and reporting.
+  order_date DateTime
+  
+  /// Payout item creation timestamp. Records when this item was added to the
+  /// payout batch.
+  created_at DateTime
+  
+  /// Payout item soft deletion timestamp. For audit purposes, financial
+  /// records are never physically deleted but can be marked as deleted for
+  /// corrections or adjustments.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sellerPayout shopping_mall_seller_payouts @relation(fields: [shopping_mall_seller_payout_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_payout_id, shopping_mall_order_id], map: "shopping_mall_seller_payout_items_shopping_mall_seller_a438585c")
+  @@index([shopping_mall_order_id])
+  @@index([order_date])
+}
+
+/// Platform commission records tracking commission charges on each order for
+/// platform revenue calculation. Each record represents the commission
+/// amount earned by the platform from a specific order based on the
+/// applicable commission rate. Supports financial reporting, revenue
+/// analytics, and seller commission reconciliation. References {@link
+/// shopping_mall_orders} and {@link shopping_mall_sellers}.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_platform_commissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order for which commission is calculated. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Seller from whom commission is collected. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Order subtotal amount (product costs only, excluding shipping and taxes).
+  /// Base amount for commission calculation.
+  order_subtotal Float
+  
+  /// Commission percentage rate applied to this order (e.g., 0.12 for 12%,
+  /// 0.15 for 15%). Rate effective at time of order placement.
+  commission_rate Float
+  
+  /// Platform commission amount calculated from order subtotal. Calculated as
+  /// order_subtotal × commission_rate.
+  commission_amount Float
+  
+  /// Currency code for commission amount (USD, EUR, GBP, etc.). ISO 4217
+  /// currency code.
+  currency String
+  
+  /// Type of commission charge (standard_commission, category_commission,
+  /// promotional_commission, custom_commission). Categorizes commission
+  /// calculation method.
+  commission_type String
+  
+  /// Product category name for category-based commission rates. Snapshot of
+  /// category at time of order for audit.
+  category_name String?
+  
+  /// Commission collection status (pending, collected, refunded, adjusted,
+  /// waived). Tracks commission lifecycle state.
+  status String
+  
+  /// Additional notes about commission calculation or adjustments. Optional
+  /// context for special handling.
+  notes String?
+  
+  /// Date when the order was placed. Snapshot for commission tracking and
+  /// reporting.
+  order_date DateTime
+  
+  /// Timestamp when commission was collected from seller. Records when
+  /// commission was deducted from seller payout.
+  collected_at DateTime?
+  
+  /// Commission record creation timestamp. Records when commission was
+  /// calculated for the order.
+  created_at DateTime
+  
+  /// Commission record last update timestamp. Tracks when commission status or
+  /// amount was modified.
+  updated_at DateTime
+  
+  /// Commission record soft deletion timestamp. For audit purposes, commission
+  /// records are never physically deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, order_date], map: "shopping_mall_platform_commissions_shopping_mall_selle_8f350582")
+  @@index([status, created_at])
+  @@index([order_date])
+}

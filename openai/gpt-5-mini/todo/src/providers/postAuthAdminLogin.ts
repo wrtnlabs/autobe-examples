@@ -15,151 +15,135 @@ export async function postAuthAdminLogin(props: {
 }): Promise<ITodoAppAdmin.IAuthorized> {
   const { body } = props;
 
-  try {
-    // Find admin by unique email
-    const admin = await MyGlobal.prisma.todo_app_admin.findUnique({
-      where: { email: body.email },
-    });
+  // 1) Locate admin by email
+  const admin = await MyGlobal.prisma.todo_app_admin.findUnique({
+    where: { email: body.email },
+  });
 
-    // If admin not found, record failed login and deny
-    if (!admin) {
-      await MyGlobal.prisma.todo_app_audit_records.create({
-        data: {
-          id: v4(),
-          admin_id: null,
-          user_id: null,
-          actor_role: "admin",
-          action_type: "admin_login_failed",
-          target_resource: "admin",
-          target_id: null,
-          reason: null,
-          created_at: toISOStringSafe(new Date()),
-        },
-      });
-
-      throw new HttpException("Invalid credentials", 401);
-    }
-
-    if (!admin.password_hash) {
-      await MyGlobal.prisma.todo_app_audit_records.create({
-        data: {
-          id: v4(),
-          admin_id: admin.id,
-          user_id: null,
-          actor_role: "admin",
-          action_type: "admin_login_failed",
-          target_resource: "admin",
-          target_id: admin.id,
-          reason: "missing_password_hash",
-          created_at: toISOStringSafe(new Date()),
-        },
-      });
-
-      throw new HttpException("Invalid credentials", 401);
-    }
-
-    const isValid = await PasswordUtil.verify(
-      body.password,
-      admin.password_hash,
-    );
-    if (!isValid) {
-      await MyGlobal.prisma.todo_app_audit_records.create({
-        data: {
-          id: v4(),
-          admin_id: admin.id,
-          user_id: null,
-          actor_role: "admin",
-          action_type: "admin_login_failed",
-          target_resource: "admin",
-          target_id: admin.id,
-          reason: "wrong_password",
-          created_at: toISOStringSafe(new Date()),
-        },
-      });
-
-      throw new HttpException("Invalid credentials", 401);
-    }
-
-    // Successful authentication - prepare timestamps
-    const now = toISOStringSafe(new Date());
-
-    // Update last_active_at
-    await MyGlobal.prisma.todo_app_admin.update({
-      where: { id: admin.id },
-      data: { last_active_at: now },
-    });
-
-    // Generate tokens
-    const accessToken = jwt.sign(
-      {
-        id: admin.id,
-        type: "admin",
-        email: admin.email,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    );
-
-    const refreshToken = jwt.sign(
-      {
-        id: admin.id,
-        tokenType: "refresh",
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    );
-
-    // Compute ISO expiry timestamps
-    const accessExpiresAt = toISOStringSafe(
-      new Date(Date.now() + 60 * 60 * 1000),
-    );
-    const refreshExpiresAt = toISOStringSafe(
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    );
-
-    // Create audit record for successful login
-    await MyGlobal.prisma.todo_app_audit_records.create({
+  if (!admin) {
+    // Audit failed attempt without revealing existence
+    await MyGlobal.prisma.todo_app_audit_logs.create({
       data: {
-        id: v4(),
-        admin_id: admin.id,
-        user_id: null,
-        actor_role: "admin",
-        action_type: "admin_login",
-        target_resource: "admin",
-        target_id: admin.id,
-        reason: null,
-        created_at: now,
+        id: v4() as string & tags.Format<"uuid">,
+        event_type: "login_failure",
+        details: `Failed admin login attempt for email: ${body.email}`,
+        ip: body.ip ?? null,
+        href: body.href,
+        created_at: toISOStringSafe(new Date()),
+        updated_at: toISOStringSafe(new Date()),
       },
     });
 
-    // Build token structure
-    const token = {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiresAt,
-      refreshable_until: refreshExpiresAt,
-    } satisfies IAuthorizationToken;
-
-    // Build authorized response
-    const authorized: ITodoAppAdmin.IAuthorized = {
-      id: admin.id,
-      email: admin.email,
-      is_super: admin.is_super,
-      created_at: toISOStringSafe(admin.created_at),
-      last_active_at: now,
-      token,
-    };
-
-    return authorized;
-  } catch (err) {
-    if (err instanceof HttpException) throw err;
-    // Unexpected errors
-    throw new HttpException("Internal Server Error", 500);
+    throw new HttpException("Invalid email or password", 401);
   }
+
+  // 2) Enforce account status
+  if (!admin.is_active || admin.deleted_at !== null) {
+    await MyGlobal.prisma.todo_app_audit_logs.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        todo_app_admin_id: admin.id,
+        event_type: "login_failure",
+        details: `Inactive or removed admin attempted login: ${body.email}`,
+        ip: body.ip ?? null,
+        href: body.href,
+        created_at: toISOStringSafe(new Date()),
+        updated_at: toISOStringSafe(new Date()),
+      },
+    });
+
+    throw new HttpException("Invalid email or password", 401);
+  }
+
+  // 3) Verify password
+  const isValidPassword = await PasswordUtil.verify(
+    body.password,
+    admin.password_hash,
+  );
+  if (!isValidPassword) {
+    await MyGlobal.prisma.todo_app_audit_logs.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        todo_app_admin_id: admin.id,
+        event_type: "login_failure",
+        details: `Invalid password attempt for admin: ${body.email}`,
+        ip: body.ip ?? null,
+        href: body.href,
+        created_at: toISOStringSafe(new Date()),
+        updated_at: toISOStringSafe(new Date()),
+      },
+    });
+
+    throw new HttpException("Invalid email or password", 401);
+  }
+
+  // 4) Create session and tokens
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  const session = await MyGlobal.prisma.todo_app_admin_sessions.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      todo_app_admin_id: admin.id,
+      ip: body.ip ?? "",
+      href: body.href,
+      referrer: body.referrer,
+      created_at: toISOStringSafe(new Date()),
+      expired_at: toISOStringSafe(accessExpires),
+    },
+  });
+
+  const token = {
+    access: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
+
+  // 5) Audit successful login
+  await MyGlobal.prisma.todo_app_audit_logs.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      todo_app_admin_id: admin.id,
+      todo_app_admin_session_id: session.id,
+      event_type: "login_success",
+      details: "Admin login successful",
+      ip: body.ip ?? null,
+      href: body.href,
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
+    },
+  });
+
+  // 6) Build and return authorized response
+  return {
+    id: admin.id,
+    email: admin.email,
+    display_name: admin.display_name ?? null,
+    role: admin.role,
+    is_active: admin.is_active,
+    createdAt: toISOStringSafe(admin.created_at),
+    updatedAt: toISOStringSafe(admin.updated_at),
+    deletedAt: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    token,
+  };
 }

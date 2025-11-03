@@ -1,8 +1,9 @@
-/// Product catalog entry owned by a seller. Contains product-level metadata
-/// used on product listing and detail pages. Related entities: {@\link
-/// shopping_mall_skus} for variant-level data and {@\link
-/// shopping_mall_product_categories} for category membership. Business
-/// constraints: seller-level code uniqueness enforced by (seller_id, code).
+/// Product container representing a seller-owned catalog item. Removed
+/// derived aggregate fields (average_rating, review_count) to avoid storing
+/// calculated metrics in the primary business table. Aggregate metrics are
+/// provided by a materialized view (mv_shopping_mall_product_ratings).
+/// Product remains the canonical product metadata store and links to seller
+/// and snapshots.
 ///
 /// @namespace Sales
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -13,238 +14,395 @@ model shopping_mall_products {
   /// Primary Key.
   id String @id
   
-  /// Owning seller. {@link shopping_mall_seller.id}.
-  seller_id String
+  /// Owning seller reference. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
   
-  /// Business identifier/code scoped to seller (unique per seller).
-  code String
+  /// Human-readable product title used in listings and search.
+  title String
   
-  /// Human-facing product title used in listings and search.
-  name String
+  /// Unique URL-friendly product slug.
+  slug String
   
-  /// Short description used in listing cards.
-  short_description String?
-  
-  /// Full product description (HTML or markdown may be stored as text).
+  /// Long-form product description for detail pages.
   description String?
   
-  /// Primary product image URI for listing thumbnail.
-  primary_image_uri String?
+  /// Canonical product image URI used as thumbnail.
+  default_image_uri String?
   
-  /// Record creation timestamp.
+  /// Whether the product is visible to customers.
+  is_published Boolean
+  
+  /// Record creation time.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Last update time.
   updated_at DateTime
   
-  /// Soft delete timestamp (nullable).
+  /// Soft-delete timestamp; null when active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_seller @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
+  shopping_mall_product_images shopping_mall_product_images[]
   shopping_mall_product_categories shopping_mall_product_categories[]
-  shopping_mall_skus shopping_mall_skus[]
-  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_variants shopping_mall_variants[]
+  shopping_mall_product_snapshots shopping_mall_product_snapshots[]
+  mv_shopping_mall_product_ratings mv_shopping_mall_product_ratings?
+  shopping_mall_inquiries shopping_mall_inquiries[]
   
-  @@unique([seller_id, code])
-  @@index([seller_id, created_at])
+  @@unique([slug])
+  @@index([shopping_mall_seller_id, created_at])
 }
 
-/// SKU (Stock Keeping Unit) representing a specific variant of a product
-/// (color, size, option). Updated to include explicit search indexing
-/// guidance for attributes and to document migration to JSONB for
-/// attributes. Retains global sku_code uniqueness; attributes remain stored
-/// as string until JSON/JsonB migration is performed.
+/// Product-level media assets. Each image references a product and provides
+/// ordering and accessibility metadata.
 ///
 /// @namespace Sales
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_skus {
+model shopping_mall_product_images {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged product. {@link shopping_mall_products.id}.
-  product_id String
+  /// Referenced product. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
   
-  /// Unique SKU code for external lookups (e.g., barcode, merchant SKU).
-  /// Remains unique globally unless business changes to seller-scoped
-  /// uniqueness.
-  sku_code String
+  /// Image resource URI.
+  uri String
   
-  /// Optional short name for the SKU variant (e.g., "T-Shirt — Red / M").
-  title String?
+  /// Alternative text for accessibility.
+  alt_text String?
   
-  /// JSON-encoded attribute map (e.g., {"color":"red","size":"M"}). Stored as
-  /// text for portability in the short term; plan to migrate to native
-  /// JSON/JSONB and create GIN jsonb_path_ops indexes on keys used for
-  /// filtering.
-  attributes_json String
+  /// Display order; lower values shown first.
+  position Int
   
-  /// Current price for this SKU in platform currency.
-  price Float
-  
-  /// ISO currency code (e.g., "USD", "KRW").
-  currency String
-  
-  /// Record creation timestamp.
+  /// Creation time.
   created_at DateTime
   
-  /// Record last update timestamp.
-  updated_at DateTime
-  
-  /// Soft delete timestamp (nullable).
+  /// Soft-delete timestamp for the image entry.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_inventory_events shopping_mall_inventory_events[]
-  shopping_mall_inventory shopping_mall_inventory[]
-  shopping_mall_reviews shopping_mall_reviews[]
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, position], map: "shopping_mall_product_images_shopping_mall_product_id__66b09bc5")
+}
+
+/// Hierarchical product taxonomy used for navigation and faceted search.
+/// Parent relationship supports nested categories.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category reference. {@link shopping_mall_categories.id}. Nullable
+  /// for root categories.
+  parent_id String?
+  
+  /// Category display name.
+  name String
+  
+  /// Unique slug for category URLs.
+  slug String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_product_categories shopping_mall_product_categories[]
+  
+  @@unique([slug])
+  @@index([parent_id, name])
+}
+
+/// Junction table linking products and categories (many-to-many). Ensures
+/// unique associations per product/category pair.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product reference. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Category reference. {@link shopping_mall_categories.id}.
+  shopping_mall_category_id String
+  
+  /// Association creation time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, shopping_mall_category_id], map: "shopping_mall_product_categories_shopping_mall_product_b5030199")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_category_id, shopping_mall_product_id], map: "shopping_mall_product_categories_shopping_mall_categor_11a94f8c")
+}
+
+/// SKU (variant) entities representing sellable units with independent price
+/// and inventory. Added explicit inventory counters
+/// (available/reserved/committed) as canonical low-latency fields. The
+/// transactional inventory log (shopping_mall_inventory_transactions) and
+/// reservation table remain the audit and reservation sources; these
+/// counters are the fast-access snapshot used by storefront and availability
+/// checks.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product reference. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Platform-unique SKU code.
+  sku String
+  
+  /// Variant display title (e.g., 'Red / L').
+  title String?
+  
+  /// Current price for this variant.
+  price Float
+  
+  /// Units currently available for sale (not reserved/committed). This is the
+  /// canonical availability counter used by storefront queries.
+  available Int
+  
+  /// Quantity currently reserved (checkout holds) for this variant.
+  /// Reservation lifecycle maintained in shopping_mall_inventory_reservations;
+  /// this counter is a snapshot to speed availability checks.
+  reserved Int
+  
+  /// Quantity permanently committed to paid orders (not yet shipped). Used for
+  /// settlement and reconciliation calculations.
+  committed Int
+  
+  /// Optional weight for shipping calculations.
+  weight Float?
+  
+  /// Flag indicating whether backorders are allowed.
+  is_backorder Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_variant_options shopping_mall_variant_options[]
+  shopping_mall_variant_images shopping_mall_variant_images[]
   shopping_mall_cart_items shopping_mall_cart_items[]
   shopping_mall_wishlist_items shopping_mall_wishlist_items[]
   shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_inventory_transactions shopping_mall_inventory_transactions[]
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_inventory_reconciliations shopping_mall_inventory_reconciliations[]
   
-  @@unique([sku_code])
-  @@index([product_id, price])
-  @@index([product_id, sku_code])
+  @@unique([sku])
+  @@index([shopping_mall_product_id, available])
 }
 
-/// Per-SKU inventory snapshot and operational counters. Added guidance to
-/// support low-stock queries and recommended DB-level CHECK constraints for
-/// non-negative inventory counts. Keeps sku_id unique to ensure one
-/// inventory row per SKU.
+/// Normalized key/value option records for variant attributes (color, size,
+/// material). Prevents repeating groups and supports flexible attribute
+/// sets.
 ///
 /// @namespace Sales
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_inventory {
+model shopping_mall_variant_options {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged SKU. {@link shopping_mall_skus.id}.
-  sku_id String
+  /// Referenced variant. {@link shopping_mall_variants.id}.
+  shopping_mall_variant_id String
   
-  /// Reference to last processed inventory event for auditing. {@link
-  /// shopping_mall_inventory_events.id}.
-  last_event_id String?
+  /// Option name (e.g., 'color').
+  name String
   
-  /// Quantity available for sale (non-negative). Application and DB-level
-  /// CHECK constraints recommended to enforce >= 0.
-  available_quantity Int
+  /// Option value (e.g., 'red').
+  value String
   
-  /// Quantity currently reserved for carts/orders (non-negative).
-  reserved_quantity Int
-  
-  /// Optional warehouse/location code.
-  location String?
-  
-  /// Suggested threshold to trigger restock alerts.
-  reorder_threshold Int?
-  
-  /// Last inventory reconciliation or check timestamp.
-  last_checked_at DateTime?
-  
-  /// Record creation timestamp.
+  /// Creation timestamp.
   created_at DateTime
-  
-  /// Record last update timestamp.
-  updated_at DateTime
-  
-  /// Soft delete timestamp (nullable).
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  sku shopping_mall_skus @relation(fields: [sku_id], references: [id], onDelete: Cascade)
-  lastInventoryEvent shopping_mall_inventory_events? @relation(fields: [last_event_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_variants @relation(fields: [shopping_mall_variant_id], references: [id], onDelete: Cascade)
   
-  @@index([last_event_id])
-  
-  @@unique([sku_id])
-  @@index([sku_id, updated_at])
-  @@index([reorder_threshold, available_quantity], map: "shopping_mall_inventory_reorder_threshold_available_qu_96795164")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_variant_id, name, value], map: "shopping_mall_variant_options_shopping_mall_variant_id_e5f2d9e8")
+  @@index([shopping_mall_variant_id, name])
 }
 
-/// Product/SKU reviews submitted by customers. Added unique constraint to
-/// enforce at-most-one review per product per author. Retains moderation
-/// flags, verified_purchase, and GIN on body for search.
+/// Variant-specific image resources for SKUs that require dedicated imagery
+/// (color swatches, texture).
 ///
 /// @namespace Sales
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_reviews {
+model shopping_mall_variant_images {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reviewed product. {@link shopping_mall_products.id}.
-  product_id String
+  /// Referenced variant. {@link shopping_mall_variants.id}.
+  shopping_mall_variant_id String
   
-  /// Optional referenced SKU for SKU-level reviews. {@link
-  /// shopping_mall_skus.id}.
-  sku_id String?
+  /// Image resource URI.
+  uri String
   
-  /// Review author as a customer. {@link shopping_mall_customer.id}.
-  author_id String
+  /// Alternative text.
+  alt_text String?
   
-  /// Optional admin who moderated or removed the review. {@link
-  /// shopping_mall_admin.id}.
-  moderator_admin_id String?
+  /// Display order position.
+  position Int
   
-  /// Numeric rating (e.g., 1-5).
-  rating Int
-  
-  /// Optional short title for the review.
-  title String?
-  
-  /// Long-form review text.
-  body String?
-  
-  /// JSON array of photo URIs attached to the review.
-  photos_json String?
-  
-  /// Whether purchase was verified (true/false).
-  verified_purchase Boolean
-  
-  /// Whether review is moderated/hidden from public view.
-  moderated Boolean
-  
-  /// Optional reason code or free-text for moderation decisions.
-  moderation_reason String?
-  
-  /// Record creation timestamp.
+  /// Creation timestamp.
   created_at DateTime
-  
-  /// Record last update timestamp.
-  updated_at DateTime
-  
-  /// Soft delete timestamp (nullable).
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  sku shopping_mall_skus? @relation(fields: [sku_id], references: [id], onDelete: Cascade)
-  author shopping_mall_customer @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  moderator shopping_mall_admin? @relation(fields: [moderator_admin_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_variants @relation(fields: [shopping_mall_variant_id], references: [id], onDelete: Cascade)
   
-  @@index([sku_id])
-  @@index([moderator_admin_id])
+  @@unique([shopping_mall_variant_id, uri])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_variant_id, position], map: "shopping_mall_variant_images_shopping_mall_variant_id__090c5b02")
+}
+
+/// Append-only snapshots of product state for audit, historical
+/// price/attribute queries, and rollbacks. Each snapshot records product
+/// fields at snapshot time.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
   
-  @@unique([product_id, author_id])
-  @@index([product_id, created_at])
-  @@index([author_id, created_at])
+  /// Referenced product. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Product title at snapshot time.
+  title String
+  
+  /// Product slug at snapshot time.
+  slug String
+  
+  /// Product description at snapshot time.
+  description String?
+  
+  /// Product default image URI at snapshot time.
+  default_image_uri String?
+  
+  /// Average rating at snapshot time.
+  average_rating Float
+  
+  /// Review count at snapshot time.
+  review_count Int
+  
+  /// Published flag at snapshot time.
+  is_published Boolean
+  
+  /// When this snapshot was taken.
+  snapshot_at DateTime
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, snapshot_at], map: "shopping_mall_product_snapshots_shopping_mall_product__4aca4f3d")
+}
+
+/// Materialized view (read-only) storing denormalized product rating
+/// aggregates for fast reads. This mv replaces storing average_rating and
+/// review_count on the product table and must be refreshed on a schedule or
+/// updated incrementally by triggers/background jobs. Marked material: true
+/// and stance: "subsidiary".
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mv_shopping_mall_product_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced product {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Computed average rating for the product (derived from reviews). Stored
+  /// here in the materialized view for fast reads.
+  average_rating Float
+  
+  /// Count of published reviews for the product at aggregation time.
+  review_count Int
+  
+  /// When this materialized row was last refreshed.
+  last_updated_at DateTime
+  
+  /// Creation timestamp for this mv row (can mirror last_updated_at).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_id])
+  @@index([last_updated_at])
 }

@@ -1,0 +1,56 @@
+/// Stores user comments on posts within communities, including support for
+/// nested comments through self-referential parent-child relationships. Each
+/// comment is authored by a registered user and belongs to a single post.
+/// Designed to preserve data integrity, support soft deletes, and allow
+/// efficient querying and full-text search on comment content. Temporal
+/// fields support audit trails and lifecycle management.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this comment belongs to. {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// The parent comment in nested replies, null for top-level comments. {@link
+  /// reddit_community_comments.id}.
+  parent_id String?
+  
+  /// The user who authored this comment. {@link reddit_community_user.id}.
+  reddit_community_user_id String
+  
+  /// The textual content of the comment. Captures the full user-supplied
+  /// comment text with validation on length and content on the application
+  /// side.
+  body String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft deleted. Null if comment is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  parent reddit_community_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  user reddit_community_user @relation(fields: [reddit_community_user_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_community_comments[] @relation("recursive")
+  reddit_community_comment_votes reddit_community_comment_votes[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_comments_reddit_community_post_id_cre_7ea47a9e")
+  @@index([parent_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_user_id, created_at], map: "reddit_community_comments_reddit_community_user_id_cre_dea99341")
+}

@@ -1,85 +1,98 @@
-## Service Vision & Mission
+# Community Platform - Service Overview and Business Purpose
 
-THIS PLATFORM SHALL empower users to build and participate in thriving, interest-based communities where authentic human connection and shared knowledge flourish. THE communityPlatform SHALL be the digital public square where curiosity drives conversation, expertise is recognized, and diverse voices find belonging.
+## Executive Summary
 
-## Problem Statement & Market Need
+The Community Platform is a decentralized, user-first online space built for passionate communities to connect, share, and grow. Unlike existing platforms dominated by algorithmic chaos or corporate moderation, this service prioritizes authenticity, niche engagement, and user empowerment. It enables individuals to create and nurture topic-specific communities where meaningful conversations thrive—not viral noise. Whether you're a programmer, gardener, chess enthusiast, or indie musician, this platform gives you the tools to build a home for your tribe—without corporate interference or attention-driven manipulation.
 
-WHILE existing social platforms prioritize algorithmic engagement over meaningful interaction, users increasingly crave authentic communities built around shared passions—whether niche hobbies, professional expertise, or cultural identity. CURRENT platforms suffer from:
+## Vision and Mission
 
-- Overly centralized moderation that stifles community autonomy
-- Homogenized content feeds that prioritize virality over relevance
-- Poor discoverability of niche topics, driving users away from meaningful discussion
-- Lack of transparent reputation systems that reward meaningful contribution
+### Vision
+To become the most trusted and inclusive home for niche communities worldwide, where knowledge, creativity, and connection flourish without the pressure of viral trends or algorithmic manipulation.
 
-THE communityPlatform SHALL fill this gap by providing a decentralized, user-owned framework for community creation where the quality of conversation—not the quantity of clicks—determines visibility and influence.
+### Mission
+To empower every individual to create a custom community around their passion, giving them full ownership over its culture, moderation, and growth—while providing a safe, ad-free, and humane experience for all participants.
+
+## The Problem We Solve
+
+Today’s major community platforms suffer from three critical failures:
+
+1. **Attention-Driven Decay**: Algorithms prioritize outrage, controversy, and shallow content to maximize engagement, punishing thoughtful discussions and rewarding sensationalism. This drives away knowledgeable contributors who seek depth, not noise.
+
+2. **One-Size-Fits-All Moderation**: Centralized control leads to inconsistent, opaque, or overly aggressive moderation. Communities are stifled by blanket policies that don’t fit their unique culture, and users have no voice in how their space is governed.
+
+3. **Erosion of Authentic Identity**: Users are reduced to metrics—like karma or likes—instead of being recognized as contributors to a shared culture. The sense of belonging and mutual respect is lost beneath performance metrics and mass consumption.
+
+The Community Platform solves these problems by design:
+- **No algorithmic feed**: Users choose what to follow
+- **Community-owned moderation**: Each community elects its own moderators
+- **Meaningful reputation**: Karma reflects genuine contribution, not popularity
+- **Zero ads, zero manipulation**: Pure, uninterrupted dialogue
 
 ## Core Value Proposition
 
-WHEN a user seeks connection around a specific interest, THE communityPlatform SHALL enable them to:
+Our platform delivers seven key value pillars that existing services fail to match:
 
-1. FIND a community where their passion already has a home, or EASILY create a new one
-2. SHARE ideas through posts that are validated by peers—not algorithms
-3. GAIN recognition through an authentic reputation system (karma) built on contribution quality
-4. ENGAGE in deep discussion through nested, context-rich comments
-5. TRUST the integrity of content through transparent moderation and reporting
+1. **Ownership**: Every community is created, governed, and sustained by its members—not a corporation. Community owners determine rules, aesthetic, and moderation standards.
 
-WHERE competing platforms turn users into metrics, THE communityPlatform SHALL treat them as participants in a living ecosystem of shared value.
+2. **Depth Over Virality**: Posts are sorted by time, relevance, or community voting—never by engagement hacks. Long-form insights, expertise, and discourse are rewarded.
 
-## Target Audience Overview
+3. **Human Reputation**: Karma is earned through consistent, valuable contributions—not by posting emotionally charged content. Users build reputation based on quality, not quantity.
 
-### Primary Users
-- **Curious Learners**: Individuals seeking to expand their knowledge in specific domains through community-driven discussion
-- **Passionate Enthusiasts**: Hobbies, niche interests, local culture, and special expertise communities
-- **Knowledge Workers**: Professionals sharing insights, solving problems, and networking in informal settings
-- **Content Contributors**: Users motivated to create and share original thought, not just consume
+4. **No Ads, No Tracking**: The platform is free from advertising, behavioral tracking, and data harvesting. User trust is non-negotiable.
 
-### Secondary Users
-- **Moderators**: Community volunteers who curate discourse, ensure civility, and protect community norms
-- **Administrators**: Platform stewards who maintain system-wide integrity, handle edge cases, and enforce policies
+5. **Inclusive Participation**: Everyone is welcome to join, comment, and contribute. Discourse is moderated for respect, not conformity.
 
-All users share a common desire: To be seen, heard, and valued for their contributions—not their clickstream.
+6. **Flexible Expression**: Support for text, images, and links gives users the freedom to express themselves in the format best suited to their idea—no restrictions.
 
-## Success Metrics & KPIs
+7. **Transparency**: All moderation actions, community rules, and moderation election processes are visible and editable by the community.
 
-THE platform SHALL measure success through the following key performance indicators:
+## Target Market and User Base
 
-1. **Monthly Active Communities (MAC)**: The number of communities with at least 5 posts per month (target: 50,000 within 12 months)
-2. **Karma Distribution Efficiency (KDE)**: The percentage of total upvotes distributed across the top 10% of users (target: <30%, indicating broad engagement, not influencer concentration)
-3. **Comment Thread Depth Average (CTDA)**: The average number of nested reply levels per top-level comment (target: ≥3.0, indicating meaningful discussion depth)
-4. **User Retention Rate (URR)**: Percentage of registered users who return and interact within 30 days of registration (target: ≥40% at 6 months)
-5. **Report Resolution Time (RPT)**: Average time from content report submission to moderator action (target: <12 hours for 95% of reports)
+We target two primary user groups:
 
-## Business Model & Monetization Strategy
+### 1. Knowledgeable Contributors (Primary)
+- Individuals with niche expertise (developers, scientists, artists, hobbyists)
+- Who value long-form discussion, accurate information, and respectful dialogue
+- Who are frustrated by algorithmic feeds that drown out thoughtful content
+- Who seek communities where their contributions are recognized—not their clickbait
 
-THE communityPlatform SHALL operate as a service monetized through advertising and premium features—never through user data sales or manipulation of content visibility.
+### 2. Community Builders (Secondary)
+- Passionate individuals who want to create and nurture a dedicated space for their interest
+- May not be experts themselves but are skilled at organizing and guiding discussion
+- Want control over rules, tone, and culture of their community
+- Prefer autonomy from corporate platforms
 
-### Revenue Streams
+We also serve:
+- **Guests**: Casual visitors who discover communities through external links or referrals and value clean, distraction-free content.
+- **Admins**: System stewards who ensure platform integrity while preserving community autonomy.
 
-1. **Contextual Display Advertising**: Non-intrusive ads deployed only on community home pages and post detail pages, aligned with community topics. Ads SHALL be clearly labeled as "Sponsored" and SHALL not affect post ranking or content moderation decisions.
+Our initial market focus is English-speaking communities of knowledge workers and hobbyists aged 18–45 who have left or avoided Reddit due to toxicity, noise, or ad overload.
 
-2. **Premium Membership (CommunityPlus)**: Optional subscription ($4.99/month) offering:
-   - Ad-free browsing across all communities
-   - Enhanced profile customization (badges, colors, custom headers)
-   - Early access to new platform features
-   - Ability to pin one community post per month to personal profile
+## Success Metrics
 
-3. **Verified Community Badges**: Optional verification for established, high-quality communities ($20/year). This is not a "trust metric"—it is merely an administrative label for communities that meet baseline activity and moderation thresholds.
+We define success through measurable, user-centered indicators—not vanity metrics:
 
-### Ethical Monetization Principles
+- **Daily Active Communities (DAC)**: Number of communities with at least 5 posts per day. Target: 50,000 within 18 months.
+- **Average Posts per Active Member**: Measure of contribution density. Target: 1.8 posts/comments per member per week.
+- **Community Retention Rate**: Percentage of communities still active after 90 days. Target: 80%.
+- **Karma-to-Post Ratio**: Measure of contribution quality. Target: 8+ upvotes per post (on average).
+- **Guest-to-Member Conversion Rate**: Percentage of visitors who register within 7 days of first visit. Target: 22%.
+- **Report Resolution Time**: Time taken to resolve reported content. Target: Less than 2 hours for admin-reviewed reports.
+- **User Satisfaction Score (uNPS)**: Net Promoter Score from in-app survey. Target: +50 within 6 months of launch.
+- **Time on Platform per Session**: Measure of engagement depth. Target: 14 minutes per session.
 
-- NO selling of user data to third parties
-- NO algorithmic manipulation of feeds to increase ad impressions
-- NO pay-to-play ranking systems
-- NO premium features that grant unfair moderation power
-- NO dark patterns in user acquisition or billing
+## Related Documents
 
-### Growth Strategy
+For a complete understanding of the system, please refer to the following documents:
 
-- Organic growth through word-of-mouth and community referrals
-- Strategic partnerships with niche forums, newsletter creators, and educators
-- Community-driven content harvesting to showcase success stories on social media
-- Free toolkits for community founders to promote their spaces
-
-THE platform SHALL grow by nurturing healthy communities—not by chasing viral moments. Success will be measured in depth, not breadth.
+- [Business Model and Monetization Strategy](./01-business-model.md)
+- [User Actors, Authentication, and Permissions](./02-user-actors.md)
+- [Functional Requirements in EARS Format](./03-functional-requirements.md)
+- [Core User Journeys and Interaction Flows](./04-user-journeys.md)
+- [Business Rules and Content Policies](./05-business-rules.md)
+- [Performance Expectations from the User’s Perspective](./06-performance-expectations.md)
+- [Error Handling and Recovery Scenarios](./07-error-handling.md)
+- [Future Enhancements and Strategic Roadmap](./08-future-enhancements.md)
+- [Document Navigation Guide](./09-documentation-map.md)
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

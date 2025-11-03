@@ -1,0 +1,60 @@
+/// Predefined categories for organizing politicsBBS articles and
+/// discussions. Categories facilitate content discoverability and filtering,
+/// focusing on economic and political topics as specified in the
+/// requirements. Categories are created and managed by moderators through
+/// the system interface.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique category code for internal reference and URL generation
+  code String
+  
+  /// Display name for the category shown to users
+  name String
+  
+  /// Detailed description of the category's purpose and scope
+  description String
+  
+  /// CSS color code for visual identification of the category
+  color String?
+  
+  /// Icon identifier for visual representation
+  icon String?
+  
+  /// Display order for category sorting in lists
+  sequence Int
+  
+  /// Whether this is a primary featured category
+  primary Boolean
+  
+  /// Whether this category is required to be assigned
+  required Boolean
+  
+  /// Whether multiple categories can be assigned to content
+  multiplicative Boolean
+  
+  /// Category creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  politics_bbs_articles politics_bbs_articles[]
+  
+  @@unique([code])
+  @@index([sequence])
+  @@index([primary, sequence])
+}

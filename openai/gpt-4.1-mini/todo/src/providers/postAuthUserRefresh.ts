@@ -7,74 +7,94 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserRefresh(props: {
   user: UserPayload;
-  body: ITodoListUser.IRefresh;
-}): Promise<ITodoListUser.IAuthorized> {
-  const { body } = props;
+  body: ITodoUser.IRefresh;
+}): Promise<ITodoUser.IAuthorized> {
+  const decoded = jwt.verify(
+    props.body.refreshToken,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { issuer: "autobe" },
+  ) as {
+    id: string;
+    session_id: string;
+    type: "user";
+  };
 
-  let decoded;
-  try {
-    decoded = jwt.verify(body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    });
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
+  if (decoded.type !== "user") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  const userIdCandidate = (decoded as { id?: unknown }).id;
-  if (typeof userIdCandidate !== "string") {
-    throw new HttpException("Invalid token payload", 401);
-  }
-  const userId = userIdCandidate;
-
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+  const session = await MyGlobal.prisma.todo_user_sessions.findFirst({
     where: {
-      id: userId,
-      deleted_at: null,
+      id: decoded.session_id,
+      todo_user_id: decoded.id,
+    },
+    include: {
+      todoUser: true,
     },
   });
 
-  if (!user) {
-    throw new HttpException("User not found or deleted", 401);
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  const now = Date.now();
+  if (session.todoUser.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  const token = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
+
+  await MyGlobal.prisma.todo_user_sessions.update({
+    where: {
+      id: decoded.session_id,
+    },
+    data: {
+      expired_at: refreshExpires,
+    },
+  });
 
   return {
-    id: user.id,
-    token: {
-      access: jwt.sign(
-        {
-          id: user.id,
-          type: "user",
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        {
-          expiresIn: "1h",
-          issuer: "autobe",
-        },
-      ),
-      refresh: jwt.sign(
-        {
-          id: user.id,
-          type: "user",
-          tokenType: "refresh",
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        {
-          expiresIn: "7d",
-          issuer: "autobe",
-        },
-      ),
-      expired_at: toISOStringSafe(new Date(now + 60 * 60 * 1000)),
-      refreshable_until: toISOStringSafe(
-        new Date(now + 7 * 24 * 60 * 60 * 1000),
-      ),
-    },
+    id: decoded.id,
+    token: token,
   };
 }

@@ -4,92 +4,114 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IDiscussionBoardAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministrator";
 import type { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
 
 /**
- * Test moderator registration rejection when attempting to register with a
- * duplicate email.
+ * Test moderator registration with duplicate email to verify email uniqueness
+ * enforcement.
  *
- * This test validates that the system properly enforces email uniqueness across
- * moderator accounts. The workflow follows these steps:
+ * This test validates that the discussion board system properly enforces email
+ * uniqueness constraints during moderator registration. Email addresses must be
+ * unique across all moderator accounts to ensure proper authentication, account
+ * recovery, and audit trail integrity.
  *
- * 1. Create an administrator account to obtain appointment authority
- * 2. Register the first moderator with a specific email address
- * 3. Attempt to register a second moderator with a different username but the same
+ * Test workflow:
+ *
+ * 1. Generate unique test data for the first moderator registration
+ * 2. Create the first moderator account successfully with a specific email
+ * 3. Validate the first registration response structure and authentication tokens
+ * 4. Attempt to create a second moderator with a different username but the same
  *    email
- * 4. Verify that the system rejects the duplicate email registration with an
- *    appropriate error
+ * 5. Verify the system rejects the duplicate email registration with an error
+ * 6. Test case-insensitive email validation by attempting with different case
  *
- * This ensures the platform maintains email uniqueness as a critical
- * authentication constraint.
+ * This ensures the system prevents:
+ *
+ * - Account duplication through email reuse
+ * - Circumvention of account restrictions through case variations
+ * - Data integrity violations
+ * - Authentication and authorization conflicts
  */
 export async function test_api_moderator_registration_with_duplicate_email(
   connection: api.IConnection,
 ) {
-  // Step 1: Create an administrator account for moderator appointment authority
-  const adminEmail = typia.random<string & tags.Format<"email">>();
-  const adminUsername = typia.random<
-    string &
-      tags.MinLength<3> &
-      tags.MaxLength<30> &
-      tags.Pattern<"^[a-zA-Z0-9_-]+$">
-  >();
-  const adminPassword = typia.random<
-    string & tags.MinLength<8> & tags.MaxLength<128>
-  >();
-
-  const admin = await api.functional.auth.administrator.join(connection, {
-    body: {
-      username: adminUsername,
-      email: adminEmail,
-      password: adminPassword,
-    } satisfies IDiscussionBoardAdministrator.ICreate,
-  });
-  typia.assert<IDiscussionBoardAdministrator.IAuthorized>(admin);
-
-  // Step 2: Register the first moderator with a specific email address
+  // Generate random email that will be used for both registration attempts
   const sharedEmail = typia.random<string & tags.Format<"email">>();
-  const firstModeratorUsername = typia.random<
-    string &
-      tags.MinLength<3> &
-      tags.MaxLength<30> &
-      tags.Pattern<"^[a-zA-Z0-9_-]+$">
-  >();
-  const firstModeratorPassword = typia.random<
-    string & tags.MinLength<8> & tags.MaxLength<128>
-  >();
 
-  const firstModerator = await api.functional.auth.moderator.join(connection, {
-    body: {
-      appointed_by_admin_id: admin.id,
-      username: firstModeratorUsername,
-      email: sharedEmail,
-      password: firstModeratorPassword,
-    } satisfies IDiscussionBoardModerator.ICreate,
-  });
-  typia.assert<IDiscussionBoardModerator.IAuthorized>(firstModerator);
+  // Step 1: Create the first moderator account successfully
+  const firstUsername = RandomGenerator.alphaNumeric(8);
+  const firstPassword = RandomGenerator.alphaNumeric(10);
 
-  // Step 3: Attempt to register a second moderator with different username but same email
-  const secondModeratorUsername = typia.random<
-    string &
-      tags.MinLength<3> &
-      tags.MaxLength<30> &
-      tags.Pattern<"^[a-zA-Z0-9_-]+$">
-  >();
-  const secondModeratorPassword = typia.random<
-    string & tags.MinLength<8> & tags.MaxLength<128>
-  >();
+  const firstModeratorData = {
+    username: firstUsername,
+    email: sharedEmail,
+    password: firstPassword,
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IDiscussionBoardModerator.ICreate;
 
-  // Step 4: Validate that the duplicate email registration is rejected
-  await TestValidator.error("duplicate email should be rejected", async () => {
+  const firstModerator: IDiscussionBoardModerator.IAuthorized =
     await api.functional.auth.moderator.join(connection, {
-      body: {
-        appointed_by_admin_id: admin.id,
-        username: secondModeratorUsername,
-        email: sharedEmail,
-        password: secondModeratorPassword,
-      } satisfies IDiscussionBoardModerator.ICreate,
+      body: firstModeratorData,
     });
-  });
+
+  // Validate the first registration succeeded
+  typia.assert(firstModerator);
+
+  // Verify the returned data matches what we sent
+  TestValidator.equals(
+    "first moderator username matches",
+    firstModerator.username,
+    firstUsername,
+  );
+  TestValidator.equals(
+    "first moderator email matches",
+    firstModerator.email,
+    sharedEmail,
+  );
+
+  // Step 2: Attempt to register a second moderator with the same email (exact match)
+  const secondUsername = RandomGenerator.alphaNumeric(8);
+  const secondPassword = RandomGenerator.alphaNumeric(10);
+
+  const secondModeratorData = {
+    username: secondUsername,
+    email: sharedEmail, // Same email as first moderator (duplicate)
+    password: secondPassword,
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IDiscussionBoardModerator.ICreate;
+
+  // Step 3: Verify that duplicate email registration fails
+  await TestValidator.error(
+    "duplicate email registration should fail",
+    async () => {
+      await api.functional.auth.moderator.join(connection, {
+        body: secondModeratorData,
+      });
+    },
+  );
+
+  // Step 4: Test case-insensitive email uniqueness validation
+  const thirdUsername = RandomGenerator.alphaNumeric(8);
+  const thirdPassword = RandomGenerator.alphaNumeric(10);
+  const caseVariantEmail = sharedEmail.toUpperCase();
+
+  const thirdModeratorData = {
+    username: thirdUsername,
+    email: caseVariantEmail, // Same email but different case
+    password: thirdPassword,
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IDiscussionBoardModerator.ICreate;
+
+  // Step 5: Verify case-insensitive duplicate detection
+  await TestValidator.error(
+    "case-variant duplicate email registration should fail",
+    async () => {
+      await api.functional.auth.moderator.join(connection, {
+        body: thirdModeratorData,
+      });
+    },
+  );
 }

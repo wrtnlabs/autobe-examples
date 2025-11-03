@@ -1,0 +1,223 @@
+/// Invitation records for list collaboration. Captures inviter, optional
+/// invitee (registered user), invitee email, an opaque invite_code, human
+/// message, lifecycle state (pending/accepted/declined/expired), expiry
+/// timestamp (14-day business rule), and audit timestamps. Adjusted to
+/// enforce uniqueness for registered-user invites to prevent duplicate
+/// invitations to the same user for the same list.
+///
+/// @namespace Collaboration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_invitations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target list. {@link todo_app_lists.id}.
+  todo_app_list_id String
+  
+  /// Inviter user. {@link todo_app_todouser.id}.
+  inviter_todouser_id String
+  
+  /// Inviter session for audit/tracing. {@link todo_app_todouser_sessions.id}.
+  inviter_todouser_session_id String?
+  
+  /// Invitee when the invited user is already registered. {@link
+  /// todo_app_todouser.id}.
+  invitee_todouser_id String?
+  
+  /// Email address used to send the invitation when invitee is not yet
+  /// registered.
+  invitee_email String?
+  
+  /// Opaque invite code used for acceptance links. Business-unique token.
+  invite_code String
+  
+  /// Optional human message included with the invitation.
+  message String?
+  
+  /// Invitation lifecycle state: 'pending', 'accepted', 'declined', 'expired'.
+  /// Consider enforcing as enum at application/DB level.
+  state String
+  
+  /// Expiration timestamp enforcing the 14-day expiry business rule.
+  expires_at DateTime
+  
+  /// When the invitation was accepted (if accepted).
+  accepted_at DateTime?
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// Last update time.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for recoverable audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  list todo_app_lists @relation(fields: [todo_app_list_id], references: [id], onDelete: Cascade)
+  inviter todo_app_todouser @relation("todo_app_invitations_of_inviter_todouser_id", fields: [inviter_todouser_id], references: [id], onDelete: Cascade)
+  inviterSession todo_app_todouser_sessions? @relation(fields: [inviter_todouser_session_id], references: [id], onDelete: Cascade)
+  invitee todo_app_todouser? @relation("todo_app_invitations_of_invitee_todouser_id", fields: [invitee_todouser_id], references: [id], onDelete: Cascade)
+  
+  @@unique([invite_code])
+  @@unique([todo_app_list_id, invitee_email])
+  @@unique([todo_app_list_id, invitee_todouser_id])
+  @@index([inviter_todouser_id])
+  @@index([inviter_todouser_session_id])
+  @@index([invitee_todouser_id])
+  @@index([state, created_at])
+  @@index([todo_app_list_id, state])
+}
+
+/// Collaborator membership records linking a registered user to a list.
+/// Enforces one membership per (list, user), stores assigned role
+/// (read-only/read-write), acceptance timestamp, who added the collaborator,
+/// and audit timestamps. Added a list-scoped composite index to optimize
+/// list->collaborators queries.
+///
+/// @namespace Collaboration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_list_collaborators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced list. {@link todo_app_lists.id}.
+  todo_app_list_id String
+  
+  /// Collaborator user. {@link todo_app_todouser.id}.
+  todo_app_todouser_id String
+  
+  /// User who added the collaborator. {@link todo_app_todouser.id}.
+  added_by_todouser_id String
+  
+  /// Collaborator role: 'read-only' or 'read-write'. Consider enforcing as
+  /// enum.
+  role String
+  
+  /// When a pending collaborator accepted membership (nullable if added by
+  /// owner and not pending).
+  accepted_at DateTime?
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// Last update time.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  list todo_app_lists @relation(fields: [todo_app_list_id], references: [id], onDelete: Cascade)
+  user todo_app_todouser @relation("todo_app_list_collaborators_of_todo_app_todouser_id", fields: [todo_app_todouser_id], references: [id], onDelete: Cascade)
+  addedBy todo_app_todouser @relation("todo_app_list_collaborators_of_added_by_todouser_id", fields: [added_by_todouser_id], references: [id], onDelete: Cascade)
+  
+  @@index([added_by_todouser_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([todo_app_list_id, todo_app_todouser_id], map: "todo_app_list_collaborators_todo_app_list_id_todo_app__6cf382f5")
+  @@index([todo_app_todouser_id, created_at])
+  @@index([role, created_at])
+  @@index([todo_app_list_id, created_at])
+}
+
+/// Canonical permission definitions used by collaboration features. Stores
+/// permission code, human description, and metadata. Supporting table used
+/// by application logic to validate and present permission choices.
+///
+/// @namespace Collaboration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_collaboration_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Permission code (e.g., 'list.read', 'list.write').
+  code String
+  
+  /// Human-friendly description of the permission.
+  description String?
+  
+  /// Whether this permission can be granted to collaborators.
+  is_grantable Boolean
+  
+  /// Creation time of the permission record.
+  created_at DateTime
+  
+  /// Last update time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@index([is_grantable, code])
+}
+
+/// Public share metadata for lists. Stores share token, optional public URL,
+/// visibility flags, expiry, and audit timestamps. One-to-one with {@link
+/// todo_app_lists.id} to represent the list's public share entry.
+///
+/// @namespace Collaboration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_list_shares {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced list for the public share. {@link todo_app_lists.id}.
+  todo_app_list_id String
+  
+  /// User who created the public share. {@link todo_app_todouser.id}.
+  created_by_todouser_id String
+  
+  /// Opaque token used to validate share access (unique).
+  share_token String
+  
+  /// Optional public URL for the list (consumer-facing).
+  public_url String?
+  
+  /// Flag indicating whether the list is currently public.
+  is_public Boolean
+  
+  /// Visibility semantic ('public'|'shared' etc.) for application use.
+  visibility String
+  
+  /// Optional expiry for the public share.
+  expires_at DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  list todo_app_lists @relation(fields: [todo_app_list_id], references: [id], onDelete: Cascade)
+  createdBy todo_app_todouser @relation(fields: [created_by_todouser_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_by_todouser_id])
+  
+  @@unique([share_token])
+  @@unique([todo_app_list_id])
+  @@index([is_public, created_at])
+}

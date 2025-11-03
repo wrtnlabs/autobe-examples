@@ -14,36 +14,25 @@ export async function getShoppingMallAdminProductReviewsId(props: {
   admin: AdminPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallProductReview> {
-  const { admin, id } = props;
+  const { id } = props;
 
-  const adminRecord = await MyGlobal.prisma.shopping_mall_admins.findFirst({
-    where: { id: admin.id, status: "active", deleted_at: null },
-  });
-
-  if (adminRecord === null) {
-    throw new HttpException("Unauthorized", 403);
-  }
-
-  const review = await MyGlobal.prisma.shopping_mall_product_reviews.findUnique(
-    {
-      where: { id },
-    },
-  );
-
-  if (review === null) {
-    throw new HttpException("Product review not found", 404);
-  }
+  const record =
+    await MyGlobal.prisma.shopping_mall_product_reviews.findFirstOrThrow({
+      where: { id, deleted_at: null },
+    });
 
   return {
-    id: review.id,
-    shopping_mall_customer_id: review.shopping_mall_customer_id,
-    shopping_mall_product_id: review.shopping_mall_product_id,
-    shopping_mall_order_id: review.shopping_mall_order_id,
-    rating: review.rating,
-    review_text: review.review_text ?? null,
-    status: review.status as "pending" | "approved" | "rejected",
-    created_at: toISOStringSafe(review.created_at),
-    updated_at: toISOStringSafe(review.updated_at),
-    deleted_at: review.deleted_at ? toISOStringSafe(review.deleted_at) : null,
+    id: record.id,
+    shopping_mall_product_sku_id: record.shopping_mall_product_sku_id,
+    shopping_mall_customer_id: record.shopping_mall_customer_id,
+    shopping_mall_order_id: record.shopping_mall_order_id,
+    rating: record.rating,
+    review_body: record.review_body ?? undefined,
+    moderation_status: record.moderation_status,
+    created_at: toISOStringSafe(record.created_at),
+    updated_at: toISOStringSafe(record.updated_at),
+    deleted_at: record.deleted_at
+      ? toISOStringSafe(record.deleted_at)
+      : undefined,
   };
 }

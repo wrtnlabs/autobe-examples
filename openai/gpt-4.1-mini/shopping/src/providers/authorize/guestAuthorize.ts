@@ -4,19 +4,21 @@ import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
 
-export async function guestAuthorize(request: { headers: { authorization?: string } }): Promise<GuestPayload> {
+export async function guestAuthorize(request: {
+  headers: {
+    authorization?: string;
+  };
+}): Promise<GuestPayload> {
   const payload: GuestPayload = jwtAuthorize({ request }) as GuestPayload;
 
   if (payload.type !== "guest") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
-  // For guest table which is standalone, use id directly
+  // Query the standalone guest table using id
   const guest = await MyGlobal.prisma.shopping_mall_guests.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null
     },
   });
 

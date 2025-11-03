@@ -6,6 +6,7 @@ import { ModeratorAuth } from "../../../../decorators/ModeratorAuth";
 import { ModeratorPayload } from "../../../../decorators/payload/ModeratorPayload";
 import { getDiscussionBoardModeratorReportsReportId } from "../../../../providers/getDiscussionBoardModeratorReportsReportId";
 import { putDiscussionBoardModeratorReportsReportId } from "../../../../providers/putDiscussionBoardModeratorReportsReportId";
+import { postDiscussionBoardModeratorReportsReportIdDismiss } from "../../../../providers/postDiscussionBoardModeratorReportsReportIdDismiss";
 
 import { IPageIDiscussionBoardReport } from "../../../../api/structures/IPageIDiscussionBoardReport";
 import { IDiscussionBoardReport } from "../../../../api/structures/IDiscussionBoardReport";
@@ -13,89 +14,77 @@ import { IDiscussionBoardReport } from "../../../../api/structures/IDiscussionBo
 @Controller("/discussionBoard/moderator/reports")
 export class DiscussionboardModeratorReportsController {
   /**
-   * Search and retrieve filtered moderation queue reports with pagination and
-   * priority sorting.
+   * Retrieve filtered, paginated list of content reports for moderator review.
    *
-   * This operation provides moderators and administrators with comprehensive
-   * access to the content moderation queue, enabling efficient review and
-   * management of reported content. The moderation queue is the central
-   * workflow hub for maintaining community standards and enforcing guidelines
-   * for civil discourse on economic and political topics.
+   * Retrieve a comprehensive, filtered, and paginated list of content reports
+   * submitted by members flagging potentially inappropriate articles or
+   * comments. This operation provides moderators with access to the moderation
+   * review queue, enabling efficient content moderation and community guideline
+   * enforcement.
    *
-   * The operation supports sophisticated filtering capabilities essential for
-   * effective moderation queue management. Moderators can filter reports by
-   * current status (pending for unassigned reports, under_review for reports
-   * actively being investigated, resolved for completed reviews, or dismissed
-   * for reports determined to be without merit). Violation category filtering
-   * allows moderators to focus on specific types of guideline violations such
-   * as personal attacks, hate speech, misinformation, spam, offensive language,
-   * off-topic content, threats, doxxing, or trolling. Severity level filtering
-   * (critical, high, medium, low) enables prioritization of the most serious
-   * violations requiring immediate attention. Additional filters include
-   * assigned moderator (to view reports assigned to specific team members or
-   * unassigned reports), date range for investigating reports from specific
-   * time periods, and report count (number of times the same content has been
-   * reported by different users, indicating community consensus on
-   * violations).
+   * The report listing system supports filtering by multiple criteria to help
+   * moderators prioritize and manage their workload effectively. Moderators can
+   * filter by report status to focus on pending reports requiring review,
+   * reports currently under review by other moderators, resolved reports for
+   * reference, or dismissed reports where no action was taken. Status filtering
+   * enables efficient queue management and workload distribution among multiple
+   * moderators.
    *
-   * The default sorting algorithm prioritizes reports using a composite score
-   * that considers severity level (critical violations appear first), multiple
-   * reports on the same content (community agreement elevates priority), and
-   * time in queue (older unresolved reports gradually increase in priority to
-   * ensure timely review). Alternative sorting options allow moderators to view
-   * the queue chronologically (oldest unresolved first, newest first), by
-   * severity only, or by report count. This flexible sorting ensures moderators
-   * can work through the queue efficiently while ensuring critical violations
-   * receive immediate attention.
+   * Additional filtering capabilities include report reason category filtering
+   * (spam, harassment, hate speech, misinformation, off-topic, profanity,
+   * personal information disclosure, other), target content type filtering to
+   * show only article reports or only comment reports, date range filtering for
+   * reports submitted within specific timeframes, reporter filtering by member
+   * username for investigating report patterns, and reviewing moderator
+   * filtering to see which reports are assigned to specific moderators. These
+   * filters can be combined to create focused moderation views.
    *
-   * Pagination controls enable moderators to navigate large moderation queues
-   * effectively. The operation returns comprehensive report information for
-   * each queue item including report ID, submission timestamp, content preview
-   * (first 100 characters of reported content), violation category and
-   * severity, number of reports on this content, current status, assigned
-   * moderator (if any), and time in queue. This information enables moderators
-   * to quickly assess reports and prioritize their review workflow.
+   * Sorting options are optimized for moderation workflows including priority
+   * sorting showing most-reported content first (multiple reports on same
+   * content), oldest first to handle reports in submission order and prevent
+   * neglect, newest first to address recent reports quickly, and
+   * status-then-date sorting to group by status and sort chronologically within
+   * each status group. The default sort order is priority-based to surface
+   * urgent reports requiring immediate attention.
    *
-   * Security and permission enforcement are critical for this operation. Only
-   * users with moderator or administrator roles can access the moderation
-   * queue. Regular members cannot view reports or access moderation interfaces.
-   * When a moderator accesses the queue, they see all pending and under-review
-   * reports across the platform. Administrators have unrestricted access to the
-   * complete queue including resolved and dismissed reports for audit and
-   * oversight purposes. The operation respects role-based access control
-   * defined in the User Roles and Authentication requirements.
+   * Each report in the results includes comprehensive information for moderator
+   * decision-making: report metadata (ID, submission timestamp, current
+   * status), reporter information (username, report history), reported content
+   * preview (article title and excerpt or comment content), report details
+   * (selected reason category, optional detailed explanation from reporter),
+   * count of reports on the same content (for priority assessment), reviewing
+   * moderator information if assigned, and resolution notes if the report has
+   * been resolved. This rich information enables moderators to make informed
+   * decisions quickly.
    *
-   * The operation integrates with multiple moderation workflow components.
-   * Report data references the discussion_board_reports table which contains
-   * foreign keys to reported content (discussion_board_topics or
-   * discussion_board_replies), the reporting user (discussion_board_members),
-   * and the assigned moderator (discussion_board_moderators). The operation
-   * provides the foundation for subsequent moderation actions including content
-   * review, warning issuance, content hiding or removal, user suspension, and
-   * report resolution. All data returned respects soft delete patterns,
-   * excluding reports with deleted_at timestamps unless explicitly requested by
-   * administrators for audit purposes.
+   * Pagination follows standard patterns with configurable page size (25, 50,
+   * or 100 reports per page, default 50 for moderator efficiency) and page
+   * number navigation. The response includes total report count, total page
+   * count, current page number, and the array of report summaries optimized for
+   * the moderation dashboard display.
    *
-   * Performance requirements mandate that the moderation queue loads within 2
-   * seconds even with thousands of pending reports. Efficient database indexing
-   * on status, severity, assigned moderator, and creation timestamp columns
-   * supports rapid filtering and sorting. The operation uses pagination to
-   * limit result set sizes, preventing performance degradation as the report
-   * volume grows. Real-time updates are not required for this operation;
-   * moderators can refresh the queue manually to see newly submitted reports.
+   * Security and access control are critical for this operation. It is
+   * restricted exclusively to users with the moderator role, verified through
+   * JWT token authentication. The operation validates moderator status before
+   * executing queries and logs all moderation queue access for audit purposes.
+   * Regular members and guests receive a 403 Forbidden error if they attempt to
+   * access this endpoint, protecting the confidentiality of the moderation
+   * process and reporter identities.
    *
-   * The operation supports the platform's commitment to transparent, fair, and
-   * timely content moderation. By providing powerful filtering and sorting
-   * tools, the system enables moderators to work through the queue efficiently,
-   * address critical violations immediately, and maintain consistent response
-   * times. The comprehensive report information displayed supports informed
-   * moderation decisions while the audit trail (created through subsequent
-   * moderation action operations) ensures accountability for all moderation
-   * activities.
+   * This operation integrates with multiple tables in the moderation system:
+   * discussion_board_reports as the primary data source, joins with
+   * discussion_board_members for reporter information, joins with
+   * discussion_board_moderators for reviewing moderator information, joins with
+   * discussion_board_articles for reported article content, joins with
+   * discussion_board_comments for reported comment content, and references
+   * discussion_board_moderation_actions for resolution tracking. The
+   * polymorphic relationship between reports and their targets (articles or
+   * comments) is handled through the reported_article_id and
+   * reported_comment_id fields with appropriate null handling.
    *
    * @param connection
-   * @param body Search criteria, filters, pagination parameters, and sorting
-   *   options for moderation queue reports
+   * @param body Filtering criteria for moderation reports including status,
+   *   reason, content type, date ranges, and sorting preferences
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -119,46 +108,38 @@ export class DiscussionboardModeratorReportsController {
   /**
    * Retrieve detailed information about a specific content report.
    *
-   * Retrieve comprehensive information about a specific content report in the
-   * moderation system. This operation provides complete details of content
-   * reports submitted by members to flag topics or replies that violate
-   * community guidelines on the economic and political discussion board.
+   * Access comprehensive information about a content report identified by its
+   * unique report ID. This operation serves both members checking the status of
+   * their submitted reports and moderators reviewing reports for moderation
+   * action.
    *
-   * This endpoint is critical for the moderation workflow, allowing moderators
-   * to examine individual reports in detail before making moderation decisions.
-   * The returned data includes all information necessary to evaluate the
-   * violation, understand the context, and take appropriate action.
+   * For members, this operation allows them to view reports they have
+   * personally submitted, including the current status (pending, under review,
+   * resolved, or dismissed), any resolution notes provided by moderators, and
+   * the timestamp of status changes. Members can only access reports they
+   * created themselves, ensuring privacy of the reporting process.
    *
-   * The operation retrieves data from the discussion_board_reports table as
-   * defined in the Prisma schema, incorporating all report fields including
-   * reporter information, reported content references, violation
-   * categorization, severity level, current status, assigned moderator, and
-   * resolution details. The response includes relationships to the reporter
-   * member, reported topic or reply, and assigned moderator for comprehensive
-   * context.
+   * For moderators, this operation provides complete report details necessary
+   * for thorough review and decision-making. Moderators can view the reporter's
+   * identity, the full context of the reported content (article or comment),
+   * all details provided by the reporter, any previous reports on the same
+   * content, the target author's account history, and previous moderation
+   * actions taken on the reported user. This comprehensive view enables
+   * informed moderation decisions aligned with progressive discipline
+   * policies.
    *
-   * Security considerations include role-based access control ensuring only
-   * moderators and administrators can view report details. The endpoint
-   * validates that the requesting user has appropriate permissions before
-   * returning sensitive moderation information. Reports contain information
-   * about community members and potentially offensive content, requiring
-   * careful access control.
-   *
-   * This operation integrates with the moderation queue workflow where
-   * moderators review pending reports, assign themselves to reports, and
-   * ultimately resolve or dismiss reports after investigation. The detailed
-   * report information enables informed moderation decisions aligned with
-   * community guidelines and platform standards for civil economic and
-   * political discourse.
-   *
-   * Expected usage patterns include moderators viewing report details from the
-   * moderation queue and examining violation context before taking moderation
-   * actions such as hiding content, issuing warnings, or dismissing reports.
-   * The endpoint supports the comprehensive moderation system defined in the
-   * requirements, enabling transparent, accountable content governance.
+   * The response includes the report reason category (spam, harassment, hate
+   * speech, misinformation, off-topic content, inappropriate language, personal
+   * information disclosure, or other), detailed explanation provided by the
+   * reporter, current report status, reviewing moderator information if
+   * assigned, resolution notes from moderator review, timestamps for creation
+   * and status updates, and references to the reported content (article or
+   * comment ID) and the reporter. This operation integrates with the moderation
+   * dashboard workflow where moderators claim reports for review, examine
+   * complete context, and make enforcement decisions.
    *
    * @param connection
-   * @param reportId Unique identifier of the content report to retrieve
+   * @param reportId Unique identifier of the target report
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":reportId")
@@ -180,42 +161,42 @@ export class DiscussionboardModeratorReportsController {
   }
 
   /**
-   * Update an existing content report with review status, assignment, or
-   * resolution details.
+   * Update content report status and resolution by report identifier.
    *
-   * Update an existing content report's details including status, moderator
-   * assignment, resolution notes, and dismissal reasons. This operation is used
-   * throughout the moderation workflow when moderators claim reports by
-   * assigning themselves, progress reports from pending to under_review status,
-   * resolve reports by adding resolution notes and marking them resolved, or
-   * dismiss false reports with explanatory dismissal reasons.
+   * Updates an existing content report with review status, resolution notes,
+   * and moderator assignment. This operation is central to the moderation
+   * workflow, enabling moderators to process reports submitted by community
+   * members who flag articles or comments that potentially violate community
+   * guidelines.
    *
-   * This operation directly modifies the discussion_board_reports table in the
-   * Prisma schema. The report being updated is identified by the reportId path
-   * parameter which corresponds to the discussion_board_reports.id field.
-   * Moderators can update the assigned_moderator_id to claim reports, change
-   * the status field through the workflow states (pending, under_review,
-   * resolved, dismissed), add resolution_notes explaining their decision, and
-   * provide dismissal_reason if the report is determined to be invalid.
+   * When a moderator reviews a report, they can update the report status to
+   * reflect the current review state: under_review when they begin examining
+   * the content, resolved when they take action on the reported content, or
+   * dismissed when the report is found to be invalid. The operation also allows
+   * moderators to assign themselves as the reviewing moderator and document
+   * their decision through resolution notes. Status transitions typically
+   * follow the pattern: pending → under_review → resolved/dismissed.
    *
-   * Security considerations require that only users with moderator or
-   * administrator roles can update reports. The system validates that the
-   * report exists before allowing updates, prevents status transitions that
-   * violate workflow logic (e.g., cannot go from resolved back to pending), and
-   * ensures resolution_notes or dismissal_reason are provided when required by
-   * the new status. All updates are logged in the moderation audit trail per
-   * the requirements.
+   * The operation validates that the specified report exists in the
+   * discussion_board_reports table and that the authenticated moderator has
+   * permission to update reports. It ensures referential integrity by verifying
+   * that any assigned reviewing_moderator_id corresponds to a valid moderator
+   * account. The system automatically updates the updated_at timestamp to track
+   * when the report was last modified, maintaining a complete audit trail of
+   * moderation activity. Resolution notes are recommended when setting status
+   * to resolved or dismissed to document the moderator's decision rationale.
    *
-   * This operation is typically used after moderators access the moderation
-   * queue (via PATCH /moderationActions) to retrieve pending reports, then
-   * update individual reports as they review content. Related operations
-   * include GET /reports/{reportId} to view full report details, and the
-   * moderation action creation flow that references the updated report.
+   * This operation is typically used in conjunction with related moderation
+   * actions. After updating a report status, moderators often create
+   * corresponding moderation_actions records to document specific enforcement
+   * actions taken (content deletion, user warnings, etc.). The operation
+   * supports the progressive discipline system by enabling moderators to track
+   * violation patterns across multiple reports for the same user or content.
    *
    * @param connection
-   * @param reportId Unique identifier of the content report to update
-   * @param body Updated report information including status, assignment, and
-   *   resolution details
+   * @param reportId Unique identifier of the target content report to update
+   * @param body Updated report information including status, reviewing
+   *   moderator, and resolution notes
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":reportId")
@@ -229,6 +210,65 @@ export class DiscussionboardModeratorReportsController {
   ): Promise<IDiscussionBoardReport> {
     try {
       return await putDiscussionBoardModeratorReportsReportId({
+        moderator,
+        reportId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Dismiss a content report without taking action on the reported content.
+   *
+   * Dismisses a content report after moderator review determines that no
+   * violation occurred or no action is warranted. This operation is a
+   * specialized moderation workflow action that allows moderators to close
+   * reports without taking enforcement actions against the reported content or
+   * its author. Dismissal explicitly indicates that no community guideline
+   * violation was found, distinguishing it from resolution which implies action
+   * was taken.
+   *
+   * When a moderator dismisses a report, the system updates the report status
+   * to dismissed in the discussion_board_reports table, assigns the moderator
+   * as the reviewing_moderator_id, and records dismissal reasoning in the
+   * resolution_notes field. This creates a complete record of why the report
+   * was dismissed, which is valuable for moderator accountability, training,
+   * and handling potential appeals. The reported content remains unchanged and
+   * visible, and no enforcement actions are taken against the content author.
+   *
+   * The operation validates that the specified report exists and is in a state
+   * that can be dismissed (typically pending or under_review status). It
+   * ensures the authenticated moderator has appropriate permissions to dismiss
+   * reports. The system automatically updates the updated_at timestamp to track
+   * when the dismissal occurred.
+   *
+   * This operation supports the moderation system's transparency by documenting
+   * false reports or reports that don't meet community guideline violation
+   * thresholds. It helps moderators track report accuracy patterns and identify
+   * users who may be abusing the reporting system. Dismissed reports remain in
+   * the audit trail permanently, contributing to the overall moderation
+   * accountability and quality assurance processes.
+   *
+   * @param connection
+   * @param reportId Unique identifier of the target content report to dismiss
+   * @param body Dismissal information including moderator notes explaining why
+   *   the report is being dismissed without action
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post(":reportId/dismiss")
+  public async dismiss(
+    @ModeratorAuth()
+    moderator: ModeratorPayload,
+    @TypedParam("reportId")
+    reportId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardReport.IDismiss,
+  ): Promise<IDiscussionBoardReport> {
+    try {
+      return await postDiscussionBoardModeratorReportsReportIdDismiss({
         moderator,
         reportId,
         body,

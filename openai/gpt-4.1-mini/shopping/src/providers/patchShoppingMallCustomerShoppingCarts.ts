@@ -20,75 +20,77 @@ export async function patchShoppingMallCustomerShoppingCarts(props: {
 
   const page = (body.page ?? 1) as number &
     tags.Type<"int32"> &
-    tags.Minimum<1> as number;
-  const limit = (body.limit ?? 100) as number &
+    tags.Minimum<0> as number;
+  const limit = (body.limit ?? 10) as number &
     tags.Type<"int32"> &
-    tags.Minimum<1> as number;
+    tags.Minimum<0> as number;
   const skip = (page - 1) * limit;
 
-  let sortField = "created_at";
-  let sortOrder: "asc" | "desc" = "desc";
-  if (body.sort) {
-    const parts = body.sort.trim().split(/\s+/);
-    if (parts.length === 2) {
-      const [field, order] = parts;
-      if (
-        field === "created_at" ||
-        field === "updated_at" ||
-        field === "session_id"
-      ) {
-        sortField = field;
-      }
-      if (order.toLowerCase() === "asc" || order.toLowerCase() === "desc") {
-        sortOrder = order.toLowerCase() as "asc" | "desc";
-      }
-    }
+  // Compose created_at range condition
+  const createdAtRange: {
+    gte?: string & tags.Format<"date-time">;
+    lte?: string & tags.Format<"date-time">;
+  } = {};
+  if (body.created_at_from !== undefined && body.created_at_from !== null) {
+    createdAtRange.gte = body.created_at_from;
+  }
+  if (body.created_at_to !== undefined && body.created_at_to !== null) {
+    createdAtRange.lte = body.created_at_to;
   }
 
-  const where: {
-    deleted_at: null;
-    shopping_mall_customer_id: string & tags.Format<"uuid">;
-    session_id?: { contains: string };
-    OR?: { session_id: { contains: string } }[];
-  } = {
+  // Compose updated_at range condition
+  const updatedAtRange: {
+    gte?: string & tags.Format<"date-time">;
+    lte?: string & tags.Format<"date-time">;
+  } = {};
+  if (body.updated_at_from !== undefined && body.updated_at_from !== null) {
+    updatedAtRange.gte = body.updated_at_from;
+  }
+  if (body.updated_at_to !== undefined && body.updated_at_to !== null) {
+    updatedAtRange.lte = body.updated_at_to;
+  }
+
+  const whereCondition = {
     deleted_at: null,
     shopping_mall_customer_id: customer.id,
-    ...(body.session_id !== undefined &&
-      body.session_id !== null && {
-        session_id: { contains: body.session_id },
+    ...(body.shopping_mall_customer_session_id !== undefined &&
+      body.shopping_mall_customer_session_id !== null && {
+        shopping_mall_customer_session_id:
+          body.shopping_mall_customer_session_id,
       }),
-    ...(body.search !== undefined &&
-      body.search !== null &&
-      body.search !== "" && {
-        OR: [{ session_id: { contains: body.search } }],
-      }),
+    ...(Object.keys(createdAtRange).length > 0 && {
+      created_at: createdAtRange,
+    }),
+    ...(Object.keys(updatedAtRange).length > 0 && {
+      updated_at: updatedAtRange,
+    }),
   };
 
-  const [records, total] = await Promise.all([
+  const [results, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_shopping_carts.findMany({
-      where,
-      orderBy: { [sortField]: sortOrder },
+      where: whereCondition,
+      orderBy: { created_at: "desc" },
       skip,
       take: limit,
     }),
-    MyGlobal.prisma.shopping_mall_shopping_carts.count({ where }),
+    MyGlobal.prisma.shopping_mall_shopping_carts.count({
+      where: whereCondition,
+    }),
   ]);
 
-  const data = records.map((record) => ({
-    id: record.id,
-    shopping_mall_customer_id: record.shopping_mall_customer_id ?? null,
-    session_id: record.session_id ?? null,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-  }));
-
   return {
+    data: results.map((r) => ({
+      id: r.id,
+      shopping_mall_customer_id: r.shopping_mall_customer_id,
+      shopping_mall_customer_session_id: r.shopping_mall_customer_session_id,
+      created_at: toISOStringSafe(r.created_at),
+      updated_at: toISOStringSafe(r.updated_at),
+    })),
     pagination: {
       current: Number(page),
       limit: Number(limit),
       records: total,
       pages: Math.ceil(total / limit),
     },
-    data,
   };
 }

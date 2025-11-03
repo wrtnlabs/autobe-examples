@@ -1,46 +1,45 @@
-/// System-defined topic categories for the economic/political discussion
-/// board. These are fixed, immutable categories that govern content
-/// organization and filtering across the platform. All posts must reference
-/// exactly one of these predefined topics.
+/// System-wide configuration settings for the discussion board. Contains
+/// key-value pairs defining behavioral limits and policies that govern
+/// posting, commenting, file uploads, moderation actions, and report
+/// handling. Managed by administrators through external tools, not by end
+/// users.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model economic_board_topics {
+model discussion_board_configs {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The exact name of the topic category. Must be one of the seven predefined
-  /// system values: "Inflation", "Tax Policy", "Elections", "Global Trade",
-  /// "Monetary Policy", "Labor Markets", "Fiscal Policy".
-  name String
+  /// Unique identifier for the configuration parameter. Examples:
+  /// "max_file_size_per_post_mb", "allowed_image_types",
+  /// "min_post_title_length".
+  key String
   
-  /// Timestamp when this topic category was initially registered in the
-  /// system. Immutable after creation.
+  /// String representation of the configuration value. Can be JSON-encoded for
+  /// complex values (e.g., array of string types).
+  value String
+  
+  /// Human-readable explanation of what this configuration controls and its
+  /// intended purpose.
+  description String
+  
+  /// Grouping for related configuration settings. Examples: "media",
+  /// "content", "moderation", "session".
+  category String
+  
+  /// Timestamp when this configuration was created.
   created_at DateTime
   
-  /// Timestamp of the last modification to this topic's metadata. Always equal
-  /// to created_at since topic names are immutable after creation.
+  /// Timestamp when this configuration was last modified.
   updated_at DateTime
-  
-  /// Indicates whether this topic is currently available for new post
-  /// creation. Topics may be deactivated if unused for 90+ days but historical
-  /// posts retain their original topic reference.
-  is_active Boolean
-  
-  /// Optional human-readable description explaining the scope and purpose of
-  /// this topic category.
-  description String?
   
   //----
   // RELATIONS
   //----
-  economic_board_posts economic_board_posts[]
-  
-  @@unique([name])
+  @@unique([key])
   @@index([created_at])
-  @@index([is_active])
-  @@index([name, is_active])
+  @@index([updated_at])
 }

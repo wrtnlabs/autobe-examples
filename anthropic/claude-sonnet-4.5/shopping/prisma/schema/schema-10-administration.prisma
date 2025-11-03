@@ -1,0 +1,463 @@
+/// Comprehensive audit trail logging all administrative actions performed by
+/// admins across the platform. Captures complete before/after state changes,
+/// action metadata, and security context for compliance, dispute resolution,
+/// and accountability. This table is system-managed and automatically
+/// populated on every admin operation.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed this action. {@link shopping_mall_admins.id}.
+  shopping_mall_admin_id String
+  
+  /// Type of administrative action performed (e.g., user_suspended,
+  /// order_refunded, product_deleted, review_approved, seller_verified).
+  action_type String
+  
+  /// Type of entity affected by this action (e.g., customer, seller, order,
+  /// product, review).
+  entity_type String
+  
+  /// Unique identifier of the specific entity affected by this action.
+  entity_id String
+  
+  /// JSON representation of entity state before the action was performed,
+  /// enabling complete audit trail reconstruction.
+  before_data String?
+  
+  /// JSON representation of entity state after the action was performed,
+  /// capturing the changes made.
+  after_data String?
+  
+  /// Admin-provided reason or notes explaining why this action was taken.
+  action_reason String?
+  
+  /// IP address from which the admin performed this action, for security
+  /// tracking.
+  ip_address String
+  
+  /// Browser user agent string of the admin session, for security and audit
+  /// context.
+  user_agent String
+  
+  /// Timestamp when this administrative action was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id, created_at], map: "shopping_mall_admin_activity_logs_shopping_mall_admin__4a1ace46")
+  @@index([entity_type, entity_id])
+  @@index([action_type, created_at])
+}
+
+/// Workflow queue managing the review moderation process. Tracks pending,
+/// in-progress, and completed review moderation tasks assigned to admin
+/// moderators. Supports prioritization and workload distribution across
+/// moderation team.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_moderation_queue {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product review being moderated. {@link shopping_mall_product_reviews.id}.
+  shopping_mall_product_review_id String
+  
+  /// Admin moderator assigned to review this item. {@link
+  /// shopping_mall_admins.id}.
+  assigned_admin_id String?
+  
+  /// Current moderation status (pending, in_progress, approved, rejected).
+  status String
+  
+  /// Moderation priority level (normal, high, urgent) based on flags or
+  /// content sensitivity.
+  priority String
+  
+  /// Timestamp when this moderation task was assigned to an admin.
+  assigned_at DateTime?
+  
+  /// Timestamp when moderation decision was made and completed.
+  moderated_at DateTime?
+  
+  /// Moderation decision made by admin (approved, rejected, requires_edit).
+  decision String?
+  
+  /// Explanation or notes from moderator regarding their decision.
+  decision_reason String?
+  
+  /// Whether this review was automatically flagged by content filters for
+  /// moderation.
+  auto_flagged Boolean
+  
+  /// Timestamp when this moderation queue entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderation queue entry was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  assignedAdmin shopping_mall_admins? @relation(fields: [assigned_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_review_id], map: "shopping_mall_review_moderation_queue_shopping_mall_pr_fa8f1151")
+  
+  @@index([status, priority])
+  // spellchecker: ignore-next-line
+  @@index([assigned_admin_id, status], map: "shopping_mall_review_moderation_queue_assigned_admin_i_04d7afc1")
+}
+
+/// Customer-seller dispute resolution cases requiring admin investigation
+/// and decision. Tracks dispute claims, evidence, seller responses, admin
+/// investigation notes, and resolution outcomes. Admins independently
+/// search, assign, investigate, and resolve disputes to maintain marketplace
+/// fairness.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_cases {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order associated with this dispute case. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Customer who initiated this dispute. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Seller involved in this dispute. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Admin assigned to investigate and resolve this dispute. {@link
+  /// shopping_mall_admins.id}.
+  assigned_admin_id String?
+  
+  /// Admin who made the final resolution decision. {@link
+  /// shopping_mall_admins.id}.
+  resolved_admin_id String?
+  
+  /// Human-readable unique case identifier for reference (e.g.,
+  /// DISP-20251031-001).
+  case_number String
+  
+  /// Category of dispute (item_not_received, item_damaged, wrong_item,
+  /// not_as_described, quality_issue, other).
+  dispute_type String
+  
+  /// Current dispute case status (open, under_review, awaiting_customer_info,
+  /// awaiting_seller_response, resolved, closed).
+  status String
+  
+  /// Case priority level (low, normal, high, urgent) based on dispute value
+  /// and customer impact.
+  priority String
+  
+  /// Detailed claim description provided by the customer explaining the
+  /// dispute.
+  customer_claim String
+  
+  /// JSON array of evidence URLs (photos, documents) provided by customer to
+  /// support their claim.
+  customer_evidence String?
+  
+  /// Seller's response to the customer claim with their explanation or
+  /// counter-evidence.
+  seller_response String?
+  
+  /// JSON array of evidence URLs provided by seller to support their response.
+  seller_evidence String?
+  
+  /// Internal notes from admin investigator documenting findings and reasoning.
+  admin_investigation_notes String?
+  
+  /// Final resolution decision (favor_customer, favor_seller, compromise,
+  /// no_fault).
+  resolution_decision String?
+  
+  /// Action taken to resolve dispute (full_refund, partial_refund,
+  /// replacement, seller_warning, close_no_action).
+  resolution_action String?
+  
+  /// Admin explanation of resolution decision and actions taken, communicated
+  /// to both parties.
+  resolution_notes String?
+  
+  /// Monetary refund amount issued as part of dispute resolution, if
+  /// applicable.
+  refund_amount Float?
+  
+  /// Timestamp when the dispute case was opened by the customer.
+  opened_at DateTime
+  
+  /// Timestamp when the case was assigned to an admin for investigation.
+  assigned_at DateTime?
+  
+  /// Timestamp when the dispute was resolved with final decision.
+  resolved_at DateTime?
+  
+  /// Timestamp when the dispute case was officially closed.
+  closed_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit trail preservation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  assignedAdmin shopping_mall_admins? @relation("shopping_mall_dispute_cases_of_assigned_admin_id", fields: [assigned_admin_id], references: [id], onDelete: Cascade)
+  resolvedAdmin shopping_mall_admins? @relation("shopping_mall_dispute_cases_of_resolved_admin_id", fields: [resolved_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([resolved_admin_id])
+  
+  @@unique([case_number])
+  @@index([status, priority])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_dispute_cases_shopping_mall_customer_id__cf13a771")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_dispute_cases_shopping_mall_seller_id_cr_d3d710ca")
+  @@index([assigned_admin_id, status])
+}
+
+/// Seller account verification records tracking the admin approval workflow
+/// for new seller registrations. Manages verification status, submission
+/// documentation, admin review decisions, and rejection reasons to ensure
+/// only legitimate businesses operate on the platform.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller account undergoing verification. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Admin who reviewed and made verification decision. {@link
+  /// shopping_mall_admins.id}.
+  reviewer_admin_id String?
+  
+  /// Current verification status (pending, under_review, approved, rejected).
+  verification_status String
+  
+  /// JSON array of URLs to uploaded business verification documents (business
+  /// license, tax ID, etc.).
+  business_documents String?
+  
+  /// Timestamp when seller submitted verification request.
+  submission_date DateTime
+  
+  /// Timestamp when admin completed verification review.
+  review_date DateTime?
+  
+  /// Admin notes recorded during approval process.
+  approval_notes String?
+  
+  /// Reason provided by admin for rejecting seller verification.
+  rejection_reason String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  reviewerAdmin shopping_mall_admins? @relation(fields: [reviewer_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_seller_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([verification_status, submission_date], map: "shopping_mall_seller_verifications_verification_status_f385ee51")
+  // spellchecker: ignore-next-line
+  @@index([reviewer_admin_id, review_date], map: "shopping_mall_seller_verifications_reviewer_admin_id_r_0e57bd9d")
+}
+
+/// Marketing promotional banners displayed on homepage, category pages, or
+/// other strategic locations. Admins create, schedule, and manage banner
+/// campaigns with display periods, positioning, and targeting. Supports
+/// time-based activation for scheduled promotions.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotional_banners {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who created this promotional banner. {@link
+  /// shopping_mall_admins.id}.
+  created_by_admin_id String
+  
+  /// Optional specific product this banner promotes. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String?
+  
+  /// Optional product category this banner promotes. {@link
+  /// shopping_mall_product_categories.id}.
+  shopping_mall_product_category_id String?
+  
+  /// Banner title or headline text for admin reference and optional display.
+  title String
+  
+  /// Internal description of banner purpose and campaign details for admin
+  /// reference.
+  description String?
+  
+  /// URL to the banner image asset to be displayed.
+  image_url String
+  
+  /// Destination URL when customers click on this banner (product page,
+  /// category page, external URL).
+  link_url String
+  
+  /// Location where banner should be displayed (homepage_hero,
+  /// homepage_sidebar, category_top, search_results).
+  display_location String
+  
+  /// Sort order for multiple banners in the same location (lower numbers
+  /// display first).
+  display_order Int
+  
+  /// Scheduled start date/time when banner becomes active and visible to
+  /// customers.
+  start_date DateTime
+  
+  /// Scheduled end date/time when banner automatically deactivates and becomes
+  /// hidden.
+  end_date DateTime?
+  
+  /// Manual activation flag allowing admins to enable/disable banner
+  /// independent of schedule.
+  is_active Boolean
+  
+  /// Total number of customer clicks on this banner for performance tracking.
+  click_count Int
+  
+  /// Total number of times this banner was displayed to customers.
+  impression_count Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for archiving old campaigns while preserving
+  /// analytics data.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  createdByAdmin shopping_mall_admins @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_product_categories? @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_by_admin_id])
+  @@index([shopping_mall_product_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_category_id], map: "shopping_mall_promotional_banners_shopping_mall_produc_869362d0")
+  
+  @@index([is_active, start_date])
+  // spellchecker: ignore-next-line
+  @@index([display_location, display_order], map: "shopping_mall_promotional_banners_display_location_dis_489ba7e9")
+  @@index([start_date, end_date])
+}
+
+/// Junction table managing which products are featured on homepage or
+/// category pages with enhanced visibility. Admins curate featured product
+/// selections to highlight quality products, promotions, or strategic
+/// inventory. Supports time-limited featuring and display ordering.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_featured_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product being featured. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Admin who added this product to featured list. {@link
+  /// shopping_mall_admins.id}.
+  featured_by_admin_id String
+  
+  /// Location where this product is featured (homepage, category_page,
+  /// search_results).
+  display_location String
+  
+  /// Sort order for featured products in the same location (lower numbers
+  /// display first).
+  display_order Int
+  
+  /// Timestamp when product was added to featured list.
+  featured_at DateTime
+  
+  /// Optional end date when product should be automatically removed from
+  /// featured list.
+  featured_until DateTime?
+  
+  /// Manual activation flag allowing admins to temporarily hide featured
+  /// products without removing them.
+  is_active Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  featuredByAdmin shopping_mall_admins @relation(fields: [featured_by_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([featured_by_admin_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, display_location], map: "shopping_mall_featured_products_shopping_mall_product__a418175e")
+  @@index([is_active, display_order])
+  @@index([featured_until, is_active])
+}

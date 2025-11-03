@@ -1,0 +1,47 @@
+/// Core todo items representing user tasks with status tracking and
+/// lifecycle management. Each todo belongs to a specific user and supports
+/// creation, completion, editing, and deletion workflows. Todos maintain
+/// their creation order and support soft deletion for data recovery
+/// capabilities.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Todo item title/content. Validated for length (1-255 characters) and
+  /// content requirements.
+  title String
+  
+  /// Current status of the todo item. Values: 'active' for pending tasks,
+  /// 'completed' for finished tasks.
+  status String
+  
+  /// Timestamp when the todo was marked as completed. Null for active todos.
+  completed_at DateTime?
+  
+  /// Timestamp when the todo was created.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the todo was soft deleted. Null for active todos.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_user_id, created_at])
+  @@index([todo_app_user_id, status])
+  @@index([completed_at])
+}

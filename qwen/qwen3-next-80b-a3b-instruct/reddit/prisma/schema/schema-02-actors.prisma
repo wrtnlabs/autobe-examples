@@ -1,6 +1,6 @@
-/// Guest users who are not authenticated and have limited viewing privileges
-/// on the platform. Represents anonymous visitors before registration or
-/// login.
+/// Represents unauthenticated visitors to the platform. Guests have limited
+/// access to public content and cannot create posts, comments, or accounts.
+/// Account lifecycle is temporary and tied to session expiration.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -11,30 +11,33 @@ model community_platform_guest {
   /// Primary Key.
   id String @id
   
-  /// Timestamp when the guest session was initiated.
+  /// Timestamp when guest first visited the platform.
   created_at DateTime
   
-  /// IP address of the guest user, useful for analytics and abuse detection.
-  ip_address String?
+  /// Timestamp of last activity by this guest.
+  updated_at DateTime
   
-  /// The browser/user agent string of the guest visitor, used for device and
-  /// browser identification.
-  user_agent String?
+  /// Timestamp when this guest record was deactivated (soft delete). Null if
+  /// active.
+  deleted_at DateTime?
   
-  /// Timestamp of the last page view or interaction by this guest.
-  last_active DateTime?
+  /// Current status of the guest. Enum values: "active", "suspended".
+  status String
   
   //----
   // RELATIONS
   //----
+  community_platform_guest_sessions community_platform_guest_sessions[]
+  community_platform_report_of_guests community_platform_report_of_guests[]
+  
   @@index([created_at])
-  @@index([ip_address])
-  @@index([last_active])
+  @@index([status])
+  @@index([updated_at])
 }
 
-/// Authenticated members who have completed email verification and can
-/// participate in the community by posting, commenting, and voting.
-/// Represents the core user base of the platform.
+/// Represents authenticated users who can create content, vote, comment, and
+/// subscribe to communities. Members can be verified, suspended, or banned.
+/// Each member has unique username/email and password credentials.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -45,116 +48,68 @@ model community_platform_member {
   /// Primary Key.
   id String @id
   
-  /// Unique email address for authentication and notifications. Required for
-  /// all members.
-  email String
-  
-  /// Display username that appears in posts and comments. Must be unique
-  /// across the platform.
-  username String
-  
-  /// BCrypt hashed password for authentication. Never stored in plaintext.
-  password_hash String
-  
-  /// Flag indicating whether email verification is complete. Initially false
-  /// until verification link is clicked.
-  is_verified Boolean
-  
   /// Timestamp when the member account was created.
   created_at DateTime
   
-  /// Timestamp when the member account was last updated.
+  /// Timestamp of last modification to member profile.
   updated_at DateTime
   
-  /// Soft delete timestamp. If null, account is active. If set, account is
-  /// deactivated.
+  /// Timestamp when this member account was deactivated (soft delete). Null if
+  /// active.
   deleted_at DateTime?
   
-  /// Total karma score calculated from upvotes minus downvotes on all posts
-  /// and comments. Minimum value is 0.
+  /// Current status of the member. Enum values: "unverified", "active",
+  /// "suspended", "banned".
+  status String
+  
+  /// Unique email address for login and notifications.
+  email String
+  
+  /// Unique display name for public profile.
+  username String
+  
+  /// Hashed password for authentication. Never store plain text passwords.
+  password_hash String
+  
+  /// Total reputation score earned through contributions. Updated
+  /// automatically by karma system.
   karma Int
   
   //----
   // RELATIONS
   //----
-  community_platform_moderator community_platform_moderator?
-  community_platform_admin community_platform_admin?
-  community_platform_user_profiles community_platform_user_profiles?
-  community_platform_user_sessions community_platform_user_sessions[]
-  community_platform_email_verifications community_platform_email_verifications?
-  community_platform_password_resets community_platform_password_resets?
+  community_platform_member_sessions community_platform_member_sessions[]
+  community_platform_communities community_platform_communities[]
   community_platform_posts community_platform_posts[]
   community_platform_comments community_platform_comments[]
-  community_platform_post_snapshots community_platform_post_snapshots[]
-  community_platform_comment_snapshots community_platform_comment_snapshots[]
-  community_platform_reports community_platform_reports[]
+  community_platform_votes community_platform_votes[]
+  community_platform_karma community_platform_karma?
+  community_platform_karma_history community_platform_karma_history[]
+  community_platform_report_of_members community_platform_report_of_members[]
   community_platform_subscriptions community_platform_subscriptions[]
-  community_platform_audit_logs_of_actor_user_id community_platform_audit_logs[] @relation("community_platform_audit_logs_of_actor_user_id")
-  community_platform_audit_logs_of_target_user_id community_platform_audit_logs[] @relation("community_platform_audit_logs_of_target_user_id")
-  community_platform_security_logs community_platform_security_logs[]
-  community_platform_api_access_logs community_platform_api_access_logs[]
-  community_platform_notifications community_platform_notifications[]
-  community_platform_notification_preferences community_platform_notification_preferences?
-  community_platform_stripe_customers community_platform_stripe_customers?
-  community_platform_stripe_subscriptions community_platform_stripe_subscriptions?
-  community_platform_auth0_mappings community_platform_auth0_mappings?
-  community_platform_email_delivery_logs community_platform_email_delivery_logs[]
+  community_platform_profiles community_platform_profiles?
+  community_platform_profile_badges community_platform_profile_badges[]
+  community_platform_profile_privacy_settings community_platform_profile_privacy_settings?
+  community_platform_messages_of_sender_member_id community_platform_messages[] @relation("community_platform_messages_of_sender_member_id")
+  community_platform_messages_of_recipient_member_id community_platform_messages[] @relation("community_platform_messages_of_recipient_member_id")
+  community_platform_message_status community_platform_message_status[]
+  community_platform_notifications_of_members community_platform_notifications_of_members[]
+  community_platform_karma_job_of_members community_platform_karma_job_of_members[]
+  community_platform_ranking_job_of_members community_platform_ranking_job_of_members[]
+  community_platform_background_task_of_members community_platform_background_task_of_members[]
+  community_platform_audit_logs community_platform_audit_logs[]
+  community_platform_deleted_entities community_platform_deleted_entities[]
   
   @@unique([email])
   @@unique([username])
   @@index([created_at])
-  @@index([is_verified])
-  @@index([deleted_at])
+  @@index([status])
   @@index([karma])
 }
 
-/// A member assigned to moderate one or more specific communities. Has
-/// administrative rights only within assigned communities. Represents the
-/// community-level governance layer.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_moderator {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The member who is granted moderator privileges. {@link
-  /// community_platform_member.id}.
-  member_id String
-  
-  /// The community where this user serves as moderator. {@link
-  /// community_platform_communities.id}.
-  community_id String
-  
-  /// Timestamp when moderator privileges were assigned.
-  created_at DateTime
-  
-  /// Internal notes for administrators about this moderator assignment.
-  notes String?
-  
-  //----
-  // RELATIONS
-  //----
-  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  
-  community_platform_post_snapshots community_platform_post_snapshots[]
-  community_platform_comment_snapshots community_platform_comment_snapshots[]
-  community_platform_report_actions community_platform_report_actions[]
-  
-  @@unique([member_id])
-  
-  @@unique([member_id, community_id])
-  @@index([created_at])
-  @@index([community_id])
-}
-
-/// Platform-wide administrators with full system access, including user
-/// management, content moderation across communities, and configuration of
-/// system-wide settings.
+/// Represents system administrators with elevated privileges for moderation,
+/// policy enforcement, and platform governance. Admins can ban users, remove
+/// content, and modify system settings.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -165,226 +120,175 @@ model community_platform_admin {
   /// Primary Key.
   id String @id
   
-  /// The member who is granted admin privileges. {@link
-  /// community_platform_member.id}.
-  member_id String
-  
-  /// Timestamp when admin privileges were granted.
+  /// Timestamp when the admin account was created.
   created_at DateTime
   
-  /// The level of administrative access. Values: 'standard', 'super' (super
-  /// admins can manage other admins).
-  access_level String
+  /// Timestamp of last modification to admin profile.
+  updated_at DateTime
   
-  /// Administrative notes about this admin's role and responsibilities.
-  notes String?
+  /// Timestamp when this admin account was deactivated (soft delete). Null if
+  /// active.
+  deleted_at DateTime?
+  
+  /// Current status of the admin. Enum values: "active", "suspended", "banned".
+  status String
+  
+  /// Unique email address for login and notifications.
+  email String
+  
+  /// Unique display name for public profile.
+  username String
+  
+  /// Hashed password for authentication. Never store plain text passwords.
+  password_hash String
+  
+  /// Indicates whether this admin has global super-admin privileges (can
+  /// modify system settings).
+  is_super_admin Boolean
   
   //----
   // RELATIONS
   //----
-  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community_platform_admin_sessions community_platform_admin_sessions[]
+  community_platform_reports community_platform_reports[]
+  community_platform_messages_of_sender_admin_id community_platform_messages[] @relation("community_platform_messages_of_sender_admin_id")
+  community_platform_messages_of_recipient_admin_id community_platform_messages[] @relation("community_platform_messages_of_recipient_admin_id")
+  community_platform_message_status community_platform_message_status[]
+  community_platform_notifications_of_admins community_platform_notifications_of_admins[]
+  community_platform_karma_job_of_admins community_platform_karma_job_of_admins[]
+  community_platform_ranking_job_of_admins community_platform_ranking_job_of_admins[]
+  community_platform_background_task_of_admins community_platform_background_task_of_admins[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
   
-  @@unique([member_id])
+  @@unique([email])
+  @@unique([username])
   @@index([created_at])
-  @@index([access_level])
+  @@index([status])
 }
 
-/// Detailed profile information for members, including display name, avatar,
-/// bio, and join date. Used to separate identity data from authentication
-/// data for better security and flexibility.
+/// Stores transient authentication sessions for guest users. Sessions are
+/// temporary, created upon first visit, and expired after inactivity or page
+/// refresh. Used for tracking anonymous activity.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_profiles {
+model community_platform_guest_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Primary link to the member account that owns this profile. {@link
-  /// community_platform_member.id}.
-  member_id String
+  /// Reference to the guest user's {@link community_platform_guest.id}.
+  community_platform_guest_id String
   
-  /// Custom display name shown instead of username in UI. Can be null, in
-  /// which case username is used.
-  display_name String?
+  /// Client IP address of the session.
+  ip String
   
-  /// Short biography or description of the user. Limited to 400 characters.
-  bio String?
+  /// URL of the page where the session was initiated.
+  href String
   
-  /// URL to the user's profile avatar image, stored in Cloudinary or similar
-  /// service.
-  avatar_url String?
-  
-  /// Date when the user registered on the platform. Set at account creation
-  /// and never changed.
-  join_date DateTime
-  
-  /// Geographic location entered by user, useful for local community discovery.
-  location String?
-  
-  //----
-  // RELATIONS
-  //----
-  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  
-  community_platform_vote_logs community_platform_vote_logs[]
-  community_platform_post_votes community_platform_post_votes[]
-  community_platform_comment_votes community_platform_comment_votes[]
-  community_platform_user_karma community_platform_user_karma?
-  community_platform_stripe_customers community_platform_stripe_customers?
-  
-  @@unique([member_id])
-  
-  @@index([display_name])
-  @@index([join_date])
-}
-
-/// Active authentication sessions for members holding JWT tokens. Used for
-/// managing user login states and enforcing session expiration.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The member associated with this session. {@link
-  /// community_platform_member.id}.
-  member_id String
-  
-  /// Hashed refresh token for validating session renewals. Never stored in
-  /// plaintext.
-  refresh_token_hash String
-  
-  /// Hashed access token for validating short-lived sessions. Never stored in
-  /// plaintext.
-  access_token_hash String
-  
-  /// The IP address from which the session was initiated.
-  ip_address String
-  
-  /// The browser user agent string when the session was created.
-  user_agent String
+  /// Referrer URL that brought the guest to the platform.
+  referrer String
   
   /// Timestamp when the session was created.
-  session_start DateTime
+  created_at DateTime
   
-  /// Timestamp when the session expires. Controls automatic logout.
-  session_expiry DateTime
-  
-  /// Indicates if the session is currently active (true) or invalidated
-  /// (false).
-  is_active Boolean
-  
-  /// Classification of device (web, ios, android, desktop) based on user-agent
-  /// analysis.
-  device_type String?
+  /// Timestamp when the session expired. Null if still active.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  guest community_platform_guest @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
   
-  community_platform_security_logs community_platform_security_logs[]
+  community_platform_report_of_guests community_platform_report_of_guests[]
   
-  @@index([member_id])
-  @@index([session_expiry])
-  @@index([is_active])
-  @@index([ip_address])
-  @@index([session_start])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guest_id, created_at], map: "community_platform_guest_sessions_community_platform_g_009bc68c")
+  @@index([expired_at])
 }
 
-/// Records email verification tokens used during user registration and
-/// re-verification processes. Ensures email ownership before granting
-/// posting privileges.
+/// Stores persistent authentication sessions for verified member users.
+/// Sessions are created upon login and invalidated on logout or password
+/// change. Supports JWT refresh token mechanism.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_email_verifications {
+model community_platform_member_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The member requiring email verification. {@link
-  /// community_platform_member.id}.
-  member_id String
+  /// Reference to the member's {@link community_platform_member.id}.
+  community_platform_member_id String
   
-  /// Unique, randomly generated verification token sent via email.
-  token String
+  /// Client IP address of the session.
+  ip String
   
-  /// Hashed version of the verification token for secure storage in database.
-  token_hash String
+  /// URL of the page where the session was initiated.
+  href String
   
-  /// Expiration timestamp of the verification token. Tokens are valid for 24
-  /// hours.
-  expires_at DateTime
+  /// Referrer URL that brought the member to the platform.
+  referrer String
   
-  /// Timestamp when the verification email was sent to the user.
-  sent_at DateTime
+  /// Timestamp when the session was created.
+  created_at DateTime
   
-  /// Flag indicating if the token has been successfully used to verify the
-  /// email.
-  is_used Boolean
+  /// Timestamp when the session expired. Null if still active.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
-  @@unique([token_hash])
-  @@unique([member_id])
-  @@index([expires_at])
-  @@index([is_used])
-  @@index([sent_at])
+  community_platform_report_of_members community_platform_report_of_members[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_sessions_community_platform__9260a62c")
+  @@index([expired_at])
 }
 
-/// Stores password reset tokens for users who have forgotten their
-/// passwords. Includes expiration and usage tracking to prevent brute force
-/// and replay attacks.
+/// Stores high-security authentication sessions for system administrators.
+/// Sessions require two-factor authentication and are closely monitored for
+/// audit purposes.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_password_resets {
+model community_platform_admin_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The member requesting a password reset. {@link
-  /// community_platform_member.id}.
-  member_id String
+  /// Reference to the admin's {@link community_platform_admin.id}.
+  community_platform_admin_id String
   
-  /// Unique, randomly generated reset token sent via email.
-  token String
+  /// Client IP address of the session.
+  ip String
   
-  /// Hashed version of the reset token for secure storage in database.
-  token_hash String
+  /// URL of the page where the session was initiated.
+  href String
   
-  /// Expiration timestamp of the reset token. Tokens are valid for 15 minutes.
-  expires_at DateTime
+  /// Referrer URL that brought the admin to the platform.
+  referrer String
   
-  /// Timestamp when the password reset request was initiated by the user.
-  requested_at DateTime
+  /// Timestamp when the session was created.
+  created_at DateTime
   
-  /// Flag indicating if the reset token has been used to change the password.
-  is_used Boolean
+  /// Timestamp when the session expired. Null if still active.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  admin community_platform_admin @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
   
-  @@unique([token_hash])
-  @@unique([member_id])
-  @@index([expires_at])
-  @@index([is_used])
-  @@index([requested_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_admin_sessions_community_platform_a_481f9112")
+  @@index([expired_at])
 }

@@ -1,0 +1,100 @@
+/// Core article entity for the politics discussion board, managing the
+/// complete article lifecycle from creation through publication. Articles
+/// support title and content with state management, view tracking, and
+/// attachment capabilities.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged category's {@link politics_bbs_categories.id}
+  politics_bbs_category_id String
+  
+  /// Creator's {@link politics_bbs_members.id} or {@link
+  /// politics_bbs_moderators.id} based on actor type
+  politics_bbs_creator_id String
+  
+  /// Article title displayed to users, limited to 5-150 characters as per
+  /// business rules
+  title String
+  
+  /// Main article content body with 50-10,000 character limit for substantive
+  /// discussions
+  content String
+  
+  /// Article lifecycle state: draft, pending, approved, or rejected for
+  /// moderation workflow
+  state String
+  
+  /// Number of times the article has been viewed for popularity tracking
+  view_count Int
+  
+  /// Timestamp when the article was first created
+  created_at DateTime
+  
+  /// Last modification timestamp for the article
+  updated_at DateTime
+  
+  /// Soft delete timestamp for article removal
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category politics_bbs_categories @relation(fields: [politics_bbs_category_id], references: [id], onDelete: Cascade)
+  creator politics_bbs_members @relation(fields: [politics_bbs_creator_id], references: [id], onDelete: Cascade)
+  
+  politics_bbs_article_snapshots politics_bbs_article_snapshots[]
+  politics_bbs_comments politics_bbs_comments[]
+  politics_bbs_file_attachments politics_bbs_file_attachments[]
+  
+  @@index([politics_bbs_category_id, created_at])
+  @@index([politics_bbs_creator_id, created_at])
+  @@index([state, created_at])
+  @@index([created_at])
+}
+
+/// Historical snapshots of articles capturing point-in-time states for audit
+/// trails and version tracking. Snapshots preserve complete article content
+/// when articles are modified.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_article_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Source article's {@link politics_bbs_articles.id}
+  politics_bbs_article_id String
+  
+  /// Snapshot of article title at this point in time
+  title String
+  
+  /// Snapshot of article content at this point in time
+  content String
+  
+  /// Snapshot of article state when this snapshot was created
+  state String
+  
+  /// View count snapshot for historical tracking
+  view_count Int
+  
+  /// Timestamp when this snapshot was created for audit trail
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article politics_bbs_articles @relation(fields: [politics_bbs_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([politics_bbs_article_id, created_at], map: "politics_bbs_article_snapshots_politics_bbs_article_id_05cd290d")
+}

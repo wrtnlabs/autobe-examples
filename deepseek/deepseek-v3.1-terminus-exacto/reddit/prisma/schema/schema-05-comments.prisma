@@ -1,0 +1,171 @@
+/// Main comment entity containing comment content, author information, and
+/// moderation status. Comments support nested replies up to 10 levels deep
+/// and can be associated with posts in any community. {@link
+/// reddit_clone_posts.id} {@link reddit_clone_members.id}
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated post where this comment is posted. {@link
+  /// reddit_clone_posts.id}
+  reddit_clone_post_id String
+  
+  /// Member who created this comment. {@link reddit_clone_members.id}
+  reddit_clone_member_id String
+  
+  /// Session when the comment was created. {@link
+  /// reddit_clone_member_sessions.id}
+  reddit_clone_member_session_id String
+  
+  /// Parent comment for nested replies (nullable for top-level comments).
+  /// {@link reddit_clone_comments.id}
+  parent_comment_id String?
+  
+  /// Comment text content with markdown formatting support.
+  content String
+  
+  /// Comment moderation status (pending, approved, removed, locked).
+  status String
+  
+  /// Depth level in comment hierarchy (0 for top-level comments).
+  nesting_level Int
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  memberSession reddit_clone_member_sessions @relation(fields: [reddit_clone_member_session_id], references: [id], onDelete: Cascade)
+  parent reddit_clone_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_clone_comments[] @relation("recursive")
+  reddit_clone_comment_threads_of_root_comment_id reddit_clone_comment_threads[] @relation("reddit_clone_comment_threads_of_root_comment_id")
+  reddit_clone_comment_threads_of_latest_comment_id reddit_clone_comment_threads[] @relation("reddit_clone_comment_threads_of_latest_comment_id")
+  reddit_clone_comment_replies_of_parent_comment_id reddit_clone_comment_replies[] @relation("reddit_clone_comment_replies_of_parent_comment_id")
+  reddit_clone_comment_replies_of_child_comment_id reddit_clone_comment_replies[] @relation("reddit_clone_comment_replies_of_child_comment_id")
+  reddit_clone_comment_votes reddit_clone_comment_votes[]
+  reddit_clone_karma_history reddit_clone_karma_history[]
+  reddit_clone_content_reports reddit_clone_content_reports[]
+  reddit_clone_moderation_actions reddit_clone_moderation_actions[]
+  reddit_clone_user_activity reddit_clone_user_activity[]
+  reddit_clone_content_metrics reddit_clone_content_metrics[]
+  
+  @@index([reddit_clone_member_session_id])
+  
+  @@index([reddit_clone_post_id, created_at])
+  @@index([reddit_clone_member_id, created_at])
+  @@index([parent_comment_id, created_at])
+  @@index([nesting_level])
+  @@index([status])
+}
+
+/// Thread management table for organizing comment hierarchies and tracking
+/// thread properties. Supports efficient loading and navigation of comment
+/// threads. {@link reddit_clone_comments.id} {@link reddit_clone_posts.id}
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_comment_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post containing this comment thread. {@link reddit_clone_posts.id}
+  reddit_clone_post_id String
+  
+  /// Root comment that started this thread. {@link reddit_clone_comments.id}
+  root_comment_id String
+  
+  /// Most recent comment in this thread. {@link reddit_clone_comments.id}
+  latest_comment_id String?
+  
+  /// Total number of comments in this thread.
+  comment_count Int
+  
+  /// Maximum nesting depth reached in this thread.
+  max_nesting_level Int
+  
+  /// Whether this thread is locked for new comments.
+  is_locked Boolean
+  
+  /// Timestamp of the most recent activity in this thread.
+  last_activity_at DateTime
+  
+  /// Timestamp when the thread was created.
+  created_at DateTime
+  
+  /// Timestamp when thread properties were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  rootComment reddit_clone_comments @relation("reddit_clone_comment_threads_of_root_comment_id", fields: [root_comment_id], references: [id], onDelete: Cascade)
+  latestComment reddit_clone_comments? @relation("reddit_clone_comment_threads_of_latest_comment_id", fields: [latest_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([root_comment_id])
+  @@index([latest_comment_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_post_id, root_comment_id], map: "reddit_clone_comment_threads_reddit_clone_post_id_root_ecb894e2")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_post_id, last_activity_at], map: "reddit_clone_comment_threads_reddit_clone_post_id_last_5badd31a")
+  @@index([is_locked])
+  @@index([comment_count])
+}
+
+/// Junction table for managing reply relationships between comments.
+/// Supports efficient querying of reply chains and nested comment
+/// structures. {@link reddit_clone_comments.id}
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_comment_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent comment being replied to. {@link reddit_clone_comments.id}
+  parent_comment_id String
+  
+  /// Child comment that is the reply. {@link reddit_clone_comments.id}
+  child_comment_id String
+  
+  /// Depth level of this reply in the hierarchy.
+  reply_depth Int
+  
+  /// Timestamp when the reply relationship was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  parentComment reddit_clone_comments @relation("reddit_clone_comment_replies_of_parent_comment_id", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  childComment reddit_clone_comments @relation("reddit_clone_comment_replies_of_child_comment_id", fields: [child_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([parent_comment_id, child_comment_id], map: "reddit_clone_comment_replies_parent_comment_id_child_c_36f3881d")
+  @@index([parent_comment_id, reply_depth])
+  @@index([child_comment_id])
+  @@index([reply_depth])
+}

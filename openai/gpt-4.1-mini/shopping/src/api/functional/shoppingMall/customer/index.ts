@@ -1,5 +1,11 @@
 export * as customers from "./customers/index";
+export * as products from "./products/index";
+export * as productSearchIndex from "./productSearchIndex/index";
 export * as shoppingCarts from "./shoppingCarts/index";
 export * as wishlists from "./wishlists/index";
 export * as orders from "./orders/index";
+export * as payments from "./payments/index";
+export * as shipmentTrackings from "./shipmentTrackings/index";
 export * as productReviews from "./productReviews/index";
+export * as skuInventories from "./skuInventories/index";
+export * as returnShipments from "./returnShipments/index";

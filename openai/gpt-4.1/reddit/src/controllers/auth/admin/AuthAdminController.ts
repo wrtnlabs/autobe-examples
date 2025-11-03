@@ -1,4 +1,4 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Ip } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 import { postAuthAdminJoin } from "../../../providers/postAuthAdminJoin";
@@ -10,55 +10,54 @@ import { ICommunityPlatformAdmin } from "../../../api/structures/ICommunityPlatf
 @Controller("/auth/admin")
 export class AuthAdminController {
   /**
-   * Register a new admin in the community_platform_admins table with full
-   * authentication onboarding.
+   * Register a new administrator account in the community_platform_admins
+   * table, sending verification using
+   * community_platform_admin_verification_tokens.
    *
-   * This endpoint facilitates registration of new platform administrators by
-   * creating a record in the 'community_platform_admins' table. Administrators
-   * must supply a unique email address, a secure password (hashed upon
-   * receipt), a 'superuser' Boolean flag (if the registering actor has this
-   * capability), and an initial status (typically set to 'active'). The
-   * operation relies strictly on the email, password_hash, superuser, and
-   * status columns in the table. All registration requests are thoroughly
-   * validated, and email uniqueness is enforced to prevent duplication. Upon
-   * successful registration, a JWT-based authorization response is issued that
-   * conveys the admin's access token and refresh token, as required by the
-   * platform's session and token rules. This endpoint forms the basis of the
-   * administrator onboarding and is a prerequisite for all further admin
-   * authentication flows.
+   * This operation enables the registration (join) of new platform
+   * administrators (admins) for the community platform. It allows a new admin
+   * to provide a unique email, password, and display name for account creation.
+   * The process creates a new record in 'community_platform_admins', storing
+   * the email, bcrypt password hash, display name, and audit timestamps, all of
+   * which are established from the provided data and verified for uniqueness
+   * and format. If the email already exists, creation is prevented and a
+   * detailed error is returned.
    *
-   * Credentials are never stored in plaintext; password_hash is mandatory and
-   * created via secure cryptographic hashing before storage. The endpoint will
-   * reject registration attempts with duplicate emails, or in cases where
-   * required information is missing. All registration and subsequent actions
-   * are logged for auditability through the community_platform_audit_logs
-   * table. Registration can only be performed through this endpoint; no
-   * alternative join flows for platform admins are provided.
+   * Upon successful registration, the operation issues a verification token as
+   * a new row in 'community_platform_admin_verification_tokens'. The admin must
+   * use this token, sent to their email, to activate their account. Until
+   * verified, the admin is unable to log in or access privileged operations,
+   * enforcing strict security and compliance requirements as documented for the
+   * admin actor.
    *
-   * Administrators who successfully register have platform-wide authority, but
-   * actions may still be subject to status review or role-based access checks
-   * for superuser-privileged APIs, ensuring platform security and
-   * administrative separation of duties. The JWT token payload will reflect the
-   * admin role and initial permissions per system configuration.
+   * All credential inputs (email, password) are validated—email must meet
+   * format and uniqueness standards, and password is subject to
+   * business-enforced complexity rules. Only the display_name, never personal
+   * or credential data, is returned post-registration, conforming to privacy
+   * requirements in the schema.
    *
-   * Security reviews are required for all admin registration flows. Strong
-   * validation and cryptographic policies are enforced at all stages.
-   * Duplicate, weak, or compromised passwords are strictly disallowed per
-   * policy.
+   * Security is paramount: credentials are hashed, never returned, and
+   * verification data is transient and separately managed. This ensures the
+   * admin registration flow is robust, secure, and fully auditable via logs
+   * referencing both 'community_platform_admins' and
+   * 'community_platform_admin_verification_tokens'.
    *
-   * Related operations: admin login (authentication), admin token refresh, and
-   * status/suspension management. The join operation is the entry-point for all
-   * admin authentication flows and must be executed first.
+   * This operation is related to but distinct from admin login and token
+   * refresh endpoints. It acts as a prerequisite for admin authentication, and
+   * is tightly coupled to email verification and session creation workflows in
+   * the system.
    *
    * @param connection
-   * @param body Admin registration information for onboarding a new
-   *   administrator account.
+   * @param body Registration information to create a new admin account—unique
+   *   email, secure password, display name.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
   public async join(
+    @Ip()
+    ip: string,
     @TypedBody()
     body: ICommunityPlatformAdmin.ICreate,
   ): Promise<ICommunityPlatformAdmin.IAuthorized> {
@@ -73,52 +72,48 @@ export class AuthAdminController {
   }
 
   /**
-   * Authenticate an admin with email and password; issue tokens if credentials
-   * match community_platform_admins table.
+   * Authenticate and issue session tokens for an admin account in
+   * community_platform_admins, creating a session in
+   * community_platform_admin_sessions.
    *
-   * This endpoint authenticates an existing platform administrator by verifying
-   * their credentials against the 'community_platform_admins' table. The admin
-   * must supply a valid, unique email and password. The password is hashed on
-   * receipt using secure algorithms and compared with the stored
-   * 'password_hash' from the schema. Only active accounts with 'status' set to
-   * 'active' will be permitted to log in, as specified by the status column.
+   * Authenticates an existing platform administrator (admin) by verifying
+   * credentials (unique email and password) against the
+   * 'community_platform_admins' table. On successful credential match, the
+   * operation checks that the account is
+   * verified—'community_platform_admin_verification_tokens' must be
+   * consumed—and not deleted (no 'deleted_at' set). Each login attempt results
+   * in a record in 'community_platform_admin_login_attempts', storing the
+   * admin's ID, attempt time, originating IP, and success flag. Consecutive
+   * failed login attempts lead to enforced rate limits or lockout in accordance
+   * with schema-based audit trails.
    *
-   * Upon successful authentication, the system issues a JWT access token (for
-   * immediate use) and a refresh token (for session renewal). Both tokens are
-   * embedded in a structured response object conforming to the platform's
-   * authentication requirements and session/token rules. Credentials are never
-   * exposed or stored in plaintext at any stage. Failed login
-   * attempts—including attempts with invalid passwords or for suspended/deleted
-   * accounts—are logged for audit, and repeated failed attempts may trigger
-   * account lockout as per business rules.
+   * Upon success, a new session record is written in
+   * 'community_platform_admin_sessions', including session context (IP, href,
+   * referrer), timestamps, and links to the authenticated admin. The operation
+   * then issues short-lived JWT access tokens and long-lived refresh tokens,
+   * following compliance, security, and platform-wide policy for session
+   * expiration. All credential data is kept secure and never
+   * exposed—'password_hash' is used solely for verification.
    *
-   * The login flow leverages the exact fields present in the schema: 'email',
-   * 'password_hash', 'superuser', and 'status'. Invalid or locked accounts are
-   * denied login and a generic authentication failure message is returned to
-   * prevent information disclosure. This operation is a critical part of the
-   * platform's administrator authentication suite and forms the basis of all
-   * subsequent privileged admin sessions.
-   *
-   * The endpoint is implemented strictly to enforce administrative security,
-   * logging, and credential isolation. It is paired with admin registration and
-   * token refresh operations for a complete authentication flow.
-   *
-   * Security reviews and cryptographic audits are essential for this endpoint.
-   * All tokens are issued following approved JWT/token management policies.
-   * Rate limiting and brute force protections are in place for this endpoint to
-   * protect against abuse and credential stuffing attacks.
-   *
-   * Related operations: /auth/admin/join for registration, /auth/admin/refresh
-   * for token renewal. The login must precede all authenticated admin actions.
+   * For additional security, multi-factor authentication (MFA) is enforced per
+   * admin policy, referencing device and context checks. Only successfully
+   * MFA-validated or prior-cleared sessions result in issued tokens, as
+   * supported by the schema. Error responses are standardized—unverified
+   * status, deletion, or excessive failed attempts trigger specific business
+   * messages, and all flow operations are fully auditable through schema-linked
+   * logs.
    *
    * @param connection
-   * @param body Admin login credentials (email, password).
+   * @param body Admin login credentials: email and password, validated and
+   *   referenced against admin table.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
   public async login(
+    @Ip()
+    ip: string,
     @TypedBody()
     body: ICommunityPlatformAdmin.ILogin,
   ): Promise<ICommunityPlatformAdmin.IAuthorized> {
@@ -133,38 +128,32 @@ export class AuthAdminController {
   }
 
   /**
-   * Refresh admin's JWT session tokens using a valid current refresh token
-   * (community_platform_admins table).
+   * Refresh JWT session tokens for an admin using a refresh token, updating
+   * community_platform_admin_sessions and session audit logs.
    *
-   * This endpoint allows an authenticated platform administrator to renew their
-   * session by exchanging a valid refresh token for a new set of tokens. The
-   * operation checks the validity and authenticity of the provided refresh
-   * token, referencing active tokens tied to the admin in the
-   * 'community_platform_admins' table. Only admins with 'status' set to
-   * 'active' may successfully refresh their tokens. The system rejects requests
-   * using expired, revoked, or invalid refresh tokens, or for accounts marked
-   * 'suspended' or 'deleted' via the status and deleted_at columns.
+   * Allows an authenticated, verified platform administrator (admin) to obtain
+   * new JWT access and refresh tokens using a valid, unexpired refresh token.
+   * The operation uses the provided refresh token to identify and verify the
+   * admin's session row in 'community_platform_admin_sessions', enforcing
+   * expiration and revocation via the 'expired_at' field. If the token is
+   * valid, new tokens are generated, session audit data is updated, and old
+   * tokens are invalidated as required by security policy.
    *
-   * On successful validation, the system returns a new JWT access token
-   * (short-lived) and a fresh refresh token (with original or truncated
-   * expiry). The tokens' payload reflects the admin's access rights, current
-   * status, and superuser setting. The refresh flow ensures that administrative
-   * session continuity stays secure and self-contained, in line with platform
-   * session/token renewal standards.
+   * All intermediary and resulting token/session events are fully audit-logged
+   * through 'community_platform_admin_login_attempts' and
+   * 'community_platform_admin_sessions' to ensure compliance and session
+   * traceability. Requests with invalid, expired, or revoked refresh tokens are
+   * systematically denied, consistent with business security posture.
    *
-   * All refresh token requests—whether accepted or rejected—are logged via the
-   * 'community_platform_audit_logs' table to ensure complete traceability.
-   * Attempts to refresh using a token associated with an inactive admin account
-   * are strictly denied. Security policies ensure strong protections against
-   * refresh token misuse, theft, or replay.
-   *
-   * This endpoint is a core element for administrative session management and
-   * is mandatory for uninterrupted admin workflows requiring extended
-   * authentication. It works together with /auth/admin/login and
-   * /auth/admin/join for a secure admin session lifecycle.
+   * No personal credential data or hashed password is exposed during this flow.
+   * The operation is only available to authenticated, verified, non-deleted
+   * admins, referencing the appropriate admin row by session link. This
+   * endpoint is foundational for maintaining uninterrupted, secure admin access
+   * and upholding security and traceability standards in the platform.
    *
    * @param connection
-   * @param body Refresh token payload for admin session renewal.
+   * @param body Valid refresh token for issuing new access/refresh tokens as
+   *   referenced in active admin sessions.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia

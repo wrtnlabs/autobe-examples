@@ -1,0 +1,222 @@
+/// Main order entity representing customer purchases including shipping
+/// details and status references. Users manage orders directly with CRUD
+/// operations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipping information for this order. {@link shopping_mall_shipping.id}.
+  shipping_id String
+  
+  /// Customer who placed the order. {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Order creation timestamp.
+  created_at DateTime
+  
+  /// Last order update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null indicates active order.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shipping shopping_mall_shipping @relation(fields: [shipping_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_payments shopping_mall_order_payments[]
+  shopping_mall_order_status shopping_mall_order_status[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  shopping_mall_admin_order_monitoring shopping_mall_admin_order_monitoring[]
+  mv_shopping_mall_admin_order_monitoring mv_shopping_mall_admin_order_monitoring[]
+  
+  @@index([shipping_id])
+  
+  @@index([customer_id, created_at])
+}
+
+/// Product items within orders, tracking variant-specific quantities and
+/// pricing. Users manage items directly with CRUD operations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order containing this item. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// Product variant included in this item. {@link
+  /// shopping_mall_product_variants.id}.
+  product_variant_id String
+  
+  /// Number of items purchased.
+  quantity Int
+  
+  /// Price per item when order was placed (historical value).
+  price Float
+  
+  /// Item creation timestamp.
+  created_at DateTime
+  
+  /// Item update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null indicates active item.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([product_variant_id])
+  
+  @@index([order_id, product_variant_id])
+}
+
+/// Payment records for orders, tracking payment method and status. Users
+/// view payment history independently with CRUD operations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order associated with this payment. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// Payment method used (e.g., credit card). {@link
+  /// shopping_mall_shipping_carriers.id}.
+  payment_method_id String
+  
+  /// Payment amount in USD.
+  amount Float
+  
+  /// Payment processing status (e.g., 'pending', 'succeeded', 'failed').
+  status String
+  
+  /// Payment gateway transaction ID.
+  transaction_id String
+  
+  /// Payment creation timestamp.
+  created_at DateTime
+  
+  /// Payment update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null indicates active payment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_shipping_carriers @relation(fields: [payment_method_id], references: [id], onDelete: Cascade)
+  
+  @@index([payment_method_id])
+  
+  @@unique([transaction_id])
+  @@index([order_id, created_at])
+}
+
+/// Historical record of order status changes for audit trails and
+/// versioning. This is a snapshot table tracking state transitions.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_status {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order being tracked. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// Current status of the order (e.g., 'pending', 'processing', 'shipped',
+  /// 'delivered').
+  status String
+  
+  /// Timestamp of status change.
+  created_at DateTime
+  
+  /// Reason for status change (optional).
+  reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([order_id, created_at])
+}
+
+/// Shipping information for orders including carriers and tracking details.
+/// Users manage shipping directly with CRUD operations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipping carrier used (e.g., FedEx, UPS). {@link
+  /// shopping_mall_shipping_carriers.id}.
+  carrier_id String
+  
+  /// Shipping address for this order. {@link shopping_mall_addresses.id}.
+  address_id String
+  
+  /// Carrier tracking number.
+  tracking_number String?
+  
+  /// Estimated delivery date.
+  estimated_delivery DateTime?
+  
+  /// Actual delivery date if known.
+  actual_delivery DateTime?
+  
+  /// Shipping setup timestamp.
+  created_at DateTime
+  
+  /// Shipping update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null indicates active shipping record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  carrier shopping_mall_shipping_carriers @relation(fields: [carrier_id], references: [id], onDelete: Cascade)
+  address shopping_mall_addresses @relation(fields: [address_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_orders shopping_mall_orders[]
+  
+  @@index([address_id])
+  
+  @@index([carrier_id, created_at])
+}

@@ -16,30 +16,45 @@ export async function patchShoppingMallAdminCustomers(props: {
   admin: AdminPayload;
   body: IShoppingMallCustomer.IRequest;
 }): Promise<IPageIShoppingMallCustomer.ISummary> {
-  const { admin, body } = props;
+  const { body } = props;
 
-  const pageRaw = body.page ?? 1;
-  const limitRaw = body.limit ?? 10;
+  const page = body.page ?? 1;
+  const limit = body.limit ?? 10;
 
-  // Coerce to plain numbers stripping branded tags
-  const page = Number(pageRaw);
-  const limit = Number(limitRaw);
-  const skip = (page - 1) * limit;
+  const where: {
+    deleted_at?: null;
+    email?: { contains: string };
+    nickname?: { contains: string };
+    created_at?: {
+      gte?: string & tags.Format<"date-time">;
+      lte?: string & tags.Format<"date-time">;
+    };
+  } = {};
 
-  const where = {
-    deleted_at: null,
-    ...(body.status !== undefined &&
-      body.status !== null && { status: body.status }),
-    ...(body.nickname !== undefined &&
-      body.nickname !== null && { nickname: { contains: body.nickname } }),
-    ...(body.search !== undefined &&
-      body.search !== null && {
-        OR: [
-          { email: { contains: body.search } },
-          { nickname: { contains: body.search } },
-        ],
-      }),
-  };
+  if (!body.includeDeleted) {
+    where.deleted_at = null;
+  }
+
+  if (body.searchEmail !== undefined && body.searchEmail !== null) {
+    where.email = { contains: body.searchEmail };
+  }
+
+  if (body.searchNickname !== undefined && body.searchNickname !== null) {
+    where.nickname = { contains: body.searchNickname };
+  }
+
+  if (
+    (body.createdAfter !== undefined && body.createdAfter !== null) ||
+    (body.createdBefore !== undefined && body.createdBefore !== null)
+  ) {
+    where.created_at = {};
+    if (body.createdAfter !== undefined && body.createdAfter !== null) {
+      where.created_at.gte = body.createdAfter;
+    }
+    if (body.createdBefore !== undefined && body.createdBefore !== null) {
+      where.created_at.lte = body.createdBefore;
+    }
+  }
 
   const [results, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_customers.findMany({
@@ -48,33 +63,29 @@ export async function patchShoppingMallAdminCustomers(props: {
         id: true,
         email: true,
         nickname: true,
-        status: true,
         created_at: true,
-        updated_at: true,
       },
-      orderBy: { created_at: "desc" },
-      skip,
+      orderBy: {
+        [body.orderBy]: body.orderDirection,
+      },
+      skip: (page - 1) * limit,
       take: limit,
     }),
     MyGlobal.prisma.shopping_mall_customers.count({ where }),
   ]);
 
-  const data = results.map((item) => ({
-    id: item.id,
-    email: item.email,
-    nickname: item.nickname ?? null,
-    status: item.status,
-    created_at: toISOStringSafe(item.created_at),
-    updated_at: toISOStringSafe(item.updated_at),
-  }));
-
   return {
     pagination: {
-      current: page,
-      limit: limit,
+      current: Number(page),
+      limit: Number(limit),
       records: total,
-      pages: Math.max(1, Math.ceil(total / limit)),
+      pages: Math.ceil(total / limit),
     },
-    data,
+    data: results.map((item) => ({
+      id: item.id,
+      email: item.email,
+      nickname: item.nickname,
+      created_at: toISOStringSafe(item.created_at),
+    })),
   };
 }

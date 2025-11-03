@@ -6,23 +6,38 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallAdmin } from "../../../structures/IShoppingMallAdmin";
 
 /**
- * Create new admin account and issue JWT tokens based on shopping_mall_admins
- * schema.
+ * Creates a new admin user account, issuing initial JWT tokens, referencing
+ * shopping_mall_admins table for data integrity.
  *
- * The join operation allows creation of a new administrator account with the
- * required email and password_hash fields stored in the shopping_mall_admins
- * table. The admin can optionally provide full_name and phone_number
- * information. The operation ensures email uniqueness and issues JWT
- * authorization tokens representing the authenticated admin user's session.
- * This method is essential for onboarding new admins who will manage users,
- * products, orders, and platform settings. It returns the authorization
- * structure IShoppingMallAdmin.IAuthorized representing an authenticated
- * session. This operation is open to anonymous users who wish to register as
- * admins during controlled onboarding processes.
+ * The join operation enables a system administrator to create a new admin
+ * account within the shoppingMall platform. It requires entry of a unique
+ * email, a securely hashed password, and the admin's full name. This operation
+ * initializes the account with timestamps for creation and updates, setting the
+ * foundation for authentication session establishment. By referencing the
+ * shopping_mall_admins table fields like email, password_hash, and full_name,
+ * the backend enforces data integrity and uniqueness constraints.
+ *
+ * Admin users created via this endpoint gain credentials for login and other
+ * secured actions. The operation is externally accessible without
+ * authentication to allow new admins to register, but only with validation to
+ * prevent duplication and unauthorized creation.
+ *
+ * This join operation integrates with the full JWT authentication workflow,
+ * issuing tokens for session management and security. Related operations
+ * include login and refresh token issuance, which manage subsequent access.
+ *
+ * Security considerations include ensuring proper password hashing and
+ * safeguarding against duplicate emails. The operation aligns with the
+ * platform-specific all-encompassing admin role requiring full backend access
+ * and management privileges.
+ *
+ * The operation forms a cornerstone of the admin user lifecycle, enabling
+ * controlled onboarding of admin users in a secure manner consistent with
+ * Prisma schema structures and business rules.
  *
  * @param props.connection
- * @param props.body Admin registration information including email and password
- *   for account creation
+ * @param props.body Admin account registration data including email, hashed
+ *   password, and full name.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -58,12 +73,12 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Admin registration information including email and password for
-     * account creation
+     * Admin account registration data including email, hashed password, and
+     * full name.
      */
-    body: IShoppingMallAdmin.ICreate;
+    body: IShoppingMallAdmin.IJoin;
   };
-  export type Body = IShoppingMallAdmin.ICreate;
+  export type Body = IShoppingMallAdmin.IJoin;
   export type Response = IShoppingMallAdmin.IAuthorized;
 
   export const METADATA = {
@@ -108,19 +123,34 @@ export namespace join {
 }
 
 /**
- * Authenticate admin user and issue JWT tokens based on shopping_mall_admins
- * schema.
+ * Authenticates an admin user and issues JWT tokens for secure session
+ * management.
  *
- * This login operation authenticates an administrator by verifying the provided
- * email and password against stored credentials in shopping_mall_admins.
- * Successful authentication issues JWT tokens for session management and access
- * control, represented by IShoppingMallAdmin.IAuthorized. It is available
- * publicly for admin users to log in securely and start managing the platform.
- * Security best practices such as rate limiting and password hashing are
- * recommended around this operation.
+ * The login operation authenticates a system administrator on the shoppingMall
+ * platform by checking provided credentials against the stored email and hashed
+ * password fields in the shopping_mall_admins table. If authentication is
+ * successful, the operation returns JWT tokens to manage session authorization
+ * securely, enabling access to privileged admin resources.
+ *
+ * The operation ensures that only identified admins gain access, supporting
+ * security policies including account lockouts on failed attempts and token
+ * expiration management. It serves as the gateway for admin users to access
+ * sensitive system management functions encapsulated in subsequent protected
+ * APIs.
+ *
+ * Credential inputs are carefully validated and handled using secure hashing
+ * algorithms in the backend. This API is a public access entry point requiring
+ * authentication data but no prior tokens.
+ *
+ * Related operations include join (for registration of new admins) and refresh
+ * token management in this suite of authentication endpoints.
+ *
+ * It is tightly coupled with backend authorization mechanisms that enforce
+ * admin-specific role access control as per platform governance.
  *
  * @param props.connection
- * @param props.body Admin login credentials (email and password)
+ * @param props.body Admin user authentication credentials including email and
+ *   password.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -155,7 +185,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Admin login credentials (email and password) */
+    /** Admin user authentication credentials including email and password. */
     body: IShoppingMallAdmin.ILogin;
   };
   export type Body = IShoppingMallAdmin.ILogin;
@@ -203,17 +233,30 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for authenticated admin user.
+ * Refreshes JWT access token for an authenticated admin user using a valid
+ * refresh token.
  *
- * This refresh operation enables an authenticated admin user to renew their JWT
- * access tokens by providing a valid refresh token. It maintains a continuous
- * authenticated session without requiring re-login. The operation verifies the
- * refresh token and issues new JWT tokens encapsulated as
- * IShoppingMallAdmin.IAuthorized. This method is essential for session
- * management and security for admin users.
+ * The refresh operation enables an authenticated admin user to obtain a new
+ * access JWT token by presenting a valid refresh token. This process extends
+ * the secure session duration without requiring the admin to log in again,
+ * maintaining seamless and secure access to admin resources.
+ *
+ * The operation cross-verifies the refresh token against stored tokens linked
+ * to the shopping_mall_admins table to ensure validity and revoke access if the
+ * token is expired or otherwise invalid. It is essential to secure token
+ * lifecycle management and prevent unauthorized prolonged access.
+ *
+ * This is part of the token management ecosystem complimentary to login and
+ * join operations within the admin authentication module.
+ *
+ * Security policies dictate token expiration times and revocation strategies,
+ * which the backend enforces.
+ *
+ * Implementing this operation ensures sustained secure interactions by admins
+ * managing the shoppingMall platform's backend functions with full privileges.
  *
  * @param props.connection
- * @param props.body Refresh token request
+ * @param props.body Payload containing the refresh token for JWT renewal.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -248,7 +291,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token request */
+    /** Payload containing the refresh token for JWT renewal. */
     body: IShoppingMallAdmin.IRefresh;
   };
   export type Body = IShoppingMallAdmin.IRefresh;

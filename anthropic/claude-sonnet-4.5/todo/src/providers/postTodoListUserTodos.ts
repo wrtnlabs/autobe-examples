@@ -18,6 +18,7 @@ export async function postTodoListUserTodos(props: {
 
   const now = toISOStringSafe(new Date());
   const todoId = v4() as string & tags.Format<"uuid">;
+  const status = body.status ?? "incomplete";
 
   const created = await MyGlobal.prisma.todo_list_todos.create({
     data: {
@@ -25,18 +26,21 @@ export async function postTodoListUserTodos(props: {
       todo_list_user_id: user.id,
       title: body.title,
       description: body.description ?? null,
-      completed: false,
+      status: status,
       created_at: now,
       updated_at: now,
+      deleted_at: null,
     },
   });
 
   return {
     id: todoId,
+    todo_list_user_id: user.id,
     title: created.title,
     description: created.description ?? undefined,
-    completed: created.completed,
+    status: status,
     created_at: now,
     updated_at: now,
+    deleted_at: undefined,
   };
 }

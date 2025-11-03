@@ -9,99 +9,95 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminJoin(props: {
-  body: IShoppingMallAdmin.ICreate;
+  admin: AdminPayload;
+  body: IShoppingMallAdmin.IJoin;
 }): Promise<IShoppingMallAdmin.IAuthorized> {
   const { body } = props;
 
-  // Check for existing email
-  const existing = await MyGlobal.prisma.shopping_mall_admins.findFirst({
-    where: { email: body.email, deleted_at: null },
-    select: { id: true },
+  const existingAdmin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+    where: {
+      email: body.email,
+      deleted_at: null,
+    },
   });
-  if (existing) {
-    throw new HttpException("Email already exists", 409);
+
+  if (existingAdmin !== null) {
+    throw new HttpException("Email already registered", 409);
   }
 
-  // Hash the password
-  const hashedPassword = await PasswordUtil.hash(body.password_hash);
+  const hashedPassword = await PasswordUtil.hash(body.password);
 
-  // Prepare timestamps
   const now = toISOStringSafe(new Date());
 
-  // Create admin
-  const created = await MyGlobal.prisma.shopping_mall_admins.create({
+  const admin = await MyGlobal.prisma.shopping_mall_admins.create({
     data: {
       id: v4(),
       email: body.email,
       password_hash: hashedPassword,
-      full_name: body.full_name ?? null,
-      phone_number: body.phone_number ?? null,
-      status: body.status,
+      full_name: body.full_name,
       created_at: now,
       updated_at: now,
     },
-    select: {
-      id: true,
-      email: true,
-      password_hash: true,
-      full_name: true,
-      phone_number: true,
-      status: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
+  });
+
+  const accessExpired = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpired = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+
+  const session = await MyGlobal.prisma.shopping_mall_admin_sessions.create({
+    data: {
+      id: v4(),
+      shopping_mall_admin_id: admin.id,
+      created_at: now,
+      expired_at: toISOStringSafe(accessExpired),
+      ip: "",
+      href: "",
+      referrer: "",
     },
   });
 
-  // Generate tokens
-  const accessToken = jwt.sign(
-    {
-      userId: created.id,
-      email: created.email,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
-
-  const refreshToken = jwt.sign(
-    {
-      userId: created.id,
-      tokenType: "refresh",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  const issuedAt = now;
+  const token = {
+    access: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        created_at: issuedAt,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: issuedAt,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: toISOStringSafe(accessExpired),
+    refreshable_until: toISOStringSafe(refreshExpired),
+  };
 
   return {
-    id: created.id,
-    email: created.email,
-    password_hash: created.password_hash,
-    full_name: created.full_name ?? null,
-    phone_number: created.phone_number ?? null,
-    status: created.status satisfies string as
-      | "active"
-      | "suspended"
-      | "disabled",
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at:
-      created.deleted_at === null ? null : toISOStringSafe(created.deleted_at),
-    shopping_mall_report_count: null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(new Date(Date.now() + 3600 * 1000)),
-      refreshable_until: toISOStringSafe(
-        new Date(Date.now() + 7 * 24 * 3600 * 1000),
-      ),
-    },
+    id: admin.id,
+    email: admin.email,
+    full_name: admin.full_name,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
+    deleted_at: null,
+    token,
   };
 }

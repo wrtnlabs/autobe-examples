@@ -3,43 +3,42 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IShoppingMallCustomer } from "../../../structures/IShoppingMallCustomer";
+import { IShoppingCustomer } from "../../../structures/IShoppingCustomer";
 export * as password from "./password/index";
-export * as email from "./email/index";
 
 /**
- * Register new customer account (shopping_mall_customers) with JWT issuance.
+ * Register a new customer (shopping_customers table) and create JWT tokens.
  *
- * This endpoint supports new customer registration for the shoppingMall
- * platform. It creates a record in the shopping_mall_customers table, requiring
- * unique email, password (hashed), full name, and phone. The implementation
- * uses Prisma's model for shopping_mall_customers, referencing fields such as
- * email (unique, string), password_hash (string), full_name (string), phone
- * (string), status (string), email_verified (boolean), created_at (datetime),
- * and updated_at (datetime).
+ * This API operation enables the registration of a new customer account by
+ * accepting required fields defined in the 'shopping_customers' Prisma schema,
+ * including email, password_hash, name, and phone. The operation enforces
+ * uniqueness validation on the email field as described in the schema and
+ * implemented in database constraints. Upon creation, the system issues JWT
+ * access and refresh tokens for session management, utilizing the related
+ * session and token infrastructure. Account registration is subject to business
+ * logic requirements, including password complexity, real name verification,
+ * and phone number validation, all of which must conform to schema formats and
+ * constraints.
  *
- * Customers are not considered verified until completing the external email
- * verification workflow. Registration attempts are rejected if the email
- * already exists, and status is initially set to a pending state until
- * verification. Soft-deletion semantics use the deleted_at field, preventing
- * re-registration after account removal unless handled with explicit logic
- * (verifying deleted_at is null).
+ * Integration with the shopping_customer_sessions table occurs
+ * post-registration to track session information, as customers receive tokens
+ * for immediate authenticated use. All validation of input data—such as proper
+ * email format and phone structure—relies on the schema-defined field
+ * properties and system-enforced rules for the 'customer' actor. Security best
+ * practices, including password hashing and audit trail generation, are
+ * employed by this endpoint.
  *
- * The endpoint is public; no authentication is required for registration. Upon
- * success, the system issues a JWT and customer profile DTO using
- * IShoppingMallCustomer.IAuthorized, and triggers subsequent flows for
- * login/verification.
- *
- * Security is enforced at both API and DB schema levels. Throttling, spam
- * protection, and infrastructure-level input filtering are outside direct scope
- * but required in production. Related operations: login and refresh for full
- * authentication lifecycle. Account verification is triggered as a necessary
- * step before granting full access to platform features.
- *
- * Related operation references: /auth/customer/login, /auth/customer/refresh.
+ * Registrations resulting in errors, such as attempted duplicate emails
+ * (violating the '@@unique([email])' constraint), are handled gracefully by
+ * returning informative error messages referencing the violating schema field.
+ * Related operations include subsequent login or token-refresh, both of which
+ * consume the tokens issued here. All registration attempts are audited for
+ * compliance with platform and regulatory requirements, ensuring accountability
+ * as reflected in the schema's audit relations.
  *
  * @param props.connection
- * @param props.body New customer registration payload.
+ * @param props.body Customer registration data, strictly matching
+ *   'shopping_customers' schema fields required for account creation.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/join
@@ -74,11 +73,14 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** New customer registration payload. */
-    body: IShoppingMallCustomer.IJoin;
+    /**
+     * Customer registration data, strictly matching 'shopping_customers'
+     * schema fields required for account creation.
+     */
+    body: IShoppingCustomer.ICreate;
   };
-  export type Body = IShoppingMallCustomer.IJoin;
-  export type Response = IShoppingMallCustomer.IAuthorized;
+  export type Body = IShoppingCustomer.ICreate;
+  export type Response = IShoppingCustomer.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -94,8 +96,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/customer/join";
-  export const random = (): IShoppingMallCustomer.IAuthorized =>
-    typia.random<IShoppingMallCustomer.IAuthorized>();
+  export const random = (): IShoppingCustomer.IAuthorized =>
+    typia.random<IShoppingCustomer.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -122,31 +124,30 @@ export namespace join {
 }
 
 /**
- * Authenticate customer (shopping_mall_customers) and issue tokens.
+ * Authenticate customer and issue tokens using 'shopping_customers' schema.
  *
- * This endpoint supports customer authentication by validating login
- * credentials. It uses the shopping_mall_customers table, where the client
- * provides email and password. The API checks email (unique, string), compares
- * the password to the stored password_hash (bcrypt), ensures the account status
- * is active, and verifies the email_verified flag.
+ * This API endpoint authenticates a customer using 'email' and 'password_hash'
+ * fields as defined in the 'shopping_customers' schema. If the credentials
+ * match an active account, new JWT tokens are generated for session management.
+ * The operation references the schema's is_active and deleted_at fields to
+ * ensure only eligible accounts can access the system. Audit log and session
+ * creation are triggered in the 'shopping_customer_sessions' related table,
+ * using metadata such as IP address stored at authentication time.
  *
- * If authentication succeeds, an access and refresh token are issued and
- * returned as IShoppingMallCustomer.IAuthorized. Failed attempts are metered
- * and logged to mitigate brute-force risk (handled at the infra/auth middleware
- * level).
+ * Security is handled according to platform guidelines—hashing passwords on
+ * comparison and strictly matching the schema column formats. If the email is
+ * not found, the password is incorrect, or the account is marked deleted
+ * (deleted_at not null) or inactive (is_active false), the endpoint returns
+ * detailed authentication errors linked to schema field constraints.
  *
- * The operation does not return detailed error cause on authentication failure,
- * complying with security best practices. The process is always paired with
- * registration and token refresh endpoints. Blocking removed (deleted) or
- * suspended accounts is enforced by checking the deleted_at and status fields
- * in the schema. The endpoint is public (no authentication required).
- *
- * Related references: /auth/customer/join (registration),
- * /auth/customer/refresh (refresh token), shopping_mall_customers Prisma
- * definition.
+ * Post-login, the endpoint issues JWT access and refresh tokens containing the
+ * customer ID, role, and permissions, drawing from the session management
+ * infrastructure described in the schema. Security, audit, and compliance
+ * requirements are enforced throughout.
  *
  * @param props.connection
- * @param props.body Customer login credentials (email, password).
+ * @param props.body Customer login credentials ('email' and 'password_hash')
+ *   referencing the 'shopping_customers' schema.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/login
@@ -181,11 +182,14 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Customer login credentials (email, password). */
-    body: IShoppingMallCustomer.ILogin;
+    /**
+     * Customer login credentials ('email' and 'password_hash') referencing
+     * the 'shopping_customers' schema.
+     */
+    body: IShoppingCustomer.ILogin;
   };
-  export type Body = IShoppingMallCustomer.ILogin;
-  export type Response = IShoppingMallCustomer.IAuthorized;
+  export type Body = IShoppingCustomer.ILogin;
+  export type Response = IShoppingCustomer.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -201,8 +205,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/customer/login";
-  export const random = (): IShoppingMallCustomer.IAuthorized =>
-    typia.random<IShoppingMallCustomer.IAuthorized>();
+  export const random = (): IShoppingCustomer.IAuthorized =>
+    typia.random<IShoppingCustomer.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -229,31 +233,33 @@ export namespace login {
 }
 
 /**
- * Refresh customer JWT tokens (shopping_mall_user_sessions).
+ * Refresh JWT tokens for a customer session using session and
+ * 'shopping_customers' schema.
  *
- * This endpoint supports refreshing JWT tokens for customer sessions by
- * accepting a valid refresh token. It validates session state using
- * shopping_mall_user_sessions, checking refresh_token (unique, string), and
- * ensures the session is not expired or revoked via expires_at and revoked_at
- * fields.
+ * This endpoint handles the secure renewal of customer JWT tokens by validating
+ * an existing refresh token. It leverages the 'shopping_customer_sessions' and
+ * 'shopping_customers' schema to verify token validity, session state, and
+ * account activity. Upon validation, new access and refresh JWTs are generated
+ * and returned, with the session metadata updated accordingly in the schema.
+ * The operation enforces token expiration, revocation, and account validity,
+ * referring to is_active and deleted_at fields in the 'shopping_customers'
+ * schema for eligibility.
  *
- * On success, a new access token is issued along with updated tokens, following
- * the authorized DTO IShoppingMallCustomer.IAuthorized. Invalid or expired
- * refresh tokens are rejected with generic error responses to prevent
- * information disclosure.
+ * If validation fails due to token expiration, revocation, or customer
+ * inactivity or deletion, a detailed error message referencing the relevant
+ * schema constraint is returned. Security and traceability are prioritized, as
+ * audit logs are created for all successful and failed token refreshes
+ * according to the relationships laid out in the schema.
  *
- * The endpoint is unauthenticated but requires a valid refresh token for
- * operation. It is always paired with login and join for standard
- * authentication lifecycle management. Session integrity rules and maximum
- * concurrent session policies may be enforced at the DB or handler layer
- * (tracked via unique tokens and session records).
- *
- * All logic is based strictly on existing fields in
- * shopping_mall_user_sessions. Related references: Prisma schema, customer
- * session management flows across platform.
+ * This endpoint is a critical component of the customer authentication flow,
+ * working closely with the login and join operations, and must be used after
+ * those endpoints have completed. The operation references all necessary schema
+ * fields and relationships for a complete and compliant token rotation
+ * infrastructure.
  *
  * @param props.connection
- * @param props.body Refresh token for acquiring new session tokens.
+ * @param props.body Refresh token and session data, based on schema for session
+ *   and 'shopping_customers' actor.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/refresh
@@ -288,11 +294,14 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token for acquiring new session tokens. */
-    body: IShoppingMallCustomer.IRefresh;
+    /**
+     * Refresh token and session data, based on schema for session and
+     * 'shopping_customers' actor.
+     */
+    body: IShoppingCustomer.IRefresh;
   };
-  export type Body = IShoppingMallCustomer.IRefresh;
-  export type Response = IShoppingMallCustomer.IAuthorized;
+  export type Body = IShoppingCustomer.IRefresh;
+  export type Response = IShoppingCustomer.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -308,8 +317,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/customer/refresh";
-  export const random = (): IShoppingMallCustomer.IAuthorized =>
-    typia.random<IShoppingMallCustomer.IAuthorized>();
+  export const random = (): IShoppingCustomer.IAuthorized =>
+    typia.random<IShoppingCustomer.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

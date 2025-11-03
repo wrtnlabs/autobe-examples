@@ -5,8 +5,7 @@
 - [Systematic](#systematic)
 - [Actors](#actors)
 - [Content](#content)
-- [Taxonomy](#taxonomy)
-- [Interactions](#interactions)
+- [Comments](#comments)
 - [Moderation](#moderation)
 - [Notifications](#notifications)
 - [Audit](#audit)
@@ -15,1039 +14,991 @@
 
 ```mermaid
 erDiagram
-"econ_political_forum_categories" {
+"discussion_board_categories" {
   String id PK
-  String code UK "nullable"
-  String name
+  String name UK
   String slug UK
   String description "nullable"
-  Boolean is_moderated
-  Boolean requires_verification
-  Int order
+  Boolean is_active
+  Int sort_order "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_political_forum_site_settings" {
+"discussion_board_tags" {
+  String id PK
+  String name UK
+  String slug UK
+  String description "nullable"
+  Boolean is_active
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_article_tags" {
+  String id PK
+  String discussion_board_article_id FK
+  String discussion_board_tag_id FK
+  DateTime created_at
+  String created_by_member_id "nullable"
+}
+"discussion_board_settings" {
   String id PK
   String key UK
   String value
   String description "nullable"
-  String environment "nullable"
-  Boolean is_public
+  Boolean is_active
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_political_forum_feature_flags" {
-  String id PK
-  String key UK
-  Boolean enabled
-  Int rollout_percentage "nullable"
-  String description "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
+"discussion_board_article_tags" }o--|| "discussion_board_tags" : tag
 ```
 
-### `econ_political_forum_categories`
+### `discussion_board_categories`
 
-Categories for econPoliticalForum. Represents the canonical
-classification of threads and content. Categories drive visibility rules
-(public, moderated, restricted), may require verification for posting,
-and are referenced by threads and moderation workflows. Contains business
-identifiers (code, slug), display metadata, and flags used by content
-gating and moderator routing.
+Categories for organizing published articles. Each category represents a
+primary organizational bucket (e.g., Economics, Policy, Commentary).
+Categories are independently managed by administrators and referenced by
+articles via a primary_category_id in the Content component. Contains
+activation flags and temporal audit fields for lifecycle management.
+Recommended: add DB-level defaults for created_at and updated_at and
+consider case-insensitive uniqueness for slug if desired.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `code`
-  > Optional short business code for the category (e.g., 'fiscal', 'trade').
-  > Unique when present.
-- `name`: Human-visible category name (for display in UI and navigation).
-- `slug`: URL-friendly unique slug for the category (used for routing and lookups).
+- `name`: Human-readable category name used in listings and UI (e.g., 'Economics').
+- `slug`
+  > URL-friendly unique identifier for category (e.g., 'economics'). Consider
+  > enforcing lower-case uniqueness (citext or functional index lower(slug)).
 - `description`
-  > Longer textual description explaining the purpose and scope of the
-  > category.
-- `is_moderated`
-  > Whether new posts in this category require moderator approval before
-  > public publishing.
-- `requires_verification`
-  > If true, posting in this category requires a verified account (email
-  > verified or other verification).
-- `order`: Display order hint for UI lists; lower values are shown earlier.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Soft delete timestamp; null when active.
+  > Optional longer description explaining the category's scope and usage
+  > guidance.
+- `is_active`
+  > Whether the category is active and available for assignment to new
+  > articles.
+- `sort_order`
+  > Optional integer used to order categories in curated lists; lower values
+  > appear first.
+- `created_at`
+  > Record creation timestamp. Recommendation: add DB default @default(now())
+  > to ensure value at insert.
+- `updated_at`: Record last modification timestamp. Recommendation: use Prisma's
+- `deleted_at`: Soft-delete timestamp; null when active.
 
-### `econ_political_forum_site_settings`
+### `discussion_board_tags`
 
-Site-level configuration settings for econPoliticalForum. Key/value pairs
-used by application code and business logic to control runtime behavior,
-feature gating defaults, moderation thresholds, and environment-specific
-overrides. Intended to be small, read-mostly, and administrable via an
-admin UI. Keys must be unique.
+Tag catalogue for articles. Tags provide flexible, many-to-many labeling
+for articles to aid discovery and search. Tags are managed independently
+and may be applied to multiple articles via the junction table {@link
+discussion_board_article_tags}. Recommended: add DB-level defaults for
+created_at and updated_at; consider case-insensitive slug uniqueness if
+product requires it.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `key`
-  > Unique configuration key (namespace.form). Example:
-  > 'moderation.report_threshold'.
+- `name`: Tag display name (e.g., 'inflation').
+- `slug`
+  > URL-friendly unique tag key (e.g., 'inflation'). Consider enforcing
+  > lower-case uniqueness (citext or functional index lower(slug)).
+- `description`: Optional description or guidance for tag usage.
+- `is_active`: Whether the tag is currently active and assignable.
+- `created_at`: Record creation timestamp. Recommendation: add DB default @default(now()).
+- `updated_at`
+  > Record last modification timestamp. Recommendation: add @updatedAt or DB
+  > trigger to maintain this value.
+- `deleted_at`: Soft-delete timestamp; null when active.
+
+### `discussion_board_article_tags`
+
+Junction table implementing the many-to-many relationship between
+articles and tags. Each row links one article (existing {@link
+discussion_board_articles.id}) to one tag ({@link
+discussion_board_tags.id}). Composite uniqueness prevents duplicate tag
+assignments per article. Recommendation: add created_at DB default
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`: Referenced article. [discussion_board_articles.id](#discussion_board_articles).
+- `discussion_board_tag_id`: Referenced tag. [discussion_board_tags.id](#discussion_board_tags).
+- `created_at`: Link creation timestamp. Recommendation: add DB default @default(now()).
+- `created_by_member_id`
+  > Optional actor (member) who created the tag assignment; references {@link
+  > discussion_board_member.id} in other components.
+
+### `discussion_board_settings`
+
+Global key/value configuration entries used by the application for
+runtime feature flags, thresholds, and SLO parameters. Settings are
+managed by administrators and read by other components at runtime. Keys
+are unique business identifiers. Recommendation: add
+created_at/updated_at DB defaults and consider jsonb for structured
+values if necessary.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `key`: Unique settings key (e.g., 'moderation.auto_hide_report_threshold').
 - `value`
-  > Configuration value stored as string. Typed interpretation handled by
-  > application logic (boolean/int/json as needed).
-- `description`: Human-readable description and intent of the setting for administrators.
-- `environment`
-  > Optional environment tag (e.g., 'production', 'staging') to scope
-  > overrides.
-- `is_public`
-  > Whether this setting is visible to non-admin clients/UI (for example for
-  > feature exposure).
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Soft delete timestamp; null when active.
-
-### `econ_political_forum_feature_flags`
-
-Runtime feature flags controlling experimental features, gradual
-rollouts, and admin toggles. This table is read-mostly and is consulted
-at runtime to enable/disable features per key. Includes rollout
-percentage for progressive exposure and an administrable description.
-Keys are unique.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `key`: Unique feature flag key (e.g., 'new_search_ui').
-- `enabled`: Whether the feature is currently enabled globally.
-- `rollout_percentage`
-  > Optional rollout percentage (0-100) used for gradual exposure to a subset
-  > of users; null indicates not used.
-- `description`: Human-readable description explaining the feature and purpose.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Soft delete timestamp; null when active.
+  > Settings value stored as string; consumer interprets type (boolean,
+  > number, JSON) as needed. Consider jsonb if structured queries are
+  > necessary.
+- `description`: Human-friendly description explaining purpose of the setting.
+- `is_active`
+  > Whether the setting entry is active and should be considered by runtime
+  > code.
+- `created_at`: Record creation timestamp. Recommendation: add DB default @default(now()).
+- `updated_at`
+  > Record last modification timestamp. Recommendation: add @updatedAt or
+  > equivalent mechanism.
+- `deleted_at`: Soft-delete timestamp; null when active.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"econ_political_forum_guest" {
+"discussion_board_guest" {
   String id PK
-  String nickname "nullable"
-  String user_agent "nullable"
+  String display_name "nullable"
+  String ip "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_political_forum_registereduser" {
+"discussion_board_member" {
   String id PK
   String username UK
   String email UK
-  String password_hash "nullable"
+  String password_hash
   String display_name "nullable"
-  String bio "nullable"
-  String(80000) avatar_uri "nullable"
-  Boolean is_banned
-  DateTime banned_until "nullable"
-  Boolean email_verified
-  DateTime verified_at "nullable"
-  Int failed_login_attempts
-  DateTime locked_until "nullable"
-  DateTime last_login_at "nullable"
+  String role
+  Boolean mfa_enabled
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_political_forum_moderator" {
+"discussion_board_moderator" {
   String id PK
-  String registereduser_id FK,UK
-  Boolean is_active
-  DateTime assigned_at "nullable"
-  String scope_notes "nullable"
+  String username UK
+  String email UK
+  String password_hash
+  String display_name "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_political_forum_administrator" {
+"discussion_board_member_sessions" {
   String id PK
-  String registereduser_id FK,UK
-  Boolean is_super
-  String notes "nullable"
+  String discussion_board_member_id FK
+  String ip
+  String(80000) href
+  String referrer
   DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
+  DateTime expired_at "nullable"
 }
-"econ_political_forum_sessions" {
+"discussion_board_moderator_sessions" {
   String id PK
-  String registereduser_id FK
-  String session_token UK
-  String refresh_token_hash "nullable"
-  String ip_address "nullable"
-  String user_agent "nullable"
-  DateTime last_active_at "nullable"
+  String discussion_board_moderator_id FK
+  String ip
+  String(80000) href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"discussion_board_email_verifications" {
+  String id PK
+  String discussion_board_member_id FK
+  String token UK
+  DateTime created_at
   DateTime expires_at
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
+  DateTime consumed_at "nullable"
 }
-"econ_political_forum_password_resets" {
+"discussion_board_password_resets" {
   String id PK
-  String registereduser_id FK
-  String reset_token_hash UK
-  DateTime expires_at
-  Boolean used
-  DateTime used_at "nullable"
+  String discussion_board_member_id FK
+  String token UK
+  String request_ip "nullable"
   DateTime created_at
-  DateTime deleted_at "nullable"
+  DateTime expires_at
+  DateTime consumed_at "nullable"
 }
-"econ_political_forum_moderator" |o--|| "econ_political_forum_registereduser" : registereduser
-"econ_political_forum_administrator" |o--|| "econ_political_forum_registereduser" : registereduser
-"econ_political_forum_sessions" }o--|| "econ_political_forum_registereduser" : registereduser
-"econ_political_forum_password_resets" }o--|| "econ_political_forum_registereduser" : registereduser
+"discussion_board_member_sessions" }o--|| "discussion_board_member" : member
+"discussion_board_moderator_sessions" }o--|| "discussion_board_moderator" : moderator
+"discussion_board_email_verifications" }o--|| "discussion_board_member" : member
+"discussion_board_password_resets" }o--|| "discussion_board_member" : member
 ```
 
-### `econ_political_forum_guest`
+### `discussion_board_guest`
 
-Lightweight guest identity record for unauthenticated or ephemeral
-visitors. Guests can browse and may file reports but cannot create
-persistent content. Stored to support anonymous or limited interactions
-and moderation traceability. Linked content references should point to
-specific actor tables when applicable. This table is primarily for
-tracking ephemeral identities and basic metadata.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `nickname`
-  > Optional display nickname provided by the guest for ephemeral
-  > identification in a session. Not verified.
-- `user_agent`
-  > User-agent string captured at first interaction for basic device/context
-  > information.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Last update timestamp for the guest record.
-- `deleted_at`: Soft-delete timestamp. Null if active.
-
-### `econ_political_forum_registereduser`
-
-Primary persistent registered user account. Contains authentication and
-profile fields used throughout the platform. Supports email/password or
-external auth (password_hash nullable). Includes verification and lockout
-fields to support email verification, account lockout policies, and basic
-security telemetry. Uniqueness enforced on username and email.
+Guest identity record for transient or tracked visitors. Stores minimal
+attribution for anonymous or pseudo-guest actors when the system requires
+a persisted guest entity (for example, to track pre-authored drafts or
+anonymous report tracking). Guests are lightweight actors and are
+primarily used for audit correlation and temporary workflows. Related
+actor tables: [discussion_board_member](#discussion_board_member), {@link
+discussion_board_moderator}.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `username`: Unique account username used for login and display (normalized).
+- `display_name`
+  > Optional display name supplied by the guest for a short-lived
+  > contribution or draft.
+- `ip`: IP address observed when the guest session or action was recorded.
+- `created_at`: Record creation time (UTC).
+- `updated_at`: Last update timestamp for guest record (UTC).
+- `deleted_at`: Soft-delete timestamp for guest records (nullable).
+
+### `discussion_board_member`
+
+Member accounts for authenticated users. Contains credentials and profile
+fields required for publishing, commenting, subscriptions and
+notification preferences. Members must verify email before gaining
+publishing privileges; verification artifacts are stored in {@link
+discussion_board_email_verifications}. Passwords are stored as hashes
+only (password_hash).
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `username`: Unique username chosen by the member.
 - `email`: Verified email address for account recovery and notifications.
-- `password_hash`
-  > Password hash for local authentication. Nullable for accounts created via
-  > external OAuth providers.
-- `display_name`: Optional display name shown publicly; may differ from username.
-- `bio`: Optional short biography or profile description.
-- `avatar_uri`: URI to user's avatar image (may be proxied via CDN).
-- `is_banned`: Flag indicating whether the account is currently banned.
-- `banned_until`: Optional suspension expiry timestamp when temporarily banned.
-- `email_verified`: Whether the account's email has been verified (true) or not (false).
-- `verified_at`: Timestamp when the account's email was verified; null if not verified.
-- `failed_login_attempts`
-  > Rolling counter of recent failed login attempts used to enforce temporary
-  > lockouts.
-- `locked_until`
-  > If present, authentication is blocked until this timestamp as part of
-  > lockout policy.
-- `last_login_at`: Most recent successful login timestamp for security analytics.
-- `created_at`: Account creation timestamp.
-- `updated_at`: Last profile update timestamp.
-- `deleted_at`: Soft-delete timestamp for account deletion requests or anonymization.
+- `password_hash`: Password hash (never store plain text).
+- `display_name`: Optional display name shown publicly.
+- `role`
+  > Actor role identifier (e.g., 'USER'). Use application-level enum
+  > enforcement; stored as string.
+- `mfa_enabled`: Whether the member has enabled MFA (true/false).
+- `created_at`: Account creation timestamp (UTC).
+- `updated_at`: Last update timestamp (UTC).
+- `deleted_at`: Soft-delete timestamp (nullable) to enable recovery workflows.
 
-### `econ_political_forum_moderator`
+### `discussion_board_moderator`
 
-Moderator role record linking back to a registered user. Stores
-moderator-specific metadata such as assignment, active status, and
-moderation scope. The registereduser_id is unique enforcing a 1:1
-relationship between a moderator record and the registered user identity.
+Moderator accounts with elevated privileges for reviewing reports, taking
+moderation actions, and accessing moderation audit trails. Moderators are
+distinct actor records to clearly separate permissions and auditing from
+regular members.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `registereduser_id`
-  > Linked registered user identity. {@link
-  > econ_political_forum_registereduser.id}.
-- `is_active`: Whether the moderator is active and assigned to triage duties.
-- `assigned_at`: Timestamp when moderator privileges were granted or assigned.
-- `scope_notes`
-  > Optional notes describing moderator scope or jurisdiction (e.g.,
-  > categories assigned).
-- `created_at`: Moderator record creation timestamp.
-- `updated_at`: Last update timestamp for moderator metadata.
-- `deleted_at`
-  > Soft-delete timestamp if moderator privileges are revoked and record
-  > retained for audit.
+- `username`: Unique moderator username.
+- `email`: Moderator contact email.
+- `password_hash`: Password hash for moderator login.
+- `display_name`: Moderator display name for audit records.
+- `created_at`: Moderator account creation timestamp (UTC).
+- `updated_at`: Last update timestamp (UTC).
+- `deleted_at`: Soft-delete timestamp for moderator account (nullable).
 
-### `econ_political_forum_administrator`
+### `discussion_board_member_sessions`
 
-Administrator role record linking to a registered user. Stores
-admin-specific metadata and flags for global privileges. This enforces a
-1:1 mapping to a registered user to centralize identity while separating
-admin attributes and auditability.
+Session records for members. Follows the required per-actor session table
+pattern: minimal connection context (ip, href, referrer), created_at and
+expired_at timestamps. Composite index on (discussion_board_member_id,
+created_at) is used for efficient session lifecycle queries.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `registereduser_id`
-  > Linked registered user identity. {@link
-  > econ_political_forum_registereduser.id}.
-- `is_super`: Flag indicating whether the administrator has full (super) privileges.
-- `notes`: Optional administrative notes for audit or delegation purposes.
-- `created_at`: Administrator record creation timestamp.
-- `updated_at`: Last update timestamp for admin metadata.
-- `deleted_at`
-  > Soft-delete timestamp used when admin privileges are revoked while
-  > preserving audit trail.
+- `discussion_board_member_id`: Belonged member's [discussion_board_member.id](#discussion_board_member).
+- `ip`: Client IP address for the session.
+- `href`: Connection URL (referring href) for the session context.
+- `referrer`: Referrer URL for the session.
+- `created_at`: Session creation time (UTC).
+- `expired_at`: Session expiry time (nullable when session is open-ended until revoked).
 
-### `econ_political_forum_sessions`
+### `discussion_board_moderator_sessions`
 
-Session records for registered users. Stores session tokens, expiration,
-client metadata, and last activity to enable session revocation and
-rotation. This is a subsidiary table managed through the registered user
-lifecycle APIs and is not a primary business entity by itself.
+Session records for moderators. Mirrors member session table structure
+and provides auditability for privileged sessions. Composite index on
+(discussion_board_moderator_id, created_at) supports session listing and
+revocation workflows.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `registereduser_id`: Owning registered user. [econ_political_forum_registereduser.id](#econ_political_forum_registereduser).
-- `session_token`
-  > Opaque session token or token identifier used for session validation.
-  > Should be unique per active session.
-- `refresh_token_hash`
-  > Hash of refresh token for rotation and verification; storing hash
-  > improves security.
-- `ip_address`
-  > IP address observed at session creation for risk analysis and security
-  > logs.
-- `user_agent`: User agent string captured at session creation.
-- `last_active_at`: Timestamp of the last observed activity for the session.
-- `expires_at`: Session expiry timestamp.
-- `created_at`: Session creation timestamp.
-- `updated_at`: Last update timestamp for session record.
-- `deleted_at`: Soft-delete timestamp for revoked sessions retained for audit.
+- `discussion_board_moderator_id`: Belonged moderator's [discussion_board_moderator.id](#discussion_board_moderator).
+- `ip`: Client IP address observed for the moderator session.
+- `href`: Connection URL for the moderator session.
+- `referrer`: Referrer URL for the moderator session.
+- `created_at`: Session creation time (UTC).
+- `expired_at`: Session expiry time (nullable).
 
-### `econ_political_forum_password_resets`
+### `discussion_board_email_verifications`
 
-Password reset requests for registered users. Stores a single-use reset
-token (or its hash), expiry, usage flag, and timestamps. This is a
-subsidiary table used by account recovery flows and is managed through
-registered user lifecycle operations.
+Email verification tokens for members. Stores single-use verification
+tokens with expiration and consumption timestamps. Tokens are unique and
+tied to a member account for verification flows.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `registereduser_id`
-  > Target registered user for the password reset request. {@link
-  > econ_political_forum_registereduser.id}.
-- `reset_token_hash`
-  > Hash of the single-use reset token. Storing a hash avoids storing
-  > plaintext tokens.
-- `expires_at`: Expiry timestamp for the reset token.
-- `used`: Flag indicating whether the reset token has been consumed.
-- `used_at`: Timestamp when the token was consumed, if applicable.
-- `created_at`: Creation timestamp for the password reset request.
-- `deleted_at`
-  > Soft-delete timestamp for expired or revoked reset requests kept for
-  > audit.
+- `discussion_board_member_id`
+  > Target member for the verification token. {@link
+  > discussion_board_member.id}.
+- `token`: Unique single-use verification token.
+- `created_at`: Token issuance time (UTC).
+- `expires_at`: Token expiration time (UTC).
+- `consumed_at`: Time when the token was used (nullable).
+
+### `discussion_board_password_resets`
+
+Password reset requests for members. Stores single-use reset tokens with
+expiry and consumption timestamps and limited context for security
+(request ip). Tokens are unique to prevent replay.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_member_id`: Member who requested password reset. [discussion_board_member.id](#discussion_board_member).
+- `token`: Unique single-use password reset token.
+- `request_ip`: IP address from which the reset was requested.
+- `created_at`: Reset request timestamp (UTC).
+- `expires_at`: Reset token expiration time (UTC).
+- `consumed_at`: Time the token was consumed (nullable).
 
 ## Content
 
 ```mermaid
 erDiagram
-"econ_political_forum_threads" {
+"discussion_board_articles" {
   String id PK
-  String category_id FK
-  String author_id FK
+  String discussion_board_member_id FK "nullable"
+  String discussion_board_category_id FK "nullable"
   String title
-  String slug UK
-  String status
-  Boolean pinned
+  String content
+  String state
+  Boolean is_pinned
+  DateTime published_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_political_forum_posts" {
+"discussion_board_attachments" {
   String id PK
-  String thread_id FK
-  String author_id FK
-  String parent_id FK "nullable"
+  String discussion_board_article_id FK
+  String discussion_board_member_id FK "nullable"
+  String original_filename
+  String storage_key
+  String mime_type
+  Int size
+  Boolean is_image
+  DateTime created_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_article_snapshots" {
+  String id PK
+  String discussion_board_article_id FK
+  String title
   String content
-  Boolean is_edited
-  DateTime edited_at "nullable"
+  String state
+  DateTime snapshot_at
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_attachments" }o--|| "discussion_board_articles" : article
+"discussion_board_article_snapshots" }o--|| "discussion_board_articles" : article
+```
+
+### `discussion_board_articles`
+
+Primary articles posted by members. Stores current live state for each
+post and references the owning member and optional primary category.
+Author FK uses ON DELETE SET NULL to preserve article content when member
+accounts are anonymized or removed; published_at is recorded separately
+to support edit windows and publication visibility semantics. Contains
+temporal audit fields and indexes for listing and moderation workloads.
+[discussion_board_member.id](#discussion_board_member) [discussion_board_categories.id](#discussion_board_categories)
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_member_id`
+  > Authoring member. [discussion_board_member.id](#discussion_board_member). Nullable to allow
+  > anonymization/set-null on account removal.
+- `discussion_board_category_id`
+  > Primary category for the article. [discussion_board_categories.id](#discussion_board_categories).
+  > Nullable for uncategorized drafts.
+- `title`: Article title (business constraint: min 5, max 250 characters).
+- `content`
+  > Article body content. Store raw text/markdown; render sanitization is an
+  > application concern.
+- `state`
+  > Article lifecycle state: one of
+  > 'draft','published','pending_review','hidden'.
+- `is_pinned`: Whether the article is pinned in listings.
+- `published_at`
+  > Timestamp when the article was published to public listings. Null for
+  > drafts.
+- `created_at`: Creation timestamp (ISO 8601 UTC).
+- `updated_at`: Last update timestamp (ISO 8601 UTC).
+- `deleted_at`: Soft-delete timestamp; null if not deleted.
+
+### `discussion_board_attachments`
+
+Attachments uploaded for articles. Each attachment belongs to an article
+and optionally references the uploading member. Uploader FK uses ON
+DELETE SET NULL so attachments persist when the account is removed;
+application-level purge logic should remove storage objects when
+attachments are permanently purged. Attachments inherit parent retention
+windows and are indexed for article-based queries. {@link
+discussion_board_articles.id} [discussion_board_member.id](#discussion_board_member)
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`
+  > Belonged article. [discussion_board_articles.id](#discussion_board_articles). This FK prevents
+  > orphan attachments; application purge must explicitly remove attachments
+  > before deleting articles.
+- `discussion_board_member_id`
+  > Uploading member. [discussion_board_member.id](#discussion_board_member). Nullable to allow
+  > SET NULL when member accounts are anonymized or removed.
+- `original_filename`: Filename as provided by the uploader.
+- `storage_key`: Object storage key or path referencing the persisted file.
+- `mime_type`: MIME type of the attachment.
+- `size`: File size in bytes.
+- `is_image`: Whether the attachment is an image (true) or not (false).
+- `created_at`: Upload timestamp.
+- `deleted_at`: Soft-delete timestamp for the attachment.
+
+### `discussion_board_article_snapshots`
+
+Append-only snapshots capturing historical states of articles for audit
+and versioning. Relationship to article must NOT cascade deletes to
+preserve audit history. Use ON DELETE RESTRICT or an archive-first purge
+flow so snapshots survive accidental article removal. Each snapshot
+denormalizes article fields at snapshot time and is retained for
+compliance. [discussion_board_articles.id](#discussion_board_articles)
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`
+  > Referenced article. [discussion_board_articles.id](#discussion_board_articles). Application
+  > must ensure snapshots are preserved; DB-level FK should use ON DELETE
+  > RESTRICT or snapshot FK made nullable with explicit archival workflow.
+- `title`: Article title at snapshot time.
+- `content`: Article content at snapshot time.
+- `state`: State value captured at snapshot time.
+- `snapshot_at`: Timestamp when snapshot was taken.
+- `created_at`: Original article creation time (denormalized).
+- `updated_at`: Original article update time (denormalized).
+- `deleted_at`: Original article deleted_at value (denormalized).
+
+## Comments
+
+```mermaid
+erDiagram
+"discussion_board_comments" {
+  String id PK
+  String discussion_board_article_id FK
+  String discussion_board_author_id FK "nullable"
+  String discussion_board_parent_comment_id FK "nullable"
+  String content
   Boolean is_hidden
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_political_forum_post_revisions" {
+"discussion_board_comment_attachments" {
   String id PK
-  String post_id FK
-  String editor_id FK "nullable"
-  String content
-  String note "nullable"
+  String discussion_board_comment_id FK
+  String discussion_board_uploaded_by_id FK "nullable"
+  String original_filename
+  String(80000) storage_key
+  String mime_type
+  Int size
+  Boolean is_image
+  Boolean quarantined
   DateTime created_at
 }
-"econ_political_forum_posts" }o--|| "econ_political_forum_threads" : thread
-"econ_political_forum_posts" }o--o| "econ_political_forum_posts" : parent
-"econ_political_forum_post_revisions" }o--|| "econ_political_forum_posts" : post
+"discussion_board_comments" }o--o| "discussion_board_comments" : parent
+"discussion_board_comment_attachments" }o--|| "discussion_board_comments" : comment
 ```
 
-### `econ_political_forum_threads`
+### `discussion_board_comments`
 
-Discussion threads (top-level topics). Canonical thread metadata only —
-no pre-calculated aggregates. Refer to category ({@link
-econ_political_forum_categories.id}) and author ({@link
-econ_political_forum_registereduser.id}). Temporal fields included for
-audit and soft-delete. Counters (view_count, post_count) removed per
-normalization rules; use materialized views (mv_*) for aggregates.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `category_id`: Belonged category. [econ_political_forum_categories.id](#econ_political_forum_categories).
-- `author_id`: Authoring registered user. [econ_political_forum_registereduser.id](#econ_political_forum_registereduser).
-- `title`: Thread title used for listing and search.
-- `slug`: URL-friendly identifier for the thread (unique).
-- `status`: Thread lifecycle status (e.g., 'open','closed','pinned').
-- `pinned`: Whether the thread is pinned for prominent display.
-- `created_at`: Creation timestamp.
-- `updated_at`: Last update timestamp.
-- `deleted_at`: Soft-delete timestamp; null when active.
-
-### `econ_political_forum_posts`
-
-Posts and replies belonging to threads. Canonical post content only (no
-cached counters or rendered HTML). Parent relation kept for replies.
-Revision history stored in econ_political_forum_post_revisions
-(snapshot). Removed derived fields (vote_count, upvote_count,
-downvote_count, content_html) to comply with normalization rules; move
-aggregates to materialized views.
+User comments on articles. Stores threaded replies via a self-referencing
+parent_comment_id and preserves author attribution while allowing account
+deletion (author nullable). Used for moderation, search, and comment
+listings tied to articles. This corrected model enforces SET NULL on
+author and parent relationships to preserve conversation history when
+accounts/parents are removed.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `thread_id`: Belonged thread. [econ_political_forum_threads.id](#econ_political_forum_threads).
-- `author_id`: Authoring registered user. [econ_political_forum_registereduser.id](#econ_political_forum_registereduser).
-- `parent_id`: Optional parent post for replies. [econ_political_forum_posts.id](#econ_political_forum_posts).
-- `content`: Raw post content (plaintext or sanitized markdown).
-- `is_edited`: Flag indicating whether the post was edited after creation.
-- `edited_at`: Timestamp of the latest edit; null if never edited.
-- `is_hidden`: Moderator hide flag; when true the post is not shown in public listings.
-- `created_at`: Creation timestamp.
-- `updated_at`: Last update timestamp.
-- `deleted_at`: Soft-delete timestamp; null when active.
+- `discussion_board_article_id`: Belonged article's [discussion_board_articles.id](#discussion_board_articles).
+- `discussion_board_author_id`
+  > Comment author's [discussion_board_member.id](#discussion_board_member). Nullable to allow
+  > SET NULL when a member account is removed.
+- `discussion_board_parent_comment_id`
+  > Parent comment reference for threaded replies. {@link
+  > discussion_board_comments.id}. Nullable for root comments or when parent
+  > is deleted.
+- `content`
+  > Comment body text. Application-enforced maximum length applies (e.g.,
+  > 500-5000 chars depending on product policy). Used for full-text search.
+- `is_hidden`: Whether the comment is hidden by moderation or automated rules.
+- `created_at`: Creation timestamp (ISO 8601 UTC).
+- `updated_at`: Last modification timestamp (ISO 8601 UTC).
+- `deleted_at`: Soft-delete timestamp. Null if not soft-deleted.
 
-### `econ_political_forum_post_revisions`
+### `discussion_board_comment_attachments`
 
-Append-only revision history for posts. Each revision captures the full
-post content at a point in time, the editor (if different from author),
-and a created_at timestamp. This table is snapshot-like and intended for
-audit/history and moderator review.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `post_id`: Referenced post. [econ_political_forum_posts.id](#econ_political_forum_posts).
-- `editor_id`
-  > Editor (registered user) who made the revision, if applicable. {@link
-  > econ_political_forum_registereduser.id}.
-- `content`: Full post content snapshot at the time of revision.
-- `note`: Optional short editor note describing the change.
-- `created_at`: Revision timestamp (when the snapshot was recorded).
-
-## Taxonomy
-
-```mermaid
-erDiagram
-"econ_political_forum_tags" {
-  String id PK
-  String name UK
-  String slug UK
-  String description "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"econ_political_forum_thread_tags" {
-  String id PK
-  String thread_id FK
-  String tag_id FK
-  DateTime created_at
-  DateTime deleted_at "nullable"
-}
-"econ_political_forum_thread_tags" }o--|| "econ_political_forum_tags" : tag
-```
-
-### `econ_political_forum_tags`
-
-Normalized tag catalog used for discovery and search across the
-econPoliticalForum. Each tag is a primary, independently managed entity.
-Tags are referenced by threads through the join table {@link
-econ_political_forum_thread_tags}. Includes temporal fields for auditing
-and soft-delete support.
+Attachments associated with comments. Stores filename, storage key, mime
+type, size, quarantine flag and ownership metadata. The uploadedBy
+relation is nullable and uses SET NULL semantics on actor removal so
+attachments remain for audit and moderation even if uploader account is
+removed.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `name`
-  > Human-readable tag name. Examples: 'fiscal-policy', 'inflation'.
-  > Normalized and unique.
-- `slug`: URL-safe lower-case slug for the tag. Unique and indexed for fast lookup.
-- `description`: Optional longer description of the tag's purpose or scope.
-- `created_at`: Creation timestamp (UTC).
-- `updated_at`: Last update timestamp (UTC).
-- `deleted_at`: Soft-delete timestamp. Null when active.
-
-### `econ_political_forum_thread_tags`
-
-Join table mapping threads to tags. Renamed foreign key field to tag_id
-for naming consistency and added index optimized for tag->threads
-lookups. Preserves UUID primary key, created_at and soft-delete fields
-for audit. References: [econ_political_forum_threads.id](#econ_political_forum_threads), {@link
-econ_political_forum_tags.id}.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `thread_id`: Belonged thread. [econ_political_forum_threads.id](#econ_political_forum_threads).
-- `tag_id`: Belonged tag. [econ_political_forum_tags.id](#econ_political_forum_tags).
-- `created_at`: Timestamp when the tag was attached to the thread.
-- `deleted_at`: Soft-delete timestamp for the join. Null when active.
-
-## Interactions
-
-```mermaid
-erDiagram
-"econ_political_forum_votes" {
-  String id PK
-  String registereduser_id FK
-  String post_id FK
-  Int value
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"econ_political_forum_bookmarks" {
-  String id PK
-  String registereduser_id FK
-  String post_id FK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"econ_political_forum_thread_follows" {
-  String id PK
-  String registereduser_id FK
-  String thread_id FK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-  DateTime muted_until "nullable"
-}
-```
-
-### `econ_political_forum_votes`
-
-User votes on posts. One vote per user per post is enforced via a
-composite unique constraint. Stores vote value (application-enforced
-domain: 1 = upvote, -1 = downvote), timestamps, and soft-delete to
-support audit and rollback. References {@link
-econ_political_forum_registereduser.id} and {@link
-econ_political_forum_posts.id}.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `registereduser_id`: Owning registered user's [econ_political_forum_registereduser.id](#econ_political_forum_registereduser).
-- `post_id`: Target post's [econ_political_forum_posts.id](#econ_political_forum_posts).
-- `value`
-  > Vote value. Business domain: 1 = upvote, -1 = downvote. Application
-  > should validate allowed values; consider DB CHECK or string enum if
-  > preferred.
-- `created_at`: Creation timestamp for the vote record.
-- `updated_at`: Last update time for the vote record (used when vote is changed).
-- `deleted_at`: Soft-delete timestamp; null when active.
-
-### `econ_political_forum_bookmarks`
-
-User bookmarks (saved posts). Enforces one bookmark per user per post via
-composite unique constraint. Soft-delete used to allow unbookmark while
-preserving an audit trail. References {@link
-econ_political_forum_registereduser.id} and {@link
-econ_political_forum_posts.id}.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `registereduser_id`: Owning registered user's [econ_political_forum_registereduser.id](#econ_political_forum_registereduser).
-- `post_id`: Bookmarked post's [econ_political_forum_posts.id](#econ_political_forum_posts).
-- `created_at`: Bookmark creation timestamp.
-- `updated_at`: Last update time for the bookmark (if metadata changes).
-- `deleted_at`: Soft-delete timestamp; null when bookmark is active.
-
-### `econ_political_forum_thread_follows`
-
-Tracks thread subscriptions (follows) by users for notification and feed
-generation. Enforces one follow per user per thread. Includes optional
-muted_until for temporary notification suppression. References {@link
-econ_political_forum_registereduser.id} and {@link
-econ_political_forum_threads.id}.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `registereduser_id`: Owning registered user's [econ_political_forum_registereduser.id](#econ_political_forum_registereduser).
-- `thread_id`: Followed thread's [econ_political_forum_threads.id](#econ_political_forum_threads).
-- `created_at`: Timestamp when the follow was created.
-- `updated_at`: Last update time for the follow (e.g., mute toggles).
-- `deleted_at`: Soft-delete timestamp; null when follow is active.
-- `muted_until`: Optional timestamp until which notifications for this follow are muted.
+- `discussion_board_comment_id`: Belonged comment's [discussion_board_comments.id](#discussion_board_comments).
+- `discussion_board_uploaded_by_id`
+  > Uploading member's [discussion_board_member.id](#discussion_board_member). Nullable to allow
+  > SET NULL when a member account is removed.
+- `original_filename`: User-provided filename for the attachment.
+- `storage_key`: Object storage key or path referencing the stored file (URI).
+- `mime_type`: MIME type reported on upload.
+- `size`: File size in bytes.
+- `is_image`: Flag indicating whether the file is an image type.
+- `quarantined`: Whether the attachment is quarantined due to malware or policy violations.
+- `created_at`: Upload timestamp (ISO 8601 UTC).
 
 ## Moderation
 
 ```mermaid
 erDiagram
-"econ_political_forum_reports" {
+"discussion_board_reports" {
   String id PK
-  String reporter_id FK "nullable"
-  String reported_post_id FK "nullable"
-  String reported_thread_id FK "nullable"
-  String moderator_id FK "nullable"
-  String moderation_case_id FK "nullable"
-  String reason_code
-  String reporter_text "nullable"
-  Boolean reporter_anonymous
+  String reporter_member_id FK
+  String reporter_session_id FK "nullable"
+  String target_type
+  String target_id
+  String reason_category
+  String explanation "nullable"
   String status
-  String priority
   DateTime created_at
-  DateTime triaged_at "nullable"
-  DateTime reviewed_at "nullable"
-  DateTime resolved_at "nullable"
-  DateTime deleted_at "nullable"
-}
-"econ_political_forum_moderation_logs" {
-  String id PK
-  String moderator_id FK "nullable"
-  String target_post_id FK "nullable"
-  String target_thread_id FK "nullable"
-  String moderation_case_id FK "nullable"
-  String acted_admin_id FK "nullable"
-  String action_type
-  String reason_code
-  String rationale "nullable"
-  String evidence_reference "nullable"
-  DateTime created_at
-  DateTime deleted_at "nullable"
-}
-"econ_political_forum_moderation_cases" {
-  String id PK
-  String assigned_moderator_id FK "nullable"
-  String owner_admin_id FK "nullable"
-  String lead_report_id "nullable"
-  String case_number UK
-  String title "nullable"
-  String status
-  String priority
-  String summary "nullable"
-  String escalation_reason "nullable"
-  Boolean legal_hold
-  DateTime created_at
-  DateTime updated_at
+  DateTime processed_at "nullable"
   DateTime closed_at "nullable"
-  DateTime deleted_at "nullable"
 }
-"econ_political_forum_reports" }o--o| "econ_political_forum_moderation_cases" : moderationCase
-"econ_political_forum_moderation_logs" }o--o| "econ_political_forum_moderation_cases" : moderationCase
+"discussion_board_moderation_actions" {
+  String id PK
+  String moderator_id FK
+  String discussion_board_report_id FK "nullable"
+  String action_type
+  String action_reason "nullable"
+  Int action_duration_days "nullable"
+  String target_type "nullable"
+  String target_id "nullable"
+  DateTime created_at
+  DateTime effective_from "nullable"
+  DateTime effective_until "nullable"
+}
+"discussion_board_appeals" {
+  String id PK
+  String appellant_member_id FK
+  String moderation_action_id FK "nullable"
+  String report_id FK "nullable"
+  String explanation
+  String status
+  DateTime created_at
+  DateTime resolved_at "nullable"
+  String resolution_reason "nullable"
+}
+"discussion_board_moderation_audit" {
+  String id PK
+  String moderation_action_id FK "nullable"
+  String report_id FK "nullable"
+  String actor_moderator_id FK "nullable"
+  String event_type
+  String event_payload
+  DateTime occurred_at
+}
+"discussion_board_moderation_actions" }o--o| "discussion_board_reports" : report
+"discussion_board_appeals" }o--o| "discussion_board_moderation_actions" : moderationAction
+"discussion_board_appeals" }o--o| "discussion_board_reports" : report
+"discussion_board_moderation_audit" }o--o| "discussion_board_moderation_actions" : moderationAction
+"discussion_board_moderation_audit" }o--o| "discussion_board_reports" : report
 ```
 
-### `econ_political_forum_reports`
+### `discussion_board_reports`
 
-Structured user reports of potentially violating content (post or
-thread). Captures reporter identity (when available), selected reason
-code, optional reporter details, linkage to target content (post or
-thread), current processing status, moderation_case association, and SLA
-timestamps for triage and review. Adjusted to ensure referential
-integrity and audit preservation: reporter FK uses SET NULL semantics
-(preserve reports if user removed), removed incorrect generated
-reverse-array relation, and added composite indexes and GIN index for
-search. Includes explicit temporal fields and soft-delete for retention.
-[econ_political_forum_posts.id](#econ_political_forum_posts) {@link
-econ_political_forum_threads.id} {@link
-econ_political_forum_registereduser.id}
+Member-submitted reports of content (articles, comments, attachments).
+Implements a typed polymorphic target reference (target_type + target_id)
+to support reporting across multiple content types. Records reporter
+identity, optional reporter session, reason category, optional
+explanation, processing status and timestamps. Used to queue moderation
+work and aggregate report counts for automated thresholds. {@link
+discussion_board_member.id}
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reporter_id`
-  > Reporting user's [econ_political_forum_registereduser.id](#econ_political_forum_registereduser). Null if
-  > reporter requested anonymity or is unauthenticated.
-- `reported_post_id`
-  > Target post's [econ_political_forum_posts.id](#econ_political_forum_posts). Nullable if the
-  > report targets a thread instead.
-- `reported_thread_id`
-  > Target thread's [econ_political_forum_threads.id](#econ_political_forum_threads). Nullable if the
-  > report targets a post.
-- `moderator_id`
-  > Reviewing moderator's [econ_political_forum_moderator.id](#econ_political_forum_moderator).
-  > Populated when a moderator triages or acts on the report.
-- `moderation_case_id`
-  > Associated moderation case {@link
-  > econ_political_forum_moderation_cases.id} aggregating related reports for
-  > admin review.
-- `reason_code`
-  > Structured reason code selected by the reporter (e.g.,
-  > 'harassment','doxxing','misinformation','illegal_content','spam','other').
-  > Stored as string for flexibility and clarity.
-- `reporter_text`
-  > Optional free-text provided by reporter giving additional context (max
-  > 2000 chars recommended).
-- `reporter_anonymous`
-  > Whether the reporter requested anonymity from the content author/public.
-  > Moderators retain reporter identity in internal UI when available.
+- `reporter_member_id`: Reporting member's [discussion_board_member.id](#discussion_board_member).
+- `reporter_session_id`
+  > Reporting member session reference. {@link
+  > discussion_board_member_sessions.id}.
+- `target_type`
+  > Type of the reported target (e.g., 'article','comment','attachment').
+  > Used with target_id to implement a polymorphic reference.
+- `target_id`: Identifier of the reported target. Interpreted according to target_type.
+- `reason_category`
+  > Report reason category (enum-like values:
+  > 'Spam','Harassment','Misinformation','Illegal','Other').
+- `explanation`
+  > Optional reporter-provided explanation supporting the report (up to 1000
+  > characters).
 - `status`
-  > Processing state of the report (e.g.,
-  > 'pending','triaged','dismissed','action_taken','escalated').
-- `priority`
-  > Operational priority label for triage (e.g.,
-  > 'low','normal','high','urgent').
-- `created_at`: Report creation timestamp (immutable).
-- `triaged_at`: Timestamp when a moderator first acknowledged or triaged the report.
-- `reviewed_at`: Timestamp when a final review/action was recorded for the report.
-- `resolved_at`: Timestamp when the report was resolved (action taken or dismissed).
-- `deleted_at`
-  > Soft-delete timestamp for the report record when removal is required. Use
-  > sparingly; legal holds may prevent deletion.
+  > Processing status of the report (e.g., 'pending','triaged','resolved').
+  > Application enforces allowed values.
+- `created_at`: Report creation timestamp (ISO 8601 UTC).
+- `processed_at`: Timestamp when a moderator or automation first processed the report.
+- `closed_at`: Timestamp when the report was resolved/closed.
 
-### `econ_political_forum_moderation_logs`
+### `discussion_board_moderation_actions`
 
-Immutable moderation log entries recording actions taken by moderators or
-system actors. Each entry is append-only and includes actor reference,
-action type, linked content (post or thread), optional linkage to a
-moderation case, structured reason codes, and free-text rationale.
-Designed for legal audit, retention, and chronological reconstruction of
-moderation decisions. {@\link econ_political_forum_moderator.id} {@\link
-econ_political_forum_posts.id} {@\link econ_political_forum_threads.id}
-{@\link econ_political_forum_moderation_cases.id}
+Actions taken by moderators in response to reports or proactive
+moderation (hide, remove, warn, suspend, ban). Links to the acting
+moderator and optional originating report. Captures action semantics
+(type, reason, duration) and timestamps for SLA and audit. {@link
+discussion_board_moderator.id} [discussion_board_reports.id](#discussion_board_reports)
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `moderator_id`
-  > Acting moderator's {@\link econ_political_forum_moderator.id}. Nullable
-  > for system or automated actions.
-- `target_post_id`
-  > Target post affected by the action ({@\link
-  > econ_political_forum_posts.id}). Nullable if action targets a thread or
-  > user record.
-- `target_thread_id`
-  > Target thread affected by the action ({@\link
-  > econ_political_forum_threads.id}). Nullable if action targets a post.
-- `moderation_case_id`
-  > Associated moderation case {@\link
-  > econ_political_forum_moderation_cases.id} for grouped investigations.
-- `acted_admin_id`
-  > Acting administrator id when an admin performed or finalized the action
-  > ({@\link econ_political_forum_administrator.id}). Nullable.
-- `action_type`
-  > Type of moderation action (e.g.,
-  > 'hide','remove','warning','suspend','approve','escalate','merge','flag').
-- `reason_code`
-  > Structured policy reason code applied by the moderator (maps to policy
-  > clauses).
-- `rationale`
-  > Moderator-provided free-text rationale explaining the action (up to
-  > recommended 1000 chars).
-- `evidence_reference`
-  > Optional URI or reference id pointing to stored evidence bundles or
-  > archived snapshots (could be internal object id or URL).
-- `created_at`: Timestamp when the moderation action was recorded (immutable).
-- `deleted_at`: Soft-delete marker for the log entry (rare; prefer append-only retention).
+- `moderator_id`: Acting moderator's [discussion_board_moderator.id](#discussion_board_moderator).
+- `discussion_board_report_id`
+  > Optional originating report reference. {@link
+  > discussion_board_reports.id}.
+- `action_type`: Type of moderation action (e.g., 'hide','remove','warn','suspend','ban').
+- `action_reason`
+  > Moderator-provided reason or short note describing rationale for the
+  > action.
+- `action_duration_days`
+  > Optional duration (in days) for time-limited sanctions (e.g., suspension
+  > length). Null for permanent actions or non-duration actions.
+- `target_type`
+  > Polymorphic type of the action target (e.g.,
+  > 'article','comment','member').
+- `target_id`
+  > Identifier of the acted-upon resource; interpreted according to
+  > target_type.
+- `created_at`: Action creation timestamp.
+- `effective_from`: Optional time when the action becomes effective.
+- `effective_until`: Optional end time for time-limited actions.
 
-### `econ_political_forum_moderation_cases`
+### `discussion_board_appeals`
 
-Moderation case entity that aggregates related reports and moderation
-logs for administrator investigation, escalation, and appeals processing.
-Contains operational metadata for triage, assignment, legal hold
-flagging, and case lifecycle timestamps. Cases provide a single
-coordination point for researchers and admins while preserving immutable
-moderation_logs for audit.
+Appeals submitted by members contesting moderation outcomes. Each appeal
+references either a report or a moderation action (or both) and records
+the appellant, explanation, status, resolution metadata and timestamps.
+Appeals are processed by moderators and linked to audit entries. {@link
+discussion_board_member.id} [discussion_board_reports.id](#discussion_board_reports) {@link
+discussion_board_moderation_actions.id}
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `assigned_moderator_id`
-  > Moderator assigned to manage the case {@link
-  > econ_political_forum_moderator.id}. Nullable when unassigned.
-- `owner_admin_id`
-  > Administrator owner or final approver for the case {@link
-  > econ_political_forum_administrator.id}. Nullable.
-- `lead_report_id`
-  > Representative report id that initiated the case {@link
-  > econ_political_forum_reports.id}. Stored as uuid rather than a DB-level
-  > foreign key to avoid circular dependency.
-- `case_number`
-  > Human-friendly unique case identifier used in operations and
-  > communication (e.g., 'CASE-2025-0001').
-- `title`: Short case title summarizing the issue for quick identification.
-- `status`
-  > Lifecycle status of the case (e.g.,
-  > 'open','investigating','closed','on_hold').
-- `priority`: Operational priority label (e.g., 'low','normal','high','urgent').
-- `summary`
-  > Concise summary or executive note for the case; suitable for dashboards
-  > and quick reviews.
-- `escalation_reason`
-  > If escalated, the reason for escalation (e.g.,
-  > 'legal','law_enforcement','coordinated_activity').
-- `legal_hold`
-  > Whether a legal hold applies to the case and associated evidence; when
-  > true archival/deletion operations must be inhibited.
-- `created_at`: Case creation timestamp.
-- `updated_at`: Last update timestamp for the case.
-- `closed_at`: Timestamp when the case was closed/resolved.
-- `deleted_at`: Soft-delete timestamp for the case record (rare).
+- `appellant_member_id`: Appeal submitter's member id. [discussion_board_member.id](#discussion_board_member).
+- `moderation_action_id`
+  > Optional referenced moderation action. {@link
+  > discussion_board_moderation_actions.id}.
+- `report_id`
+  > Optional referenced report that motivated the moderation action. {@link
+  > discussion_board_reports.id}.
+- `explanation`: Member-provided explanation for the appeal (up to 2000 characters).
+- `status`: Appeal processing status (e.g., 'pending','accepted','rejected').
+- `created_at`: Appeal submission timestamp.
+- `resolved_at`: Timestamp when the appeal was resolved.
+- `resolution_reason`: Moderator-provided resolution note describing the outcome.
+
+### `discussion_board_moderation_audit`
+
+Append-only immutable audit entries capturing moderation-related events
+for compliance and investigations. Stores a canonical event_type,
+serialized event_payload (JSON as text), links to related moderation
+artifacts when available, and occurred_at for time-based queries. This
+model is append-only and intended for long-term retention. {@link
+discussion_board_moderation_actions.id} {@link
+discussion_board_reports.id}
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `moderation_action_id`
+  > Linked moderation action if applicable. {@link
+  > discussion_board_moderation_actions.id}.
+- `report_id`: Linked report if applicable. [discussion_board_reports.id](#discussion_board_reports).
+- `actor_moderator_id`
+  > Moderator or system actor responsible for the event. {@link
+  > discussion_board_moderator.id}.
+- `event_type`
+  > Canonical event type for the audit entry (e.g.,
+  > 'report.filed','moderation.action','appeal.submitted').
+- `event_payload`
+  > Serialized event payload (JSON stored as text) containing the full
+  > snapshot of the event for forensic reconstruction.
+- `occurred_at`: Timestamp when the audited event occurred.
 
 ## Notifications
 
 ```mermaid
 erDiagram
-"econ_political_forum_notifications" {
+"discussion_board_subscriptions" {
   String id PK
-  String registereduser_id FK
-  String actor_registereduser_id FK "nullable"
+  String discussion_board_member_id FK
+  String target_type
+  String target_id
+  String delivery_mode
+  Boolean active
+  DateTime last_notified_at "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_notifications" {
+  String id PK
+  String recipient_member_id FK
+  String discussion_board_subscription_id FK "nullable"
+  String discussion_board_article_id FK "nullable"
   String type
-  String title "nullable"
-  String body "nullable"
-  String payload
-  Boolean is_read
-  DateTime delivered_at "nullable"
+  String payload "nullable"
+  String status
+  Int priority
+  Int delivery_attempts
+  DateTime last_attempted_at "nullable"
+  DateTime next_retry_at "nullable"
+  DateTime scheduled_at
+  DateTime sent_at "nullable"
+  String fail_reason "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-  String related_thread_id "nullable"
-  String related_post_id "nullable"
-  String related_moderation_case_id "nullable"
 }
-"econ_political_forum_notification_preferences" {
+"discussion_board_notification_failures" {
   String id PK
-  String registereduser_id FK,UK
-  Boolean in_app
-  Boolean email
-  Boolean push
-  String preferences_payload "nullable"
+  String discussion_board_notification_id FK
+  Int attempt_number
+  DateTime attempted_at
+  String error_code "nullable"
+  String error_message "nullable"
+  DateTime backoff_until "nullable"
   DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
 }
+"discussion_board_notifications" }o--o| "discussion_board_subscriptions" : subscription
+"discussion_board_notification_failures" }o--|| "discussion_board_notifications" : notification
 ```
 
-### `econ_political_forum_notifications`
+### `discussion_board_subscriptions`
 
-User-facing notification events. Each record represents a single
-notification targeted to a registered user (recipient). Notifications are
-append-only events by business practice with soft-delete support. Records
-contain a small, flexible JSON payload (stored as string) for extensible
-delivery payloads (mentions, replies, moderation actions, system
-messages). Key relations: recipient ({@link
-econ_political_forum_registereduser.id}), optional actor ({@link
-econ_political_forum_registereduser.id}) who triggered the notification,
-and optional references to related domain entities (thread, post,
-moderation_case) stored as UUIDs for cross-component linkage. Optimized
-for fast per-recipient reads and supports marking notifications as read,
-delivery timestamps, and light audit fields.
+Member subscriptions to posts or authors. Stores which member subscribed
+to which target (polymorphic by target_type + target_id), delivery
+preference (immediate or daily_digest), active flag, and temporal fields
+for auditing and soft-delete. Includes a uniqueness constraint to prevent
+duplicate subscriptions per member and target.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `registereduser_id`
-  > Recipient registered user's {@link
-  > econ_political_forum_registereduser.id}.
-- `actor_registereduser_id`
-  > Optional actor (triggering user) {@link
-  > econ_political_forum_registereduser.id}. Nullable when system-generated.
-- `type`: Notification type code (e.g., 'mention', 'reply', 'moderation', 'system').
-- `title`
-  > Short human-readable title for the notification. Optional; used in UI
-  > summaries.
-- `body`: Optional short message body or plain-text excerpt for display in lists.
+- `discussion_board_member_id`
+  > Owning member's [discussion_board_member.id](#discussion_board_member). The subscriber who
+  > created the subscription.
+- `target_type`
+  > Type of subscription target. Examples: "article", "author". Application
+  > enforces allowed values.
+- `target_id`
+  > UUID of the target resource (article id or author/member id). Polymorphic
+  > target identifier; referential integrity enforced by application logic.
+- `delivery_mode`
+  > Delivery preference for this subscription. Allowed values: "immediate",
+  > "daily_digest".
+- `active`: Whether the subscription is active and eligible to receive notifications.
+- `last_notified_at`
+  > Timestamp of the last notification sent for this subscription (used for
+  > throttling/deduping).
+- `created_at`: Creation timestamp.
+- `updated_at`: Last update timestamp.
+- `deleted_at`: Soft-delete timestamp; null when not deleted.
+
+### `discussion_board_notifications`
+
+Queued notification messages targeted to members. Each record represents
+a delivery task produced by subscription events or direct notifications
+(mentions, system messages). Contains scheduling, delivery attempts,
+status, optional relation to article and originating subscription, and
+temporal fields for auditing. Managed by worker processes for delivery
+and retries.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `recipient_member_id`: Recipient member's [discussion_board_member.id](#discussion_board_member).
+- `discussion_board_subscription_id`
+  > Originating subscription's [discussion_board_subscriptions.id](#discussion_board_subscriptions).
+  > Nullable when notification was created outside a subscription (e.g.,
+  > mention).
+- `discussion_board_article_id`
+  > Optional related article [discussion_board_articles.id](#discussion_board_articles) that
+  > triggered the notification.
+- `type`: Notification type (e.g., "subscription_update", "mention", "system").
 - `payload`
-  > Flexible JSON payload (serialized as string) containing structured
-  > delivery data (links to thread/post ids, excerpt, metadata).
-- `is_read`: Whether the recipient has marked this notification as read.
-- `delivered_at`
-  > When the notification was delivered to the user (for push/email).
-  > Nullable if not yet delivered or for in-app only events.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`
-  > Soft-delete timestamp. When set, notification is treated as removed from
-  > normal listings but retained for audit.
-- `related_thread_id`
-  > Optional related thread id (referencing {@link
-  > econ_political_forum_threads.id}) stored as UUID for linkage. Nullable to
-  > avoid hard FK to other component in this schema file.
-- `related_post_id`
-  > Optional related post id (referencing {@link
-  > econ_political_forum_posts.id}) stored as UUID for linkage.
-- `related_moderation_case_id`
-  > Optional related moderation case id (referencing {@link
-  > econ_political_forum_moderation_cases.id}) stored as UUID for linkage.
+  > Opaque JSON payload or small text describing the notification content.
+  > Application enforces size limits.
+- `status`: Delivery status: "pending", "sent", or "failed".
+- `priority`: Delivery priority, higher values indicate earlier processing.
+- `delivery_attempts`: Number of delivery attempts made.
+- `last_attempted_at`: Timestamp of the last delivery attempt.
+- `next_retry_at`: Scheduled time for the next retry attempt (backoff).
+- `scheduled_at`
+  > When the notification is scheduled to be delivered (worker will consider
+  > scheduled_at <= now).
+- `sent_at`: Timestamp when notification was successfully delivered.
+- `fail_reason`: Optional short failure reason from last attempt.
+- `created_at`: Creation timestamp.
+- `updated_at`: Last update timestamp.
+- `deleted_at`: Soft-delete timestamp.
 
-### `econ_political_forum_notification_preferences`
+### `discussion_board_notification_failures`
 
-Per-user notification delivery preferences. One row per registered user
-controls channel-level toggles (in-app, email, push) and a flexible JSON
-string for per-notification-type overrides. Designed to be small and
-infrequently updated; referenced when enqueuing or delivering
-notifications. Links to registered users via a one-to-one foreign key
-constraint.
+Records of individual failed delivery attempts for notifications. Tracks
+attempt number, timestamp, error details and next backoff time to support
+retry scheduling and operational diagnostics. Each failure references a
+notification entry.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `registereduser_id`
-  > Belonged registered user's {@link
-  > econ_political_forum_registereduser.id}. One-to-one relationship enforced
-  > with a unique constraint.
-- `in_app`: Whether in-app notifications are enabled for the user.
-- `email`: Whether email notifications are enabled for the user.
-- `push`: Whether push notifications are enabled for the user.
-- `preferences_payload`
-  > Optional JSON-serialized per-type preference overrides (e.g.,
-  > {"mentions": {"email": false}}) stored as string for portability.
+- `discussion_board_notification_id`: Related notification's [discussion_board_notifications.id](#discussion_board_notifications).
+- `attempt_number`: Sequential attempt number for this delivery (1-based).
+- `attempted_at`: Timestamp when this delivery attempt occurred.
+- `error_code`: Optional short machine-readable error code from delivery channel.
+- `error_message`: Human-readable error message captured from the delivery attempt.
+- `backoff_until`
+  > If present, worker should not retry this notification until this
+  > timestamp (backoff/backpressure).
 - `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Soft-delete timestamp for preference records.
 
 ## Audit
 
 ```mermaid
 erDiagram
-"econ_political_forum_audit_logs" {
+"discussion_board_audit_logs" {
   String id PK
-  String registereduser_id FK "nullable"
-  String moderator_id FK "nullable"
-  String post_id FK "nullable"
-  String thread_id FK "nullable"
-  String report_id FK "nullable"
-  String moderation_case_id FK "nullable"
-  String action_type
-  String target_type
-  String target_identifier "nullable"
-  String details "nullable"
+  String event_type
+  DateTime event_timestamp
+  String resource_type "nullable"
+  String resource_id "nullable"
+  String actor_type
+  String actor_id "nullable"
+  String ip "nullable"
+  String user_agent "nullable"
+  String metadata "nullable"
   DateTime created_at
-  Boolean created_by_system
+  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"econ_political_forum_legal_holds" {
+"discussion_board_audit_log_accesses" {
   String id PK
-  String registereduser_id FK "nullable"
-  String post_id FK "nullable"
-  String thread_id FK "nullable"
-  String moderation_case_id FK "nullable"
-  String hold_reason
-  DateTime hold_start
-  DateTime hold_end "nullable"
-  Boolean is_active
-  String notes "nullable"
+  String discussion_board_audit_log_id FK
+  DateTime accessed_at
+  String accessor_type
+  String accessor_id "nullable"
+  String accessor_role "nullable"
+  String access_purpose "nullable"
+  String ip "nullable"
+  String user_agent "nullable"
+  String metadata "nullable"
   DateTime created_at
+  DateTime deleted_at "nullable"
 }
+"discussion_board_audit_log_accesses" }o--|| "discussion_board_audit_logs" : auditLog
 ```
 
-### `econ_political_forum_audit_logs`
+### `discussion_board_audit_logs`
 
-Immutable audit log entries capturing system and moderation events for
-compliance and incident investigation. Each record references acting
-principals and related objects (post, thread, report, moderation case).
-Relations intentionally use nullable foreign keys and MUST use SET NULL
-or RESTRICT on delete to preserve audit history when referenced objects
-are removed. This model is append-only and classified as a snapshot for
-retention and legal export workflows.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `registereduser_id`
-  > Acting user's [econ_political_forum_registereduser.id](#econ_political_forum_registereduser). Nullable
-  > for system actions.
-- `moderator_id`
-  > Acting moderator's [econ_political_forum_moderator.id](#econ_political_forum_moderator). Nullable
-  > when action is not by a moderator.
-- `post_id`
-  > Referenced post [econ_political_forum_posts.id](#econ_political_forum_posts). Nullable to
-  > preserve audit when posts are removed.
-- `thread_id`
-  > Referenced thread [econ_political_forum_threads.id](#econ_political_forum_threads). Nullable to
-  > preserve audit when threads are removed.
-- `report_id`
-  > Associated report [econ_political_forum_reports.id](#econ_political_forum_reports). Nullable to
-  > preserve audit records independent of report lifecycle.
-- `moderation_case_id`
-  > Associated moderation case {@link
-  > econ_political_forum_moderation_cases.id}. Nullable to preserve audit
-  > records independent of case lifecycle.
-- `action_type`
-  > Categorical action type (e.g., 'create', 'edit', 'delete', 'hide',
-  > 'warn', 'suspend', 'escalate', 'legal_disclosure').
-- `target_type`
-  > Type of target object (e.g.,
-  > 'post','thread','user','report','moderation_case').
-- `target_identifier`
-  > Canonical identifier of the target as a string for cross-domain queries;
-  > nullable when not applicable.
-- `details`
-  > Free-text or JSON-serialized details of the event (evidence snapshot,
-  > moderator rationale, metadata). Keep size reasonable; heavy binary
-  > artifacts should be stored externally and referenced by
-  > evidence_reference.
-- `created_at`: Timestamp when the audit entry was recorded (ISO 8601).
-- `created_by_system`
-  > Whether the entry was generated by an automated system (true) or by a
-  > human actor (false).
-
-### `econ_political_forum_legal_holds`
-
-Legal hold records that prevent deletion or purging of content subject to
-legal or investigatory requirements. Holds must persist independently of
-target object lifecycle; relations use nullable FKs and application/DB
-logic must prevent purge while holds are active. Classified as subsidiary
-because holds support enforcement rather than user-facing CRUD.
+Append-only audit log capturing system and user events for compliance and
+forensic analysis. Records generic events such as authentication events,
+moderation actions, exports, deletions and system events. Designed as a
+historical snapshot table: each row is a point-in-time immutable record
+describing an event. Uses polymorphic actor (actor_type + actor_id) and
+polymorphic resource references (resource_type + resource_id) to remain
+generic across domain objects. Retention, partitioning and access
+controls are expected to be implemented at operational level.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `registereduser_id`
-  > Administrator or legal officer who placed the hold. {@link
-  > econ_political_forum_registereduser.id}. Nullable when placed by
-  > system/legal process.
-- `post_id`
-  > If the hold targets a specific post, reference to {@link
-  > econ_political_forum_posts.id}. Nullable when the hold targets a thread
-  > or case.
-- `thread_id`
-  > If the hold targets a thread, reference to {@link
-  > econ_political_forum_threads.id}. Nullable when not applicable.
-- `moderation_case_id`
-  > Optional link to a related moderation case {@link
-  > econ_political_forum_moderation_cases.id} that motivated the hold.
-- `hold_reason`
-  > Short human-readable reason for the legal hold (e.g., 'subpoena', 'law
-  > enforcement request', 'litigation').
-- `hold_start`: Timestamp when the hold became effective (ISO 8601).
-- `hold_end`: Optional timestamp when the hold is scheduled to end; null if indefinite.
-- `is_active`: Whether the hold is currently active and prevents purging.
-- `notes`
-  > Optional free-text notes or case identifiers for internal use; do not
-  > expose sensitive PII in this field without access controls.
-- `created_at`: Timestamp when the hold record was created.
+- `event_type`
+  > Categorized event type (e.g., "auth.login", "moderation.action",
+  > "export.request", "attachment.quarantine"). Use hierarchical dot notation
+  > for filtering and analytics.
+- `event_timestamp`: Exact time when the audited event occurred (ISO 8601 UTC).
+- `resource_type`
+  > Logical type of the resource this event targets (e.g., "article",
+  > "comment", "attachment"). Nullable for system-level events with no
+  > resource.
+- `resource_id`
+  > UUID of the target resource when applicable. Kept nullable to allow
+  > non-resource events.
+- `actor_type`
+  > Actor classification that performed the action (e.g., "member",
+  > "moderator", "system", "guest"). Use this field to route to the correct
+  > actor subtype if needed.
+- `actor_id`
+  > Actor identifier (UUID) when applicable. Polymorphic; may reference a
+  > member, moderator or be null for system events.
+- `ip`: Origin IP address observed for the event, if available.
+- `user_agent`: User agent or client hint string captured at event time, if available.
+- `metadata`
+  > Arbitrary JSON payload stored as text for event-specific details
+  > (searchable via full-text/GIN index). Keep structured JSON small to avoid
+  > row bloat.
+- `created_at`
+  > Record insertion time. For audit semantics this should be set by the
+  > application to match event_timestamp where possible.
+- `updated_at`
+  > Record last-update time. By policy audit records are append-only; updates
+  > should be exceptional and logged.
+- `deleted_at`
+  > Nullable administrative soft-delete marker; production policy should
+  > restrict use and requires extra audit trail.
+
+### `discussion_board_audit_log_accesses`
+
+Access audit for audit-log reads. Records every access to audit records
+for accountability: who accessed which audit record, when, from where and
+for what declared purpose. This table provides an immutable trail of
+access attempts and is designed as a snapshot (append-only) table for
+compliance queries.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_audit_log_id`: Referenced audit log record. [discussion_board_audit_logs.id](#discussion_board_audit_logs).
+- `accessed_at`: Timestamp when the audit record was accessed (ISO 8601 UTC).
+- `accessor_type`: Type of accessor (e.g., "moderator", "administrator", "system").
+- `accessor_id`
+  > Identifier of the accessor when applicable (polymorphic reference to
+  > member/moderator account).
+- `accessor_role`
+  > Accessor role at time of access (e.g., "moderator", "audit_viewer").
+  > Useful for retrospective RBAC checks.
+- `access_purpose`
+  > Declared business reason for access (e.g., "appeal_review",
+  > "legal_request").
+- `ip`: IP address of accessor session when available.
+- `user_agent`: User agent string of accessor session when available.
+- `metadata`
+  > Optional JSON payload with contextual details about the access (e.g.,
+  > query parameters, filters used).
+- `created_at`: Record insertion time for the access event.
+- `deleted_at`: Nullable admin soft-delete marker. Use is restricted by policy.

@@ -15,148 +15,79 @@ export async function postAuthModeratorLogin(props: {
 }): Promise<IDiscussionBoardModerator.IAuthorized> {
   const { body } = props;
 
-  const moderator =
-    await MyGlobal.prisma.discussion_board_moderators.findUnique({
-      where: { email: body.email },
-    });
+  // Phase 1: Find moderator by username or email
+  const moderator = await MyGlobal.prisma.discussion_board_moderators.findFirst(
+    {
+      where: {
+        OR: [
+          { username: body.username_or_email },
+          { email: body.username_or_email },
+        ],
+      },
+    },
+  );
 
   if (!moderator) {
-    const loginHistoryId = v4();
-    const now = toISOStringSafe(new Date());
-
-    await MyGlobal.prisma.discussion_board_login_history.create({
-      data: {
-        id: loginHistoryId,
-        discussion_board_member_id: null,
-        discussion_board_moderator_id: null,
-        discussion_board_administrator_id: null,
-        email_attempted: body.email,
-        is_successful: false,
-        failure_reason: "account_not_found",
-        ip_address: "0.0.0.0",
-        device_type: "Unknown",
-        browser_info: "Unknown",
-        location: null,
-        created_at: now,
-      },
-    });
-
-    throw new HttpException("Invalid credentials", 401);
+    throw new HttpException("Invalid username/email or password", 401);
   }
 
+  // Phase 2: Verify password using PasswordUtil
   const isPasswordValid = await PasswordUtil.verify(
     body.password,
     moderator.password_hash,
   );
 
   if (!isPasswordValid) {
-    const loginHistoryId = v4();
-    const now = toISOStringSafe(new Date());
-
-    await MyGlobal.prisma.discussion_board_login_history.create({
-      data: {
-        id: loginHistoryId,
-        discussion_board_member_id: null,
-        discussion_board_moderator_id: moderator.id,
-        discussion_board_administrator_id: null,
-        email_attempted: body.email,
-        is_successful: false,
-        failure_reason: "incorrect_password",
-        ip_address: "0.0.0.0",
-        device_type: "Unknown",
-        browser_info: "Unknown",
-        location: null,
-        created_at: now,
-      },
-    });
-
-    throw new HttpException("Invalid credentials", 401);
+    throw new HttpException("Invalid username/email or password", 401);
   }
 
+  // Phase 3: Validate account status
   if (!moderator.email_verified) {
-    const loginHistoryId = v4();
-    const now = toISOStringSafe(new Date());
-
-    await MyGlobal.prisma.discussion_board_login_history.create({
-      data: {
-        id: loginHistoryId,
-        discussion_board_member_id: null,
-        discussion_board_moderator_id: moderator.id,
-        discussion_board_administrator_id: null,
-        email_attempted: body.email,
-        is_successful: false,
-        failure_reason: "email_not_verified",
-        ip_address: "0.0.0.0",
-        device_type: "Unknown",
-        browser_info: "Unknown",
-        location: null,
-        created_at: now,
-      },
-    });
-
-    throw new HttpException("Email not verified", 403);
+    throw new HttpException(
+      "Please verify your email address before logging in",
+      403,
+    );
   }
 
-  if (moderator.account_status !== "active") {
-    const loginHistoryId = v4();
-    const now = toISOStringSafe(new Date());
-
-    await MyGlobal.prisma.discussion_board_login_history.create({
-      data: {
-        id: loginHistoryId,
-        discussion_board_member_id: null,
-        discussion_board_moderator_id: moderator.id,
-        discussion_board_administrator_id: null,
-        email_attempted: body.email,
-        is_successful: false,
-        failure_reason: "account_suspended",
-        ip_address: "0.0.0.0",
-        device_type: "Unknown",
-        browser_info: "Unknown",
-        location: null,
-        created_at: now,
-      },
-    });
-
+  if (moderator.status !== "active") {
     throw new HttpException("Account is not active", 403);
   }
 
-  if (!moderator.is_active) {
-    const loginHistoryId = v4();
-    const now = toISOStringSafe(new Date());
+  // Phase 4: Create new session
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 30 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    await MyGlobal.prisma.discussion_board_login_history.create({
+  const sessionId = v4();
+
+  const session =
+    await MyGlobal.prisma.discussion_board_moderator_sessions.create({
       data: {
-        id: loginHistoryId,
-        discussion_board_member_id: null,
+        id: sessionId,
         discussion_board_moderator_id: moderator.id,
-        discussion_board_administrator_id: null,
-        email_attempted: body.email,
-        is_successful: false,
-        failure_reason: "account_suspended",
-        ip_address: "0.0.0.0",
-        device_type: "Unknown",
-        browser_info: "Unknown",
-        location: null,
-        created_at: now,
+        ip: body.ip ?? "unknown",
+        href: body.href,
+        referrer: body.referrer,
+        created_at: toISOStringSafe(now),
+        expired_at: toISOStringSafe(accessExpires),
       },
     });
 
-    throw new HttpException("Moderator privileges are disabled", 403);
-  }
+  // Phase 5: Update last_login_at
+  await MyGlobal.prisma.discussion_board_moderators.update({
+    where: { id: moderator.id },
+    data: {
+      last_login_at: toISOStringSafe(now),
+    },
+  });
 
-  const now = toISOStringSafe(new Date());
-  const accessExpiration = toISOStringSafe(
-    new Date(Date.now() + 30 * 60 * 1000),
-  );
-  const refreshExpiration = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-
+  // Phase 6: Generate JWT tokens
   const accessToken = jwt.sign(
     {
-      id: moderator.id,
       type: "moderator",
+      id: moderator.id,
+      session_id: session.id,
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -167,84 +98,45 @@ export async function postAuthModeratorLogin(props: {
 
   const refreshToken = jwt.sign(
     {
+      type: "moderator",
       id: moderator.id,
-      type: "refresh",
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "7d",
+      expiresIn: "30d",
       issuer: "autobe",
     },
   );
 
-  const sessionId = v4();
-  const refreshTokenId = v4();
-
-  await MyGlobal.prisma.discussion_board_sessions.create({
-    data: {
-      id: sessionId,
-      discussion_board_member_id: null,
-      discussion_board_moderator_id: moderator.id,
-      discussion_board_administrator_id: null,
-      access_token_hash: accessToken,
-      device_type: "Unknown",
-      browser_info: "Unknown",
-      ip_address: "0.0.0.0",
-      location: null,
-      is_active: true,
-      expires_at: accessExpiration,
-      last_activity_at: now,
-      created_at: now,
-      revoked_at: null,
-    },
-  });
-
-  await MyGlobal.prisma.discussion_board_refresh_tokens.create({
-    data: {
-      id: refreshTokenId,
-      discussion_board_session_id: sessionId,
-      refresh_token_hash: refreshToken,
-      expires_at: refreshExpiration,
-      is_revoked: false,
-      created_at: now,
-      revoked_at: null,
-    },
-  });
-
-  const loginHistoryId = v4();
-  await MyGlobal.prisma.discussion_board_login_history.create({
-    data: {
-      id: loginHistoryId,
-      discussion_board_member_id: null,
-      discussion_board_moderator_id: moderator.id,
-      discussion_board_administrator_id: null,
-      email_attempted: body.email,
-      is_successful: true,
-      failure_reason: null,
-      ip_address: "0.0.0.0",
-      device_type: "Unknown",
-      browser_info: "Unknown",
-      location: null,
-      created_at: now,
-    },
-  });
-
-  await MyGlobal.prisma.discussion_board_moderators.update({
-    where: { id: moderator.id },
-    data: {
-      last_login_at: now,
-      last_activity_at: now,
-      updated_at: now,
-    },
-  });
-
+  // Phase 7: Return authorized response
   return {
     id: moderator.id,
+    username: moderator.username,
+    email: moderator.email,
+    display_name: moderator.display_name ?? undefined,
+    bio: moderator.bio ?? undefined,
+    location: moderator.location ?? undefined,
+    website_url: moderator.website_url ?? undefined,
+    profile_picture_url: moderator.profile_picture_url ?? undefined,
+    email_verified: moderator.email_verified,
+    status: moderator.status,
+    moderation_permissions: moderator.moderation_permissions,
+    profile_visibility: moderator.profile_visibility,
+    activity_visibility: moderator.activity_visibility,
+    last_login_at: toISOStringSafe(now),
+    created_at: toISOStringSafe(moderator.created_at),
+    updated_at: toISOStringSafe(moderator.updated_at),
+    deleted_at: moderator.deleted_at
+      ? toISOStringSafe(moderator.deleted_at)
+      : undefined,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpiration,
-      refreshable_until: refreshExpiration,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
     },
   };
 }

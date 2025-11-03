@@ -1,928 +1,732 @@
-# Functional Requirements - Todo List Application
+# Functional Requirements for Todo List Application
 
-## Functional Requirements Overview
+## 1. Overview
 
-The Todo List Application provides a simple, focused system for users to manage their personal todo items. This document defines all functional requirements from a business perspective, specifying what the system must accomplish without prescribing technical implementation details.
-
-The application supports three user roles with different levels of access:
-- **Guest Users**: Can only access authentication endpoints; cannot access todo operations
-- **Authenticated Users**: Can perform full CRUD (Create, Read, Update, Delete) operations on their own todos
-- **Administrators**: Have elevated system access for administrative functions
-
-This document focuses primarily on the functional requirements for authenticated users, as they represent the core business functionality of the todo management system.
+This document specifies the complete functional requirements for the Todo List application. It defines what users can do with the system, how the system behaves, what data is managed, and all business rules that govern todo operations. This specification is designed for backend developers to understand and implement the core todo management system.
 
 ---
 
-## User Authentication Context
+## 2. Core Todo Management Features
 
-### Role-Based Access to Todo Operations
+### 2.1 Todo Creation
 
-WHEN a guest user attempts to access todo operations (create, read, update, or delete), THE system SHALL deny access and redirect to authentication endpoints.
+WHEN a user submits a request to create a new todo, THE system SHALL validate all required fields and store the todo with all provided information.
 
-WHEN an authenticated user logs in successfully, THE system SHALL grant them full access to their personal todo operations and data.
+WHEN a user attempts to create a todo without providing a title, THE system SHALL reject the operation with error code INVALID_INPUT_EMPTY_TITLE and display the message "Todo title cannot be empty".
 
-WHEN an administrator accesses the system, THE system SHALL provide administrative capabilities including full system access and monitoring functions.
+WHEN a user provides a title exceeding 255 characters, THE system SHALL reject the operation with error code INVALID_INPUT_TITLE_TOO_LONG and display the message "Todo title cannot exceed 255 characters".
 
-### User Capability Summary
+THE system SHALL automatically assign a unique identifier to each created todo item that does not conflict with any existing todo.
 
-| User Role | Create | Read Own | Read All | Update Own | Update All | Delete Own | Delete All |
-|-----------|:------:|:--------:|:--------:|:----------:|:----------:|:----------:|:----------:|
-| Guest | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Authenticated User | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ | ❌ |
-| Administrator | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+THE system SHALL automatically record the creation timestamp in UTC format when a todo is created, and this timestamp SHALL never be modified.
 
----
+THE system SHALL initialize the new todo in the "Active" status upon creation.
 
-## Todo Creation Requirements
+WHEN a user provides optional fields (description, due date, priority), THE system SHALL validate these fields according to their specific requirements and reject the creation if any validation fails.
 
-### Requirement 1: Basic Todo Creation
+### 2.2 Todo Viewing & Retrieval
 
-WHEN an authenticated user submits a request to create a new todo, THE system SHALL accept the todo with the following minimum required information:
-- **Title/Description**: A text field containing the todo's primary content
-- **Completion Status**: Initially set to incomplete (false) by default
+WHEN a user requests their todo list, THE system SHALL retrieve all todos associated with the authenticated user and return them sorted by creation date with newest todos first.
 
-The system SHALL store the todo permanently in the database and return a confirmation with the newly created todo's identifier.
+WHEN a user views their todo list, THE system SHALL display each todo with its complete properties: ID, title, description, status, priority, due date, created date, modified date, and completion date (if applicable).
 
-### Requirement 2: Todo Ownership and Association
+WHEN a user requests a filtered view (active only, completed only), THE system SHALL apply the filter and return only todos matching the filter criteria.
 
-WHEN a todo is created, THE system SHALL automatically associate it with the authenticated user who created it using the user's unique identifier from their authentication token.
+IF a user has no todos, THEN THE system SHALL display an empty list indication and provide guidance on creating a first todo.
 
-THE system SHALL ensure that each todo belongs to exactly one user and cannot be shared across multiple users in the basic system. NO todo can be created without explicit user association.
+### 2.3 Todo Updating
 
-### Requirement 3: Todo Creation Response
+WHEN a user modifies a todo item, THE system SHALL update only the specified fields while validating each modified field according to its validation rules.
 
-WHEN a todo is successfully created, THE system SHALL return to the client:
-- The unique identifier for the created todo (UUID format)
-- All properties of the newly created todo including title, completion status, and timestamps
-- A success confirmation message indicating the operation completed
-- HTTP status code 201 (Created) indicating successful creation
+WHEN a user updates a todo title, THE title SHALL meet all title validation requirements (non-empty, maximum 255 characters, valid characters).
 
-THE client application SHALL display the newly created todo immediately in the user's list without requiring a page refresh.
+WHEN a user updates a todo description, THE description SHALL not exceed 2000 characters and SHALL be a valid string value.
 
-### Requirement 4: Mandatory Field Validation for Creation
+WHEN a user updates a todo due date, THE due date SHALL be a valid calendar date in ISO 8601 format (YYYY-MM-DD) and SHALL not be in the past.
 
-WHEN a user attempts to create a todo without providing a title/description, THE system SHALL reject the request and return a validation error.
+WHEN a user updates a todo priority, THE priority SHALL be one of the three valid values: "low", "medium", or "high".
 
-IF the title/description field is empty (zero-length string) or contains only whitespace characters (spaces, tabs, newlines), THEN THE system SHALL reject the creation request immediately.
+WHEN a user updates a todo status, THE new status SHALL be one of the valid values: "active" or "completed".
 
-THE system SHALL provide a specific error message: "Todo title cannot be empty. Please enter a title for your todo."
+THE system SHALL automatically record the last modification timestamp whenever a todo is updated, and this timestamp SHALL reflect the exact time of the most recent change.
 
-### Requirement 5: Title Length Constraints
+IF a user provides invalid data for any field during an update, THEN THE system SHALL reject the entire update operation and return specific error messages for each invalid field.
 
-THE system SHALL accept todo titles with a minimum of 1 character and a maximum of 255 characters.
+THE system SHALL preserve all unchanged properties from the previous state when performing partial updates.
 
-IF a user submits a title exceeding 255 characters, THEN THE system SHALL reject the creation and inform the user of the character limit with error message: "Todo title cannot exceed 255 characters. Current: [X] characters."
+### 2.4 Todo Deletion
 
-IF a user submits a title that is exactly 255 characters, THEN THE system SHALL accept the title without error and display remaining character count as "0 characters remaining."
+WHEN a user requests to delete a todo, THE system SHALL verify the user owns that todo before proceeding with deletion.
 
-### Requirement 6: Initial Status Assignment
+WHEN a user confirms deletion, THE system SHALL permanently remove the todo from the database.
 
-WHEN a new todo is created by an authenticated user, THE system SHALL automatically assign the completion status as "incomplete" (false).
+WHEN a todo is successfully deleted, THE system SHALL immediately remove it from all queries and user-facing views.
 
-THE user SHALL NOT be able to specify a different initial status during creation. ATTEMPTS to set initial status to "completed" during creation SHALL be ignored, and the system SHALL always assign "incomplete" status.
+IF a user attempts to delete a todo they do not own, THEN THE system SHALL deny the operation with error code ACCESS_DENIED_TODO_NOT_OWNED and display the message "You do not have permission to delete this todo".
 
-### Requirement 7: Timestamp Assignment
+THE system SHALL not provide any recovery or "undo" mechanism for deleted todos - deletion is permanent and final.
 
-WHEN a todo is created, THE system SHALL automatically capture the exact date and time of creation using the server's current UTC time.
+### 2.5 Todo Completion & Status Management
 
-THE creation timestamp SHALL be stored in ISO 8601 format with millisecond precision (e.g., "2024-10-16T08:30:45.123Z").
+WHEN a user marks a todo as "completed", THE system SHALL record the completion timestamp indicating when the todo was marked as finished.
 
-THE creation timestamp SHALL never be modifiable; it represents the permanent record of when the todo was created.
+WHEN a user marks a previously completed todo back to "active", THE system SHALL change the status to "active" and clear or remove the completion timestamp.
 
-### Requirement 8: Duplicate Content Handling
+WHEN a user marks a todo as completed, THE system SHALL update the "modified date" to the current timestamp while preserving the original "created date".
 
-THE system SHALL allow authenticated users to create multiple todos with identical titles.
+THE system SHALL allow users to change the status of any todo between "active" and "completed" states regardless of previous status changes.
 
-THE system SHALL NOT enforce uniqueness constraints on todo content or titles. MULTIPLE todos with the same exact title and description SHALL be permitted to coexist.
-
-EACH duplicate todo SHALL receive a unique internal identifier (UUID) so they can be individually managed, edited, and deleted.
-
-### Requirement 9: Creation Under Network Conditions
-
-WHEN a user creates a todo while experiencing poor network connectivity, THE system SHALL queue the creation request locally.
-
-IF the creation request fails to reach the server within 30 seconds, THE system SHALL save the todo locally with "pending creation" status.
-
-WHEN network connectivity is restored, THE system SHALL automatically attempt to transmit the pending todo to the server.
-
-IF automatic transmission succeeds, THE system SHALL replace the local pending status with the server-assigned permanent todo ID and confirmation.
-
-### Requirement 10: Rapid Successive Creation
-
-WHEN an authenticated user rapidly creates multiple todos in succession (multiple requests within 1 second), THE system SHALL queue all creation requests and process them sequentially.
-
-THE system SHALL return confirmation for each created todo with its unique identifier.
-
-THE system SHALL display progress to the user: "Creating todos... (3 of 5 completed)" when multiple creations are in progress.
+WHEN a user views their todo list, THE system SHALL clearly distinguish completed todos from active todos through visual indicators or separate list sections.
 
 ---
 
-## Todo Reading and Display Requirements
+## 3. Todo Item Lifecycle & States
 
-### Requirement 11: Retrieve All User Todos
+### 3.1 Todo States
 
-WHEN an authenticated user requests to view their todos, THE system SHALL retrieve all todos belonging to that user from the database.
+Each todo item exists in one of two primary states throughout its lifecycle:
 
-THE system SHALL return all todos in a single comprehensive list, regardless of their completion status.
+1. **Active State**: The todo is incomplete and requires action from the user
+2. **Completed State**: The todo has been marked as done by the user
 
-BOTH completed and incomplete todos SHALL be included in the retrieval response.
+### 3.2 State Transitions
 
-### Requirement 12: Todo List Organization and Display Order
+Todos transition between states according to these rules:
 
-THE system SHALL organize todos in a specific order when displaying the user's list:
-- PRIMARY sort: Incomplete todos first, completed todos second
-- SECONDARY sort: Within each group, sort by creation date with newest first (most recent first)
+- WHEN a todo is created, THE status SHALL always default to "Active"
+- WHEN a user marks a todo as complete, THE status SHALL transition from "Active" to "Completed"
+- WHEN a user marks a previously completed todo as incomplete, THE status SHALL transition from "Completed" back to "Active"
+- IF a todo is deleted while in either state, THEN THE todo is permanently removed and no state information remains
 
-EXAMPLE: A list with creation times would display as:
-1. Incomplete todo created today (newest incomplete)
-2. Incomplete todo created yesterday
-3. Completed todo created this morning (newest completed)
-4. Completed todo created last week
-
-THE display order SHALL be consistent and predictable to provide familiarity to users across multiple sessions.
-
-### Requirement 13: Individual Todo Retrieval
-
-WHEN an authenticated user requests a specific todo by its identifier, THE system SHALL retrieve that todo and return the complete todo data including:
-- Unique identifier (UUID)
-- Title/description text
-- Completion status (true for completed, false for incomplete)
-- Creation timestamp (ISO 8601 format in UTC)
-- Last modified timestamp (ISO 8601 format in UTC)
-
-THE system SHALL verify that the requesting user owns the requested todo before returning the data.
-
-IF the user does not own the requested todo, THE system SHALL deny access with authorization error (HTTP 403).
-
-### Requirement 14: Empty List Handling
-
-WHEN an authenticated user has no todos, THE system SHALL return an empty list (empty array) rather than an error response.
-
-THE system SHALL clearly indicate to the user that they have no todos when applicable, with message: "You have no todos yet. Create your first todo to get started."
-
-THE system SHALL prominently display a "Create New Todo" button or call-to-action to encourage users to create their first todo.
-
-### Requirement 15: User Isolation in Display
-
-THE system SHALL ensure that each authenticated user can ONLY view their own todos through the read/list endpoints.
-
-WHEN a user requests their todo list, THE system SHALL return ONLY todos created by that user using their user ID from the authentication token.
-
-IF a user attempts to view another user's todos (even through direct ID reference), THE system SHALL deny access immediately and return authorization error.
-
-THE system SHALL NOT disclose whether the attempted todo exists or belongs to another user; the error SHALL be generic to prevent information disclosure.
-
-### Requirement 16: Performance of Large Lists
-
-WHEN a user has accumulated a large number of todos (100, 500, or 1000+ items), THE system SHALL retrieve and display them within acceptable timeframe.
-
-THE system SHALL not degrade performance as the todo list grows. Response times SHALL remain consistent regardless of list size.
-
-IF the frontend chooses to implement pagination or lazy loading for UI performance, THE system MAY provide todos in batches or pages through separate API endpoints.
-
-THE system SHALL support retrieving all todos in a single request and SHALL also support pagination parameters (limit/offset or page/size) for flexible client implementation.
-
-### Requirement 17: Real-Time List Synchronization
-
-WHEN a user performs any modification to a todo (create, update, delete, status change), THE list of todos displayed to the user SHALL reflect the change immediately.
-
-THE system SHALL transmit updated todo list to the client within 500 milliseconds of the operation completion.
-
-IF the user performs multiple operations in succession, THE system SHALL update the display list after each operation completes.
-
----
-
-## Todo Update Requirements
-
-### Requirement 18: Edit Todo Title/Description
-
-WHEN an authenticated user submits an update to an existing todo's title/description, THE system SHALL accept the new text content and update the todo permanently in persistent storage.
-
-THE system SHALL validate the new title according to the same rules as creation (1-255 characters, non-empty, not whitespace-only).
-
-ONLY the user who owns the todo SHALL be able to edit that todo's properties.
-
-### Requirement 19: Update Completion Status
-
-WHEN an authenticated user updates a todo's completion status, THE system SHALL toggle the status between completed (true) and incomplete (false).
-
-THE system SHALL support updating the completion status independently from the title/description; either can be updated without modifying the other.
-
-THE system SHALL support explicit status assignment (setting to "completed" OR "incomplete") not just toggling.
-
-### Requirement 20: Update Response
-
-WHEN a todo is successfully updated, THE system SHALL return to the client:
-- The complete updated todo with all current properties
-- Updated timestamp reflecting the modification (different from creation timestamp)
-- HTTP status code 200 (OK) indicating successful update
-- A success confirmation message
-
-THE client application SHALL display the updated todo properties immediately in the list view without requiring manual refresh.
-
-### Requirement 21: Update Authorization Validation
-
-WHEN an authenticated user attempts to update a todo, THE system SHALL first verify that the todo belongs to that user (user's ID matches the todo's owner ID).
-
-IF a user attempts to update a todo they do not own, THEN THE system SHALL deny the operation with HTTP 403 (Forbidden) authorization error.
-
-THE system SHALL NOT reveal whether the todo exists or belongs to someone else; authorization errors SHALL be generic.
-
-### Requirement 22: Non-Existent Todo Handling for Updates
-
-IF a user attempts to update a todo that does not exist in the database, THEN THE system SHALL return HTTP 404 (Not Found) error with message: "The requested todo was not found or has been deleted."
-
-THE system SHALL NOT create a new todo or modify any other data in response to an update on non-existent todo.
-
-IF a user deletes a todo and immediately attempts to update it, THE system SHALL return "todo not found" error.
-
-### Requirement 23: Partial Update Support
-
-THE system SHALL support partial updates where a user can update either the title OR the completion status without requiring both properties to be submitted in the request.
-
-WHEN only the title is provided in an update request, THE system SHALL update only the title and preserve the existing completion status.
-
-WHEN only the completion status is provided, THE system SHALL update only the status and preserve the existing title.
-
-WHEN both properties are provided, THE system SHALL update both simultaneously.
-
-THE system SHALL update the modification timestamp for any update operation, regardless of which properties are changed.
-
-### Requirement 24: Concurrent Update Handling
-
-WHEN multiple update operations are submitted for the same todo nearly simultaneously, THE system SHALL apply them sequentially in the order received.
-
-THE final state SHALL reflect the most recent update; earlier updates may be overwritten by later ones.
-
-THE system SHALL use appropriate database locking mechanisms to ensure atomicity and prevent data corruption.
-
-THE system SHALL not create conflicts or merge states; the last update wins strategy applies.
-
-### Requirement 25: Update Validation Requirements
-
-WHEN an updated todo title is provided, THE system SHALL validate:
-- Title is not empty or whitespace-only
-- Title length is between 1 and 255 characters
-- Title does not contain only control characters
-
-WHEN an updated completion status is provided, THE system SHALL validate:
-- Status is either "completed" (true) or "incomplete" (false)
-- Status is a valid boolean value
-- Status is not null or undefined
-
-IF validation fails, THE system SHALL reject the update and return validation error with specific message indicating what is invalid.
-
----
-
-## Todo Delete Requirements
-
-### Requirement 26: Delete Todo Operation
-
-WHEN an authenticated user submits a delete request for a specific todo, THE system SHALL permanently remove that todo from the database.
-
-The deletion SHALL be permanent and cannot be reversed through the application. NO undo functionality or soft delete is implemented in this minimal system.
-
-THE system SHALL remove all associated data with the deleted todo including timestamps, title, and status information.
-
-### Requirement 27: Delete Authorization Validation
-
-WHEN an authenticated user attempts to delete a todo, THE system SHALL verify that the todo belongs to that user (user's ID matches the todo's owner ID).
-
-IF a user attempts to delete a todo they do not own, THEN THE system SHALL deny the operation with HTTP 403 (Forbidden) authorization error.
-
-THE system SHALL NOT reveal whether the todo exists or belongs to someone else; authorization errors SHALL be generic to prevent information disclosure.
-
-### Requirement 28: Delete Confirmation Response
-
-WHEN a todo is successfully deleted, THE system SHALL return to the client:
-- A success confirmation message: "Todo deleted successfully"
-- The identifier of the deleted todo (for reference)
-- HTTP status code 200 (OK) or 204 (No Content) indicating successful deletion
-- No remaining data for the deleted todo in the response
-
-THE client application SHALL immediately remove the deleted todo from the displayed list without requiring a page refresh.
-
-### Requirement 29: Delete Non-Existent Todo
-
-IF a user attempts to delete a todo that does not exist or has already been deleted, THEN THE system SHALL return HTTP 404 (Not Found) error.
-
-THE system SHALL NOT throw an exception or enter an error state; deletion of non-existent todo SHALL be treated as idempotent.
-
-THE system SHALL return success response to the user (no error displayed) when attempting to delete already-deleted todo; the result is the same (todo is not in system).
-
-### Requirement 30: Bulk Delete Prevention
-
-THE system SHALL prevent accidental bulk deletion by requiring individual delete requests for each todo.
-
-WHEN a user attempts to delete multiple todos, EACH deletion action SHALL require a separate delete request and separate authorization check.
-
-THE system SHALL NOT provide a "delete all completed todos" or "delete all todos" function in this minimal implementation.
-
----
-
-## Todo Status Management
-
-### Requirement 31: Status Toggle Operation
-
-WHEN an authenticated user marks a todo as complete, THE system SHALL set the completion status to true and update the last modified timestamp to current UTC time.
-
-WHEN an authenticated user marks a todo as incomplete, THE system SHALL set the completion status to false and update the last modified timestamp to current UTC time.
-
-THE system SHALL update the modification timestamp regardless of whether status is being toggled to a different value or set to its current state.
-
-### Requirement 32: Status State Clarity
-
-THE system SHALL maintain exactly two distinct states for todo completion:
-- **Incomplete** (false): Todo task has not been completed by the user
-- **Completed** (true): Todo task has been completed by the user
-
-THE system SHALL clearly reflect these states to the user when retrieving todos through visual distinction in the user interface (strikethrough, color change, checkbox state, etc.).
-
-THE system SHALL NOT support intermediate states like "in progress," "pending," "paused," or any other status values.
-
-### Requirement 33: Status Persistence
-
-WHEN a user changes a todo's completion status, THE system SHALL immediately persist the status change to the database.
-
-THE new status SHALL be permanently stored and SHALL be reflected when the user accesses their todo list in future sessions.
-
-THE status change SHALL not be lost due to browser refreshes, application restarts, or other events.
-
-### Requirement 34: Status History
-
-THE system SHALL record the current status of each todo but SHALL NOT maintain a complete history of status changes (in this minimal implementation).
-
-If a user marks a todo complete, then incomplete, then complete again, THE system SHALL simply reflect the current status as "complete."
-
-No historical record of the previous status changes SHALL be maintained or accessible to the user.
-
----
-
-## Data Validation Rules
-
-### Requirement 35: Title/Description Validation
-
-THE system SHALL validate that the title/description field:
-- Is not null, undefined, or completely missing
-- Is not an empty string (zero-length)
-- Does not contain ONLY whitespace characters (spaces, tabs, newlines)
-- Is a text string data type (not boolean, array, or object)
-- Does not exceed 255 characters in length
-- Does not fall below 1 character minimum
-- Accepts any valid UTF-8 encoded characters including letters, numbers, punctuation, emojis, and special characters
-
-WHEN validating title length, THE system SHALL count actual characters as UTF-8 encoded strings, not bytes.
-
-### Requirement 36: Completion Status Validation
-
-THE system SHALL validate that the completion status field:
-- Is a boolean data type with value of true or false only
-- Is not null, undefined, or any other value
-- Accepts only literal boolean values, not string representations like "true", "false", "1", or "0"
-
-IF the system receives a string "true" or "false", THE system SHALL reject it as invalid data type and return validation error.
-
-### Requirement 37: Identifier Validation
-
-THE system SHALL validate that todo identifiers:
-- Are unique within the entire system
-- Follow UUID version 4 format (36 characters with hyphens)
-- Are not modifiable by users under any circumstances
-- Are automatically assigned by the system at creation time
-- Are immutable throughout the todo's entire lifecycle
-
-### Requirement 38: Timestamp Validation
-
-THE system SHALL automatically manage timestamps with the following rules:
-- **Created Timestamp**: Set once at todo creation and never modified by any operation
-- **Modified Timestamp**: Updated each time the todo is modified; initially set to same value as created timestamp
-- Both timestamps SHALL use ISO 8601 format in UTC timezone (e.g., "2024-10-16T14:30:45.123Z")
-- Both timestamps SHALL include millisecond precision (three decimal places for fractional seconds)
-- Timestamps SHALL never be in the future (before current server time)
-
-### Requirement 39: User Association Validation
-
-THE system SHALL validate that:
-- Each todo is associated with exactly one user ID (no orphaned todos)
-- A todo's user association cannot be changed after creation (immutable)
-- Only the associated user can perform read, update, or delete operations on that todo
-- Administrators can access any user's todos for system administration purposes
-
----
-
-## Business Rules
-
-### Requirement 40: One Todo List Per User
-
-WHEN an authenticated user accesses their todos, THE system SHALL operate on a single personal todo list per user.
-
-THE system SHALL not support shared todos between multiple users, collaborative editing, or multi-user todos in this minimum viable implementation.
-
-EACH user's todos SHALL be completely separate and isolated from all other users' todos.
-
-### Requirement 41: Todo Immutability of User Association
-
-THE user association of a todo SHALL be immutable once the todo is created.
-
-IF a todo is created by User A, it SHALL always belong to User A and cannot be reassigned to another user by any operation.
-
-USER A can delete the todo, but that doesn't transfer it to another user; it simply removes it from the system.
-
-### Requirement 42: Permanent Data Persistence
-
-WHEN a todo is created or modified, THE system SHALL immediately persist the data to permanent database storage.
-
-THE system SHALL not support draft or temporary todo states; all todos are permanent upon creation.
-
-WHEN the application is closed and reopened, THE system SHALL retrieve all previously created todos in their last saved state.
-
-WHEN the user's device or browser is restarted, THE system SHALL preserve all todo data without loss.
-
-### Requirement 43: No Todo Archival or Soft Delete
-
-THE system SHALL permanently delete todos when requested rather than archiving or soft-deleting them.
-
-THERE SHALL be no archive function, trash bin, or recovery of permanently deleted todos.
-
-ONCE a todo is deleted through the delete operation, IT SHALL NOT be accessible, listed, or recoverable through the application.
-
-### Requirement 44: Operational Idempotency for Status Changes
-
-WHEN marking a todo as complete multiple times without changing its status between completions, THE system SHALL return success each time without creating duplicate states or side effects.
-
-IF a user sends "mark as complete" request for an already-completed todo, THE system SHALL:
-- Return success response (HTTP 200)
-- Keep status as completed
-- Update the modification timestamp
-- Not treat this as an error
-
-REPEATED operations on the same state SHALL not produce different results than the first operation.
-
-### Requirement 45: No Automatic Todo Deletion
-
-THE system SHALL NOT automatically delete todos based on age, status, inactivity, or any other criteria.
-
-TODOS SHALL persist indefinitely in the system unless explicitly deleted by the user.
-
-A todo that was marked as completed 1 year ago SHALL still be accessible and available in the user's list indefinitely.
-
-### Requirement 46: No Status Dependencies
-
-THE system SHALL NOT enforce dependencies between todo statuses.
-
-COMPLETING one todo SHALL NOT automatically affect, change, or modify the status of any other todo.
-
-THERE SHALL be no concept of "blocking" todos, "dependent" todos, or "prerequisite" todos in this minimal system.
-
----
-
-## Complete CRUD Operation Workflows
-
-### Workflow 1: Create Todo Operation - Complete Specification
-
-**User Objective**: Add a new task to their todo list
-
-**Preconditions**:
-- User is authenticated with valid session token
-- User is on the application interface
-- Create todo form is accessible and visible
-
-**Step-by-Step Process**:
-
-1. **User Initiation**: User opens the application and views their current todo list
-2. **Action Selection**: User clicks the "Create New Todo", "Add Todo", or "+" button to initiate creation
-3. **Form Display**: System displays a form with a text input field for the todo title/description
-4. **User Input**: User enters a meaningful title or description (e.g., "Buy groceries for dinner")
-5. **Form Submission**: User submits the form by clicking "Add Todo" button or pressing Enter key
-6. **Server-Side Validation**: 
-   - System validates the input title is not empty
-   - System validates title is not longer than 255 characters
-   - System validates title does not contain only whitespace
-   - System verifies user is authenticated
-7. **Todo Creation**: System creates the todo with:
-   - Automatically generated unique identifier (UUID v4)
-   - User-provided title
-   - Completion status automatically set to "incomplete" (false)
-   - Creation timestamp set to current server time in UTC
-   - Associated with the authenticated user's user ID
-   - Modification timestamp initialized to same value as creation timestamp
-8. **Database Storage**: System saves the todo to persistent database
-9. **Response Generation**: System returns success response containing the created todo object with all properties
-10. **Client Update**: System displays the new todo in the user's list view at appropriate sort position (with other incomplete todos, sorted newest first)
-11. **Confirmation Display**: System displays success confirmation message to the user
-12. **Form Reset**: The input form clears and is immediately ready for the next todo entry
-13. **User Feedback**: User receives visual confirmation that todo was created (notification, list update, sound if enabled)
-
-**Data Returned on Success**:
-```json
-{
-  "todoId": "550e8400-e29b-41d4-a716-446655440000",
-  "title": "Buy groceries for dinner",
-  "isCompleted": false,
-  "createdAt": "2024-10-16T14:30:45.123Z",
-  "updatedAt": "2024-10-16T14:30:45.123Z"
-}
+```mermaid
+graph LR
+    A["Created (Active)"] -->|"User marks complete"| B["Completed"]
+    B -->|"User marks incomplete"| A
+    A -->|"User deletes"| C["Deleted (Removed)"]
+    B -->|"User deletes"| C
 ```
 
-**Success Criteria**:
-- THE new todo appears immediately in the todo list view
-- THE todo displays the exact title the user entered
-- THE todo shows "incomplete" or unchecked status indicator
-- THE form clears and is ready for new entries
-- THE user receives visual confirmation of successful creation
-- THE todo receives unique ID that can be used for future operations
-- THE todo is permanently saved and survives session/app restarts
+### 3.3 Lifecycle Events & Timestamps
 
-**Error Paths**:
+THE system SHALL record the following events and timestamps for each todo:
 
-- **If user enters empty title**:
-  1. System displays validation error message "Todo title cannot be empty"
-  2. System prevents form submission and keeps form open
-  3. Form data is preserved so user can correct without re-entering
-  4. User corrects input and resubmits
-  5. System creates todo on next successful validation
+- **Created Event**: Recorded when the todo is first created (creation_date timestamp in UTC)
+- **Modified Event**: Recorded every time the todo properties are changed (modified_date timestamp in UTC, automatically updated on each change)
+- **Completed Event**: Recorded when the todo status changes to "Completed" (completion_date timestamp in UTC)
+- **Deleted Event**: Permanent removal when the user deletes the todo (no recovery possible)
 
-- **If user enters title exceeding 255 characters**:
-  1. System displays error "Todo title cannot exceed 255 characters"
-  2. System shows current character count and limit
-  3. System prevents form submission
-  4. User shortens the title
-  5. System creates todo after title is within limit
-
-- **If network error occurs during creation**:
-  1. System detects connection failure
-  2. System displays error "Unable to create todo. Please check your connection and try again."
-  3. User's form input is preserved in temporary local storage
-  4. User can retry after connection is restored
-  5. System automatically attempts retry when connection restored
-  6. Todo is created on successful retry
-
-- **If database is full or quota exceeded**:
-  1. System displays error "Storage is full. Please delete some todos and try again."
-  2. System prevents creation
-  3. User deletes some completed todos to free space
-  4. System allows creation after space is available
+WHEN a todo transitions from "Completed" back to "Active", THE completion_date SHALL be cleared and the modified_date SHALL be updated to the current timestamp.
 
 ---
 
-### Workflow 2: Read/Retrieve Todos Operation - Complete Specification
+## 4. Todo Item Properties & Data
 
-**User Objective**: See all their todos to understand their task list and current workload
+### 4.1 Required Properties
 
-**Preconditions**:
-- User is authenticated
-- User has previously created one or more todos (or zero todos for empty state)
-- User is viewing the main dashboard/todo list view
+EVERY todo item that exists in the system SHALL contain the following required properties:
 
-**Step-by-Step Process**:
+**Todo ID**: 
+- UNIQUE identifier for each todo
+- Automatically generated by the system
+- Immutable after creation
+- Never shared between different todos
+- Format: UUID or sequential integer
 
-1. **User Navigation**: User opens or navigates to the main todo list page/dashboard
-2. **Request Initiation**: System automatically requests todos for the authenticated user (triggered on page load)
-3. **Database Retrieval**: System queries database for all todos belonging to the authenticated user
-4. **Query Execution**: System retrieves todos from persistent storage matching the user's ID
-5. **Data Organization**: 
-   - System sorts todos with incomplete first, completed second
-   - Within each status group, sorts by creation date (newest first)
-   - System prepares complete todo objects with all properties
-6. **Response Preparation**: System formats retrieved todos as list/array of todo objects
-7. **Client Reception**: Client receives list of todos (may be empty array if user has zero todos)
-8. **Display Rendering**: System renders each todo with:
-   - Todo title/description
-   - Completion status indicator (visual distinction: unchecked/checked, normal/strikethrough, etc.)
-   - Timestamp information (if shown to user)
-   - Action buttons (edit, delete, mark complete/incomplete)
-   - All interactive controls for todo management
-9. **Empty State Handling**: If user has no todos:
-   - System displays empty state message "No todos yet"
-   - System shows encouragement to create first todo
-   - System displays prominent "Create New Todo" button
-10. **Large List Handling**: If user has many todos (50+):
-   - System implements pagination or infinite scroll as needed
-   - System loads todos in batches for performance
-   - System allows navigation through pages or scrolling to load more
-11. **Display Completion**: System displays fully rendered todo list to user within 2 seconds
-12. **User Interaction Ready**: User can immediately interact with any todo (click edit, delete, mark complete)
+**Title/Description**:
+- THE main text content describing what the user needs to do
+- REQUIRED when creating a todo
+- CAN be updated after creation
+- REPRESENTS the primary way users identify and understand their task
+- MAXIMUM length: 255 characters
+- CANNOT be empty or contain only whitespace
 
-**Data Returned on Success**:
-```json
-[
-  {
-    "todoId": "550e8400-e29b-41d4-a716-446655440000",
-    "title": "Buy groceries",
-    "isCompleted": false,
-    "createdAt": "2024-10-16T14:30:45.123Z",
-    "updatedAt": "2024-10-16T14:30:45.123Z"
-  },
-  {
-    "todoId": "550e8400-e29b-41d4-a716-446655440001",
-    "title": "Complete project report",
-    "isCompleted": false,
-    "createdAt": "2024-10-16T10:15:20.456Z",
-    "updatedAt": "2024-10-16T10:15:20.456Z"
-  },
-  {
-    "todoId": "550e8400-e29b-41d4-a716-446655440002",
-    "title": "Call dentist",
-    "isCompleted": true,
-    "createdAt": "2024-10-15T09:00:00.789Z",
-    "updatedAt": "2024-10-16T11:30:10.234Z"
-  }
-]
-```
+**Status**:
+- CURRENT state of the todo ("Active" or "Completed")
+- ALWAYS has a value at all times
+- DEFAULTS to "Active" when a todo is created
+- CAN be changed by the user at any time
+- ONLY two valid values allowed: "Active" or "Completed"
 
-**Success Criteria**:
-- ALL todos created by the user are displayed in the list
-- COMPLETED and incomplete todos are clearly visually distinguished
-- EACH todo shows its title, status, and available action buttons
-- THE list is organized logically (incomplete first, then completed; newest first within each group)
-- THE data loads within expected timeframe (< 2 seconds for typical todo counts)
-- USERS can quickly identify which todos are complete and which need attention
-- THE list updates immediately after any todo operation (create, update, delete)
-- EMPTY state is handled gracefully with encouragement to create first todo
+**Created Date**:
+- TIMESTAMP when the todo was first created
+- Automatically set by the system
+- RECORDED in UTC format with complete timestamp information
+- NEVER changes throughout the todo's lifetime
+- Preserved even if the todo is updated or status changes
 
-**Error Paths**:
+**Modified Date**:
+- TIMESTAMP of the most recent modification to the todo
+- Automatically updated whenever any property of the todo changes
+- RECORDED in UTC format with complete timestamp information
+- INITIALLY matches the created date when todo is first created
+- UPDATED every time user makes any change (title, status, description, etc.)
 
-- **If user has no todos**:
-  1. System displays empty state message "No todos yet. Create your first todo!"
-  2. System prominently displays "Create New Todo" button
-  3. No errors displayed
-  4. User can immediately click to create first todo
+**User ID**:
+- REFERENCE to the user who owns this todo
+- Used for data isolation and access control
+- Determines which user can view, modify, and delete the todo
+- Immutable after creation
+- CANNOT be changed to another user
 
-- **If database query fails**:
-  1. System displays error "Unable to load your todos. Please refresh the page."
-  2. System attempts automatic retry
-  3. If retry succeeds, todos are displayed
-  4. If retry fails, user can manually refresh page or try again later
-  5. System may display cached todos if available while reconnecting
+### 4.2 Optional Properties
 
-- **If network connection is lost**:
-  1. System displays "No internet connection. Displaying cached todos."
-  2. System shows previously loaded todos from local cache
-  3. System indicates that updates will sync when connection restored
-  4. User can still view todos but cannot create/edit/delete until online
+**Due Date**:
+- OPTIONAL deadline for when the todo should be completed
+- CAN be any future date (not past)
+- USER can set, change, or remove the due date
+- HELPS user prioritize and organize tasks
+- FORMAT: ISO 8601 date format (YYYY-MM-DD) without time component
+- MUST NOT be in the past; system rejects past dates
 
-- **If todos load very slowly (large list, 1000+ items)**:
-  1. System displays loading indicator "Loading your todos..."
-  2. System implements pagination or lazy loading
-  3. System displays first batch of todos quickly
-  4. Additional todos load as user scrolls or navigates pages
-  5. Performance remains acceptable even with large dataset
+**Priority Level**:
+- OPTIONAL ranking of the todo's importance
+- THREE levels only: "Low", "Medium", "High"
+- USER can set or change the priority
+- HELPS user understand task importance at a glance
+- DEFAULTS to "Medium" if user does not specify
+- IF not specified, system uses neutral/medium priority state
+
+**Description (Extended)**:
+- OPTIONAL detailed information about the todo
+- LONGER-form explanation or notes beyond the title
+- USER can provide or remove
+- MAXIMUM length: 2000 characters
+- HELPS user remember context and details about the task
+
+**Completion Date**:
+- ONLY populated when todo status is "Completed"
+- Automatically set when user marks todo as done
+- RECORDED in UTC format with complete timestamp
+- CLEARED when user marks todo as incomplete again
+- PRESERVED in historical data after creation
 
 ---
 
-### Workflow 3: Update Todo Operation - Complete Specification
+## 5. Complete Todo Workflows
 
-**User Objective**: Edit an existing todo's title or mark it as complete/incomplete
+### 5.1 Create Todo Workflow
 
-**Preconditions**:
-- User is authenticated
-- User is viewing their todo list
-- At least one todo exists that user owns
-- User has identified the specific todo to update
+WHEN a user initiates todo creation, THE following steps SHALL occur:
 
-**Step-by-Step Process for Title Update**:
+1. User accesses the todo creation interface
+2. User provides a todo title (required)
+3. User optionally provides description, due date, and/or priority
+4. User submits the creation form
+5. System validates the title is not empty and does not exceed 255 characters
+6. System validates the due date (if provided) is not in the past and is valid format
+7. System validates the priority (if provided) is one of: Low, Medium, High
+8. IF all validation passes, THEN system creates the todo with unique ID
+9. System automatically records creation timestamp in UTC
+10. System sets status to "Active"
+11. System associates todo with the authenticated user
+12. System returns the created todo to the user with all properties populated
+13. User sees the new todo immediately in their list
 
-1. **Todo Selection**: User views their todo list and identifies a todo they want to edit
-2. **Edit Activation**: User clicks "Edit" button or similar action for the specific todo
-3. **Form Display**: System opens an edit form or inline editing interface showing:
-   - Current todo title in an input field
-   - Action buttons: "Save" and "Cancel"
-   - Character count indicator (current/max)
-4. **User Edit**: User modifies the todo title as needed:
-   - User may add additional details to clarify task
-   - User may correct spelling or grammar
-   - User may completely change the title
-   - User may clear and start over
-5. **Form Submission**: User clicks "Save" button or presses Enter to confirm changes
-6. **Server-Side Validation**:
-   - System validates that user is authenticated
-   - System validates that the new title is not empty
-   - System validates title length is 1-255 characters
-   - System verifies authenticated user owns this todo
-7. **Ownership Verification**: If user does not own the todo:
-   - System denies operation with authorization error
-   - System displays "Unauthorized to edit this todo"
-   - No update occurs
-8. **Update Processing**: System updates the todo with new title
-9. **Timestamp Update**: System automatically updates modification timestamp to current UTC time
-10. **Database Storage**: System saves updated todo to persistent database
-11. **Response Return**: System returns updated todo object with all current properties
-12. **Display Update**: System returns to list view and displays the updated todo with new title
-13. **Confirmation**: System displays success message "Todo updated successfully"
+**Validation Performed**:
+- Title cannot be empty
+- Title cannot exceed 255 characters
+- Due date (if provided) must be valid ISO 8601 format
+- Due date cannot be in the past
+- Priority (if provided) must be one of: Low, Medium, High
+- User must be authenticated
 
-**Step-by-Step Process for Status Update**:
+### 5.2 View Todos Workflow
 
-1. **Todo Viewing**: User views their todo list
-2. **Status Change**: User clicks the checkbox, complete button, or status toggle for a specific todo
-3. **Status Determination**: 
-   - If todo is currently incomplete, user action changes it to complete
-   - If todo is currently complete, user action changes it to incomplete
-4. **Status Update**: System updates the todo's completion status in opposite state
-5. **Timestamp Update**: System updates modification timestamp to current UTC time
-6. **Database Save**: System saves updated status to database
-7. **Display Refresh**: System immediately updates the todo's visual appearance:
-   - Completed todos show strikethrough or grayed out styling
-   - Incomplete todos show normal styling
-8. **List Reorganization**: System may reorganize list if status change affects sort order:
-   - If todo changed from incomplete to complete, it moves to completed section
-   - If todo changed from complete to incomplete, it moves to incomplete section
-9. **Confirmation**: System displays brief confirmation of status change
+WHEN a user requests their todo list, THE following steps SHALL occur:
 
-**Data Update Example**:
-```json
-// Original todo
-{
-  "todoId": "550e8400-e29b-41d4-a716-446655440000",
-  "title": "Buy milk",
-  "isCompleted": false,
-  "createdAt": "2024-10-16T08:30:45.123Z",
-  "updatedAt": "2024-10-16T08:30:45.123Z"
-}
+1. User accesses the todo dashboard or list view
+2. System verifies user is authenticated
+3. System retrieves all todos owned by the authenticated user
+4. System sorts todos by creation date (newest first) by default
+5. System optionally applies any user-specified filters
+6. System returns complete list with all todo properties
+7. User receives complete todo list organized by preference
+8. User can see all todos with their current status and properties
 
-// After edit request to change title
-{
-  "todoId": "550e8400-e29b-41d4-a716-446655440000",
-  "title": "Buy milk and eggs",
-  "isCompleted": false,
-  "createdAt": "2024-10-16T08:30:45.123Z",
-  "updatedAt": "2024-10-16T14:45:20.567Z"  // Updated timestamp
-}
-```
+**Viewing Options**:
+- View all todos (active and completed)
+- View only active todos
+- View only completed todos
+- View single todo details by ID
 
-**Success Criteria**:
-- THE todo title/status is updated to the new value provided by user
-- THE change is immediately visible in the list view
-- THE modification is persistent (persists across page refresh and sessions)
-- THE todo's completion status is not affected by title edits (and vice versa)
-- THE modification timestamp is updated to current time
-- THE creation timestamp remains unchanged
-- THE user receives confirmation of successful edit
-- ONLY the owner of the todo can edit it
+### 5.3 Update Todo Workflow
 
-**Error Paths**:
+WHEN a user modifies an existing todo, THE following steps SHALL occur:
 
-- **If user enters empty title**:
-  1. System displays validation error "Todo title cannot be empty"
-  2. System keeps the edit form open for correction
-  3. System preserves existing title as fallback
-  4. User corrects input and resubmits
-  5. System saves changes on successful validation
+1. User selects a todo to modify
+2. User provides new values for one or more properties
+3. System validates all provided values according to their specific rules
+4. IF all validation passes, THEN system updates only the specified properties
+5. System preserves all unchanged properties from the previous state
+6. System automatically records modification timestamp to current UTC time
+7. System updates the "modified date" field
+8. System returns the updated todo to the user
+9. User sees the todo immediately reflected with new values in the list
 
-- **If user enters title exceeding 255 characters**:
-  1. System displays error "Todo title exceeds maximum length (255 characters)"
-  2. System shows current character count and limit
-  3. System keeps edit form open
-  4. User shortens the title
-  5. System saves after title is within acceptable length
+**Modifiable Properties**:
+- Title (must be non-empty, max 255 characters)
+- Description (optional, max 2000 characters)
+- Due date (optional, must be future date or today)
+- Priority (optional, must be Low/Medium/High or removed)
+- Status (must be Active or Completed)
 
-- **If user is not the owner**:
-  1. System detects authorization failure
-  2. System displays error "Unauthorized to edit this todo"
-  3. No update occurs
-  4. User is returned to their own todo list
+### 5.4 Mark Todo Complete Workflow
 
-- **If todo no longer exists**:
-  1. System detects that todo cannot be found
-  2. System displays error "This todo no longer exists or has been deleted"
-  3. System removes the todo from the displayed list
-  4. User is returned to main todo list
+WHEN a user marks a todo as complete, THE following steps SHALL occur:
 
-- **If network fails during update**:
-  1. System detects connection loss
-  2. System displays error "Unable to save changes. Please try again."
-  3. System preserves the edited content in temporary storage
-  4. User can retry when connection is restored
-  5. Changes are persisted on successful retry
+1. User selects an active todo from their list
+2. User clicks "mark complete" or similar button
+3. System changes the status from "Active" to "Completed"
+4. System records the completion timestamp in UTC format
+5. System updates the modified timestamp to current time
+6. System displays confirmation to user
+7. Todo immediately updates appearance (strikethrough, moved to completed section)
+8. User can still view the completed todo
+9. User can still modify the completed todo's properties
+10. User can revert the completion status if needed
 
-- **If user clicks Cancel**:
-  1. System closes the edit form without saving
-  2. System returns to list view
-  3. Original todo title/status remains unchanged
-  4. No persistence or update occurs
+### 5.5 Mark Todo Incomplete Workflow
+
+WHEN a user changes a completed todo back to active, THE following steps SHALL occur:
+
+1. User selects a completed todo from the list
+2. User clicks "mark incomplete" or similar button
+3. System changes the status from "Completed" to "Active"
+4. System clears the completion timestamp
+5. System updates the modified timestamp to current time
+6. System displays confirmation to user
+7. Todo immediately returns to the active section
+8. Todo appears as an active task requiring attention
+9. User can continue working with the reactivated todo
+
+### 5.6 Delete Todo Workflow
+
+WHEN a user requests to delete a todo, THE following steps SHALL occur:
+
+1. User selects a todo (active or completed)
+2. User clicks delete button and confirms deletion
+3. System verifies the user owns the todo (user_id matches authenticated user)
+4. System displays confirmation dialog: "Are you sure? This cannot be undone."
+5. User confirms deletion
+6. System permanently removes the todo from the database
+7. System confirms deletion to the user with success message
+8. Todo is no longer available in any queries or views
+9. Todo cannot be recovered or restored
 
 ---
 
-### Workflow 4: Delete Todo Operation - Complete Specification
+## 6. Business Rules & Validation Requirements
 
-**User Objective**: Remove a todo from their list permanently
+### 6.1 Todo Creation Validation Rules
 
-**Preconditions**:
-- User is authenticated
-- User is viewing their todo list
-- At least one todo exists that user owns
-- User has identified the specific todo to delete
+WHEN a user creates a todo, THE title/description field SHALL be required and non-empty.
 
-**Step-by-Step Process**:
+WHEN a user submits an empty title field, THE system SHALL reject with error code INVALID_INPUT_EMPTY_TITLE and message "Todo title cannot be empty".
 
-1. **Todo Selection**: User views their todo list
-2. **Delete Activation**: User clicks the "Delete" button, trash icon, or similar delete action for a specific todo
-3. **Confirmation Display**: System displays a confirmation dialog with:
-   - Message: "Are you sure you want to delete this todo? This action cannot be undone."
-   - Todo title displayed for user to confirm they're deleting the correct item
-   - "Confirm Delete" button
-   - "Cancel" button for changing mind
-4. **User Confirmation**: User clicks "Confirm Delete" button to proceed with deletion
-5. **Authorization Check**:
-   - System verifies user is authenticated
-   - System verifies the user owns this todo
-   - If authorization fails, system displays error and aborts deletion
-6. **Delete Execution**: System removes the todo record completely from the database
-7. **Deletion Verification**: System confirms deletion was successful in database
-8. **Response**: System returns success confirmation to client
-9. **Display Update**: System removes the deleted todo from the displayed list immediately
-10. **Confirmation Message**: System displays confirmation "Todo deleted successfully"
+THE title/description SHALL NOT exceed 255 characters in length.
 
-**If User Cancels**:
-1. User clicks "Cancel" button in confirmation dialog
-2. System closes the dialog without performing any deletion
-3. System returns to the todo list
-4. Todo remains in list completely unchanged
-5. No database changes occur
+WHEN a user provides a title exceeding 255 characters, THE system SHALL reject with error code INVALID_INPUT_TITLE_TOO_LONG and message "Todo title cannot exceed 255 characters".
 
-**Success Criteria**:
-- THE todo is completely removed from the system and list
-- THE deleted todo does not appear anywhere in the application
-- THE deletion is permanent and immediate (no undo within app)
-- THE user receives clear confirmation that deletion was successful
-- ONLY the owner of the todo can delete it
-- CONFIRMATION is required before deletion (prevents accidental deletion)
-- OTHER todos in the list are not affected by this deletion
+WHEN a user provides a due date, THE date SHALL be a valid calendar date in ISO 8601 format (YYYY-MM-DD).
 
-**Error Paths**:
+WHEN a user provides an invalid due date format, THE system SHALL reject with error code INVALID_INPUT_DATE_FORMAT and message "Due date must be in YYYY-MM-DD format".
 
-- **If user is not the owner**:
-  1. System detects authorization failure
-  2. System displays error "Unauthorized to delete this todo"
-  3. Todo remains in list unchanged
-  4. Deletion does not occur
+WHEN a user provides a due date in the past, THE system SHALL reject with error code INVALID_INPUT_PAST_DATE and message "Due date cannot be in the past".
 
-- **If todo no longer exists**:
-  1. System attempts to delete but cannot find the todo
-  2. System treats as successful deletion (idempotent operation)
-  3. System removes todo from UI if still displaying it
-  4. User receives confirmation "Todo deleted successfully"
+WHEN a user provides a priority level, THE priority SHALL be one of: "Low", "Medium", or "High".
 
-- **If database connection fails**:
-  1. System detects connection error during deletion
-  2. System displays error "Unable to delete todo. Please try again."
-  3. Todo remains in database and list
-  4. User can retry deletion when connection is restored
+WHEN a user provides an invalid priority value, THE system SHALL reject with error code INVALID_INPUT_PRIORITY and message "Priority must be 'Low', 'Medium', or 'High'".
 
-- **If user cancels the confirmation**:
-  1. System closes confirmation dialog
-  2. System returns to list view
-  3. Todo remains completely unchanged
-  4. No deletion occurs
+IF priority is not specified by the user during creation, THEN the system SHALL automatically assign "Medium" as the default priority.
 
----
+### 6.2 Todo Update Validation Rules
 
-## Constraint Specifications
+WHEN a user updates a todo, THE system SHALL update only the properties specified in the request.
 
-### Minimum Feature Set Constraint
+THE system SHALL preserve all unchanged properties from the previous state.
 
-THE system SHALL provide only essential CRUD operations for todo management in this implementation.
+WHEN a user updates the title, THE new title SHALL meet the same requirements as creation (non-empty, max 255 characters, valid characters).
 
-THE system SHALL NOT include the following features:
-- ❌ Due dates or deadline management
-- ❌ Priority levels or urgency indicators
-- ❌ Categories, tags, or custom labels
-- ❌ Recurring or repeating todos
-- ❌ Todo dependencies or subtasks
-- ❌ Collaboration or sharing features
-- ❌ Real-time synchronization across multiple devices
-- ❌ Rich text formatting or markdown support
-- ❌ Attachments or file uploads
-- ❌ Notifications or reminders
-- ❌ Comments or notes sections
-- ❌ Time tracking or estimation
+IF a user attempts to update title to empty, THEN the system SHALL reject with error INVALID_INPUT_EMPTY_TITLE.
 
-### Single User Focus Constraint
+IF a user attempts to update title exceeding 255 characters, THEN the system SHALL reject with error INVALID_INPUT_TITLE_TOO_LONG.
 
-THE system SHALL be designed for single-user usage within a session.
+WHEN a user updates the description, THE new description SHALL not exceed 2000 characters.
 
-While the system technically supports multiple users through role-based access control, EACH user operates independently on their own todos without cross-user visibility or interaction.
+IF a user attempts to update description exceeding 2000 characters, THEN the system SHALL reject with error INVALID_INPUT_DESCRIPTION_TOO_LONG.
 
-### Data Limits Constraint
+WHEN a user updates the due date, THE new date SHALL be a valid calendar date and not in the past.
 
-THE system SHALL support a minimum of 1,000 todos per user without performance degradation.
+IF a user attempts to update due date to past, THEN the system SHALL reject with error INVALID_INPUT_PAST_DATE.
 
-THE system SHALL accept todo titles up to 255 characters as specified in data requirements.
+WHEN a user updates the priority, THE new priority SHALL be one of: "Low", "Medium", or "High".
 
----
+IF a user attempts to update priority to invalid value, THEN the system SHALL reject with error INVALID_INPUT_PRIORITY.
 
-## Summary of Functional Requirements
+WHEN a user updates the status to "Completed", THE system SHALL automatically record the completion timestamp.
 
-The Todo List Application provides authenticated users with core functionality to:
+WHEN a user updates the status to "Active", THE system SHALL clear any existing completion timestamp.
 
-1. **Create** new todos with title and automatic incomplete status
-2. **Read/Retrieve** all personal todos in organized list view
-3. **Update** todo titles and completion status independently
-4. **Delete** todos permanently when no longer needed
+### 6.3 Data Consistency Rules
 
-All operations are user-specific (users can only access their own todos), permanently persisted to the database, and validated according to business rules specified in this document. The system maintains data integrity through authorization checks and comprehensive validation to ensure only valid todos are stored and only authorized users can access their data.
+THE system SHALL maintain referential integrity between todos and users.
 
-The minimal set of features keeps the application focused and simple while providing the essential todo management capabilities users require for personal task organization and tracking.
+EVERY todo SHALL have an associated user_id that corresponds to an existing user account.
+
+THE system SHALL never allow a todo to exist without an associated user.
+
+THE system SHALL never allow duplicate todo IDs.
+
+WHEN a user is deleted, THE system SHALL delete all todos owned by that user (cascade delete).
+
+THE system SHALL maintain data consistency across all timestamps (never store timestamp data with errors).
+
+### 6.4 Data Isolation Rules
+
+THE system SHALL only allow users to view their own todos.
+
+WHEN a user queries their todos, THE system SHALL return only todos where user_id matches the authenticated user's id.
+
+THE system SHALL only allow users to modify their own todos.
+
+WHEN a user attempts to modify a todo, THE system SHALL verify ownership before allowing the modification.
+
+THE system SHALL only allow users to delete their own todos.
+
+WHEN a user attempts to delete a todo, THE system SHALL verify ownership before allowing deletion.
+
+IF a user attempts to access a todo belonging to another user, THEN the system SHALL deny access with error code ACCESS_DENIED_TODO_NOT_OWNED.
+
+### 6.5 Status & Lifecycle Rules
+
+WHEN a todo is created, THE status SHALL always default to "Active".
+
+THE system SHALL only allow two status values: "Active" and "Completed".
+
+IF a user attempts to set status to any value other than these two, THEN the system SHALL reject with error code INVALID_INPUT_STATUS.
+
+THE system SHALL not delete todos based on status (both active and completed todos can be deleted by the user).
+
+WHEN a todo is in "Completed" status, THE completion_date SHALL contain a valid timestamp.
+
+WHEN a todo is in "Active" status, THE completion_date SHALL be null or empty.
+
+### 6.6 Timestamp Rules
+
+THE system SHALL automatically generate and assign creation_date upon todo creation.
+
+THE system SHALL automatically generate and assign modified_date upon todo creation.
+
+THE creation_date SHALL never change throughout the todo's lifetime.
+
+THE modified_date SHALL be updated whenever any property of the todo is changed.
+
+WHEN a todo's status changes to "Completed", THE system SHALL generate a completion_date timestamp.
+
+WHEN a todo's status changes to "Active", THE system SHALL clear the completion_date timestamp.
+
+ALL timestamps SHALL be recorded in UTC timezone and stored in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ).
 
 ---
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team. The document describes WHAT the system should do from a business perspective, not HOW to build it. Developers have full autonomy over architectural decisions, API design, database schema, technology stack, and implementation details.*
+## 7. Error Handling & Recovery
+
+### 7.1 Validation Error Scenarios
+
+**Empty Title Error:**
+- Scenario: User attempts to create a todo without providing a title
+- Error Code: INVALID_INPUT_EMPTY_TITLE
+- HTTP Status: 400 Bad Request
+- User Message: "Please enter a title for your todo. The title cannot be empty."
+- System Action: Reject the request and return error to user
+- Recovery: User provides title and resubmits
+
+**Title Too Long Error:**
+- Scenario: User provides a title exceeding 255 characters
+- Error Code: INVALID_INPUT_TITLE_TOO_LONG
+- HTTP Status: 400 Bad Request
+- User Message: "Your title is too long. Please keep it under 255 characters."
+- System Action: Reject the request and suggest maximum length
+- Recovery: User shortens title and resubmits
+
+**Invalid Date Format Error:**
+- Scenario: User provides a due date not in YYYY-MM-DD format
+- Error Code: INVALID_INPUT_DATE_FORMAT
+- HTTP Status: 400 Bad Request
+- User Message: "Please provide the date in YYYY-MM-DD format (example: 2025-12-31)."
+- System Action: Reject the request and show expected format
+- Recovery: User enters date in correct format and resubmits
+
+**Past Due Date Error:**
+- Scenario: User attempts to set a due date in the past
+- Error Code: INVALID_INPUT_PAST_DATE
+- HTTP Status: 400 Bad Request
+- User Message: "Due date cannot be in the past. Please select today or a future date."
+- System Action: Reject the request and keep previous due date
+- Recovery: User selects valid future date and resubmits
+
+**Invalid Priority Error:**
+- Scenario: User provides a priority value that is not Low/Medium/High
+- Error Code: INVALID_INPUT_PRIORITY
+- HTTP Status: 400 Bad Request
+- User Message: "Priority must be one of: Low, Medium, or High."
+- System Action: Reject the request and list valid options
+- Recovery: User selects valid priority and resubmits
+
+### 7.2 Access Control Error Scenarios
+
+**Unauthorized Todo Access Error:**
+- Scenario: User attempts to view/edit/delete a todo belonging to another user
+- Error Code: ACCESS_DENIED_TODO_NOT_OWNED
+- HTTP Status: 403 Forbidden
+- User Message: "You don't have permission to access this todo."
+- System Action: Deny access, log the unauthorized attempt, return error
+- Recovery: User can only access their own todos
+
+**User Not Authenticated Error:**
+- Scenario: User attempts to perform todo operations without being logged in
+- Error Code: NOT_AUTHENTICATED
+- HTTP Status: 401 Unauthorized
+- User Message: "You must log in to access your todos."
+- System Action: Redirect to authentication, prevent operation
+- Recovery: User logs in and can proceed with operation
+
+### 7.3 Not Found Error Scenarios
+
+**Todo Not Found Error:**
+- Scenario: User requests a todo that does not exist or was deleted
+- Error Code: TODO_NOT_FOUND
+- HTTP Status: 404 Not Found
+- User Message: "This todo was not found. It may have been deleted."
+- System Action: Return not found error, suggest viewing todo list
+- Recovery: User views their todo list and creates new todos
+
+**User Account Not Found Error:**
+- Scenario: System cannot locate user account during operation
+- Error Code: USER_NOT_FOUND
+- HTTP Status: 404 Not Found
+- User Message: "Your user account could not be found."
+- System Action: Log error, prompt user to log in again
+- Recovery: User logs out and logs back in
+
+### 7.4 Recovery Mechanisms
+
+**After Validation Error:**
+- User receives clear error message explaining the specific issue
+- User receives guidance on how to fix the problem (format, character limits, requirements)
+- User can retry the operation with corrected data
+- Previous valid data is preserved for user convenience where safe
+- Form retains user input to avoid re-typing
+
+**After Access Denied Error:**
+- User receives clear message that they lack permission
+- System prevents the operation from being executed
+- No partial data changes or corruption occur
+- User can view their own todos or operations they have permission for
+- System remains stable and responsive
+
+**After Not Found Error:**
+- User receives message that the resource doesn't exist
+- User can navigate to see their available todos
+- User can create new todos or perform other valid operations
+- System remains stable and responsive
+
+### 7.5 Data Integrity During Errors
+
+THE system SHALL NOT update any todo state if validation fails.
+
+THE system SHALL NOT create partial todo records if an error occurs during creation.
+
+THE system SHALL NOT delete any todo if an error occurs during deletion request.
+
+WHEN an error occurs, THE system SHALL leave the database in a consistent state (all-or-nothing transactions).
+
+THE system SHALL not lose user data due to errors or exceptions.
+
+IF a transaction fails, THEN THE system SHALL rollback all changes and restore to previous state.
+
+---
+
+## 8. Performance & Response Expectations
+
+### 8.1 Response Time Requirements
+
+WHEN a user creates a new todo, THE system SHALL respond with confirmation within 1 second.
+
+WHEN a user retrieves their todo list, THE system SHALL return results within 2 seconds, even with 1000+ todos.
+
+WHEN a user updates a todo, THE system SHALL confirm the update within 1 second.
+
+WHEN a user marks a todo complete or incomplete, THE system SHALL process the change within 1 second.
+
+WHEN a user deletes a todo, THE system SHALL confirm deletion within 1 second.
+
+WHEN a user searches or filters todos, THE system SHALL return filtered results within 2 seconds.
+
+### 8.2 List Retrieval Performance
+
+WHEN a user requests their complete todo list with fewer than 500 todos, THE system SHALL retrieve and return results within 1 second.
+
+WHEN a user has very large numbers of todos (1000+), THE system SHALL still return results within 2 seconds using optimized queries.
+
+THE system SHALL maintain acceptable performance even as data grows over time.
+
+### 8.3 Concurrent Operation Handling
+
+WHEN multiple simultaneous todo operations come from different users, THE system SHALL process them without performance degradation for individual users.
+
+WHEN multiple users access the system simultaneously, THE system SHALL provide consistent response times for all users.
+
+WHEN a user updates a todo, THE system SHALL prevent race conditions and ensure data conflicts do not occur.
+
+---
+
+## 9. System Behavior & Interaction Patterns
+
+### 9.1 Default Behaviors
+
+WHEN a user creates a todo without specifying a priority, THE system SHALL assign priority level "Medium" automatically.
+
+WHEN a user creates a todo without specifying a description, THE system SHALL leave the description empty (optional field).
+
+WHEN a user creates a todo without specifying a due date, THE system SHALL leave the due date empty (optional field).
+
+WHEN sorting todos, THE system SHALL use creation date (newest first) as the default order if user does not specify otherwise.
+
+WHEN displaying todos, THE system SHALL show both active and completed todos together unless the user filters by status.
+
+### 9.2 User-Specific Data Requirements
+
+THE system SHALL maintain separate todo lists for each user with complete data isolation.
+
+THE system SHALL ensure zero data leakage between users.
+
+WHEN a user logs in, THE system SHALL retrieve only their own todos from the database.
+
+THE system SHALL never display or return another user's todos in any circumstance.
+
+### 9.3 Status Visibility
+
+WHEN displaying todos, THE system SHALL clearly indicate which todos are active and which are completed using visual indicators or separate sections.
+
+THE system SHALL allow filtering to show only active todos or only completed todos.
+
+THE system SHALL preserve completed todos in the user's history until the user explicitly deletes them.
+
+### 9.4 Date/Time Display
+
+THE system SHALL store and maintain all timestamps consistently in UTC timezone.
+
+WHEN returning todo data to users, THE system SHALL provide all timestamps in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ).
+
+WHEN displaying due dates to users, THE system SHALL show in user-friendly format (e.g., "December 31, 2025" or similar depending on user locale).
+
+---
+
+## 10. Business Logic Summary
+
+### 10.1 Core Operations Allowed
+
+✅ **Authenticated users CAN:**
+- Create new todos with title (required), optional description, optional due date, optional priority
+- View all their own todos with complete details
+- View todos filtered by status (active/completed), priority, due date, or search terms
+- Update any property of their own todos (title, description, due date, priority, status)
+- Mark todos as complete or incomplete and track completion history
+- Delete their own todos permanently
+- Change due dates, priorities, or descriptions at any time
+- Mark and unmark todos as complete multiple times
+
+✅ **System automatically:**
+- Assigns unique ID to each todo
+- Records creation timestamp in UTC
+- Updates modification timestamp on every change
+- Records completion timestamp when marked complete
+- Clears completion timestamp when marked incomplete
+- Validates all input data against requirements
+- Maintains data isolation per user
+- Prevents unauthorized access to other users' todos
+- Applies default values where needed (priority defaults to Medium)
+
+### 10.2 Core Operations NOT Allowed
+
+❌ **Users CANNOT:**
+- Create todos without a title
+- Access or modify another user's todos
+- Undelete a deleted todo (deletion is permanent)
+- Set invalid priority values (only Low/Medium/High allowed)
+- Create todos with duplicate IDs
+- Bypass data isolation
+- View system admin functions
+- Modify other users' account information
+
+❌ **System will NOT:**
+- Allow empty todo titles
+- Recover deleted todos
+- Share todos between users
+- Accept invalid dates, priorities, or status values
+- Compromise data isolation
+- Allow status values other than Active or Completed
+- Store passwords in plaintext
+- Create incomplete or corrupted todo records
+
+---
+
+## 11. Data Completeness Verification
+
+EVERY todo item stored in the system SHALL contain ALL of the following:
+
+- ✅ Unique ID (system-generated, never changes)
+- ✅ Title/description (user-provided at creation, required, non-empty)
+- ✅ User ID (automatically linked to owner, immutable)
+- ✅ Status (Active or Completed, default: Active, always present)
+- ✅ Creation timestamp (automatically set at creation time, never changes)
+- ✅ Modified timestamp (automatically set at creation, updated on every change)
+- ✅ Due date (optional, user-provided, must be future date if provided)
+- ✅ Priority (optional, user-provided or defaults to Medium)
+- ✅ Completion timestamp (only present when status is Completed, null when Active)
+
+WHEN a todo is stored, THE system SHALL verify all required fields are populated before saving.
+
+IF any required field is missing, THEN the system SHALL reject the save operation and return an error.
+
+---
+
+## 12. Implementation Readiness Verification
+
+This specification provides backend developers with:
+
+1. ✅ **Complete CRUD Operations**: All create, read, update, delete behaviors specified with EARS format
+2. ✅ **State Management**: Clear state transitions with specific rules for all state changes
+3. ✅ **Validation Rules**: Exact requirements for all input validation with specific error codes
+4. ✅ **Business Logic**: Complete rules governing todo operations and constraints
+5. ✅ **Error Handling**: Specific error codes, HTTP status codes, and user messages for all scenarios
+6. ✅ **Performance Requirements**: Clear response time expectations for all operations
+7. ✅ **Data Isolation**: Strong requirements for user data security and access control
+8. ✅ **User Workflows**: Step-by-step interaction patterns for all common operations
+9. ✅ **Timestamp Management**: Complete specification of how timestamps are recorded and maintained
+10. ✅ **Rollback & Recovery**: Complete transaction handling and data consistency requirements
+
+Developers now have sufficient detail to implement the complete todo management system with all business rules, validation, user interactions, error handling, and performance requirements properly specified.
+
+---
+
+## 13. Quick Reference: Error Codes & HTTP Status Codes
+
+| Error Code | HTTP Status | User Message | Cause |
+|-----------|-----------|--------------|-------|
+| INVALID_INPUT_EMPTY_TITLE | 400 | Please enter a title for your todo | Title is empty |
+| INVALID_INPUT_TITLE_TOO_LONG | 400 | Title cannot exceed 255 characters | Title exceeds limit |
+| INVALID_INPUT_DATE_FORMAT | 400 | Please provide date in YYYY-MM-DD format | Invalid date format |
+| INVALID_INPUT_PAST_DATE | 400 | Due date cannot be in the past | Past date provided |
+| INVALID_INPUT_PRIORITY | 400 | Priority must be Low, Medium, or High | Invalid priority |
+| INVALID_INPUT_DESCRIPTION_TOO_LONG | 400 | Description cannot exceed 2000 characters | Description too long |
+| INVALID_INPUT_STATUS | 400 | Status must be Active or Completed | Invalid status value |
+| ACCESS_DENIED_TODO_NOT_OWNED | 403 | You don't have permission to access this todo | User doesn't own todo |
+| NOT_AUTHENTICATED | 401 | You must log in to access your todos | User not logged in |
+| TODO_NOT_FOUND | 404 | This todo was not found | Todo doesn't exist |
+| USER_NOT_FOUND | 404 | Your user account could not be found | User doesn't exist |
+
+---
+
+> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

@@ -1,239 +1,238 @@
-# Minimal Todo List – Requirements Analysis Report (todoList)
+# Minimal Todo Service – Functional Requirements (MVP)
 
-Version: v1.0.0 — 2025-10-08 (Asia/Seoul)
+Functional requirements for the minimal Todo service are expressed in precise, testable business language using EARS syntax. Content states WHAT must happen from a user and business perspective without prescribing HOW to implement it. Technical decisions (architecture, APIs, data storage, transport) remain at the development team’s discretion.
 
-## Vision and Goals
-Deliver the smallest set of capabilities that enables an individual to capture, review, update, complete, and delete simple personal tasks reliably and quickly. Emphasize predictability, low friction, and focus over breadth of features.
+Related references: Service scope and value are set in the [Service Overview](./01-service-overview.md). Actor definition and ownership boundaries are detailed in [User Actors and Permissions](./02-user-actors-and-permissions.md). Field rules and validations complement this specification in [Business Rules and Validation](./06-business-rules-and-validation.md).
 
-Goals:
-- Enable fast task entry and clear task state (Active vs. Completed).
-- Keep user attention on doing tasks, not managing a tool.
-- Provide unambiguous, testable behavior so developers can implement with confidence.
+## Guiding Principles and System Identity
 
-## Scope Boundaries
+- Minimalism: include only the features essential for a personal Todo list MVP.
+- Single actor: one authenticated user manages only their own items; no shared lists or collaboration in MVP.
+- Privacy by default: strict ownership and data isolation; no cross-user visibility or inference.
+- Deterministic behavior: every operation defines inputs, validations, outcomes, and errors in business terms.
+- EARS-first: use WHEN/IF/WHILE/WHERE + THE + SHALL for testable requirements.
 
-### In-Scope Minimal Feature Set
-- Create Todo with required title and optional description.
-- Read and list personal Todos.
-- Update title and description.
-- Toggle completion (complete/uncomplete) for personal Todos.
-- Delete personal Todos.
-- Basic filtering by state (All, Active, Completed).
-- Default ordering (newest first); simple pagination in business terms.
+Core identity (business perspective):
+- THE minimal todo service SHALL require authentication for any action on user-owned todo data.
+- THE minimal todo service SHALL allow a user to register, authenticate, and manage personal todo items only within their ownership.
+- THE minimal todo service SHALL prevent a user from accessing or inferring another user’s items.
 
-### Out-of-Scope Items (Initial Release)
-- Collaboration or sharing; multi-owner items.
-- Subtasks, tags/labels, priorities, reminders, due dates, recurring tasks, attachments.
-- Advanced filters, search syntax, saved searches, reporting.
-- UI design specifications, wireframes, or visual styling.
-- Technical specifications: API endpoints, database schemas/ERDs, infrastructure and deployment details, library/architecture choices.
+## Performance Expectations (user-perceived targets)
 
-## Stakeholders, Personas, and Roles
-- guestVisitor: Unauthenticated visitor; cannot view or manage any Todos.
-- todoMember: Authenticated user; can fully manage only their own Todos.
-- systemAdmin: Administrative user; manages service-level settings and policy/abuse handling without routine access to private Todos.
+- WHEN a user performs core actions (register, login, create, list, update, toggle, delete), THE minimal todo service SHALL present results within 2 seconds under normal conditions for typical personal volumes (≤ 1,000 items per user).
+- WHERE a list response exceeds 20 items by request, THE minimal todo service SHALL present results in pages and complete each page within 2 seconds under normal conditions.
+- WHERE concurrent changes occur across a user’s devices, THE minimal todo service SHALL reflect accepted changes in other signed-in sessions within 2 seconds in typical conditions.
 
-Principles:
-- Least-privilege access; privacy-first boundaries.
-- Personal list only; each Todo has exactly one owner.
+## Account Lifecycle (business-level)
 
-## Definitions and Entities (Business Terms)
-- Todo: A personal task with a required "title" and optional "description"; completion state indicates whether it is done.
-- Active: A Todo that is not completed.
-- Completed: A Todo marked as done by its owner.
-- List: A user’s view of their Todos, optionally filtered and paginated.
-- Owner: The member who created the Todo.
-- Page: A group of results shown together for readability (e.g., up to 20 items by default).
+### Registration
+- WHEN a new person submits required registration information, THE minimal todo service SHALL create a personal account eligible for immediate authentication.
+- THE required registration information SHALL include a unique email and a password that meets stated business rules.
+- IF a registration email is already associated with an existing account, THEN THE minimal todo service SHALL reject registration with a business message indicating the email is in use.
+- IF a password fails minimum strength requirements, THEN THE minimal todo service SHALL reject registration with a business message indicating the requirement(s) not met.
 
-## Assumptions and Constraints
-- Single-person usage per list; no shared lists.
-- Language: en-US; timestamps shown in the user’s local timezone; default Asia/Seoul when unspecified.
-- Device-agnostic business behavior; no device-specific rules.
-- Deletion is permanent in the minimal scope (no recovery window).
-- No API, schema, or UI commitments in this report.
+Password rules (business-level):
+- THE password SHALL be at least 8 characters.
+- THE password SHALL contain at least one letter and at least one number.
+- WHERE stronger passwords are provided (e.g., symbols), THE minimal todo service SHALL accept them.
 
-## User Journeys and Core Workflows
+### Login and Session
+- WHEN an existing user submits valid credentials, THE minimal todo service SHALL authenticate the user and establish an active session.
+- IF credentials are invalid, THEN THE minimal todo service SHALL deny login with a business message indicating invalid credentials.
+- WHILE a session remains active, THE minimal todo service SHALL allow all permitted actions on the user’s own items without re-authentication.
 
-### Overview Flow
-```mermaid
-graph LR
-  A["Start"] --> B["Create Todo(Title required)"]
-  B --> C["Active"]
-  C --> D{"User Action"}
-  D -->|"Edit"| E["Update Title/Description"]
-  D -->|"Complete"| F["Mark Completed"]
-  D -->|"Delete"| G["Delete Todo"]
-  F --> H["Completed"]
-  H --> I{"User Action"}
-  I -->|"Uncomplete"| C
-  I -->|"Delete"| G
-  G --> J["End"]
-```
+### Logout
+- WHEN a user initiates logout, THE minimal todo service SHALL terminate the session and prevent further access to protected actions until the next login.
 
-### Listing Flow
-```mermaid
-graph LR
-  L1["Request List"] --> L2["Scope To Owner"]
-  L2 --> L3{"Filter?"}
-  L3 -->|"All"| L4["All Owned Todos"]
-  L3 -->|"Active"| L5["Completed=false"]
-  L3 -->|"Completed"| L6["Completed=true"]
-  L4 --> L7["Order By CreatedAt Desc"]
-  L5 --> L7
-  L6 --> L7
-  L7 --> L8["Paginate(Default Up To 20)"]
-  L8 --> L9["Return Page + Metadata"]
-```
+### Account Deletion (user-initiated)
+- WHEN a user confirms account deletion, THE minimal todo service SHALL delete the account and make all associated items inaccessible immediately after success.
+- IF an account has been deleted, THEN THE minimal todo service SHALL prevent subsequent logins using prior credentials.
 
-## Functional Requirements (EARS)
+## Todo Item Model (business fields and semantics)
+
+Each todo item is owned by exactly one authenticated user and includes:
+- Title (required): short, single-line text naming the task.
+- Description (optional): free-text details elaborating the task.
+- Due date (optional): date-only value indicating intended completion date; time-of-day is not part of MVP semantics.
+- Completion status (required, default false): whether the task is done.
+
+Field rules (summaries; full details in the validation reference):
+- THE title SHALL be required and between 1 and 120 characters inclusive after trimming, single line, no control characters.
+- WHERE a description is provided, THE description SHALL be allowed up to 1,000 characters after trimming.
+- WHERE a due date is provided, THE due date SHALL be a valid calendar date (date-only) recognizable in the user’s locale; time-of-day is ignored.
+- THE completion status SHALL default to not completed at creation and may be toggled at any time by the owner.
+
+## Ownership and Access (authorization and isolation)
+
+- THE minimal todo service SHALL assign ownership of each todo to exactly one user at creation and SHALL not allow ownership transfer in MVP.
+- THE minimal todo service SHALL return only the authenticated user’s items in listing or retrieval.
+- IF a user attempts to access, update, toggle, or delete a non-owned item, THEN THE minimal todo service SHALL deny the action without disclosing whether the item exists.
+
+## Todo Lifecycle
 
 ### Create Todo
-- THE todoList service SHALL require "title" to be non-empty after trimming.
-- THE todoList service SHALL allow an optional "description" up to a reasonable length (e.g., 1000 characters).
-- WHEN a todoMember submits valid data, THE todoList service SHALL create a Todo owned by that member with Completed=false and record creation and update times.
-- IF the supplied "title" is missing or exceeds the allowed length, THEN THE todoList service SHALL reject creation with a clear validation message while preserving user input where feasible.
-- IF the actor is guestVisitor, THEN THE todoList service SHALL deny creation and guide the actor to authenticate.
+- WHEN a user submits a new todo with a valid title and optional fields, THE minimal todo service SHALL create the todo with completion status set to not completed.
+- WHERE a description is provided up to 1,000 characters, THE minimal todo service SHALL store it with the todo.
+- WHERE a valid date-only due date is provided, THE minimal todo service SHALL set it on the todo.
 
-### Read Single Todo
-- WHEN a todoMember requests an owned Todo by identifier, THE todoList service SHALL return its fields (identifier, title, description if present, completed state, creation and last update times, and completion time if completed).
-- IF the Todo does not exist in the requester’s accessible scope, THEN THE todoList service SHALL respond with a not-available message without confirming existence.
-- IF the actor is guestVisitor, THEN THE todoList service SHALL deny access and guide to authenticate.
+Validation failures on create:
+- IF the title is missing or trims to empty, THEN THE minimal todo service SHALL reject creation with a business message indicating that a title is required.
+- IF the title exceeds 120 characters, THEN THE minimal todo service SHALL reject creation with a business message indicating the maximum length.
+- IF the description exceeds 1,000 characters, THEN THE minimal todo service SHALL reject creation with a business message indicating the maximum length.
+- IF the due date is not a valid calendar date, THEN THE minimal todo service SHALL reject creation with a business message indicating an invalid date.
 
-### Update Todo
-- WHEN a todoMember submits valid changes to title and/or description for an owned Todo, THE todoList service SHALL apply the changes and update the last update time.
-- IF the new content violates validation rules, THEN THE todoList service SHALL reject the update with a field-specific message.
-- IF the Todo does not exist or is not owned by the requester, THEN THE todoList service SHALL deny with a neutral not-available message.
-- IF the actor is guestVisitor, THEN THE todoList service SHALL deny the update and guide to authenticate.
+### Read Todo (single)
+- WHEN a user requests a specific todo they own, THE minimal todo service SHALL return the item’s current business fields and values.
+- IF the item does not exist or has been deleted, THEN THE minimal todo service SHALL indicate that the resource is not available.
 
-### Complete and Uncomplete
-- WHEN a todoMember requests completion of an owned Todo currently Active, THE todoList service SHALL set Completed=true and record completion time.
-- WHEN a todoMember requests uncompletion of an owned Todo currently Completed, THE todoList service SHALL set Completed=false and clear completion time.
-- IF the Todo is already in the requested state, THEN THE todoList service SHALL perform no state change and return the current state.
-- IF the Todo does not exist or is not owned, THEN THE todoList service SHALL deny with a neutral not-available message.
+### List Todos (overview)
+- WHEN a user requests their list, THE minimal todo service SHALL return only that user’s items using deterministic ordering and optional filters.
+- THE default page size SHALL be 20 items.
+- WHERE a page size up to 100 is requested, THE minimal todo service SHALL honor it; WHERE more than 100 is requested, THE minimal todo service SHALL cap at 100 and indicate a cap was applied in business terms.
+
+Default ordering and supported sorting:
+- THE default ordering for list results SHALL be creation time descending (newest to oldest by creation time).
+- WHERE multiple items share the same creation time to a coarse granularity, THE minimal todo service SHALL apply a deterministic secondary key of last-modified time descending.
+- WHERE a user requests alternate ordering, THE minimal todo service SHALL support ordering by:
+  - Creation time (newest first or oldest first)
+  - Due date (earliest first or latest first), placing no-due-date items last when sorting by due date
+
+Basic filtering:
+- THE minimal todo service SHALL support a completion status filter with values:
+  - "all": all items regardless of completion
+  - "active": only not-completed items
+  - "completed": only completed items
+
+### Update Todo (fields)
+- WHEN a user updates fields of a todo they own, THE minimal todo service SHALL apply valid changes and return the updated values.
+- WHERE the title is updated, THE title SHALL remain between 1 and 120 characters inclusive after trimming and remain single-line.
+- WHERE the description is updated, THE description SHALL not exceed 1,000 characters after trimming.
+- WHERE a due date is added or updated, THE due date SHALL be a valid calendar date.
+- WHERE a due date is cleared, THE minimal todo service SHALL remove the due date.
+
+Validation failures on update:
+- IF the updated title is missing or trims to empty, THEN THE minimal todo service SHALL reject the update with a title-required message.
+- IF the updated title exceeds 120 characters or contains line breaks, THEN THE minimal todo service SHALL reject the update with a limit/single-line message.
+- IF the updated description exceeds 1,000 characters, THEN THE minimal todo service SHALL reject the update with a length message.
+- IF the updated due date is not a valid calendar date, THEN THE minimal todo service SHALL reject the update with an invalid-date message.
+
+### Toggle Completion Status
+- WHEN a user marks their own item complete, THE minimal todo service SHALL set completion to completed and preserve other fields.
+- WHEN a user reopens their own completed item, THE minimal todo service SHALL set completion to not completed and preserve other fields.
+- WHERE the item is already in the requested state, THE minimal todo service SHALL acknowledge success without changing other fields (idempotent behavior).
 
 ### Delete Todo
-- WHEN a todoMember requests deletion of an owned Todo, THE todoList service SHALL permanently remove it from the member’s perspective so it no longer appears in lists or detail views.
-- IF the Todo does not exist or is not owned, THEN THE todoList service SHALL deny deletion with a neutral not-available message.
-- IF the actor is guestVisitor, THEN THE todoList service SHALL deny deletion and guide to authenticate.
+- WHEN a user deletes their own item, THE minimal todo service SHALL remove it from listings immediately.
+- THE deletion behavior SHALL be permanent in MVP (no recycle bin, no restore).
+- IF a user attempts to delete a non-existent item, THEN THE minimal todo service SHALL indicate that the resource is not available.
 
-### List, Filter, Ordering, Pagination
-- WHEN a todoMember requests a list, THE todoList service SHALL return only that member’s Todos.
-- THE todoList service SHALL support filters: "All", "Active" (Completed=false), "Completed" (Completed=true).
-- THE todoList service SHALL order results by CreatedAt descending by default.
-- THE todoList service SHALL return results in pages with default page size up to 20 items and allow a policy-defined range (e.g., 10–50) in business terms.
-- WHEN a page beyond available results is requested, THE todoList service SHALL return an empty list with page metadata.
-- IF the actor is guestVisitor, THEN THE todoList service SHALL deny listing and guide to authenticate.
+## Due Date Semantics (date-only)
 
-## Authentication and Authorization (Business-Level)
-- THE todoList service SHALL implement least-privilege access for all roles.
-- WHEN a user is not authenticated (guestVisitor), THE todoList service SHALL deny all Todo operations and present sign-in guidance.
-- WHEN a user is authenticated as todoMember, THE todoList service SHALL authorize only actions on the member’s own Todos and account settings.
-- WHEN a user is authenticated as systemAdmin, THE todoList service SHALL authorize only administrative functions and SHALL not expose private member Todo content by default.
-- IF an actor attempts to access a Todo not owned by them, THEN THE todoList service SHALL deny the request without revealing whether the Todo exists.
+- THE due date SHALL be optional on create and update; absence means no due semantics apply.
+- WHERE a due date is set, THE due date SHALL be a date-only value with no time-of-day semantics in MVP.
+- THE minimal todo service SHALL consider a todo overdue if today’s date is strictly after the due date and the item is not completed.
+- THE minimal todo service SHALL consider a todo due today if today’s date equals the due date and the item is not completed.
+- WHERE time zone considerations apply, THE minimal todo service SHALL apply a consistent interpretation for all users per product policy and SHALL avoid ambiguous behavior in MVP.
+- WHERE a due date in the past is provided, THE minimal todo service SHALL accept it and reflect the item as overdue if not completed.
 
-Optional single-user local mode (deployment choice):
-- WHERE single-user local mode is enabled, THE todoList service SHALL operate with an implicit member, disable registration/sign-in, and keep all data scoped to the local environment.
+## Error Handling (business-level outcomes)
 
-## Business Rules and Validation (EARS)
-- THE todoList service SHALL trim leading and trailing whitespace for "title" before validation.
-- THE todoList service SHALL accept "title" length between 1 and 120 characters after trimming; longer or empty titles SHALL be rejected with clear messages.
-- THE todoList service SHALL allow "description" up to 1000 characters; longer descriptions SHALL be rejected with clear messages.
-- THE todoList service SHALL set Completed=false on creation and SHALL manage completion state only via explicit user actions.
-- THE todoList service SHALL set CreatedAt on creation and update UpdatedAt on any change; completion timestamps SHALL be recorded when completed.
-- THE todoList service SHALL associate each Todo with exactly one owner.
+- IF an unauthenticated person attempts a protected action on todos, THEN THE minimal todo service SHALL deny the action and indicate that sign-in is required.
+- IF a user attempts to access a non-owned or non-existent item, THEN THE minimal todo service SHALL deny access or indicate unavailability without disclosing ownership or existence details.
+- IF input validation fails (e.g., title length, invalid date), THEN THE minimal todo service SHALL reject the action and provide field-specific business messages.
+- IF simultaneous updates cause conflicts or an item is deleted during an attempted change, THEN THE minimal todo service SHALL indicate that the item is no longer available and preserve user data from unintended changes.
+- WHERE transient conditions occur, THE minimal todo service SHALL support safe retries and avoid duplicate creations or partial updates.
 
-## Error Handling and Recovery (EARS)
-- THE todoList service SHALL categorize errors into validation, authentication, authorization, missing resource, conflict-like, temporary condition.
-- WHEN validation fails, THE todoList service SHALL keep user-provided input available where feasible and present field-specific guidance within about 1 second under typical conditions.
-- WHEN authentication is required, THE todoList service SHALL deny the action and guide the user to sign in, resuming the intent where feasible after sign-in.
-- WHEN authorization fails, THE todoList service SHALL present a privacy-safe message such as "This item is not available." without confirming existence.
-- WHEN a referenced Todo is missing or deleted, THE todoList service SHALL present a neutral message and offer to refresh the list.
-- WHEN conflicting or stale edits are detected, THE todoList service SHALL avoid silent overwrites and guide the user to refresh and re-apply.
-- WHEN a temporary system condition occurs, THE todoList service SHALL advise retry shortly and avoid data loss.
+## Non-Functional Reinforcements (business-level)
 
-## Non-Functional Requirements
+- THE minimal todo service SHALL meet user-perceived response targets stated above for typical volumes.
+- THE minimal todo service SHALL protect privacy by ensuring data isolation across users.
+- THE minimal todo service SHALL provide consistent, human-readable messages for errors without exposing internal details.
 
-### Performance (User-Centric Targets)
-- THE todoList service SHALL complete creation, update, completion toggle, and deletion with user-visible confirmation within 1 second for at least 95% of attempts under normal conditions; absolute worst-case for single actions SHALL not exceed 2 seconds.
-- THE todoList service SHALL return the first page of a Todo list (up to 20 items by default) within 1 second for at least 95% of attempts; worst-case SHALL not exceed 2.5 seconds.
-- IF an operation is expected to exceed 2 seconds, THEN THE todoList service SHALL display in-progress feedback until completion or failure.
+## Acceptance Criteria (testable EARS)
 
-### Reliability and Availability
-- THE todoList service SHALL be available for core operations at least 99.5% of the time monthly, excluding announced maintenance.
-- WHEN maintenance occurs, THE todoList service SHALL present a clear, time-bounded message and resume normal operation afterward.
-- THE todoList service SHALL ensure operations confirmed to users remain durable thereafter.
+Registration and Login
+- WHEN a unique email and compliant password are submitted, THE minimal todo service SHALL create an account and allow subsequent login.
+- IF a duplicate email is used at registration, THEN THE minimal todo service SHALL reject the request with a message indicating the email is in use.
+- WHEN valid credentials are used at login, THE minimal todo service SHALL establish a session; IF invalid, THEN access SHALL be denied with a generic invalid-credentials message.
 
-### Usability and Accessibility
-- THE todoList service SHALL provide concise confirmations after core actions.
-- THE todoList service SHALL be operable without reliance on color alone and be usable via keyboard for core actions.
-- THE todoList service SHALL present dates/times in the user’s locale and timezone; default Asia/Seoul when unspecified.
+Logout
+- WHEN a user logs out, THE minimal todo service SHALL terminate the session and require login for further actions.
 
-### Observability (Outcomes)
-- THE todoList service SHALL track user-perceived completion times for core actions and error rates by category.
-- WHEN P95 latency for any core action exceeds its target persistently, THE todoList service SHALL trigger internal attention for remediation.
+Create Todo
+- WHEN a valid title is provided (1–120 chars, single line), THE minimal todo service SHALL create the item with completion=false.
+- WHERE a description up to 1,000 chars is provided, THE minimal todo service SHALL store it; IF longer, THEN the request SHALL be rejected with a length message.
+- WHERE a valid date-only due date is provided, THE minimal todo service SHALL set it; IF invalid, THEN the request SHALL be rejected with an invalid-date message.
+- IF title is empty or exceeds 120 chars, THEN THE minimal todo service SHALL reject creation with a title rule message.
 
-## Security and Privacy (Business-Level)
-- THE todoList service SHALL protect the confidentiality and integrity of member Todos and account data.
-- THE todoList service SHALL default to deny where an action is not explicitly permitted.
-- WHEN abuse patterns or suspicious sign-in behavior are detected, THE todoList service SHALL throttle or require re-authentication before sensitive actions.
-- THE todoList service SHALL collect only data necessary to operate minimal Todo functionality and avoid logging secrets or full Todo content in audit records.
-- IF policy/abuse review is required, THEN THE todoList service SHALL minimize data exposure, require justification, and record audit details.
+Read Todo
+- WHEN the owner requests an existing item, THE minimal todo service SHALL return all business fields; IF the item does not exist, THEN indicate unavailability.
 
-## Data Lifecycle and Retention (Business-Level)
-- Creation: new Todo starts Active; ownership is the creating member.
-- Update: owner may edit title/description; UpdatedAt reflects changes.
-- Completion: owner toggles Completed state; completion timestamp is set when Completed and cleared when uncompleted.
-- Deletion: minimal default is immediate, permanent removal with no recovery.
-- Export (optional business capability): owner may obtain a privacy-safe export of their own Todos in widely supported formats; exact formats are an implementation choice.
+List Todos
+- WHEN the owner requests the list without filters, THE minimal todo service SHALL return up to 20 items ordered by creation time descending.
+- WHERE a page size up to 100 is requested, THE minimal todo service SHALL return that many items; WHERE more than 100 is requested, cap at 100 and indicate a cap applied.
+- WHERE a status filter is set to active, THE minimal todo service SHALL return only not-completed items; where completed, only completed items; where all, both.
+- WHERE sorting by due date ascending is chosen, THE minimal todo service SHALL place items without a due date last.
 
-EARS highlights:
-- WHEN an owner deletes a Todo, THE todoList service SHALL make it unavailable for further actions and exclude it from subsequent lists.
-- WHERE export is provided, THE todoList service SHALL include only the requesting owner’s Todos.
+Update Todo
+- WHEN the owner updates title, description, or due date within constraints, THE minimal todo service SHALL persist the changes and reflect them on subsequent reads.
+- IF an updated field violates constraints (title empty/too long/multiline; description > 1,000; invalid date), THEN THE minimal todo service SHALL reject the update and preserve existing values.
 
-## Acceptance Criteria Summary (EARS)
+Toggle Completion
+- WHEN the owner marks complete, THE minimal todo service SHALL set completed; WHEN reopened, set not completed; WHERE state is already the requested state, acknowledge success with no change.
 
-Create
-- WHEN a member submits a non-empty trimmed title (≤120 chars) and optional description (≤1000 chars), THE todoList service SHALL create a Todo with Completed=false and set CreatedAt/UpdatedAt.
-- IF the title is missing or too long, THEN THE todoList service SHALL reject with a clear validation message.
+Delete Todo
+- WHEN the owner deletes the item, THE minimal todo service SHALL remove it from listings immediately and exclude it from subsequent operations.
+- IF deletion is requested for a non-existent item, THEN THE minimal todo service SHALL indicate that the resource is not available.
 
-Read
-- WHEN a member requests an owned Todo by identifier, THE todoList service SHALL return its fields.
-- IF the Todo is unavailable to the requester, THEN THE todoList service SHALL return a neutral not-available message.
-
-Update
-- WHEN a member submits valid edits to an owned Todo, THE todoList service SHALL apply changes and update UpdatedAt.
-- IF edits violate validation rules, THEN THE todoList service SHALL reject with field-specific guidance.
-
-Complete/Uncomplete
-- WHEN a member completes an Active Todo, THE todoList service SHALL set Completed=true and record completion time.
-- WHEN a member uncompletes a Completed Todo, THE todoList service SHALL set Completed=false and clear completion time.
-
-Delete
-- WHEN a member deletes an owned Todo, THE todoList service SHALL permanently remove it from subsequent lists and details.
-
-List/Filter/Ordering/Pagination
-- THE todoList service SHALL list only the requesting member’s Todos; filter by All/Active/Completed; order newest first; paginate with a default page size up to 20.
-
-AuthZ
-- IF a user attempts to access a Todo not owned by them, THEN THE todoList service SHALL deny without confirming existence.
+Ownership and Isolation
+- IF a user attempts to access or modify another user’s item, THEN THE minimal todo service SHALL deny the action and provide a permission message without revealing existence.
 
 Performance
-- THE todoList service SHALL meet the performance targets specified above for core actions under normal conditions.
+- WHEN any core action is performed under normal conditions and typical data volumes, THE minimal todo service SHALL complete within 2 seconds perceived response time per action.
 
-## Success Metrics
-- Time-to-First-Todo: median new member creates the first Todo within 30 seconds of initial use.
-- P95 operation latency targets met for create, list first page, update, toggle, and delete for ≥95% of attempts.
-- 7-Day retention: at least 25% of new members return to create or complete a Todo within 7 days.
-- Zero observed cross-user data exposure incidents.
+## Visual References (Mermaid diagrams)
 
-## Risks and Mitigations
-- Scope creep adds complexity and delays: maintain a strict out-of-scope list and revisit only after minimal release success.
-- Error message inconsistency reduces user trust: centralize message patterns and reuse stable wording across flows.
-- Performance regressions under growth: enforce pagination and measure user-perceived latency with alerts on P95 thresholds.
+### Account Lifecycle (conceptual)
+```mermaid
+graph LR
+  subgraph "Account Lifecycle"
+    A["Start"] --> B["Register(Account)"]
+    B --> C{"Email Unique?"}
+    C -->|"Yes"| D["Account Created"]
+    C -->|"No"| E["Reject: Email In Use"]
+    D --> F["Login"]
+    F --> G{"Credentials Valid?"}
+    G -->|"Yes"| H["Session Active"]
+    G -->|"No"| I["Reject: Invalid Credentials"]
+    H --> J["Logout"]
+    H --> K["Delete Account"]
+    J --> L["Session Ended"]
+    K --> M["Account Deleted"]
+  end
+```
 
-## Glossary
-- Todo: A personal task entry with required title and optional description.
-- Active/Completed: States indicating whether a Todo remains to be done or is done.
-- Owner: The member to whom the Todo belongs; only the owner can manage it.
-- Pagination: Returning results in manageable groups for readability (e.g., up to 20 per page).
-- EARS: Easy Approach to Requirements Syntax (WHEN/IF/WHILE/WHERE + THE/SHALL) for clear, testable requirements.
+### Todo Lifecycle (conceptual)
+```mermaid
+graph LR
+  subgraph "Todo Lifecycle"
+    A["Start"] --> B["Create Todo(Title, Optional Description, Optional Due Date)"]
+    B --> C["Todo Created (Completed = false)"]
+    C --> D["Read/View Todo"]
+    C --> E["List Todos (Creation Desc)"]
+    D --> F{"Update Fields?"}
+    F -->|"Yes"| G["Validate Updates"]
+    G --> H{"Valid?"}
+    H -->|"Yes"| I["Apply Updates"]
+    H -->|"No"| J["Reject With Field Messages"]
+    C --> K{"Toggle Complete?"}
+    K -->|"Yes"| L["Set Completed / Not Completed"]
+    C --> M{"Delete?"}
+    M -->|"Yes"| N["Remove From Lists (Permanent)"]
+  end
+```
+
+## Related References
+- [Service Overview](./01-service-overview.md) — vision, scope, and KPIs for the minimal Todo service.
+- [User Actors and Permissions](./02-user-actors-and-permissions.md) — actor definition, access boundaries, and audit expectations.
+- [Business Rules and Validation](./06-business-rules-and-validation.md) — field constraints, ownership rules, ordering, and error messages.

@@ -1,138 +1,168 @@
-# econPoliticalForum — Documentation Table of Contents and Project Map
+# 00 Table of Contents for discussionBoard Documentation
 
-## Short project description
-The econPoliticalForum project is a lightweight, safety-minded online discussion board focused on economic and political topics. Its purpose is to provide a structured, moderated environment where informed discussion, debate, and resource sharing can occur while minimizing abuse, misinformation, and legal/regulatory risk.
+## Purpose and Scope
+Provide a single navigation entry for the discussionBoard documentation set that guides stakeholders to the authoritative document for any topic related to business requirements, user workflows, or governance of the service. The TOC is intended for product managers, backend developers, QA engineers, operations, and legal/compliance reviewers. The file organizes and summarizes business-level artifacts; all technical implementation decisions (architecture, APIs, database design, vendor selection) remain the responsibility of the engineering team.
 
-## Scope and purpose
-- Provide a single, authoritative table of contents that maps every project document to its intended audience and purpose.
-- Make it easy for engineers, product owners, moderators, legal, and operations to find the business requirements, policies, and runbooks required to implement and operate the service.
-- Capture governance rules and ownership for each document in EARS format to ensure timely updates and traceability.
+## Quick Index (Descriptive Links)
+- [01-service-overview.md](./01-service-overview.md) — Service vision, business justification, high-level scope and success metrics.
+- [02-user-actors.md](./02-user-actors.md) — Actor definitions, authentication expectations, and permission matrices.
+- [03-functional-requirements.md](./03-functional-requirements.md) — Business-level feature requirements and acceptance criteria for posts, attachments, comments, moderation, and discovery.
+- [04-user-stories.md](./04-user-stories.md) — Prioritized user stories and testable acceptance conditions for MVP journeys.
+- [05-user-flows.md](./05-user-flows.md) — Step-by-step flows for posting, attaching files, moderation, registration, and password reset.
+- [06-business-rules.md](./06-business-rules.md) — Measurable rules and constraints for posting, attachments, sanctions, and retention.
+- [07-non-functional-requirements.md](./07-non-functional-requirements.md) — Business-level performance, availability, security and monitoring expectations.
+- [08-external-integrations.md](./08-external-integrations.md) — Conceptual third-party integrations (file storage, email, spam detection) and fallback expectations.
+- [09-data-lifecycle.md](./09-data-lifecycle.md) — Retention, archival, deletion, legal-hold and portability rules for posts, comments, attachments, and accounts.
+- [10-error-handling-and-exceptions.md](./10-error-handling-and-exceptions.md) — User-facing error messages, retry/backoff expectations, and escalation procedures.
 
-## Service metadata
-- Service prefix: econPoliticalForum
-- Primary roles referenced across the documentation: guest, registeredUser, moderator, administrator
-- Primary owners: Product Manager (owner), Lead Backend Engineer (technical owner), Policy Lead (moderation & legal owner)
-- Document version: 1.0
-- Last updated: 2025-10-03
+## Per-Document Summaries
 
-## Intended audience and recommended reading order
-- Product managers and stakeholders: read Service Overview (01-service-overview.md), Core Value Proposition (03-core-value-proposition.md), and MVP Roadmap (10-mvp-roadmap.md).
-- Backend developers and QA: read User Roles & Authentication (05-user-roles-authentication.md), Functional Requirements (04-functional-requirements.md), Primary User Scenarios (06-primary-user-scenarios.md), Secondary & Edge Cases (07-secondary-edge-cases.md), and Non-Functional Requirements (09-non-functional-requirements.md) in that order.
-- Moderators, legal, and trust & safety reviewers: read Moderation & Content Policy (08-moderation-content-policy.md) and Secondary & Edge Cases (07-secondary-edge-cases.md).
-- Operations and SRE: read Non-Functional Requirements (09-non-functional-requirements.md) and MVP Roadmap (10-mvp-roadmap.md).
+### 01-service-overview.md
+Purpose: Describe the product vision, why discussionBoard exists, the target market, and business success metrics.
+Primary audience: Business stakeholders, product managers, backend developers.
+Key questions answered:
+- Why does the discussionBoard exist and what problem does it solve?
+- Who are the target users and what are the primary use cases?
+- What are measurable success metrics and MVP scope?
+Primary sections expected: Service Vision and Purpose; Problem Definition; Core Value Proposition; Target Users; Business Model; KPIs; Scope and Out-of-Scope.
+Related documents: 03-functional-requirements.md, 06-business-rules.md
 
-## Document map (descriptive list of documents)
-Each entry below contains: Document title — short summary — primary audience — relative link (update link targets if filenames change). All entries include the outline and expected detail level.
+### 02-user-actors.md
+Purpose: Define guest/member/moderator actor responsibilities and business-level authentication expectations.
+Primary audience: Backend developers, security reviewers, product managers.
+Key questions answered:
+- What are the available actor roles and their high-level permissions?
+- What are the expected account lifecycle and session behaviors from a business standpoint?
+Primary sections expected: Actor Definitions; Permission Matrix; Authentication & Verification Rules; Session & Token Lifecycle (business expectations); Audit and Accountability.
+Related documents: 03-functional-requirements.md; 09-data-lifecycle.md
 
-- Service Overview — High-level goals and business case — Audience: product managers, stakeholders, developers — Link: ./01-service-overview.md
-  - Outline: Executive summary; Target market and users; Core value proposition; Business model; Success metrics and go/no-go criteria.
-  - Detail level: Detailed business specification.
+### 03-functional-requirements.md
+Purpose: Capture business-level requirements for core features: posting, commenting, attachments, moderation, search and notifications.
+Primary audience: Backend developers, QA, product managers.
+Key questions answered:
+- What must the system provide to meet member and moderator needs?
+- How should attachments and content be validated from a business perspective?
+Primary sections expected: Content Management; Attachment Support; Commenting; Moderation and Reporting; Search and Classification; Notifications; Visibility Rules.
+Related documents: 01-service-overview.md; 06-business-rules.md
 
-- Problem Definition — User pains and risk profile — Audience: product managers, legal advisors — Link: ./02-problem-definition.md
-  - Outline: Problem statement; Target user pain points; Risks and sensitivities; Regulatory concerns; Opportunity statement.
-  - Detail level: Moderate.
+### 04-user-stories.md
+Purpose: Provide prioritized, testable user stories describing member, moderator and guest journeys for MVP implementation.
+Primary audience: Product managers, QA, backend developers.
+Key questions answered:
+- Which user journeys are critical for MVP?
+- What acceptance criteria make each story testable?
+Primary sections expected: Persona Summaries; Primary Member Stories; Moderator Stories; Guest Scenarios; Edge Cases and QA Scenarios.
+Related documents: 03-functional-requirements.md; 05-user-flows.md
 
-- Core Value Proposition — Minimal feature set that delivers value — Audience: product managers, marketing — Link: ./03-core-value-proposition.md
-  - Outline: Primary benefits for users; Minimal feature set for MVP; Differentiation; Acquisition and retention levers.
-  - Detail level: Moderate.
+### 05-user-flows.md
+Purpose: Describe step-by-step business flows for core tasks: post creation (with attachments), commenting, moderation workflow, account registration and password reset.
+Primary audience: Backend developers, QA.
+Key questions answered:
+- What steps do users take to complete core tasks and what business validation occurs at each step?
+- Where are decision points and how should the system respond to failures?
+Primary sections expected: Post Creation Flow; Commenting Flow; Moderation Flow; Account Registration & Verification; Password Reset Flow.
+Related documents: 03-functional-requirements.md; 10-error-handling-and-exceptions.md
 
-- Functional Requirements — Complete business-level functional requirements (EARS formatted) — Audience: backend developers, product owners — Link: ./04-functional-requirements.md
-  - Outline: CRUD for posts/comments; Thread/category/tag behavior; Voting and reputation; Search and discovery; Notifications; Reporting; Acceptance criteria.
-  - Detail level: Detailed specification.
+### 06-business-rules.md
+Purpose: Enumerate precise, measurable business rules that govern content length, edit windows, attachment limits, reporting thresholds, sanctions and retention.
+Primary audience: Product managers, legal/compliance, backend developers.
+Key questions answered:
+- What constraints must be enforced on posts, comments and attachments?
+- How are sanctions and moderation escalations applied and measured?
+Primary sections expected: Posting and Editing Rules; Attachment Rules; Moderation Policies; Sanctions and Strike Lifecycle; Retention and Deletion Policies.
+Related documents: 09-data-lifecycle.md; 03-functional-requirements.md
 
-- User Roles & Authentication — Roles, lifecycle, and token expectations — Audience: backend developers, security reviewers — Link: ./05-user-roles-authentication.md
-  - Outline: Role definitions; Authentication lifecycle; Email verification; Session and token rules; Suspension and appeals.
-  - Detail level: Detailed.
+### 07-non-functional-requirements.md
+Purpose: Establish business-level SLOs and expectations for performance, availability, security, scalability and monitoring.
+Primary audience: Backend developers, operations, security.
+Key questions answered:
+- What are the measurable performance and availability targets for the MVP?
+- What security and privacy constraints must be respected at a business level?
+Primary sections expected: Performance SLOs; Availability Targets; Security & Privacy Expectations; Logging and Monitoring; Operational Recovery.
+Related documents: 08-external-integrations.md; 09-data-lifecycle.md
 
-- Primary User Scenarios — Typical success journeys — Audience: developers, QA, product managers — Link: ./06-primary-user-scenarios.md
-  - Outline: User personas; Browse, register, post, comment, vote journeys; Notification flows; Reporting initiation; Acceptance criteria.
-  - Detail level: Moderate.
+### 08-external-integrations.md
+Purpose: Describe the role of third-party services (file storage, email, spam detection, analytics), business rationale, and expected fallback behavior when integrations fail.
+Primary audience: Backend developers, architects, procurement.
+Key questions answered:
+- Which categories of external services are required and why?
+- How should the system behave when an integration is degraded or unavailable?
+Primary sections expected: Integration Categories; Failure & Fallback Expectations; Privacy and Compliance Considerations; Cost & SLA Notes.
+Related documents: 07-non-functional-requirements.md; 09-data-lifecycle.md
 
-- Secondary & Edge Cases — Error paths, rate limits, and conflicts — Audience: backend developers, QA, operations — Link: ./07-secondary-edge-cases.md
-  - Outline: Rate limits and throttling; Edit and deletion edge cases; Concurrency conflicts; Anonymous posting rules; Suspension/appeal scenarios.
-  - Detail level: Detailed.
+### 09-data-lifecycle.md
+Purpose: Define retention windows, archival and purge cycles for posts, comments, attachments, and account data and describe legal-hold and export procedures.
+Primary audience: Backend developers, legal/compliance, operations.
+Key questions answered:
+- How long is content retained and under what conditions is it purged?
+- What are user rights around export and deletion and what SLAs apply?
+Primary sections expected: Data Types and Ownership; Retention Rules (soft-delete and purge); Legal Holds; Export & Portability; Backup & Recovery SLAs.
+Related documents: 06-business-rules.md; 08-external-integrations.md
 
-- Moderation & Content Policy — Rules, workflows, and escalation paths — Audience: moderators, administrators, legal — Link: ./08-moderation-content-policy.md
-  - Outline: Prohibited content list; Reporting workflow and reporter protections; Moderator actions and escalation; Appeals; Transparency reporting.
-  - Detail level: Detailed.
+### 10-error-handling-and-exceptions.md
+Purpose: Specify user-facing error messages, retry/backoff expectations, and escalation for attachment failures, auth issues, and moderation action failures.
+Primary audience: Backend developers, QA, operations.
+Key questions answered:
+- What should users see and be able to do when operations fail?
+- What retry and queuing policies must the system follow for transient integration failures?
+Primary sections expected: User-Facing Errors; Attachment Retry Policy; Authentication Failure Handling; Moderation Action Failures; Operational Rollback.
+Related documents: 05-user-flows.md; 08-external-integrations.md
 
-- Non-Functional Requirements — SLAs, privacy, security expectations — Audience: operations, backend developers, security — Link: ./09-non-functional-requirements.md
-  - Outline: Performance SLAs; Scalability targets; Security and privacy principles; Accessibility; Monitoring and backups; Moderation latency.
-  - Detail level: Detailed.
+## Recommended Reading Order and Usage Guidance
+- Product stakeholders and executives: read 01-service-overview.md first to understand vision and success metrics.
+- For authentication, session and actor-related decisions: consult 02-user-actors.md before implementing features described in 03-functional-requirements.md.
+- Backend implementation teams: implement features using 03-functional-requirements.md and 06-business-rules.md together to ensure behavior aligns with product policy and retention rules.
+- QA: create test plans from 04-user-stories.md and validate flows in 05-user-flows.md; use 10-error-handling-and-exceptions.md for negative test cases.
+- Operations and security: review 07-non-functional-requirements.md and 08-external-integrations.md for SLOs, fallback expectations and procurement considerations.
 
-- MVP Roadmap & Operations — Launch checklist and integrations — Audience: product managers, operations — Link: ./10-mvp-roadmap.md
-  - Outline: Operational checklist; Required integrations; Analytics and dashboards; Phased timeline; Acceptance criteria for launch.
-  - Detail level: Moderate.
-
-- 00-toc.md (this file) — Table of contents and governance map — Audience: all project stakeholders — Link: ./00-toc.md
-  - Outline: Project description; Document map; Governance rules; References and next steps.
-  - Detail level: High-level overview.
-
-## Document relationships and dependencies
-- THE Functional Requirements document SHALL depend on User Roles & Authentication for role definitions used in EARS rules.
-- THE Moderation & Content Policy SHALL inform Secondary & Edge Cases and Non-Functional Requirements for moderation SLAs and logging expectations.
-- THE MVP Roadmap SHALL reference Core Value Proposition and Service Overview for scope decisions.
-- THE Non-Functional Requirements SHALL set business-level constraints that Functional Requirements must respect (for example, the 2-second content load expectation).
+## Visual Map of Document Relationships
 
 ```mermaid
 graph LR
-  A["Service Overview"] --> B["Core Value Proposition"]
-  B --> C["MVP Roadmap & Operations"]
-  C --> D["Non-Functional Requirements"]
-  B --> E["Functional Requirements"]
-  E --> F["User Roles & Authentication"]
-  E --> G["Primary User Scenarios"]
-  E --> H["Secondary & Edge Cases"]
-  H --> I["Moderation & Content Policy"]
-  D --> I
-  C --> D
-  F --> E
+  A["01-service-overview.md"] --> B["02-user-actors.md"]
+  B --> C["03-functional-requirements.md"]
+  C --> D["05-user-flows.md"]
+  C --> E["04-user-stories.md"]
+  C --> F["06-business-rules.md"]
+  F --> G["07-non-functional-requirements.md"]
+  G --> H["08-external-integrations.md"]
+  H --> I["09-data-lifecycle.md"]
+  I --> J["10-error-handling-and-exceptions.md"]
+  A --> C
+  B --> F
 ```
 
-## How to use this documentation set
-- IF you are a stakeholder deciding whether to fund or prioritize features, THEN start with the Service Overview, Core Value Proposition, and MVP Roadmap.
-- IF you are a backend developer starting implementation, THEN read User Roles & Authentication, Functional Requirements, Primary User Scenarios, Secondary & Edge Cases, and Non-Functional Requirements in that order.
-- IF you are part of moderation, legal, or trust & safety, THEN read Moderation & Content Policy, Secondary & Edge Cases, and Non-Functional Requirements for SLAs and retention policies.
-- IF you are operations or SRE, THEN prioritize Non-Functional Requirements and MVP Roadmap for deployment and monitoring needs.
+## Maintenance and Contribution
+Location and update cadence:
+- Files are stored at the repository root in the documentation folder. When adding or updating a document, create or update the corresponding numbered markdown file and update this TOC entry.
+- The TOC SHALL be updated in the same change that introduces or renames any document. Updates to document filenames or scopes SHALL be reflected here within the same commit and pull request.
 
-Recommended reading order for developers: ./05-user-roles-authentication.md -> ./04-functional-requirements.md -> ./06-primary-user-scenarios.md -> ./07-secondary-edge-cases.md -> ./09-non-functional-requirements.md
+Authorship and review:
+- Authors must include a short purpose, primary audience and at least two key questions answered in the front matter of each document.
+- Document owners are responsible for maintaining accuracy; product owners, engineers, and legal/compliance SHALL coordinate on changes that impact policy, retention or security.
 
-## Governance and maintenance (EARS-format requirements)
-- WHEN any document is updated, THE document owner SHALL increment the document version and SHALL add a changelog entry including summary, author, and date within 7 calendar days.
+Contribution guidance:
+- New documents MUST follow the structure used across this set: Purpose, Audience, Key Questions, Outline and Related Documents.
+- Changes that affect business rules, retention periods, or legal obligations SHALL require sign-off from product and compliance representatives before merge.
 
-- WHEN a major release (feature or policy) is approved for production, THE product manager SHALL ensure related documents are updated within 7 calendar days and SHALL record approver names and approval dates in a document metadata section.
+## Governance and Who Uses Each Document
+- Product and stakeholders: primary readers of 01-service-overview.md and 06-business-rules.md for strategy and policy decisions.
+- Backend engineers: primary readers of 02-user-actors.md, 03-functional-requirements.md, 05-user-flows.md, 06-business-rules.md, 07-non-functional-requirements.md and 08-external-integrations.md for implementation.
+- QA engineers: primary readers of 04-user-stories.md and 05-user-flows.md for acceptance testing and negative tests from 10-error-handling-and-exceptions.md.
+- Operations/security/legal: primary readers of 07-non-functional-requirements.md, 08-external-integrations.md, 09-data-lifecycle.md and 10-error-handling-and-exceptions.md.
 
-- IF a document becomes obsolete or is superseded, THEN the owning team SHALL move the previous version to an /archive/ folder, SHALL mark the file header with a "superseded-by" pointer to the replacing document, and SHALL include the archival date.
+## Acceptance Checklist
+- [ ] TOC file length >= 2,000 characters
+- [ ] All listed documents have a concise purpose, audience, 2–3 key questions, and primary sections
+- [ ] Mermaid diagram uses double-quoted labels and valid arrow syntax
+- [ ] Developer Note present at the end and starts with "Developer Note:"
+- [ ] No forbidden starting phrases used anywhere in the file
 
-- WHERE a document affects moderation or legal policy, THEN THE document SHALL require sign-off by the Policy Lead and a legal reviewer before being marked as final.
+## Contact and Escalation
+For clarification on business intent or policy changes, contact the following roles (use team aliases):
+- Product Owner: @product-owner
+- Documentation Owner: @doc-owner
+- Engineering Lead: @eng-lead
+- Legal/Compliance: @legal-compliance
 
-- WHILE the project is in active development, THE documentation owners SHALL ensure a changelog entry is created for every substantive update.
-
-- WHEN a document requires legal or compliance sign-off, THEN THE project SHALL store approver name(s), role, and approval date in a metadata block at the top of the file.
-
-## Access, authorship, and ownership (EARS formatted)
-- THE project SHALL maintain a documented owner for each file: Product Manager (business), Lead Backend Engineer (technical), and Policy Lead (policy/legal) where applicable.
-- WHEN a document is proposed for change, THEN THE proposed change SHALL include a reviewer from the owning discipline (technical or policy) and SHALL be approved by at least one designated reviewer before merge.
-- IF a document is changed without required sign-offs in the repository, THEN THE change SHALL be reverted and the incident SHALL be logged for governance review.
-
-## Where to find role and requirement details
-- Role definitions and permission matrix are in: ./05-user-roles-authentication.md
-- Complete functional behaviors and acceptance criteria are in: ./04-functional-requirements.md
-- Moderation workflows and appeal processes are in: ./08-moderation-content-policy.md
-
-## Glossary and abbreviations
-- MAU: Monthly Active Users (business metric)
-- SLA: Service Level Agreement (business SLA for moderation and availability)
-- EARS: Easy Approach to Requirements Syntax (format used for requirements in functional documents)
-
-## References and next steps
-- FOR immediate implementation work, THE development team SHALL use the reading order recommended earlier and SHALL coordinate with product and policy owners to confirm policies before building moderation features.
-- FOR initial launch (MVP), SEE: ./10-mvp-roadmap.md
-
-## Quality checklist (EARS format)
-- WHEN this file is reviewed, THE reviewer SHALL confirm that each document listed has a valid relative link and that the target file exists in the repository.
-- WHEN this file is reviewed, THE reviewer SHALL confirm that the governance and owner entries are current and SHALL update the metadata block if owners have changed.
-- WHEN this file is updated, THE updater SHALL ensure the content length remains >= 2,000 characters and SHALL ensure Mermaid diagrams validate with double-quoted labels.
-
-
-> Developer Note: The content above contains business requirements and governance guidance only. Technical implementation decisions (architecture, APIs, database design, hosting) are at the discretion of the development team.
+Developer Note: Technical implementation decisions (architecture, API design, database schema, vendor selection) are left to the engineering team and require coordination with product and compliance when they affect policy or retention.

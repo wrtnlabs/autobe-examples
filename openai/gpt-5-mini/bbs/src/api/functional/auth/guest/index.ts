@@ -3,59 +3,63 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IEconPoliticalForumGuest } from "../../../structures/IEconPoliticalForumGuest";
+import { IDiscussionBoardGuest } from "../../../structures/IDiscussionBoardGuest";
 
 /**
- * Register a temporary guest identity and issue guest JWT tokens (uses
- * econ_political_forum_guest table).
+ * Register a temporary guest account (creates discussion_board_guest row) and
+ * issue temporary JWT tokens.
  *
- * Purpose and overview: This endpoint registers a temporary guest identity by
- * creating a row in the econ_political_forum_guest table. The request may
- * supply an optional nickname and the server captures the client user_agent. On
- * success the API returns an authorization payload
- * (IEconPoliticalForumGuest.IAuthorized) containing a short-lived access token
- * and a guest refresh token. The created database fields that this operation
- * uses are: econ_political_forum_guest.id (primary key),
- * econ_political_forum_guest.nickname (optional display label),
- * econ_political_forum_guest.user_agent (captured client UA), and
- * econ_political_forum_guest.created_at / updated_at timestamps.
+ * Purpose and overview: This operation registers a transient guest identity in
+ * the system by creating a row in the `discussion_board_guest` table. The
+ * stored fields referenced by this operation include `id`, `display_name`,
+ * `ip`, `created_at`, `updated_at`, and the nullable `deleted_at` timestamp
+ * defined on the `discussion_board_guest` model. The guest record provides a
+ * durable identifier that can be used for short-lived client interactions
+ * (draft attribution, anonymous report linkage) without creating a full member
+ * account.
  *
- * Implementation details using confirmed schema fields: When the join request
- * succeeds, the system inserts a new econ_political_forum_guest record and
- * populates nickname and user_agent where provided. The created_at and
- * updated_at columns are set by the database. The response contains
- * authorization tokens but the Prisma schema does not include token columns for
- * guests — token storage or rotation is an application responsibility outside
- * the guest table and should follow secure JWT-refresh best practices.
+ * Implementation details and validation: The request payload accepts minimal
+ * guest attributes (for example: display name and optional client IP metadata);
+ * the created DB row must populate the `created_at` and `updated_at` timestamps
+ * and return the generated `id` in the response. The server issues a pair of
+ * JWT credentials (access + refresh) scoped to the guest actor; the response
+ * body follows the authorized-response contract
+ * (`IDiscussionBoardGuest.IAuthorized`). Persisted database values used by
+ * downstream systems are the `id` (primary key), `display_name` (nullable
+ * string), `ip` (nullable string) and timestamps for lifecycle and audit.
  *
- * Role-specific integration and business context: This endpoint is public (no
- * prior authentication). It is intended to let unauthenticated visitors obtain
- * a temporary guest identity and tokens to interact with guest-capable client
- * features (for example, to preserve a short-lived draft or allow limited API
- * access for ephemeral sessions). The returned guest identity includes the id
- * that references econ_political_forum_guest.id for traceability in moderation
- * and audit logs.
+ * Actor-specific integration and business context: Guests are unauthenticated
+ * actors by design and have a minimal persisted footprint in
+ * `discussion_board_guest`. Unlike member accounts, the Prisma schema for
+ * guests does not include a dedicated session table; therefore, this join
+ * operation is intentionally lightweight: it creates the guest row and relies
+ * on the issued tokens to represent the session state. Implementations may map
+ * the guest `id` into token claims so downstream services can correlate actions
+ * to the `discussion_board_guest.id` without requiring a separate guest session
+ * table.
  *
- * Security considerations within schema constraints: Because the
- * econ_political_forum_guest table contains only non-sensitive fields
- * (nickname, user_agent, timestamps), the system MUST avoid embedding PII in
- * guest records. Tokens are ephemeral and must be implemented with short access
- * token TTLs and rotating refresh tokens. When honoring refresh requests, the
- * implementation MUST verify that the referenced guest id (if used) is not
- * marked removed: the operation MAY check econ_political_forum_guest.deleted_at
- * and reject refresh for entries where deleted_at is set.
+ * Security considerations and lifecycle constraints: Issued tokens for guests
+ * MUST be short-lived and scoped narrowly (for example: access token lifetime
+ * measured in minutes and refresh token lifetime measured in hours) because the
+ * persisted guest record holds only minimal attribution fields. Because the
+ * `discussion_board_guest` model includes a nullable `deleted_at` timestamp,
+ * the application can mark guest records as inactive by setting that column;
+ * guest account lifecycle and retention must follow product retention policies
+ * but no permanent personal-data-bearing fields are introduced here beyond
+ * `display_name` and `ip`.
  *
- * Related operations and workflow integration: Typical workflow: client calls
- * POST /auth/guest/join → server creates econ_political_forum_guest row and
- * returns IEconPoliticalForumGuest.IAuthorized → client uses access token for
- * authorized guest flows → when access token expires, client calls POST
- * /auth/guest/refresh to rotate tokens. See the companion refresh operation for
- * the refresh flow and validation rules.
+ * Related operations and error handling: This operation is part of the guest
+ * authentication workflow and is paired with a token renewal endpoint (`POST
+ * /auth/guest/refresh`). Implementations SHOULD return clear validation errors
+ * (400) for malformed display names and SHOULD return 409 if the request
+ * violates any uniqueness/business constraints the application enforces. If
+ * database persistence fails, the operation MUST not issue tokens and MUST
+ * return a 500 with a safe diagnostic message.
  *
  * @param props.connection
- * @param props.body Guest creation payload. Optional nickname and user agent
- *   context. Mapped to econ_political_forum_guest.nickname and
- *   econ_political_forum_guest.user_agent.
+ * @param props.body Guest registration payload. Example fields: displayName
+ *   (optional), ip (optional). This request creates a new
+ *   `discussion_board_guest` row and issues initial credentials.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/join
@@ -91,14 +95,14 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Guest creation payload. Optional nickname and user agent context.
-     * Mapped to econ_political_forum_guest.nickname and
-     * econ_political_forum_guest.user_agent.
+     * Guest registration payload. Example fields: displayName (optional),
+     * ip (optional). This request creates a new `discussion_board_guest`
+     * row and issues initial credentials.
      */
-    body: IEconPoliticalForumGuest.ICreate;
+    body: IDiscussionBoardGuest.ICreate;
   };
-  export type Body = IEconPoliticalForumGuest.ICreate;
-  export type Response = IEconPoliticalForumGuest.IAuthorized;
+  export type Body = IDiscussionBoardGuest.ICreate;
+  export type Response = IDiscussionBoardGuest.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -114,8 +118,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/guest/join";
-  export const random = (): IEconPoliticalForumGuest.IAuthorized =>
-    typia.random<IEconPoliticalForumGuest.IAuthorized>();
+  export const random = (): IDiscussionBoardGuest.IAuthorized =>
+    typia.random<IDiscussionBoardGuest.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -142,53 +146,56 @@ export namespace join {
 }
 
 /**
- * Rotate guest refresh token and issue new access token for a guest identity
- * (validates econ_political_forum_guest record).
+ * Refresh guest access tokens for a temporary guest account (validates
+ * discussion_board_guest existence).
  *
- * Purpose and overview: This endpoint accepts a guest refresh token and returns
- * a new access token and a rotated refresh token
- * (IEconPoliticalForumGuest.IAuthorized). It is part of the guest token
- * lifecycle and should validate that the guest identity referenced by the token
- * corresponds to an existing econ_political_forum_guest record. The operation
- * references econ_political_forum_guest.id and may consult
- * econ_political_forum_guest.deleted_at to ensure the guest record is active.
+ * Purpose and overview: This operation refreshes short-lived access credentials
+ * for an existing guest actor represented by a row in the
+ * `discussion_board_guest` table. The operation references the persisted guest
+ * record fields `id`, `display_name`, `ip`, `created_at`, `updated_at`, and
+ * `deleted_at` to validate that the guest is still present and not marked for
+ * retention/cleanup.
  *
- * Implementation details using confirmed schema fields: The Prisma schema
- * contains the econ_political_forum_guest table with id and timestamps but does
- * not include persistent token fields for guests; therefore the refresh
- * operation must validate the presented refresh token against the token store
- * (or stateless JWT revocation plan) and then, if token is valid, optionally
- * confirm the referenced guest id exists in econ_political_forum_guest and that
- * deleted_at is null. The response returns the
- * IEconPoliticalForumGuest.IAuthorized object with new tokens and minimal guest
- * identity information (id and nickname) for client correlation.
+ * Implementation details and validation: The request payload contains the guest
+ * refresh token. Because the Prisma schema for guests does not define a
+ * dedicated guest session table, implementations may validate refresh tokens
+ * statelessly (token signature and claims containing the
+ * `discussion_board_guest.id`) or choose to map refresh tokens to a short-lived
+ * server-side session store if desired. Before issuing new credentials the
+ * implementation SHOULD verify that the referenced `discussion_board_guest`
+ * record exists and that `deleted_at` is null (or within retention rules) if
+ * the application enforces such lifecycle constraints.
  *
- * Role-specific integration and business context: This operation is intended
- * for guest clients that were previously issued a refresh token by the join
- * endpoint. The endpoint enforces that the refresh token belongs to a guest
- * identity and that the identity has not been removed. After successful
- * rotation, updated_at of the guest row may be modified if the implementation
- * records last-seen metadata; that is optional and must respect the
- * econ_political_forum_guest.updated_at field semantics.
+ * Actor-specific integration and business context: Guests are intentionally
+ * lightweight in the DB; refresh operations therefore must avoid assuming
+ * member-only artifacts (for example, there is no
+ * `discussion_board_guest_sessions` table in the provided schema). Token
+ * rotation strategies used here should be compatible with the minimal shape of
+ * the `discussion_board_guest` record: validate the `id` and relevant
+ * timestamps (`created_at`, `updated_at`) embedded in token claims, and return
+ * renewed tokens scoped to the guest actor so downstream services can continue
+ * to correlate activity to `discussion_board_guest.id`.
  *
- * Security considerations within schema constraints: Because guest records are
- * ephemeral and do not carry PII, refresh tokens should have conservative
- * lifetimes and be rotated on each refresh. The API MUST reject refresh tokens
- * if the linked guest record shows deleted_at set. Implementations SHOULD log
- * refresh events for audit but avoid persisting tokens in the guest table (no
- * token column exists in Prisma schema).
+ * Security considerations and limits: Refresh tokens for guests SHOULD be
+ * constrained to limited sliding windows to reduce persistence needs and
+ * potential abuse. If the `deleted_at` column is set on the persisted
+ * `discussion_board_guest` row, the refresh endpoint SHOULD reject token
+ * renewal and require re-creation of a guest identity via the join operation.
+ * Refresh behavior MUST avoid escalating privileges and MUST only produce
+ * tokens with the guest actor scope.
  *
- * Related operations and workflow integration: Typical workflow: client calls
- * POST /auth/guest/refresh with a refresh token → authentication service
- * validates token and optionally checks econ_political_forum_guest.id exists
- * and deleted_at is null → service returns rotated refresh token and new access
- * token in IEconPoliticalForumGuest.IAuthorized format. This complements POST
- * /auth/guest/join which creates the initial guest identity and tokens.
+ * Related operations and failure modes: This endpoint pairs with `POST
+ * /auth/guest/join` (join). Typical success response returns a renewed
+ * `IDiscussionBoardGuest.IAuthorized` object. Failure modes include
+ * invalid/expired refresh token (401), revoked guest identity (404 or 403 per
+ * product policy), and transient storage errors (500). Implementations SHOULD
+ * log token refresh attempts while avoiding storing sensitive token values in
+ * plaintext.
  *
  * @param props.connection
- * @param props.body Refresh request containing the guest refresh token. No
- *   persistent guest-token fields exist in the database; token validation is
- *   handled by the auth service.
+ * @param props.body Refresh request payload containing the guest refresh token
+ *   (e.g., { "refreshToken": "string" }). The implementation validates token
+ *   and guest row before issuing new credentials.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/refresh
@@ -224,14 +231,14 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Refresh request containing the guest refresh token. No persistent
-     * guest-token fields exist in the database; token validation is handled
-     * by the auth service.
+     * Refresh request payload containing the guest refresh token (e.g., {
+     * "refreshToken": "string" }). The implementation validates token and
+     * guest row before issuing new credentials.
      */
-    body: IEconPoliticalForumGuest.IRefresh;
+    body: IDiscussionBoardGuest.IRefresh;
   };
-  export type Body = IEconPoliticalForumGuest.IRefresh;
-  export type Response = IEconPoliticalForumGuest.IAuthorized;
+  export type Body = IDiscussionBoardGuest.IRefresh;
+  export type Response = IDiscussionBoardGuest.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -247,8 +254,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/guest/refresh";
-  export const random = (): IEconPoliticalForumGuest.IAuthorized =>
-    typia.random<IEconPoliticalForumGuest.IAuthorized>();
+  export const random = (): IDiscussionBoardGuest.IAuthorized =>
+    typia.random<IDiscussionBoardGuest.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

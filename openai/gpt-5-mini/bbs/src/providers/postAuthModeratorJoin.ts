@@ -7,101 +7,128 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPoliticalForumModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPoliticalForumModerator";
+import { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
 
 export async function postAuthModeratorJoin(props: {
-  body: IEconPoliticalForumModerator.ICreate;
-}): Promise<IEconPoliticalForumModerator.IAuthorized> {
-  const { body } = props;
+  moderator: ModeratorPayload;
+  body: IDiscussionBoardModerator.ICreate;
+}): Promise<IDiscussionBoardModerator.IAuthorized> {
+  const { moderator, body } = props;
 
-  try {
-    // Check for existing username or email
-    const existing =
-      await MyGlobal.prisma.econ_political_forum_registereduser.findFirst({
-        where: {
-          OR: [{ username: body.username }, { email: body.email }],
-        },
-      });
+  // Authorization required because moderator payload is provided
+  const caller = await MyGlobal.prisma.discussion_board_moderator.findUnique({
+    where: { id: moderator.id },
+  });
+  if (!caller || caller.deleted_at !== null) {
+    throw new HttpException("Unauthorized: caller not found or inactive", 403);
+  }
 
-    if (existing) {
-      throw new HttpException(
-        "Conflict: username or email already in use",
-        409,
-      );
-    }
+  // Uniqueness checks
+  const existingByUsername =
+    await MyGlobal.prisma.discussion_board_moderator.findFirst({
+      where: { username: body.username },
+    });
+  if (existingByUsername)
+    throw new HttpException("Username already registered", 409);
 
-    const passwordHash = await PasswordUtil.hash(body.password);
+  const existingByEmail =
+    await MyGlobal.prisma.discussion_board_moderator.findFirst({
+      where: { email: body.email },
+    });
+  if (existingByEmail) throw new HttpException("Email already registered", 409);
 
-    const id = v4() as string & tags.Format<"uuid">;
-    const now = toISOStringSafe(new Date());
+  // Hash password
+  const password_hash = await PasswordUtil.hash(body.password);
 
-    const created =
-      await MyGlobal.prisma.econ_political_forum_registereduser.create({
+  // Prepare ids and timestamps
+  const moderatorId = v4() as string & tags.Format<"uuid">;
+  const sessionId = v4() as string & tags.Format<"uuid">;
+  const now = toISOStringSafe(new Date());
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  // Create moderator and session in transaction
+  const [createdModerator, createdSession] = await MyGlobal.prisma.$transaction(
+    [
+      MyGlobal.prisma.discussion_board_moderator.create({
         data: {
-          id,
+          id: moderatorId,
           username: body.username,
           email: body.email,
-          password_hash: passwordHash,
+          password_hash,
           display_name: body.display_name ?? null,
-          bio: null,
-          avatar_uri: null,
-          is_banned: false,
-          banned_until: null,
-          email_verified: false,
-          verified_at: null,
-          failed_login_attempts: 0,
-          locked_until: null,
-          last_login_at: null,
+          // role and mfa_enabled DO NOT exist on discussion_board_moderator schema - removed
           created_at: now,
           updated_at: now,
           deleted_at: null,
         },
-      });
+      }),
+      MyGlobal.prisma.discussion_board_moderator_sessions.create({
+        data: {
+          id: sessionId,
+          discussion_board_moderator_id: moderatorId,
+          ip: body.ip ?? "",
+          href: body.href,
+          referrer: body.referrer,
+          created_at: now,
+          expired_at: toISOStringSafe(accessExpires),
+        },
+      }),
+    ],
+  );
 
-    const accessExpiry = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-    const refreshExpiry = toISOStringSafe(
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    );
+  // Generate tokens
+  const tokenCreatedAt = toISOStringSafe(new Date());
 
-    const access = jwt.sign(
-      { id: created.id, type: "registereduser", email: created.email },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    );
+  const access = jwt.sign(
+    {
+      type: "moderator",
+      id: createdModerator.id,
+      session_id: createdSession.id,
+      created_at: tokenCreatedAt,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
 
-    const refresh = jwt.sign(
-      { id: created.id, tokenType: "refresh" },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    );
+  const refresh = jwt.sign(
+    {
+      type: "moderator",
+      id: createdModerator.id,
+      session_id: createdSession.id,
+      tokenType: "refresh",
+      created_at: tokenCreatedAt,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
 
-    return {
-      id: created.id as string & tags.Format<"uuid">,
-      token: {
-        access,
-        refresh,
-        expired_at: accessExpiry,
-        refreshable_until: refreshExpiry,
-      },
-    };
-  } catch (e) {
-    if (
-      e instanceof Prisma.PrismaClientKnownRequestError &&
-      e.code === "P2002"
-    ) {
-      throw new HttpException(
-        "Conflict: username or email already in use",
-        409,
-      );
-    }
-    if (e instanceof HttpException) throw e;
-    throw new HttpException("Internal Server Error", 500);
-  }
+  const token: IAuthorizationToken = {
+    access,
+    refresh,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
+
+  return {
+    id: createdModerator.id,
+    username: createdModerator.username,
+    email: createdModerator.email,
+    display_name: createdModerator.display_name ?? null,
+    created_at: toISOStringSafe(createdModerator.created_at),
+    updated_at: toISOStringSafe(createdModerator.updated_at),
+    token,
+    moderator: {
+      id: createdModerator.id,
+      username: createdModerator.username,
+      display_name: createdModerator.display_name ?? null,
+      created_at: toISOStringSafe(createdModerator.created_at),
+      updated_at: toISOStringSafe(createdModerator.updated_at),
+      deleted_at: createdModerator.deleted_at
+        ? toISOStringSafe(createdModerator.deleted_at)
+        : null,
+    },
+  };
 }

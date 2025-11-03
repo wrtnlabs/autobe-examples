@@ -1,222 +1,240 @@
-# Minimal Todo Service – Business Rules and Validation (todoList)
+# Business Rules and Validation for Minimal Todo Service (todo)
 
-This specification defines WHAT the minimal Todo service must do in business terms so developers can implement it without ambiguity. It deliberately excludes technical designs (APIs, schemas, storage, infrastructure) and UI specifications. Language: en-US. Timezone defaults: Asia/Seoul unless a user preference is set.
+Scope: Minimal Todo functionality for a single authenticated user who manages only personal items. Content is expressed in business language and does not prescribe technical implementations (no APIs, schemas, or storage details). Requirements use EARS syntax where applicable and are testable from a black-box perspective.
 
-## 1) Purpose and Scope
-- Purpose: Provide clear, testable business rules and validations for a minimal personal Todo list so a single authenticated member can reliably create, review, update, complete/uncomplete, delete, and list items.
-- Scope (Minimal): Only the fields and actions strictly necessary to operate a basic Todo list.
-  - In scope: Title (required), Completed (boolean), CreatedAt, UpdatedAt, optional CompletedAt (set only when completed), ownership, listing, basic status filters, default ordering by creation time, pagination.
-  - Out of scope (Initial Minimal): Description/notes, due dates, tags/labels, priorities, reminders/notifications, attachments, subtasks, comments, sharing/collaboration, advanced filters/search, bulk operations, import/export tooling (beyond references in other docs), API/database/infrastructure details.
+- Out of scope: sharing/collaboration, tags/labels/priorities, attachments/subtasks, reminders/notifications, recurring tasks, complex search/filters, multi-actor roles, bulk operations, or administrative consoles.
 
-## 2) References and Relationships
-- Roles and permissions: see ./02-user-roles-and-permissions.md (business terms only).
-- Functional requirements: see ./03-functional-requirements-minimal-todo.md.
-- Error handling and recovery: see ./07-error-handling-and-recovery.md.
-- Non-functional expectations: see ./08-non-functional-requirements.md.
-- Security and privacy: see ./09-security-and-privacy.md.
-- Data lifecycle: see ./10-data-lifecycle-and-retention.md.
+## Terminology and Domain Definitions
+- Todo Item: A personal task owned by exactly one authenticated user. Contains a required title, optional description, optional due date (calendar date), completion status, and system-maintained business timestamps.
+- Title: Short, single-line text naming the Todo Item. Required at creation and update.
+- Description: Optional, multi-line free text providing additional detail.
+- Due Date: Optional calendar date indicating when the item is intended to be completed. Interpreted as a date-only value (no time-of-day); comparisons are based on the user’s local calendar context.
+- Completion Status: Boolean state: completed or not completed. Defaults to not completed at creation.
+- Created At / Updated At: Business-visible timestamps indicating when the item was created and last modified for ordering and audit expectations (not user-editable fields).
+- Ownership: Association of a Todo Item with the single authenticated user who created it. Ownership is immutable in MVP.
+- Deletion: Removal by the owner. MVP behavior is immediate and irreversible (hard delete); deleted items are not accessible to users.
+- Listing: Retrieval of a user’s own items with default ordering and optional basic filtering by completion status.
 
-## 3) Terminology and Entity Overview (Minimal Fields)
-- Todo: A personal task entry owned by exactly one member.
-- Fields (business-level):
-  - Title (required): Short text describing the task.
-  - Completed (system-managed): Boolean state; defaults to false on creation.
-  - CreatedAt (system-managed): Creation timestamp.
-  - UpdatedAt (system-managed): Last modification timestamp (any change including completion toggle).
-  - CompletedAt (system-managed, optional): Timestamp set when transitioning to Completed; cleared when uncompleted.
-- Ownership: The authenticated member who created the Todo; only the owner may act on the Todo under normal operation.
+## Guiding Principles and Non-Goals (MVP Minimalism)
+- Minimal Feature Set: Only essential capabilities for create, read, update, complete/reopen, delete.
+- Data Isolation: Users access only their own items; cross-user leakage is prohibited.
+- Predictability: Deterministic validations, ordering, and messages.
+- No Background Automations: No reminders, scheduled jobs, or notifications in MVP.
+- No Collaboration: No shared lists, assignments, or delegated access.
 
-## 4) Field-Level Rules (Business Terms)
+EARS principles:
+- THE "todo system" SHALL implement only the rules stated in this business document for MVP.
+- WHERE "unspecified behaviors" arise, THE "todo system" SHALL follow the principle of least surprise and deny unsupported actions with clear, consistent business messages.
 
-### 4.1 Title
-- THE todoList service SHALL treat Title as mandatory.
-- THE todoList service SHALL trim leading and trailing whitespace from Title before validation and storage.
-- THE todoList service SHALL validate Title length between 1 and 100 characters inclusive after trimming.
-- THE todoList service SHALL accept any Unicode characters in Title except non-printable control characters; newline characters are not allowed.
-- THE todoList service SHALL preserve internal spaces and casing within Title after trimming.
+## Todo Field Rules (title, description, due date, completion)
 
-EARS examples:
-- WHEN a user submits a Title containing only whitespace, THE todoList service SHALL reject the input with a clear validation message stating that a non-empty Title is required.
-- IF Title length after trimming exceeds 100 characters, THEN THE todoList service SHALL reject the request and state the maximum allowed length is 100 characters.
-- IF Title contains newline characters, THEN THE todoList service SHALL reject the request and state that Title must be a single line.
+### General Input Normalization
+- WHEN "text fields (title, description) are received", THE "todo system" SHALL trim leading and trailing whitespace.
+- WHEN "an empty string trims to empty", THE "todo system" SHALL treat it as missing for optional fields and as invalid for required fields.
 
-### 4.2 Completed and CompletedAt
-- THE todoList service SHALL default Completed to false on creation.
-- THE todoList service SHALL set Completed=true only via explicit user action to complete a Todo.
-- THE todoList service SHALL set CompletedAt when a Todo transitions to Completed and SHALL clear CompletedAt when uncompleted.
-- THE todoList service SHALL not infer completion from Title patterns or text content.
+### Title (Required)
+- THE "todo system" SHALL require a non-empty title after trimming.
+- THE "todo system" SHALL constrain title length to 1–120 characters after trimming.
+- THE "todo system" SHALL restrict the title to a single line (no line breaks). Any line break is invalid.
+- THE "todo system" SHALL allow any visible Unicode characters except control characters.
 
-EARS examples:
-- WHEN a Todo is marked complete, THE todoList service SHALL set Completed=true and set CompletedAt to the current time in the user’s timezone context.
-- WHEN a Todo is marked uncomplete, THE todoList service SHALL set Completed=false and clear CompletedAt.
+EARS: Title validation and messages
+- WHEN "creating a todo without a title or with a title that trims to empty", THE "todo system" SHALL reject with the message "Title is required".
+- WHEN "updating a todo with a title exceeding 120 characters after trimming", THE "todo system" SHALL reject with the message "Title must be 1 to 120 characters".
+- WHEN "a title contains line breaks", THE "todo system" SHALL reject with the message "Title must be a single line".
 
-### 4.3 CreatedAt and UpdatedAt
-- THE todoList service SHALL set CreatedAt when the Todo is created and SHALL never change it afterwards.
-- THE todoList service SHALL set UpdatedAt whenever a mutable field changes (Title or Completed state).
+### Description (Optional)
+- THE "todo system" SHALL accept description as optional.
+- THE "todo system" SHALL allow multi-line content for description.
+- THE "todo system" SHALL limit description length to a maximum of 2,000 characters after trimming.
+- WHEN "description is omitted or trims to empty", THE "todo system" SHALL store it as absent (no description).
 
-EARS examples:
-- WHEN a Todo is created, THE todoList service SHALL set CreatedAt and UpdatedAt to the current time in the user’s timezone context.
-- WHEN a Todo is edited or completion state toggled, THE todoList service SHALL update UpdatedAt to the current time in the user’s timezone context.
+EARS: Description validation and messages
+- WHEN "description exceeds 2,000 characters after trimming", THE "todo system" SHALL reject with the message "Description must be 0 to 2000 characters".
 
-### 4.4 Ownership
-- THE todoList service SHALL associate each Todo with exactly one owner at creation.
-- THE todoList service SHALL prevent non-owners from reading or modifying a Todo under normal operations.
+### Due Date (Optional, Date-Only)
+- THE "todo system" SHALL treat due date as a calendar date (no time-of-day component).
+- THE "todo system" SHALL accept due date as optional.
+- THE "todo system" SHALL allow due dates in the past, present, or future (overdue detection occurs by comparison rules, not by validation).
+- THE "todo system" SHALL interpret due date comparisons in the user’s local calendar context.
+- THE "todo system" SHALL allow removal of an existing due date by explicitly setting it to absent.
 
-EARS examples:
-- WHEN the owner performs an allowed action, THE todoList service SHALL allow the action subject to other validations.
-- IF a non-owner attempts to access a Todo, THEN THE todoList service SHALL deny access and SHALL not reveal whether the Todo exists.
+EARS: Due date validation and messages
+- WHEN "due date value is not a valid calendar date", THE "todo system" SHALL reject with the message "Due date must be a valid date".
+- WHEN "a due date is provided with a time-of-day component", THE "todo system" SHALL ignore the time-of-day and use only the date for business behavior.
 
-## 5) Action-Level Rules (Preconditions and Postconditions)
+### Completion Status
+- THE "todo system" SHALL default completion to not completed for newly created items.
+- WHEN "a user marks an item complete", THE "todo system" SHALL set completion to completed and maintain a non-editable completion timestamp internally for audit expectations.
+- WHEN "a user reopens a completed item", THE "todo system" SHALL set completion to not completed and may maintain prior completion timestamps internally for audit expectations.
+- THE "todo system" SHALL allow toggling completion regardless of due date presence.
 
-Role constraints:
-- guestVisitor: no access to any Todo data or actions.
-- todoMember: full control over own Todos only.
-- systemAdmin: oversight for system policies and abuse processes; no routine access to private Todos.
+EARS: Completion semantics
+- WHEN "marking complete an item already complete", THE "todo system" SHALL confirm the item remains complete without error.
+- WHEN "reopening an item already not completed", THE "todo system" SHALL confirm the item remains not completed without error.
 
-### 5.1 Create a Todo
-Preconditions:
-- Actor is todoMember.
-- Input includes a valid Title per section 4.1.
+## Ownership and Authorization Rules (business-level)
 
-Postconditions:
-- A new Todo exists with Completed=false; CreatedAt and UpdatedAt are set; owner is assigned.
+Ownership establishment and boundaries
+- WHEN "a user creates a todo", THE "todo system" SHALL assign ownership to that user and persist ownership until deletion.
+- THE "todo system" SHALL forbid any ownership transfer in MVP.
 
-EARS:
-- WHEN a todoMember submits a valid Title, THE todoList service SHALL create a Todo owned by that member with Completed=false and timestamps set.
-- IF Title fails validation, THEN THE todoList service SHALL not create a Todo and SHALL return a field-specific validation message.
-- WHERE the actor is guestVisitor, THE todoList service SHALL deny creation and provide authentication guidance.
+Access boundaries and messaging
+- WHEN "a user attempts to read a todo they do not own", THE "todo system" SHALL deny access with the message "You do not have access to this item".
+- WHEN "a user attempts to update a todo they do not own", THE "todo system" SHALL deny access with the message "You do not have access to this item".
+- WHEN "a user attempts to delete a todo they do not own", THE "todo system" SHALL deny access with the message "You do not have access to this item".
+- THE "todo system" SHALL ensure listings return only the authenticated user’s items.
 
-### 5.2 Read a Todo (Detail)
-Preconditions:
-- Actor is todoMember requesting own Todo by identifier.
+Permission matrix (business view)
 
-Postconditions:
-- The Todo’s fields (Title, Completed, CreatedAt, UpdatedAt, CompletedAt where applicable) are returned.
+| Action | User |
+|--------|------|
+| Create own todo | ✅ |
+| Read own todo | ✅ |
+| Update own todo | ✅ |
+| Delete own todo | ✅ |
+| Read others’ todo | ❌ |
+| Update others’ todo | ❌ |
+| Delete others’ todo | ❌ |
 
-EARS:
-- WHEN a member requests their own Todo by identifier, THE todoList service SHALL return the Todo’s fields.
-- IF the Todo does not exist in the member’s accessible scope, THEN THE todoList service SHALL respond with a not-available message without revealing existence to non-owners.
+EARS: Ownership and isolation summary
+- THE "todo system" SHALL restrict all todo access and modifications to the owner only.
+- IF "the requester is not the owner", THEN THE "todo system" SHALL deny the action with a clear business message and without revealing whether the item exists.
 
-### 5.3 Update a Todo’s Title
-Preconditions:
-- Actor is the owner (todoMember).
-- Input Title passes validation.
+## Editing and Deletion Constraints
 
-Postconditions:
-- Title is changed; UpdatedAt is set to current time.
+Editing rules
+- THE "todo system" SHALL allow editing of title, description, due date, and completion status for the owner.
+- WHEN "editing title", THE "todo system" SHALL enforce all title rules.
+- WHEN "editing description", THE "todo system" SHALL enforce description length rules.
+- WHEN "editing due date", THE "todo system" SHALL enforce valid date semantics.
+- WHEN "toggling completion", THE "todo system" SHALL update completion and maintain audit expectations internally.
 
-EARS:
-- WHEN the owner submits a valid new Title, THE todoList service SHALL apply the change and set UpdatedAt.
-- IF the new Title is invalid, THEN THE todoList service SHALL reject the update with a field-specific message.
-- IF the Todo is not owned by the requester or not found, THEN THE todoList service SHALL deny the update and SHALL not leak existence.
+Deletion rules and edge cases
+- THE "todo system" SHALL allow only the owner to delete their items.
+- THE "todo system" SHALL perform immediate and irreversible deletion in MVP.
+- WHEN "the owner requests deletion of an item", THE "todo system" SHALL remove it so it is no longer visible in listings or retrievable.
+- WHEN "an operation targets a deleted or non-existent item", THE "todo system" SHALL respond with the message "Item not found" without exposing whether it ever existed.
+- WHEN "deleting a completed item or an item with a due date", THE "todo system" SHALL delete it with the same behavior as any other item.
 
-### 5.4 Complete a Todo
-Preconditions:
-- Actor is the owner.
+## Ordering, Listing Visibility, and Basic Filtering
 
-Postconditions:
-- Completed=true; CompletedAt set; UpdatedAt set.
+Default ordering and determinism
+- THE "todo system" SHALL list a user’s items by default with the newest items first based on creation time (descending).
+- WHERE "multiple items share the same creation time to the minute", THE "todo system" SHALL order such items deterministically by most recent update time as a secondary key (descending), and by title lexicographic order (ascending) as a tertiary key if still tied.
 
-EARS:
-- WHEN the owner marks a Todo complete, THE todoList service SHALL set Completed=true, set CompletedAt, and set UpdatedAt.
-- WHERE the Todo is already Completed, THE todoList service SHALL return the current state without duplicating effects.
+Visibility and scope
+- THE "todo system" SHALL include only items owned by the requesting user in any listing.
+- THE "todo system" SHALL include both completed and not completed items by default when no status filter is applied.
 
-### 5.5 Uncomplete a Todo
-Preconditions:
-- Actor is the owner.
+Basic status filters
+- THE "todo system" SHALL support the status filter values: "all", "active", and "completed".
+- WHERE "all" is selected, THE "todo system" SHALL include both completed and not completed items.
+- WHERE "active" is selected, THE "todo system" SHALL include only items whose completion status is not completed.
+- WHERE "completed" is selected, THE "todo system" SHALL include only items whose completion status is completed.
 
-Postconditions:
-- Completed=false; CompletedAt cleared; UpdatedAt set.
+Pagination expectations (business-level)
+- THE "todo system" SHALL return listings in pages with a default page size of 20 items and a maximum of 100 items per page for MVP.
+- WHERE "a requested page size exceeds 100", THE "todo system" SHALL cap results at 100 items and indicate that a cap was applied in business terms.
 
-EARS:
-- WHEN the owner marks a Todo uncomplete, THE todoList service SHALL set Completed=false, clear CompletedAt, and set UpdatedAt.
-- WHERE the Todo is already Active (not completed), THE todoList service SHALL return the current state without error.
+Due date semantics
+- THE "todo system" SHALL consider an item overdue if its due date is before the user’s current local calendar date and the item is not completed (computed, not stored).
+- THE "todo system" SHALL consider an item due today if its due date equals the user’s current local calendar date.
+- THE "todo system" SHALL not exclude overdue or completed items from default listings in MVP.
 
-### 5.6 Delete a Todo
-Preconditions:
-- Actor is the owner.
+## Validation Error Conditions and Standard Messages (business terms)
 
-Postconditions:
-- The Todo is permanently removed in the minimal scope and is no longer available in subsequent operations.
+Title errors
+- IF "title is missing or trims to empty", THEN THE "todo system" SHALL present the message "Title is required".
+- IF "title exceeds 120 characters after trimming", THEN THE "todo system" SHALL present the message "Title must be 1 to 120 characters".
+- IF "title contains line breaks", THEN THE "todo system" SHALL present the message "Title must be a single line".
 
-EARS:
-- WHEN the owner deletes a Todo, THE todoList service SHALL permanently remove it from subsequent reads and listings.
-- WHERE the Todo is already deleted or not found, THE todoList service SHALL return a safe outcome indicating that no item is available to delete.
+Description errors
+- IF "description exceeds 2000 characters after trimming", THEN THE "todo system" SHALL present the message "Description must be 0 to 2000 characters".
 
-## 6) Idempotency and Duplication Handling
-- Status actions are idempotent; repeating the same state set does not change state further.
-- Creation retries are treated as distinct Creates if each submission passes validation; deduplication is out of scope for minimal.
+Due date errors
+- IF "due date is not a valid calendar date", THEN THE "todo system" SHALL present the message "Due date must be a valid date".
 
-EARS:
-- WHEN a Todo is repeatedly marked complete without intervening uncomplete, THE todoList service SHALL keep Completed=true and SHALL not create multiple completion effects.
-- WHEN a Todo is repeatedly marked uncomplete, THE todoList service SHALL keep Completed=false and SHALL not create multiple effects.
-- WHEN a delete request is repeated for the same Todo, THE todoList service SHALL respond safely that the item is no longer available.
-- IF the same create is submitted multiple times, THEN THE todoList service SHALL create distinct Todos if all submissions pass validation.
+Authorization and ownership errors
+- IF "the requester is not the owner of the item", THEN THE "todo system" SHALL present the message "You do not have access to this item" and shall not reveal whether the item exists.
 
-## 7) Ordering and Pagination (Business Terms)
-- Default ordering: CreatedAt descending (newest first) for all list views in the minimal scope.
-- Pagination: Default page size is 20 items; allowed page size range is 10 to 50 inclusive.
-- Empty pages: Requests beyond the end of results return an empty list with page metadata sufficient to understand navigation (format is implementation-defined).
+Not found and state errors
+- IF "the item does not exist (never existed or already deleted)", THEN THE "todo system" SHALL present the message "Item not found".
 
-EARS:
-- THE todoList service SHALL order list results by CreatedAt descending by default.
-- THE todoList service SHALL provide page-based retrieval with default page size 20 and allow 10–50 inclusive upon request; out-of-range values SHALL be coerced to the nearest bound or rejected with a validation message, consistently.
-- WHEN a page has no items, THE todoList service SHALL return an empty list with page metadata indicating no items for that page.
+General validation behavior
+- THE "todo system" SHALL return user-understandable business messages only and avoid internal technical details.
+- WHERE "multiple validation errors occur in a single request", THE "todo system" SHALL present messages for all fields that failed validation in a concise, readable way.
 
-## 8) Localization and Timezone
-- Presentation timezone: Use the user’s configured timezone if available; otherwise default to Asia/Seoul.
-- Date-only vs. date-time inputs are not in scope for minimal, since due dates are out of scope. Timestamps referenced in this document are system-managed and shown in user-local time for human contexts.
-
-EARS:
-- WHERE a user timezone preference exists, THE todoList service SHALL present timestamps in that timezone.
-- WHERE no preference exists, THE todoList service SHALL present timestamps in Asia/Seoul.
-
-## 9) Business Lifecycle and Access Control (Mermaid)
+## Lifecycle Diagram (business-level)
 
 ```mermaid
 graph LR
-  subgraph "Todo Lifecycle"
-    A["Create Todo"] --> B["Active(Incomplete)"]
-    B -->|"Edit Title"| B
-    B -->|"Complete"| C["Completed"]
-    C -->|"Uncomplete"| B
-    B -->|"Delete"| D["Deleted(Permanent)"]
-    C -->|"Delete"| D
-  end
-
-  subgraph "Access Control"
-    E["Owner(todoMember)"] -->|"Allowed"| B
-    E -->|"Allowed"| C
-    F["guestVisitor"] -.->|"Denied"| B
-    F -.->|"Denied"| C
-    G["systemAdmin(Policy-bound)"] -.->|"NoRoutineAccess"| B
-  end
+  A["Create Item"] --> B["Active (Not Completed)"]
+  B --> C["Edit Fields"]
+  B --> D["Mark Complete"]
+  D --> E["Active (Completed)"]
+  E --> F["Reopen (Mark Not Completed)"]
+  F --> B
+  B --> G["Delete (Hard)"]
+  E --> G
+  C --> B
 ```
 
-## 10) Traceability to Roles and Permissions
-- Boundaries: Only the owner may act on a Todo; guests have no access; admins do not access private content in routine operations.
+Diagram notes: “Active” represents items that exist and are owned by the user; completion is a property. “Delete (Hard)” removes the item permanently; no recovery in MVP.
 
-EARS:
-- THE todoList service SHALL restrict access to personal Todos to the owner by default.
-- IF an actor’s role does not permit the action, THEN THE todoList service SHALL deny the action and provide next-step guidance in business terms.
+## Acceptance Criteria (testable, business-focused)
 
-## 11) Acceptance and Testability Notes
-- Field validation is testable by providing Title edge cases (empty/whitespace-only, 1 char, 100 chars, >100 chars, newline present).
-- Action rules are testable by verifying state transitions and timestamps (CreatedAt/UpdatedAt/CompletedAt behavior).
-- Idempotency is testable by repeating the same state-setting action and confirming stable results.
-- Ordering is testable by creating Todos with known CreatedAt values and confirming newest-first ordering with pagination boundaries at 20, 10, and 50.
-- Permission denial is testable by attempting cross-user access and confirming neutral, non-leaky messaging.
+Creation
+1. WHEN "creating with valid title (1–120 chars), optional description (<=2000), and optional valid due date", THE "todo system" SHALL create the item as not completed and assign ownership to the requester.
+2. WHEN "creating without a title or with a title that trims to empty", THE "todo system" SHALL reject with "Title is required" and create nothing.
+3. WHEN "creating with a title containing line breaks", THE "todo system" SHALL reject with "Title must be a single line".
+4. WHEN "creating with title longer than 120 characters", THE "todo system" SHALL reject with "Title must be 1 to 120 characters".
+5. WHEN "creating with description longer than 2000 characters", THE "todo system" SHALL reject with "Description must be 0 to 2000 characters".
+6. WHEN "creating with invalid due date", THE "todo system" SHALL reject with "Due date must be a valid date".
 
-## 12) EARS Requirement Index (Extract)
-- THE todoList service SHALL require a non-empty Title trimmed to 1–100 characters.
-- WHEN a valid Title is submitted, THE todoList service SHALL create a Todo with Completed=false and set CreatedAt and UpdatedAt.
-- WHEN a Todo is marked complete, THE todoList service SHALL set Completed=true, set CompletedAt, and set UpdatedAt.
-- WHEN a Todo is marked uncomplete, THE todoList service SHALL set Completed=false, clear CompletedAt, and set UpdatedAt.
-- WHEN the owner updates Title, THE todoList service SHALL set UpdatedAt.
-- IF Title is invalid, THEN THE todoList service SHALL reject create or update with field-specific guidance.
-- THE todoList service SHALL order listings by CreatedAt descending and paginate with a default size of 20 and allowed range of 10–50.
-- IF an actor is unauthenticated or not the owner, THEN THE todoList service SHALL deny access without revealing existence.
-- WHERE no timezone preference exists, THE todoList service SHALL present timestamps in Asia/Seoul.
+Reading
+7. WHEN "reading an item owned by the requester", THE "todo system" SHALL return the item details.
+8. WHEN "reading an item not owned by the requester", THE "todo system" SHALL deny with "You do not have access to this item" without confirming existence.
+9. WHEN "reading a non-existent or previously deleted item", THE "todo system" SHALL respond with "Item not found".
 
----
-This specification expresses business requirements only and intentionally avoids technical implementation details. Developers retain full autonomy over architecture, APIs, data models, and infrastructure while meeting these business outcomes.
+Updating
+10. WHEN "updating title within 1–120 chars single-line", THE "todo system" SHALL accept and reflect the change.
+11. WHEN "updating title to empty or whitespace-only", THE "todo system" SHALL reject with "Title is required".
+12. WHEN "updating title to include line breaks", THE "todo system" SHALL reject with "Title must be a single line".
+13. WHEN "updating description to >2000 chars", THE "todo system" SHALL reject with "Description must be 0 to 2000 characters".
+14. WHEN "setting due date to a valid date (past, today, future)", THE "todo system" SHALL accept and reflect the change.
+15. WHEN "setting due date to an invalid date", THE "todo system" SHALL reject with "Due date must be a valid date".
+16. WHEN "removing due date explicitly", THE "todo system" SHALL store it as absent.
+17. WHEN "toggling completion to completed", THE "todo system" SHALL mark the item as completed and maintain internal audit expectations.
+18. WHEN "toggling completion to not completed", THE "todo system" SHALL mark the item as not completed.
+19. WHEN "attempting to update an item not owned by requester", THE "todo system" SHALL deny with "You do not have access to this item".
+20. WHEN "attempting to update a non-existent or previously deleted item", THE "todo system" SHALL respond with "Item not found".
+
+Deletion
+21. WHEN "the owner requests deletion", THE "todo system" SHALL delete the item immediately so it is no longer visible or retrievable.
+22. WHEN "a non-owner attempts deletion", THE "todo system" SHALL deny with "You do not have access to this item".
+23. WHEN "deleting an item that does not exist or is already deleted", THE "todo system" SHALL respond with "Item not found".
+
+Listing and Visibility
+24. WHEN "listing without filters", THE "todo system" SHALL return only the requester’s items ordered by creation time descending with deterministic secondary (updated time desc) and tertiary (title asc) keys.
+25. WHEN "listing with filter for active items only", THE "todo system" SHALL include only items whose completion status is not completed.
+26. WHEN "listing with filter for completed items only", THE "todo system" SHALL include only items whose completion status is completed.
+27. WHEN "listing after deleting an item", THE "todo system" SHALL not include the deleted item in results.
+28. WHEN "listing with an explicit page size up to 100", THE "todo system" SHALL return that many items; IF request exceeds 100, THEN cap at 100 and indicate a cap was applied.
+
+Due Date Semantics
+29. WHEN "today is after an item’s due date and the item is not completed", THE "todo system" SHALL consider the item overdue (computed, not stored).
+30. WHEN "today equals an item’s due date", THE "todo system" SHALL consider the item due today (computed, not stored).
+
+Security and Isolation (Business-Level)
+31. THE "todo system" SHALL never expose another user’s item identifiers, titles, or any data through any business function.
+32. IF "any operation references an item not owned by the requester", THEN THE "todo system" SHALL deny access with "You do not have access to this item".
+
+Messaging Consistency
+33. THE "todo system" SHALL ensure that identical validation failures always produce the same business message text as specified in this document.
+
+## Related Documents
+- Functional scope: [Functional Requirements](./03-functional-requirements.md)
+- Actor boundaries: [User Actors and Permissions](./02-user-actors-and-permissions.md)
+
+Notes: Business requirements only. Technical implementation details (architecture, APIs, storage) are explicitly deferred to the development team.

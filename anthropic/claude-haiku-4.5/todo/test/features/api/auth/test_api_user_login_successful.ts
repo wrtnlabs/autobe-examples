@@ -4,137 +4,153 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoAppAuth } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAuth";
-import type { ITodoAppAuthenticatedUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAuthenticatedUser";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
- * Validates the complete user authentication workflow including registration,
- * email verification, and login.
+ * Test successful user login workflow with session creation and JWT token
+ * generation.
  *
- * This test ensures that:
+ * This test validates the complete authentication flow:
  *
- * 1. A new user can successfully register with valid email and password
- * 2. User email can be verified with a valid verification token
- * 3. User can successfully login with registered credentials
- * 4. Login response contains valid JWT access token with proper structure
- * 5. Token contains required metadata (userId, email, role, expiration)
- * 6. Access token is properly set in connection headers for authenticated requests
- * 7. Last login timestamp is updated on successful authentication
+ * 1. Creates a new user account with email and password
+ * 2. Authenticates the user with their credentials
+ * 3. Verifies session creation with connection metadata
+ * 4. Confirms JWT tokens are generated with correct expiration times
+ * 5. Validates the response contains all required user information
  *
- * The test implements a realistic authentication flow:
+ * Process:
  *
- * - Create account → Email verification → Login → Token validation
+ * 1. Register a new user account via /auth/user/join endpoint
+ * 2. Login with registered credentials via /auth/user/login endpoint with
+ *    connection metadata
+ * 3. Validate response contains user ID, email, status, and timestamps
+ * 4. Verify access token and refresh token are present with valid expiration times
+ * 5. Ensure tokens are properly formatted JWT tokens
  */
 export async function test_api_user_login_successful(
   connection: api.IConnection,
 ) {
-  // Step 1: Create a new user account with valid credentials
-  const userEmail = typia.random<string & tags.Format<"email">>();
-  const userPassword = "SecurePass123!@#";
+  // Step 1: Register a new user account
+  const registrationEmail = typia.random<string & tags.Format<"email">>();
+  const registrationPassword = RandomGenerator.alphabets(10); // At least 8 characters
 
-  const registrationResponse = await api.functional.auth.authenticatedUser.join(
-    connection,
-    {
-      body: {
-        email: userEmail,
-        password: userPassword,
-      } satisfies ITodoAppAuthenticatedUser.ICreate,
-    },
+  const registeredUser = await api.functional.auth.user.join(connection, {
+    body: {
+      email: registrationEmail,
+      password: registrationPassword,
+    } satisfies ITodoAppUser.IJoin,
+  });
+  typia.assert(registeredUser);
+
+  // Validate registration response contains required fields
+  TestValidator.equals(
+    "registered user email matches input",
+    registeredUser.email,
+    registrationEmail,
   );
-
-  typia.assert(registrationResponse);
+  TestValidator.equals(
+    "registered user status is active",
+    registeredUser.status,
+    "active",
+  );
   TestValidator.predicate(
-    "registration response contains valid user id",
-    registrationResponse.id.length > 0,
+    "registered user has valid ID",
+    typeof registeredUser.id === "string" && registeredUser.id.length > 0,
+  );
+
+  // Step 2: Authenticate with login credentials
+  const loginHref = typia.random<string & tags.Format<"uri">>();
+  const loginReferrer = typia.random<string & tags.Format<"uri">>();
+
+  const authenticatedUser = await api.functional.auth.user.login(connection, {
+    body: {
+      email: registrationEmail,
+      password: registrationPassword,
+      href: loginHref,
+      referrer: loginReferrer,
+    } satisfies ITodoAppUser.ILogin,
+  });
+  typia.assert(authenticatedUser);
+
+  // Step 3: Validate login response user information
+  TestValidator.equals(
+    "authenticated user email matches login email",
+    authenticatedUser.email,
+    registrationEmail,
+  );
+  TestValidator.equals(
+    "authenticated user ID matches registered user",
+    authenticatedUser.id,
+    registeredUser.id,
+  );
+  TestValidator.equals(
+    "authenticated user status is active",
+    authenticatedUser.status,
+    "active",
   );
   TestValidator.predicate(
-    "registration response contains auth token",
-    registrationResponse.token !== undefined,
+    "authenticated user has created_at timestamp",
+    typeof authenticatedUser.created_at === "string" &&
+      authenticatedUser.created_at.length > 0,
   );
-
-  // Step 2: Verify user email with a valid verification token
-  // In a real scenario, this token would be sent via email
-  // For testing purposes, we generate a token that meets the minimum length requirement
-  const verificationToken = RandomGenerator.alphaNumeric(32);
-
-  const verificationResponse =
-    await api.functional.todoApp.auth.verify_email.verifyEmail(connection, {
-      body: {
-        token: verificationToken,
-      } satisfies ITodoAppAuth.IVerifyEmailRequest,
-    });
-
-  typia.assert(verificationResponse);
   TestValidator.predicate(
-    "email verification response contains success message",
-    verificationResponse.message.length > 0,
+    "authenticated user has updated_at timestamp",
+    typeof authenticatedUser.updated_at === "string" &&
+      authenticatedUser.updated_at.length > 0,
   );
 
-  // Step 3: Login with the registered credentials
-  const loginResponse = await api.functional.auth.authenticatedUser.login(
-    connection,
-    {
-      body: {
-        email: userEmail,
-        password: userPassword,
-      } satisfies ITodoAppAuthenticatedUser.ILogin,
-    },
-  );
-
-  typia.assert(loginResponse);
-
-  // Step 4: Validate the login response structure and user ID
-  TestValidator.predicate(
-    "login returns valid user id in UUID format",
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      loginResponse.id,
-    ),
-  );
-
-  // Step 5: Validate the JWT token structure
-  const token = loginResponse.token;
-  typia.assert<IAuthorizationToken>(token);
+  // Step 4: Validate JWT tokens are present and properly formatted
+  const token = authenticatedUser.token;
+  typia.assert(token);
 
   TestValidator.predicate(
-    "access token is a non-empty string",
-    token.access.length > 0,
+    "access token is present and non-empty",
+    typeof token.access === "string" && token.access.length > 0,
   );
-
   TestValidator.predicate(
-    "refresh token is a non-empty string",
-    token.refresh.length > 0,
+    "refresh token is present and non-empty",
+    typeof token.refresh === "string" && token.refresh.length > 0,
+  );
+  TestValidator.predicate(
+    "access token has JWT format (three parts separated by dots)",
+    (token.access.match(/\./g) || []).length === 2,
+  );
+  TestValidator.predicate(
+    "refresh token has JWT format (three parts separated by dots)",
+    (token.refresh.match(/\./g) || []).length === 2,
   );
 
-  // Step 6: Validate token expiration time is in the future
-  const expiredAt = new Date(token.expired_at);
-  const now = new Date();
+  // Step 5: Validate token expiration times
   TestValidator.predicate(
     "access token expiration is in the future",
-    expiredAt.getTime() > now.getTime(),
+    new Date(token.expired_at) > new Date(),
   );
-
-  const refreshableUntil = new Date(token.refreshable_until);
   TestValidator.predicate(
     "refresh token expiration is in the future",
-    refreshableUntil.getTime() > now.getTime(),
+    new Date(token.refreshable_until) > new Date(),
   );
-
-  // Step 7: Validate that token type is Bearer
-  TestValidator.equals(
-    "login returns bearer token type",
-    loginResponse.tokenType,
-    "Bearer",
-  );
-
-  // Step 8: Validate that expiresIn is provided and is a positive number
   TestValidator.predicate(
-    "login returns valid expiration time in seconds",
-    typeof loginResponse.expiresIn === "number" && loginResponse.expiresIn > 0,
+    "refresh token expires after access token",
+    new Date(token.refreshable_until) > new Date(token.expired_at),
   );
 
-  // Step 9: Verify that the access token is now set in connection headers for authenticated requests
+  // Step 6: Verify token expiration times align with expectations
+  const nowTime = new Date();
+  const accessTokenExpTime = new Date(token.expired_at);
+  const accessTokenExpMinutes =
+    (accessTokenExpTime.getTime() - nowTime.getTime()) / (1000 * 60);
+
   TestValidator.predicate(
-    "authorization header is set after login",
-    connection.headers?.Authorization !== undefined,
+    "access token expires in approximately 30 minutes (within reasonable margin)",
+    accessTokenExpMinutes > 25 && accessTokenExpMinutes < 35,
+  );
+
+  const refreshTokenExpTime = new Date(token.refreshable_until);
+  const refreshTokenExpDays =
+    (refreshTokenExpTime.getTime() - nowTime.getTime()) / (1000 * 60 * 60 * 24);
+
+  TestValidator.predicate(
+    "refresh token expires in approximately 7 days (within reasonable margin)",
+    refreshTokenExpDays > 6.5 && refreshTokenExpDays < 7.5,
   );
 }

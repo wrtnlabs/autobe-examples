@@ -1,0 +1,187 @@
+/// Tracking information for anonymous guests who have not authenticated to
+/// the system. Used for analytics and session logging without account data.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guest {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// IP address of the guest
+  ip String
+  
+  /// When guest record was created
+  created_at DateTime
+  
+  /// Last update timestamp for guest record
+  updated_at DateTime
+  
+  /// Soft delete timestamp for guest record
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+}
+
+/// Authenticated users who can create communities, post content, and
+/// participate in community discussions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for authentication
+  email String
+  
+  /// Hashed password for authentication
+  password_hash String
+  
+  /// Account creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_member_session community_platform_member_session[]
+  community_platform_community_moderator community_platform_community_moderator[]
+  community_platform_post community_platform_post[]
+  community_platform_comment community_platform_comment[]
+  community_platform_vote community_platform_vote[]
+  community_platform_karma community_platform_karma[]
+  community_platform_karma_log community_platform_karma_log[]
+  community_platform_moderation_report community_platform_moderation_report[]
+  community_platform_moderation_appeal community_platform_moderation_appeal[]
+  community_platform_sorting_preference community_platform_sorting_preference[]
+  
+  @@unique([email])
+}
+
+/// System administrators with elevated access to moderate content, manage
+/// communities, and configure global settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for authentication
+  email String
+  
+  /// Hashed password for authentication
+  password_hash String
+  
+  /// Account creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_admin_session community_platform_admin_session[]
+  community_platform_moderation_log community_platform_moderation_log[]
+  
+  @@unique([email])
+}
+
+/// Session records for authenticated members, tracking connection details
+/// and authentication state.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_session {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who owns the session. {@link community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// IP address used for the session
+  ip String
+  
+  /// Connection URL
+  href String
+  
+  /// Referrer URL
+  referrer String
+  
+  /// Session creation time
+  created_at DateTime
+  
+  /// Session expiration time
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_session_community_platform_m_088dda49")
+}
+
+/// Session records for administrator accounts, tracking connection details
+/// and authentication state.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admin_session {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who owns the session. {@link community_platform_admin.id}.
+  community_platform_admin_id String
+  
+  /// IP address used for the session
+  ip String
+  
+  /// Connection URL
+  href String
+  
+  /// Referrer URL
+  referrer String
+  
+  /// Session creation time
+  created_at DateTime
+  
+  /// Session expiration time
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin community_platform_admin @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_admin_session_community_platform_ad_a31c300c")
+}

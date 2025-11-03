@@ -14,8 +14,17 @@ export async function deleteShoppingMallAdminAdminsId(props: {
   id: string & tags.Format<"uuid">;
 }): Promise<void> {
   const { admin, id } = props;
-  await MyGlobal.prisma.shopping_mall_admins.findUniqueOrThrow({
+
+  // Verify the admin to be deleted exists and is not soft deleted
+  const existingAdmin = await MyGlobal.prisma.shopping_mall_admins.findUnique({
     where: { id },
   });
-  await MyGlobal.prisma.shopping_mall_admins.delete({ where: { id } });
+  if (!existingAdmin) {
+    throw new HttpException("Admin not found", 404);
+  }
+
+  // Proceed with hard delete
+  await MyGlobal.prisma.shopping_mall_admins.delete({
+    where: { id },
+  });
 }

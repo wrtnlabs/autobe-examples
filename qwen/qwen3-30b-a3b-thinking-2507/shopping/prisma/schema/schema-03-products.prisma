@@ -1,0 +1,273 @@
+/// Main product catalog entry with title, description, price, and category
+/// reference. This is the primary business entity representing a product
+/// offering to customers.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product's primary category {@link shopping_mall_product_categories.id}.
+  shopping_mall_product_category_id String
+  
+  /// Product title for user display (max 100 characters).
+  title String
+  
+  /// Product description (max 2000 characters).
+  description String
+  
+  /// Base price in USD for product creation ($9.99-$999.99).
+  base_price Float
+  
+  /// Timestamp when product was created.
+  created_at DateTime
+  
+  /// Timestamp when product was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when product was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_product_categories @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_seller_products shopping_mall_seller_products[]
+  shopping_mall_admin_product_overview shopping_mall_admin_product_overview[]
+  mv_shopping_mall_admin_product_overview mv_shopping_mall_admin_product_overview[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_category_id, created_at], map: "shopping_mall_products_shopping_mall_product_category__6be91f3e")
+}
+
+/// Product variants with color, size, SKU, and inventory tracking. Each
+/// variant represents a specific combination (e.g., 'Blue S') with its own
+/// inventory level.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product this variant belongs to {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Unique SKU for variant (format: COLOR-SIZE).
+  sku String
+  
+  /// Product color variant (e.g., 'Red', 'Blue').
+  color String
+  
+  /// Product size variant (e.g., 'S', 'M', 'L').
+  size String
+  
+  /// Price difference for variant ($5.00 max).
+  price_adjustment Float?
+  
+  /// Current inventory count for this specific variant.
+  inventory_count Int
+  
+  /// Timestamp when variant was created.
+  created_at DateTime
+  
+  /// Timestamp when variant was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when variant was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_seller_inventories shopping_mall_seller_inventories[]
+  
+  @@unique([sku])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_variants_shopping_mall_product_i_8fcece9d")
+}
+
+/// Hierarchical category system for product organization. Includes root
+/// categories and subcategories. Maximum 3-level hierarchy enforced.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category if this is a subcategory {@link
+  /// shopping_mall_product_categories.id}.
+  parent_id String?
+  
+  /// Category name (max 50 characters).
+  name String
+  
+  /// Category description (max 200 characters).
+  description String?
+  
+  /// Hierarchy level (1 = root, 2 = subcategory, 3 = sub-subcategory).
+  level Int
+  
+  /// Timestamp when category was created.
+  created_at DateTime
+  
+  /// Timestamp when category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when category was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_product_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_products shopping_mall_products[]
+  recursive shopping_mall_product_categories[] @relation("recursive")
+  
+  @@unique([name, level])
+  @@index([parent_id, level])
+}
+
+/// Customer reviews for products. Each review has a content string and
+/// timestamp. Reviews can be submitted after order completion.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product being reviewed {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Customer who wrote the review {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Review text (20-500 characters).
+  content String
+  
+  /// Timestamp when review was created.
+  created_at DateTime
+  
+  /// Timestamp when review was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when review was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_ratings shopping_mall_review_ratings[]
+  
+  @@index([shopping_mall_customer_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_reviews_shopping_mall_product_id_20a1ef06")
+}
+
+/// Rating associated with product reviews. Each review may have a separate
+/// rating entity with star value.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review this rating belongs to {@link shopping_mall_product_reviews.id}.
+  shopping_mall_product_review_id String
+  
+  /// Star rating (1.0-5.0, 0.5 increments).
+  stars Float
+  
+  /// Timestamp when rating was created.
+  created_at DateTime
+  
+  /// Timestamp when rating was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when rating was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_review_id, created_at], map: "shopping_mall_review_ratings_shopping_mall_product_rev_6c778871")
+}
+
+/// Images associated with products. Includes image URLs, alt text, and
+/// ordering. Images are attached to products and managed through the product
+/// entity.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product this image belongs to {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// URL to the image file.
+  image_url String
+  
+  /// Alternative text for image accessibility.
+  alt_text String?
+  
+  /// Order position for display (1 = main image, 2 = additional, etc.).
+  position Int
+  
+  /// Timestamp when image was created.
+  created_at DateTime
+  
+  /// Timestamp when image was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when image was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, position], map: "shopping_mall_product_images_shopping_mall_product_id__66b09bc5")
+}

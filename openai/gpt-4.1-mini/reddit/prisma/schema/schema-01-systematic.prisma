@@ -1,0 +1,96 @@
+/// Core system configurations for the redditCommunity platform. Contains
+/// key-value settings that govern platform-wide behaviors and validation
+/// rules such as community naming policies and other global system
+/// parameters. This table serves as the authoritative source for
+/// system-level runtime configuration.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_system_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique key identifying the configuration setting.
+  config_key String
+  
+  /// Value of the configuration setting as a string.
+  config_value String
+  
+  /// Detailed explanation of the configuration setting's purpose and usage.
+  description String?
+  
+  /// Timestamp when the configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key])
+}
+
+/// Enumeration of valid content types that users can post within
+/// communities, such as text, link, and image. This table underpins
+/// validation logic and enforces allowed content categories ensuring
+/// consistency and integration with moderation workflows.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_content_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code representing the content type (e.g., 'text', 'link', 'image').
+  content_type_code String
+  
+  /// Human-readable name of the content type.
+  content_type_name String
+  
+  /// Detailed description of the content type and its validation rules.
+  description String?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_posts reddit_community_posts[]
+  
+  @@unique([content_type_code])
+}
+
+/// Enumeration of reasons users may provide when reporting inappropriate
+/// content. Enables structured reporting and improves moderation efficiency
+/// by categorizing reports according to predefined reasons.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_report_reasons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code representing the report reason.
+  reason_code String
+  
+  /// Descriptive name of the report reason.
+  reason_name String
+  
+  /// Detailed explanation of the report reason to guide user selection.
+  description String?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_content_reports reddit_community_content_reports[]
+  
+  @@unique([reason_code])
+}

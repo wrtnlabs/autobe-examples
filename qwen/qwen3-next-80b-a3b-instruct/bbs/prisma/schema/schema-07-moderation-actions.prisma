@@ -1,0 +1,189 @@
+/// Main entity capturing the audit event of a moderation action performed by
+/// a moderator. This is the central record that stores the action type,
+/// reason, timestamp, and discriminator for the moderated entity. Each
+/// moderation event (edit or delete) is a discrete business transaction.
+/// References to specific moderated entities (posts, comments, attachments)
+/// are handled through subsidiary tables to ensure referential integrity and
+/// compliance with 3NF normalization. This is NOT a standalone table; it
+/// must be joined with one of the three *_of_* subsidiary tables to
+/// determine what exactly was moderated. Use this table to count total
+/// moderation actions or filter by action_type. @link
+/// discussion_board_moderation_action_of_posts, @link
+/// discussion_board_moderation_action_of_comments, @link
+/// discussion_board_moderation_action_of_attachments
+///
+/// @namespace ModerationActions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderator who performed this moderation action. {@link
+  /// discussion_board_moderators.id}
+  moderator_id String
+  
+  /// Type of moderation action performed. Must be exactly 'edit' or 'delete'.
+  /// This field is required to distinguish between modifications and removals
+  /// in the audit trail.
+  action_type String
+  
+  /// Optional textual reason provided by the moderator for the moderation
+  /// action. When a moderator actions follows a report, this field may capture
+  /// the report reason. This complements the audit trail.
+  reason String?
+  
+  /// Timestamp when the moderation action was performed. This is the moment
+  /// the action was recorded. Always required.
+  created_at DateTime
+  
+  /// Timestamp when this moderation record was last updated. Will be equal to
+  /// created_at unless the moderation action is later updated (rare). Used for
+  /// consistency tracking.
+  updated_at DateTime
+  
+  /// Soft delete marker. Only set if the moderation action itself is flagged
+  /// as invalid (e.g., if a moderator overruled their own action). This
+  /// preserves the audit trail but hides it from normal queries.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_action_of_posts discussion_board_moderation_action_of_posts?
+  discussion_board_moderation_action_of_comments discussion_board_moderation_action_of_comments?
+  discussion_board_moderation_action_of_attachments discussion_board_moderation_action_of_attachments?
+  
+  @@index([moderator_id, created_at])
+  @@index([action_type, created_at])
+}
+
+/// Subsidiary table that links a specific moderation action to the post that
+/// was moderated. This table ensures referential integrity between
+/// moderation events and posts. Each row represents one moderation action
+/// applied to one post. Cannot exist without a parent in
+/// discussion_board_moderation_actions. This table only contains the FK to
+/// the moderated post and the parent moderation action. Used for querying
+/// all moderation actions on posts. @link
+/// discussion_board_moderation_actions
+///
+/// @namespace ModerationActions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_action_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderation action record this subsidiary entry belongs to. {@link
+  /// discussion_board_moderation_actions.id}
+  moderation_action_id String
+  
+  /// The specific post that was moderated. This FK is non-nullable and enforce
+  /// referential integrity with the discussion_board_posts table. {@link
+  /// discussion_board_posts.id}
+  discussion_board_post_id String
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction discussion_board_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  post discussion_board_posts @relation(fields: [discussion_board_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([moderation_action_id], map: "discussion_board_moderation_action_of_posts_moderation_a2566dae")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_post_id], map: "discussion_board_moderation_action_of_posts_discussion_39eb44dd")
+  // spellchecker: ignore-next-line
+  @@index([moderation_action_id], map: "discussion_board_moderation_action_of_posts_moderation_030c947b")
+}
+
+/// Subsidiary table that links a specific moderation action to the comment
+/// that was moderated. This table ensures referential integrity between
+/// moderation events and comments. Each row represents one moderation action
+/// applied to one comment. Cannot exist without a parent in
+/// discussion_board_moderation_actions. This table only contains the FK to
+/// the moderated comment and the parent moderation action. Used for querying
+/// all moderation actions on comments. @link
+/// discussion_board_moderation_actions
+///
+/// @namespace ModerationActions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_action_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderation action record this subsidiary entry belongs to. {@link
+  /// discussion_board_moderation_actions.id}
+  moderation_action_id String
+  
+  /// The specific comment that was moderated. This FK is non-nullable and
+  /// enforce referential integrity with the discussion_board_comments table.
+  /// {@link discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction discussion_board_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([moderation_action_id], map: "discussion_board_moderation_action_of_comments_moderat_b5089f0b")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id], map: "discussion_board_moderation_action_of_comments_discuss_cab54f61")
+  // spellchecker: ignore-next-line
+  @@index([moderation_action_id], map: "discussion_board_moderation_action_of_comments_moderat_9a32455e")
+}
+
+/// Subsidiary table that links a specific moderation action to the
+/// attachment that was moderated. This table ensures referential integrity
+/// between moderation events and attachments. Each row represents one
+/// moderation action applied to one attachment. Cannot exist without a
+/// parent in discussion_board_moderation_actions. This table only contains
+/// the FK to the moderated attachment and the parent moderation action. Used
+/// for querying all moderation actions on attachments. @link
+/// discussion_board_moderation_actions
+///
+/// @namespace ModerationActions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_action_of_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderation action record this subsidiary entry belongs to. {@link
+  /// discussion_board_moderation_actions.id}
+  moderation_action_id String
+  
+  /// The specific attachment that was moderated. This FK is non-nullable and
+  /// enforce referential integrity with the discussion_board_attachments
+  /// table. {@link discussion_board_attachments.id}
+  discussion_board_attachment_id String
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction discussion_board_moderation_actions @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  attachment discussion_board_attachments @relation(fields: [discussion_board_attachment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([moderation_action_id], map: "discussion_board_moderation_action_of_attachments_mode_53414933")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_attachment_id], map: "discussion_board_moderation_action_of_attachments_disc_1c928e96")
+  // spellchecker: ignore-next-line
+  @@index([moderation_action_id], map: "discussion_board_moderation_action_of_attachments_mode_0860e3bc")
+}

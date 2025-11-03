@@ -5,27 +5,32 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
 
 /**
- * Verifies JWT token and ensures the token belongs to an admin account.
+ * Verifies JWT and ensures the admin session and account are valid and active.
  */
 export async function adminAuthorize(request: {
   headers: {
     authorization?: string;
   };
 }): Promise<AdminPayload> {
-  const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
+  const payload = jwtAuthorize({ request }) as AdminPayload;
 
   if (payload.type !== "admin") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains the top-level admin.id (admin is a top-level model)
-  const admin = await MyGlobal.prisma.todo_app_admin.findFirst({
+  // Validate session belongs to the admin and admin is active (not soft-deleted).
+  const session = await MyGlobal.prisma.todo_app_admin_sessions.findFirst({
     where: {
-      id: payload.id,
+      id: payload.session_id,
+      admin: {
+        id: payload.id,
+        deleted_at: null,
+        is_active: true,
+      },
     },
   });
 
-  if (admin === null) {
+  if (session === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

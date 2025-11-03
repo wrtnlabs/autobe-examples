@@ -1,0 +1,741 @@
+/// Top-level community entity representing a topic-based space with its own
+/// rules, moderators, and visibility. Enforces case-insensitive uniqueness
+/// via a normalized_name field while preserving the original name for
+/// presentation and search. References creator and current owner {@link
+/// community_platform_members}. Vocabulary references ({@link
+/// community_platform_languages}, {@link community_platform_regions}) are
+/// optional. Note: In PSL, prefer onDelete: Restrict/NoAction for member FKs
+/// and SetNull for vocabulary FKs to avoid unintended cascading deletions.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creator member's {@link community_platform_members.id}.
+  creator_member_id String
+  
+  /// Current owner's {@link community_platform_members.id}.
+  current_owner_member_id String
+  
+  /// Preferred language {@link community_platform_languages.id}. Optional at
+  /// community level.
+  community_platform_language_id String?
+  
+  /// Geographic region {@link community_platform_regions.id}. Optional at
+  /// community level.
+  community_platform_region_id String?
+  
+  /// Immutable community handle (3–21 chars). Used for presentation and
+  /// search; case-insensitive uniqueness is enforced by normalized_name.
+  name String
+  
+  /// Lowercased/trimmed canonical form of the community handle used for
+  /// case-insensitive uniqueness and lookups.
+  normalized_name String
+  
+  /// Human-friendly community display name (3–40 chars).
+  display_name String
+  
+  /// Community description shown on overview pages. Up to 500 characters.
+  description String?
+  
+  /// Community visibility: public, restricted, or private.
+  visibility String
+  
+  /// Whether the community is designated as NSFW by policy.
+  nsfw Boolean
+  
+  /// Lifecycle state of the community (active, archived, closed, quarantined).
+  state String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp for recovery/audit; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  creator community_platform_members @relation("community_platform_communities_of_creator_member_id", fields: [creator_member_id], references: [id], onDelete: Cascade)
+  currentOwner community_platform_members @relation("community_platform_communities_of_current_owner_member_id", fields: [current_owner_member_id], references: [id], onDelete: Cascade)
+  language community_platform_languages? @relation(fields: [community_platform_language_id], references: [id], onDelete: Cascade)
+  region community_platform_regions? @relation(fields: [community_platform_region_id], references: [id], onDelete: Cascade)
+  
+  community_platform_community_settings community_platform_community_settings?
+  community_platform_community_rules community_platform_community_rules[]
+  community_platform_community_topics community_platform_community_topics[]
+  community_platform_community_moderators community_platform_community_moderators[]
+  community_platform_community_moderator_invitations community_platform_community_moderator_invitations[]
+  community_platform_community_owner_transfers community_platform_community_owner_transfers[]
+  community_platform_community_bans community_platform_community_bans[]
+  community_platform_community_mutes community_platform_community_mutes[]
+  community_platform_community_join_requests community_platform_community_join_requests[]
+  community_platform_community_pinned_posts community_platform_community_pinned_posts[]
+  community_platform_community_flairs community_platform_community_flairs[]
+  community_platform_community_banned_domains community_platform_community_banned_domains[]
+  community_platform_posts community_platform_posts[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_member_source_filters community_platform_member_source_filters[]
+  community_platform_moderation_cases community_platform_moderation_cases[]
+  community_platform_notification_preferences_of_communities community_platform_notification_preferences_of_communities[]
+  
+  @@index([creator_member_id])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_language_id], map: "community_platform_communities_community_platform_lang_d57e9f70")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_region_id], map: "community_platform_communities_community_platform_regi_82dbe010")
+  
+  @@unique([name])
+  @@unique([normalized_name])
+  @@index([visibility, created_at])
+  // spellchecker: ignore-next-line
+  @@index([current_owner_member_id, created_at], map: "community_platform_communities_current_owner_member_id_ed531d8f")
+  @@index([created_at])
+}
+
+/// 1:1 extension of a community capturing governance and posting
+/// configuration toggles. Managed by owners/moderators. Related to {@link
+/// community_platform_communities}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target community's {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Whether text posts are permitted in this community.
+  allow_text_posts Boolean
+  
+  /// Whether link posts are permitted in this community.
+  allow_link_posts Boolean
+  
+  /// Whether image posts are permitted in this community.
+  allow_image_posts Boolean
+  
+  /// If true, new posts require moderator/owner approval before public
+  /// visibility.
+  require_post_approval Boolean
+  
+  /// Join policy for members (open, approval_required, invite_only).
+  join_approval_mode String
+  
+  /// Posting eligibility rules (all_members, subscribers_only,
+  /// approved_contributors).
+  posting_eligibility String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id], map: "community_platform_community_settings_community_platfo_17c63a5c")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_settings_community_platfo_88787242")
+}
+
+/// Community-defined rule set entries. Each rule has a stable code, title,
+/// and description. Optimized for ordered display by adding a composite
+/// index on (community, order).
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner community's {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Stable rule identifier unique within the community.
+  code String
+  
+  /// Rule title presented to members.
+  title String
+  
+  /// Detailed rule description (0–500 chars).
+  body String?
+  
+  /// Display order within the community rules list.
+  order Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, code], map: "community_platform_community_rules_community_platform__95c0721f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_rules_community_platform__5226c2a2")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, order], map: "community_platform_community_rules_community_platform__fcf49cbe")
+}
+
+/// Curated topic tags or categories within a community to organize posts and
+/// discovery. Adds (community, order) index for efficient ordered rendering.
+/// Owned by {@link community_platform_communities}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_topics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent community's {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Topic/tag name unique within the community.
+  name String
+  
+  /// Optional topic description to guide usage.
+  description String?
+  
+  /// Display order of the topic within the community.
+  order Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, name], map: "community_platform_community_topics_community_platform_04f61943")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_topics_community_platform_9783386b")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, order], map: "community_platform_community_topics_community_platform_af14d9c9")
+}
+
+/// Assignment of moderators to a community with tier/level. Managed by
+/// owners; supports audit of who assigned. References {@link
+/// community_platform_members}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target community's {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Moderator member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Assigning actor's {@link community_platform_members.id}. Optional for
+  /// system assignments.
+  assigned_by_member_id String?
+  
+  /// Moderator tier (full, content, limited).
+  tier String
+  
+  /// Assignment creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp when revoked.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation("community_platform_community_moderators_of_community_p_361452aa", fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  assignedBy community_platform_members? @relation("community_platform_community_moderators_of_assigned_by_0eb2a7c4", fields: [assigned_by_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([assigned_by_member_id], map: "community_platform_community_moderators_assigned_by_me_8542d27d")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, community_platform_member_id], map: "community_platform_community_moderators_community_plat_b8c7ad75")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_moderators_community_plat_eb2141bf")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_community_moderators_community_plat_1900f6d4")
+}
+
+/// Invitation records for prospective moderators with tier, status, and
+/// expiry. Adds composite index for pending/expiry workflows to improve
+/// queue operations. References {@link community_platform_members} for
+/// invitee and inviter.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderator_invitations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community to which the invitation applies {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Invited member's {@link community_platform_members.id}.
+  invited_member_id String
+  
+  /// Inviter's {@link community_platform_members.id}.
+  invited_by_member_id String?
+  
+  /// Proposed moderator tier (full, content, limited).
+  tier String
+  
+  /// Invitation status (pending, accepted, declined, expired, revoked).
+  status String
+  
+  /// Expiration deadline of the invitation.
+  expires_at DateTime
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  invitedMember community_platform_members @relation("community_platform_community_moderator_invitations_of__ea93246d", fields: [invited_member_id], references: [id], onDelete: Cascade)
+  invitedBy community_platform_members? @relation("community_platform_community_moderator_invitations_of__fe37b3b6", fields: [invited_by_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, invited_member_id], map: "community_platform_community_moderator_invitations_com_fdfe8a6e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_moderator_invitations_com_6ab3340f")
+  // spellchecker: ignore-next-line
+  @@index([invited_member_id], map: "community_platform_community_moderator_invitations_inv_c8f92554")
+  // spellchecker: ignore-next-line
+  @@index([invited_by_member_id], map: "community_platform_community_moderator_invitations_inv_01f23e96")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, status, expires_at], map: "community_platform_community_moderator_invitations_com_ad002c6f")
+}
+
+/// Ownership transfer offers and decisions. Tracks source and target
+/// members, status, and expiry. Supports audit of governance changes for
+/// {@link community_platform_communities}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_owner_transfers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community under ownership transfer {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Current owner's {@link community_platform_members.id}.
+  from_member_id String
+  
+  /// Prospective owner's {@link community_platform_members.id}.
+  to_member_id String
+  
+  /// Transfer status (pending, accepted, declined, expired, cancelled).
+  status String
+  
+  /// Offer expiration deadline.
+  expires_at DateTime
+  
+  /// Decision timestamp when accepted/declined.
+  decided_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp; null when retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  fromMember community_platform_members @relation("community_platform_community_owner_transfers_of_from_member_id", fields: [from_member_id], references: [id], onDelete: Cascade)
+  toMember community_platform_members @relation("community_platform_community_owner_transfers_of_to_member_id", fields: [to_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([from_member_id], map: "community_platform_community_owner_transfers_from_memb_8c176452")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_owner_transfers_community_2a9b420d")
+  // spellchecker: ignore-next-line
+  @@index([to_member_id, created_at], map: "community_platform_community_owner_transfers_to_member_b5888f0c")
+}
+
+/// Community-scoped bans applied to members with reason codes and durations.
+/// Added composite index to optimize active-ban checks and expiry sweeps.
+/// References the acting moderator (optional) and the affected member.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community scope {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Banned member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Acting moderator's {@link community_platform_members.id}. Optional if
+  /// system applied.
+  actor_member_id String?
+  
+  /// Reason category code for the ban as per policy catalog.
+  reason_code String
+  
+  /// Ban start time.
+  started_at DateTime
+  
+  /// Ban end time; null for permanent bans.
+  ends_at DateTime?
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// Last update time.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp; null when active or retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation("community_platform_community_bans_of_community_platfor_4fcb4215", fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  actor community_platform_members? @relation("community_platform_community_bans_of_actor_member_id", fields: [actor_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_community_bans_community_platform_m_9a878c89")
+  @@index([actor_member_id])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, community_platform_member_id, ends_at], map: "community_platform_community_bans_community_platform_c_9ac2da9c")
+}
+
+/// Community-level mutes restricting posting/commenting while allowing
+/// reading. Analogous to bans but typically shorter duration.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_mutes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community scope {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Muted member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Acting moderator's {@link community_platform_members.id}. Optional if
+  /// system applied.
+  actor_member_id String?
+  
+  /// Reason category code for the mute as per policy catalog.
+  reason_code String
+  
+  /// Mute start time.
+  started_at DateTime
+  
+  /// Mute end time; null for indefinite mutes.
+  ends_at DateTime?
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// Last update time.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp; null when active or retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation("community_platform_community_mutes_of_community_platfo_b4077c98", fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  actor community_platform_members? @relation("community_platform_community_mutes_of_actor_member_id", fields: [actor_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_member_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, community_platform_member_id], map: "community_platform_community_mutes_community_platform__701b3f8c")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_community_mutes_community_platform__f2e2fc3c")
+}
+
+/// Join/access requests for private/restricted communities including status
+/// and expiry. Supports 7-day decision window and audit. Allows multiple
+/// requests across time by removing hard uniqueness on (community, member);
+/// application enforces at most one pending request per member per
+/// community. References requester {@link community_platform_members}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_join_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target community {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Requesting member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Request status (pending, approved, denied, expired, cancelled).
+  status String
+  
+  /// Optional requester note for moderators/owners.
+  note String?
+  
+  /// Auto-expiry time for undecided requests (default 7 days).
+  expires_at DateTime
+  
+  /// Decision timestamp when not pending.
+  decided_at DateTime?
+  
+  /// Request creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp; null when active or for audit retention.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_join_requests_community_p_7a6b599a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_community_join_requests_community_p_1b51681f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, community_platform_member_id, status], map: "community_platform_community_join_requests_community_p_6efe17f2")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, status, expires_at], map: "community_platform_community_join_requests_community_p_52a4f004")
+}
+
+/// Pinned posts within a community for prioritized visibility. Associates a
+/// community with a post and pin order. Enforces unique pin order per
+/// community for deterministic ordering. References {@link
+/// community_platform_posts}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_pinned_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that pins the post {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Pinned post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Relative ordering of pinned items (lower = higher priority). Unique
+  /// within a community.
+  pin_order Int
+  
+  /// Pin creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp when unpinned.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, community_platform_post_id], map: "community_platform_community_pinned_posts_community_pl_ba231956")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, pin_order], map: "community_platform_community_pinned_posts_community_pl_78345042")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_pinned_posts_community_pl_f30d9498")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id], map: "community_platform_community_pinned_posts_community_pl_9b8297b3")
+}
+
+/// Community-managed flair definitions assignable to posts. Unique per
+/// community by code. Used for labeling and filtering. Owned by {@link
+/// community_platform_communities}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_flairs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner community's {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Stable flair identifier unique within the community.
+  code String
+  
+  /// Human-readable label shown to users.
+  label String
+  
+  /// Display color token or hex value for the flair.
+  color String
+  
+  /// Display order for the flair set.
+  order Int
+  
+  /// Whether the flair is currently available for use.
+  enabled Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp for retired flairs.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_labels community_platform_post_labels[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, code], map: "community_platform_community_flairs_community_platform_94849c1d")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_flairs_community_platform_6a298787")
+}
+
+/// Community-scoped domain denylist for link posts. Separate from
+/// platform-wide blocked domains. Enforces local policy. Owned by {@link
+/// community_platform_communities}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_banned_domains {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner community {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Domain name excluded in this community (stored normalized, without
+  /// scheme).
+  domain String
+  
+  /// Optional rationale or reference for the ban.
+  reason String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp when ban is lifted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, domain], map: "community_platform_community_banned_domains_community__37c793f1")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_banned_domains_community__296263e1")
+}

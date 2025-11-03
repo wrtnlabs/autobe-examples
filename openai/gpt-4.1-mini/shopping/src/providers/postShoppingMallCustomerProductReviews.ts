@@ -15,17 +15,16 @@ export async function postShoppingMallCustomerProductReviews(props: {
   body: IShoppingMallProductReview.ICreate;
 }): Promise<IShoppingMallProductReview> {
   const now = toISOStringSafe(new Date());
-  const id = v4() as string & tags.Format<"uuid">;
 
   const created = await MyGlobal.prisma.shopping_mall_product_reviews.create({
     data: {
-      id: id,
-      shopping_mall_customer_id: props.body.shopping_mall_customer_id,
-      shopping_mall_product_id: props.body.shopping_mall_product_id,
+      id: v4(),
+      shopping_mall_product_sku_id: props.body.shopping_mall_product_sku_id,
+      shopping_mall_customer_id: props.customer.id,
       shopping_mall_order_id: props.body.shopping_mall_order_id,
       rating: props.body.rating,
-      review_text: props.body.review_text ?? null,
-      status: "pending",
+      review_body: props.body.review_body ?? null,
+      moderation_status: "pending",
       created_at: now,
       updated_at: now,
       deleted_at: null,
@@ -34,15 +33,14 @@ export async function postShoppingMallCustomerProductReviews(props: {
 
   return {
     id: created.id,
+    shopping_mall_product_sku_id: created.shopping_mall_product_sku_id,
     shopping_mall_customer_id: created.shopping_mall_customer_id,
-    shopping_mall_product_id: created.shopping_mall_product_id,
     shopping_mall_order_id: created.shopping_mall_order_id,
     rating: created.rating,
-    review_text: created.review_text ?? null,
-    status: typia.assert<"pending" | "approved" | "rejected">(created.status),
+    review_body: created.review_body ?? null,
+    moderation_status: created.moderation_status,
     created_at: toISOStringSafe(created.created_at),
     updated_at: toISOStringSafe(created.updated_at),
-    deleted_at:
-      created.deleted_at === null ? null : toISOStringSafe(created.deleted_at),
+    deleted_at: created.deleted_at ? toISOStringSafe(created.deleted_at) : null,
   };
 }

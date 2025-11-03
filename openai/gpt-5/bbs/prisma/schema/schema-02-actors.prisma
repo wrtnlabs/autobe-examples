@@ -1,0 +1,464 @@
+/// Registered member accounts for the civicBoard application. Stores
+/// authentication credentials and profile-facing display attributes. Serves
+/// as the primary identity for regular users who author posts and comments.
+/// Related entities include session records {@link
+/// civic_board_user_sessions} and verification/reset flows via {@link
+/// civic_board_email_verification_of_users} and {@link
+/// civic_board_password_reset_token_of_users}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Login and contact email for the user. Must be unique across all users and
+  /// used for verification workflows.
+  email String
+  
+  /// BCrypt or similar password hash for authentication. Never store plain
+  /// passwords.
+  password_hash String
+  
+  /// Public display name shown on authored content instead of email for
+  /// privacy.
+  display_name String
+  
+  /// Whether the user’s email has been verified. Governs posting/commenting
+  /// eligibility.
+  email_verified Boolean
+  
+  /// Whether the account is currently suspended and restricted from creating
+  /// or modifying content.
+  suspended Boolean
+  
+  /// Timestamp when the account was suspended, if applicable.
+  suspended_at DateTime?
+  
+  /// Record creation time (UTC).
+  created_at DateTime
+  
+  /// Last update time (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion time (UTC). Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  civic_board_user_sessions civic_board_user_sessions[]
+  civic_board_email_verification_of_users civic_board_email_verification_of_users[]
+  civic_board_password_reset_token_of_users civic_board_password_reset_token_of_users[]
+  civic_board_posts civic_board_posts[]
+  civic_board_post_attachments civic_board_post_attachments[]
+  civic_board_comments civic_board_comments[]
+  civic_board_report_of_posts civic_board_report_of_posts[]
+  civic_board_report_of_comments civic_board_report_of_comments[]
+  civic_board_post_reactions civic_board_post_reactions[]
+  civic_board_comment_reactions civic_board_comment_reactions[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Authenticated session records for {@link civic_board_users}. Follows the
+/// exact session table pattern: one actor FK, connection context (ip, href,
+/// referrer), created_at, and optional expired_at. Managed through
+/// authentication flows for audit and authorization context.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user’s {@link civic_board_users.id}
+  civic_board_user_id String
+  
+  /// IP address observed when establishing the session.
+  ip String
+  
+  /// Full URL that initiated the session (connection URL).
+  href String
+  
+  /// Referrer URL captured at session creation.
+  referrer String
+  
+  /// Session creation time (UTC).
+  created_at DateTime
+  
+  /// Session expiration/end time (UTC), when present.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user civic_board_users @relation(fields: [civic_board_user_id], references: [id], onDelete: Cascade)
+  
+  civic_board_posts civic_board_posts[]
+  civic_board_post_attachments civic_board_post_attachments[]
+  civic_board_comments civic_board_comments[]
+  civic_board_report_of_posts civic_board_report_of_posts[]
+  civic_board_report_of_comments civic_board_report_of_comments[]
+  
+  @@index([civic_board_user_id, created_at])
+}
+
+/// Administrator accounts with elevated privileges for moderation and policy
+/// management. Admins can review reports, hide or delete content, and manage
+/// board-level policies. Related entities include {@link
+/// civic_board_admin_sessions} and verification/reset flows via {@link
+/// civic_board_email_verification_of_admins} and {@link
+/// civic_board_password_reset_token_of_admins}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Login and contact email for the admin. Must be unique across all admins
+  /// and used in verification flows.
+  email String
+  
+  /// BCrypt or similar password hash for administrator authentication.
+  password_hash String
+  
+  /// Administrator display name surfaced in audit trails and moderation
+  /// actions.
+  display_name String
+  
+  /// Whether the admin’s email is verified.
+  email_verified Boolean
+  
+  /// Whether the admin account has been suspended from taking privileged
+  /// actions.
+  suspended Boolean
+  
+  /// Timestamp when the admin account was suspended, if applicable.
+  suspended_at DateTime?
+  
+  /// Record creation time (UTC).
+  created_at DateTime
+  
+  /// Last update time (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion time (UTC). Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  civic_board_admin_sessions civic_board_admin_sessions[]
+  civic_board_email_verification_of_admins civic_board_email_verification_of_admins[]
+  civic_board_password_reset_token_of_admins civic_board_password_reset_token_of_admins[]
+  civic_board_moderation_actions civic_board_moderation_actions[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Authenticated session records for {@link civic_board_admins}. Strictly
+/// follows the session table pattern with a single admin FK, connection
+/// context, created_at and optional expired_at. Used for auditing privileged
+/// actions and enforcing role-aware permissions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged admin’s {@link civic_board_admins.id}
+  civic_board_admin_id String
+  
+  /// IP address when the administrator session was established.
+  ip String
+  
+  /// Connection URL that initiated the admin session.
+  href String
+  
+  /// Referrer URL captured at session creation.
+  referrer String
+  
+  /// Session creation time (UTC).
+  created_at DateTime
+  
+  /// Session expiration/end time (UTC), when applicable.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin civic_board_admins @relation(fields: [civic_board_admin_id], references: [id], onDelete: Cascade)
+  
+  civic_board_moderation_actions civic_board_moderation_actions[]
+  
+  @@index([civic_board_admin_id, created_at])
+}
+
+/// Main email verification tokens used to confirm ownership of an email
+/// address for either users or admins. Implements the polymorphic ownership
+/// pattern: a main entity with actor_type discriminator ("user" | "admin")
+/// and subtype tables {@link civic_board_email_verification_of_users},
+/// {@link civic_board_email_verification_of_admins} that each enforce a 1:1
+/// link to this token and hold the actor-specific FKs.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor discriminator for polymorphic ownership. Allowed values: "user" or
+  /// "admin".
+  actor_type String
+  
+  /// Email address to be verified. Captured at token issuance for audit and
+  /// delivery traceability.
+  email String
+  
+  /// Opaque verification token string used to confirm email ownership. Must be
+  /// unique across all active tokens.
+  token String
+  
+  /// Token expiration time (UTC). Tokens are invalid after this timestamp.
+  expires_at DateTime
+  
+  /// Whether this verification token has already been consumed.
+  used Boolean
+  
+  /// Timestamp when the token was consumed, if applicable.
+  used_at DateTime?
+  
+  /// Record creation time (UTC).
+  created_at DateTime
+  
+  /// Last update time (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion time (UTC). Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  civic_board_email_verification_of_users civic_board_email_verification_of_users?
+  civic_board_email_verification_of_admins civic_board_email_verification_of_admins?
+  
+  @@unique([token])
+  @@index([actor_type, created_at])
+  @@index([expires_at])
+}
+
+/// Subtype table connecting a main email verification token to a specific
+/// user. Enforces a strict 1:1 relationship with {@link
+/// civic_board_email_verifications} and holds the required user FK for
+/// referential integrity without nullable proliferation.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_email_verification_of_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Connected main token’s {@link civic_board_email_verifications.id}
+  civic_board_email_verification_id String
+  
+  /// Associated user’s {@link civic_board_users.id}
+  civic_board_user_id String
+  
+  /// Creation time of the subtype link (UTC).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  emailVerification civic_board_email_verifications @relation(fields: [civic_board_email_verification_id], references: [id], onDelete: Cascade)
+  user civic_board_users @relation(fields: [civic_board_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([civic_board_email_verification_id], map: "civic_board_email_verification_of_users_civic_board_em_2677416a")
+  // spellchecker: ignore-next-line
+  @@index([civic_board_user_id, created_at], map: "civic_board_email_verification_of_users_civic_board_us_38ba1ff7")
+}
+
+/// Subtype table connecting a main email verification token to a specific
+/// administrator. Enforces 1:1 uniqueness to {@link
+/// civic_board_email_verifications} and maintains a required FK to {@link
+/// civic_board_admins} to guarantee integrity for admin email verification
+/// flows.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_email_verification_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Connected main token’s {@link civic_board_email_verifications.id}
+  civic_board_email_verification_id String
+  
+  /// Associated admin’s {@link civic_board_admins.id}
+  civic_board_admin_id String
+  
+  /// Creation time of the subtype link (UTC).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  emailVerification civic_board_email_verifications @relation(fields: [civic_board_email_verification_id], references: [id], onDelete: Cascade)
+  admin civic_board_admins @relation(fields: [civic_board_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([civic_board_email_verification_id], map: "civic_board_email_verification_of_admins_civic_board_e_1ef8ac94")
+  // spellchecker: ignore-next-line
+  @@index([civic_board_admin_id, created_at], map: "civic_board_email_verification_of_admins_civic_board_a_1f5aa445")
+}
+
+/// Main password reset tokens for account recovery. Polymorphically owned by
+/// either users or admins via actor_type field and subtype tables {@link
+/// civic_board_password_reset_token_of_users}, {@link
+/// civic_board_password_reset_token_of_admins}. The main entity carries
+/// token lifecycle attributes; subtypes enforce actor-specific FKs with a
+/// 1:1 uniqueness to the main token.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_password_reset_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor discriminator for polymorphic ownership. Allowed values: "user" or
+  /// "admin".
+  actor_type String
+  
+  /// Opaque password reset token string. Must be unique across all active
+  /// tokens.
+  token String
+  
+  /// Token expiration time (UTC) after which the token is invalid.
+  expires_at DateTime
+  
+  /// Whether this reset token has already been consumed.
+  used Boolean
+  
+  /// Timestamp when the token was consumed, if applicable.
+  used_at DateTime?
+  
+  /// Record creation time (UTC).
+  created_at DateTime
+  
+  /// Last update time (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion time (UTC). Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  civic_board_password_reset_token_of_users civic_board_password_reset_token_of_users?
+  civic_board_password_reset_token_of_admins civic_board_password_reset_token_of_admins?
+  
+  @@unique([token])
+  @@index([actor_type, created_at])
+  @@index([expires_at])
+}
+
+/// Subtype table connecting a main password reset token to a specific user.
+/// Enforces a strict 1:1 relationship with {@link
+/// civic_board_password_reset_tokens} and holds the required user FK to
+/// maintain normalization and data integrity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_password_reset_token_of_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Connected main token’s {@link civic_board_password_reset_tokens.id}
+  civic_board_password_reset_token_id String
+  
+  /// Associated user’s {@link civic_board_users.id}
+  civic_board_user_id String
+  
+  /// Creation time of the subtype link (UTC).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  passwordResetToken civic_board_password_reset_tokens @relation(fields: [civic_board_password_reset_token_id], references: [id], onDelete: Cascade)
+  user civic_board_users @relation(fields: [civic_board_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([civic_board_password_reset_token_id], map: "civic_board_password_reset_token_of_users_civic_board__9132d7b4")
+  // spellchecker: ignore-next-line
+  @@index([civic_board_user_id, created_at], map: "civic_board_password_reset_token_of_users_civic_board__8a89f425")
+}
+
+/// Subtype table connecting a main password reset token to a specific
+/// administrator. Enforces 1:1 uniqueness to {@link
+/// civic_board_password_reset_tokens} and maintains a required FK to {@link
+/// civic_board_admins} to guarantee integrity for admin password reset
+/// flows.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_password_reset_token_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Connected main token’s {@link civic_board_password_reset_tokens.id}
+  civic_board_password_reset_token_id String
+  
+  /// Associated admin’s {@link civic_board_admins.id}
+  civic_board_admin_id String
+  
+  /// Creation time of the subtype link (UTC).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  passwordResetToken civic_board_password_reset_tokens @relation(fields: [civic_board_password_reset_token_id], references: [id], onDelete: Cascade)
+  admin civic_board_admins @relation(fields: [civic_board_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([civic_board_password_reset_token_id], map: "civic_board_password_reset_token_of_admins_civic_board_74cf7913")
+  // spellchecker: ignore-next-line
+  @@index([civic_board_admin_id, created_at], map: "civic_board_password_reset_token_of_admins_civic_board_c0bdff25")
+}

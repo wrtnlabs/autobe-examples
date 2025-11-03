@@ -7,74 +7,102 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IShoppingAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAdmin";
+import { IShoppingAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAuthorizationToken";
 
 export async function postAuthAdminRefresh(props: {
-  body: IShoppingMallAdmin.IRefresh;
-}): Promise<IShoppingMallAdmin.IAuthorized> {
-  const { body } = props;
-  // 1. Lookup the session by refresh_token
-  const session = await MyGlobal.prisma.shopping_mall_user_sessions.findUnique({
-    where: { refresh_token: body.refresh_token },
-  });
-  if (!session) throw new HttpException("Invalid refresh token.", 401);
-  // 2. Check not revoked
-  if (session.revoked_at)
-    throw new HttpException("Refresh token revoked.", 403);
-  // 3. Check not expired
-  const nowIso = toISOStringSafe(new Date());
-  if (toISOStringSafe(session.expires_at) <= nowIso)
-    throw new HttpException("Refresh token expired.", 401);
-  // 4. Find admin for this session (only admins can refresh here)
-  const admin = await MyGlobal.prisma.shopping_mall_admins.findUnique({
-    where: { id: session.user_id },
-  });
-  if (!admin || admin.status !== "active")
-    throw new HttpException("Admin not active or not found.", 403);
-  // 5. Issue new access and refresh tokens
-  const jwtPayload = { id: admin.id, type: "admin" };
-  const accessToken = jwt.sign(jwtPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refreshToken = jwt.sign(jwtPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "7d",
-    issuer: "autobe",
-  });
-  // Compute expiration times
-  const accessExpired = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpired = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  // 6. Update the session with new tokens and expiry
-  await MyGlobal.prisma.shopping_mall_user_sessions.update({
-    where: { id: session.id },
-    data: {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      expires_at: refreshExpired,
+  body: IShoppingAdmin.IRefresh;
+}): Promise<IShoppingAdmin.IAuthorized> {
+  let decoded: { id: string; session_id: string; type: string };
+  try {
+    const verified = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    );
+    if (typeof verified === "string") {
+      throw new HttpException("Invalid or expired refresh token", 401);
+    }
+    decoded = verified as { id: string; session_id: string; type: string };
+  } catch (_) {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
+
+  // Check actor type
+  if (decoded.type !== "admin") {
+    throw new HttpException("Invalid token type for admin refresh", 403);
+  }
+
+  // Load session and admin
+  const session = await MyGlobal.prisma.shopping_admin_sessions.findFirst({
+    where: {
+      id: decoded.session_id,
+      shopping_admin_id: decoded.id,
+    },
+    include: {
+      admin: true,
     },
   });
-  // 7. Return response
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
+  if (session.admin.deleted_at !== null) {
+    throw new HttpException("Admin account is deleted", 403);
+  }
+  if (session.admin.status !== "active") {
+    throw new HttpException("Admin account is not active", 403);
+  }
+
+  // Issue tokens
+  const now = Date.now();
+  const access_expires = now + 60 * 60 * 1000;
+  const refresh_expires = now + 7 * 24 * 60 * 60 * 1000;
+  const access = jwt.sign(
+    {
+      type: "admin",
+      id: session.admin.id,
+      session_id: session.id,
+      created_at: toISOStringSafe(new Date()),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refresh = jwt.sign(
+    {
+      type: "admin",
+      id: session.admin.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(new Date()),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+
+  // Update session expiry
+  await MyGlobal.prisma.shopping_admin_sessions.update({
+    where: { id: session.id },
+    data: { expired_at: toISOStringSafe(new Date(refresh_expires)) },
+  });
+
+  // Response mapping (all date fields as string)
   return {
-    id: admin.id,
-    email: admin.email,
-    full_name: admin.full_name,
-    status: admin.status,
-    last_login_at: admin.last_login_at
-      ? toISOStringSafe(admin.last_login_at)
-      : undefined,
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: admin.deleted_at
-      ? toISOStringSafe(admin.deleted_at)
-      : undefined,
+    id: session.admin.id,
+    email: session.admin.email,
+    name: session.admin.name,
+    role: session.admin.role,
+    status: session.admin.status,
+    created_at: toISOStringSafe(session.admin.created_at),
+    updated_at: toISOStringSafe(session.admin.updated_at),
+    deleted_at:
+      session.admin.deleted_at === null
+        ? null
+        : toISOStringSafe(session.admin.deleted_at),
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpired,
-      refreshable_until: refreshExpired,
+      access,
+      refresh,
+      expired_at: toISOStringSafe(new Date(access_expires)),
+      refreshable_until: toISOStringSafe(new Date(refresh_expires)),
     },
   };
 }

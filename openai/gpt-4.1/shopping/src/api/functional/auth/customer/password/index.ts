@@ -1,2 +1,2 @@
-export * as request_reset from "./request_reset/index";
+export * as reset_request from "./reset_request/index";
 export * as reset from "./reset/index";

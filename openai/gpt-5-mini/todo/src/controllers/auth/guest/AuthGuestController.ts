@@ -1,70 +1,73 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Ip } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 import { postAuthGuestJoin } from "../../../providers/postAuthGuestJoin";
 import { postAuthGuestRefresh } from "../../../providers/postAuthGuestRefresh";
-import { GuestAuth } from "../../../decorators/GuestAuth";
-import { GuestPayload } from "../../../decorators/payload/GuestPayload";
 
 import { ITodoAppGuest } from "../../../api/structures/ITodoAppGuest";
 
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Create a guest record in the todo_app_guest table and issue temporary
-   * authorization tokens.
+   * Create a temporary guest identity (writes to todo_app_guest).
    *
-   * Purpose and functionality: This endpoint allows an unauthenticated visitor
-   * to create a temporary guest record in the `todo_app_guest` table. The API
-   * accepts an optional `email` (if provided by the client) and the server will
-   * create a new record with a system-assigned `id` (UUID) and set
-   * `created_at`. The returned response contains an authorization payload
-   * (short-lived tokens) suitable for guest workflows.
+   * Purpose and overview: This operation creates a new guest identity record in
+   * the `todo_app_guest` table. The record will populate the table fields such
+   * as `id`, `created_at`, `updated_at`, and may include an optional
+   * `anonymous_label`. The created guest identity is intended for ephemeral
+   * identification of unauthenticated visitors and to enable issuance of
+   * temporary access tokens for read-only public content access.
    *
-   * Implementation details using confirmed schema fields: The request maps
-   * directly to fields present in the Prisma model `todo_app_guest`.
-   * Specifically, provided `email` maps to `todo_app_guest.email`. The server
-   * will set `todo_app_guest.id` (UUID) and `todo_app_guest.created_at`
-   * (timestamp). The server may also initialize `todo_app_guest.status` and
-   * leave `last_active_at` null until the guest performs subsequent activity.
+   * Implementation details and schema references: The operation writes to
+   * `todo_app_guest` (Prisma model `todo_app_guest`). Confirmed columns
+   * available for use are: `id` (primary key), `created_at`, `updated_at`,
+   * `deleted_at` (soft-delete timestamp), and `anonymous_label`. On creation
+   * the implementation must set `created_at` and `updated_at`. Because
+   * `deleted_at` exists on the model, the application can record soft-delete
+   * for guest records if necessary; however typical guest accounts are
+   * short-lived and the service may choose to leave `deleted_at` null for
+   * active ephemeral guests.
    *
-   * Role-specific integration and business context: This operation is a public
-   * join endpoint for the role 'guest' and is intended to be used in client
-   * flows that need temporary identity without full user registration. Because
-   * the `email` column in `todo_app_guest` is nullable in the schema, the
-   * request may omit `email` to create an anonymous guest record. The response
-   * follows the authorization response naming convention and returns
-   * `ITodoAppGuest.IAuthorized` as the successful response type.
+   * Actor-specific integration and business context: Guests are unauthenticated
+   * visitors that may view public lists and shared content only. The guest row
+   * intentionally contains no password or credential fields. The guest record
+   * can be used to link ephemeral browsing sessions to public interactions;
+   * guests relate indirectly to lists and public interactions via other
+   * components in the schema, for example public list sharing
+   * (`todo_app_list_shares`) and public index preferences
+   * (`todo_app_public_index_preferences`). This operation is public (no prior
+   * authentication) and returns an authorization payload enabling limited read
+   * access.
    *
-   * Security considerations within schema constraints: Validate the optional
-   * `email` format when present (RFC 5322 basic validation) and rate-limit join
-   * attempts to prevent abuse. Do not store additional user credentials in
-   * `todo_app_guest.password` because that field does not exist. Keep issued
-   * tokens short-lived and tie refresh operations to the guest `id` and
-   * `last_active_at` lifecycle.
+   * Security considerations and validation rules: Because the `todo_app_guest`
+   * model does not hold authentication credentials, token issuance must be
+   * managed by the authorization subsystem (tokens themselves are not persisted
+   * in `todo_app_guest` fields). The server MUST issue short-lived access and
+   * refresh tokens following business rules for guest sessions. Validate any
+   * provided optional `anonymous_label` against application rules (e.g., max
+   * length) before persisting. Record the creation event in activity/audit logs
+   * (e.g., `todo_app_user_activity_logs`) to support traceability; do not
+   * persist secrets in the guest table.
    *
-   * Related operations and workflow integration: This operation pairs with
-   * `POST /auth/guest/refresh` which can update `todo_app_guest.last_active_at`
-   * and may create audit entries in `todo_app_audit_records` (for example,
-   * recording refresh events using `todo_app_audit_records.actor_role`,
-   * `action_type`, `target_resource`, `target_id`, and `created_at`).
+   * Related operations and workflow integration: This endpoint is intended to
+   * be used together with a token refresh endpoint (`POST /auth/guest/refresh`)
+   * and with public list read endpoints. Clients will call `POST
+   * /auth/guest/join` to obtain initial temporary authorization and then use
+   * refresh when the refresh token is available. The `todo_app_guest` table is
+   * the canonical Prisma table referenced by this operation.
    *
    * @param connection
-   * @param body Guest registration payload. Maps to `todo_app_guest.email`
-   *   (nullable). If omitted, an anonymous guest record is created.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
   public async join(
-    @TypedBody()
-    body: ITodoAppGuest.IJoin,
+    @Ip()
+    ip: string,
   ): Promise<ITodoAppGuest.IAuthorized> {
     try {
-      return await postAuthGuestJoin({
-        body,
-      });
+      return await postAuthGuestJoin();
     } catch (error) {
       console.log(error);
       throw error;
@@ -72,62 +75,61 @@ export class AuthGuestController {
   }
 
   /**
-   * Exchange a valid guest refresh credential for a new access token and update
-   * guest activity metadata in todo_app_guest.
+   * Refresh guest authorization (associated with todo_app_guest).
    *
-   * Purpose and functionality: This endpoint accepts a valid guest refresh
-   * credential and issues a new short-lived access token (and optionally
-   * rotates the refresh token). It targets the `todo_app_guest` table so that
-   * guest activity can be associated with the `id` and `last_active_at`
-   * fields.
+   * Purpose and overview: This endpoint accepts a refresh credential from a
+   * previously issued guest authorization and returns a renewed short-lived
+   * access (and optionally a renewed refresh) token. It conceptually maps to
+   * the guest identity represented by the `todo_app_guest` table so audit and
+   * activity logs may reference `todo_app_guest.id` for traceability.
    *
-   * Implementation details using confirmed schema fields: On successful
-   * validation of the presented refresh credential, the server SHOULD update
-   * `todo_app_guest.last_active_at` to the current server timestamp and may
-   * record the refresh event in `todo_app_audit_records` by populating
-   * `actor_role` (e.g., 'system' or 'guest'), `action_type` (e.g.,
-   * 'refresh_token'), `target_resource` = 'guest', `target_id` = the guest
-   * `id`, and `created_at` to capture the event time.
+   * Implementation details and schema references: The `todo_app_guest` model
+   * contains `id`, `created_at`, `updated_at`, `deleted_at`, and
+   * `anonymous_label`. This model does not include persistent fields for
+   * refresh tokens or revocation timestamps; therefore, implementations must
+   * validate refresh tokens against the token store or the session subsystem
+   * rather than relying on columns in `todo_app_guest`. Successful refresh
+   * operations SHOULD record activity in `todo_app_user_activity_logs` or
+   * `todo_app_audit_logs` for monitoring and abuse detection.
    *
-   * Role-specific integration and business context: This operation is
-   * role-restricted: it requires a valid refresh credential tied to a
-   * previously created guest (role = 'guest'). The API path
-   * `/auth/guest/refresh` follows the service naming conventions for guest
-   * token lifecycle management and returns `ITodoAppGuest.IAuthorized` on
-   * success, matching the service prefix and role naming pattern.
+   * Actor-specific integration and business context: Guests only have read-only
+   * access to public/shared lists; refreshing a guest session only extends that
+   * ephemeral read access and does not convert a guest into a persistent
+   * authenticated account. If a refresh token is presented for a guest that no
+   * longer has an active guest record (for example, the `deleted_at` column is
+   * set), the refresh operation MUST fail and return an appropriate
+   * authorization error.
    *
-   * Security considerations within schema constraints: Rotate refresh tokens
-   * when practical and invalidate refresh tokens upon abuse detection. Because
-   * `todo_app_guest.password_hash` does not exist in the schema, do not attempt
-   * password-based verification for guests; instead rely on token material.
-   * Record refresh attempts and consider rate-limiting per guest `id` to reduce
-   * token replay risk.
+   * Security considerations and validation rules: Validate the refresh token
+   * for integrity and expiry before issuing new access tokens. Because
+   * `todo_app_guest` lacks refresh-token fields, the refresh token store must
+   * support revocation (for example, blacklists or a centralized session
+   * store). Log refresh attempts (success/failure) in
+   * `todo_app_user_activity_logs` with reference to the acting
+   * `todo_app_guest.id` where available. Enforce anti-replay and rate-limiting
+   * controls to prevent abuse.
    *
-   * Related operations and workflow integration: This operation complements
-   * `/auth/guest/join` (which issues initial tokens) and may be followed by
-   * guest-scoped API calls. Audit entries for refresh events can be stored in
-   * `todo_app_audit_records` (fields: `actor_role`, `action_type`,
-   * `target_resource`, `target_id`, `created_at`) to help operations and
-   * security teams investigate token usage patterns.
+   * Related operations and workflow integration: This operation pairs with
+   * `POST /auth/guest/join` (initial issuance). Implementations should also
+   * consider a public registration (member join) flow separate from guest
+   * operations. Where a guest transitions to a registered account, ensure
+   * refresh tokens are invalidated and relevant audit entries are recorded.
    *
    * @param connection
-   * @param body Refresh request payload. Contains the refresh credential/token
-   *   associated with a guest identity. Server will validate and rotate as
-   *   appropriate.
+   * @param body Refresh request containing the guest refresh credential
+   *   (application/json). The schema should include a single `refreshToken`
+   *   string property in the components as an appropriate request DTO.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")
   public async refresh(
-    @GuestAuth()
-    guest: GuestPayload,
     @TypedBody()
     body: ITodoAppGuest.IRefresh,
   ): Promise<ITodoAppGuest.IAuthorized> {
     try {
       return await postAuthGuestRefresh({
-        guest,
         body,
       });
     } catch (error) {

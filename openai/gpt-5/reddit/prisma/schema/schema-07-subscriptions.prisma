@@ -1,0 +1,253 @@
+/// Membership subscriptions connecting a {@link community_platform_members}
+/// to a {@link community_platform_communities}. Drives home feed composition
+/// and governs inclusion of community posts for the subscriber.
+/// Subscriptions can be independently created, listed, and removed by users
+/// and are subject to community visibility rules.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning member’s {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Subscribed community’s {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Creation timestamp of the subscription.
+  created_at DateTime
+  
+  /// Last update timestamp of the subscription record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Set when a subscription is cancelled while
+  /// preserving audit context.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_community_id], map: "community_platform_community_subscriptions_community_p_cd4b4000")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_community_subscriptions_community_p_5036042f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_community_subscriptions_community_p_98b73d50")
+}
+
+/// Per-member feed preferences and personalization flags controlling
+/// home/community feed behavior. Supports NSFW/Spoiler visibility, default
+/// sort/timeframe, page size, recommendation toggles, and diversity caps.
+/// 1:1 with {@link community_platform_members}.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_feed_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target member’s {@link community_platform_members.id}. One preference row
+  /// per member.
+  community_platform_member_id String
+  
+  /// Default feed sort preference (e.g., hot, new, top, controversial).
+  /// Business-validated in application layer.
+  default_sort String
+  
+  /// Default timeframe filter for ranking sorts (e.g., day, week, month, year,
+  /// all).
+  default_timeframe String
+  
+  /// Preferred page size for feed pagination (business-validated range;
+  /// defaults typically 20).
+  page_size Int
+  
+  /// Whether NSFW posts are eligible in feeds for this member per policy and
+  /// age gating.
+  nsfw_allowed Boolean
+  
+  /// Whether spoiler content may be shown without masking in feeds for this
+  /// member.
+  spoiler_allowed Boolean
+  
+  /// Enable infusion of recommended posts when subscribed volume is low.
+  recommendations_enabled Boolean
+  
+  /// Maximum percentage of a single community’s items per feed page (e.g.,
+  /// 60). Applied by feed composer.
+  diversity_cap_percent Int
+  
+  /// Whether to include posts from quarantined communities when the member has
+  /// explicit consent. Typically false.
+  include_quarantined Boolean
+  
+  /// Creation timestamp of the preference record.
+  created_at DateTime
+  
+  /// Last update timestamp of the preference record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for preference resets while preserving audit
+  /// context.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id], map: "community_platform_member_feed_preferences_community_p_b0c9f4e5")
+  
+  @@index([updated_at])
+}
+
+/// Per-member list of hidden posts used to suppress items from feeds. Each
+/// row associates a {@link community_platform_members} with a {@link
+/// community_platform_posts}.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_hidden_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning member’s {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Hidden post’s {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Optional user-provided note or reason for hiding the post.
+  note String?
+  
+  /// Timestamp when the post was hidden.
+  created_at DateTime
+  
+  /// Timestamp when the hidden entry was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for un-hiding while preserving audit context.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_post_id], map: "community_platform_member_hidden_posts_community_platf_50ee92c8")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_hidden_posts_community_platf_242d9857")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_member_hidden_posts_community_platf_56ccd0f3")
+}
+
+/// Per-member list of muted discussion threads to suppress
+/// notifications/visibility noise. Modeled as a relationship to the parent
+/// {@link community_platform_posts} to avoid polymorphic references to
+/// comments. Muting prevents notifications and may suppress thread-level
+/// surfacing.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_muted_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning member’s {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Muted thread’s root post {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Optional user-provided note indicating why the thread was muted.
+  muted_reason String?
+  
+  /// Timestamp when the thread was muted.
+  created_at DateTime
+  
+  /// Timestamp when the mute record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for unmuting while preserving audit context.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_post_id], map: "community_platform_member_muted_threads_community_plat_a575bbca")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_muted_threads_community_plat_8778f8c7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_member_muted_threads_community_plat_0829d79e")
+}
+
+/// Per-member per-community source filters to include or exclude specific
+/// communities from the home feed without changing subscription state. Works
+/// alongside {@link community_platform_community_subscriptions}.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_source_filters {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning member’s {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Target community’s {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Filter mode for this source: "include" or "exclude". Application enforces
+  /// allowed values.
+  mode String
+  
+  /// Creation timestamp of this filter.
+  created_at DateTime
+  
+  /// Last update timestamp of this filter.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for removing the filter while preserving audit
+  /// context.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_community_id], map: "community_platform_member_source_filters_community_pla_6e9597ac")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_source_filters_community_pla_bf5b6ba4")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_member_source_filters_community_pla_d4a986a5")
+}

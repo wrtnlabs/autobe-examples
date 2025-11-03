@@ -5,184 +5,90 @@ import typia, { tags } from "typia";
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IRedditCommunityAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityAdmin";
-import type { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
-import type { IRedditCommunityCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommentVote";
-import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import type { IRedditCommunityCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityModerator";
-import type { IRedditCommunityCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunitySubscription";
-import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
-import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
-import type { IRedditCommunityPostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostVote";
-import type { IRedditCommunityPosts } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPosts";
-import type { IRedditCommunityReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityReport";
-import type { IRedditCommunityReportAction } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityReportAction";
-import type { IRedditCommunityUserKarma } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserKarma";
-import type { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
+import type { IRedditCommunityContentReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityContentReport";
+import type { IRedditCommunityUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUser";
 
 export async function test_api_content_report_update_by_admin(
   connection: api.IConnection,
 ) {
-  // 1. Admin joins
-  const adminEmail = typia.random<string & tags.Format<"email">>();
-  const adminPassword = "AdminPass123!";
+  // 1. Admin joins and authenticates to obtain JWT tokens and set Authorization header
+  const adminCreate: IRedditCommunityAdmin.ICreate = {
+    user_id: typia.random<string & tags.Format<"uuid">>(),
+  };
+
   const admin: IRedditCommunityAdmin.IAuthorized =
     await api.functional.auth.admin.join(connection, {
-      body: {
-        email: adminEmail,
-        password: adminPassword,
-      } satisfies IRedditCommunityAdmin.ICreate,
+      body: adminCreate,
     });
   typia.assert(admin);
 
-  // 2. Admin login
-  await api.functional.auth.admin.login(connection, {
-    body: {
-      email: adminEmail,
-      password: adminPassword,
-    } satisfies IRedditCommunityAdmin.ILogin,
-  });
+  // The connection automatically acquires authorization token in headers
 
-  // 3. Member joins
-  const memberEmail = typia.random<string & tags.Format<"email">>();
-  const memberPassword = "MemberPass123!";
-  const member: IRedditCommunityMember.IAuthorized =
-    await api.functional.auth.member.join(connection, {
-      body: {
-        email: memberEmail,
-        password: memberPassword,
-      } satisfies IRedditCommunityMember.ICreate,
-    });
-  typia.assert(member);
+  // 2. Prepare an update payload for content report
+  const updateBody: IRedditCommunityContentReport.IUpdate = {
+    report_reason_id: typia.random<string & tags.Format<"uuid">>(),
+    report_status_id: typia.random<string & tags.Format<"uuid">>(),
+    additional_details: `Updated notes by admin at ${new Date().toISOString()}`,
+  };
 
-  // 4. Member creates community
-  const communityName = `community_${RandomGenerator.alphaNumeric(8)}`;
-  const communityDescription = RandomGenerator.paragraph({
-    sentences: 5,
-    wordMin: 4,
-    wordMax: 7,
-  });
+  // 3. Use a mock UUID for contentReportId to update
+  const contentReportId = typia.random<string & tags.Format<"uuid">>();
 
-  const community: IRedditCommunityCommunity =
-    await api.functional.redditCommunity.member.communities.createCommunity(
+  // 4. Update the content report
+  const updatedReport: IRedditCommunityContentReport =
+    await api.functional.redditCommunity.admin.content_reports.update(
       connection,
       {
-        body: {
-          name: communityName,
-          description: communityDescription,
-        } satisfies IRedditCommunityCommunity.ICreate,
+        contentReportId,
+        body: updateBody,
       },
     );
-  typia.assert(community);
-
-  // 5. Member creates a post in community
-  const postTitle = RandomGenerator.paragraph({ sentences: 4 });
-  const postBody = RandomGenerator.content({
-    paragraphs: 2,
-    sentenceMin: 8,
-    sentenceMax: 15,
-  });
-  const post: IRedditCommunityPosts =
-    await api.functional.redditCommunity.member.communities.posts.createPost(
-      connection,
-      {
-        communityId: community.id,
-        body: {
-          reddit_community_community_id: community.id,
-          post_type: "text",
-          title: postTitle.substring(0, 300),
-          body_text: postBody.substring(0, 10000),
-        } satisfies IRedditCommunityPosts.ICreate,
-      },
-    );
-  typia.assert(post);
-
-  // 6. Member creates a content report for the post
-  const reportCategory = "spam";
-  const reportDescription = RandomGenerator.paragraph({ sentences: 3 });
-
-  // For status_id in creation, reusing a generated UUID as placeholder
-  const initialStatusId = typia.random<string & tags.Format<"uuid">>();
-
-  const report: IRedditCommunityReport =
-    await api.functional.redditCommunity.reports.create(connection, {
-      body: {
-        reporter_member_id: member.id,
-        reported_post_id: post.id,
-        status_id: initialStatusId,
-        category: reportCategory,
-        description: reportDescription,
-      } satisfies IRedditCommunityReport.ICreate,
-    });
-  typia.assert(report);
-
-  // 7. Admin updates the content report
-  // Generate new data for update
-  const newStatusId = typia.random<string & tags.Format<"uuid">>();
-  const newCategory = "abuse";
-  const newDescription = RandomGenerator.paragraph({ sentences: 4 });
-
-  const updatedReport: IRedditCommunityReport =
-    await api.functional.redditCommunity.admin.reports.update(connection, {
-      reportId: report.id,
-      body: {
-        reporter_member_id: member.id,
-        reported_post_id: post.id,
-        status_id: newStatusId,
-        category: newCategory,
-        description: newDescription,
-      } satisfies IRedditCommunityReport.IUpdate,
-    });
   typia.assert(updatedReport);
 
-  // Validate updated values
+  // 5. Validate that the returned updatedReport has the expected updated properties
   TestValidator.equals(
-    "status_id should be updated",
-    updatedReport.status_id,
-    newStatusId,
+    "report_reason_id should match update",
+    updatedReport.report_reason_id,
+    updateBody.report_reason_id,
   );
   TestValidator.equals(
-    "category should be updated",
-    updatedReport.category,
-    newCategory,
+    "report_status_id should match update",
+    updatedReport.report_status_id,
+    updateBody.report_status_id,
   );
   TestValidator.equals(
-    "description should be updated",
-    updatedReport.description,
-    newDescription,
-  );
-  TestValidator.equals(
-    "report id should remain same",
-    updatedReport.id,
-    report.id,
+    "additional_details should match update",
+    updatedReport.additional_details ?? null,
+    updateBody.additional_details ?? null,
   );
 
-  // 8. Authorization enforcement - attempt update without admin login should fail
-  // Setup unauthorized connection (empty headers)
-  const unauthorizedConn: api.IConnection = { ...connection, headers: {} };
+  // 6. Validate audit fields exist
+  TestValidator.predicate(
+    "created_at is ISO date string",
+    typeof updatedReport.created_at === "string" &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(
+        updatedReport.created_at,
+      ),
+  );
+  TestValidator.predicate(
+    "updated_at is ISO date string",
+    typeof updatedReport.updated_at === "string" &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(
+        updatedReport.updated_at,
+      ),
+  );
+
+  // 7. Confirm unauthorized user cannot update content report
+  // Create a connection without auth header
+  const unauthConnection: api.IConnection = { ...connection, headers: {} };
+
   await TestValidator.error("unauthorized update should fail", async () => {
-    await api.functional.redditCommunity.admin.reports.update(
-      unauthorizedConn,
+    await api.functional.redditCommunity.admin.content_reports.update(
+      unauthConnection,
       {
-        reportId: report.id,
-        body: {
-          status_id: newStatusId,
-          category: newCategory,
-        } satisfies IRedditCommunityReport.IUpdate,
+        contentReportId,
+        body: updateBody,
       },
     );
   });
-
-  // 9. Invalid reportId update attempt
-  await TestValidator.error(
-    "update with invalid reportId should fail",
-    async () => {
-      await api.functional.redditCommunity.admin.reports.update(connection, {
-        reportId: typia.random<string & tags.Format<"uuid">>(),
-        body: {
-          status_id: newStatusId,
-          category: newCategory,
-        } satisfies IRedditCommunityReport.IUpdate,
-      });
-    },
-  );
 }

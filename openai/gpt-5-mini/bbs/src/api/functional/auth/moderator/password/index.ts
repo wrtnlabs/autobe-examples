@@ -1,2 +1,1 @@
-export * as reset from "./reset/index";
-export * as confirm from "./confirm/index";
+export * as change from "./change/index";

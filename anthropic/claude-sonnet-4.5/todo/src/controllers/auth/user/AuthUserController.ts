@@ -1,4 +1,4 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Ip } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 import { postAuthUserJoin } from "../../../providers/postAuthUserJoin";
@@ -10,50 +10,58 @@ import { ITodoListUser } from "../../../api/structures/ITodoListUser";
 @Controller("/auth/user")
 export class AuthUserController {
   /**
-   * Register new user account and issue authentication tokens for
-   * todo_list_users table.
+   * Register a new user account with email and password authentication.
    *
-   * Registers a new user account in the Todo list application and issues JWT
-   * authentication tokens.
+   * Enables new users to create an account in the Todo list application by
+   * providing their email address and password. This public registration
+   * endpoint validates that the email is properly formatted, ensures it's not
+   * already registered in the system (checking against todo_list_users.email
+   * for uniqueness), and enforces password security requirements including
+   * minimum length of 8 characters with at least one letter and one number.
+   * Upon successful validation, the system creates a new user record in the
+   * todo_list_users table with a unique UUID identifier, stores the email,
+   * generates a secure password hash using industry-standard algorithms
+   * (bcrypt, argon2, or PBKDF2), sets created_at and updated_at to the current
+   * timestamp, and leaves deleted_at as null to indicate an active account.
    *
-   * This operation creates a new user account with the provided email and
-   * password credentials. The system performs comprehensive validation
-   * including email format verification, email uniqueness check, and password
-   * strength validation (minimum 8 characters with letters and numbers). Upon
-   * successful validation, the password is securely hashed using bcrypt with
-   * cost factor 12 before storage.
+   * The registration process immediately authenticates the newly created user
+   * by generating both a JWT access token (with 15-minute expiration) and a
+   * refresh token (with 30-day expiration), allowing the user to start using
+   * the application without requiring a separate login step. The JWT tokens
+   * contain the user's ID, email, role ('user'), and appropriate expiration
+   * timestamps. This streamlined registration-and-authentication flow provides
+   * an optimal user experience by eliminating the need for users to log in
+   * immediately after registration.
    *
-   * The registration process follows these steps: validate email format and
-   * uniqueness, validate password strength requirements, hash the password
-   * using bcrypt, create the user account record in todo_list_users table,
-   * generate JWT access token (30-minute expiration) and refresh token (30-day
-   * expiration), store the refresh token hash in todo_list_refresh_tokens
-   * table, and return the complete authentication response.
+   * Security measures include validating email format to prevent malformed
+   * input, checking email uniqueness to prevent duplicate accounts, enforcing
+   * password strength requirements to ensure account security, and securely
+   * hashing passwords before storage (never storing plain text passwords). The
+   * operation returns the user's profile information (id, email, created_at)
+   * along with the authentication tokens wrapped in the
+   * ITodoListUser.IAuthorized response structure.
    *
-   * Security measures include password hashing with bcrypt, JWT token
-   * generation with HS256 signing, rate limiting (maximum 3 registration
-   * attempts per IP per hour), and protection against common vulnerabilities.
-   * The operation returns HTTP 409 if the email already exists, HTTP 400 for
-   * validation errors, and HTTP 201 with authentication tokens on success.
-   *
-   * The response includes the user's profile information (id, email,
-   * created_at), JWT access token for API authentication, and refresh token for
-   * session renewal. After successful registration, users can immediately
-   * access all todo management features without additional login.
-   *
-   * This operation relates to the todo_list_users table creation workflow and
-   * is a prerequisite for all authenticated todo management operations.
+   * This operation is essential for user onboarding and serves as the primary
+   * entry point for new users to access the Todo list application. It
+   * establishes the user's identity in the system and creates the foundation
+   * for all subsequent todo management operations. The registration data
+   * populates the todo_list_users table which maintains the one-to-many
+   * relationship with todo_list_todos, enabling users to own and manage their
+   * personal todo items after registration.
    *
    * @param connection
-   * @param body User registration credentials including email and password
+   * @param body User registration credentials including email address and
+   *   password meeting security requirements
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
   public async join(
+    @Ip()
+    ip: string,
     @TypedBody()
-    body: ITodoListUser.ICreate,
+    body: ITodoListUser.IRegister,
   ): Promise<ITodoListUser.IAuthorized> {
     try {
       return await postAuthUserJoin({
@@ -66,60 +74,61 @@ export class AuthUserController {
   }
 
   /**
-   * Authenticate user credentials and issue session tokens for todo_list_users
-   * table.
+   * Authenticate user with email and password to obtain access tokens.
    *
-   * Authenticates existing user credentials and establishes an authenticated
-   * session with JWT tokens.
+   * Authenticates existing users with their registered email and password
+   * credentials to establish a secure session in the Todo list application.
+   * This public login endpoint validates the provided email exists in the
+   * todo_list_users table, verifies the password matches the stored
+   * password_hash using secure comparison methods, and ensures the account is
+   * active by checking that deleted_at is null. The system uses
+   * industry-standard password hashing algorithms (bcrypt, argon2, or PBKDF2)
+   * with constant-time comparison to prevent timing attacks.
    *
-   * This operation validates user login credentials by verifying the email
-   * exists in the todo_list_users table and comparing the provided password
-   * against the stored bcrypt password hash. The authentication process
-   * implements several security measures including constant-time password
-   * comparison to prevent timing attacks, account activity verification
-   * (deleted_at must be null), and comprehensive brute force protection.
+   * Upon successful credential validation, the system generates a JWT access
+   * token with 15-minute expiration and a refresh token with 30-day expiration.
+   * The access token payload includes the user's ID (todo_list_users.id), email
+   * (todo_list_users.email), role ('user'), issued-at timestamp, and expiration
+   * timestamp. These tokens enable stateless authentication for subsequent API
+   * requests. The system also creates a session record in the
+   * todo_list_user_sessions table, capturing the user's IP address, connection
+   * URL (href), referrer, and setting created_at to the current timestamp while
+   * leaving expired_at null for the active session. This session tracking
+   * supports security auditing and multi-device session management.
    *
-   * The login workflow executes these steps: validate that both email and
-   * password are provided, lookup the user account by email address, verify the
-   * account is active (not soft-deleted), validate the password using bcrypt
-   * comparison against password_hash, check for account lockout due to failed
-   * attempts, generate new JWT access token with 30-minute expiration, generate
-   * new JWT refresh token with 30-day expiration, store the refresh token hash
-   * in todo_list_refresh_tokens table, update the user's login activity
-   * timestamp, and return the complete authentication response.
+   * Security features include generic error messages that don't reveal whether
+   * the email or password was incorrect (preventing account enumeration
+   * attacks), basic brute force protection through rate limiting on repeated
+   * failed attempts, and the option to implement temporary account lockout
+   * after excessive failures. The operation updates the user's last login
+   * metadata to track account activity patterns.
    *
-   * Security implementations include bcrypt password verification with
-   * constant-time comparison, JWT token generation using HS256 algorithm with
-   * 256-bit secret key, brute force protection tracking failed login attempts
-   * (locks account for 15 minutes after 5 consecutive failures), rate limiting
-   * on login endpoint, comprehensive security logging of all authentication
-   * attempts, and generic error messages that don't reveal whether email
-   * exists.
+   * The login operation returns the ITodoListUser.IAuthorized response
+   * containing the user's profile information (id, email, created_at from
+   * todo_list_users) along with both authentication tokens. This establishes
+   * the authenticated session that authorizes the user to perform all todo
+   * management operations on their personal todo items. The JWT tokens must be
+   * included in subsequent requests to protected endpoints, where they are
+   * validated to ensure the user can only access todo_list_todos records where
+   * todo_list_user_id matches their authenticated user ID.
    *
-   * The operation returns HTTP 401 for invalid credentials (without revealing
-   * which field is incorrect for security), HTTP 429 when rate limit or account
-   * lockout is triggered, HTTP 400 for missing required fields, and HTTP 200
-   * with authentication tokens on success. Error responses maintain security by
-   * using the same message for non-existent email and wrong password
-   * scenarios.
-   *
-   * The response includes complete user profile information (id, email,
-   * created_at, updated_at), JWT access token for authenticating API requests,
-   * refresh token for obtaining new access tokens, and token expiration
-   * information. Users can immediately access all todo management features
-   * after successful login.
-   *
-   * This operation integrates with the session management system and is
-   * followed by token refresh operations when access tokens expire.
+   * This operation is fundamental to the application's security model,
+   * establishing user identity and enforcing the data isolation that ensures
+   * users can only access their own todo items. Failed login attempts are
+   * logged for security monitoring without exposing whether specific email
+   * addresses exist in the system.
    *
    * @param connection
-   * @param body User login credentials with email and password
+   * @param body User login credentials containing registered email address and
+   *   password
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
   public async login(
+    @Ip()
+    ip: string,
     @TypedBody()
     body: ITodoListUser.ILogin,
   ): Promise<ITodoListUser.IAuthorized> {
@@ -134,61 +143,59 @@ export class AuthUserController {
   }
 
   /**
-   * Refresh expired access token using valid refresh token for session
-   * continuation.
+   * Refresh expired access token using a valid refresh token.
    *
-   * Renews user session by generating a new access token from a valid refresh
-   * token.
+   * Enables users to obtain a new access token using their valid refresh token
+   * when the access token expires after 15 minutes. This public endpoint
+   * supports seamless session continuation without forcing users to
+   * re-authenticate with their email and password. The operation validates that
+   * the provided refresh token is properly signed, not expired (refresh tokens
+   * have 30-day expiration), not revoked, and belongs to an active user account
+   * by verifying the associated user in todo_list_users has deleted_at set to
+   * null.
    *
-   * This operation enables seamless session continuation when JWT access tokens
-   * expire after their 30-minute lifetime. Users submit their refresh token to
-   * obtain a new access token without re-authentication, maintaining
-   * uninterrupted access to the application. The system validates the refresh
-   * token against stored hashes in todo_list_refresh_tokens table and ensures
-   * all security requirements are met.
+   * The token refresh process performs comprehensive validation including
+   * signature verification using the JWT secret key, expiration timestamp
+   * checking to ensure the token hasn't exceeded its 30-day lifespan,
+   * revocation status verification against the system's revoked token list
+   * (tokens are revoked on logout, password change, or 'logout from all
+   * devices' actions), and user account status confirmation to prevent refresh
+   * for suspended or deleted accounts. The system extracts the user identity
+   * from the refresh token payload and verifies the corresponding record exists
+   * in todo_list_users.
    *
-   * The refresh workflow executes these steps: validate that refresh token is
-   * provided in request, lookup the refresh token hash in
-   * todo_list_refresh_tokens table, verify token signature and integrity, check
-   * token hasn't expired (expires_at is in the future), verify token hasn't
-   * been revoked (revoked_at is null), confirm the associated user account
-   * exists and is active (deleted_at is null in todo_list_users), generate new
-   * JWT access token with fresh 30-minute expiration containing userId and role
-   * claims, optionally implement token rotation by generating new refresh token
-   * and invalidating the old one, update token usage tracking, and return the
-   * new authentication tokens.
+   * Upon successful validation, the system generates a new JWT access token
+   * with 15-minute expiration containing the user's ID (todo_list_users.id),
+   * email (todo_list_users.email), role ('user'), issued-at timestamp, and new
+   * expiration timestamp. The operation may implement refresh token rotation as
+   * a security enhancement, where using a refresh token invalidates it and
+   * issues both a new access token and a new refresh token. This rotation
+   * limits the lifespan of any individual refresh token and reduces the window
+   * of vulnerability if a token is compromised.
    *
-   * Security implementations include refresh token validation against stored
-   * hashes using secure comparison, expiration timestamp verification ensuring
-   * tokens are used within 30-day validity period, revocation status checking
-   * to prevent use of invalidated tokens, user account status verification,
-   * optional token rotation where each refresh generates a new refresh token
-   * and invalidates the old one (limiting exposure window), rate limiting to
-   * prevent token refresh abuse, comprehensive logging of all refresh attempts
-   * for security monitoring, and immediate token invalidation on security
-   * events.
+   * Security considerations include maintaining a revoked token list to prevent
+   * reuse of invalidated refresh tokens, limiting the number of concurrent
+   * refresh tokens per user to prevent token proliferation, and logging refresh
+   * token usage for security monitoring and anomaly detection. The system
+   * denies refresh attempts if the token has been revoked (user logged out or
+   * changed password), if the token signature is invalid (potential tampering),
+   * if the token has expired beyond the 30-day window, or if the associated
+   * user account is suspended or deleted.
    *
-   * The operation returns HTTP 401 with error code TOKEN_EXPIRED when the
-   * refresh token has expired (user must log in again), HTTP 401 with error
-   * code TOKEN_REVOKED when token has been invalidated, HTTP 401 with error
-   * code TOKEN_INVALID for malformed or tampered tokens, HTTP 404 when token
-   * not found in database, HTTP 403 when associated user account is inactive or
-   * deleted, and HTTP 200 with new tokens on success.
-   *
-   * The response includes new JWT access token with fresh expiration,
-   * optionally new refresh token if rotation is enabled, token expiration
-   * timestamps, and user identification information. This enables client
-   * applications to automatically refresh tokens before expiration, providing
-   * seamless user experience without interruption.
-   *
-   * This operation integrates with the session management system and is
-   * critical for maintaining long-lived user sessions. It works in conjunction
-   * with login operations and supports the authentication flow defined in the
-   * security requirements. When refresh tokens expire after 30 days, users must
-   * perform a new login operation.
+   * The operation returns the ITodoListUser.IAuthorized response structure
+   * containing the user's profile information from todo_list_users along with
+   * the new access token and optionally a new refresh token. This enables the
+   * client to seamlessly update their stored tokens and continue making
+   * authenticated requests to protected endpoints. The refresh mechanism is
+   * essential for maintaining continuous user sessions in the Todo list
+   * application while keeping access tokens short-lived for security purposes.
+   * It supports the user experience expectation that they remain logged in
+   * across multiple sessions without frequent re-authentication, while
+   * maintaining security through limited-lifetime access tokens and revocable
+   * refresh tokens.
    *
    * @param connection
-   * @param body Refresh token for obtaining new access token
+   * @param body Valid refresh token to exchange for a new access token
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia

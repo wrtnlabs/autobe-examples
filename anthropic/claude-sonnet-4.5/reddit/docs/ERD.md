@@ -5,1700 +5,1321 @@
 - [Systematic](#systematic)
 - [Actors](#actors)
 - [Communities](#communities)
-- [Posts](#posts)
-- [Comments](#comments)
-- [Voting](#voting)
-- [Karma](#karma)
+- [Content](#content)
+- [Engagement](#engagement)
 - [Moderation](#moderation)
-- [default](#default)
+- [Discovery](#discovery)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"reddit_like_system_settings" {
+"community_platform_categories" {
   String id PK
-  String key UK
-  String value
+  String name UK
   String description "nullable"
-  String value_type
-  String category "nullable"
-  Boolean is_public
+  Int display_order
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 ```
 
-### `reddit_like_system_settings`
+### `community_platform_categories`
 
-Platform-wide configuration settings stored as key-value pairs. This
-table contains system parameters that control platform behavior, such as
-content limits, rate limiting rules, feature toggles, and other
-configurable aspects of the system. Settings can be categorized and
-marked as public or internal-only. Values are stored as strings with a
-type indicator for proper deserialization.
+System-level reference table defining predefined categories for
+organizing and discovering communities. Categories enable users to filter
+communities by topic areas such as Technology, Gaming, Sports, etc.
+Managed by site administrators. Referenced by
+community_platform_community_categories for community categorization.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `key`
-  > Unique identifier for the setting (e.g., 'max_post_length',
-  > 'rate_limit_posts_per_hour'). This key is used to retrieve the setting
-  > value throughout the application.
-- `value`
-  > The setting value stored as a string. Complex values (objects, arrays)
-  > can be stored as JSON strings. The value_type field indicates how to
-  > deserialize this value.
+- `name`
+  > Category name displayed to users. Examples: Technology & Programming,
+  > Gaming, Sports & Fitness, Entertainment & Media. Must be unique across
+  > all categories.
 - `description`
-  > Human-readable description explaining what this setting controls and its
-  > purpose. Helps administrators understand the impact of changing this
-  > setting.
-- `value_type`
-  > Indicates the data type of the value for proper deserialization. Common
-  > values: 'string', 'int', 'double', 'boolean', 'json'. This helps the
-  > application correctly parse the value string.
-- `category`
-  > Grouping category for organizing related settings (e.g., 'content',
-  > 'moderation', 'performance', 'features'). Allows filtering and grouping
-  > settings in admin interfaces.
-- `is_public`
-  > Whether this setting can be exposed via public API or is internal-only.
-  > Public settings may be displayed to users (e.g., max post length), while
-  > internal settings are admin-only (e.g., API keys, security parameters).
-- `created_at`: Timestamp when this setting was first created in the system.
+  > Detailed explanation of what types of communities belong in this
+  > category. Helps administrators and users understand the category scope
+  > and purpose.
+- `display_order`
+  > Integer controlling the presentation order of categories in UI elements
+  > like dropdowns and filter lists. Lower numbers appear first. Allows
+  > administrators to prioritize popular categories.
+- `created_at`
+  > Timestamp when this category was created. Used for audit trails and
+  > tracking category system evolution.
 - `updated_at`
-  > Timestamp when this setting was last modified. Updated whenever the value
-  > or other fields change. Provides audit trail for configuration changes.
+  > Timestamp of the most recent update to this category. Updated whenever
+  > name, description, or display_order changes.
+- `deleted_at`
+  > Soft delete timestamp. When set, the category is archived and hidden from
+  > active use while preserving historical references in
+  > community_platform_community_categories. Prevents breaking existing
+  > community categorizations.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"reddit_like_guests" {
+"community_platform_members" {
   String id PK
-  String session_identifier UK
-  String ip_address "nullable"
-  String user_agent "nullable"
-  DateTime first_visit_at
-  DateTime last_visit_at
-  DateTime created_at
-  DateTime updated_at
-}
-"reddit_like_members" {
-  String id PK
-  String username UK
   String email UK
   String password_hash
-  Boolean email_verified
-  String profile_bio "nullable"
-  String avatar_url "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"reddit_like_moderators" {
-  String id PK
   String username UK
-  String email UK
-  String password_hash
   Boolean email_verified
-  String profile_bio "nullable"
+  String bio "nullable"
   String avatar_url "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"reddit_like_admins" {
-  String id PK
-  String username UK
-  String email UK
-  String password_hash
-  Boolean email_verified
-  String profile_bio "nullable"
-  String avatar_url "nullable"
-  Boolean super_admin
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"reddit_like_auth_credentials" {
-  String id PK
-  String reddit_like_user_id FK,UK
-  Int failed_login_attempts
-  DateTime last_failed_login_at "nullable"
-  DateTime account_locked_until "nullable"
-  DateTime last_successful_login_at "nullable"
-  String last_login_ip "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"reddit_like_email_verifications" {
-  String id PK
-  String reddit_like_user_id FK
-  String email
-  String verification_token UK
-  String verification_type
-  DateTime expires_at
-  DateTime verified_at "nullable"
-  DateTime created_at
-}
-"reddit_like_password_resets" {
-  String id PK
-  String reddit_like_user_id FK
-  String email
-  String reset_token UK
-  DateTime expires_at
-  DateTime used_at "nullable"
-  DateTime created_at
-}
-"reddit_like_sessions" {
-  String id PK
-  String reddit_like_user_id FK
-  String access_token UK
-  String refresh_token UK
-  DateTime access_token_expires_at
-  DateTime refresh_token_expires_at
-  String ip_address "nullable"
-  String user_agent "nullable"
-  DateTime last_activity_at
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"reddit_like_users" {
-  String id PK
-  String username UK
-  String email UK
-  String password_hash "nullable"
-  String role
-  Boolean email_verified
-  String profile_bio "nullable"
-  String(80000) avatar_url "nullable"
+  String banner_url "nullable"
   Int post_karma
   Int comment_karma
-  Boolean show_karma_publicly
-  String profile_privacy
-  Boolean show_subscriptions_publicly
-  Boolean is_super_admin
-  String session_identifier UK "nullable"
-  String ip_address "nullable"
-  String user_agent "nullable"
-  DateTime first_visit_at "nullable"
-  DateTime last_visit_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"reddit_like_auth_credentials" |o--|| "reddit_like_users" : user
-"reddit_like_email_verifications" }o--|| "reddit_like_users" : user
-"reddit_like_password_resets" }o--|| "reddit_like_users" : user
-"reddit_like_sessions" }o--|| "reddit_like_users" : user
+"community_platform_member_sessions" {
+  String id PK
+  String community_platform_member_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"community_platform_moderators" {
+  String id PK
+  String email UK
+  String password_hash
+  String username UK
+  Boolean email_verified
+  String bio "nullable"
+  String avatar_url "nullable"
+  String banner_url "nullable"
+  Int post_karma
+  Int comment_karma
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"community_platform_moderator_sessions" {
+  String id PK
+  String community_platform_moderator_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"community_platform_siteadmins" {
+  String id PK
+  String email UK
+  String password_hash
+  String username UK
+  Boolean email_verified
+  String bio "nullable"
+  String avatar_url "nullable"
+  String banner_url "nullable"
+  Int post_karma
+  Int comment_karma
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"community_platform_siteadmin_sessions" {
+  String id PK
+  String community_platform_siteadmin_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"community_platform_users" {
+  String id PK
+  String email UK
+  String password_hash
+  String username UK
+  Boolean email_verified
+  String bio "nullable"
+  String avatar_url "nullable"
+  String banner_url "nullable"
+  Int post_karma
+  Int comment_karma
+  Boolean is_site_admin
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"community_platform_user_sessions" {
+  String id PK
+  String community_platform_user_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"community_platform_member_sessions" }o--|| "community_platform_members" : member
+"community_platform_moderator_sessions" }o--|| "community_platform_moderators" : moderator
+"community_platform_siteadmin_sessions" }o--|| "community_platform_siteadmins" : siteadmin
+"community_platform_user_sessions" }o--|| "community_platform_users" : user
 ```
 
-### `reddit_like_guests`
+### `community_platform_members`
 
-Guest users represent unauthenticated visitors to the platform. Guests
-can view public communities, posts, and comments but cannot interact
-through voting, posting, or commenting. This table tracks guest sessions
-for analytics and potential conversion to member accounts.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `session_identifier`
-  > Unique session identifier for tracking guest activity across visits. Used
-  > for analytics and anonymous user behavior tracking.
-- `ip_address`
-  > IP address of the guest user for security monitoring and rate limiting
-  > purposes.
-- `user_agent`: Browser user agent string for device and browser analytics.
-- `first_visit_at`: Timestamp of the guest's first visit to the platform.
-- `last_visit_at`: Timestamp of the guest's most recent visit to the platform.
-- `created_at`: Timestamp when the guest session was first created.
-- `updated_at`: Timestamp when the guest session was last updated.
-
-### `reddit_like_members`
-
-Member users are authenticated standard users with full participation
-rights. Members can create posts, write comments, vote on content,
-subscribe to communities, and earn karma. This is the core user type
-representing the majority of platform participants.
+Member accounts representing regular users of the community platform.
+Members can create posts, comments, vote on content, subscribe to
+communities, and earn karma based on community engagement. Each member
+has authentication credentials and profile customization options.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `username`
-  > Unique username chosen during registration. Must be 3-20 characters
-  > containing only alphanumeric characters, underscores, and hyphens.
-  > Displayed throughout the platform as the user's identity.
 - `email`
-  > Unique email address for authentication and communication. Used for
-  > login, verification, and notifications.
-- `password_hash`
-  > Securely hashed password using bcrypt, Argon2, or PBKDF2. Never stored in
-  > plain text. Used for authentication.
+  > Email address for authentication and notifications. Must be unique across
+  > all members.
+- `password_hash`: Bcrypt hashed password for authentication. Never stored in plain text.
+- `username`
+  > Unique display name for the member. Used throughout the platform for
+  > identification. Length 3-50 characters.
 - `email_verified`
-  > Whether the user has verified their email address. Some features may
-  > require verified email status.
-- `profile_bio`
-  > Optional user biography or description displayed on their profile page.
-  > Limited to 200-500 characters.
+  > Whether the member has verified their email address. Unverified members
+  > may have restricted access to certain features.
+- `bio`
+  > Optional self-description text written by the member. Maximum 500
+  > characters. Displayed on member profile.
 - `avatar_url`
-  > URL to the user's profile avatar image. Points to uploaded custom avatar
-  > or default generated avatar.
+  > URL to the member's profile picture. Uploaded images are stored
+  > externally and referenced here.
+- `banner_url`
+  > URL to the member's profile banner image. Displayed at the top of their
+  > profile page.
+- `post_karma`
+  > Karma points earned from upvotes on the member's posts. Can be negative
+  > if posts receive more downvotes than upvotes.
+- `comment_karma`
+  > Karma points earned from upvotes on the member's comments. Can be
+  > negative if comments receive more downvotes than upvotes.
 - `created_at`
-  > Timestamp when the member account was created. Displayed as account age
-  > on profile.
-- `updated_at`: Timestamp when the member account was last updated.
+  > Timestamp when the member account was created. Used to calculate account
+  > age.
+- `updated_at`
+  > Timestamp when the member account was last updated. Tracks profile
+  > modifications.
 - `deleted_at`
-  > Timestamp when the account was soft-deleted. Null if account is active.
-  > Enables account recovery and data preservation.
+  > Timestamp when the member account was soft deleted. Null if account is
+  > active. Soft delete preserves content history.
 
-### `reddit_like_moderators`
+### `community_platform_member_sessions`
 
-Moderator users are trusted community managers with elevated permissions
-within specific communities. Moderators can remove content, ban users
-from their communities, configure community settings, and enforce
-community rules. Moderator status is community-specific.
+Authentication sessions for member accounts. Tracks active login sessions
+with connection metadata for security audit trails. Multiple concurrent
+sessions per member are supported.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `username`
-  > Unique username for the moderator account. Same constraints as member
-  > usernames: 3-20 characters, alphanumeric with underscores and hyphens.
+- `community_platform_member_id`: Member who owns this session. [community_platform_members.id](#community_platform_members)
+- `ip`
+  > IP address from which the session was created. Used for security
+  > monitoring and fraud detection.
+- `href`
+  > Full URL where the session connection was established. Tracks entry point
+  > for analytics.
+- `referrer`
+  > HTTP referrer URL indicating where the user came from. Empty string if
+  > direct navigation.
+- `created_at`: Timestamp when the session was created. Session start time.
+- `expired_at`
+  > Timestamp when the session expired or was logged out. Null for active
+  > sessions.
+
+### `community_platform_moderators`
+
+Moderator accounts with elevated permissions to manage specific
+communities. Moderators can remove content, ban users from communities
+they manage, review reports, and enforce community rules. Authentication
+and profile features mirror member accounts.
+
+Properties as follows:
+
+- `id`: Primary Key.
 - `email`
-  > Unique email address for moderator authentication and communication. Used
-  > for moderation notifications and alerts.
-- `password_hash`
-  > Securely hashed password for moderator authentication. Same security
-  > standards as member passwords.
+  > Email address for authentication and notifications. Must be unique across
+  > all moderators.
+- `password_hash`: Bcrypt hashed password for authentication. Never stored in plain text.
+- `username`
+  > Unique display name for the moderator. Used throughout the platform for
+  > identification. Length 3-50 characters.
 - `email_verified`
-  > Whether the moderator has verified their email address. Required for
-  > moderator privileges.
-- `profile_bio`: Optional moderator biography displayed on their profile.
-- `avatar_url`: URL to the moderator's profile avatar image.
+  > Whether the moderator has verified their email address. Unverified
+  > moderators may have restricted access.
+- `bio`
+  > Optional self-description text written by the moderator. Maximum 500
+  > characters.
+- `avatar_url`: URL to the moderator's profile picture.
+- `banner_url`: URL to the moderator's profile banner image.
+- `post_karma`
+  > Karma points earned from upvotes on the moderator's posts. Can be
+  > negative.
+- `comment_karma`
+  > Karma points earned from upvotes on the moderator's comments. Can be
+  > negative.
 - `created_at`: Timestamp when the moderator account was created.
 - `updated_at`: Timestamp when the moderator account was last updated.
 - `deleted_at`
-  > Timestamp when the moderator account was soft-deleted. Null if account is
+  > Timestamp when the moderator account was soft deleted. Null if account is
   > active.
 
-### `reddit_like_admins`
+### `community_platform_moderator_sessions`
 
-Administrator users are platform-level managers with system-wide elevated
-permissions. Admins can manage all communities, handle appeals, suspend
-users from the entire platform, and configure platform-wide settings.
-This represents the highest authority level.
+Authentication sessions for moderator accounts. Tracks active login
+sessions with connection metadata for security audit trails. Multiple
+concurrent sessions per moderator are supported.
 
 Properties as follows:
 
 - `id`: Primary Key.
+- `community_platform_moderator_id`: Moderator who owns this session. [community_platform_moderators.id](#community_platform_moderators)
+- `ip`
+  > IP address from which the session was created. Used for security
+  > monitoring and fraud detection.
+- `href`
+  > Full URL where the session connection was established. Tracks entry point
+  > for analytics.
+- `referrer`
+  > HTTP referrer URL indicating where the user came from. Empty string if
+  > direct navigation.
+- `created_at`: Timestamp when the session was created. Session start time.
+- `expired_at`
+  > Timestamp when the session expired or was logged out. Null for active
+  > sessions.
+
+### `community_platform_siteadmins`
+
+Site administrator accounts with platform-wide elevated permissions. Site
+admins can manage all communities, ban users platform-wide, delete
+communities, remove any content, and handle escalated moderation issues.
+Highest permission level on the platform.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `email`
+  > Email address for authentication and notifications. Must be unique across
+  > all site admins.
+- `password_hash`: Bcrypt hashed password for authentication. Never stored in plain text.
 - `username`
-  > Unique username for the administrator account. Same constraints as other
-  > user types.
-- `email`
-  > Unique email address for administrator authentication and critical
-  > platform notifications.
-- `password_hash`
-  > Securely hashed password for administrator authentication. Highest
-  > security standards required.
-- `email_verified`
-  > Whether the administrator has verified their email address. Required for
-  > admin privileges.
-- `profile_bio`: Optional administrator biography displayed on their profile.
-- `avatar_url`: URL to the administrator's profile avatar image.
-- `super_admin`
-  > Whether this administrator has super admin privileges for critical
-  > platform operations like managing other administrators.
-- `created_at`: Timestamp when the administrator account was created.
-- `updated_at`: Timestamp when the administrator account was last updated.
-- `deleted_at`
-  > Timestamp when the administrator account was soft-deleted. Null if
-  > account is active.
-
-### `reddit_like_auth_credentials`
-
-Authentication security metadata tracking failed login attempts, account
-locking, and login history for security monitoring. Supports rate
-limiting (max 5 failed attempts in 15 minutes triggers 30-minute lock)
-and suspicious activity detection. One credential record per user account
-for centralized auth security tracking.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_like_user_id`: User account these credentials belong to. [reddit_like_users.id](#reddit_like_users)
-- `failed_login_attempts`
-  > Count of consecutive failed login attempts. Used for rate limiting and
-  > account locking after 5 failed attempts within 15 minutes per
-  > requirements.
-- `last_failed_login_at`
-  > Timestamp of most recent failed login attempt. Used to calculate rate
-  > limiting windows and reset counters after timeout periods.
-- `account_locked_until`
-  > Timestamp until which account is locked due to failed login attempts.
-  > Null if not locked. Auto-unlocks after 30 minutes per requirements.
-- `last_successful_login_at`
-  > Timestamp of most recent successful login. Used for security monitoring,
-  > user activity tracking, and displaying last login on profile.
-- `last_login_ip`
-  > IP address from most recent login attempt. Used for security monitoring,
-  > suspicious activity detection, and geographic login patterns.
-- `created_at`
-  > Timestamp when authentication credential record was created (typically
-  > when user registered).
-- `updated_at`
-  > Timestamp when authentication credential record was last updated (login
-  > attempt, lock status change).
-
-### `reddit_like_email_verifications`
-
-Email verification tokens generated when users register or change email
-addresses. Manages verification workflow with unique time-limited links
-expiring after 24 hours per requirements. Supports both initial
-registration verification and email change verification workflows.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_like_user_id`: User requesting email verification. [reddit_like_users.id](#reddit_like_users)
-- `email`
-  > Email address being verified. For registration, matches user's current
-  > email. For email changes, this is the new pending email awaiting
-  > verification.
-- `verification_token`
-  > Unique cryptographically secure token included in verification link. Used
-  > to validate verification request. Generated using secure random number
-  > generation.
-- `verification_type`
-  > Type of verification: 'registration' (initial account email verification)
-  > or 'email_change' (verifying new email address). Determines workflow
-  > after verification.
-- `expires_at`
-  > Timestamp when verification token expires. Set to 24 hours after creation
-  > per requirements. Expired tokens cannot be used.
-- `verified_at`
-  > Timestamp when email was successfully verified by clicking link. Null if
-  > not yet verified. Marks verification completion.
-- `created_at`: Timestamp when verification token was generated and email sent.
-
-### `reddit_like_password_resets`
-
-Password reset tokens generated when users request password recovery via
-forgot password workflow. Manages time-limited reset links expiring after
-1 hour per requirements. Tracks token usage to prevent reuse and supports
-the complete password reset workflow including expiration and retry
-mechanisms.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_like_user_id`: User requesting password reset. [reddit_like_users.id](#reddit_like_users)
-- `email`
-  > Email address for which password reset was requested. Used to send reset
-  > link and validate reset request matches account email.
-- `reset_token`
-  > Unique cryptographically secure token included in password reset link.
-  > Used to validate reset request. Generated using secure random number
-  > generation.
-- `expires_at`
-  > Timestamp when reset token expires. Set to 1 hour after creation per
-  > requirements. Expired tokens cannot be used for password reset.
-- `used_at`
-  > Timestamp when password was successfully reset using this token. Null if
-  > not yet used. Prevents token reuse - tokens can only be used once.
-- `created_at`: Timestamp when password reset token was generated and email sent.
-
-### `reddit_like_sessions`
-
-User sessions managing authentication state using JWT tokens. Each
-session contains access token (expires in 30 minutes) and refresh token
-(expires in 30 days) per requirements. Tracks active user authentication,
-enables token refresh without re-login, and monitors session activity for
-security. Sessions can be explicitly revoked on logout or invalidated on
-password changes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_like_user_id`: User who owns this session. [reddit_like_users.id](#reddit_like_users)
-- `access_token`
-  > JWT access token used for authenticating API requests. Expires in 30
-  > minutes per requirements. Contains user ID, username, and role in
-  > payload.
-- `refresh_token`
-  > JWT refresh token used to obtain new access tokens without re-login.
-  > Expires in 30 days per requirements. Longer-lived than access token.
-- `access_token_expires_at`
-  > Timestamp when access token expires. Set to 30 minutes from token issue
-  > time per requirements. After expiration, token cannot authenticate
-  > requests.
-- `refresh_token_expires_at`
-  > Timestamp when refresh token expires. Set to 30 days from token issue
-  > time per requirements. After expiration, user must re-login with
-  > credentials.
-- `ip_address`
-  > IP address from which session was created. Used for security monitoring,
-  > suspicious activity detection, and geographic login analysis.
-- `user_agent`
-  > Browser user agent string for session. Used for device tracking, security
-  > monitoring, and identifying unusual login patterns.
-- `last_activity_at`
-  > Timestamp of most recent activity in this session. Updated on each
-  > authenticated request. Used for session timeout and activity monitoring.
-- `created_at`
-  > Timestamp when session was created (user logged in). Used for session
-  > duration tracking.
-- `updated_at`: Timestamp when session was last updated (activity timestamp change).
-- `deleted_at`
-  > Soft deletion timestamp when session was explicitly revoked (user logged
-  > out or password changed). Null for active sessions. Follows platform
-  > soft-delete pattern.
-
-### `reddit_like_users`
-
-Unified user table representing all user types on the platform. Uses
-role-based access control with a single user entity supporting the
-four-tier hierarchy (guest, member, moderator, admin). This design
-ensures global username/email uniqueness, proper normalization, and
-simplified authentication. Users have profile information, karma scores,
-and privacy settings. Moderator and admin roles are granted through the
-role field, with community-specific moderator assignments tracked in
-reddit_like_community_moderators junction table.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `username`
-  > Unique username chosen during registration. Must be 3-20 characters
-  > containing only alphanumeric characters, underscores, and hyphens.
-  > Displayed throughout the platform as the user's identity. Globally unique
-  > across all user roles.
-- `email`
-  > Unique email address for authentication and communication. Used for
-  > login, verification, and notifications. Globally unique across all user
-  > roles.
-- `password_hash`
-  > Securely hashed password using bcrypt, Argon2, or PBKDF2. Never stored in
-  > plain text. Used for authentication. Null for guest users who haven't
-  > registered.
-- `role`
-  > User role determining permission level. Valid values: 'guest'
-  > (unauthenticated visitor), 'member' (standard user), 'moderator'
-  > (community manager), 'admin' (platform manager). Role can be elevated as
-  > users gain privileges.
-- `email_verified`
-  > Whether the user has verified their email address. Some features require
-  > verified email status. Always false for guest users.
-- `profile_bio`
-  > Optional user biography or description displayed on their profile page.
-  > Limited to 200-500 characters per requirements.
-- `avatar_url`
-  > URL to the user's profile avatar image. Points to uploaded custom avatar
-  > or platform-generated default avatar based on username.
+  > Unique display name for the site admin. Used throughout the platform for
+  > identification. Length 3-50 characters.
+- `email_verified`: Whether the site admin has verified their email address.
+- `bio`
+  > Optional self-description text written by the site admin. Maximum 500
+  > characters.
+- `avatar_url`: URL to the site admin's profile picture.
+- `banner_url`: URL to the site admin's profile banner image.
 - `post_karma`
-  > Denormalized karma earned from votes on user's posts. Calculated as sum
-  > of (upvotes - downvotes) across all posts. Can be negative. Updated in
-  > real-time from voting activity. Default 0 for new users.
+  > Karma points earned from upvotes on the site admin's posts. Can be
+  > negative.
 - `comment_karma`
-  > Denormalized karma earned from votes on user's comments. Calculated as
-  > sum of (upvotes - downvotes) across all comments. Can be negative.
-  > Updated in real-time from voting activity. Default 0 for new users.
-- `show_karma_publicly`
-  > Privacy setting controlling whether karma scores are visible on public
-  > profile. Per requirements, users can hide karma from display. Default
-  > true (karma visible).
-- `profile_privacy`
-  > Profile visibility level per privacy requirements. Valid values: 'public'
-  > (visible to all including guests), 'members_only' (authenticated users
-  > only), 'private' (only self). Default 'public'.
-- `show_subscriptions_publicly`
-  > Privacy setting for community subscription list visibility. Per
-  > requirements, users control subscription list privacy independently of
-  > overall profile privacy. Default true (subscriptions visible).
-- `is_super_admin`
-  > Whether this admin user has super admin privileges for critical platform
-  > operations like managing other administrators. Only applicable when role
-  > is 'admin'. Default false.
-- `session_identifier`
-  > For guest users, tracks anonymous session for analytics. Null for
-  > authenticated users. Used for guest conversion tracking and analytics.
-- `ip_address`
-  > For guest users, stores IP address for security monitoring and rate
-  > limiting. Null for authenticated users where IP is tracked in sessions
-  > table.
-- `user_agent`
-  > For guest users, browser user agent string for device analytics. Null for
-  > authenticated users where user agent is tracked in sessions table.
-- `first_visit_at`
-  > For guest users, timestamp of first platform visit. Null for
-  > authenticated users. Used for guest conversion analysis.
-- `last_visit_at`
-  > For guest users, timestamp of most recent visit. Null for authenticated
-  > users. Used for guest engagement tracking.
-- `created_at`
-  > Timestamp when user account was created. For guests, when session
-  > started. For members/moderators/admins, when they registered. Displayed
-  > as account age on profiles.
-- `updated_at`
-  > Timestamp when user account was last updated. Tracks profile changes,
-  > role elevations, and setting modifications.
+  > Karma points earned from upvotes on the site admin's comments. Can be
+  > negative.
+- `created_at`: Timestamp when the site admin account was created.
+- `updated_at`: Timestamp when the site admin account was last updated.
 - `deleted_at`
-  > Soft deletion timestamp. When set, account is deactivated but data
-  > preserved for recovery and referential integrity. Null indicates active
-  > account.
+  > Timestamp when the site admin account was soft deleted. Null if account
+  > is active.
+
+### `community_platform_siteadmin_sessions`
+
+Authentication sessions for site administrator accounts. Tracks active
+login sessions with connection metadata for security audit trails.
+Multiple concurrent sessions per site admin are supported.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_platform_siteadmin_id`: Site admin who owns this session. [community_platform_siteadmins.id](#community_platform_siteadmins)
+- `ip`
+  > IP address from which the session was created. Used for security
+  > monitoring and fraud detection.
+- `href`
+  > Full URL where the session connection was established. Tracks entry point
+  > for analytics.
+- `referrer`
+  > HTTP referrer URL indicating where the user came from. Empty string if
+  > direct navigation.
+- `created_at`: Timestamp when the session was created. Session start time.
+- `expired_at`
+  > Timestamp when the session expired or was logged out. Null for active
+  > sessions.
+
+### `community_platform_users`
+
+Unified user accounts representing all platform users (members,
+moderators, and site administrators). Users authenticate via email and
+password, can customize profiles with avatars and bios, earn karma from
+community engagement, and have role-based permissions. Moderator
+permissions are community-specific through
+community_platform_community_moderator_assignments. Site admin
+permissions are platform-wide via is_site_admin flag.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `email`
+  > Email address for authentication and notifications. Must be unique across
+  > all users. Used as primary authentication identifier.
+- `password_hash`
+  > Bcrypt hashed password with cost factor of at least 12. Never stored in
+  > plain text. Used for authentication during login.
+- `username`
+  > Unique display name for the user. Used throughout the platform for
+  > identification. Length 3-50 characters. Alphanumeric characters,
+  > underscores, and hyphens only.
+- `email_verified`
+  > Whether the user has verified their email address through verification
+  > link. Unverified users may have restricted access to features like
+  > posting or community creation.
+- `bio`
+  > Optional self-description text written by the user. Maximum 500
+  > characters. Supports line breaks. Displayed on user profile page.
+- `avatar_url`
+  > URL to the user's profile picture. Images uploaded by users are stored
+  > externally (CDN or file storage) and referenced here. Maximum file size
+  > 5MB, recommended 256x256 pixels.
+- `banner_url`
+  > URL to the user's profile banner image displayed at the top of their
+  > profile page. Maximum file size 10MB, recommended 1920x384 pixels (5:1
+  > aspect ratio).
+- `post_karma`
+  > Karma points earned from votes on the user's posts. Calculated as sum of
+  > (upvotes - downvotes) across all posts. Can be negative if posts receive
+  > more downvotes than upvotes. Updated when post votes change.
+- `comment_karma`
+  > Karma points earned from votes on the user's comments. Calculated as sum
+  > of (upvotes - downvotes) across all comments. Can be negative if comments
+  > receive more downvotes than upvotes. Updated when comment votes change.
+- `is_site_admin`
+  > Whether this user has platform-wide site administrator permissions. Site
+  > admins can moderate all communities, ban users platform-wide, delete
+  > communities, and access admin dashboards. Default false for regular
+  > users.
+- `created_at`
+  > Timestamp when the user account was created during registration. Used to
+  > calculate and display account age (e.g., 'Member for 2 years').
+- `updated_at`
+  > Timestamp when the user account was last updated. Updated whenever
+  > profile information (bio, avatar, banner) or account settings change.
+- `deleted_at`
+  > Soft delete timestamp. When set, the account is deactivated and the user
+  > cannot log in. Null for active accounts. Soft delete preserves content
+  > history and karma while preventing access.
+
+### `community_platform_user_sessions`
+
+Authentication sessions for user accounts. Tracks active login sessions
+with connection metadata (IP address, entry URL, referrer) for security
+audit trails and fraud detection. Supports multiple concurrent sessions
+per user across different devices. Sessions expire after 30 days (refresh
+token lifetime) or when user logs out.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_platform_user_id`
+  > User who owns this authentication session. {@link
+  > community_platform_users.id}
+- `ip`
+  > IP address from which the session was created. Used for security
+  > monitoring, fraud detection, and identifying suspicious login patterns.
+- `href`
+  > Full URL where the session connection was established. Tracks entry point
+  > for analytics and helps identify referral sources.
+- `referrer`
+  > HTTP referrer URL indicating where the user came from before
+  > authentication. Empty string if direct navigation. Used for marketing
+  > attribution.
+- `created_at`
+  > Timestamp when the session was created during login. Represents session
+  > start time and is used for session age calculations.
+- `expired_at`
+  > Timestamp when the session expired or user logged out. Null for currently
+  > active sessions. Used for session cleanup and security audit.
 
 ## Communities
 
 ```mermaid
 erDiagram
-"reddit_like_communities" {
+"community_platform_communities" {
   String id PK
-  String creator_id FK
-  String code UK
-  String name
+  String name UK
   String description
-  String(80000) icon_url "nullable"
-  String(80000) banner_url "nullable"
-  String privacy_type
-  String posting_permission
-  Boolean allow_text_posts
-  Boolean allow_link_posts
-  Boolean allow_image_posts
-  String primary_category
-  String secondary_tags "nullable"
+  String visibility
   Int subscriber_count
-  Boolean is_archived
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"reddit_like_community_rules" {
+"community_platform_community_rules" {
   String id PK
-  String community_id FK
+  String community_platform_community_id FK
+  Int rule_number
   String title
-  String description "nullable"
-  String rule_type
-  Int display_order
+  String description
   DateTime created_at
   DateTime updated_at
 }
-"reddit_like_community_subscriptions" {
+"community_platform_community_subscriptions" {
   String id PK
-  String community_id FK
-  String member_id FK
-  DateTime subscribed_at
+  String community_platform_community_id FK
+  String community_platform_member_id FK
+  DateTime created_at
 }
-"reddit_like_community_moderators" {
+"community_platform_community_categories" {
   String id PK
-  String community_id FK
-  String moderator_id FK
-  String assigned_by_moderator_id FK "nullable"
-  DateTime assigned_at
-  Boolean is_primary
-  String permissions
+  String community_platform_community_id FK
+  String community_platform_category_id FK
+  DateTime created_at
 }
-"reddit_like_community_rules" }o--|| "reddit_like_communities" : community
-"reddit_like_community_subscriptions" }o--|| "reddit_like_communities" : community
-"reddit_like_community_moderators" }o--|| "reddit_like_communities" : community
+"community_platform_community_moderator_assignments" {
+  String id PK
+  String community_platform_community_id FK
+  String community_platform_moderator_id FK
+  DateTime created_at
+}
+"community_platform_community_rules" }o--|| "community_platform_communities" : community
+"community_platform_community_subscriptions" }o--|| "community_platform_communities" : community
+"community_platform_community_categories" }o--|| "community_platform_communities" : community
+"community_platform_community_moderator_assignments" }o--|| "community_platform_communities" : community
 ```
 
-### `reddit_like_communities`
+### `community_platform_communities`
 
-Core community entity representing a subreddit-like community where users
-gather around shared interests. Communities serve as the organizational
-structure for all content, with each community having its own rules,
-moderators, and subscriber base. Communities can be public (visible to
-all) or private (invitation/approval required).
+Core community entity representing topic-based communities (similar to
+subreddits). Communities are the fundamental organizational structure
+where users create posts, engage in discussions, and build focused
+interest groups. Each community has its own rules, moderators, and
+subscriber base. Communities can be public (visible to all) or private
+(requiring membership approval).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `creator_id`
-  > User who created this community and serves as the primary moderator.
-  > References [reddit_like_members.id](#reddit_like_members).
-- `code`
-  > Unique community identifier used in URLs (3-25 characters, alphanumeric
-  > and underscores only, case-insensitive). Examples: technology, gaming,
-  > science.
 - `name`
-  > Display name of the community (3-25 characters). This is shown in the UI
-  > and can differ from the code.
+  > Unique community name displayed to users. Must be between 3 and 50
+  > characters, using letters, numbers, spaces, hyphens, and underscores
+  > only. This is the human-readable identifier for the community.
 - `description`
-  > Community description explaining its purpose and topic (10-500
-  > characters). Helps users understand what the community is about.
-- `icon_url`
-  > URL to the community icon image (256x256 pixels). Uploaded by moderators
-  > for community branding.
-- `banner_url`
-  > URL to the community banner image (max width 1920px). Uploaded by
-  > moderators for community header.
-- `privacy_type`
-  > Privacy setting for the community. Values: public (anyone can view),
-  > private (approval required to view). Default is public.
-- `posting_permission`
-  > Who can create posts in this community. Values: anyone_subscribed,
-  > approved_only, moderators_only. Default is anyone_subscribed.
-- `allow_text_posts`
-  > Whether text posts are allowed in this community. Moderators can disable
-  > specific post types.
-- `allow_link_posts`
-  > Whether link posts are allowed in this community. Moderators can disable
-  > specific post types.
-- `allow_image_posts`
-  > Whether image posts are allowed in this community. Moderators can disable
-  > specific post types.
-- `primary_category`
-  > Main category for community classification (Technology, Gaming, Sports,
-  > Entertainment, Education, Science, Arts, News, Lifestyle, Business,
-  > Other). Used for discovery and browsing.
-- `secondary_tags`
-  > Additional tags for better discoverability (up to 3 tags,
-  > comma-separated). Helps users find communities through search and
-  > recommendations.
+  > Community description explaining the purpose and topic of the community.
+  > Must be between 20 and 500 characters. This helps users understand what
+  > the community is about and whether they want to join.
+- `visibility`
+  > Community visibility status. Values: 'public' (visible to all users,
+  > anyone can subscribe) or 'private' (requires membership approval, only
+  > members can view content). Determines access control for the community.
 - `subscriber_count`
-  > Total number of subscribers to this community. Denormalized for
-  > performance, updated when subscriptions change.
-- `is_archived`
-  > Whether this community is archived due to inactivity. Archived
-  > communities prevent new posts but remain viewable.
-- `created_at`: Timestamp when the community was created.
-- `updated_at`: Timestamp when the community settings were last updated.
+  > Total number of members subscribed to this community. This count is
+  > incremented when users subscribe and decremented when they unsubscribe.
+  > Used for displaying community popularity and for trending calculations.
+- `created_at`
+  > Timestamp when the community was created. Used for displaying community
+  > age and for sorting communities by creation date.
+- `updated_at`
+  > Timestamp when the community was last updated. Updated whenever community
+  > settings, description, or other metadata changes.
 - `deleted_at`
-  > Timestamp when the community was soft-deleted. Null if active. Deleted
-  > communities enter 30-day cooldown before permanent deletion.
+  > Timestamp when the community was soft-deleted by site administrators.
+  > Null if the community is active. Soft deletion preserves community data
+  > for audit purposes while hiding it from public view.
 
-### `reddit_like_community_rules`
+### `community_platform_community_rules`
 
-Community-specific rules defined by moderators (maximum 15 rules per
-community). Rules help maintain community standards and guide user
-behavior. Each rule has a title and optional detailed description.
+Community-specific rules that members must follow when participating in a
+community. Each community can define up to 10 rules with titles and
+descriptions. Rules are numbered and displayed to users when creating
+posts or reporting content. Moderators use these rules to enforce
+community standards and explain content removal decisions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_id`
-  > Community that this rule belongs to. References {@link
-  > reddit_like_communities.id}.
+- `community_platform_community_id`: Community that owns this rule. [community_platform_communities.id](#community_platform_communities).
+- `rule_number`
+  > Sequential rule number determining display order (1, 2, 3, etc.). Rules
+  > are shown to users in ascending order. Moderators can reorder rules by
+  > changing these numbers.
 - `title`
-  > Rule title (3-100 characters). Short, clear statement of the rule.
-  > Examples: No self-promotion, Be respectful, Posts must be related to
-  > topic.
+  > Rule title summarizing the rule in 3-50 characters. Examples: 'Be
+  > respectful', 'No spam', 'Stay on topic'. Displayed prominently in rule
+  > lists.
 - `description`
-  > Optional detailed explanation of the rule (0-500 characters). Provides
-  > additional context and examples for the rule.
-- `rule_type`
-  > Type of rule for categorization. Values: required (must do), prohibited
-  > (must not do), etiquette (recommended behavior).
-- `display_order`
-  > Order in which this rule should be displayed (1-15). Lower numbers appear
-  > first. Used for sorting rules in the UI.
-- `created_at`: Timestamp when the rule was created by moderators.
-- `updated_at`: Timestamp when the rule was last modified by moderators.
+  > Detailed rule description explaining what the rule means and how it is
+  > enforced. Must be between 10 and 200 characters. Provides context and
+  > examples for users to understand community expectations.
+- `created_at`: Timestamp when this rule was created by moderators.
+- `updated_at`: Timestamp when this rule was last modified by moderators.
 
-### `reddit_like_community_subscriptions`
+### `community_platform_community_subscriptions`
 
-Many-to-many junction table tracking which users are subscribed to which
-communities. Subscriptions determine what content appears in a user's
-personalized feed. Users can subscribe to unlimited communities.
+Junction table tracking member subscriptions to communities. When a
+member subscribes to a community, a record is created linking the member
+to the community. Subscriptions determine which community posts appear in
+a member's personalized home feed. Members can subscribe to unlimited
+communities.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_id`
-  > Community that the user subscribed to. References {@link
-  > reddit_like_communities.id}.
-- `member_id`
-  > User who subscribed to the community. References {@link
-  > reddit_like_members.id}.
-- `subscribed_at`
-  > Timestamp when the user subscribed to the community. Used for tracking
-  > subscription history and feed ordering.
+- `community_platform_community_id`: Community being subscribed to. [community_platform_communities.id](#community_platform_communities).
+- `community_platform_member_id`
+  > Member who subscribed to the community. {@link
+  > community_platform_members.id}.
+- `created_at`
+  > Timestamp when the member subscribed to this community. Used for
+  > displaying subscription history and for sorting user's subscribed
+  > communities by recency.
 
-### `reddit_like_community_moderators`
+### `community_platform_community_categories`
 
-Many-to-many junction table tracking moderator assignments to
-communities. Moderators manage content, enforce rules, and configure
-community settings. Each moderator can have different permission levels,
-and the primary moderator (creator) has irrevocable permissions.
+Junction table linking communities to platform-wide categories.
+Communities can be assigned up to 5 categories to help with discovery and
+search. Categories like 'Technology', 'Gaming', 'Sports' help users find
+communities matching their interests. This many-to-many relationship
+allows flexible categorization.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `community_id`
-  > Community that this moderator manages. References {@link
-  > reddit_like_communities.id}.
-- `moderator_id`
-  > Moderator user assigned to this community. References {@link
-  > reddit_like_moderators.id}.
-- `assigned_by_moderator_id`
-  > Moderator who assigned this moderator to the community. Null for the
-  > primary moderator (community creator). References {@link
-  > reddit_like_moderators.id}.
-- `assigned_at`
+- `community_platform_community_id`: Community being categorized. [community_platform_communities.id](#community_platform_communities).
+- `community_platform_category_id`
+  > Category assigned to the community. {@link
+  > community_platform_categories.id}.
+- `created_at`: Timestamp when this category was assigned to the community by moderators.
+
+### `community_platform_community_moderator_assignments`
+
+Junction table tracking moderator assignments to communities. When a
+moderator is assigned to manage a community, a record is created granting
+them moderation permissions for that specific community. Moderators can
+manage multiple communities, and communities can have multiple
+moderators. The community creator is automatically assigned as the first
+moderator.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_platform_community_id`: Community being moderated. [community_platform_communities.id](#community_platform_communities).
+- `community_platform_moderator_id`
+  > Moderator assigned to manage this community. {@link
+  > community_platform_moderators.id}.
+- `created_at`
   > Timestamp when this moderator was assigned to the community. Used for
-  > seniority-based permissions.
-- `is_primary`
-  > Whether this is the primary moderator (community creator). Primary
-  > moderators have irrevocable permissions and can remove any other
-  > moderator.
-- `permissions`
-  > JSON or comma-separated list of granted permissions. Possible values:
-  > manage_posts, manage_comments, manage_users, manage_settings,
-  > manage_moderators, access_reports. Primary moderators have all
-  > permissions.
+  > tracking moderator seniority and assignment history.
 
-## Posts
+## Content
 
 ```mermaid
 erDiagram
-"reddit_like_posts" {
+"community_platform_posts" {
   String id PK
-  String reddit_like_member_id FK
-  String reddit_like_community_id FK
+  String community_platform_member_id FK
+  String community_platform_community_id FK
   String type
   String title
+  String body "nullable"
+  String url "nullable"
+  String link_description "nullable"
+  String image_url "nullable"
+  String image_caption "nullable"
+  Int score
+  Int comment_count
   DateTime created_at
   DateTime updated_at
+  DateTime edited_at "nullable"
   DateTime deleted_at "nullable"
 }
-"reddit_like_post_text_content" {
+"community_platform_post_snapshots" {
   String id PK
-  String reddit_like_post_id FK,UK
+  String community_platform_post_id FK
+  String type
+  String title
   String body "nullable"
+  String url "nullable"
+  String link_description "nullable"
+  String image_url "nullable"
+  String image_caption "nullable"
   DateTime created_at
-  DateTime updated_at
 }
-"reddit_like_post_link_content" {
+"community_platform_comments" {
   String id PK
-  String reddit_like_post_id FK,UK
-  String url
-  String domain
-  String preview_title "nullable"
-  String preview_description "nullable"
-  String preview_image_url "nullable"
-  DateTime metadata_fetched_at "nullable"
+  String community_platform_post_id FK
+  String community_platform_member_id FK
+  String parent_id FK "nullable"
+  String content
+  Int depth
+  Int score
   DateTime created_at
   DateTime updated_at
+  DateTime edited_at "nullable"
+  DateTime deleted_at "nullable"
 }
-"reddit_like_post_image_content" {
-  String id PK
-  String reddit_like_post_id FK,UK
-  String original_image_url
-  String medium_image_url
-  String thumbnail_image_url
-  Int image_width
-  Int image_height
-  Int file_size
-  String file_format
-  String caption "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"reddit_like_post_text_content" |o--|| "reddit_like_posts" : post
-"reddit_like_post_link_content" |o--|| "reddit_like_posts" : post
-"reddit_like_post_image_content" |o--|| "reddit_like_posts" : post
+"community_platform_post_snapshots" }o--|| "community_platform_posts" : post
+"community_platform_comments" }o--|| "community_platform_posts" : post
+"community_platform_comments" }o--o| "community_platform_comments" : parent
 ```
 
-### `reddit_like_posts`
+### `community_platform_posts`
 
-Main posts table storing common attributes for all post types (text,
-link, image). Posts are the primary content type in the platform, created
-by members within communities. Each post has a type discriminator and
-links to type-specific content tables. Posts support voting, commenting,
-editing, and soft deletion. Vote scores and comment counts should be
-calculated from related tables or materialized views, not stored here to
-maintain strict 3NF normalization.
+User-generated posts within communities. Supports three post types: text
+posts with body content, link posts with URLs, and image posts with
+uploaded images. Posts can be edited within 24 hours of creation and
+deleted by authors or moderators. Voting and karma tracking handled
+through [community_platform_post_votes](#community_platform_post_votes).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_like_member_id`
-  > Post author's [reddit_like_members.id](#reddit_like_members). References the member who
-  > created this post.
-- `reddit_like_community_id`
-  > Community where post was published [reddit_like_communities.id](#reddit_like_communities).
-  > Every post belongs to exactly one community.
-- `type`
-  > Post type discriminator. Valid values: 'text', 'link', 'image'.
-  > Determines which type-specific content table contains the post's detailed
-  > content.
-- `title`
-  > Post title (3-300 characters). Required for all post types. Indexed for
-  > full-text search.
-- `created_at`
-  > Timestamp when the post was created. Used for chronological sorting and
-  > time-based filtering.
-- `updated_at`
-  > Timestamp of last edit. Updated when post title or type-specific content
-  > is modified. Initially equals created_at.
+- `community_platform_member_id`: Post author's [community_platform_members.id](#community_platform_members).
+- `community_platform_community_id`
+  > Community where post was created {@link
+  > community_platform_communities.id}.
+- `type`: Post type discriminator: 'text', 'link', or 'image'.
+- `title`: Post title, required for all post types. Length: 5-300 characters.
+- `body`
+  > Text content for text posts. Maximum 40,000 characters. Null for link and
+  > image posts.
+- `url`
+  > External URL for link posts. Must be valid HTTP/HTTPS URL. Null for text
+  > and image posts.
+- `link_description`
+  > Optional description for link posts. Maximum 2,000 characters. Null for
+  > text and image posts.
+- `image_url`: Uploaded image URL for image posts. Null for text and link posts.
+- `image_caption`
+  > Optional caption for image posts. Maximum 2,000 characters. Null for text
+  > and link posts.
+- `score`
+  > Net vote score (upvotes minus downvotes). Calculated from {@link
+  > community_platform_post_votes}.
+- `comment_count`
+  > Total number of comments on this post. Updated when comments are created
+  > or deleted.
+- `created_at`: Timestamp when post was created.
+- `updated_at`: Timestamp when post was last modified (content updates).
+- `edited_at`
+  > Timestamp of last edit. Null if never edited. Edits allowed within 24
+  > hours of creation.
 - `deleted_at`
   > Soft delete timestamp. When set, post is hidden from public view but
-  > preserved in database with metadata. Null indicates post is active.
+  > preserved for audit.
 
-### `reddit_like_post_text_content`
+### `community_platform_post_snapshots`
 
-Text-specific content for text posts. Contains the body text/markdown
-content for posts with type='text'. Has 1:1 relationship with
-reddit_like_posts. The body supports markdown formatting and can be up to
-40,000 characters. Managed through parent post entity - no independent
-lifecycle.
+Historical snapshots of post content capturing state at each edit.
+Created whenever a post is edited to maintain audit trail and version
+history. Snapshots are immutable and preserve exact post state including
+all content fields.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_like_post_id`
-  > Parent post's [reddit_like_posts.id](#reddit_like_posts). One-to-one relationship with
-  > posts table.
+- `community_platform_post_id`
+  > Original post [community_platform_posts.id](#community_platform_posts) this snapshot belongs
+  > to.
+- `type`: Post type at snapshot time: 'text', 'link', or 'image'.
+- `title`: Post title at snapshot time.
 - `body`
-  > Post body text content. Supports markdown formatting. Maximum 40,000
-  > characters. Can be empty for title-only posts. Indexed for full-text
-  > search.
-- `created_at`
-  > Timestamp when text content was created. Typically matches parent post's
-  > created_at.
-- `updated_at`
-  > Timestamp when text content was last edited. Updated when body is
-  > modified within edit time window.
+  > Text content at snapshot time for text posts. Null for link and image
+  > posts.
+- `url`: URL at snapshot time for link posts. Null for text and image posts.
+- `link_description`: Link description at snapshot time. Null for text and image posts.
+- `image_url`: Image URL at snapshot time for image posts. Null for text and link posts.
+- `image_caption`: Image caption at snapshot time. Null for text and link posts.
+- `created_at`: Timestamp when this snapshot was created (when the edit occurred).
 
-### `reddit_like_post_link_content`
+### `community_platform_comments`
 
-Link-specific content for link posts. Contains URL and extracted metadata
-for posts with type='link'. Has 1:1 relationship with reddit_like_posts.
-The system attempts to extract Open Graph metadata (title, description,
-preview image) from the target URL. Managed through parent post entity -
-no independent lifecycle.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_like_post_id`
-  > Parent post's [reddit_like_posts.id](#reddit_like_posts). One-to-one relationship with
-  > posts table.
-- `url`
-  > The shared URL (HTTP or HTTPS). Maximum 2,000 characters. Required for
-  > all link posts. Must be valid web address.
-- `domain`
-  > Extracted domain name from URL for display and filtering. Example:
-  > 'example.com' from 'https://example.com/article'. Indexed for
-  > domain-based queries.
-- `preview_title`
-  > Extracted page title from target URL metadata (Open Graph or meta tags).
-  > Used for preview display. Null if extraction failed or not yet attempted.
-- `preview_description`
-  > Extracted page description from target URL metadata. Used for preview
-  > display. Null if extraction failed or not yet attempted.
-- `preview_image_url`
-  > Extracted preview/thumbnail image URL from target page metadata. Used for
-  > link preview card. Null if no image available or extraction failed.
-- `metadata_fetched_at`
-  > Timestamp when metadata extraction was attempted. Null if metadata hasn't
-  > been fetched yet. Used to determine if re-fetch is needed.
-- `created_at`
-  > Timestamp when link content was created. Typically matches parent post's
-  > created_at.
-- `updated_at`
-  > Timestamp when link content was last updated. Updated when metadata is
-  > refreshed.
-
-### `reddit_like_post_image_content`
-
-Image-specific content for image posts. Contains image URLs and metadata
-for posts with type='image'. Has 1:1 relationship with reddit_like_posts.
-The system stores multiple image versions (original, medium 640px,
-thumbnail 150x150) for responsive display. Includes optional caption
-supporting markdown. Managed through parent post entity - no independent
-lifecycle.
+User comments on posts with support for nested threading up to 10 levels
+deep. Comments can be edited within 15 minutes of creation and deleted by
+authors or moderators. When deleted, childless comments are removed
+completely, but comments with replies show [deleted] placeholder while
+preserving thread structure. Voting and karma tracking handled through
+[community_platform_comment_votes](#community_platform_comment_votes).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_like_post_id`
-  > Parent post's [reddit_like_posts.id](#reddit_like_posts). One-to-one relationship with
-  > posts table.
-- `original_image_url`
-  > URL to full-resolution original uploaded image. Used for full-size
-  > viewing. Maximum 20MB file size.
-- `medium_image_url`
-  > URL to medium-resolution version (640px width). Used for feed display.
-  > Maintains aspect ratio.
-- `thumbnail_image_url`
-  > URL to thumbnail version (150x150 pixels). Used for list views and
-  > previews. Maintains aspect ratio within bounds.
-- `image_width`
-  > Original image width in pixels. Used for aspect ratio calculations and
-  > responsive display.
-- `image_height`
-  > Original image height in pixels. Used for aspect ratio calculations and
-  > responsive display.
-- `file_size`
-  > Original image file size in bytes. Maximum 20MB (20,971,520 bytes).
-  > Displayed to users.
-- `file_format`
-  > Image file format. Valid values: 'JPEG', 'PNG', 'GIF', 'WebP'. Validated
-  > during upload.
-- `caption`
-  > Optional image caption (up to 10,000 characters). Supports markdown
-  > formatting. Displayed below image. Indexed for search.
-- `created_at`
-  > Timestamp when image content was created. Typically matches parent post's
-  > created_at.
-- `updated_at`
-  > Timestamp when image content was last updated. Updated when caption is
-  > modified.
-
-## Comments
-
-```mermaid
-erDiagram
-"reddit_like_comments" {
-  String id PK
-  String reddit_like_post_id FK
-  String reddit_like_parent_comment_id FK "nullable"
-  String reddit_like_member_id FK
-  String content_text
-  Int depth
-  Int vote_score
-  Boolean edited
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"reddit_like_comments" }o--o| "reddit_like_comments" : parentComment
-```
-
-### `reddit_like_comments`
-
-Comment system supporting nested threaded discussions on posts. Comments
-can be replies to other comments (nested up to 10 levels deep) or
-top-level comments. Each comment belongs to a post and has an author.
-Comments track vote scores, edit status, and support soft deletion to
-preserve thread structure. The parent-child relationship enables threaded
-conversations while maintaining clean data structure.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_like_post_id`: Post where this comment was created. [reddit_like_posts.id](#reddit_like_posts)
-- `reddit_like_parent_comment_id`
-  > Parent comment for nested threading. Null for top-level comments. {@link
-  > reddit_like_comments.id}
-- `reddit_like_member_id`: Author of this comment. [reddit_like_members.id](#reddit_like_members)
-- `content_text`
-  > Text content of the comment. Supports markdown formatting and up to
-  > 10,000 characters.
+- `community_platform_post_id`: Post [community_platform_posts.id](#community_platform_posts) this comment belongs to.
+- `community_platform_member_id`: Comment author's [community_platform_members.id](#community_platform_members).
+- `parent_id`
+  > Parent comment [community_platform_comments.id](#community_platform_comments) for nested replies.
+  > Null for top-level comments directly on the post.
+- `content`
+  > Comment text content. Minimum 1 character, maximum 10,000 characters.
+  > Supports markdown formatting.
 - `depth`
-  > Nesting level in comment tree. 0 for top-level comments, increments for
-  > each reply level. Maximum depth of 10 enforced at application level.
-- `vote_score`
-  > Net vote score calculated as upvotes minus downvotes. Updated when votes
-  > are cast via reddit_like_comment_votes table.
-- `edited`
-  > Whether this comment has been edited after initial creation. Set to true
-  > when content_text is modified.
+  > Nesting depth in thread. 0 for top-level comments, increments by 1 for
+  > each reply level. Maximum depth 10.
+- `score`
+  > Net vote score (upvotes minus downvotes). Calculated from {@link
+  > community_platform_comment_votes}.
 - `created_at`: Timestamp when comment was created.
-- `updated_at`: Timestamp when comment was last modified (edit or vote update).
+- `updated_at`: Timestamp when comment was last modified.
+- `edited_at`
+  > Timestamp of last edit. Null if never edited. Edits allowed within 15
+  > minutes of creation.
 - `deleted_at`
-  > Soft deletion timestamp. When set, comment content is hidden but thread
-  > structure is preserved. Null for active comments.
+  > Soft delete timestamp. When set, comment content is hidden but structure
+  > preserved if comment has replies.
 
-## Voting
-
-```mermaid
-erDiagram
-"reddit_like_post_votes" {
-  String id PK
-  String reddit_like_member_id FK
-  String reddit_like_post_id FK
-  Int vote_value
-  String ip_address "nullable"
-  String user_agent "nullable"
-  Float vote_weight "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"reddit_like_comment_votes" {
-  String id PK
-  String reddit_like_member_id FK
-  String reddit_like_comment_id FK
-  Int vote_value
-  String ip_address "nullable"
-  String user_agent "nullable"
-  Float vote_weight "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-```
-
-### `reddit_like_post_votes`
-
-Individual user votes on posts enabling democratic content curation
-through upvotes and downvotes. Each record represents a single user's
-vote on a specific post, storing the vote direction (upvote +1 or
-downvote -1), timestamp, and anti-manipulation data. This table is the
-foundation for calculating post karma, vote scores, and detecting voting
-patterns for anti-manipulation measures. Users can change their votes,
-with updated_at tracking modifications. The unique constraint on (member,
-post) ensures one vote per user per post. IP address and user agent
-tracking enable detection of multiple accounts and vote manipulation per
-requirements section 8.3. Vote weight field supports trust-based vote
-impact adjustments per requirements section 8.6.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_like_member_id`: The member who cast this vote. [reddit_like_members.id](#reddit_like_members)
-- `reddit_like_post_id`: The post being voted on. [reddit_like_posts.id](#reddit_like_posts)
-- `vote_value`
-  > The vote direction: 1 for upvote (positive endorsement), -1 for downvote
-  > (negative signal). This value directly impacts the post's net vote score
-  > and the post author's karma.
-- `ip_address`
-  > IP address of the voter at time of vote. Required per requirements
-  > section 8.3 for detecting multiple accounts from same IP voting on same
-  > content, implementing vote weight reduction for suspicious IPs, and
-  > identifying vote brigading patterns. Used for anti-manipulation analysis
-  > and security monitoring.
-- `user_agent`
-  > Browser user agent string of the voter's device. Required per
-  > requirements section 8.3 for device fingerprinting to detect users
-  > operating multiple accounts. Enables correlation of voting patterns
-  > across devices for sockpuppet detection.
-- `vote_weight`
-  > Calculated weight for this vote based on trust factors per requirements
-  > section 8.6. Default value 1.0 for normal votes. Reduced values (0.5,
-  > 0.25) for new accounts, suspicious patterns, or low-trust voters. May be
-  > increased (rare) for highly trusted accounts. Used to calculate weighted
-  > vote impact on scores and karma. Enables trust-based vote weighting
-  > without deleting votes.
-- `created_at`
-  > Timestamp when the vote was originally cast. Used for vote velocity
-  > calculations, manipulation detection, engagement analytics, and hot
-  > algorithm time decay factors.
-- `updated_at`
-  > Timestamp when the vote was last modified (vote value changed or weight
-  > adjusted). Tracks vote changes for detecting rapid vote cycling
-  > manipulation and vote editing patterns. Initially equals created_at.
-
-### `reddit_like_comment_votes`
-
-Individual user votes on comments enabling community-driven discussion
-quality assessment through upvotes and downvotes. Each record represents
-a single user's vote on a specific comment, storing the vote direction
-(upvote +1 or downvote -1), timestamp, and anti-manipulation data. This
-table powers comment karma calculation, comment sorting algorithms (best,
-top, controversial), and vote manipulation detection. Users can modify
-their votes, with updated_at tracking changes. The unique constraint on
-(member, comment) enforces one vote per user per comment. IP address and
-user agent tracking enable detection of coordinated voting and multiple
-account abuse per requirements section 8.3. Vote weight field supports
-trust-based vote impact adjustments per requirements section 8.6.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reddit_like_member_id`: The member who cast this vote. [reddit_like_members.id](#reddit_like_members)
-- `reddit_like_comment_id`: The comment being voted on. [reddit_like_comments.id](#reddit_like_comments)
-- `vote_value`
-  > The vote direction: 1 for upvote (positive endorsement), -1 for downvote
-  > (negative signal). This value directly impacts the comment's net vote
-  > score and the comment author's karma.
-- `ip_address`
-  > IP address of the voter at time of vote. Required per requirements
-  > section 8.3 for detecting multiple accounts from same IP voting on same
-  > content, implementing vote weight reduction for suspicious IPs, and
-  > identifying coordinated comment vote brigading. Used for
-  > anti-manipulation analysis and security monitoring.
-- `user_agent`
-  > Browser user agent string of the voter's device. Required per
-  > requirements section 8.3 for device fingerprinting to detect users
-  > operating multiple accounts for comment vote manipulation. Enables
-  > correlation of voting patterns across devices for sockpuppet detection.
-- `vote_weight`
-  > Calculated weight for this vote based on trust factors per requirements
-  > section 8.6. Default value 1.0 for normal votes. Reduced values (0.5,
-  > 0.25) for new accounts, suspicious patterns, or low-trust voters. May be
-  > increased (rare) for highly trusted accounts. Used to calculate weighted
-  > vote impact on comment scores and karma. Enables trust-based vote
-  > weighting without deleting votes.
-- `created_at`
-  > Timestamp when the vote was originally cast. Used for vote timing
-  > analysis, manipulation detection patterns (rapid voting, coordinated
-  > timing), engagement metrics, and comment sorting algorithm inputs.
-- `updated_at`
-  > Timestamp when the vote was last modified (vote value changed or weight
-  > adjusted). Tracks vote changes for detecting rapid vote cycling
-  > manipulation and vote editing patterns. Initially equals created_at.
-
-## Karma
+## Engagement
 
 ```mermaid
 erDiagram
-"reddit_like_user_karma" {
+"community_platform_post_votes" {
   String id PK
-  String reddit_like_member_id FK,UK
-  Int post_karma
-  Int comment_karma
+  String community_platform_member_id FK
+  String community_platform_post_id FK
+  String vote_type
   DateTime created_at
-  DateTime updated_at
 }
-"reddit_like_karma_history" {
+"community_platform_comment_votes" {
   String id PK
-  String reddit_like_member_id FK
-  String reddit_like_post_id FK "nullable"
-  String reddit_like_comment_id FK "nullable"
-  String karma_type
-  Int change_amount
-  String triggered_by_vote_action
+  String community_platform_member_id FK
+  String community_platform_comment_id FK
+  String vote_type
   DateTime created_at
 }
 ```
 
-### `reddit_like_user_karma`
+### `community_platform_post_votes`
 
-Stores current karma scores for each user, tracking post karma and
-comment karma separately. Karma represents user reputation earned through
-community voting on their content. This table maintains the current state
-of each user's karma totals, which are updated in real-time as votes are
-cast on their posts and comments. Per business requirements, karma
-persists even when content is deleted, and can be negative without limit.
+Vote records for posts, tracking member upvotes and downvotes. Each
+member can cast one vote (upvote or downvote) per post. Votes contribute
+to post scoring and member karma calculations. Vote changes are handled
+by deleting the old vote and creating a new one.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_like_member_id`
-  > Reference to the user who owns this karma record. {@link
-  > reddit_like_members.id}
-- `post_karma`
-  > Karma earned from votes on the user's posts. Calculated as sum of
-  > (upvotes - downvotes) across all posts created by this user. Can be
-  > negative if user's posts receive more downvotes than upvotes. Updated in
-  > real-time as votes are cast.
-- `comment_karma`
-  > Karma earned from votes on the user's comments. Calculated as sum of
-  > (upvotes - downvotes) across all comments created by this user. Can be
-  > negative if user's comments receive more downvotes than upvotes. Updated
-  > in real-time as votes are cast.
+- `community_platform_member_id`: Member who cast this vote. [community_platform_members.id](#community_platform_members).
+- `community_platform_post_id`: Post that received this vote. [community_platform_posts.id](#community_platform_posts).
+- `vote_type`
+  > Type of vote cast: 'upvote' for positive vote or 'downvote' for negative
+  > vote. Used to calculate post score and member karma.
 - `created_at`
-  > Timestamp when this karma record was created (when user account was
-  > initialized).
-- `updated_at`
-  > Timestamp when karma scores were last modified. Updated whenever
-  > post_karma or comment_karma changes due to voting activity.
+  > Timestamp when the vote was cast. Used for vote velocity calculations in
+  > trending algorithms and karma tracking.
 
-### `reddit_like_karma_history`
+### `community_platform_comment_votes`
 
-Audit trail tracking all karma changes over time. Each record represents
-a single karma modification event triggered by voting activity on user
-content. This history enables transparency, troubleshooting karma
-calculation issues, and provides users insight into how their reputation
-evolved. Records are retained for minimum 12 months per business
-requirements.
+Vote records for comments, tracking member upvotes and downvotes. Each
+member can cast one vote (upvote or downvote) per comment. Votes
+contribute to comment scoring and member karma calculations. Vote changes
+are handled by deleting the old vote and creating a new one.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_like_member_id`: Reference to the user whose karma changed. [reddit_like_members.id](#reddit_like_members)
-- `reddit_like_post_id`
-  > Reference to the post that triggered this karma change (if applicable).
-  > Null if karma change was from comment voting. {@link
-  > reddit_like_posts.id}
-- `reddit_like_comment_id`
-  > Reference to the comment that triggered this karma change (if
-  > applicable). Null if karma change was from post voting. {@link
-  > reddit_like_comments.id}
-- `karma_type`
-  > Type of karma that changed. Valid values: 'post' (change to post karma)
-  > or 'comment' (change to comment karma). Indicates which karma counter was
-  > affected by this event.
-- `change_amount`
-  > Amount of karma change. Positive values (+1, +2) indicate karma increases
-  > from upvotes. Negative values (-1, -2) indicate karma decreases from
-  > downvotes or vote changes. Common values: +1 (upvote added), -1 (downvote
-  > added or upvote removed), +2 (vote changed from downvote to upvote), -2
-  > (vote changed from upvote to downvote).
-- `triggered_by_vote_action`
-  > Vote action that triggered this karma change. Valid values:
-  > 'upvote_added', 'downvote_added', 'vote_removed',
-  > 'vote_changed_to_upvote', 'vote_changed_to_downvote'. Provides context
-  > for why karma changed.
+- `community_platform_member_id`: Member who cast this vote. [community_platform_members.id](#community_platform_members).
+- `community_platform_comment_id`: Comment that received this vote. [community_platform_comments.id](#community_platform_comments).
+- `vote_type`
+  > Type of vote cast: 'upvote' for positive vote or 'downvote' for negative
+  > vote. Used to calculate comment score and member karma.
 - `created_at`
-  > Timestamp when this karma change occurred. Matches the timestamp of the
-  > vote action that triggered the change.
+  > Timestamp when the vote was cast. Used for vote velocity calculations in
+  > trending algorithms and karma tracking.
 
 ## Moderation
 
 ```mermaid
 erDiagram
-"reddit_like_content_reports" {
+"community_platform_reports" {
   String id PK
-  String reporter_member_id FK "nullable"
+  String reporter_member_id FK
+  String community_id FK "nullable"
   String reported_post_id FK "nullable"
   String reported_comment_id FK "nullable"
-  String community_id FK
-  String content_type
-  String violation_categories
-  String additional_context "nullable"
+  String reported_member_id FK "nullable"
+  String resolver_type "nullable"
+  String category
+  String details "nullable"
   String status
-  String reporter_ip_address "nullable"
-  Boolean is_anonymous_report
-  Boolean is_high_priority
+  String priority
+  String resolution_action "nullable"
+  String resolution_note "nullable"
   DateTime created_at
   DateTime updated_at
+  DateTime resolved_at "nullable"
+  DateTime deleted_at "nullable"
 }
-"reddit_like_moderation_actions" {
+"community_platform_community_bans" {
   String id PK
-  String report_id FK "nullable"
-  String moderator_id FK "nullable"
-  String admin_id FK "nullable"
-  String affected_post_id FK "nullable"
-  String affected_comment_id FK "nullable"
   String community_id FK
-  String action_type
-  String content_type
-  String removal_type "nullable"
-  String reason_category
-  String reason_text
-  String internal_notes "nullable"
-  String status
-  DateTime created_at
-  DateTime updated_at
-}
-"reddit_like_community_bans" {
-  String id PK
   String banned_member_id FK
-  String community_id FK
-  String moderator_id FK
-  String ban_reason_category
-  String ban_reason_text
-  String internal_notes "nullable"
+  String banned_by_moderator_id FK
+  String reason
+  Int duration_days "nullable"
   Boolean is_permanent
-  DateTime expiration_date "nullable"
-  Boolean is_active
   DateTime created_at
-  DateTime updated_at
+  DateTime expires_at "nullable"
   DateTime deleted_at "nullable"
 }
-"reddit_like_platform_suspensions" {
+"community_platform_platform_bans" {
   String id PK
-  String suspended_member_id FK
-  String admin_id FK
-  String suspension_reason_category
-  String suspension_reason_text
-  String internal_notes "nullable"
+  String banned_member_id FK,UK
+  String banned_by_siteadmin_id FK
+  String reason
   Boolean is_permanent
-  DateTime expiration_date "nullable"
-  Boolean is_active
+  Int duration_days "nullable"
   DateTime created_at
-  DateTime updated_at
+  DateTime expires_at "nullable"
   DateTime deleted_at "nullable"
 }
-"reddit_like_moderation_appeals" {
+"community_platform_moderation_actions" {
   String id PK
-  String appellant_member_id FK
-  String moderation_action_id FK "nullable"
-  String community_ban_id FK "nullable"
-  String platform_suspension_id FK "nullable"
-  String reviewer_moderator_id FK "nullable"
-  String reviewer_admin_id FK "nullable"
-  String appeal_type
-  String appeal_text
-  String status
-  String decision_explanation "nullable"
-  Boolean is_escalated
-  DateTime expected_resolution_at
-  DateTime created_at
-  DateTime updated_at
-  DateTime reviewed_at "nullable"
-}
-"reddit_like_moderation_logs" {
-  String id PK
-  String actor_member_id FK "nullable"
-  String actor_moderator_id FK "nullable"
-  String actor_admin_id FK "nullable"
-  String related_report_id FK "nullable"
-  String related_action_id FK "nullable"
-  String related_ban_id FK "nullable"
-  String related_suspension_id FK "nullable"
-  String related_appeal_id FK "nullable"
   String community_id FK "nullable"
-  String log_type
-  String action_description
+  String moderator_id FK "nullable"
+  String siteadmin_id FK "nullable"
+  String target_post_id FK "nullable"
+  String target_comment_id FK "nullable"
+  String target_member_id FK "nullable"
+  String target_report_id FK "nullable"
+  String parent_moderation_action_id FK "nullable"
+  String action_type
+  String reason "nullable"
   String metadata "nullable"
-  String ip_address "nullable"
   DateTime created_at
 }
-"reddit_like_moderation_actions" }o--o| "reddit_like_content_reports" : report
-"reddit_like_moderation_appeals" }o--o| "reddit_like_moderation_actions" : moderationAction
-"reddit_like_moderation_appeals" }o--o| "reddit_like_community_bans" : communityBan
-"reddit_like_moderation_appeals" }o--o| "reddit_like_platform_suspensions" : platformSuspension
-"reddit_like_moderation_logs" }o--o| "reddit_like_content_reports" : relatedReport
-"reddit_like_moderation_logs" }o--o| "reddit_like_moderation_actions" : relatedAction
-"reddit_like_moderation_logs" }o--o| "reddit_like_community_bans" : relatedBan
-"reddit_like_moderation_logs" }o--o| "reddit_like_platform_suspensions" : relatedSuspension
-"reddit_like_moderation_logs" }o--o| "reddit_like_moderation_appeals" : relatedAppeal
+"community_platform_pinned_posts" {
+  String id PK
+  String community_id FK
+  String post_id FK
+  String pinned_by_moderator_id FK
+  Int pin_order
+  Boolean is_temporary
+  DateTime created_at
+  DateTime expires_at "nullable"
+  DateTime deleted_at "nullable"
+}
+"community_platform_report_of_moderators" {
+  String id PK
+  String community_platform_report_id FK,UK
+  String community_platform_moderator_id FK
+  DateTime created_at
+}
+"community_platform_report_of_siteadmins" {
+  String id PK
+  String community_platform_report_id FK,UK
+  String community_platform_siteadmin_id FK
+  DateTime created_at
+}
+"community_platform_rule_violations" {
+  String id PK
+  String community_id FK
+  String violator_member_id FK
+  String moderation_action_id FK,UK
+  Int rule_number
+  DateTime created_at
+}
+"community_platform_moderation_actions" }o--o| "community_platform_reports" : targetReport
+"community_platform_moderation_actions" }o--o| "community_platform_moderation_actions" : parentAction
+"community_platform_report_of_moderators" |o--|| "community_platform_reports" : report
+"community_platform_report_of_siteadmins" |o--|| "community_platform_reports" : report
+"community_platform_rule_violations" |o--|| "community_platform_moderation_actions" : moderationAction
 ```
 
-### `reddit_like_content_reports`
+### `community_platform_reports`
 
-User-submitted reports for content that may violate community or platform
-rules. Supports both authenticated member reports and anonymous guest
-reports. Each report includes violation categories, additional context,
-and routing information for moderator review queues. Reports are
-permanent records and maintain reporter privacy while enabling moderation
-workflows. Ensures exactly one content type is reported per submission
-through application-level validation.
+Content and user violation reports submitted by members. Supports
+polymorphic reporting of posts, comments, or user accounts. Reports are
+routed to community moderators or site administrators based on severity
+and type. Tracks report status through lifecycle from submission to
+resolution. Report resolution handled through separate subtype tables
+(community_platform_report_of_moderators and
+community_platform_report_of_siteadmins) to maintain referential
+integrity.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reporter_member_id`
-  > Reporter's member account. [reddit_like_members.id](#reddit_like_members). Nullable for
-  > anonymous guest reports.
+- `reporter_member_id`: Member who submitted the report. [community_platform_members.id](#community_platform_members).
+- `community_id`
+  > Community context where reported content exists. Nullable for user
+  > account reports. [community_platform_communities.id](#community_platform_communities).
 - `reported_post_id`
-  > Reported post if content type is post. [reddit_like_posts.id](#reddit_like_posts).
-  > Nullable when reporting comments. Must be non-null when
-  > content_type='post'.
+  > Post being reported. Nullable - only populated for post reports. {@link
+  > community_platform_posts.id}.
 - `reported_comment_id`
-  > Reported comment if content type is comment. {@link
-  > reddit_like_comments.id}. Nullable when reporting posts. Must be non-null
-  > when content_type='comment'.
-- `community_id`
-  > Community where reported content exists, used for routing to correct
-  > moderators. [reddit_like_communities.id](#reddit_like_communities).
-- `content_type`
-  > Type of content being reported: 'post' or 'comment'. Used for polymorphic
-  > relationship handling and validation.
-- `violation_categories`
-  > Comma-separated or JSON array of violation category names selected by
-  > reporter (spam, harassment, hate speech, etc.). Supports multiple
-  > categories per report.
-- `additional_context`
-  > Optional text provided by reporter explaining the violation (max 500
-  > characters). Helps moderators understand reporter's perspective.
+  > Comment being reported. Nullable - only populated for comment reports.
+  > [community_platform_comments.id](#community_platform_comments).
+- `reported_member_id`
+  > Member being reported. Nullable - only populated for user account
+  > reports. [community_platform_members.id](#community_platform_members).
+- `resolver_type`
+  > Type of actor who resolved the report. Valid values: 'moderator',
+  > 'siteadmin'. Used with Compatible Actor Pattern for polymorphic
+  > resolution tracking. Nullable until report is resolved.
+- `category`
+  > Report category. Valid values: 'spam', 'harassment', 'inappropriate',
+  > 'misinformation', 'illegal', 'rule_violation', 'other'. Used for report
+  > routing and prioritization.
+- `details`
+  > Additional context provided by reporter. Maximum 1000 characters.
+  > Optional explanation of why content is being reported.
 - `status`
-  > Report review status: 'pending', 'reviewed', or 'dismissed'. Tracks
-  > progression through moderation queue.
-- `reporter_ip_address`
-  > IP address of reporter for abuse detection and anti-spam. Stored for
-  > guest reports and logged for authenticated reports.
-- `is_anonymous_report`
-  > Whether this report was submitted by an unauthenticated guest user. True
-  > when reporter_member_id is null, false when authenticated member
-  > submitted the report. Simplifies guest vs member report filtering.
-- `is_high_priority`
-  > Whether report is flagged as high priority (5+ reports on same content
-  > within 24 hours). Auto-calculated flag.
+  > Report status. Valid values: 'pending', 'resolved', 'dismissed'. Tracks
+  > report lifecycle through moderation process.
+- `priority`
+  > Report priority. Valid values: 'high' (illegal/harassment categories),
+  > 'standard' (other categories). Used for queue prioritization.
+- `resolution_action`
+  > Action taken on resolution. Valid values: 'dismissed', 'content_removed',
+  > 'user_banned', 'escalated'. Nullable until resolved.
+- `resolution_note`
+  > Note explaining resolution decision. Required when dismissing reports
+  > with 3+ reporters for transparency. Nullable until resolved.
 - `created_at`
-  > Timestamp when report was submitted. Used for queue ordering and SLA
-  > tracking.
-- `updated_at`: Timestamp when report status was last updated (reviewed, dismissed).
+  > Timestamp when report was submitted. Used for queue ordering and response
+  > time tracking.
+- `updated_at`
+  > Timestamp of last status update. Tracks when report moved from pending to
+  > resolved/dismissed.
+- `resolved_at`
+  > Timestamp when report was resolved or dismissed. Nullable until
+  > resolution. Used for calculating moderation response times.
+- `deleted_at`
+  > Soft delete timestamp for report cleanup and archival. Preserves
+  > historical report data while removing from active queues.
 
-### `reddit_like_moderation_actions`
+### `community_platform_community_bans`
 
-Actions taken by moderators or administrators in response to content
-reports or proactive moderation. Records removal, approval, dismissal,
-and escalation decisions with full audit trail. Each action references
-the triggering report and includes detailed reasoning for transparency
-and appeal processes. Ensures exactly one content type and one actor type
-per action through application-level validation.
+Community-scoped user bans issued by community moderators. Prevents
+banned members from posting, commenting, or voting in specific
+communities. Supports temporary bans with expiration dates and permanent
+bans. Soft delete pattern used for unbanning.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `report_id`
-  > Content report that triggered this action. {@link
-  > reddit_like_content_reports.id}. Nullable for proactive moderation
-  > without reports.
+- `community_id`
+  > Community where member is banned. {@link
+  > community_platform_communities.id}.
+- `banned_member_id`
+  > Member who is banned from the community. {@link
+  > community_platform_members.id}.
+- `banned_by_moderator_id`: Moderator who issued the ban. [community_platform_moderators.id](#community_platform_moderators).
+- `reason`: Explanation for why member was banned.
+- `duration_days`: Ban duration in days for temporary bans. Null for permanent bans.
+- `is_permanent`: Whether this is a permanent ban.
+- `created_at`: Timestamp when ban was issued.
+- `expires_at`: Expiration timestamp for temporary bans. Null for permanent bans.
+- `deleted_at`: Soft delete timestamp representing unbanning.
+
+### `community_platform_platform_bans`
+
+Platform-wide user bans issued by site administrators. Prevents banned
+members from accessing any platform functionality. Supports temporary and
+permanent bans. Only one active platform ban per member allowed. Soft
+delete pattern used for unbanning.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `banned_member_id`
+  > Member who is banned from the entire platform. {@link
+  > community_platform_members.id}.
+- `banned_by_siteadmin_id`
+  > Site administrator who issued the platform ban. {@link
+  > community_platform_siteadmins.id}.
+- `reason`: Explanation for platform-wide ban.
+- `is_permanent`: Whether this is a permanent platform ban.
+- `duration_days`: Ban duration in days for temporary bans. Null for permanent bans.
+- `created_at`: Timestamp when platform ban was issued.
+- `expires_at`: Expiration timestamp for temporary bans. Null for permanent bans.
+- `deleted_at`: Soft delete timestamp representing unbanning from platform.
+
+### `community_platform_moderation_actions`
+
+Immutable audit log of all moderation actions taken by moderators and
+site administrators. Provides complete transparency and accountability
+trail for content removal, user bans, report handling, and post pinning.
+Append-only table preserving historical moderation decisions. Supports
+action relationships for tracking appeals and escalations.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_id`
+  > Community context for moderation action. Null for platform-wide actions.
+  > [community_platform_communities.id](#community_platform_communities).
 - `moderator_id`
-  > Moderator who performed this action. [reddit_like_moderators.id](#reddit_like_moderators).
-  > Nullable when action taken by admin. Exactly one of moderator_id or
-  > admin_id must be non-null.
-- `admin_id`
-  > Administrator who performed this action. [reddit_like_admins.id](#reddit_like_admins).
-  > Nullable when action taken by moderator. Exactly one of moderator_id or
-  > admin_id must be non-null.
-- `affected_post_id`
-  > Post affected by this action. [reddit_like_posts.id](#reddit_like_posts). Nullable when
-  > action affects comments. Must be non-null when content_type='post'.
-- `affected_comment_id`
-  > Comment affected by this action. [reddit_like_comments.id](#reddit_like_comments).
-  > Nullable when action affects posts. Must be non-null when
-  > content_type='comment'.
-- `community_id`
-  > Community where action was taken. [reddit_like_communities.id](#reddit_like_communities).
-  > Used for community-specific moderation scope.
+  > Moderator who performed the action. Null for admin actions. {@link
+  > community_platform_moderators.id}.
+- `siteadmin_id`
+  > Site administrator who performed the action. Null for moderator actions.
+  > [community_platform_siteadmins.id](#community_platform_siteadmins).
+- `target_post_id`
+  > Post targeted by moderation action. Nullable. {@link
+  > community_platform_posts.id}.
+- `target_comment_id`
+  > Comment targeted by moderation action. Nullable. {@link
+  > community_platform_comments.id}.
+- `target_member_id`
+  > Member targeted by moderation action (bans). Nullable. {@link
+  > community_platform_members.id}.
+- `target_report_id`
+  > Report being processed by moderation action. Nullable. {@link
+  > community_platform_reports.id}.
+- `parent_moderation_action_id`
+  > Parent moderation action this action is related to. Used for tracking
+  > appeals that overturn previous decisions or escalations that follow up on
+  > earlier actions. Null for original actions. {@link
+  > community_platform_moderation_actions.id}.
 - `action_type`
-  > Type of moderation action: 'remove', 'approve', 'dismiss_report',
-  > 'escalate', 'restore', 'lock'. Defines what action was taken.
-- `content_type`
-  > Type of affected content: 'post' or 'comment'. Used for polymorphic
-  > relationship handling and validation.
-- `removal_type`
-  > For removal actions, specifies scope: 'community', 'platform', or 'spam'.
-  > Nullable for non-removal actions.
-- `reason_category`
-  > Predefined reason category selected by moderator (rule violation, spam,
-  > harassment, etc.). Required for all actions.
-- `reason_text`
-  > Detailed explanation of why action was taken. Shown to content author in
-  > notifications. Required for transparency.
-- `internal_notes`
-  > Private notes visible only to moderators and administrators. Used for
-  > context sharing among moderation team.
-- `status`
-  > Action status: 'completed', 'reversed', 'appealed'. Tracks action
-  > lifecycle including reversals.
-- `created_at`
-  > Timestamp when moderation action was taken. Critical for audit trail and
-  > SLA tracking.
-- `updated_at`: Timestamp when action status changed (reversed, appealed).
-
-### `reddit_like_community_bans`
-
-Community-level bans issued by community moderators preventing users from
-participating in specific communities. Supports both temporary and
-permanent bans with expiration tracking. Soft delete enabled to track ban
-history including lifted bans while maintaining audit trail. Active bans
-are enforced to prevent posting, commenting, and voting in the banned
-community.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `banned_member_id`: Member who is banned from the community. [reddit_like_members.id](#reddit_like_members).
-- `community_id`: Community from which member is banned. [reddit_like_communities.id](#reddit_like_communities).
-- `moderator_id`: Moderator who issued the ban. [reddit_like_moderators.id](#reddit_like_moderators).
-- `ban_reason_category`
-  > Predefined ban reason: 'repeated_violations', 'harassment', 'spam',
-  > 'hate_speech', 'illegal_content', 'ban_evasion', 'other'. Required for
-  > all bans.
-- `ban_reason_text`
-  > Detailed explanation of ban reason shown to banned user. Required for
-  > transparency and appeal context.
-- `internal_notes`
-  > Private notes visible only to moderators. Used for documenting ban
-  > history and context for moderation team.
-- `is_permanent`
-  > Whether ban is permanent (true) or temporary (false). Determines if
-  > expiration_date is relevant.
-- `expiration_date`
-  > Date when temporary ban expires and user regains access. Null for
-  > permanent bans. Auto-restore triggers on expiration.
-- `is_active`
-  > Whether ban is currently active. False when lifted by moderators or
-  > automatically expired. Used for quick active ban checks.
-- `created_at`
-  > Timestamp when ban was issued. Used for ban history tracking and duration
-  > calculations.
-- `updated_at`: Timestamp when ban status changed (lifted, expired).
-- `deleted_at`
-  > Soft delete timestamp when ban was lifted by moderators. Null for active
-  > bans. Enables ban history tracking.
-
-### `reddit_like_platform_suspensions`
-
-Platform-wide suspensions issued by administrators preventing users from
-accessing the entire platform. More severe than community bans, affecting
-all platform activity. Supports temporary and permanent suspensions with
-expiration tracking and soft delete for lifted suspensions.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `suspended_member_id`: Member who is suspended from the platform. [reddit_like_members.id](#reddit_like_members).
-- `admin_id`: Administrator who issued the suspension. [reddit_like_admins.id](#reddit_like_admins).
-- `suspension_reason_category`
-  > Predefined suspension reason: 'repeated_violations', 'harassment',
-  > 'spam', 'hate_speech', 'illegal_content', 'ban_evasion', 'other'.
-  > Required for all suspensions.
-- `suspension_reason_text`
-  > Detailed explanation of suspension reason shown to suspended user via
-  > email. Required for transparency and appeal context.
-- `internal_notes`
-  > Private notes visible only to administrators. Used for documenting
-  > suspension history and context for admin team.
-- `is_permanent`
-  > Whether suspension is permanent account termination (true) or temporary
-  > (false). Determines if expiration_date is relevant.
-- `expiration_date`
-  > Date when temporary suspension expires and user regains access. Null for
-  > permanent suspensions. Auto-restore triggers on expiration.
-- `is_active`
-  > Whether suspension is currently active. False when lifted by admins or
-  > automatically expired. Used for login access checks.
-- `created_at`
-  > Timestamp when suspension was issued. Used for suspension history
-  > tracking and duration calculations.
-- `updated_at`: Timestamp when suspension status changed (lifted, expired).
-- `deleted_at`
-  > Soft delete timestamp when suspension was lifted by administrators. Null
-  > for active suspensions. Enables suspension history tracking.
-
-### `reddit_like_moderation_appeals`
-
-User-submitted appeals challenging moderation actions, bans, or
-suspensions. Enables due process by allowing users to contest decisions
-with written reasoning. Appeals are reviewed by moderators (for community
-actions) or administrators (for platform actions) with status tracking
-through resolution. Expected resolution timestamps enable SLA monitoring
-and automated reminder notifications.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `appellant_member_id`: Member who submitted the appeal. [reddit_like_members.id](#reddit_like_members).
-- `moderation_action_id`
-  > Moderation action being appealed. {@link
-  > reddit_like_moderation_actions.id}. Nullable when appealing
-  > bans/suspensions directly.
-- `community_ban_id`
-  > Community ban being appealed. [reddit_like_community_bans.id](#reddit_like_community_bans).
-  > Nullable when appealing other action types.
-- `platform_suspension_id`
-  > Platform suspension being appealed. {@link
-  > reddit_like_platform_suspensions.id}. Nullable when appealing other
-  > action types.
-- `reviewer_moderator_id`
-  > Moderator who reviewed this appeal. [reddit_like_moderators.id](#reddit_like_moderators).
-  > Nullable when reviewed by admin or still pending.
-- `reviewer_admin_id`
-  > Administrator who reviewed this appeal. [reddit_like_admins.id](#reddit_like_admins).
-  > Nullable when reviewed by moderator or still pending.
-- `appeal_type`
-  > Type of action being appealed: 'content_removal', 'community_ban',
-  > 'platform_suspension'. Determines routing to moderators vs admins.
-- `appeal_text`
-  > User's written explanation of why the action should be reversed (50-1000
-  > characters). Required reasoning for all appeals.
-- `status`
-  > Appeal status: 'pending', 'under_review', 'upheld', 'overturned',
-  > 'reduced'. Tracks progression through review process.
-- `decision_explanation`
-  > Reviewer's written explanation of appeal decision. Required when status
-  > changes from pending to final decision. Shown to appellant.
-- `is_escalated`
-  > Whether appeal was escalated from moderator review to administrator
-  > review. Used for tracking escalation workflow.
-- `expected_resolution_at`
-  > Expected timestamp by which this appeal should be reviewed and decided.
-  > Calculated based on appeal type: community appeals (2-3 days), platform
-  > suspensions (5-7 days), escalated appeals (7-10 days). Used for SLA
-  > monitoring and automated reminder notifications per R-APP-029 and
-  > R-APP-030.
-- `created_at`
-  > Timestamp when appeal was submitted. Used for SLA tracking and queue
-  > ordering.
-- `updated_at`: Timestamp when appeal status changed (under review, decided).
-- `reviewed_at`
-  > Timestamp when appeal decision was finalized. Null for pending appeals.
-  > Used for response time metrics.
-
-### `reddit_like_moderation_logs`
-
-Comprehensive immutable audit trail of all moderation system activities.
-Records every report submission, action taken, ban issued, appeal filed,
-and decision made with complete context. Snapshot-based table serving as
-permanent historical record for accountability, analytics, and legal
-compliance.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `actor_member_id`
-  > Member who performed the logged action (reporter, appellant). {@link
-  > reddit_like_members.id}. Nullable for system-generated events.
-- `actor_moderator_id`
-  > Moderator who performed the logged action. {@link
-  > reddit_like_moderators.id}. Nullable for member/admin/system actions.
-- `actor_admin_id`
-  > Administrator who performed the logged action. {@link
-  > reddit_like_admins.id}. Nullable for member/moderator/system actions.
-- `related_report_id`
-  > Content report associated with this log entry. {@link
-  > reddit_like_content_reports.id}. Nullable for non-report events.
-- `related_action_id`
-  > Moderation action associated with this log entry. {@link
-  > reddit_like_moderation_actions.id}. Nullable for non-action events.
-- `related_ban_id`
-  > Community ban associated with this log entry. {@link
-  > reddit_like_community_bans.id}. Nullable for non-ban events.
-- `related_suspension_id`
-  > Platform suspension associated with this log entry. {@link
-  > reddit_like_platform_suspensions.id}. Nullable for non-suspension events.
-- `related_appeal_id`
-  > Appeal associated with this log entry. {@link
-  > reddit_like_moderation_appeals.id}. Nullable for non-appeal events.
-- `community_id`
-  > Community context for this log entry. [reddit_like_communities.id](#reddit_like_communities).
-  > Nullable for platform-level events.
-- `log_type`
-  > Category of moderation event: 'report_submitted', 'action_taken',
-  > 'ban_issued', 'ban_lifted', 'suspension_issued', 'suspension_lifted',
-  > 'appeal_submitted', 'appeal_decided', 'report_dismissed'. Used for
-  > filtering and analytics.
-- `action_description`
-  > Human-readable description of what occurred in this log entry.
-  > Auto-generated from event data for audit trail readability.
+  > Type of moderation action. Valid values: 'remove_post', 'remove_comment',
+  > 'ban_user', 'unban_user', 'pin_post', 'unpin_post', 'dismiss_report',
+  > 'escalate_report', 'restore_content', 'appeal_approved', 'appeal_denied'.
+  > Indicates what action was taken.
+- `reason`
+  > Explanation for the moderation action. Provides context for why action
+  > was taken and helps with transparency and appeals.
 - `metadata`
-  > JSON object containing additional context and details specific to the log
-  > event type. Flexible storage for event-specific data.
-- `ip_address`
-  > IP address of actor who performed the logged action. Stored for security
-  > auditing and abuse detection.
+  > JSON-encoded additional context for the action. May include escalation
+  > details, appeal information, or other structured data specific to action
+  > type.
 - `created_at`
-  > Timestamp when moderation event occurred. Immutable audit trail timestamp
-  > with second precision.
+  > Timestamp when moderation action was taken. Immutable audit trail
+  > timestamp.
 
-## default
+### `community_platform_pinned_posts`
+
+Tracks posts pinned to the top of community feeds by moderators. Maximum
+2 pinned posts per community. Supports temporary pins with expiration
+dates. Soft delete pattern used for unpinning. Pin order determines
+display sequence.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_id`: Community where post is pinned. [community_platform_communities.id](#community_platform_communities).
+- `post_id`: Post being pinned to community top. [community_platform_posts.id](#community_platform_posts).
+- `pinned_by_moderator_id`: Moderator who pinned the post. [community_platform_moderators.id](#community_platform_moderators).
+- `pin_order`: Display order for pinned post. Values 1 or 2 for maximum 2 pins.
+- `is_temporary`: Whether pin has expiration date.
+- `created_at`: Timestamp when post was pinned.
+- `expires_at`: Expiration timestamp for temporary pins. Null for permanent pins.
+- `deleted_at`: Soft delete timestamp representing unpinning.
+
+### `community_platform_report_of_moderators`
+
+Subtype table tracking reports resolved by community moderators. Part of
+Compatible Actor Pattern for polymorphic report resolution. Maintains 1:1
+relationship with community_platform_reports when resolver_type is
+'moderator'. Ensures referential integrity for moderator resolution
+tracking.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_platform_report_id`: Report resolved by moderator. [community_platform_reports.id](#community_platform_reports).
+- `community_platform_moderator_id`
+  > Moderator who resolved this report. {@link
+  > community_platform_moderators.id}.
+- `created_at`
+  > Timestamp when moderator resolved the report. Matches parent report's
+  > resolved_at timestamp.
+
+### `community_platform_report_of_siteadmins`
+
+Subtype table tracking reports resolved by site administrators. Part of
+Compatible Actor Pattern for polymorphic report resolution. Maintains 1:1
+relationship with community_platform_reports when resolver_type is
+'siteadmin'. Ensures referential integrity for site admin resolution
+tracking.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_platform_report_id`
+  > Report resolved by site administrator. {@link
+  > community_platform_reports.id}.
+- `community_platform_siteadmin_id`
+  > Site administrator who resolved this report. {@link
+  > community_platform_siteadmins.id}.
+- `created_at`
+  > Timestamp when site admin resolved the report. Matches parent report's
+  > resolved_at timestamp.
+
+### `community_platform_rule_violations`
+
+Tracks rule violations for each user within each community. Enables
+moderators to identify repeat offenders and track violation patterns.
+Each record links a content removal action to the specific community rule
+that was violated. This subsidiary table supports the requirement to
+track rule violation frequency per user per community.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_id`
+  > Community where the rule was violated. {@link
+  > community_platform_communities.id}.
+- `violator_member_id`
+  > Member who violated the community rule. {@link
+  > community_platform_members.id}.
+- `moderation_action_id`
+  > Moderation action that recorded this violation (content removal action).
+  > [community_platform_moderation_actions.id](#community_platform_moderation_actions).
+- `rule_number`
+  > Community rule number that was violated (1-10). References the
+  > rule_number from community_platform_community_rules. Used to track which
+  > rules are violated most frequently.
+- `created_at`
+  > Timestamp when the violation was recorded. Matches the moderation action
+  > timestamp.
+
+## Discovery
 
 ```mermaid
 erDiagram
-"mv_reddit_like_post_metrics" {
+"community_platform_trending_communities" {
   String id PK
-  String reddit_like_post_id FK,UK
-  Int vote_score
-  Int comment_count
-  Int upvote_count
-  Int downvote_count
-  DateTime last_calculated_at
+  String community_platform_community_id FK,UK
+  Float trend_score
+  Int subscribers_gained_last_7_days
+  Int subscribers_7_days_ago
+  Int total_subscribers
+  DateTime calculation_timestamp
+  DateTime created_at
+  DateTime updated_at
+}
+"community_platform_trending_posts" {
+  String id PK
+  String community_platform_post_id FK,UK
+  Float trending_score
+  Int upvotes_last_6_hours
+  Int comments_last_6_hours
+  Float hours_since_posted
+  DateTime calculation_timestamp
+  DateTime created_at
+  DateTime updated_at
+}
+"community_platform_search_queries" {
+  String id PK
+  String community_platform_member_id FK "nullable"
+  String query_text
+  String search_category
+  String filters_applied "nullable"
+  Int result_count
+  Boolean clicked_result
+  String session_id "nullable"
+  DateTime created_at
 }
 ```
 
-### `mv_reddit_like_post_metrics`
+### `community_platform_trending_communities`
 
-Materialized view for post engagement metrics providing denormalized vote
-scores and comment counts for query performance optimization.
-Pre-calculates net vote score (upvotes - downvotes) from
-reddit_like_post_votes and total comment count from reddit_like_comments.
-Refreshed periodically to maintain accurate metrics without impacting
-write performance on normalized tables. This is the ONLY appropriate
-location for denormalized post metrics per architectural requirements.
+Trending communities calculated periodically based on subscriber growth
+rate and activity metrics. This subsidiary table stores pre-calculated
+trending scores to optimize discovery performance. Trending data is
+recalculated every 6 hours as specified in requirements.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reddit_like_post_id`
-  > Reference to the post whose metrics are calculated. {@link
-  > reddit_like_posts.id}
-- `vote_score`
-  > Pre-calculated net vote score (upvotes minus downvotes) aggregated from
-  > reddit_like_post_votes. This denormalized value enables fast query
-  > performance for sorting and ranking algorithms without real-time vote
-  > aggregation.
-- `comment_count`
-  > Pre-calculated total number of comments on this post aggregated from
-  > reddit_like_comments. This denormalized value enables fast feed display
-  > and post listing without counting comments in real-time.
-- `upvote_count`
-  > Total number of upvotes (vote_value = 1) aggregated from
-  > reddit_like_post_votes. Used for calculating upvote percentage and
-  > controversial ranking.
-- `downvote_count`
-  > Total number of downvotes (vote_value = -1) aggregated from
-  > reddit_like_post_votes. Used for calculating upvote percentage and
-  > controversial ranking.
-- `last_calculated_at`
-  > Timestamp when this materialized view was last refreshed with current
-  > vote and comment data. Indicates the freshness of calculated metrics.
+- `community_platform_community_id`
+  > Reference to the trending community. {@link
+  > community_platform_communities.id}
+- `trend_score`
+  > Calculated trending score based on subscriber growth rate. Formula:
+  > (subscribers_gained_last_7_days / subscribers_7_days_ago) × 100. Higher
+  > scores indicate faster growth.
+- `subscribers_gained_last_7_days`
+  > Number of new subscribers in the past 7 days. Used for trending
+  > calculation and display.
+- `subscribers_7_days_ago`
+  > Total subscriber count as of 7 days ago. Used in trend_score formula
+  > denominator to calculate growth rate percentage. Essential for accurate
+  > trending calculation verification.
+- `total_subscribers`
+  > Total subscriber count at the time of trending calculation. Cached for
+  > performance and display purposes.
+- `calculation_timestamp`
+  > Timestamp when the trending score was calculated. Updated every 6 hours
+  > according to trending refresh schedule.
+- `created_at`: Timestamp when this trending entry was first created.
+- `updated_at`: Timestamp when this trending entry was last updated with new scores.
+
+### `community_platform_trending_posts`
+
+Trending posts calculated periodically based on engagement velocity
+metrics including upvotes and comments received in the past 6 hours. This
+subsidiary table stores pre-calculated trending scores to optimize the
+Popular feed performance. Trending data is recalculated every 30 minutes
+as specified in requirements.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_platform_post_id`: Reference to the trending post. [community_platform_posts.id](#community_platform_posts)
+- `trending_score`
+  > Calculated trending score using formula: (upvotes_last_6_hours × 1.5 +
+  > comments_last_6_hours × 2.0) / (hours_since_posted + 2). Higher scores
+  > indicate more rapid engagement.
+- `upvotes_last_6_hours`
+  > Number of upvotes received in the past 6 hours. Used for trending
+  > calculation.
+- `comments_last_6_hours`
+  > Number of comments received in the past 6 hours. Used for trending
+  > calculation with higher weight than upvotes.
+- `hours_since_posted`
+  > Hours elapsed since post creation at time of calculation. Used in
+  > trending score formula to favor recent posts.
+- `calculation_timestamp`
+  > Timestamp when the trending score was calculated. Updated every 30
+  > minutes according to trending post refresh schedule.
+- `created_at`: Timestamp when this trending entry was first created.
+- `updated_at`: Timestamp when this trending entry was last updated with new scores.
+
+### `community_platform_search_queries`
+
+Search query history tracking all searches performed by members across
+communities, posts, and users. This subsidiary table logs search queries
+for analytics, improvement, and autocomplete suggestion generation.
+Search logs are anonymized after 90 days by removing user identifiers
+while retaining query patterns.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `community_platform_member_id`
+  > Reference to the member who performed the search. {@link
+  > community_platform_members.id}. Set to null after 90 days for
+  > anonymization.
+- `query_text`
+  > The search query text entered by the user. Normalized to lowercase with
+  > trimmed whitespace. Maximum 200 characters as per search validation
+  > requirements.
+- `search_category`
+  > Search category indicating what entity type was searched. Valid values:
+  > 'all', 'communities', 'posts', 'users'. Indicates which search interface
+  > was used.
+- `filters_applied`
+  > JSON string containing applied filters such as time range, minimum score,
+  > post type, community selection. Stored as text for analytics purposes.
+- `result_count`
+  > Number of results returned for this search query. Used for zero-result
+  > search analytics and search quality metrics.
+- `clicked_result`
+  > Whether the user clicked on at least one search result. Used for
+  > click-through rate analytics to measure search quality.
+- `session_id`
+  > Anonymous session identifier for tracking search sequences. Used when
+  > member_id is null (anonymous users) or after anonymization.
+- `created_at`
+  > Timestamp when the search query was performed. Used for analytics and
+  > temporal analysis of search patterns.

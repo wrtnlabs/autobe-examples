@@ -10,158 +10,137 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { IDiscussionBoardModerationAction } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerationAction";
 import { IPageIDiscussionBoardModerationAction } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardModerationAction";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
 import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
 
 export async function patchDiscussionBoardModeratorModerationActions(props: {
   moderator: ModeratorPayload;
   body: IDiscussionBoardModerationAction.IRequest;
-}): Promise<IPageIDiscussionBoardModerationAction> {
-  const { moderator, body } = props;
+}): Promise<IPageIDiscussionBoardModerationAction.ISummary> {
+  const { body } = props;
 
-  const page = (body.page ?? 1) as number;
-  const limit = (body.limit ?? 20) as number;
+  // Extract pagination parameters with double-cast pattern
+  const page = (body.page ?? 1) as number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> as number;
+  const limit = (body.limit ?? 20) as number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100> as number;
   const skip = (page - 1) * limit;
 
-  const [reports, total] = await Promise.all([
-    MyGlobal.prisma.discussion_board_reports.findMany({
-      where: {
-        ...(body.status !== undefined &&
-          body.status !== null && {
-            status: body.status,
-          }),
-        ...(body.severity !== undefined &&
-          body.severity !== null && {
-            severity_level: body.severity,
-          }),
-        ...(body.violation_category !== undefined &&
-          body.violation_category !== null && {
-            violation_category: body.violation_category,
-          }),
-        ...(body.assigned_moderator_id !== undefined &&
-          body.assigned_moderator_id !== null && {
-            assigned_moderator_id: body.assigned_moderator_id,
-          }),
-        ...((body.date_from !== undefined && body.date_from !== null) ||
-        (body.date_to !== undefined && body.date_to !== null)
-          ? {
-              created_at: {
-                ...(body.date_from !== undefined &&
-                  body.date_from !== null && {
-                    gte: body.date_from,
-                  }),
-                ...(body.date_to !== undefined &&
-                  body.date_to !== null && {
-                    lte: body.date_to,
-                  }),
-              },
-            }
-          : {}),
-      },
+  // Build reusable WHERE clause with all filters
+  const whereCondition = {
+    ...(body.moderator_id !== undefined &&
+      body.moderator_id !== null && {
+        discussion_board_moderator_id: body.moderator_id,
+      }),
+    ...(body.action_type !== undefined &&
+      body.action_type !== null && {
+        action_type: body.action_type,
+      }),
+    ...(body.target_type !== undefined &&
+      body.target_type !== null && {
+        target_type: body.target_type,
+      }),
+    ...(body.target_id !== undefined &&
+      body.target_id !== null && {
+        target_id: body.target_id,
+      }),
+    ...(body.related_report_id !== undefined &&
+      body.related_report_id !== null && {
+        related_report_id: body.related_report_id,
+      }),
+    ...((body.created_after !== undefined && body.created_after !== null) ||
+    (body.created_before !== undefined && body.created_before !== null)
+      ? {
+          created_at: {
+            ...(body.created_after !== undefined &&
+              body.created_after !== null && {
+                gte: body.created_after,
+              }),
+            ...(body.created_before !== undefined &&
+              body.created_before !== null && {
+                lte: body.created_before,
+              }),
+          },
+        }
+      : {}),
+  };
+
+  // Determine sort order based on sort parameter
+  const orderBy =
+    body.sort === "oldest_first"
+      ? { created_at: "asc" as const }
+      : body.sort === "by_moderator"
+        ? [
+            { discussion_board_moderator_id: "asc" as const },
+            { created_at: "desc" as const },
+          ]
+        : body.sort === "by_action_type"
+          ? [{ action_type: "asc" as const }, { created_at: "desc" as const }]
+          : { created_at: "desc" as const };
+
+  // Execute parallel queries with shared where condition
+  const [results, total] = await Promise.all([
+    MyGlobal.prisma.discussion_board_moderation_actions.findMany({
+      where: whereCondition,
       include: {
-        reportedTopic: true,
-        reportedReply: true,
+        moderator: true,
       },
-      orderBy:
-        body.sort_by === "severity"
-          ? { severity_level: body.sort_order === "asc" ? "asc" : "desc" }
-          : body.sort_by === "created_at"
-            ? { created_at: body.sort_order === "asc" ? "asc" : "desc" }
-            : { created_at: "desc" },
+      orderBy,
       skip,
       take: limit,
     }),
-    MyGlobal.prisma.discussion_board_reports.count({
-      where: {
-        ...(body.status !== undefined &&
-          body.status !== null && {
-            status: body.status,
-          }),
-        ...(body.severity !== undefined &&
-          body.severity !== null && {
-            severity_level: body.severity,
-          }),
-        ...(body.violation_category !== undefined &&
-          body.violation_category !== null && {
-            violation_category: body.violation_category,
-          }),
-        ...(body.assigned_moderator_id !== undefined &&
-          body.assigned_moderator_id !== null && {
-            assigned_moderator_id: body.assigned_moderator_id,
-          }),
-        ...((body.date_from !== undefined && body.date_from !== null) ||
-        (body.date_to !== undefined && body.date_to !== null)
-          ? {
-              created_at: {
-                ...(body.date_from !== undefined &&
-                  body.date_from !== null && {
-                    gte: body.date_from,
-                  }),
-                ...(body.date_to !== undefined &&
-                  body.date_to !== null && {
-                    lte: body.date_to,
-                  }),
-              },
-            }
-          : {}),
-      },
+    MyGlobal.prisma.discussion_board_moderation_actions.count({
+      where: whereCondition,
     }),
   ]);
 
-  const data: IDiscussionBoardModerationAction[] = reports.map((report) => {
-    const actionType: IDiscussionBoardModerationAction["action_type"] =
-      report.status === "resolved"
-        ? "hide_content"
-        : report.status === "dismissed"
-          ? "dismiss_report"
-          : "dismiss_report";
+  // Map results to ISummary format with proper null→undefined conversion
+  const data: IDiscussionBoardModerationAction.ISummary[] = results.map(
+    (action) => ({
+      id: action.id,
+      moderator: {
+        id: action.moderator.id,
+        username: action.moderator.username,
+        display_name: action.moderator.display_name,
+        profile_picture_url: action.moderator.profile_picture_url,
+        email_verified: action.moderator.email_verified,
+        status: action.moderator.status,
+        moderation_permissions: action.moderator.moderation_permissions,
+        profile_visibility: action.moderator.profile_visibility,
+        activity_visibility: action.moderator.activity_visibility,
+        bio: action.moderator.bio === null ? undefined : action.moderator.bio,
+        location:
+          action.moderator.location === null
+            ? undefined
+            : action.moderator.location,
+        website_url:
+          action.moderator.website_url === null
+            ? undefined
+            : action.moderator.website_url,
+        last_login_at:
+          action.moderator.last_login_at === null
+            ? undefined
+            : toISOStringSafe(action.moderator.last_login_at),
+        created_at: toISOStringSafe(action.moderator.created_at),
+        updated_at: toISOStringSafe(action.moderator.updated_at),
+        deleted_at:
+          action.moderator.deleted_at === null
+            ? undefined
+            : toISOStringSafe(action.moderator.deleted_at),
+      },
+      action_type: action.action_type,
+      target_type: action.target_type,
+      target_id: action.target_id,
+      reason: action.reason,
+      created_at: toISOStringSafe(action.created_at),
+      updated_at: toISOStringSafe(action.updated_at),
+    }),
+  );
 
-    const violationCategory: IDiscussionBoardModerationAction["violation_category"] =
-      report.violation_category === "personal_attack" ||
-      report.violation_category === "hate_speech" ||
-      report.violation_category === "misinformation" ||
-      report.violation_category === "spam" ||
-      report.violation_category === "offensive_language" ||
-      report.violation_category === "off_topic" ||
-      report.violation_category === "threats" ||
-      report.violation_category === "doxxing" ||
-      report.violation_category === "trolling" ||
-      report.violation_category === "other"
-        ? report.violation_category
-        : undefined;
-
-    return {
-      id: report.id as string & tags.Format<"uuid">,
-      moderator_id:
-        report.assigned_moderator_id !== null
-          ? (report.assigned_moderator_id as string & tags.Format<"uuid">)
-          : undefined,
-      administrator_id: undefined,
-      target_member_id: report.reporter_member_id as string &
-        tags.Format<"uuid">,
-      related_report_id: report.id as string & tags.Format<"uuid">,
-      content_topic_id:
-        report.reported_topic_id !== null
-          ? (report.reported_topic_id as string & tags.Format<"uuid">)
-          : undefined,
-      content_reply_id:
-        report.reported_reply_id !== null
-          ? (report.reported_reply_id as string & tags.Format<"uuid">)
-          : undefined,
-      action_type: actionType,
-      reason: report.reporter_explanation ?? "Report pending review",
-      violation_category: violationCategory,
-      content_snapshot:
-        report.reportedTopic?.body ??
-        report.reportedReply?.content ??
-        undefined,
-      is_reversed: false,
-      reversed_at: undefined,
-      reversal_reason: undefined,
-      created_at: toISOStringSafe(report.created_at),
-      updated_at: toISOStringSafe(report.updated_at),
-    };
-  });
-
+  // Return paginated response with Number() for brand type stripping
   return {
     pagination: {
       current: Number(page),

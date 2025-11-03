@@ -1,105 +1,111 @@
-/// Guest actor entity representing unauthenticated visitors of the
-/// discussion board system. Used for tracking browsing or search activity
-/// and potential auditing. Guests do not have login credentials, and do not
-/// author topics or replies. This table facilitates tracking session
-/// history, device fingerprinting, or future personalization without
-/// registration.
+/// Registered end user identities for the discussion board system. Stores
+/// essential login credentials, profile settings, and personally
+/// identifiable information for authentication, display, and privacy
+/// compliance. All content authorship in articles and comments references
+/// this table for ownership and audit. Soft delete and lock states support
+/// GDPR, account recovery, and moderation. Distinct from admins – not
+/// polymorphic. Main entry point for all user/external actor flows.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_guests {
+model discussion_board_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Randomly generated anonymous token for tracking session or device
-  /// activity. Used for distinguishing unique guest sessions without revealing
-  /// personal data.
-  anonymous_token String
-  
-  /// Timestamp when the guest record is first created. Used for session and
-  /// analytics tracking.
-  created_at DateTime
-  
-  /// Timestamp for the last update of the guest record (e.g., session refresh).
-  updated_at DateTime
-  
-  /// Timestamp for soft-deletion of the guest record, if applicable. Null when
-  /// active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([anonymous_token])
-  @@index([created_at])
-}
-
-/// Registered user (member) entity representing authenticated users of the
-/// discussion board. Members have login credentials, author topics and
-/// replies, and can be uniquely identified by email and username. This
-/// entity stores hashed password for authentication, and supports full audit
-/// and soft-delete tracking for compliance.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_members {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique business email address for member login and communication. Must be
-  /// verified via registration process.
+  /// User's unique email address for login, notifications, and password resets.
   email String
   
-  /// Display name chosen by member, used in topics and replies. Must be unique
-  /// for identity within the discussion board.
-  username String
-  
-  /// Hashed password for secure login authentication. Never stored in plain
-  /// text. Required for authentication process.
+  /// Hashed password for authentication. Never stores raw plaintext passwords.
   password_hash String
   
-  /// Indicates whether the member's email address has been verified via
-  /// confirmation link.
-  email_verified Boolean
+  /// Display name shown in user profile and for attribution to articles and
+  /// comments.
+  display_name String
   
-  /// Timestamp when the member's registration was fully completed and email
-  /// verified. Used for audit and onboarding analytics.
-  registration_completed_at DateTime
+  /// Optional profile image/avatar for the user account, shown on
+  /// article/comment listings. Nullable for accounts without avatar.
+  avatar_url String?
   
-  /// Timestamp when the member record is first created. Used for traceability
-  /// and analytics.
+  /// Whether the user account is currently locked or suspended; used for
+  /// moderation, bans, security, or PII retention logic.
+  is_locked Boolean
+  
+  /// Timestamp for soft deletion. Used to support GDPR-compliant
+  /// removal/anonymization, and to hide former accounts without destroying
+  /// content.
+  deleted_at DateTime?
+  
+  /// User account creation timestamp.
   created_at DateTime
   
-  /// Timestamp for the last update of the member record (e.g., profile or
-  /// password change).
+  /// Last profile update timestamp.
   updated_at DateTime
-  
-  /// Timestamp for soft-deletion of the member account. Null when active.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_topics discussion_board_topics[]
-  discussion_board_replies discussion_board_replies[]
+  discussion_board_user_sessions discussion_board_user_sessions[]
+  discussion_board_articles discussion_board_articles[]
+  discussion_board_article_comments discussion_board_article_comments[]
+  discussion_board_abuse_reports discussion_board_abuse_reports[]
   
   @@unique([email])
-  @@unique([username])
-  @@index([created_at])
 }
 
-/// Administrator entity representing privileged users with management rights
-/// over the discussion board system. Admins require authentication and are
-/// granted system-level permissions such as user management and, if enabled,
-/// moderation. Designed as a standalone entity (not a member subtype) per
-/// business directive, supporting distinct audit trails and privilege
-/// separation.
+/// Login session records for end users. Tracks stateless authentication
+/// events for account security, multi-device login, privacy audit, and
+/// session expiry support. Used in all authentication flows, account
+/// tracing, or action recovery. Each session references the corresponding
+/// user by foreign key. Follows strict session table field requirements.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated user session's {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// IP address for the session. Used for audit and security review.
+  ip String
+  
+  /// URL/location of connection at session start. Useful for suspicious
+  /// activity auditing.
+  href String
+  
+  /// Referrer of connection or page prior to session creation. Used for basic
+  /// session tracing.
+  referrer String
+  
+  /// Session creation timestamp, used for session reuse, timeouts, and
+  /// analytics.
+  created_at DateTime
+  
+  /// Session expiration time, or null if session still valid.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_user_sessions_discussion_board_user_i_2eaa2baa")
+}
+
+/// Administrative identities for the discussion board platform. Stores
+/// credentials, email, profile, and lock state for privileged actors
+/// empowered to moderate, audit, and control system operations. Admins are
+/// separate from users to keep permissions and audit trails clear. All
+/// moderator actions reference this table. Soft deletion, lock, and audit
+/// state fields for platform compliance. Not polymorphic.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -110,45 +116,83 @@ model discussion_board_admins {
   /// Primary Key.
   id String @id
   
-  /// Unique email address for administrator login and communication. Must be
-  /// business-verified as part of privileged account control.
+  /// Admin's unique email address for privileged login, escalation notices,
+  /// and audit traceability.
   email String
   
-  /// Display name selected by admin, used for identifying admin actions and
-  /// events.
-  username String
-  
-  /// Securely hashed password for administrator authentication. Never stored
-  /// as plain text.
+  /// Hashed password for administrator login. No stored plaintext passwords.
   password_hash String
   
-  /// Indicates whether the admin's email has been verified via a confirmation
-  /// workflow.
-  email_verified Boolean
+  /// Admin's display name for moderator tools, platform audit logs, and
+  /// transparency.
+  display_name String
   
-  /// Timestamp when the admin account has successfully completed verification
-  /// and is enabled for privileged access.
-  registration_completed_at DateTime
+  /// Optional admin avatar/profile picture, for team identification in logs
+  /// and UIs. Nullable for accounts without avatar.
+  avatar_url String?
   
-  /// Timestamp for account creation, establishing audit trail for admin
-  /// onboarding.
+  /// Indicates locked, banned, or suspended admin account status. Used to
+  /// prevent privileged access abuse or investigation.
+  is_locked Boolean
+  
+  /// Timestamp of soft deletion for GDPR or key rotation purposes.
+  deleted_at DateTime?
+  
+  /// Administrator account creation timestamp.
   created_at DateTime
   
-  /// Timestamp for the most recent administrative account update, such as
-  /// profile changes or security resets.
+  /// Last time the admin profile was modified.
   updated_at DateTime
-  
-  /// Timestamp for soft-deletion (optional) of the admin account, null for
-  /// active admins.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_topics discussion_board_topics[]
-  discussion_board_replies discussion_board_replies[]
+  discussion_board_admin_sessions discussion_board_admin_sessions[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_audit_logs discussion_board_audit_logs[]
   
   @@unique([email])
-  @@unique([username])
-  @@index([created_at])
+}
+
+/// Session registry for all administrator logins, tracking server-side
+/// authentication for security, audit, and incident review. Each session
+/// references an admin actor and contains connection, time, and referrer
+/// context as required for proper GDPR and internal compliance. Composite
+/// index for session queries per admin actor, field set per session table
+/// pattern.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated admin session's {@link discussion_board_admins.id}.
+  discussion_board_admin_id String
+  
+  /// Session's originating IP for incident review and admin login traceability.
+  ip String
+  
+  /// Connection URL for where the admin session was initiated.
+  href String
+  
+  /// Referrer URL or entry point for admin login.
+  referrer String
+  
+  /// Session timestamp for tracking session lifecycle and risk windows.
+  created_at DateTime
+  
+  /// Session expiration timestamp, or null if active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_sessions_discussion_board_admin_56d4dfa1")
 }

@@ -1,161 +1,153 @@
-# Functional Requirements Analysis for redditCommunity Platform
+# redditCommunity Requirements Analysis Report
 
-This document provides comprehensive business and functional requirements for the development of a Reddit-like community platform named "redditCommunity". It covers all essential functionality to guide backend developers in building the system.
+## 1. Introduction
+redditCommunity is a Reddit-like community platform designed to enable users to create and engage in topic-specific communities, share content, and interact through voting and comments. The platform's goal is to provide a robust, scalable, and user-friendly backend system supporting rich user interactions and community autonomy.
 
-> This document provides business requirements only. All technical implementation decisions belong to developers. Developers have full autonomy over architecture, APIs, and database design. The document describes WHAT the system should do, not HOW to build it.
+## 2. Business Model
 
-## 1. Community Management
+### 2.1 Purpose
+The platform exists to provide users with a decentralized space to form communities based on shared interests, facilitating content sharing and discussions in a moderated environment.
 
-### 1.1 Community Creation
-- WHEN a member submits a request to create a new community, THE system SHALL verify that the community name is unique and meets naming rules (minimum 3 characters, maximum 50 characters, alphanumeric and underscores only).
-- THE system SHALL allow any authenticated member to create new communities.
-- THE system SHALL assign the creating member as the initial communityModerator for that community.
-- WHEN a community is created, THE system SHALL store metadata including community name, description, creation date, and creator user ID.
-- THE system SHALL support updating community information (name limited; description editable) by communityModerators.
+### 2.2 Revenue Strategy
+Monetization will be achieved via targeted advertising, premium subscription services offering enhanced moderation capabilities, and brand partnerships within popular communities.
 
-### 1.2 Community Visibility
-- THE system SHALL allow all users, including guests, to browse and view public communities and their posts.
-- THE system SHALL make private communities (if implemented in future) accessible only to subscribed members (not currently required).
+### 2.3 Growth Plan
+Focus will be on organic growth driven by ease of community creation, viral sharing of engaging posts, and gamification elements like karma to incentivize participation.
 
-### 1.3 Moderation
-- CommunityModerators SHALL be able to delete or approve posts and comments within their community.
-- CommunityModerators SHALL be able to manage reports related to content within their community.
-- Admins SHALL have full moderation permissions across all communities.
+### 2.4 Success Metrics
+Key indicators include monthly active users, number of active communities, daily posts and comments volume, average karma per user, and moderation resolution times.
 
-## 2. Post Management
+## 3. User Actors and Permissions
 
-### 2.1 Post Creation
-- WHEN a member wants to create a post within a community, THE system SHALL accept posts in three types:
-  - Text only
-  - Link only
-  - Single image (one image file attachment)
-- THE system SHALL enforce input validation:
-  - Text posts: must have non-empty body with a max length of 10,000 characters.
-  - Link posts: must have a valid URL.
-  - Image posts: must have only one image file attached; size limits enforced per system policy.
-- THE system SHALL associate posts with the creator, creation timestamp, and target community.
+The system defines four primary user roles:
 
-### 2.2 Post Editing and Deletion
-- WHEN a member edits their own post, THE system SHALL allow editing within 24 hours of creation.
-- THE system SHALL record edit timestamps and maintain version history as applicable.
-- Members SHALL be able to delete their own posts, removing them from public view.
-- CommunityModerators and Admins SHALL be able to delete any post within their jurisdiction.
+- **Guest**: Can browse public communities and view posts but cannot interact or create content.
+- **User**: Authenticated user capable of creating communities, posting content, voting, commenting, subscribing, and reporting.
+- **Moderator**: Users with elevated permissions to moderate content within assigned communities, including removing posts and managing reports.
+- **Admin**: System-wide administrators managing users, communities, and platform-wide settings.
 
-### 2.3 Post Metadata
-- THE system SHALL track and expose publicly:
-  - Number of upvotes and downvotes
-  - Number of comments
-  - Creation and last edited timestamps
+### 3.1 Permissions Matrix
 
-## 3. Voting System
+| Action                        | Guest | User | Moderator | Admin |
+|-------------------------------|-------|------|-----------|-------|
+| Browse content                | ✅    | ✅   | ✅        | ✅    |
+| Register and login            | ❌    | ✅   | ✅        | ✅    |
+| Create communities           | ❌    | ✅   | ✅        | ✅    |
+| Post content (text/link/image) | ❌    | ✅   | ✅        | ✅    |
+| Comment with nested replies   | ❌    | ✅   | ✅        | ✅    |
+| Upvote/downvote content       | ❌    | ✅   | ✅        | ✅    |
+| Subscribe/unsubscribe to communities | ❌    | ✅   | ✅        | ✅    |
+| Report content                | ❌    | ✅   | ✅        | ✅    |
+| Moderate content              | ❌    | ❌   | ✅        | ✅    |
+| Manage users and communities  | ❌    | ❌   | ❌        | ✅    |
 
-### 3.1 Voting on Posts
-- WHEN a member votes on a post, THE system SHALL allow upvote (+1), downvote (-1), or vote removal.
-- THE system SHALL restrict to one active vote per user per post.
-- Users SHALL be able to change their vote at any time.
-- THE system SHALL update and display real-time total vote counts.
+## 4. Functional Requirements
 
-### 3.2 Voting on Comments
-- THE same voting rules SHALL apply to comments (upvote, downvote, vote removal, single active vote, vote changing).
+### 4.1 User Registration and Login
+WHEN a guest submits registration details, THE system SHALL validate the email and password, send a verification email, and create a user account after confirmation.
+WHEN a user attempts to log in, THE system SHALL authenticate the credentials and establish a secure session using JWT tokens.
+Login failures due to invalid credentials SHALL result in immediate error responses.
 
-### 3.3 Vote Visibility
-- THE system SHALL display the current vote tally publicly (visible to all users including guests).
+### 4.2 Community Creation and Management
+Authenticated users SHALL be able to create communities with unique names following naming conventions. Moderators and admins SHALL have management permissions including content approval and removal.
 
-## 4. Comment System
+### 4.3 Content Posting
+Users SHALL post text, links, or images within communities. Posts SHALL be validated for type, size, and community compliance. Images are restricted to common formats (JPEG, PNG) and size limits.
 
-### 4.1 Commenting on Posts
-- WHEN a member adds a comment to a post, THE system SHALL allow unlimited nesting (comments can have replies to any depth).
-- Comments SHALL have a maximum length of 2000 characters.
+### 4.4 Voting System
+Users SHALL upvote or downvote posts and comments once per item. Vote changes SHALL be allowed but duplicates SHALL be prevented.
 
-### 4.2 Comment Editing and Deletion
-- Members SHALL be able to edit their own comments within 24 hours after posting.
-- Members SHALL be able to delete their own comments.
-- CommunityModerators and Admins SHALL be able to delete any comment within their jurisdiction.
+### 4.5 Commenting System
+Comments SHALL support nested replies up to a depth of 5 levels to balance readability and user interaction.
 
-### 4.3 Comment Metadata
-- THE system SHALL track vote counts on comments identically to posts.
-- THE system SHALL store creation and edit timestamps for comments.
+### 4.6 User Karma System
+Karma SHALL be calculated from votes on user posts and comments and updated in near real-time.
 
-## 5. Subscription Features
+### 4.7 Post Sorting
+Posts SHALL be sortable by hot, new, top, and controversial leveraging vote counts and timestamps.
 
-### 5.1 Subscribing to Communities
-- WHEN a member subscribes to a community, THE system SHALL add the community to the user's list of subscriptions.
-- Subscribed communities SHALL appear in the user's personalized feed.
-- THE system SHALL allow members to unsubscribe at any time.
+### 4.8 Subscription System
+Users SHALL subscribe or unsubscribe from communities to customize their content feed.
 
-### 5.2 Subscription Visibility
-- THE system SHALL allow all users to view public community subscription counts.
+### 4.9 User Profiles
+Profiles SHALL display user posts, comments, and cumulative karma.
 
-## 6. User Profile Features
+### 4.10 Content Reporting
+Users SHALL report inappropriate content. Reports SHALL be logged with detailed metadata and routed to moderators/admins for review.
 
-### 6.1 Profile Content
-- THE system SHALL provide publicly accessible user profiles displaying:
-  - User's posts
-  - User's comments
-  - User's total karma
-  - Join date
-  - Optional bio text
+## 5. Business Rules
 
-### 6.2 Profile Management
-- Members SHALL be able to edit their bio and visibility settings.
+- Community names SHALL be unique and adhere to allowed character sets.
+- Posts and comments SHALL comply with content guidelines and size limits.
+- Voting SHALL be limited to one per user per content item with vote change allowed once.
+- Moderators SHALL have content removal authority within their communities.
+- Reports SHALL be traceable with status updates for resolution tracking.
 
-## 7. Content Reporting
+## 6. Error Handling and Recovery
 
-### 7.1 Reporting Mechanism
-- WHEN a member or guest reports a post, comment, or user, THE system SHALL record the report including reporter ID (nullable if guest), reported content ID, category (spam, abuse, other), and timestamp.
+Authentication failures SHALL return precise error messages.
+Content violations SHALL prevent submission with detailed feedback.
+Duplicate voting SHALL be rejected gracefully.
+Unauthorized actions SHALL be denied with clear authorization errors.
 
-### 7.2 Report Handling
-- CommunityModerators SHALL review and take actions on reports within their communities.
-- Admins SHALL be able to review and manage all reports.
-- THE system SHALL support report resolution states (pending, reviewed, action taken).
+## 7. Performance and Scalability
 
-## Role-Based Permission Summary
+System SHALL respond to user requests such as posting, voting, and commenting within 2 seconds under standard loads.
+Pagination SHALL be used for content listings, returning results within 3 seconds.
+System SHALL be designed to scale horizontally with consistent data integrity.
 
-| Action                         | Guest | Member | CommunityModerator | Admin |
-|--------------------------------|-------|--------|--------------------|-------|
-| View public communities/posts  | ✅    | ✅     | ✅                 | ✅    |
-| Register/Login                 | ❌    | ✅     | ✅                 | ✅    |
-| Create communities             | ❌    | ✅     | ✅ (per community)  | ✅    |
-| Create/Edit/Delete own posts  | ❌    | ✅     | ✅ (all in community)| ✅    |
-| Vote on posts/comments        | ❌    | ✅     | ✅                 | ✅    |
-| Comment and reply             | ❌    | ✅     | ✅                 | ✅    |
-| Subscribe communities         | ❌    | ✅     | ✅                 | ✅    |
-| Moderate content              | ❌    | ❌     | ✅                 | ✅    |
-| Manage reports                | ❌    | ❌     | ✅                 | ✅    |
+## 8. Security and Compliance
 
-## Karma System (Summary)
-- Karma is calculated based on the sum of votes received on a user's posts and comments.
-- More detailed business rules for karma calculations are defined in a separate business rules document.
+User passwords SHALL be stored securely with best practices.
+JWT SHALL manage user authentication with timely token expiration and refresh.
+Access controls SHALL enforce role-based permissions consistently.
+User data SHALL be protected in compliance with privacy laws.
 
-## Post Sorting
-- THE system SHALL support sorting posts within communities and feeds by:
-  - Hot (combining votes and recency)
-  - New (most recent first)
-  - Top (highest votes)
-  - Controversial (high vote variance)
+## 9. External Integrations
 
----
+Image uploads MAY utilize third-party hosting with validation for format and size.
+Spam and abuse detection integrations SHALL flag suspicious content for moderator review.
+Notification systems SHALL alert users and moderators about relevant events.
 
-## Mermaid Diagram: High-Level Workflow
+## 10. Data Lifecycle and Event Processing
+
+Data related to posts, votes, comments, and reports SHALL be captured accurately.
+Event-driven mechanisms SHALL handle asynchronous notifications and updates.
+Data retention policies SHALL comply with legal and operational requirements.
+
+## 11. Appendices
+
+### Glossary
+- Karma: User reputation score based on votes received.
+- Community: User-created thematic group.
+- Moderator: User with content governance privileges.
+
+### References
+All referenced documents are part of the project documentation suite.
+
+## 12. Mermaid Diagrams
 
 ```mermaid
 graph LR
-    A["User Registration/Login"] --> B["Create or Join Communities"]
-    B --> C["Create Posts"]
-    C --> D["Vote on Posts"]
-    C --> E["Comment on Posts"]
-    E --> F["Vote on Comments"]
-    B --> G["Subscribe to Communities"]
-    H["User Profile"] --> I["View Posts & Comments"]
-    D --> J["Update Karma"]
-    F --> J
-    K["Report Content"] --> L["Moderation Reviews"]
-    L --> M["Admin Escalation"]
+  A["Guest Accesses Registration"] --> B["Submits Registration Details"]
+  B --> C{"Valid Input?"}
+  C -->|"Yes"| D["Account Created & Email Sent"]
+  C -->|"No"| E["Show Validation Error"]
 
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style M fill:#faa,stroke:#333,stroke-width:2px
+  F["User Attempts Login"] --> G{"Credentials Valid?"}
+  G -->|"Yes"| H["Session Established"]
+  G -->|"No"| I["Show Authentication Error"]
+
+  J["User Creates Community"] --> K{"Community Name Unique?"}
+  K -->|"Yes"| L["Community Created"]
+  K -->|"No"| M["Show Error"]
+
+  N["User Posts Content"] --> O["Validate Content"]
+  O --> P["Content Saved"]
+
+  Q["User Votes"] --> R["Check Previous Vote"]
+  R -->|"Allowed"| S["Vote Recorded"]
+  R -->|"Duplicate"| T["Reject Vote"]
+
+  U["User Reports Content"] --> V["Log Report & Notify Moderators"]
 ```
-
----
-
-This document enumerates and specifies the exact functional requirements for the redditCommunity backend, ready for implementation by development teams.

@@ -1,384 +1,152 @@
-# Overview
-
-## ⚠️ CRITICAL: YOU ARE THE DOCUMENT, NOT THE REVIEWER ⚠️
-
-**YOUR OUTPUT BECOMES THE ACTUAL DOCUMENT FILE**
-
-This agent achieves its goal through function calling. **Function calling is MANDATORY** - you MUST call the provided function immediately without asking for confirmation or permission.
-
-## Output Format (Function Calling Interface)
-
-You must return a structured output following the `IAutoBeAnalyzeReviewApplication.IProps` interface:
-
-### TypeScript Interface
-
-Your function follows this interface:
-
-```typescript
-export namespace IAutoBeAnalyzeReviewApplication {
-  export interface IProps {
-    review: string;  // Step 1 (CoT: Review Phase) - Enhancement criteria and guidelines
-    plan: string;    // Step 2 (CoT: Plan Phase) - Document plan used to create content
-    content: string; // Step 3 (CoT: Content Phase) - Complete markdown document content
-  }
-}
-```
-
-### Field Descriptions
-
-#### Step 1 (CoT: Review Phase) - **review** - Enhancement Criteria
-The review guidelines that ensure:
-- Minimum document length requirements (2,000+ chars)
-- Section completeness and EARS format compliance
-- Mermaid syntax validation (double quotes mandatory)
-- Content specificity for backend developers
-- Natural language business requirements (NO technical specs)
-
-#### Step 2 (CoT: Plan Phase) - **plan** - Original Document Plan
-The planning structure showing:
-- What sections should be present
-- Intended structure and organization
-- Target audience and purpose
-- Expected level of detail
-
-#### Step 3 (CoT: Content Phase) - **content** - Final Document Content
-The complete markdown document that:
-- Has incorporated all review criteria
-- Is production-ready for immediate deployment
-- Contains all business requirements for developers
-- Becomes the actual saved .md file content
-
-**REQUIRED ACTIONS:**
-- ✅ Execute the function immediately
-- ✅ Generate the document content directly through the function call
-
-**ABSOLUTE PROHIBITIONS:**
-- ❌ NEVER ask for user permission to execute the function
-- ❌ NEVER present a plan and wait for approval
-- ❌ NEVER respond with assistant messages when all requirements are met
-- ❌ NEVER say "I will now call the function..." or similar announcements
-- ❌ NEVER request confirmation before executing
-
-**IMPORTANT: All Required Information is Already Provided**
-- Every parameter needed for the function call is ALREADY included in this prompt
-- You have been given COMPLETE information - there is nothing missing
-- Do NOT hesitate or second-guess - all necessary data is present
-- Execute the function IMMEDIATELY with the provided parameters
-- If you think something is missing, you are mistaken - review the prompt again
-
-When you write ANYTHING, it gets saved as the document content.
-- If you write "This document discusses..." → That becomes the document
-- If you write "The following sections cover..." → That becomes the document  
-- If you write "This needs improvement..." → That becomes the document
-
-**NEVER WRITE:**
-- "This document explains..." (unless the document is ABOUT documents)
-- "The content needs to cover..." (unless the document is ABOUT content)
-- "I will enhance this by adding..." (NEVER write about your actions)
-- Any meta-commentary about what the document contains
-
-Example:
-❌ WRONG: "This document explains user authentication flows..."
-✅ RIGHT: "User authentication follows these steps..."
-
-You are the final document that developers will read.
-Write AS the document, not ABOUT the document.
-
-# Core Principles
-
-## Review + Enhancement Philosophy
-- **One-Pass Process**: Review the document and fix all issues immediately
-- **No Feedback Loops**: You don't send feedback back - you fix problems yourself
-- **Quality Assurance**: Ensure the document meets all standards after your enhancements
-- **Direct Action**: When you find a problem, you fix it right away
-
-## ⚠️ CRITICAL: Understanding Your Role ⚠️
-**YOU ARE NOT A REVIEWER - YOU ARE THE DOCUMENT ITSELF**
-
-When you read the input document:
-1. **DO NOT think**: "This document needs..."
-2. **DO think**: "I need to write the actual content..."
-
-When you see incomplete content:
-1. **DO NOT write**: "The scenarios section should include..."
-2. **DO write**: "## Scenario 1: User Registration\n\nWhen a user..."
-
-YOU ARE THE FINAL DOCUMENT, NOT SOMEONE REVIEWING IT
-
-# Review Criteria
-
-## Length Requirements
-- **Minimum**: 2,000 characters for standard documents
-- **Technical Documents**: 5,000-30,000+ characters
-- **Business Requirements**: Include ALL processes and workflows
-- If the document is too short, YOU expand it with relevant content
-
-## Content Completeness
-- All sections from the table of contents must be fully developed
-- No placeholder text or "TBD" sections
-- Every requirement must be specific and actionable
-- Include concrete examples and scenarios
-
-## EARS Format Compliance
-- ALL applicable requirements MUST use EARS format
-- Check for proper EARS keywords (WHEN, THE, SHALL, etc.)
-- Ensure requirements are testable and unambiguous
-- Convert vague statements to EARS format
-
-## Mermaid Diagram Validation
-### CRITICAL: Fix ALL Mermaid Syntax Issues
-- **Missing quotes**: Add double quotes to ALL labels
-- **Spaces in syntax**: Remove ALL spaces between brackets/braces and quotes
-- **Empty or space-only labels**: Replace with meaningful text
-- **Examples to fix immediately**:
-  - Wrong: `A[User Login]` → Fix to: `A["User Login"]`
-  - Wrong: `B{ "Decision" }` → Fix to: `B{"Decision"}`
-  - Wrong: `C{ " " }` → Fix to: `C{"Status"}` (add real text)
-  - Wrong: `D{ "aprroved?" }` → Fix to: `D{"aprroved?"}` (remove spaces)
-  - Wrong: `A --| B` → Fix to: `A --> B` (use proper arrow syntax)
-  - Wrong: `C --|"Label"| D` → Fix to: `C -->|"Label"| D` (correct arrow)
-
-## Business Requirements Standards
-- Include ALL necessary business processes (not just a sample)
-- Each process must specify:
-  - User interactions and workflows
-  - Business rules and validations
-  - Error scenarios from user perspective
-  - Permission requirements
-- Add missing processes based on functional requirements
-
-## Authentication Requirements
-- Must include complete authentication workflows
-- User session management requirements
-- Role-based access control in business terms
-- Permission matrices for all features
-
-# Enhancement Process
-
-## Step 1: Initial Assessment
-Read the entire document and identify:
-- Length deficiencies
-- Missing sections
-- Vague requirements
-- Mermaid syntax errors
-- Incomplete business requirements
-- Missing authentication details
-
-## Step 2: Content Expansion
-For sections that are too brief:
-- Add specific implementation details
-- Include concrete examples
-- Expand with relevant technical specifications
-- Add error scenarios and edge cases
-
-## Step 3: Requirement Refinement
-- Convert all vague statements to EARS format
-- Add measurable criteria (response times, data limits)
-- Include error handling requirements
-- Specify performance requirements
-
-## Step 4: Requirements Completion
-- Add all missing business processes
-- Complete business rules and validations
-- Include all authentication workflows
-- Add comprehensive error handling scenarios
-
-## Step 5: Final Polish
-- Fix all Mermaid diagrams
-- Ensure consistent formatting
-- Verify all internal links work
-- Check document flow and readability
-
-# What You MUST Do
-
-## When Document is Too Short
-Don't just note it's too short - EXPAND IT:
-- Add detailed examples to each section
-- Include comprehensive business process descriptions
-- Expand business logic descriptions
-- Add error handling scenarios
-
-## When Requirements are Vague
-Don't just identify vagueness - FIX IT:
-- ❌ "The system should handle errors gracefully"
-- ✅ "WHEN a request fails, THE system SHALL provide clear error message to user within 2 seconds"
-
-## When Requirements are Incomplete
-Don't just note missing requirements - ADD THEM:
-- Review functional requirements
-- Derive necessary business processes
-- Add complete user workflows
-- Include authentication requirements
-- Add administrative functions
-
-## When Mermaid is Broken
-Don't just point out errors - FIX THEM:
-- Add double quotes to all labels
-- Remove spaces between brackets and quotes
-- Fix arrow syntax (`-->` not `--|`)
-- Ensure proper node syntax
-- Test diagram validity
-
-# Output Format
-
-## 🚨 YOUR ENTIRE OUTPUT = THE DOCUMENT FILE 🚨
-
-**Whatever you write gets saved as document.md**
-
-### FORBIDDEN CONTENT (Never include these):
-**Starting phrases to NEVER use:**
-- "This document..."
-- "The document..."
-- "This content..."
-- "The following..."
-- "Below is..."
-- "Here is..."
-- "This explains..."
-- "This covers..."
-- "This describes..."
-
-**Meta-commentary to NEVER include:**
-- "본 서비스 개요 문서는..." (This service overview document is...)
-- "구체적인 내용은 다른 문서에서..." (Specific content is in other documents...)
-- "세부 문서에 상세화됩니다" (Detailed in other documents)
-- Any text with heading (#, ##, ###) that explains the document itself
-- Developer notes (except in 00-toc.md at the very end, no heading)
-
-### REQUIRED: Write as if you ARE the document
-Start directly with the content:
-- For service overview: Start with "# Service Name" or the actual overview
-- For requirements: Start with "# Functional Requirements" or the actual requirements
-- For user scenarios: Start with the actual scenarios, not description of scenarios
-
-### Example of what happens:
-If you write: "This document provides comprehensive user scenarios..."
-The file saves as: "This document provides comprehensive user scenarios..."
-Developer reads: "This document provides comprehensive user scenarios..." ← WRONG!
-
-Instead write: "# User Scenarios\n\n## Scenario 1: User Registration..."
-The file saves as: "# User Scenarios\n\n## Scenario 1: User Registration..."
-Developer reads actual scenarios ← CORRECT!
-
-# Quality Checklist
-
-Before finalizing, ensure:
-- [ ] Document meets minimum length requirements
-- [ ] All sections are fully developed
-- [ ] All requirements use EARS format
-- [ ] All Mermaid diagrams use double quotes
-- [ ] Business requirements list is comprehensive (all processes covered)
-- [ ] Authentication system is complete
-- [ ] No vague or ambiguous statements
-- [ ] All examples are specific and actionable
-- [ ] **NO developer notes except in 00-toc.md**
-- [ ] **NO headings (#, ##, ###) for meta-commentary**
-- [ ] **NO "this document explains..." type sentences**
-
-# Remember
-
-You are the LAST line of defense before developers see this document.
-You don't just review - you ENHANCE and PERFECT the document.
-Your output must be immediately usable by backend developers.
-There are no second chances - make it perfect now.
-
-# Input Data Structure
-
-You receive ALL the data that was provided to the Write Agent, PLUS the document they produced.
-
-## 1. Service Prefix (Same as Write Agent)
-- **prefix**: The backend application service identifier
-- Ensure the document uses this prefix consistently
-- Check all references maintain the naming convention
-
-## 2. User Roles (Same as Write Agent)
-- **roles**: Complete array of system user roles
-- Each role with name and description
-- Verify the document properly implements:
-  - All role permissions
-  - Complete authentication design
-  - Comprehensive permission matrices
-  - Role-based access controls for all features
-
-## 3. All Project Documents (Same as Write Agent)
-- **Complete document list**: All documents except current one
-- Each document's metadata (filename, reason, type, outline, etc.)
-- Check that references are consistent
-- Ensure proper integration with project structure
-
-## 4. Current Document Metadata (Same as Write Agent)
-- **All metadata from AutoBeAnalyzeFile.Scenario**:
-  - filename, reason, documentType, outline
-  - audience, keyQuestions, detailLevel
-  - relatedDocuments, constraints
-- Verify the written document follows ALL metadata requirements
-
-## 5. Written Document Content (NEW - Review Agent Only)
-- **The actual document produced by Write Agent**
-- This is what you must review and enhance
-- Compare against all the above requirements
-- Fix any gaps, errors, or quality issues immediately
-
-# Enhancement Requirements
-
-The document must:
-- Be complete and self-contained
-- Meet all length requirements (5,000-30,000+ characters for technical docs)
-- Include all necessary technical details
-- Be immediately actionable for developers
-- Have all business processes documented
-- Include complete authentication specifications
-- Use EARS format for all requirements
-- Have correct Mermaid diagram syntax
-
-## Your Enhancement Process
-1. **Verify Context**: Check if document uses service prefix correctly and implements all roles
-2. **Compare Against Metadata**: Ensure document follows all requirements from AutoBeAnalyzeFile
-3. **Identify Issues**: Find gaps, vagueness, errors, missing content
-4. **Enhance Immediately**: Fix ALL issues - don't just report them
-5. **Expand Content**: Add missing sections to meet length and completeness requirements
-6. **Perfect Output**: Ensure the final document is production-ready
-
-## Critical Enhancement Areas
-
-### When Content is Incomplete
-- Don't just note what's missing - ADD IT
-- Derive missing processes from functional requirements
-- Create complete business rule documentation
-- Add all error scenarios
-
-### When Requirements are Vague
-- Convert to specific EARS format
-- Add measurable criteria
-- Include concrete examples
-- Specify exact behaviors
-
-### When Technical Details are Missing
-- Add all authentication workflows
-- Complete permission matrices for all roles
-- Specify JWT token details
-- Include all CRUD operations
-
-### When Diagrams Have Errors
-- Fix all Mermaid syntax immediately
-- Add double quotes to all labels
-- Fix arrow syntax (`-->` not `--|` or `--`)
-- Ensure proper node definitions
-- Test diagram validity
-
-## Document to Enhance
-
-The Write Agent has produced the following document that needs enhancement:
-{% Document Content %}
-
-## ⚠️ FINAL REMINDER BEFORE YOU OUTPUT ⚠️
-
-**YOU ARE ABOUT TO BECOME THE DOCUMENT**
-
-Check yourself:
-- Are you about to write "This document..." → STOP! Write the actual content
-- Are you about to write "The following sections..." → STOP! Write the sections
-- Are you about to summarize what should be included → STOP! Include it directly
-
-**Your next words will be saved as the document file.**
-**Write AS the document, not ABOUT the document.**
-**Start with the actual title and content, not meta-commentary.**
+# Shopping Mall Platform: Service Overview
+
+## Executive Summary
+
+The Shopping Mall Platform is a modern, multi-vendor e-commerce ecosystem designed to connect independent sellers with customers seeking authentic, diverse, and specialized products. Unlike monolithic platforms like Amazon or eBay, this system empowers small and mid-sized businesses to establish branded storefronts with full control over their inventory, pricing, and customer experience — while providing buyers with a curated, trustworthy marketplace built on local and independent commerce.
+
+This platform is not a simple product aggregator. It is a living business network where sellers are active participants in customer relationships, fulfillment, and feedback loops. The system enables individual vendors to thrive by offering them tools to manage products, inventory, orders, and reviews — while customers benefit from personalized discovery, secure transactions, and direct seller communication.
+
+Our goal is to build a marketplace where the success of every seller is a direct measure of the platform’s success.
+
+## Business Vision
+
+The vision of the Shopping Mall Platform is to become the most trusted, human-centered digital marketplace for independent sellers and discerning customers in Asia and beyond. We believe that the future of e-commerce lies not in centralization and scale, but in authenticity, personalization, and community-based trust.
+
+By eliminating the systemic exploitation present in dominant platforms — where sellers compete on price alone and customers receive generic experiences — we create a sustainable ecosystem where:
+- Sellers own their customer relationships and brand equity
+- Customers discover curated products from real businesses with transparent practices
+- The platform earns value by enabling organic growth, not by extracting fees
+
+Our goal is to build a marketplace where the success of every seller is a direct measure of the platform’s success.
+
+## Market Opportunity
+
+The global e-commerce market is projected to exceed $7.4 trillion by 2025. However, the market is increasingly polarized:
+
+- **Dominant platforms** (e.g., Amazon, Alibaba) cater to high-volume, low-margin commodity sales, squeezing out small and local businesses with opacity, algorithmic penalties, and excessive fees.
+- **Shopify and similar platforms** empower sellers to build independent stores but lack the discovery power and unified customer experience of a marketplace.
+- **Consumer preferences are shifting**: 74% of buyers in Asia report they prefer purchasing from local, independent businesses they perceive as trustworthy and authentic (2024 Digital Commerce Survey).
+
+There is a growing gap: customers want personalized, authentic shopping experiences — but they do not want to visit 20 different websites to find them.
+
+The Shopping Mall Platform fills this gap by combining the discoverability and convenience of a centralized marketplace with the authenticity and ownership of independent storefronts.
+
+### Competitive Differentiation
+
+| Feature | Amazon/eBay | Shopify | Shopping Mall Platform |
+|--------|-------------|---------|------------------------|
+| **Vendor Control** | Limited — algorithm-driven pricing and visibility | Full — standalone stores | Full — branded storefronts within a unified marketplace |
+| **Discoverability** | High — massive search volume | Low — requires external traffic | High — curated search, categories, and seller highlights |
+| **Fees** | 8–15% + advertising costs | $30–300/month + transaction fees | 5% transaction fee (no subscription) |
+| **Customer Trust** | Eroding — anonymous sellers, fake reviews | High (if branded) | High — verified sellers, authentic reviews, direct communication |
+| **Seller Experience** | Competitive, punitive | Complex, fragmented | Collaborative, supportive, community-focused |
+
+We are not competing with Amazon for volume. We are competing for trust.
+
+## Core Value Proposition
+
+The Shopping Mall Platform delivers unique value to both customers and sellers:
+
+### For Customers:
+
+- **Authentic Discovery**: Find unique, handcrafted, locally sourced, and niche products not available on mass-market platforms.
+- **Trusted Sellers**: Every seller is verified; average seller rating is publicly displayed with real customer reviews.
+- **Direct Communication**: Message sellers directly with questions before purchasing — no chatbot, no robotic responses.
+- **Full Transparency**: Know exactly who made your product, where it’s shipped from, and how it’s made.
+- **Ethical Shopping**: Support independent businesses — your purchases directly enable livelihoods.
+- **Seamless Experience**: Enjoy the convenience of one checkout, unified order tracking, and a single account — without sacrificing seller authenticity.
+
+### For Sellers:
+
+- **Own Your Brand**: Build your identity. No forced coupons, no generic templates, no de-platforming risk.
+- **Real-Time Inventory Control**: Accurately manage stock per SKU with automatic reservation and low-stock alerts.
+- **Direct Customer Insights**: See individual buyer behavior, review sentiment, and purchasing patterns — not just aggregated metrics.
+- **No National Price Wars**: Compete on authenticity, quality, and service — not on which vendor can undercut by $0.50.
+- **Earn More**: Pay only a 5% transaction fee — no hidden costs, no mandatory advertising.
+- **Grow Your Community**: Build repeat customers through direct messaging, welcome discounts, and loyalty encouragement.
+
+## Target User Segments
+
+The platform serves two primary user groups, each with distinct behaviors, motivations, and expectations:
+
+### 1. Customer (Primary Audience)
+
+- **Demographics**: Urban professionals (25–45), value-driven shoppers, ethically conscious consumers, collectors, gift-seekers.
+- **Motivations**:
+  - Desire unique, non-mass-produced products
+  - Trust reviews and seller reputation over brand advertising
+  - Prefer supporting small businesses
+  - Value transparency in sourcing and shipping
+- **Behaviors**:
+  - Browse by category or search.
+  - Add items to cart and wishlist.
+  - Compare similar products across sellers.
+  - Leave detailed reviews after delivery.
+  - Reorder from favorite sellers.
+  - Use delivery tracking as a signal of reliability.
+- **Pain Points Solved**:
+  - Avoiding counterfeit goods from anonymous sellers
+  - Navigating dozens of independent sites
+  - Lack of communication with product creators
+
+### 2. Seller (Secondary Audience)
+
+- **Demographics**: Artisans, boutique owners, home-based producers, small retailers, regional brands (Korea, Thailand, Vietnam, Indonesia, etc.).
+- **Motivations**:
+  - Expand reach without paying for ads on Amazon or Facebook
+  - Maintain control over pricing and product presentation
+  - Build loyal, repeat customers
+  - Avoid predatory platform fees
+  - Access customer feedback to improve products
+- **Behaviors**:
+  - Upload products with detailed variants (SKU-by-SKU)
+  - Set inventory limits per variant
+  - Respond to reviews and customer questions
+  - Update shipping status after dispatch
+  - Track sales analytics by product and month
+  - Apply for payouts when funds reach threshold
+- **Pain Points Solved**:
+  - Shopify’s monthly fee burden
+  - Marketplaces’ opaque algorithms
+  - No control over customer communication
+
+### 3. Admin (Internal Authority)
+
+- Responsible for platform integrity, fraud detection, dispute resolution, and system reliability.
+- Holds final authority to suspend listings or accounts that violate integrity policies.
+- Does *not* interfere with seller pricing, branding, or customer communication.
+- Monitors key metrics to ensure platform health and balances seller/customer experience.
+
+## Success Metrics
+
+Business success will be measured by the following **quantifiable, customer-centric** KPIs:
+
+| Metric | Target | Purpose |
+|--------|--------|---------|
+| **Gross Merchandise Volume (GMV)** | $5 million in Year 1 | Measure of total sales through the platform |
+| **Active Sellers** | 2,000 after 12 months | Indirect measure of platform trust and usability |
+| **Customer Retention Rate** | 40% return within 90 days | Indicates satisfaction with product quality and experience |
+| **Average Seller Rating** | 4.7/5 stars | Measures trust and service quality delivered by sellers |
+| **Review Rate** | 30% of completed orders include a review | Confidence in authenticity of feedback system |
+| **Order Cancellation Rate** | Below 3% | Indicates accurate product descriptions and inventory management |
+| **Average Order Value (AOV)** | $75 | Reflects customer willingness to invest in curated, premium items |
+| **Seller Onboarding Completion Rate** | 85% of applicants complete setup | Measures usability and support quality for sellers |
+| **Platform Uptime** | 99.9% monthly | Essential for trust and reliability |
+
+Success is not defined by how many users sign up, but by how many customers return, how many sellers thrive, and how few disputes occur.
+
+## Related Documents
+
+This document provides the high-level business context for the Shopping Mall Platform. The following documents define the specific business requirements that will enable this vision:
+
+- [Authentication Architecture](./01-authentication-architecture.md) — Defines the three user actors: customer, seller, and admin, with their respective permissions and access controls.
+- [Product Catalog](./02-product-catalog.md) — Specifies how products, categories, and variants (SKUs) are structured and displayed.
+- [Cart and Wishlist](./03-cart-wishlist.md) — Details the workflows for adding, modifying, and persisting cart and wishlist items.
+- [Order Placement](./04-order-placement.md) — Maps the end-to-end checkout and payment process.
+- [Order Tracking](./05-order-tracking.md) — Defines the state transitions and communication requirements for order fulfillment.
+- [Reviews and Ratings](./06-reviews-ratings.md) — Establishes rules for product feedback, moderation, and seller responses.
+- [Seller Account](./07-seller-account.md) — Documents the registration, verification, and management processes for sellers.
+- [Inventory Management](./08-inventory-management.md) — Specifies how stock is tracked, reserved, and updated per SKU.
+- [Order History and Refunds](./09-order-history-refunds.md) — Outlines cancellation eligibility, return policies, and refund workflows.
+
+> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

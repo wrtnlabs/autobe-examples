@@ -6,106 +6,78 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 
-/**
- * Test administrator login operation with existing admin account.
- *
- * This test ensures that an administrator can successfully register (join) and
- * then authenticate (login) with valid credentials. It also validates error
- * scenarios such as login failures due to wrong passwords or non-existent
- * emails.
- *
- * Steps:
- *
- * 1. Register a new admin user with a valid email and password hash.
- * 2. Attempt to login with the exact credentials used for registration.
- * 3. Verify successful login response contains a valid JWT token.
- * 4. Attempt login with incorrect password to assert failure.
- * 5. Attempt login with non-existent email to assert failure.
- */
 export async function test_api_admin_login_existing(
   connection: api.IConnection,
 ) {
-  // Generate new admin email and password hash
-  const adminEmail = typia.random<string & tags.Format<"email">>();
-  const adminPassword = RandomGenerator.alphaNumeric(16);
-  // For testing purpose, simulate password_hash as the password string
-
-  // 1. Register a new admin user via join
-  const adminCreate = {
+  // 1. Admin joins to create a new admin account
+  const adminEmail: string = typia.random<string & tags.Format<"email">>();
+  const adminJoinBody = {
     email: adminEmail,
-    password_hash: adminPassword,
+    password: "Str0ngP@ssw0rd!",
     full_name: RandomGenerator.name(),
-    phone_number: RandomGenerator.mobile(),
-    status: "active",
-  } satisfies IShoppingMallAdmin.ICreate;
-
-  const joinedAdmin: IShoppingMallAdmin.IAuthorized =
-    await api.functional.auth.admin.join(connection, {
-      body: adminCreate,
-    });
+  } satisfies IShoppingMallAdmin.IJoin;
+  const joinedAdmin = await api.functional.auth.admin.join(connection, {
+    body: adminJoinBody,
+  });
   typia.assert(joinedAdmin);
   TestValidator.equals(
-    "joined admin email",
+    "joined admin email matches input",
     joinedAdmin.email,
-    adminCreate.email,
+    adminJoinBody.email,
+  );
+  TestValidator.predicate(
+    "token.access is non-empty",
+    joinedAdmin.token.access.length > 0,
   );
 
-  // Prepare login input with correct credentials
-  const loginInputCorrect = {
+  // 2. Admin login with valid credentials
+  const adminLoginBody = {
     email: adminEmail,
-    password: adminPassword,
-    type: "admin",
-    remember_me: true,
+    password: "Str0ngP@ssw0rd!",
+    href: "https://admin.shoppingmall.com/login",
+    referrer: "https://admin.shoppingmall.com",
   } satisfies IShoppingMallAdmin.ILogin;
-
-  // 2. Attempt login with correct credentials
-  const loggedInAdmin: IShoppingMallAdmin.IAuthorized =
-    await api.functional.auth.admin.login(connection, {
-      body: loginInputCorrect,
-    });
-  typia.assert(loggedInAdmin);
-
+  const loginResult = await api.functional.auth.admin.login(connection, {
+    body: adminLoginBody,
+  });
+  typia.assert(loginResult);
   TestValidator.equals(
-    "logged in admin email equals created admin email",
-    loggedInAdmin.email,
-    adminEmail,
+    "login result email matches",
+    loginResult.email,
+    adminLoginBody.email,
   );
-
   TestValidator.predicate(
-    "logged in admin has non-empty access token",
-    typeof loggedInAdmin.token.access === "string" &&
-      loggedInAdmin.token.access.length > 0,
+    "login token access is non-empty",
+    loginResult.token.access.length > 0,
   );
 
-  TestValidator.predicate(
-    "logged in admin has non-empty refresh token",
-    typeof loggedInAdmin.token.refresh === "string" &&
-      loggedInAdmin.token.refresh.length > 0,
+  // 3. Admin login with invalid password
+  await TestValidator.error(
+    "login should fail with incorrect password",
+    async () => {
+      await api.functional.auth.admin.login(connection, {
+        body: {
+          email: adminEmail,
+          password: "WrongPassword!",
+          href: "https://admin.shoppingmall.com/login",
+          referrer: "https://admin.shoppingmall.com",
+        } satisfies IShoppingMallAdmin.ILogin,
+      });
+    },
   );
 
-  // 4. Attempt login with incorrect password
-  const loginInputWrongPassword = {
-    email: adminEmail,
-    password: RandomGenerator.alphaNumeric(16), // wrong password
-    type: "admin",
-  } satisfies IShoppingMallAdmin.ILogin;
-
-  await TestValidator.error("login fails with incorrect password", async () => {
-    await api.functional.auth.admin.login(connection, {
-      body: loginInputWrongPassword,
-    });
-  });
-
-  // 5. Attempt login with non-existent email
-  const loginInputNonExistEmail = {
-    email: `nonexist_${RandomGenerator.alphaNumeric(8)}@example.com`,
-    password: adminPassword,
-    type: "admin",
-  } satisfies IShoppingMallAdmin.ILogin;
-
-  await TestValidator.error("login fails with non-existent email", async () => {
-    await api.functional.auth.admin.login(connection, {
-      body: loginInputNonExistEmail,
-    });
-  });
+  // 4. Admin login with unregistered email
+  await TestValidator.error(
+    "login should fail with unknown email",
+    async () => {
+      await api.functional.auth.admin.login(connection, {
+        body: {
+          email: typia.random<string & tags.Format<"email">>(),
+          password: "Str0ngP@ssw0rd!",
+          href: "https://admin.shoppingmall.com/login",
+          referrer: "https://admin.shoppingmall.com",
+        } satisfies IShoppingMallAdmin.ILogin,
+      });
+    },
+  );
 }

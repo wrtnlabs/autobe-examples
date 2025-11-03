@@ -1,132 +1,166 @@
-# Functional Requirements Analysis for Economic and Political Discussion Board
+# Requirements Analysis Report for Economic and Political Discussion Board
 
-## 1. Introduction
-This document details the functional requirements of a simple web-based discussion board platform focused on economic and political topics. The system supports user-generated discussion topics and threaded replies with basic moderation capabilities. This document is intended for backend developers and outlines all necessary business rules, user roles, workflows, and constraints.
+## 1. Service Overview
 
-## 2. User Roles and Permissions
+### 1.1 Business Model
 
-### 2.1 User Roles
-- **Guest**: Unauthenticated users who can browse discussion topics and view posts but cannot create or reply to content.
-- **Member**: Authenticated users who can create new discussion topics, reply to existing posts, and manage their own profiles.
-- **Moderator**: Users with elevated privileges to manage posts and replies, including editing and deleting content deemed inappropriate.
-- **Admin**: System administrators with full privileges including user management, system configuration, and moderation oversight.
+The economic and political discussion board provides a focused platform where users can create, share, and discuss articles related to economic and political topics. The service aims to be simple and minimal to reduce barriers to participation while supporting rich content through image and file attachments.
 
-### 2.2 Permissions Summary Table
-| Action                     | Guest | Member | Moderator | Admin |
-|----------------------------|:-----:|:------:|:---------:|:-----:|
-| Browse and view discussions |  ✅   |   ✅    |    ✅     |  ✅   |
-| Create new discussion topics|  ❌   |   ✅    |    ✅     |  ✅   |
-| Reply to posts              |  ❌   |   ✅    |    ✅     |  ✅   |
-| Edit own posts/replies      |  ❌   |   ✅    |    ✅     |  ✅   |
-| Edit others' posts/replies  |  ❌   |   ❌    |    ✅     |  ✅   |
-| Delete posts/replies        |  ❌   |   ❌    |    ✅     |  ✅   |
-| User management             |  ❌   |   ❌    |    ❌     |  ✅   |
-| System config management    |  ❌   |   ❌    |    ❌     |  ✅   |
+The core features include article creation and management, user authentication, role-based access control with guest, member, and admin roles, a commenting system, attachment support, and search and pagination functionalities.
 
-## 3. Posting Discussions
+Success of the service is measured by user engagement metrics such as daily and monthly active users, number of articles created, attachment usage rate, and system responsiveness under expected load conditions.
 
-### 3.1 Creating a New Discussion Topic
-- WHEN a member submits a new discussion topic, THE system SHALL validate the content and store it under either the "Economic" or "Political" category.
-- THE discussion topic SHALL have a title and a body of text content.
-- THE title SHALL be between 5 and 100 characters.
-- THE body content SHALL not exceed 5000 characters.
-- IF the content includes profanity, THEN THE system SHALL reject the submission and return an appropriate error message.
-- THE system SHALL categorize the topic as either "Economic" or "Political" based on user selection.
-- WHEN a new discussion topic is successfully created, THE system SHALL make it visible to all users immediately.
+### 1.2 Business Strategy
 
-### 3.2 Editing and Deleting Topics
-- WHEN a member edits their own discussion topic, THE system SHALL allow edits within 24 hours of original posting.
-- WHEN a moderator or admin edits any discussion topic, THE system SHALL update the content immediately.
-- WHEN a moderator or admin deletes a discussion topic, THE system SHALL remove it and all associated replies from view.
+The service focuses on organic growth by attracting users interested in economic and political discussions, with potential future monetization through advertising or premium features. The system emphasizes simplicity, scalability, and security to ensure consistent user experience without unnecessary complexity.
 
-## 4. Replying to Posts
+## 2. User Actors
 
-### 4.1 Creating Replies
-- WHEN a member adds a reply to a discussion topic, THE system SHALL validate the reply content.
-- THE reply content SHALL not exceed 1000 characters.
-- IF the reply contains profanity, THEN THE system SHALL reject it and return an error.
-- THE system SHALL associate the reply to the correct discussion topic.
-- THE system SHALL make the reply visible immediately after acceptance.
+### 2.1 Guest
 
-### 4.2 Editing and Deleting Replies
-- WHEN a member edits their own reply, THE system SHALL allow edits within 24 hours.
-- WHEN a moderator or admin edits or deletes any reply, THE system SHALL update or remove it respectively.
+- Guests are unauthenticated users who can only view published articles and associated attachments.
+- Guests SHALL NOT create, edit, or delete articles or comments.
+- Guests SHALL receive an error message if attempting unauthorized actions.
 
-## 5. User Registration and Login
+### 2.2 Member
 
-### 5.1 Registration
-- WHEN a guest submits registration details, THE system SHALL validate the email format and password strength.
-- THE password SHALL be at least 8 characters, including letters and numbers.
-- THE system SHALL verify email uniqueness.
-- WHEN registration is successful, THE system SHALL create a member account.
+- Members are authenticated users who can create, edit, and delete their own articles.
+- Members SHALL be able to upload images and file attachments within specified size and format limits.
+- Members SHALL be able to comment on articles and edit or delete their own comments.
+- Members SHALL NOT edit or delete others' content.
 
-### 5.2 Login and Session Management
-- WHEN a member submits login credentials, THE system SHALL authenticate the user.
-- IF credentials are invalid, THEN THE system SHALL return an authentication failure message.
-- THE system SHALL maintain user sessions securely for continuous authentication.
+### 2.3 Admin
 
-### 5.3 Profile Management
-- THE system SHALL allow members to update basic profile information such as display name.
+- Admins have full permissions to manage all content and user accounts.
+- Admins SHALL be able to remove inappropriate articles, comments, or users.
+- Admins SHALL have access to system settings and audit logs.
 
-## 6. Browsing and Searching Discussions
+## 3. Functional Requirements
 
-### 6.1 Browsing
-- THE system SHALL provide a paginated list of discussion topics ordered by latest activity (newest posts and replies first).
-- EACH page SHALL display up to 20 discussion topics.
-- THE system SHALL allow filtering discussion topics by category (Economic or Political).
+### 3.1 Article Management
 
-### 6.2 Searching
-- WHEN a user performs a search query by keywords, THE system SHALL return matching discussion topics.
-- THE search SHALL be case-insensitive and support partial matches within titles and bodies.
-- THE search response SHALL be paginated with the same page size of 20.
+- WHEN a member creates an article, THE system SHALL store the article with associated attachments.
+- THE article must have a non-empty title with a maximum length of 200 characters.
+- THE article content SHALL support rich text in Markdown format and be limited to 10,000 characters.
+- Members SHALL be able to edit or delete their own articles.
+- THE system SHALL prevent unauthorized editing or deletion by other users.
 
-## 7. Business Rules and Constraints
+### 3.2 Attachment Support
 
-### 7.1 Content Limits
-- Discussion titles: minimum 5 characters, maximum 100 characters.
-- Discussion bodies: maximum 5000 characters.
-- Reply bodies: maximum 1000 characters.
+- THE system SHALL support uploading image attachments in JPEG, PNG, and GIF formats.
+- THE system SHALL support file attachments including PDF, DOCX, XLSX, and TXT formats.
+- Attachments SHALL be limited to 10 MB in size.
+- An article SHALL support up to 10 attachments.
+- THE system SHALL sanitize and validate file content to prevent security risks.
+- WHEN an article is deleted, ALL associated attachments SHALL be removed.
 
-### 7.2 Profanity Filtering
-- THE system SHALL apply a simple profanity filter to posts and replies.
-- IF profanity is detected, THE system SHALL reject the content and notify the user.
+### 3.3 Commenting System
 
-### 7.3 Moderation
-- Moderators SHALL be able to edit or delete any content immediately.
-- Members can only edit their own content and only within 24 hours of posting.
+- Members SHALL be able to post comments linked to articles.
+- Comments SHALL be limited to 1000 characters.
+- Members SHALL be able to edit or delete their own comments.
+- Admins SHALL have the ability to moderate all comments.
 
-## 8. Use Case Diagrams and Workflows
+### 3.4 Article Listing and Search
+
+- Articles SHALL be listed in descending order of creation date.
+- THE system SHALL paginate articles with 20 articles per page.
+- THE system SHALL allow filtering articles by tags or keywords.
+- A basic search SHALL be provided over article titles and content.
+- THE system SHALL return search results within 2 seconds for queries over the 1000 most recent articles.
+
+### 3.5 Authentication and Authorization
+
+- THE system SHALL support user registration and login using username/email and password.
+- Authentication SHALL use secure password hashing and JWT token-based session management.
+- THE system SHALL restrict article creation, editing, deletion, and commenting to authenticated members.
+- Administrative functions SHALL be restricted to admin users.
+
+## 4. Business Rules and Validation
+
+- Articles SHALL have a non-empty title and content.
+- Title length SHALL NOT exceed 200 characters.
+- Content length SHALL NOT exceed 10,000 characters.
+- Attachments SHALL comply with allowed formats and size limits.
+- Members SHALL only modify or delete their own articles and comments.
+- Unauthorized attempts SHALL be logged and result in access denial.
+
+## 5. Error Handling
+
+### 5.1 User Errors
+
+- WHEN a guest attempts a restricted action, THE system SHALL respond with HTTP 401 Unauthorized and error code AUTH_REQUIRED.
+- WHEN file size limits are exceeded, THE system SHALL respond with HTTP 413 Payload Too Large.
+- WHEN unsupported file formats are uploaded, THE system SHALL respond with HTTP 415 Unsupported Media Type.
+
+### 5.2 System Errors
+
+- ON storage failures during uploads, THE system SHALL respond with HTTP 503 Service Unavailable.
+- ON database errors during article transactions, THE system SHALL roll back transactions and respond with HTTP 500 Internal Server Error.
+
+### 5.3 Recovery
+
+- THE system SHALL allow users to retry failed uploads.
+- ALL errors SHALL be logged with sufficient context for administrative review.
+
+## 6. Performance Expectations
+
+- Article creation, editing, and deletion SHALL complete within 2 seconds under typical load.
+- Article listing pages SHALL load within 3 seconds.
+- Search queries SHALL complete within 2 seconds for up to 1000 recent articles.
+- The system SHALL support at least 100 concurrent users without performance degradation.
+
+## 7. Security and Privacy
+
+- THE system SHALL use industry-standard password hashing algorithms.
+- JWT session tokens SHALL have expiration and refresh mechanisms.
+- Role-based authorization SHALL be strictly enforced.
+- Sensitive data SHALL be stored securely with encryption where applicable.
+- THE system SHALL log authentication and authorization events for auditing.
+
+## 8. User Scenarios
+
+### 8.1 Article Creation
+- WHEN a member creates an article with attachments, THE system SHALL validate input and store the article and attachments.
+- IF validation fails, THE system SHALL provide clear error messages.
+
+### 8.2 Article Editing
+- WHEN a member edits an article, THE system SHALL validate ownership and apply changes.
+- Unauthorized edits SHALL be denied with error responses.
+
+### 8.3 Article Deletion
+- WHEN a member deletes an article, THE system SHALL delete the article and related attachments.
+- Admins SHALL be able to delete any article.
+
+### 8.4 Commenting
+- WHEN a member posts a comment, THE system SHALL associate it with the article and member.
+- Editing and deletion apply similarly as with articles.
+
+### 8.5 Authentication
+- User registration, login, logout, password reset, and session refresh SHALL be supported.
+
+## 9. Mermaid Diagrams
 
 ```mermaid
 graph LR
-  subgraph "User Actions"
-    A["Guest Browses Discussions"] --> B["Registers or Logs In"]
-    B --> C["Views Discussion List"]
-    C -->|"Filters by Category"| D["Filtered List"]
-    C -->|"Searches Keyword"| E["Search Results"]
-    C -->|"Selects Discussion"| F["View Discussion Details"]
-  end
-
-  subgraph "Member Actions"
-    F --> G["Creates New Discussion"]
-    F --> H["Replies to Post"]
-    G --> I["Edits Own Discussion (within 24h)"]
-    H --> J["Edits Own Reply (within 24h)"]
-  end
-
-  subgraph "Moderator/ Admin Actions"
-    M["Moderates Content"]
-    M -->|"Edits or Deletes Posts/Replies"| N["Updates Content"]
-    M -->|"Manages Users and System"| O["Admin Functions"]
-  end
-
-  G --> F
-  H --> F
-  N --> F
+  A["User Sends Article Creation Request"] --> B["Validate Input"]
+  B --> C{"Valid?"}
+  C -->|"Yes"| D["Store Article and Attachments"]
+  C -->|"No"| E["Return Validation Errors"]
+  D --> F["Publish Article"]
+  E --> G["Notify User of Errors"]
 ```
 
-## Summary
-This document strictly defines the functional requirements of the discussion board, focusing on user roles, posting and replying functionality, user authentication, browsing and searching capabilities, and core business constraints like content length limits and profanity filtering. The workflows and roles described provide a clear foundation for backend implementation of a simple, effective economic and political discussion platform.
+```mermaid
+graph LR
+  Login["User Login"] --> Auth["Authentication Check"]
+  Auth -->|"Success"| Token["Issue JWT Token"]
+  Auth -->|"Fail"| Error["Return Unauthorized"]
+```
+
+## 10. References
+
+- Related documents: User Actors, Service Overview, Business Rules.
 
 
-> This document provides business requirements only. All technical implementation decisions belong to developers. Developers have full autonomy over architecture, APIs, and database design. This document describes WHAT the system should do, not HOW to build it.
+> This report captures all business requirements in clear, measurable terms, suitable for immediate backend development. It avoids technical implementation specifics while providing comprehensive functional, security, and error scenarios necessary for a minimal yet robust economic/political discussion board backend.

@@ -1,1 +1,0 @@
-Enhanced document content directly

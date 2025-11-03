@@ -1,170 +1,179 @@
-/// Discussion threads (top-level topics). Canonical thread metadata only —
-/// no pre-calculated aggregates. Refer to category ({@link
-/// econ_political_forum_categories.id}) and author ({@link
-/// econ_political_forum_registereduser.id}). Temporal fields included for
-/// audit and soft-delete. Counters (view_count, post_count) removed per
-/// normalization rules; use materialized views (mv_*) for aggregates.
+/// Primary articles posted by members. Stores current live state for each
+/// post and references the owning member and optional primary category.
+/// Author FK uses ON DELETE SET NULL to preserve article content when member
+/// accounts are anonymized or removed; published_at is recorded separately
+/// to support edit windows and publication visibility semantics. Contains
+/// temporal audit fields and indexes for listing and moderation workloads.
+/// {@link discussion_board_member.id} {@link discussion_board_categories.id}
 ///
 /// @namespace Content
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_political_forum_threads {
+model discussion_board_articles {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged category. {@link econ_political_forum_categories.id}.
-  category_id String
+  /// Authoring member. {@link discussion_board_member.id}. Nullable to allow
+  /// anonymization/set-null on account removal.
+  discussion_board_member_id String?
   
-  /// Authoring registered user. {@link econ_political_forum_registereduser.id}.
-  author_id String
+  /// Primary category for the article. {@link discussion_board_categories.id}.
+  /// Nullable for uncategorized drafts.
+  discussion_board_category_id String?
   
-  /// Thread title used for listing and search.
+  /// Article title (business constraint: min 5, max 250 characters).
   title String
   
-  /// URL-friendly identifier for the thread (unique).
-  slug String
+  /// Article body content. Store raw text/markdown; render sanitization is an
+  /// application concern.
+  content String
   
-  /// Thread lifecycle status (e.g., 'open','closed','pinned').
-  status String
+  /// Article lifecycle state: one of
+  /// 'draft','published','pending_review','hidden'.
+  state String
   
-  /// Whether the thread is pinned for prominent display.
-  pinned Boolean
+  /// Whether the article is pinned in listings.
+  is_pinned Boolean
   
-  /// Creation timestamp.
+  /// Timestamp when the article was published to public listings. Null for
+  /// drafts.
+  published_at DateTime?
+  
+  /// Creation timestamp (ISO 8601 UTC).
   created_at DateTime
   
-  /// Last update timestamp.
+  /// Last update timestamp (ISO 8601 UTC).
   updated_at DateTime
   
-  /// Soft-delete timestamp; null when active.
+  /// Soft-delete timestamp; null if not deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  category econ_political_forum_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
-  author econ_political_forum_registereduser @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  author discussion_board_member? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  category discussion_board_categories? @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
   
-  econ_political_forum_posts econ_political_forum_posts[]
-  econ_political_forum_thread_tags econ_political_forum_thread_tags[]
-  econ_political_forum_thread_follows econ_political_forum_thread_follows[]
-  econ_political_forum_reports econ_political_forum_reports[]
-  econ_political_forum_moderation_logs econ_political_forum_moderation_logs[]
-  econ_political_forum_audit_logs econ_political_forum_audit_logs[]
-  econ_political_forum_legal_holds econ_political_forum_legal_holds[]
+  discussion_board_article_tags discussion_board_article_tags[]
+  discussion_board_attachments discussion_board_attachments[]
+  discussion_board_article_snapshots discussion_board_article_snapshots[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_notifications discussion_board_notifications[]
   
-  @@unique([slug])
-  @@index([category_id, created_at])
-  @@index([author_id, created_at])
+  @@index([state, published_at, created_at])
+  @@index([discussion_board_member_id])
+  @@index([discussion_board_category_id])
+  // spellchecker: ignore-next-line
+  @@index([created_at, discussion_board_member_id], map: "discussion_board_articles_created_at_discussion_board__5727dbec")
 }
 
-/// Posts and replies belonging to threads. Canonical post content only (no
-/// cached counters or rendered HTML). Parent relation kept for replies.
-/// Revision history stored in econ_political_forum_post_revisions
-/// (snapshot). Removed derived fields (vote_count, upvote_count,
-/// downvote_count, content_html) to comply with normalization rules; move
-/// aggregates to materialized views.
+/// Attachments uploaded for articles. Each attachment belongs to an article
+/// and optionally references the uploading member. Uploader FK uses ON
+/// DELETE SET NULL so attachments persist when the account is removed;
+/// application-level purge logic should remove storage objects when
+/// attachments are permanently purged. Attachments inherit parent retention
+/// windows and are indexed for article-based queries. {@link
+/// discussion_board_articles.id} {@link discussion_board_member.id}
 ///
 /// @namespace Content
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_political_forum_posts {
+model discussion_board_attachments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged thread. {@link econ_political_forum_threads.id}.
-  thread_id String
+  /// Belonged article. {@link discussion_board_articles.id}. This FK prevents
+  /// orphan attachments; application purge must explicitly remove attachments
+  /// before deleting articles.
+  discussion_board_article_id String
   
-  /// Authoring registered user. {@link econ_political_forum_registereduser.id}.
-  author_id String
+  /// Uploading member. {@link discussion_board_member.id}. Nullable to allow
+  /// SET NULL when member accounts are anonymized or removed.
+  discussion_board_member_id String?
   
-  /// Optional parent post for replies. {@link econ_political_forum_posts.id}.
-  parent_id String?
+  /// Filename as provided by the uploader.
+  original_filename String
   
-  /// Raw post content (plaintext or sanitized markdown).
-  content String
+  /// Object storage key or path referencing the persisted file.
+  storage_key String
   
-  /// Flag indicating whether the post was edited after creation.
-  is_edited Boolean
+  /// MIME type of the attachment.
+  mime_type String
   
-  /// Timestamp of the latest edit; null if never edited.
-  edited_at DateTime?
+  /// File size in bytes.
+  size Int
   
-  /// Moderator hide flag; when true the post is not shown in public listings.
-  is_hidden Boolean
+  /// Whether the attachment is an image (true) or not (false).
+  is_image Boolean
   
-  /// Creation timestamp.
+  /// Upload timestamp.
   created_at DateTime
   
-  /// Last update timestamp.
-  updated_at DateTime
-  
-  /// Soft-delete timestamp; null when active.
+  /// Soft-delete timestamp for the attachment.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  thread econ_political_forum_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade)
-  author econ_political_forum_registereduser @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  parent econ_political_forum_posts? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  uploader discussion_board_member? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
   
-  recursive econ_political_forum_posts[] @relation("recursive")
-  econ_political_forum_post_revisions econ_political_forum_post_revisions[]
-  econ_political_forum_votes econ_political_forum_votes[]
-  econ_political_forum_bookmarks econ_political_forum_bookmarks[]
-  econ_political_forum_reports econ_political_forum_reports[]
-  econ_political_forum_moderation_logs econ_political_forum_moderation_logs[]
-  econ_political_forum_audit_logs econ_political_forum_audit_logs[]
-  econ_political_forum_legal_holds econ_political_forum_legal_holds[]
-  
-  @@index([thread_id, created_at])
-  @@index([author_id, created_at])
-  @@index([parent_id])
-  @@index([thread_id, is_hidden, created_at])
+  @@index([discussion_board_member_id])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_attachments_discussion_board_article__663ecfce")
 }
 
-/// Append-only revision history for posts. Each revision captures the full
-/// post content at a point in time, the editor (if different from author),
-/// and a created_at timestamp. This table is snapshot-like and intended for
-/// audit/history and moderator review.
+/// Append-only snapshots capturing historical states of articles for audit
+/// and versioning. Relationship to article must NOT cascade deletes to
+/// preserve audit history. Use ON DELETE RESTRICT or an archive-first purge
+/// flow so snapshots survive accidental article removal. Each snapshot
+/// denormalizes article fields at snapshot time and is retained for
+/// compliance. {@link discussion_board_articles.id}
 ///
 /// @namespace Content
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_political_forum_post_revisions {
+model discussion_board_article_snapshots {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Referenced post. {@link econ_political_forum_posts.id}.
-  post_id String
+  /// Referenced article. {@link discussion_board_articles.id}. Application
+  /// must ensure snapshots are preserved; DB-level FK should use ON DELETE
+  /// RESTRICT or snapshot FK made nullable with explicit archival workflow.
+  discussion_board_article_id String
   
-  /// Editor (registered user) who made the revision, if applicable. {@link
-  /// econ_political_forum_registereduser.id}.
-  editor_id String?
+  /// Article title at snapshot time.
+  title String
   
-  /// Full post content snapshot at the time of revision.
+  /// Article content at snapshot time.
   content String
   
-  /// Optional short editor note describing the change.
-  note String?
+  /// State value captured at snapshot time.
+  state String
   
-  /// Revision timestamp (when the snapshot was recorded).
+  /// Timestamp when snapshot was taken.
+  snapshot_at DateTime
+  
+  /// Original article creation time (denormalized).
   created_at DateTime
+  
+  /// Original article update time (denormalized).
+  updated_at DateTime
+  
+  /// Original article deleted_at value (denormalized).
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  post econ_political_forum_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  editor econ_political_forum_registereduser? @relation(fields: [editor_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
-  @@index([editor_id])
-  
-  @@index([post_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, snapshot_at], map: "discussion_board_article_snapshots_discussion_board_ar_f7d29220")
 }

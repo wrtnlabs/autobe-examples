@@ -1,0 +1,367 @@
+/// Temporary visitor accounts for users browsing the platform without
+/// registration. Guests can view public content but cannot create posts,
+/// comments, or vote. These accounts are typically short-lived and used for
+/// exploration before registration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// IP address of the guest user for tracking and security purposes.
+  ip String
+  
+  /// Browser user agent string for compatibility tracking.
+  user_agent String
+  
+  /// Timestamp of the guest's last interaction with the platform.
+  last_activity DateTime
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest session was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest session was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([ip])
+  @@index([last_activity])
+  @@index([created_at])
+}
+
+/// Registered users who can create content, vote, comment, and participate
+/// in communities. Members form the core user base of the platform and have
+/// full access to community features. {@link
+/// reddit_clone_member_sessions.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for authentication and communication.
+  email String
+  
+  /// Hashed password for secure authentication using bcrypt algorithm.
+  password_hash String
+  
+  /// Public display name shown to other users on the platform.
+  display_name String
+  
+  /// URL to the user's profile picture or avatar.
+  avatar_url String?
+  
+  /// Short biography or description written by the user.
+  bio String?
+  
+  /// Account status: active, suspended, banned, or deactivated.
+  status String
+  
+  /// Total karma points earned from post and comment votes.
+  karma Int
+  
+  /// Karma earned specifically from post votes.
+  post_karma Int
+  
+  /// Karma earned specifically from comment votes.
+  comment_karma Int
+  
+  /// Timestamp of the user's last successful login.
+  last_login DateTime?
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_clone_member_sessions reddit_clone_member_sessions[]
+  reddit_clone_moderators reddit_clone_moderators?
+  reddit_clone_admins reddit_clone_admins?
+  reddit_clone_communities reddit_clone_communities[]
+  reddit_clone_posts reddit_clone_posts[]
+  reddit_clone_comments reddit_clone_comments[]
+  reddit_clone_post_votes reddit_clone_post_votes[]
+  reddit_clone_comment_votes reddit_clone_comment_votes[]
+  reddit_clone_user_karma reddit_clone_user_karma?
+  reddit_clone_subscriptions reddit_clone_subscriptions[]
+  reddit_clone_subscription_feeds reddit_clone_subscription_feeds[]
+  reddit_clone_user_preferences reddit_clone_user_preferences?
+  reddit_clone_content_reports reddit_clone_content_reports[]
+  reddit_clone_moderation_action_of_members reddit_clone_moderation_action_of_members[]
+  reddit_clone_user_bans reddit_clone_user_bans[]
+  reddit_clone_user_activity reddit_clone_user_activity[]
+  reddit_clone_content_metrics reddit_clone_content_metrics[]
+  reddit_clone_performance_logs reddit_clone_performance_logs[]
+  
+  @@unique([email])
+  @@index([status])
+  @@index([karma])
+  @@index([last_login])
+  @@index([created_at])
+}
+
+/// Authentication sessions for member users tracking login activity and
+/// connection context. Used for audit tracing of member actions and session
+/// management. {@link reddit_clone_members.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link reddit_clone_members.id}.
+  reddit_clone_member_id String
+  
+  /// IP address of the connection.
+  ip String
+  
+  /// Connection URL where the session was established.
+  href String
+  
+  /// Referrer URL that directed the user to the platform.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_comments reddit_clone_comments[]
+  reddit_clone_content_reports reddit_clone_content_reports[]
+  reddit_clone_moderation_action_of_members reddit_clone_moderation_action_of_members[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_member_id, created_at], map: "reddit_clone_member_sessions_reddit_clone_member_id_cr_796ff510")
+}
+
+/// Community moderators who manage specific communities and enforce
+/// community guidelines. Moderators have elevated permissions within their
+/// assigned communities including content removal and user management.
+/// {@link reddit_clone_moderator_sessions.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Base member account for the moderator. {@link reddit_clone_members.id}.
+  reddit_clone_member_id String
+  
+  /// Moderator permission level: junior, senior, or lead moderator.
+  moderator_level String
+  
+  /// Number of communities currently moderated by this user.
+  communities_moderated Int
+  
+  /// Total months of moderation experience on the platform.
+  moderation_experience Int
+  
+  /// Special moderation permissions granted by administrators.
+  special_permissions String?
+  
+  /// Timestamp of the last moderation action performed.
+  last_moderation_activity DateTime?
+  
+  /// Timestamp when the moderator role was assigned.
+  created_at DateTime
+  
+  /// Timestamp when the moderator profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator role was revoked.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_moderator_sessions reddit_clone_moderator_sessions[]
+  reddit_clone_communities reddit_clone_communities[]
+  reddit_clone_moderation_action_of_moderators reddit_clone_moderation_action_of_moderators[]
+  reddit_clone_user_ban_of_moderators reddit_clone_user_ban_of_moderators[]
+  
+  @@unique([reddit_clone_member_id])
+  
+  @@index([moderator_level])
+  @@index([communities_moderated])
+  @@index([last_moderation_activity])
+  @@index([created_at])
+}
+
+/// Authentication sessions for moderator users tracking login activity and
+/// connection context. Used for audit tracing of moderation actions and
+/// session management. {@link reddit_clone_moderators.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged moderator's {@link reddit_clone_moderators.id}.
+  reddit_clone_moderator_id String
+  
+  /// IP address of the connection.
+  ip String
+  
+  /// Connection URL where the session was established.
+  href String
+  
+  /// Referrer URL that directed the user to the platform.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator reddit_clone_moderators @relation(fields: [reddit_clone_moderator_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_moderation_action_of_moderators reddit_clone_moderation_action_of_moderators[]
+  reddit_clone_user_ban_of_moderators reddit_clone_user_ban_of_moderators[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_moderator_id, created_at], map: "reddit_clone_moderator_sessions_reddit_clone_moderator_b3030e30")
+}
+
+/// Platform administrators with system-wide management capabilities
+/// including user management, community oversight, and platform
+/// configuration. Administrators have the highest level of permissions.
+/// {@link reddit_clone_admin_sessions.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Base member account for the administrator. {@link
+  /// reddit_clone_members.id}.
+  reddit_clone_member_id String
+  
+  /// Administrative permission level: junior, senior, or system administrator.
+  admin_level String
+  
+  /// Comma-separated list of specific administrative permissions.
+  permissions String
+  
+  /// Timestamp of the last administrative action performed.
+  last_admin_activity DateTime?
+  
+  /// System access level determining which administrative features are
+  /// available.
+  access_level String
+  
+  /// Timestamp when the administrator role was assigned.
+  created_at DateTime
+  
+  /// Timestamp when the administrator profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator role was revoked.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_admin_sessions reddit_clone_admin_sessions[]
+  reddit_clone_moderation_action_of_admins reddit_clone_moderation_action_of_admins[]
+  reddit_clone_user_ban_of_admins reddit_clone_user_ban_of_admins[]
+  
+  @@unique([reddit_clone_member_id])
+  
+  @@index([admin_level])
+  @@index([access_level])
+  @@index([last_admin_activity])
+  @@index([created_at])
+}
+
+/// Authentication sessions for administrator users tracking login activity
+/// and connection context. Used for audit tracing of administrative actions
+/// and session management. {@link reddit_clone_admins.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged administrator's {@link reddit_clone_admins.id}.
+  reddit_clone_admin_id String
+  
+  /// IP address of the connection.
+  ip String
+  
+  /// Connection URL where the session was established.
+  href String
+  
+  /// Referrer URL that directed the user to the platform.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin reddit_clone_admins @relation(fields: [reddit_clone_admin_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_moderation_action_of_admins reddit_clone_moderation_action_of_admins[]
+  reddit_clone_user_ban_of_admins reddit_clone_user_ban_of_admins[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_admin_id, created_at], map: "reddit_clone_admin_sessions_reddit_clone_admin_id_crea_d70239de")
+}

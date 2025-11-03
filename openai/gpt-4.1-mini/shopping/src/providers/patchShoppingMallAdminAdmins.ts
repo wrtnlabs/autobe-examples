@@ -18,59 +18,57 @@ export async function patchShoppingMallAdminAdmins(props: {
 }): Promise<IPageIShoppingMallAdmin.ISummary> {
   const { body } = props;
 
-  const page = body.page;
-  const limit = body.limit;
+  const page = body.page ?? 1;
+  const limit = body.limit ?? 20;
   const skip = (page - 1) * limit;
 
   const where: Prisma.shopping_mall_adminsWhereInput = {
     deleted_at: null,
-    ...(body.search !== undefined && body.search !== null
-      ? { email: { contains: body.search } }
-      : {}),
-    ...(body.status !== undefined && body.status !== null
-      ? { status: body.status }
-      : {}),
+    ...(body.filter?.email !== undefined &&
+      body.filter.email !== null && {
+        email: { contains: body.filter.email },
+      }),
+    ...(body.filter?.full_name !== undefined &&
+      body.filter.full_name !== null && {
+        full_name: { contains: body.filter.full_name },
+      }),
   };
 
-  const validOrderFields = new Set([
-    "email",
-    "status",
-    "full_name",
-    "created_at",
-    "updated_at",
-  ]);
-  const orderByField =
-    body.orderBy && validOrderFields.has(body.orderBy)
-      ? body.orderBy
+  if (
+    body.search !== undefined &&
+    body.search !== null &&
+    body.search.length > 0
+  ) {
+    where.OR = [
+      { email: { contains: body.search } },
+      { full_name: { contains: body.search } },
+    ];
+  }
+
+  const validSortFields = ["email", "full_name", "created_at"];
+  const sortField =
+    body.sort?.field && validSortFields.includes(body.sort.field)
+      ? body.sort.field
       : "created_at";
-  const orderDirection = body.orderDirection === "asc" ? "asc" : "desc";
+  const sortOrder = body.sort?.order === "asc" ? "asc" : "desc";
 
   const [rows, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_admins.findMany({
       where,
-      orderBy: { [orderByField]: orderDirection },
-      skip,
-      take: limit,
       select: {
         id: true,
         email: true,
         full_name: true,
-        status: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
       },
+      orderBy: { [sortField]: sortOrder },
+      skip,
+      take: limit,
     }),
     MyGlobal.prisma.shopping_mall_admins.count({ where }),
   ]);
-
-  const data: IShoppingMallAdmin.ISummary[] = rows.map((r) => ({
-    id: r.id,
-    email: r.email,
-    full_name: r.full_name ?? undefined,
-    status: r.status,
-    created_at: toISOStringSafe(r.created_at),
-    updated_at: toISOStringSafe(r.updated_at),
-  }));
 
   return {
     pagination: {
@@ -79,6 +77,15 @@ export async function patchShoppingMallAdminAdmins(props: {
       records: total,
       pages: Math.ceil(total / limit),
     },
-    data,
+    data: rows.map((admin) => ({
+      id: admin.id,
+      email: admin.email,
+      full_name: admin.full_name,
+      created_at: toISOStringSafe(admin.created_at),
+      updated_at: toISOStringSafe(admin.updated_at),
+      deleted_at: admin.deleted_at
+        ? toISOStringSafe(admin.deleted_at)
+        : undefined,
+    })),
   };
 }

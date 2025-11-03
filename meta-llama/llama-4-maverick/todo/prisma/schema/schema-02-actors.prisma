@@ -1,0 +1,67 @@
+/// Table storing user information for authentication and task management
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for login
+  email String
+  
+  /// Hashed password for secure storage
+  password_hash String
+  
+  /// Timestamp when user account was created
+  created_at DateTime
+  
+  /// Timestamp when user information was last updated
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_user_sessions todo_list_user_sessions[]
+  
+  @@unique([email])
+}
+
+/// Table storing user session information for authentication
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing the user who owns this session
+  user_id String
+  
+  /// IP address of the user during session creation
+  ip String
+  
+  /// URL where the session was created
+  href String
+  
+  /// Referrer URL for the session
+  referrer String
+  
+  /// Timestamp when the session was created
+  created_at DateTime
+  
+  /// Timestamp when the session expires
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+}

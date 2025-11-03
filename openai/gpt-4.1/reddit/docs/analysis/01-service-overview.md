@@ -1,110 +1,147 @@
-# Functional Requirements Specification for Reddit-like Community Platform
+# Service Overview: Reddit-like Community Platform
 
-## Introduction
-This document captures the complete set of business requirements for a Reddit-like community platform, written in EARS format where applicable, without reference to technical or implementation details. It covers all mandatory system, user, and administrative functions, aligning with business objectives and explicit role-based permissions.
+## Service Vision and Purpose
+The Reddit-like community platform aims to empower people to create, join, and participate in diverse online communities. The core vision is to provide a safe, engaging, and flexible space where users can freely share content, discuss topics, and contribute to various interest-based forums while enabling healthy community regulation and encouraging constructive participation.
 
-## Core Platform Features
-- THE platform SHALL allow guests to browse public communities, view posts and comments, and search for communities and content.
-- THE platform SHALL require a registered member account to create posts, comments, vote, subscribe, or report content.
-- THE platform SHALL provide secure user registration, login, logout, email verification, password reset, and session/token management as defined in [User Roles & Authentication](./02-user-roles-and-authentication.md).
-- THE platform SHALL support English language throughout the user experience.
-- THE platform SHALL restrict access to create, edit, or delete actions for unauthorized roles according to the permission matrix.
-- THE platform SHALL maintain responsiveness for all primary actions, targeting a response time of under 2 seconds for content loads, posting, voting, and reporting.
+This platform is designed for users seeking meaningful interactions across different communities, whether by sharing knowledge, seeking support, or exploring interests. Administrators oversee user safety and platform integrity. The purpose of this document is to provide a strategic, business-oriented overview of the platform and establish a high-level foundation for all subsequent requirements and technical specifications.
 
-## Community Management
-### Creation
-- WHEN a member submits a valid request, THE platform SHALL enable the member to create a new community with a unique name, title, and description.
-- IF a community name or URL slug already exists, THEN THE platform SHALL reject the creation request and provide a descriptive error message.
-- WHERE the member is the founder of the community, THE platform SHALL assign them as an initial moderator.
-- THE platform SHALL enforce a minimum and maximum allowed length for community names and descriptions as set in [Business Rules & Validation](./06-business-rules-and-validation.md).
-- IF a member exceeds allowed community creation limits (per [Business Rules & Validation](./06-business-rules-and-validation.md)), THEN THE platform SHALL reject new community creation for that member.
+## Business Model
 
-### Configuration & Management
-- WHILE a user is a community moderator, THE platform SHALL allow them to update the community's description, rules, header image, and banner.
-- THE platform SHALL allow moderators to define, update, and publish community-specific posting and commenting rules.
-- WHEN an admin changes community status to 'banned', 'private', or similar, THE platform SHALL restrict access and display explanatory messages accordingly.
-- WHEN a community is deleted, THE platform SHALL archive all posts, comments, and user relationships, following the retention policy in [Policies & Compliance](./10-policies-and-compliance.md).
+### Why This Service Exists
+Current online communities either target too general an audience or lack modern tools for managing content, moderation, and personalization. While platforms like Reddit have established the paradigm, gaps remain in local content policies, privacy expectations, moderation flexibility, and community ownership models.
 
-### Membership
-- WHEN a member requests to subscribe to a community, THE platform SHALL add that community to the member’s subscription list and enable personalized feeds.
-- WHEN a member leaves or unsubscribes from a community, THE platform SHALL remove the community from their subscription list and adjust feed content accordingly.
-- IF a member is banned from a community, THEN THE platform SHALL block their posting, commenting, voting, and viewing of non-public content in that community.
+The platform is positioned to:
+- Address deficiencies in user empowerment, content safety, and flexible customization.
+- Fill the need for a moderated yet open and diverse environment for both niche and broad interests.
+- Enable users to shape their own experiences and foster civil, self-sustaining communities.
 
-## Posting & Commenting
-### Posts
-- WHEN a member submits a post (text, link, or image), THE platform SHALL validate content type, length, formatting, and potential prohibited media.
-- THE platform SHALL support post types: text-only, link, or image, as restricted by community configuration and system content policy.
-- IF a post contains prohibited content or violates platform/community rules, THEN THE platform SHALL reject the submission and provide an explanatory error.
-- WHERE community rules require moderation approval, THE platform SHALL queue new posts for moderator review before public visibility.
-- WHEN a post is published, THE platform SHALL associate it with the author, community, timestamp, and initialize its vote and comment counts.
+### Revenue Strategy
+The service will implement a phased monetization approach:
+- **Advertising:** Contextual ads and sponsorship placements that respect user privacy.
+- **Premium Membership:** Optional paid features such as ad-free experience, enhanced profile visibility, and exclusive communities.
+- **Featured Communities:** Paid promotional placements for communities and posts, with strict content quality review.
+- **Potential Additional Streams:** Digital goods, badges, and API/data partnership licenses.
 
-### Editing & Deletion
-- WHERE a member is the original author of a post, THE platform SHALL allow editing or deletion within the allowed time window (as per [Business Rules & Validation](./06-business-rules-and-validation.md)).
-- WHERE a moderator or admin identifies content that violates rules, THE platform SHALL permit them to remove or edit posts with traceable audit logs.
+The focus for launch is establishing a robust, engaged user base before integrating premium monetization. The monetization model is designed to be transparent, non-intrusive, and additive to community experience, not disruptive.
 
-### Comments
-- WHEN a member submits a comment, THE platform SHALL validate text format and disallow prohibited content.
-- THE platform SHALL support infinite nesting of comments (threaded replies), subject to system-imposed maximum depth (see [Business Rules & Validation](./06-business-rules-and-validation.md)).
-- WHEN a comment is posted, THE platform SHALL associate it with the parent post or comment, author, timestamp, and initialize its vote count.
-- WHERE a member is the author, THE platform SHALL allow editing or deletion of their comment within the policy-based time window.
-- WHERE a moderator identifies rule-violating comments, THE platform SHALL allow removal with trace/audit information recorded.
+### Growth Plan
+Growth will initially target digital natives and online community enthusiasts. Acquisition strategies include:
+- Community onboarding campaigns with guided creation and content seeding.
+- Influencer and key opinion leader partnerships for initial traction.
+- Viral sharing and referral bonuses to promote organic expansion.
+- Continuous product improvement using user analytics and feedback.
 
-## Voting System
-- WHEN a member upvotes or downvotes a post or comment, THE platform SHALL record the vote and update the total score immediately (within 2 seconds for user experience).
-- THE platform SHALL restrict each member to a single (latest) vote per post/comment.
-- IF a guest user attempts to vote, THEN THE platform SHALL reject the action and prompt login/register.
-- THE platform SHALL display vote scores for all visible content and provide sorting based on total score, recency, or controversy.
-- WHEN a vote is cast or revoked, THE platform SHALL recalculate affected karma values and apply sorting as per algorithm rules.
-- WHERE posts/comments are controversial (as defined in [Business Rules & Validation](./06-business-rules-and-validation.md)), THE platform SHALL support sorting by 'controversial' algorithm.
+Retention will focus on:
+- Personalized discovery of new communities based on user activity.
+- Gamified engagement: karma system, badges, leaderboards.
+- Timely moderation and quality community management support.
 
-## Subscription & Profiles
-### Subscriptions
-- WHEN a member subscribes or unsubscribes from a community, THE platform SHALL update their personalized feed immediately.
-- THE platform SHALL support members browsing, searching, and discovering new communities based on popularity, relevance, and recent activity.
+### Success Metrics
+- Monthly Active Users (MAU) and Daily Active Users (DAU)
+- User retention rates (7-day & 30-day retention)
+- Community creation and activity rates
+- Average number of posts/comments per user
+- Revenue per active user (once monetization is active)
+- Number and quality of reported content resolutions
 
-### Profiles
-- THE platform SHALL provide a public profile page for each member, showing their post and comment history (subject to privacy and moderation controls).
-- WHEN a member views their own profile, THE platform SHALL display their subscription list and full karma breakdown.
-- THE platform SHALL show accumulated karma, badges/rewards (if any), and membership status (member, moderator, admin) in the profile view.
-- IF a member is banned or has content removed due to violations, THEN THE platform SHALL provide clear information on restrictions within the user’s own profile.
+## Core Value Proposition
+THE platform SHALL empower any registered user to create, join, and actively participate in interest-based communities, facilitating high-quality content exchange, conversation, and engagement, supported by transparent moderation and robust personalization features.
 
-### Karma System
-- WHEN a member receives upvotes/downvotes, THE platform SHALL adjust their karma according to explicit, published rules (see [Business Rules & Validation](./06-business-rules-and-validation.md)).
-- THE platform SHALL update karma scores in real time after each vote and display changes on user profiles and content.
-- THE platform SHALL prevent artificial inflation or abuse of karma by detecting and negating manipulation patterns (as detailed in [Business Rules & Validation](./06-business-rules-and-validation.md)).
+Key benefits:
+- Democratic content governance, allowing users to curate and moderate their own forums
+- A reputation (karma) system that encourages valuable contributions and penalizes unwanted behavior
+- Frictionless sharing of different content types: text, links, images
+- Personalized discovery and engagement, driven by subscriptions and user actions
+- Scalable to support both high-traffic public communities and small, niche groups
 
-## Moderation
-- WHERE a member is assigned as a moderator to a community, THE platform SHALL grant permission to remove/pin posts and comments, set community rules, and ban users from that community.
-- WHEN a report is submitted, THE platform SHALL notify relevant moderators and provide actionable queues per community.
-- WHEN a moderator reviews reported content, THE platform SHALL permit resolve (remove, warn, ban, ignore) actions and record all outcomes for audit.
-- WHERE an action is taken on content, THE platform SHALL notify the content author with the reason, except in cases where this would conflict with policy (see [Policies & Compliance](./10-policies-and-compliance.md)).
-- WHEN an admin assigns or removes moderators, THE platform SHALL update permissions and provide logs for traceability.
-- THE platform SHALL allow admins to perform all moderator actions across any community, as well as system-wide bans and escalated report resolutions.
+## Key Features
+1. **User Registration and Authentication**
+    - THE system SHALL allow users to register and securely log in using unique credentials.
+    - THE platform SHALL support user authentication for all actions requiring identification, with JWT-based sessions for security.
 
-## Reporting
-- WHEN a member reports a post or comment, THE platform SHALL require a category selection (spam, abuse, off-topic, etc.) and a brief explanation.
-- THE platform SHALL limit the number of reports per member per day to prevent abuse (as set in [Business Rules & Validation](./06-business-rules-and-validation.md)).
-- WHEN the number or severity of reports on content crosses a defined threshold, THE platform SHALL flag the content for immediate moderator review and optionally auto-hide it until reviewed.
-- THE platform SHALL provide a transparent log of all reporting actions for moderator/admin review and appeals.
-- IF a report is found to be invalid or abusive, THEN THE platform SHALL warn or restrict the abusing member’s reporting privileges as specified in [Business Rules & Validation](./06-business-rules-and-validation.md)).
+2. **Community (Subreddit) Management**
+    - WHEN a user creates a new community, THE platform SHALL enforce unique community names and allow initial configuration of rules and moderators.
+    - THE system SHALL allow users to search for, join (subscribe to), or leave any public community.
+
+3. **Posting Content**
+    - THE user SHALL be able to submit text, links, or images to communities they are subscribed to, subject to content validation and rules.
+    - THE system SHALL associate all posts with a specific community and user.
+    - WHEN a post is submitted, THE system SHALL process and store it for display in the relevant community.
+
+4. **Upvote/Downvote System**
+    - WHEN a user votes on a post or comment, THE system SHALL update vote tallies in real time, restricting each user to one active vote per item.
+    - Votes contribute directly to user and content karma.
+
+5. **Nested Commenting**
+    - THE system SHALL enable users to comment on posts and reply in a nested (threaded) manner, with each reply assigned to a parent post or comment.
+
+6. **Karma and Reputation**
+    - THE platform SHALL calculate user karma based on aggregated upvotes/downvotes on their posts and comments, reflecting their reputation across the platform and within each community.
+
+7. **Content Sorting**
+    - WHEN users view community content, THE platform SHALL provide sort options: hot, new, top, and controversial, with sorting logic defined in business rules.
+
+8. **Subscriptions**
+    - THE system SHALL allow users to subscribe to or unsubscribe from communities, and use their subscriptions to personalize home and feed views.
+
+9. **User Profiles**
+    - WHEN a profile is viewed, THE platform SHALL display the user’s posts and comments, as well as cumulative karma and community memberships.
+
+10. **Content Reporting**
+    - WHEN inappropriate content is reported by a user, THE system SHALL record the report, notify administrators or community moderators as appropriate, and track resolution status.
+
+## Market Differentiation
+Many platforms provide only light-touch moderation or lack real local autonomy for individual communities. This platform differentiates itself by combining:
+- Flexible, multi-tiered moderation (community and platform-wide)
+- Full support for anonymous and pseudonymous participation (while supporting traceability for abuse prevention)
+- Powerful reputation systems that are visible and actionable
+- Modern performance standards (fast loading, real-time updates)
+- Open APIs for extensibility (when/if released)
+- User-centric privacy and content visibility controls
+
+## Growth and Monetization Strategy
+The approach is “community-first, monetization later”. All growth initiatives initially focus on building authentic, engaged user bases. Monetization will begin after achieving a critical threshold of active communities and users.
+
+Expected monetization phases:
+1. **Initial Community Growth**: Seed key communities, build engagement, monitor quality
+2. **Monetization Rollout**: Introduce unobtrusive ads, then premium features, then brand partnerships
+3. **Sustained Expansion**: Scale successful programs, add digital goods, explore internationalization
+
+THE platform SHALL prioritize user trust and transparent opt-in over aggressive monetization. All paid features and ads will be clearly labeled and non-invasive, with strict opt-out options in compliance with privacy regulations.
+
+## Success Metrics
+To ensure ongoing alignment with business goals, the following metrics will be tracked:
+- Number of active communities and growth rate
+- User adoption and engagement (DAU, MAU)
+- User retention and churn rates
+- Engagement depth (posts/user, votes/user, comments/user)
+- Revenue streams diversified across ads, premium, and digital goods
+- Quality and speed of content moderation and report handling
+- Community satisfaction (measured via surveys and NPS)
 
 ---
 
-Mermaid Diagram – Core Posting & Moderation Flow:
+### Mermaid Diagram: Core Feature Overview
 ```mermaid
 graph LR
-    A["Member Submits Post"] --> B{"Validates Content?"}
-    B -->|"Yes"| C["Add Post to Community"]
-    B -->|"No"| D["Reject & Show Error"]
-    C --> E{"Mod Approval Needed?"}
-    E -->|"Yes"| F["Queue for Moderator"]
-    E -->|"No"| G["Publish Publicly"]
-    F --> H{"Moderator Approves?"}
-    H -->|"Yes"| G
-    H -->|"No"| I["Reject & Notify Author"]
-    G --> J["Post Visible & Open to Voting"]
+  subgraph "User Journey"
+    A["Register/Login"] --> B["Subscribe/Create Communities"]
+    B --> C["Create/Interact with Posts"]
+    C --> D["Vote and Comment (Nested)"]
+    D --> E["Track Karma and Personal Stats"]
+    C --> F["Report Content"]
+    F --> G["Admin/Moderator Resolution"]
+  end
+
+  subgraph "System Processes"
+    H["Feed Sorting (Hot/New/Top/Controversial)"]
+    I["Profile Aggregation"]
+    J["Community Moderation"]
+  end
+
+  E --> I
+  B --> H
+  F --> J
 ```
 
----
-
-This document defines business requirements only. All technical implementation details, such as API design, data models, and system infrastructure, are at the discretion of the development team. For all validation logic, error handling, or business constraints not covered herein, please refer to the related documents (as titled in the Table of Contents) for comprehensive guidance.
+This overview document supplies foundational business and strategic context for all further requirement, journey, and technical documentation concerning the Reddit-like community platform.

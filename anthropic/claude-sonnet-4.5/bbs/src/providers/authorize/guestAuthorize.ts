@@ -18,7 +18,6 @@ export async function guestAuthorize(request: {
   const guest = await MyGlobal.prisma.discussion_board_guests.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
     },
   });
 

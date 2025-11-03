@@ -17,73 +17,51 @@ export async function postAuthGuestJoin(props: {
 }): Promise<IShoppingMallGuest.IAuthorized> {
   const { body } = props;
 
-  const existingGuest = await MyGlobal.prisma.shopping_mall_guests.findFirst({
-    where: {
-      session_token: body.session_token,
-      deleted_at: null,
+  const guestId: string & tags.Format<"uuid"> = v4();
+
+  const newGuest = await MyGlobal.prisma.shopping_mall_guests.create({
+    data: {
+      id: guestId,
+      ip: body.ip,
+      created_at: body.created_at,
     },
   });
 
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
   const now = toISOStringSafe(new Date());
 
-  let guestRecord;
-
-  if (existingGuest) {
-    guestRecord = existingGuest;
-  } else {
-    guestRecord = await MyGlobal.prisma.shopping_mall_guests.create({
-      data: {
-        id: v4() as string & tags.Format<"uuid">,
-        session_token: body.session_token,
-        ip_address: body.ip_address ?? null,
-        user_agent: body.user_agent ?? null,
+  const token = {
+    access: jwt.sign(
+      {
+        type: "guest",
+        id: newGuest.id,
+        session_id: newGuest.id,
         created_at: now,
-        updated_at: now,
-        deleted_at: null,
       },
-    });
-  }
-
-  const payload = {
-    id: guestRecord.id,
-    type: "guest" as const,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "guest",
+        id: newGuest.id,
+        session_id: newGuest.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
 
-  const accessToken = jwt.sign(payload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-
-  const refreshToken = jwt.sign(
-    {
-      id: guestRecord.id,
-      type: "guest" as const,
-      tokenType: "refresh",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-
   return {
-    id: guestRecord.id,
-    session_token: guestRecord.session_token,
-    ip_address: guestRecord.ip_address ?? null,
-    user_agent: guestRecord.user_agent ?? null,
-    created_at: toISOStringSafe(guestRecord.created_at),
-    updated_at: toISOStringSafe(guestRecord.updated_at),
-    deleted_at: guestRecord.deleted_at
-      ? toISOStringSafe(guestRecord.deleted_at)
-      : null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(new Date(Date.now() + 3600 * 1000)),
-      refreshable_until: toISOStringSafe(
-        new Date(Date.now() + 7 * 24 * 3600 * 1000),
-      ),
-    },
+    id: newGuest.id,
+    token,
+    expires_at: accessExpires,
   };
 }

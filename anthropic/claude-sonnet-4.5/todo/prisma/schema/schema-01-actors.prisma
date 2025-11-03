@@ -1,10 +1,7 @@
-/// User accounts for the Todo list application. Represents authenticated
-/// users who can create and manage their personal todo items. Each user
-/// account stores authentication credentials and profile information. Users
-/// are the foundation of the application - they must register and
-/// authenticate before accessing any todo management features. This table
-/// implements soft delete to support account closure while maintaining
-/// referential integrity with existing todos.
+/// Regular authenticated users who manage their personal todo lists. Users
+/// represent the primary user base of the application and have full control
+/// over their personal data within security boundaries. Each user can
+/// create, organize, and manage their own todo items.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -15,88 +12,160 @@ model todo_list_users {
   /// Primary Key.
   id String @id
   
-  /// User's email address for authentication and identification. Must be
-  /// unique across all users. Used as the primary login credential. Normalized
-  /// to lowercase for case-insensitive comparison. Maximum 255 characters as
-  /// per validation requirements.
+  /// User's email address for authentication and account recovery. Must be
+  /// unique across all users and follow valid email format.
   email String
   
-  /// Securely hashed user password using bcrypt with minimum cost factor of
-  /// 10. Never stored in plain text. Used for authentication verification
-  /// during login. The hash is generated from passwords that meet minimum
-  /// security requirements: at least 8 characters, containing letters and
-  /// numbers.
+  /// Securely hashed password for authentication. Never store passwords in
+  /// plain text. Uses industry-standard hashing algorithms like bcrypt,
+  /// argon2, or PBKDF2.
   password_hash String
   
-  /// Timestamp when the user account was created. Immutable after creation.
-  /// Used for account age tracking and audit purposes.
+  /// Timestamp when the user account was created. Automatically set by the
+  /// system during registration.
   created_at DateTime
   
-  /// Timestamp of the last modification to the user account. Updated
-  /// automatically whenever email or password is changed. Used for tracking
-  /// account activity and changes.
+  /// Timestamp when the user account was last modified. Automatically updated
+  /// whenever any profile information changes.
   updated_at DateTime
   
-  /// Soft delete timestamp. When set, indicates the user account has been
-  /// deleted but data is retained temporarily. Null for active accounts.
-  /// Supports account deletion with grace period as per data management
-  /// requirements.
+  /// Timestamp when the user account was soft deleted. Null for active
+  /// accounts. Enables account recovery and audit trails.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_refresh_tokens todo_list_refresh_tokens[]
+  todo_list_user_sessions todo_list_user_sessions[]
   todo_list_todos todo_list_todos[]
   
   @@unique([email])
   @@index([created_at])
 }
 
-/// JWT refresh tokens for maintaining user sessions. Supports token-based
-/// authentication system with automatic session renewal. Each token belongs
-/// to a specific user and has a defined expiration period (30 days as per
-/// authentication requirements). Tokens can be revoked when users log out or
-/// change passwords. This table enables stateless JWT authentication while
-/// providing server-side token validation and revocation capabilities.
+/// Authentication sessions for regular users. Tracks user login sessions for
+/// security auditing and session management. Each session represents a
+/// distinct login from a specific device or browser.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_refresh_tokens {
+model todo_list_user_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Owner of this refresh token. References the user account this token
-  /// authenticates. {@link todo_list_users.id}.
+  /// User who owns this session. {@link todo_list_users.id}
   todo_list_user_id String
   
-  /// Securely hashed refresh token value. The actual token is hashed before
-  /// storage for security. Used to validate refresh token requests when users
-  /// need new access tokens.
-  token_hash String
+  /// IP address from which the user connected to establish this session.
+  ip String
   
-  /// Token expiration timestamp. Set to 30 days from issuance as per
-  /// authentication requirements. After this time, the token becomes invalid
-  /// and user must log in again.
-  expires_at DateTime
+  /// Connection URL where the session was initiated.
+  href String
   
-  /// Timestamp when the refresh token was issued. Used for token age tracking
-  /// and audit purposes.
+  /// Referrer URL that led to the session creation.
+  referrer String
+  
+  /// Timestamp when the session was created (user logged in).
   created_at DateTime
   
-  /// Timestamp when the token was revoked. Null for active tokens. Set when
-  /// user logs out, changes password, or explicitly revokes the token. Revoked
-  /// tokens cannot be used even if not yet expired.
-  revoked_at DateTime?
+  /// Timestamp when the session ended or expired. Null for active sessions.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
   user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_user_id, expires_at])
-  @@index([expires_at])
+  @@index([todo_list_user_id, created_at])
+}
+
+/// System administrators with elevated privileges for system management and
+/// user support. Admins are trusted personnel responsible for maintaining
+/// the system, supporting users, and monitoring overall application health.
+/// They have broader visibility into system operations while respecting user
+/// privacy.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's email address for authentication and system
+  /// communications. Must be unique across all admins and follow valid email
+  /// format.
+  email String
+  
+  /// Securely hashed password for admin authentication. Never store passwords
+  /// in plain text. Uses industry-standard hashing algorithms like bcrypt,
+  /// argon2, or PBKDF2.
+  password_hash String
+  
+  /// Timestamp when the admin account was created. Automatically set by the
+  /// system during admin account creation.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last modified. Automatically updated
+  /// whenever any admin information changes.
+  updated_at DateTime
+  
+  /// Timestamp when the admin account was soft deleted. Null for active
+  /// accounts. Enables account recovery and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_admin_sessions todo_list_admin_sessions[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Authentication sessions for system administrators. Tracks admin login
+/// sessions for security auditing and session management. Each session
+/// represents a distinct admin login from a specific device or browser with
+/// elevated privileges.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who owns this session. {@link todo_list_admins.id}
+  todo_list_admin_id String
+  
+  /// IP address from which the administrator connected to establish this
+  /// session.
+  ip String
+  
+  /// Connection URL where the admin session was initiated.
+  href String
+  
+  /// Referrer URL that led to the admin session creation.
+  referrer String
+  
+  /// Timestamp when the admin session was created (admin logged in).
+  created_at DateTime
+  
+  /// Timestamp when the admin session ended or expired. Null for active
+  /// sessions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_list_admins @relation(fields: [todo_list_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_admin_id, created_at])
 }

@@ -1,64 +1,72 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Ip } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 import { postAuthAdminJoin } from "../../../providers/postAuthAdminJoin";
 import { postAuthAdminLogin } from "../../../providers/postAuthAdminLogin";
 import { postAuthAdminRefresh } from "../../../providers/postAuthAdminRefresh";
+import { AdminAuth } from "../../../decorators/AdminAuth";
+import { AdminPayload } from "../../../decorators/payload/AdminPayload";
 
 import { ITodoAppAdmin } from "../../../api/structures/ITodoAppAdmin";
 
 @Controller("/auth/admin")
 export class AuthAdminController {
   /**
-   * Create a new admin account (todo_app_admin).
+   * Register a new admin (creates todo_app_admin record and returns
+   * authorization payload).
    *
-   * Purpose and overview: This endpoint registers a new administrator account
-   * for the system and issues an initial authorized response payload. It is
-   * explicitly tied to the Prisma model `todo_app_admin` and will rely on the
-   * `email`, `password_hash`, `is_super`, `created_at`, and `last_active_at`
-   * fields on that table to represent account identity and state.
+   * Purpose and overview: This endpoint registers a new administrative operator
+   * and creates a record in the Prisma `todo_app_admin` table. The operation
+   * accepts an email, a plaintext password (to be hashed server-side and
+   * persisted to `password_hash`), and optional `display_name` and `role`
+   * fields. The endpoint is public and intended for controlled admin onboarding
+   * flows only.
    *
-   * Implementation details and required fields: When called, the implementation
-   * will validate the provided `email` and password, persist the new
-   * `todo_app_admin` row (setting `email` and, after hashing, `password_hash`)
-   * and set the initial `created_at` and `last_active_at` timestamps. If
-   * elevated privileges are required for the account, `is_super` may be set per
-   * the request. The response payload uses tokens and the admin summary, but
-   * token persistence or revocation mechanism is implementation specific and
-   * not assumed to be a column on `todo_app_admin`.
+   * Implementation details and DB field usage: On successful registration the
+   * implementation MUST create a `todo_app_admin` row setting `email`,
+   * `password_hash` (hashed server-side), `display_name` (if provided), and
+   * `role` (if provided). The Prisma schema enforces uniqueness on `email`
+   * (`@@unique([email])`) so the controller MUST return a validation error if
+   * the submitted email already exists. Timestamps `created_at` and
+   * `updated_at` are recorded by the service per the schema contract.
    *
-   * Role-specific integration: This endpoint is the public entry point for
-   * creating admin accounts. It should ensure the `email` value is unique (the
-   * Prisma model defines `@@unique([email])`) and must fail cleanly if a
-   * duplicate `email` exists. As part of the workflow, an audit entry may be
-   * recorded in `todo_app_audit_records` referencing the created admin
-   * (`admin_id`) with `action_type` like `create_admin` to satisfy compliance
-   * and traceability.
+   * Actor-specific integration and lifecycle: The `todo_app_admin` model
+   * exposes `is_active` and `deleted_at` which the service can use for admin
+   * lifecycle (activation, suspension, or removal). While this endpoint creates
+   * the admin record, downstream admin lifecycle operations
+   * (suspend/reactivate) should update `is_active` and may set `deleted_at`
+   * when an admin is removed; those actions are separate and not performed by
+   * this join operation.
    *
-   * Security considerations: Passwords MUST be hashed before storing in
-   * `password_hash` and never returned in responses. The implementation must
-   * not expose `password_hash` in any response. All audit actions related to
-   * account creation SHOULD be recorded in `todo_app_audit_records` (fields
-   * available: `admin_id`, `actor_role`, `action_type`, `target_resource`,
-   * `target_id`, `created_at`). Use secure transport (HTTPS) and apply rate
-   * limiting to prevent abuse.
+   * Security considerations and token issuance: The endpoint MUST never log
+   * plaintext passwords. The server MUST hash the supplied password before
+   * writing to `password_hash`. After successful creation the endpoint SHOULD
+   * issue the standard authorization response (short-lived access token and
+   * longer-lived refresh token) and use secure cookie or Authorization header
+   * semantics per platform rules. Because admin accounts are high-privilege,
+   * the implementation SHOULD require out-of-band approval or invite-code
+   * validation in production; that gating is an implementation choice but must
+   * reference the `email` uniqueness constraint and `role` semantics in the
+   * schema.
    *
-   * Related operations and workflow integration: This operation complements
-   * `POST /auth/admin/login` (to obtain access tokens) and `POST
-   * /auth/admin/refresh` (to refresh tokens). After creation, the caller is
-   * expected to use the issued tokens from this response (see response schema)
-   * to authenticate subsequent admin-only endpoints. If email verification is
-   * required by policy, the implementation should create an initial unverified
-   * state and record this in `todo_app_audit_records`.
+   * Related operations and error handling: This operation is intended to be
+   * used together with `POST /auth/admin/login` and `POST /auth/admin/refresh`.
+   * Validation errors to return include duplicate `email` (conflict/400 with
+   * details), invalid email format, and password policy violations. Successful
+   * responses return an authorized payload referencing the `todo_app_admin`
+   * identity and tokens.
    *
    * @param connection
-   * @param body Registration payload for a new admin account.
+   * @param body Admin registration payload. The server expects email and
+   *   password; optional display_name and role may be provided.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
   public async join(
+    @Ip()
+    ip: string,
     @TypedBody()
     body: ITodoAppAdmin.ICreate,
   ): Promise<ITodoAppAdmin.IAuthorized> {
@@ -73,50 +81,54 @@ export class AuthAdminController {
   }
 
   /**
-   * Authenticate admin and issue tokens (todo_app_admin).
+   * Authenticate admin credentials and return authorization payload.
    *
-   * Purpose and overview: This endpoint authenticates an administrator by
-   * validating supplied credentials against the `todo_app_admin` model. It
-   * references the `email` (unique) column and compares the supplied password
-   * to the stored `password_hash` field before issuing tokens. Successful
-   * authentication may update `last_active_at` on the `todo_app_admin` row.
+   * Purpose and overview: This endpoint authenticates an administrative
+   * operator using credentials stored in the Prisma `todo_app_admin` table. It
+   * accepts `email` and `password` and, on success, returns an authorization
+   * payload (access + refresh tokens) and basic admin identity details (id,
+   * email, display_name, role).
    *
-   * Implementation details and validation: The implementation MUST validate
-   * that the provided `email` exists in `todo_app_admin`. Password verification
-   * must compare the supplied secret to the `password_hash` using secure hash
-   * verification (e.g., bcrypt/argon2). On success, the implementation may
-   * update `last_active_at` to the current timestamp and optionally create an
-   * audit record in `todo_app_audit_records` with `action_type` such as
-   * `admin_login` and `actor_role` set to `admin`.
+   * Implementation details and DB field usage: Authentication MUST locate the
+   * `todo_app_admin` row by `email` (the schema has `@@unique([email])`). The
+   * supplied plaintext password MUST be compared against the stored
+   * `password_hash` using a secure password verification algorithm. The service
+   * MUST check `is_active` before issuing tokens and disallow authentication
+   * for inactive accounts; `created_at`/`updated_at` can be returned for client
+   * auditing if useful.
    *
-   * Role-specific integration and behavior: This is a public authentication
-   * endpoint that issues an `ITodoAppAdmin.IAuthorized` response containing
-   * short-lived access credentials and a refresh credential. The caller uses
-   * these tokens for subsequent admin-scoped API calls. The operation should
-   * respect account status (the `account_status` field on `todo_app_user`
-   * exists for users; for admins the `todo_app_admin` model has `is_super` and
-   * timestamps — implementors may add an `account_status` equivalent if needed,
-   * but do not assume it exists by default on `todo_app_admin`).
+   * Actor-specific integration and session recording: Successful authentication
+   * SHOULD create a `todo_app_admin_sessions` record (referencing
+   * `todo_app_admin_sessions`) with `ip`, `href`, and `referrer` for audit and
+   * session-management purposes. The presence of `deleted_at` on the admin row
+   * indicates administrative removal and should prevent login if set.
    *
-   * Security considerations: Do NOT include `password_hash` in any response.
-   * Failed login attempts SHOULD be logged to `todo_app_audit_records` with
-   * `action_type` like `admin_login_failed` to support monitoring and abuse
-   * detection. Apply rate limits and account lockout policies at higher
-   * layers.
+   * Security considerations and abuse prevention: Implement rate-limiting and
+   * monitoring for failed login attempts for admin emails and consider
+   * multi-factor enrollment for admin accounts (MFA for admins is recommended
+   * even though not present in this schema). The endpoint MUST never return the
+   * `password_hash` field and MUST redact sensitive fields from logs. Error
+   * responses should be non-revealing (e.g., "Invalid email or password") while
+   * providing audit logging via `todo_app_audit_logs` for failed/suspicious
+   * attempts.
    *
-   * Related operations: After successful login, the issued tokens are expected
-   * to be used with `POST /auth/admin/refresh` to renew short-lived access
-   * tokens and with admin-protected endpoints that require `authorizationRole:
-   * "admin"` such as password change or administrative maintenance actions.
+   * Related operations and workflow integration: This operation pairs with
+   * `POST /auth/admin/refresh` to continue sessions. Clients should store and
+   * rotate refresh tokens as described by platform token policies. For account
+   * lifecycle changes (suspend/reactivate), admin-authenticated actions
+   * recorded in `todo_app_admin_actions` and `todo_app_audit_logs` provide the
+   * necessary audit trail.
    *
    * @param connection
-   * @param body Login payload: admin email and password.
+   * @param body Admin login payload including email and password.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
   public async login(
+    @Ip()
+    ip: string,
     @TypedBody()
     body: ITodoAppAdmin.ILogin,
   ): Promise<ITodoAppAdmin.IAuthorized> {
@@ -131,50 +143,59 @@ export class AuthAdminController {
   }
 
   /**
-   * Refresh admin access token.
+   * Refresh admin access tokens using a valid refresh token.
    *
-   * Purpose and overview: This endpoint accepts a valid refresh credential and
-   * issues a new short-lived access token (and optionally a new refresh token).
-   * While `todo_app_admin` does not store token values in any specific column,
-   * the operation is semantically tied to admin sessions for accounts
-   * represented by `todo_app_admin.id` and `todo_app_admin.email`.
+   * Purpose and overview: This endpoint renews an admin's access credentials by
+   * verifying a presented refresh token and issuing a new access token (and
+   * optionally a rotated refresh token). The endpoint is part of the admin
+   * authentication lifecycle and must correlate tokens to the `todo_app_admin`
+   * identity in the Prisma schema.
    *
-   * Implementation details and security: The implementation must validate the
-   * presented refresh credential according to the chosen session/token
-   * architecture. Because the Prisma schema does not include dedicated token
-   * storage fields, token persistence and revocation logic is an implementation
-   * concern; however, all refresh operations SHOULD be recorded to
-   * `todo_app_audit_records` (e.g., `action_type = refresh_token_used`,
-   * `target_id = admin id`) to support auditability.
+   * Implementation details and DB field usage: The service MUST validate that
+   * the target admin account exists (lookup by id embedded in the refresh token
+   * or via a token-store), that `is_active` is true, and that `deleted_at` is
+   * null. On successful validation the service issues a new `IAuthorized`
+   * response and SHOULD record the rotation event in
+   * `todo_app_user_activity_logs` or `todo_app_audit_logs` for traceability.
+   * The operation may also create or update a `todo_app_admin_sessions` record
+   * to reflect refreshed session metadata.
    *
-   * Role-specific integration: This is a public endpoint in the auth flow
-   * (clients call it with a refresh credential). On successful refresh, the
-   * response returns the same `ITodoAppAdmin.IAuthorized` shape used for login
-   * / join so that clients have a consistent authorized payload. The server
-   * SHOULD update `last_active_at` for the related `todo_app_admin` row when
-   * appropriate.
+   * Actor-specific integration and session safety: Because refresh exchanges
+   * extend session life, the implementation SHOULD check for session revocation
+   * policies and any administrative revocation markers before issuing new
+   * tokens. The admin model's `role` field remains authoritative for
+   * permissioning after token renewal and should be included in returned
+   * identity claims.
    *
-   * Security considerations: Refresh tokens SHOULD be revocable (server-side
-   * blacklist or rotating refresh tokens). Revocation and revocation attempts
-   * SHOULD be logged to `todo_app_audit_records` with appropriate `actor_role`
-   * and `action_type` so that administrators can trace suspicious activity.
+   * Security considerations and token rotation: Refresh token verification MUST
+   * include checks for token revocation and issuance timestamps. The endpoint
+   * MUST never return password-related data. Token rotation events SHOULD be
+   * auditable. If refresh token rotation is used, prior refresh tokens should
+   * be invalidated in the token store to reduce replay risk.
    *
-   * Related operations: Works together with `POST /auth/admin/login` (initial
-   * issuance) and admin session revocation endpoints (not included here).
+   * Related operations and caller guidance: This operation complements `POST
+   * /auth/admin/login` (initial issuance) and should be used for session
+   * continuity. Clients must handle 401/403 responses by redirecting users to
+   * the login flow. Audit entries for refresh failures and success SHOULD be
+   * captured in `todo_app_audit_logs` for administrative review.
    *
    * @param connection
-   * @param body Payload containing the refresh credential for token renewal.
+   * @param body Refresh token payload. Contains the refresh token string or
+   *   token handle used to request a new access token.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")
   public async refresh(
+    @AdminAuth()
+    admin: AdminPayload,
     @TypedBody()
     body: ITodoAppAdmin.IRefresh,
   ): Promise<ITodoAppAdmin.IAuthorized> {
     try {
       return await postAuthAdminRefresh({
+        admin,
         body,
       });
     } catch (error) {

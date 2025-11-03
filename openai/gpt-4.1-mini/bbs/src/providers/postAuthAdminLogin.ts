@@ -8,6 +8,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminSession";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
@@ -16,76 +17,78 @@ export async function postAuthAdminLogin(props: {
   body: IDiscussionBoardAdmin.ILogin;
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
   const { body } = props;
+
   const admin = await MyGlobal.prisma.discussion_board_admins.findFirst({
-    where: {
-      email: body.email,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      email: true,
-      password_hash: true,
-      display_name: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
+    where: { email: body.email, deleted_at: null },
+  });
+
+  if (!admin) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+
+  const isValid = await PasswordUtil.verify(body.password, admin.password_hash);
+
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+
+  const now = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  const session = await MyGlobal.prisma.discussion_board_admin_sessions.create({
+    data: {
+      id: v4(),
+      discussion_board_admin_id: admin.id,
+      ip: body.ip ?? "",
+      href: body.href,
+      referrer: body.referrer,
+      created_at: now,
+      expired_at: accessExpires,
     },
   });
 
-  if (admin === null) {
-    throw new HttpException("Unauthorized", 401);
-  }
-
-  const passwordValid = await PasswordUtil.verify(
-    body.password,
-    admin.password_hash,
-  );
-  if (!passwordValid) {
-    throw new HttpException("Unauthorized", 401);
-  }
-
-  const now = new Date();
-  const accessTokenExpiredAt = new Date(now.getTime() + 3600 * 1000);
-  const refreshTokenExpiredAt = new Date(now.getTime() + 7 * 24 * 3600 * 1000);
-
-  const accessToken = jwt.sign(
-    {
-      id: admin.id,
-      type: "admin",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
-
-  const refreshToken = jwt.sign(
-    {
-      id: admin.id,
-      tokenType: "refresh",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
   return {
     id: admin.id,
     email: admin.email,
     password_hash: admin.password_hash,
-    display_name: admin.display_name,
     created_at: toISOStringSafe(admin.created_at),
     updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at:
-      admin.deleted_at === null ? null : toISOStringSafe(admin.deleted_at),
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(accessTokenExpiredAt),
-      refreshable_until: toISOStringSafe(refreshTokenExpiredAt),
-    },
+    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    token,
   };
 }

@@ -1,0 +1,541 @@
+/// Physical or virtual stock locations owned by a seller (warehouse, store,
+/// 3PL node). Serves as the per-location anchor for inventory tracking and
+/// inbound receipts. Each location belongs to exactly one {@link
+/// shopping_mall_sellers} and is referenced by {@link
+/// shopping_mall_sku_location_inventories}, {@link
+/// shopping_mall_inbound_shipments}, and alerting. Business uniqueness is
+/// enforced per seller via (seller, code).
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_locations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Seller-scoped unique code identifying the location (e.g., "WH-SEOUL-01").
+  code String
+  
+  /// Human readable name of the location for operations and search.
+  name String
+  
+  /// IANA timezone identifier for operational cutoffs (e.g., "Asia/Seoul").
+  timezone String
+  
+  /// Country code/label for shipping/serviceability checks.
+  country String
+  
+  /// Administrative region/state/province of the location.
+  region String?
+  
+  /// City of the location.
+  city String?
+  
+  /// Primary street address line.
+  address_line1 String
+  
+  /// Secondary street address line.
+  address_line2 String?
+  
+  /// Postal/ZIP code.
+  postal_code String
+  
+  /// Operational contact phone for the location.
+  phone String?
+  
+  /// Whether the location is active and eligible for allocations.
+  active Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the location is retired.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sku_location_inventories shopping_mall_sku_location_inventories[]
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_inventory_adjustments shopping_mall_inventory_adjustments[]
+  shopping_mall_inbound_shipments shopping_mall_inbound_shipments[]
+  shopping_mall_low_stock_alerts shopping_mall_low_stock_alerts[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id, code], map: "shopping_mall_inventory_locations_shopping_mall_seller_dcb9c166")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, name], map: "shopping_mall_inventory_locations_shopping_mall_seller_ed1bf7a1")
+  @@index([country, region, city])
+}
+
+/// Per-SKU per-location inventory state storing raw counters only (no
+/// derived fields). Tracks current On-hand, Reserved, Quarantine, Inbound
+/// Confirmed, and Safety Stock threshold. Uniqueness is per (inventory
+/// location, SKU).
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_location_inventories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target location's {@link shopping_mall_inventory_locations.id}.
+  shopping_mall_inventory_location_id String
+  
+  /// Target SKU's {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Current sellable physical quantity at the location.
+  on_hand Int
+  
+  /// Total currently reserved quantity for pending orders/checkouts.
+  reserved Int
+  
+  /// Quantity held in quarantine/damaged and excluded from ATP.
+  quarantine Int
+  
+  /// Quantity expected from confirmed inbound receipts not yet received.
+  inbound_confirmed Int
+  
+  /// Configured minimum buffer quantity triggering alerts when breached.
+  safety_stock Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the record is retired.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inventoryLocation shopping_mall_inventory_locations @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inventory_location_id, shopping_mall_product_sku_id], map: "shopping_mall_sku_location_inventories_shopping_mall_i_fd016ccb")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, updated_at], map: "shopping_mall_sku_location_inventories_shopping_mall_p_8cfa50b8")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_location_id, updated_at], map: "shopping_mall_sku_location_inventories_shopping_mall_i_9e5574d0")
+}
+
+/// Time-limited, idempotent inventory holds used during checkout to prevent
+/// oversell. Each record reserves a quantity of a SKU at a specific
+/// inventory location. Optionally links to a cart during checkout and to an
+/// order when converted. TTL is enforced via expires_at and release tracked
+/// via released_at. Idempotency enforced via unique business_reference.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_reservations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reserved SKU's {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Location's {@link shopping_mall_inventory_locations.id} from which
+  /// quantity is reserved.
+  shopping_mall_inventory_location_id String
+  
+  /// Related cart's {@link shopping_mall_carts.id} for pre-order reservation
+  /// context.
+  shopping_mall_cart_id String?
+  
+  /// Converted order's {@link shopping_mall_orders.id} once checkout succeeds.
+  shopping_mall_order_id String?
+  
+  /// Idempotency key for reservation requests (unique business reference).
+  business_reference String
+  
+  /// Reserved quantity for this request.
+  quantity Int
+  
+  /// Business state of the reservation (e.g., active, released, expired).
+  state String
+  
+  /// Reservation expiration timestamp (TTL).
+  expires_at DateTime
+  
+  /// Timestamp when reservation was released (if applicable).
+  released_at DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for administrative masking when needed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  inventoryLocation shopping_mall_inventory_locations @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  cart shopping_mall_carts? @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([business_reference])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, state, expires_at], map: "shopping_mall_inventory_reservations_shopping_mall_pro_c4d3bf6f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_location_id, expires_at], map: "shopping_mall_inventory_reservations_shopping_mall_inv_5fc1b088")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cart_id, created_at], map: "shopping_mall_inventory_reservations_shopping_mall_car_a862791a")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_inventory_reservations_shopping_mall_ord_5e798128")
+}
+
+/// Immutable audit lines for inventory-affecting events with controlled
+/// reason codes. Adjustments modify counters in {@link
+/// shopping_mall_sku_location_inventories} via business processes and
+/// preserve an audit trail for compliance (reasoned deltas). Actor-specific
+/// identity is handled by platform audit logs; this table captures
+/// normalized deltas only.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_adjustments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Affected location's {@link shopping_mall_inventory_locations.id}.
+  shopping_mall_inventory_location_id String
+  
+  /// Affected SKU's {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Reason code's {@link shopping_mall_policy_reason_codes.id} describing why
+  /// the adjustment occurred.
+  shopping_mall_policy_reason_code_id String
+  
+  /// Signed integer change to On-hand (positive or negative).
+  delta_on_hand Int
+  
+  /// Signed integer change to Reserved (positive or negative).
+  delta_reserved Int
+  
+  /// Signed integer change to Quarantine (positive or negative).
+  delta_quarantine Int
+  
+  /// Optional human-readable note describing context of the adjustment.
+  note String?
+  
+  /// Creation timestamp (adjustment time).
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for privacy/compliance masking when needed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inventoryLocation shopping_mall_inventory_locations @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  reasonCode shopping_mall_policy_reason_codes @relation(fields: [shopping_mall_policy_reason_code_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_reason_code_id], map: "shopping_mall_inventory_adjustments_shopping_mall_poli_a55b9aac")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_location_id, created_at], map: "shopping_mall_inventory_adjustments_shopping_mall_inve_45cfc61f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, created_at], map: "shopping_mall_inventory_adjustments_shopping_mall_prod_456781c3")
+}
+
+/// Inbound receiving documents for inventory replenishment tied to a
+/// specific inventory location. Represents a shipment from supplier/transfer
+/// with carrier and scheduling information. Items are stored in {@link
+/// shopping_mall_inbound_shipment_items}.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inbound_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Receiving location's {@link shopping_mall_inventory_locations.id}.
+  shopping_mall_inventory_location_id String
+  
+  /// Business reference code unique per location (e.g., ASN/PO number).
+  reference_code String
+  
+  /// Carrier or logistics provider name.
+  carrier_name String?
+  
+  /// Estimated arrival timestamp for planning.
+  expected_arrival_at DateTime?
+  
+  /// Timestamp when inbound was fully received (if applicable).
+  received_at DateTime?
+  
+  /// Business status of the inbound (e.g., created, in_transit, receiving,
+  /// received).
+  status String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inventoryLocation shopping_mall_inventory_locations @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inbound_shipment_items shopping_mall_inbound_shipment_items[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inventory_location_id, reference_code], map: "shopping_mall_inbound_shipments_shopping_mall_inventor_44e6d206")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_location_id, status], map: "shopping_mall_inbound_shipments_shopping_mall_inventor_f323a6f2")
+  @@index([status, expected_arrival_at])
+  @@index([expected_arrival_at])
+}
+
+/// Line items under an inbound shipment. Each line connects the parent
+/// {@link shopping_mall_inbound_shipments} with a specific {@link
+/// shopping_mall_product_skus} and tracks expected vs received quantities
+/// with optional discrepancy notes.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inbound_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent shipment's {@link shopping_mall_inbound_shipments.id}.
+  shopping_mall_inbound_shipment_id String
+  
+  /// SKU's {@link shopping_mall_product_skus.id} on this shipment line.
+  shopping_mall_product_sku_id String
+  
+  /// Expected quantity to be received for this SKU.
+  expected_quantity Int
+  
+  /// Actual received quantity (defaults to 0 until receipt).
+  received_quantity Int
+  
+  /// Optional note describing over/short/damage discrepancies.
+  discrepancy_note String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inboundShipment shopping_mall_inbound_shipments @relation(fields: [shopping_mall_inbound_shipment_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inbound_shipment_id, shopping_mall_product_sku_id], map: "shopping_mall_inbound_shipment_items_shopping_mall_inb_17e91310")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inbound_shipment_id, created_at], map: "shopping_mall_inbound_shipment_items_shopping_mall_inb_6f1efcb1")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, shopping_mall_inbound_shipment_id], map: "shopping_mall_inbound_shipment_items_shopping_mall_pro_5849c8d1")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, created_at], map: "shopping_mall_inbound_shipment_items_shopping_mall_pro_0ea2233b")
+}
+
+/// Per-SKU backorder configuration defining whether backorders are accepted
+/// and under what limits. Applies to {@link shopping_mall_product_skus}.
+/// Used during checkout/reservations to determine acceptability and caps.
+/// Single policy per SKU enforced via unique constraint.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_backorder_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target SKU's {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Whether backorders are permitted for the SKU.
+  allow_backorder Boolean
+  
+  /// Optional maximum total backorder quantity permitted across all locations
+  /// (null means unlimited by policy).
+  max_backorder_quantity Int?
+  
+  /// Whether allocation follows FIFO across backorders when inventory is
+  /// replenished.
+  fifo_allocation Boolean
+  
+  /// Optional expected lead time in days communicated to customers.
+  lead_time_days Int?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_sku_id], map: "shopping_mall_backorder_policies_shopping_mall_product_ef81b499")
+  @@index([allow_backorder, updated_at])
+}
+
+/// Per-SKU preorder configuration defining whether preorders are accepted,
+/// availability date, and optional caps. Applies to {@link
+/// shopping_mall_product_skus}. Single policy per SKU enforced via unique
+/// constraint.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_preorder_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target SKU's {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Whether preorders are permitted for the SKU.
+  allow_preorder Boolean
+  
+  /// Availability/release timestamp when fulfillment may begin.
+  available_at DateTime
+  
+  /// Optional maximum total preorder quantity permitted across all locations
+  /// (null means unlimited by policy).
+  max_preorder_quantity Int?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_sku_id], map: "shopping_mall_preorder_policies_shopping_mall_product__a4cf5db4")
+  @@index([allow_preorder, available_at])
+}
+
+/// System-generated alert records for low-stock or stockout conditions on a
+/// (location, SKU) basis. Alerts are derived from {@link
+/// shopping_mall_sku_location_inventories.safety_stock} breaches or zero ATP
+/// signals and support acknowledgement/resolution tracking. Managed via
+/// operational workflows; not directly user-authored.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_low_stock_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Location's {@link shopping_mall_inventory_locations.id}.
+  shopping_mall_inventory_location_id String
+  
+  /// SKU's {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Type of alert (e.g., "threshold_breach", "stockout").
+  alert_type String
+  
+  /// Threshold value that triggered the alert (safety stock or zero).
+  threshold Int
+  
+  /// On-hand quantity at trigger time for context.
+  current_on_hand Int
+  
+  /// Timestamp when the alert was created.
+  triggered_at DateTime
+  
+  /// Timestamp when the alert was resolved (if applicable).
+  resolved_at DateTime?
+  
+  /// Timestamp when the alert was acknowledged (if applicable).
+  acknowledged_at DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inventoryLocation shopping_mall_inventory_locations @relation(fields: [shopping_mall_inventory_location_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id], map: "shopping_mall_low_stock_alerts_shopping_mall_product_s_798b2768")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_location_id, shopping_mall_product_sku_id, triggered_at], map: "shopping_mall_low_stock_alerts_shopping_mall_inventory_25bc6c3c")
+}

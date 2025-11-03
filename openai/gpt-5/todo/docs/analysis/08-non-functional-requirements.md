@@ -1,207 +1,264 @@
-# Non-Functional Requirements for Minimal Todo List Service (todoList)
+# Minimal Todo Service – Functional Requirements (MVP)
 
-## 1) Introduction and Scope
+This document defines the complete, precise, and testable business-level functional requirements for the minimal Todo service. It describes WHAT the system must do, not HOW to implement it. All technical decisions (architecture, APIs, database design, tokens, and storage) are at the development team’s discretion.
 
-Purpose: Establish business-level quality expectations for the minimal Todo list service identified by the prefix “todoList.” These requirements describe WHAT quality the service must deliver to users, not HOW to implement it.
+For business context and scope framing, see the [Service Overview for the Minimal Todo Service](./01-service-overview.md). For actor definition and ownership boundaries, see the [User Actors and Permissions Specification](./02-user-actors-and-permissions.md).
 
-Scope: Core minimal operations only—authenticate where applicable, create, read, update, complete/uncomplete, delete, and list/filter/paginate personal Todos. This document sets user-centric targets for performance, reliability/availability, usability/accessibility, maintainability/operability, scalability, and observability.
+## Overview and Guiding Principles
 
-Audience: Product owners and developers who will implement and verify business outcomes without being constrained to specific technical solutions.
+- Minimalism: Only the smallest set of features necessary to manage personal todos is included in MVP.
+- Single actor: A single authenticated user manages their own todos; there are no shared lists in MVP.
+- Personal data isolation: Users can access only their own data.
+- Business-first requirements: Requirements below are expressed in natural language and EARS format where applicable; no endpoints, schemas, or technical flows are prescribed.
+- Deterministic behavior: Every operation has clear inputs, validations, outcomes, and errors in business terms.
+- Responsiveness: User-perceived response times are specified to guide implementation targets.
 
-Constraints:
-- No API specifications, database schemas, infrastructure choices, algorithms, or library mandates.
-- Business requirements stated with EARS syntax where applicable.
-- Locale: en-US for language; timestamps presented in the user’s locale; default timezone assumption is Asia/Seoul when no preference is available.
+EARS Style Reminder: Keywords (WHEN, WHILE, IF, THEN, WHERE, THE, SHALL) are in English; all other text is in en-US.
 
-Definitions (Business Terms):
-- Service Level Indicator (SLI): A measurable characteristic of user experience (e.g., time to display the first page of a Todo list).
-- Service Level Objective (SLO): A target range for an SLI over a timeframe (e.g., P95 list-display < 1 second during a calendar month).
-- Normal Conditions: Typical modern device and everyday network; no ongoing incident; personal collection within scale envelope; no bulk or stress testing.
-- Typical Result Size: Up to 50 items for a single list page in the minimal product; users navigate pages for larger collections.
+### Core System Identity (Business Perspective)
+- THE minimal todo service SHALL allow users to register, authenticate, and manage their personal todo items.
+- THE minimal todo service SHALL require authentication for any action on todo data.
+- THE minimal todo service SHALL not expose any user’s data to other users.
 
-## 2) Quality Model Overview
+### Performance Expectations (User-Perceived)
+- WHEN a user performs core actions (register, login, create todo, list todos, update todo, toggle completion, delete todo), THE system SHALL respond within 2 seconds under normal conditions for typical data sizes (<= 1,000 todos per user).
+- WHERE large lists are requested (more than 100 items at once), THE system SHALL provide results in pages of 20 items by default to maintain responsiveness within 2 seconds per page request.
 
-The minimal Todo experience emphasizes speed, predictability, clarity, and dependability over advanced features. Non-functional goals align with the functional scope and related documents:
-- Service vision and scope: Service Overview
-- Roles and access boundaries: User Roles and Permissions
-- Functional behaviors: Minimal Todo Functional Requirements
-- Error behavior and recovery: Error Handling and Recovery
-- Security and privacy: Security and Privacy
-- Data lifecycle and retention: Data Lifecycle and Retention
+## Account Lifecycle (business-level)
 
-EARS anchoring:
-- THE todoList service SHALL meet user-centric targets for performance, availability, and usability so that core actions feel immediate and predictable.
-- WHILE the user operates within normal conditions, THE todoList service SHALL preserve responsiveness and clarity across all minimal operations.
+This section defines business behavior for registration, login, session continuity, logout, and account deletion. This MVP does not prescribe email verification or password reset; such features may be considered in future iterations.
 
-## 3) Performance Expectations
+### Registration
+- WHEN a new user submits required registration information, THE system SHALL create a personal account.
+- THE required information for registration SHALL include a unique email and a password compliant with business rules defined below.
+- IF the provided email already belongs to an existing account, THEN THE system SHALL reject registration with a business message indicating the email is already in use.
+- IF the provided password does not meet minimum strength requirements, THEN THE system SHALL reject registration with a business message indicating password requirements were not met.
 
-### 3.1 Principles (User-Centric)
-- THE todoList service SHALL make core actions feel immediate through low latency and prompt feedback.
-- THE todoList service SHALL provide consistent response times under normal conditions so users can rely on predictable behavior.
-- IF an operation exceeds typical duration, THEN THE todoList service SHALL show in-progress feedback and conclude with a clear success or failure message.
+Password Requirements (business rules):
+- THE password SHALL be at least 8 characters in length.
+- THE password SHALL contain at least one letter and at least one number.
+- WHERE users choose stronger passwords (e.g., adding symbols), THE system SHALL accept them.
 
-### 3.2 Operation Targets and Feedback
+### Login and Session
+- WHEN an existing user submits valid credentials, THE system SHALL authenticate the user and establish a session.
+- IF credentials are invalid, THEN THE system SHALL reject the login attempt with a business message indicating the credentials are invalid.
+- WHILE the user session is active, THE system SHALL allow the user to perform all permitted actions on their own todos without re-entering credentials.
 
-Targets apply under normal conditions and reflect user-perceived completion (updated state or clear confirmation visible to the user).
+### Logout
+- WHEN a user initiates logout, THE system SHALL end the session and prevent further authenticated actions until the user logs in again.
 
-| Operation | Typical Result Size | Target P50 | Target P95 | Target P99 | Max Acceptable (Single Action) | Feedback Expectation |
-|---|---|---|---|---|---|---|
-| Create a Todo | N/A | 300 ms | 800 ms | 1.5 s | 2 s | Immediate confirmation |
-| Read one Todo | N/A | 200 ms | 600 ms | 1 s | 1.5 s | Content appears promptly |
-| Update Todo fields | N/A | 300 ms | 800 ms | 1.5 s | 2 s | Clear saved confirmation |
-| Complete/Uncomplete Todo | N/A | 200 ms | 600 ms | 1 s | 1.5 s | Immediate state change |
-| Delete a Todo | N/A | 300 ms | 800 ms | 1.5 s | 2 s | Clear deletion confirmation |
-| List Todos (first page) | Up to 50 items | 400 ms | 1 s | 2 s | 2.5 s | Newest-first list appears |
-| List Todos (subsequent pages) | Up to 50 items | 300 ms | 800 ms | 1.5 s | 2 s | Smooth transitions |
-| Basic filter (status or simple text) | Up to 50 items | 400 ms | 1 s | 2 s | 2.5 s | Results update promptly |
+### Account Deletion (User-Initiated)
+- WHEN a user confirms account deletion, THE system SHALL delete the account and all associated todos from the user’s view immediately.
+- IF the user’s account is deleted, THEN THE system SHALL prevent any further login using the deleted account credentials.
+- WHERE legal or compliance requirements necessitate retention (not applicable by default in MVP), THE system SHALL follow the applicable policy as defined in business governance documents outside the MVP scope.
 
-EARS requirements:
-- THE todoList service SHALL meet the tabled P95 targets for each operation during a monthly window under normal conditions.
-- IF an operation is expected to exceed 2 seconds, THEN THE todoList service SHALL provide immediate in-progress feedback until completion or failure.
-- WHEN any core action completes, THE todoList service SHALL present the updated state without requiring manual refresh.
-- IF a user repeats the same action rapidly, THEN THE todoList service SHALL prevent unintended duplication and present the final consistent state.
+## Todo Item Lifecycle: Create, Read, Update, Delete
 
-### 3.3 Performance-Feedback Flow (Mermaid)
+Each todo item is personal to the authenticated user and comprises the following business-level fields:
+- Title (required): short text describing the task.
+- Description (optional): longer text elaborating the task.
+- Due date (optional): date-only value representing the intended completion date; time-of-day is not supported in MVP.
+- Completion status (required, default false): indicates whether the task is complete.
+
+### Ownership and Access
+- THE system SHALL ensure users can create, view, update, toggle completion, and delete only their own todo items.
+- IF a user attempts to access or modify a todo that does not belong to them, THEN THE system SHALL deny the action and provide a business message indicating lack of permission.
+
+### Create Todo
+- WHEN a user submits a new todo with a valid title and optional fields, THE system SHALL create the todo with completion status defaulting to not completed.
+- THE title SHALL be required and between 1 and 120 characters inclusive.
+- WHERE a description is provided, THE description SHALL be allowed up to 2,000 characters.
+- WHERE a due date is provided, THE due date SHALL be a valid calendar date (date-only, no time-of-day) recognizable in the user’s locale.
+- WHERE a due date is omitted, THE system SHALL treat the todo as having no due date.
+
+Validation Failures on Create
+- IF the title is missing or empty after trimming whitespace, THEN THE system SHALL reject creation with a business message indicating title is required.
+- IF the title exceeds 120 characters, THEN THE system SHALL reject creation with a business message indicating the maximum length.
+- IF the description exceeds 2,000 characters, THEN THE system SHALL reject creation with a business message indicating the maximum length.
+- IF the due date is not a recognizable calendar date, THEN THE system SHALL reject creation with a business message indicating the due date format is invalid.
+
+### Read Todo (Single)
+- WHEN a user requests a specific todo that they own, THE system SHALL return the todo’s current business fields and values.
+- IF the todo does not exist or has been deleted, THEN THE system SHALL respond with a business message indicating the resource is not available.
+
+### List Todos (Overview)
+- WHEN a user requests their todo list, THE system SHALL return only the user’s todos subject to listing, sorting, and filtering rules defined later in this document.
+
+### Update Todo (Fields)
+- WHEN a user updates fields of a todo they own, THE system SHALL apply the changes if all validations pass and return the updated values.
+- WHERE a user updates the title, THE title SHALL remain between 1 and 120 characters inclusive after trimming whitespace.
+- WHERE a user updates the description, THE description SHALL be allowed up to 2,000 characters.
+- WHERE a user adds or updates the due date, THE due date SHALL be a valid calendar date.
+- WHERE a user clears the due date, THE system SHALL remove the due date and treat the todo as having no due date.
+
+Validation Failures on Update
+- IF the updated title is missing or empty after trimming whitespace, THEN THE system SHALL reject the update with a business message indicating title is required.
+- IF the updated title exceeds 120 characters, THEN THE system SHALL reject the update with a business message indicating the maximum length.
+- IF the updated description exceeds 2,000 characters, THEN THE system SHALL reject the update with a business message indicating the maximum length.
+- IF the updated due date is not a recognizable calendar date, THEN THE system SHALL reject the update with a business message indicating the due date format is invalid.
+
+### Toggle Completion Status
+- WHEN a user marks a todo as complete, THE system SHALL set the completion status to completed and preserve other fields unchanged.
+- WHEN a user reopens a completed todo, THE system SHALL set the completion status to not completed and preserve other fields unchanged.
+- WHERE a todo is already in the requested state, THE system SHALL accept the request and maintain the current state without error.
+
+### Delete Todo
+- WHEN a user deletes a todo they own, THE system SHALL remove it from all standard lists immediately.
+- THE deletion behavior SHALL be permanent in MVP (no recycle bin, no restore).
+- IF a user attempts to delete a todo that does not exist, THEN THE system SHALL respond with a business message indicating the resource is not available.
+
+## Completion Status and Due Date Rules (optional due date)
+
+### Completion Status Semantics
+- THE completion status SHALL be a boolean with two business states: completed or not completed.
+- WHEN a todo is created, THE completion status SHALL default to not completed.
+- WHERE completion status is toggled, THE system SHALL record the new status immediately and reflect it in subsequent listings and reads.
+
+### Due Date Semantics (Date-Only)
+- THE due date SHALL be optional on create and update.
+- WHERE a due date is set, THE due date SHALL be interpreted as a calendar date without time-of-day.
+- THE system SHALL consider a todo "overdue" for business logic if the current date is strictly later than the due date and the todo is not completed.
+- THE system SHALL consider a todo "due today" if the current date equals the due date and the todo is not completed.
+- WHERE time zone considerations apply, THE interpretation SHALL use the user’s business locale/region as determined by product policy; the MVP SHALL apply a consistent interpretation for all users to avoid ambiguous behavior.
+- WHERE a due date in the past is provided, THE system SHALL accept it and reflect the item as overdue if not completed.
+
+## Listing, Sorting, and Basic Filtering (business-level)
+
+### Listing Scope and Pagination
+- THE listing scope SHALL include only the authenticated user’s non-deleted todos.
+- THE default page size SHALL be 20 items, and users MAY request different page sizes up to a maximum of 100 items per request in MVP.
+- WHERE the requested page size exceeds 100, THE system SHALL cap the result at 100 items and indicate that a cap was applied in a business-appropriate manner.
+
+### Default Ordering
+- THE default ordering for list results SHALL be most recently created first (newest to oldest by creation time).
+
+### Supported Sorting Options (MVP)
+- WHERE a user requests alternate ordering, THE system SHALL support ordering by:
+  - Creation time (newest first or oldest first)
+  - Due date (earliest first or latest first); todos without a due date SHALL appear last when sorting by due date
+
+### Basic Filtering
+- THE system SHALL support a status filter with the following values:
+  - "all": includes all non-deleted todos regardless of completion status
+  - "active": includes only todos where completion status is not completed
+  - "completed": includes only todos where completion status is completed
+- WHERE a due date exists, THE system MAY expose conceptual groupings such as "overdue" and "due today" in presentation; however, the MVP filtering requirement is limited to status filters only.
+
+### Search (Deferred)
+- THE MVP SHALL exclude full-text search by keyword. Users can locate items using sorting and paging only in MVP.
+
+## Notifications and Reminders (explicitly out of scope for MVP)
+
+- THE MVP SHALL exclude push notifications, email reminders, in-app reminders, and recurring reminders.
+- IF users request reminder-related functions, THEN THE system SHALL communicate that reminders are not available in the current version.
+
+## Error Handling (Business-Level Outcomes)
+
+- IF an unauthenticated user attempts to perform an authenticated action on todos, THEN THE system SHALL deny the action and indicate that login is required.
+- IF a user attempts to access a todo that does not exist or has been deleted, THEN THE system SHALL respond that the resource is not available.
+- IF input validation fails (e.g., title length, invalid date), THEN THE system SHALL reject the action and provide a business message indicating which input failed and why in business terms.
+- IF simultaneous updates cause conflicts (e.g., a todo is deleted while being updated), THEN THE system SHALL inform the user that the item is no longer available and no changes were applied.
+
+## Non-Functional Expectations Referenced by Functionality (Business-Level)
+
+- THE system SHALL maintain user-perceived response time targets stated above.
+- THE system SHALL protect user privacy by ensuring data isolation at all times.
+- THE system SHALL be reliable enough to allow uninterrupted CRUD operations in normal conditions; operational targets and metrics are defined separately in non-functional requirements.
+
+## Acceptance Criteria
+
+The following acceptance criteria provide measurable, testable outcomes derived from the requirements.
+
+### Registration and Login
+- WHEN a unique email and compliant password are submitted, THE system SHALL create an account and allow login thereafter.
+- IF a duplicate email is used at registration, THEN THE system SHALL reject the request with a message indicating the email is in use.
+- WHEN valid credentials are used at login, THE system SHALL establish a session.
+- IF invalid credentials are used at login, THEN THE system SHALL deny access with a message indicating invalid credentials.
+
+### Logout
+- WHEN a user logs out, THE system SHALL terminate the session and require login for further actions.
+
+### Create Todo
+- WHEN a valid title is provided (1–120 chars), THE system SHALL create the todo with completion status set to not completed.
+- WHERE a description up to 2,000 chars is provided, THE system SHALL store it with the todo.
+- WHERE a valid date-only due date is provided, THE system SHALL set it and reflect due semantics.
+- IF title is empty or exceeds 120 chars, THEN THE system SHALL reject creation.
+- IF description exceeds 2,000 chars or due date is invalid, THEN THE system SHALL reject creation.
+
+### Read Todo
+- WHEN the owner requests an existing todo, THE system SHALL return all business fields.
+- IF the todo does not exist or is deleted, THEN THE system SHALL return a business message that the resource is not available.
+
+### List Todos
+- WHEN the owner requests the list without filters, THE system SHALL return up to 20 items ordered by newest first.
+- WHERE a page size is requested up to 100, THE system SHALL return that many items, else cap at 100.
+- WHERE status filter is set to active, THE system SHALL return only not-completed todos; where set to completed, only completed todos; where set to all, both.
+- WHERE sorting by due date ascending is chosen, THE system SHALL order by earliest due date first and place no-due-date items last.
+
+### Update Todo
+- WHEN the owner updates title, description, or due date within constraints, THE system SHALL persist the changes and reflect them on subsequent reads.
+- IF an updated field violates constraints, THEN THE system SHALL reject the update and preserve existing values.
+
+### Toggle Completion
+- WHEN the owner marks complete, THE system SHALL set completed; WHEN reopened, set not completed.
+- WHERE the requested state equals current state, THE system SHALL succeed without changing other fields.
+
+### Delete Todo
+- WHEN the owner deletes the todo, THE system SHALL remove it from all standard lists immediately and not show it again.
+- IF deletion is requested for a non-existent item, THEN THE system SHALL respond that the resource is not available.
+
+### Ownership and Isolation
+- IF a user attempts to access or modify another user’s todo, THEN THE system SHALL deny the action and provide a permission message.
+
+### Performance
+- WHEN any core action is performed under normal conditions and typical data volumes, THE system SHALL complete within 2 seconds perceived response time.
+
+## Visual References (Mermaid diagrams)
+
+### Account Lifecycle (Conceptual)
 ```mermaid
 graph LR
-  A["User Action"] --> B["Validate Input(Business Rules)"]
-  B --> C{"Allowed?"}
-  C -->|"Yes"| D["Process Action"]
-  C -->|"No"| H["Show Clear Validation Message"]
-  D --> E["Commit Change"]
-  E --> F["Update User-Visible State"]
-  F --> G["Record Telemetry(Latency,Success)"]
-  D -.->|"Takes >2s"| I["Show In-Progress Feedback"]
-  D -.->|"Error"| J["Show Actionable Error"]
+  subgraph "Account Lifecycle"
+    A["Start"] --> B["Register(Account)"]
+    B --> C{"Email Unique?"}
+    C -->|"Yes"| D["Account Created"]
+    C -->|"No"| E["Reject: Email In Use"]
+    D --> F["Login"]
+    F --> G{"Credentials Valid?"}
+    G -->|"Yes"| H["Session Active"]
+    G -->|"No"| I["Reject: Invalid Credentials"]
+    H --> J["Logout"]
+    H --> K["Delete Account"]
+    J --> L["Session Ended"]
+    K --> M["Account Deleted"]
+  end
 ```
 
-## 4) Reliability and Availability
-
-### 4.1 Availability Objectives
-- THE todoList service SHALL be available for core operations at least 99.5% of the time per calendar month, excluding scheduled maintenance announced in advance.
-- WHEN scheduled maintenance is required, THE todoList service SHALL announce at least 48 hours in advance and SHALL show a concise message during the window with expected return time.
-
-### 4.2 Durability, Integrity, and Consistency
-- THE todoList service SHALL ensure that any operation confirmed as successful remains durable and visible afterward.
-- IF partially processed actions cannot be completed, THEN THE todoList service SHALL revert to the last known good user-visible state and inform the user succinctly.
-- WHEN multiple sessions for the same account act concurrently, THE todoList service SHALL present the latest confirmed state and avoid duplicate Todos.
-
-### 4.3 Recovery Time and Point (Business-Level)
-- THE todoList service SHALL resume normal operation quickly after transient disruptions so that members can continue their tasks with minimal interruption.
-- WHERE business-level recovery objectives are referenced, THE todoList service SHALL uphold: user-confirmed operations are not lost (effective RPO for confirmed actions is zero from the user’s perspective), and resumption of basic actions occurs within a short period appropriate to the incident (business-level RTO target within minutes for minor disruptions).
-
-EARS requirements:
-- WHEN maintenance begins, THE todoList service SHALL present a friendly unavailability message with expected return time.
-- WHEN service resumes, THE todoList service SHALL reflect only successful, durable operations in all views.
-- IF a disruption occurs mid-action, THEN THE todoList service SHALL either complete the action safely or roll back and instruct the user to retry.
-
-## 5) Usability and Accessibility
-
-### 5.1 Confirmation and Clarity
-- THE todoList service SHALL provide concise confirmations after create, update, complete/uncomplete, and delete so users understand outcomes without ambiguity.
-- THE todoList service SHALL use plain, non-technical language in messages and avoid exposing internal details.
-
-### 5.2 Keyboard, Perceivability, and Robustness
-- THE todoList service SHALL be fully operable via keyboard-only for all core actions.
-- THE todoList service SHALL provide non-color cues (e.g., icons or text labels) to distinguish Active vs. Completed states.
-- THE todoList service SHALL ensure that changes in state (e.g., completion toggled, item created/deleted) are announced in a manner perceivable to assistive technologies.
-
-### 5.3 Language, Locale, and Timezone
-- THE todoList service SHALL present dates and times in the user’s locale and timezone preferences.
-- WHERE no preference is set, THE todoList service SHALL default to Asia/Seoul for interpreting date-only values and for user-facing timestamp presentation.
-
-EARS requirements:
-- WHEN a long-running process is underway, THE todoList service SHALL provide immediate and continuous feedback.
-- IF an error is shown, THEN THE todoList service SHALL keep user input available for correction where feasible and provide actionable guidance.
-
-## 6) Maintainability and Operability
-
-### 6.1 Change Management and Rollback
-- THE todoList service SHALL allow routine changes that do not materially disrupt core actions.
-- WHERE a change risks availability or data correctness, THE todoList service SHALL provide a reversible path so normal service can be restored rapidly.
-- THE todoList service SHALL communicate significant behavior changes to users in plain language before they take effect.
-
-### 6.2 Incident Handling and Communication
-- WHEN a user-impacting incident is detected (e.g., create or list unavailable), THE todoList service SHALL publish a clear status update within 30 minutes.
-- WHILE an incident is ongoing, THE todoList service SHALL provide brief progress updates at reasonable intervals.
-- WHEN resolved, THE todoList service SHALL publish a concise summary and any recovery guidance if user action is needed.
-
-### 6.3 Configuration and Policy Changes
-- THE todoList service SHALL ensure administrative configuration changes do not degrade member responsiveness.
-- WHERE a configuration affects user-visible behavior (e.g., default page size), THE todoList service SHALL document the current setting in user-facing help or notices.
-
-## 7) Scalability Expectations
-
-### 7.1 Per-User Scale Envelope
-- THE todoList service SHALL support up to 10,000 Todos stored per member over time with up to 1,000 considered “active” for everyday use.
-- THE todoList service SHALL keep list pagination responsive by limiting pages to reasonable sizes (up to 50 items per page in minimal scope).
-
-### 7.2 Growth Behavior and Prioritization
-- THE todoList service SHALL maintain performance targets for members operating within the scale envelope defined above.
-- IF aggregate usage grows so that typical latency approaches the Max Acceptable thresholds, THEN THE todoList service SHALL prioritize core actions to preserve member experience within target ranges.
-- WHERE administrative tasks occur, THE todoList service SHALL ensure they do not materially degrade member operations.
-
-## 8) Observability Needs
-
-### 8.1 SLIs, SLOs, and Error Budget (Business-Level)
-- THE todoList service SHALL measure user-perceived completion time for create, read, update, completion toggle, delete, list first page, list subsequent pages, and basic filter operations.
-- THE todoList service SHALL compute P50/P95 (and P99 where defined) for the measured actions per calendar month.
-- THE todoList service SHALL set SLOs as stated in the performance table for P95 targets, and SHALL track error budgets as the allowance for misses beyond the SLO.
-- IF the error budget is depleted before the end of the period, THEN THE todoList service SHALL prioritize reliability and performance work over new changes until SLOs are back on track.
-
-### 8.2 Alerting and Thresholds
-- WHEN P95 user-perceived latency for any core action exceeds its SLO for a sustained period, THE todoList service SHALL trigger an internal alert for timely investigation.
-- WHEN availability threatens to fall below 99.5% in the current month, THE todoList service SHALL trigger an internal alert and prioritize recovery.
-- THE todoList service SHALL track success and failure counts for core actions and categorize high-level failure reasons in business terms (validation, permission, missing resource, conflict, temporary condition).
-
-### 8.3 Status Communication and Transparency
-- WHEN user-visible incidents occur, THE todoList service SHALL provide a publicly accessible status message in clear language and maintain it until normal service is restored.
-
-### 8.4 Alerting Flow (Mermaid)
+### Todo Lifecycle (Conceptual)
 ```mermaid
 graph LR
-  A["Measure SLIs(User-Perceived)"] --> B["Compute P50/P95/P99 Monthly"]
-  B --> C{"Exceeds SLO?"}
-  C -->|"No"| D["Record Healthy State"]
-  C -->|"Yes"| E["Trigger Internal Alert"]
-  E --> F["Investigate and Mitigate"]
-  F --> G{"Error Budget OK?"}
-  G -->|"No"| H["Prioritize Reliability Work"]
-  G -->|"Yes"| I["Continue Normal Operations"]
+  subgraph "Todo Lifecycle"
+    A["Start"] --> B["Create Todo(Title, Optional Description, Optional Due Date)"]
+    B --> C["Todo Created (Completed = false)"]
+    C --> D["Read/View Todo"]
+    C --> E["List Todos"]
+    D --> F{"Update Fields?"}
+    F -->|"Yes"| G["Validate Updates"]
+    G --> H{"Valid?"}
+    H -->|"Yes"| I["Apply Updates"]
+    H -->|"No"| J["Reject With Message"]
+    C --> K{"Toggle Complete?"}
+    K -->|"Yes"| L["Set Completed / Not Completed"]
+    C --> M{"Delete?"}
+    M -->|"Yes"| N["Remove From Lists (Permanent)"]
+  end
 ```
 
-## 9) Verification Approach (Business-Level)
+## Out-of-Scope Confirmation
 
-- THE todoList service SHALL verify performance targets using representative scenarios for each core operation under normal conditions.
-- THE todoList service SHALL simulate brief unavailability to confirm clear maintenance/incident messaging and resumption behavior.
-- THE todoList service SHALL verify keyboard-only operation and assistive technology perceivability of confirmations and errors for core actions.
-- THE todoList service SHALL run pagination and filtering tests on accounts with large collections (e.g., 10,000 total Todos, 1,000 active) and confirm targets are met.
-- THE todoList service SHALL confirm that telemetry exists to compute SLIs and trigger alerts as defined.
+- THE MVP SHALL exclude multi-user collaboration, shared lists, tags, categories, priorities, file attachments, subtasks, complex recurrence, reminders/notifications, and search. These may be considered in future scope documents.
 
-## Appendix: EARS Requirement Index (Consolidated)
+## Traceability to Related Documents
 
-Performance (selected):
-- THE todoList service SHALL meet P95 latency targets per operation under normal conditions.
-- IF an operation is expected to exceed 2 seconds, THEN THE todoList service SHALL provide immediate in-progress feedback.
-- WHEN any core action completes, THE todoList service SHALL present the updated state without manual refresh.
-
-Reliability and Availability (selected):
-- THE todoList service SHALL meet at least 99.5% monthly availability excluding scheduled maintenance with notice.
-- THE todoList service SHALL ensure durability for operations once confirmed to the user.
-- IF a disruption occurs mid-action, THEN THE todoList service SHALL complete safely or roll back and guide the user to retry.
-
-Usability and Accessibility (selected):
-- THE todoList service SHALL provide concise confirmations after core actions.
-- THE todoList service SHALL be fully operable via keyboard and perceivable via assistive technologies.
-- THE todoList service SHALL present dates and times in the user’s locale and timezone, defaulting to Asia/Seoul when unspecified.
-
-Maintainability and Operability (selected):
-- THE todoList service SHALL allow routine updates with minimal disruption and ensure a reversible path for risky changes.
-- WHEN an incident occurs, THE todoList service SHALL publish a status update within 30 minutes and provide periodic updates until resolved.
-
-Scalability (selected):
-- THE todoList service SHALL maintain targets up to 1,000 active Todos and 10,000 total per user, with responsive pagination.
-
-Observability (selected):
-- THE todoList service SHALL track user-perceived latency and error rates and alert when SLOs are at risk.
-- IF the error budget is depleted, THEN THE todoList service SHALL prioritize reliability over new changes until objectives recover.
+- Scope boundaries are introduced in the [Service Overview for the Minimal Todo Service](./01-service-overview.md).
+- Actor capabilities and ownership rules are detailed in the [User Actors and Permissions Specification](./02-user-actors-and-permissions.md).

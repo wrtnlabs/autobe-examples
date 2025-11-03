@@ -1,0 +1,417 @@
+/// Primary content entities representing posts created by users in
+/// communities. Posts are the core content type that users interact with
+/// through voting, commenting, and sharing. They support multiple content
+/// types (text, link, image) and are the foundation of the platform's
+/// content ecosystem.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged community's {@link reddit_like_community_communities.id}
+  reddit_like_community_community_id String
+  
+  /// Post author's {@link reddit_like_community_members.id}
+  reddit_like_community_member_id String
+  
+  /// Session when post was created {@link
+  /// reddit_like_community_member_sessions.id}
+  reddit_like_community_member_session_id String
+  
+  /// Post title displayed in listings and at the top of the post
+  title String
+  
+  /// Content type: text, link, or image determining how content is displayed
+  content_type String
+  
+  /// Main content body for text posts, optional for link/image posts
+  body String?
+  
+  /// External URL for link posts, null for text/image posts
+  url String?
+  
+  /// Current vote score calculated from upvotes minus downvotes
+  score Int
+  
+  /// Total number of upvotes received
+  upvotes Int
+  
+  /// Total number of downvotes received
+  downvotes Int
+  
+  /// Number of comments on this post
+  comment_count Int
+  
+  /// Whether commenting is locked on this post
+  is_locked Boolean
+  
+  /// Whether this post is pinned in its community
+  is_pinned Boolean
+  
+  /// Whether this post contains adult content
+  is_nsfw Boolean
+  
+  /// Whether this post contains spoilers requiring hidden content
+  is_spoiler Boolean
+  
+  /// Post status: active, removed, deleted, or flagged for moderation
+  status String
+  
+  /// When the post was created
+  created_at DateTime
+  
+  /// When the post was last modified
+  updated_at DateTime
+  
+  /// When the post was deleted (soft delete)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  author reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  session reddit_like_community_member_sessions @relation(fields: [reddit_like_community_member_session_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_community_post_snapshots reddit_like_community_post_snapshots[]
+  reddit_like_community_post_metadata reddit_like_community_post_metadata?
+  reddit_like_community_link_previews reddit_like_community_link_previews?
+  reddit_like_community_image_assets reddit_like_community_image_assets?
+  reddit_like_community_comments reddit_like_community_comments[]
+  reddit_like_community_comment_threads reddit_like_community_comment_threads[]
+  reddit_like_community_vote_fraud_alerts reddit_like_community_vote_fraud_alerts[]
+  reddit_like_community_vote_patterns reddit_like_community_vote_patterns[]
+  reddit_like_community_content_scores reddit_like_community_content_scores?
+  reddit_like_community_content_votes reddit_like_community_content_votes[]
+  reddit_like_community_post_reports reddit_like_community_post_reports[]
+  reddit_like_community_karma_events reddit_like_community_karma_events[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_member_id], map: "reddit_like_community_posts_reddit_like_community_memb_0d4df564")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_member_session_id], map: "reddit_like_community_posts_reddit_like_community_memb_3d92c326")
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_community_id, title], map: "reddit_like_community_posts_reddit_like_community_comm_b58d6b2e")
+  @@index([content_type, created_at])
+  @@index([score, created_at])
+  @@index([is_pinned, created_at])
+}
+
+/// Historical snapshots of post states for audit trails and content
+/// versioning. These append-only records preserve the state of posts at
+/// specific points in time, supporting moderation review and content
+/// integrity verification.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced post's {@link reddit_like_community_posts.id}
+  reddit_like_community_post_id String
+  
+  /// User who created this snapshot {@link reddit_like_community_members.id}
+  reddit_like_community_member_id String
+  
+  /// Snapshot of post title at time of record creation
+  title String
+  
+  /// Snapshot of content type
+  content_type String
+  
+  /// Snapshot of post body content
+  body String?
+  
+  /// Snapshot of external URL if present
+  url String?
+  
+  /// Snapshot of vote score at creation time
+  score Int
+  
+  /// Snapshot of upvote count
+  upvotes Int
+  
+  /// Snapshot of downvote count
+  downvotes Int
+  
+  /// Snapshot of comment count
+  comment_count Int
+  
+  /// Snapshot of locked status
+  is_locked Boolean
+  
+  /// Snapshot of pinned status
+  is_pinned Boolean
+  
+  /// Snapshot of NSFW status
+  is_nsfw Boolean
+  
+  /// Snapshot of spoiler status
+  is_spoiler Boolean
+  
+  /// Snapshot of post status
+  status String
+  
+  /// When this snapshot was created
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  snapshotBy reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_member_id], map: "reddit_like_community_post_snapshots_reddit_like_commu_3a097294")
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_id, created_at], map: "reddit_like_community_post_snapshots_reddit_like_commu_daa24351")
+}
+
+/// Extended metadata attributes for posts including SEO information,
+/// engagement metrics, and content-specific properties. This subsidiary
+/// table supports the main posts table with additional data that may vary by
+/// content type.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated post's {@link reddit_like_community_posts.id}
+  reddit_like_community_post_id String
+  
+  /// SEO-optimized title for search engines and social sharing
+  meta_title String?
+  
+  /// SEO-optimized description for search engine snippets
+  meta_description String?
+  
+  /// Comma-separated keywords for SEO optimization
+  meta_keywords String?
+  
+  /// Estimated reading time in minutes for text content
+  reading_time_minutes Int?
+  
+  /// Word count for text posts
+  word_count Int?
+  
+  /// Character count including spaces
+  character_count Int?
+  
+  /// Whether the post includes a TL;DR summary
+  has_tldr Boolean
+  
+  /// Too long; didn't read summary text
+  tldr_text String?
+  
+  /// Whether this is original content created by the author
+  is_oc Boolean
+  
+  /// Whether this is a crosspost from another community
+  is_crosspost Boolean
+  
+  /// Original post ID if this is a crosspost
+  original_post_id String?
+  
+  /// Content language code (ISO 639-1)
+  language String
+  
+  /// When metadata was created
+  created_at DateTime
+  
+  /// When metadata was last updated
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_post_id], map: "reddit_like_community_post_metadata_reddit_like_commun_0f76ace1")
+  
+  @@index([reading_time_minutes])
+  @@index([is_oc, created_at])
+}
+
+/// Pre-fetched link preview data for link posts including title,
+/// description, and thumbnail information. This improves user experience by
+/// displaying rich previews without requiring external fetches on each view.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_link_previews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated link post's {@link reddit_like_community_posts.id}
+  reddit_like_community_post_id String
+  
+  /// The original URL that was processed
+  target_url String
+  
+  /// Extracted or generated title for the link preview
+  preview_title String?
+  
+  /// Extracted or generated description for the link preview
+  preview_description String?
+  
+  /// Name of the website or domain
+  site_name String?
+  
+  /// URL to the site's favicon or logo
+  favicon_url String?
+  
+  /// URL to thumbnail image for the preview
+  thumbnail_url String?
+  
+  /// Width of thumbnail image in pixels
+  thumbnail_width Int?
+  
+  /// Height of thumbnail image in pixels
+  thumbnail_height Int?
+  
+  /// Alt text for thumbnail image accessibility
+  thumbnail_alt_text String?
+  
+  /// MIME type of the linked content
+  content_type String?
+  
+  /// Status of link preview fetch: success, failed, pending, expired
+  fetch_status String
+  
+  /// Error message if fetch failed
+  fetch_error String?
+  
+  /// When the link preview data was fetched
+  fetched_at DateTime
+  
+  /// When this preview data expires and should be refetched
+  expires_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_post_id], map: "reddit_like_community_link_previews_reddit_like_commun_5f4c8735")
+  
+  @@unique([target_url])
+  @@index([fetch_status, fetched_at])
+  @@index([expires_at])
+}
+
+/// Image processing and storage metadata for image posts including multiple
+/// size variants, optimization settings, and CDN references. Supports
+/// efficient delivery across devices and network conditions.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_image_assets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated image post's {@link reddit_like_community_posts.id}
+  reddit_like_community_post_id String
+  
+  /// Original filename when uploaded
+  original_filename String
+  
+  /// MIME type of the original uploaded file
+  original_mime_type String
+  
+  /// Size of original file in bytes
+  original_size_bytes Int
+  
+  /// Width of original image in pixels
+  original_width Int
+  
+  /// Height of original image in pixels
+  original_height Int
+  
+  /// Aspect ratio of original image (width/height)
+  original_aspect_ratio Float
+  
+  /// Base CDN URL for serving image variants
+  cdn_base_url String
+  
+  /// URL to thumbnail variant for listings
+  thumbnail_url String?
+  
+  /// Width of thumbnail in pixels
+  thumbnail_width Int?
+  
+  /// Height of thumbnail in pixels
+  thumbnail_height Int?
+  
+  /// URL to medium-sized variant for content pages
+  medium_url String?
+  
+  /// Width of medium variant in pixels
+  medium_width Int?
+  
+  /// Height of medium variant in pixels
+  medium_height Int?
+  
+  /// URL to large variant for detail views
+  large_url String?
+  
+  /// Width of large variant in pixels
+  large_width Int?
+  
+  /// Height of large variant in pixels
+  large_height Int?
+  
+  /// Whether WebP variants are available for better compression
+  has_webp Boolean
+  
+  /// Whether AVIF variants are available for modern browsers
+  has_avif Boolean
+  
+  /// Status of image optimization: pending, processing, complete, failed
+  optimization_status String
+  
+  /// SHA256 hash of the original file for deduplication
+  file_hash String
+  
+  /// When image processing was completed
+  processed_at DateTime?
+  
+  /// When the image asset record was created
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_post_id], map: "reddit_like_community_image_assets_reddit_like_communi_a9e6fccc")
+  
+  @@unique([file_hash])
+  // spellchecker: ignore-next-line
+  @@index([optimization_status, created_at], map: "reddit_like_community_image_assets_optimization_status_a9d73af0")
+  @@index([has_webp, has_avif])
+}

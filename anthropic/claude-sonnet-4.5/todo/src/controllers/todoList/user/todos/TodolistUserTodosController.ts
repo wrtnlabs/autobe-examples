@@ -8,6 +8,8 @@ import { patchTodoListUserTodos } from "../../../../providers/patchTodoListUserT
 import { getTodoListUserTodosTodoId } from "../../../../providers/getTodoListUserTodosTodoId";
 import { putTodoListUserTodosTodoId } from "../../../../providers/putTodoListUserTodosTodoId";
 import { deleteTodoListUserTodosTodoId } from "../../../../providers/deleteTodoListUserTodosTodoId";
+import { putTodoListUserTodosTodoIdComplete } from "../../../../providers/putTodoListUserTodosTodoIdComplete";
+import { putTodoListUserTodosTodoIdIncomplete } from "../../../../providers/putTodoListUserTodosTodoIdIncomplete";
 
 import { ITodoListTodo } from "../../../../api/structures/ITodoListTodo";
 import { IPageITodoListTodo } from "../../../../api/structures/IPageITodoListTodo";
@@ -15,59 +17,44 @@ import { IPageITodoListTodo } from "../../../../api/structures/IPageITodoListTod
 @Controller("/todoList/user/todos")
 export class TodolistUserTodosController {
   /**
-   * Create a new todo item for the authenticated user.
+   * Create a new todo item for the authenticated user to track a task or
+   * responsibility. This operation enables users to capture new tasks they want
+   * to remember and manage.
    *
-   * Create a new todo item and add it to the authenticated user's personal todo
-   * list. This operation is the primary method for users to capture and record
-   * new tasks they need to complete.
+   * The operation accepts a todo title (required) and optional description to
+   * provide additional context about the task. The system validates that the
+   * title is non-empty and meets length requirements (1-200 characters for
+   * title, maximum 2,000 characters for description if provided). The title
+   * represents the primary text users will see when viewing their todo list, so
+   * it should be concise but meaningful enough to identify the task.
    *
-   * The operation accepts a todo title (required) and an optional description
-   * in the request body. The title must be between 1 and 200 characters and
-   * contain at least one non-whitespace character as per business validation
-   * rules defined in the requirements. The description is optional but if
-   * provided must not exceed 2000 characters.
+   * When a todo item is successfully created, the system automatically performs
+   * several actions based on the todo_list_todos schema: assigns the todo to
+   * the authenticated user (sets todo_list_user_id from the JWT token), sets
+   * the completion status to 'incomplete', records the current timestamp in
+   * both created_at and updated_at fields, and sets deleted_at to null. The
+   * system generates a unique identifier for the new todo item and returns the
+   * complete todo object to the user.
    *
-   * When a todo is successfully created, the system automatically performs
-   * several operations: generates a unique UUID identifier for the todo,
-   * assigns the currently authenticated user (extracted from the JWT token) as
-   * the owner by setting the todo_list_user_id field, sets the completion
-   * status to false (incomplete) by default, and records both the creation
-   * timestamp and initial update timestamp with the current date and time.
+   * Security and authorization: This operation requires valid authentication
+   * via JWT token. The system extracts the user ID from the token and uses it
+   * to establish ownership of the new todo item. Users can only create todos
+   * for themselves - there is no ability to create todos for other users. This
+   * ensures proper data isolation and privacy boundaries.
    *
-   * The operation enforces strict ownership and data isolation. Each todo is
-   * exclusively associated with the user who created it, and the
-   * todo_list_user_id field in the todo_list_todos table maintains this
-   * relationship through a foreign key reference to todo_list_users.id. The
-   * relationship is configured with CASCADE delete, meaning if a user account
-   * is deleted, all their todos are automatically removed to maintain
-   * referential integrity.
+   * Validation rules enforced: Title must be provided and cannot be empty or
+   * contain only whitespace. Title length must be between 1 and 200 characters
+   * after trimming. Description, if provided, must not exceed 2,000 characters.
+   * If validation fails, the operation returns detailed error messages
+   * indicating which requirements were not met.
    *
-   * Validation occurs before todo creation. If the title is empty, contains
-   * only whitespace, or exceeds 200 characters, the system rejects the request
-   * with a 400 Bad Request error and returns a clear validation error message.
-   * Similarly, if the description exceeds 2000 characters, the request is
-   * rejected with appropriate error feedback.
-   *
-   * Security measures include requiring valid JWT authentication before
-   * processing the request (users must be logged in), extracting the user ID
-   * from the validated JWT token payload to ensure correct ownership
-   * assignment, and preventing unauthenticated guests from creating todos
-   * (returns 401 Unauthorized).
-   *
-   * Performance expectations require the operation to complete within 500
-   * milliseconds from request receipt to response delivery as defined in the
-   * performance requirements document. The system provides immediate feedback
-   * by returning the complete newly created todo object including the
-   * system-generated ID and timestamps.
-   *
-   * This operation is fundamental to the user workflow. After successful
-   * registration or login, creating the first todo is typically the user's
-   * initial interaction with the core functionality. The operation is designed
-   * to be fast and simple, allowing users to quickly capture tasks as they
-   * arise throughout their day without friction or complexity.
+   * The newly created todo item becomes immediately available in the user's
+   * todo list and can be viewed, updated, marked complete, or deleted through
+   * other API operations. The creation timestamp enables chronological sorting
+   * and organization of tasks.
    *
    * @param connection
-   * @param body Todo creation data including required title and optional
+   * @param body Todo item creation data including title and optional
    *   description
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
@@ -90,58 +77,34 @@ export class TodolistUserTodosController {
   }
 
   /**
-   * Search and retrieve filtered, paginated list of user's todos from
-   * todo_list_todos table.
+   * Search and retrieve a filtered, paginated list of user's todo items.
    *
-   * Retrieve a filtered and paginated list of todo items belonging to the
-   * authenticated user. This operation provides advanced search and filtering
-   * capabilities for the user's personal todo list, operating on the
-   * todo_list_todos table with strict user isolation.
+   * Retrieve a filtered and paginated list of todo items from the system. This
+   * operation provides advanced search capabilities for finding todos based on
+   * multiple criteria including completion status (complete/incomplete), title
+   * text search, and creation date ranges.
    *
-   * The operation supports comprehensive filtering and search functionality to
-   * help users find specific todos or view subsets of their task list. Users
-   * can filter by completion status to view only incomplete or completed tasks,
-   * search within todo titles and descriptions using text matching, and sort
-   * results by various fields including creation date, update date, title, or
-   * completion status. Pagination enables efficient handling of large todo
-   * lists, returning results in manageable pages.
+   * The operation supports comprehensive pagination with configurable page
+   * sizes and sorting options. Users can sort by creation date (newest or
+   * oldest first), update date (most recently modified), or alphabetically by
+   * title. This enables efficient browsing through large todo collections.
    *
-   * Security considerations include strict enforcement of data isolation - the
-   * system automatically filters todos to include only those where
-   * todo_list_user_id matches the authenticated user's ID from the JWT token.
-   * Users cannot access or search todos belonging to other users under any
-   * circumstances. Rate limiting prevents abuse of search operations, and all
-   * query parameters are validated to prevent injection attacks.
+   * Security considerations include strict user isolation - each authenticated
+   * user can only access their own todo items. The system automatically filters
+   * results to include only todos where todo_list_user_id matches the
+   * authenticated user. The response excludes soft-deleted todos (where
+   * deleted_at is not null) to maintain data consistency.
    *
    * This operation integrates with the todo_list_todos table as defined in the
-   * Prisma schema, utilizing indexes on todo_list_user_id, created_at,
-   * completed, and deleted_at fields for optimal query performance. The
-   * operation excludes soft-deleted todos by filtering where deleted_at is
-   * null, ensuring users only see their active todo items.
-   *
-   * The response includes todo summary information optimized for list displays:
-   * id, title, description, completion status, creation timestamp, and last
-   * update timestamp. Each response also includes pagination metadata showing
-   * total count, current page, page size, and total pages to support
-   * client-side pagination controls.
-   *
-   * Validation rules ensure search parameters are within acceptable ranges:
-   * page numbers must be positive integers, page size is limited to prevent
-   * excessive data retrieval (typically 50-100 items per page), sort fields
-   * must be valid todo properties, and search text length is constrained to
-   * prevent performance issues. The system provides clear error messages when
-   * validation fails.
-   *
-   * Expected behavior: Successful requests return a paginated list of todos
-   * matching the search criteria, sorted according to the specified order
-   * (defaulting to newest first by created_at). Empty result sets return
-   * successfully with an empty data array and pagination metadata. Invalid
-   * search parameters return validation errors with specific guidance on
-   * correcting the request.
+   * Prisma schema, utilizing indexes on todo_list_user_id, status, and
+   * created_at for optimal query performance. The GIN index on title enables
+   * efficient text search capabilities. The response includes todo summary
+   * information optimized for list displays, with options to filter by status
+   * and search within title text.
    *
    * @param connection
-   * @param body Search criteria including filters, pagination, and sorting
-   *   options for todo list retrieval
+   * @param body Search criteria, filtering options, and pagination parameters
+   *   for todo retrieval
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -163,40 +126,33 @@ export class TodolistUserTodosController {
   }
 
   /**
-   * Retrieve detailed information for a specific todo item.
+   * Retrieve detailed information about a specific todo item.
    *
-   * Retrieve the complete details of a single todo item by its unique
-   * identifier. This operation returns all properties of the specified todo
+   * Retrieve complete details of a single todo item identified by its unique
+   * ID. This operation returns all information associated with the todo
    * including the title, optional description, completion status, creation
    * timestamp, and last modification timestamp.
    *
-   * The operation enforces strict data isolation to ensure users can only
-   * access their own todo items. When a user requests a todo by ID, the system
-   * verifies that the authenticated user is the owner of the requested todo. If
-   * the user attempts to access a todo owned by another user, the request is
-   * denied with a 403 Forbidden error.
+   * The operation performs strict authorization checks to ensure data privacy
+   * and security. Before returning the todo item, the system verifies that the
+   * todo_list_user_id of the requested todo matches the authenticated user's
+   * ID. If the todo belongs to a different user, the system denies access with
+   * a 403 Forbidden error, preventing unauthorized access to other users'
+   * personal task data.
    *
-   * This endpoint is commonly used after viewing the todo list when a user
-   * wants to see full details of a specific task, or when the user interface
-   * needs to display detailed todo information for editing or review purposes.
-   * The operation is designed to respond quickly, typically within 300
-   * milliseconds as per performance requirements.
+   * This operation queries the todo_list_todos table as defined in the Prisma
+   * schema. The system excludes soft-deleted todos from retrieval - if the
+   * requested todo has a non-null deleted_at timestamp, it is treated as not
+   * found. This maintains consistency with the soft delete pattern while
+   * allowing for potential future recovery features.
    *
-   * Security considerations include verifying the JWT authentication token
-   * before processing the request and ensuring the todo belongs to the
-   * authenticated user. The operation will return appropriate error responses
-   * if the todo does not exist (404 Not Found) or if the user lacks permission
-   * to access it (403 Forbidden).
-   *
-   * The response includes all todo fields as defined in the todo_list_todos
-   * table: unique identifier, title (1-200 characters), optional description
-   * (up to 2000 characters), completion status (boolean), creation timestamp,
-   * and last updated timestamp. The operation supports the core user workflow
-   * of reviewing task details and provides the foundation for subsequent edit
-   * or status update operations.
+   * The response provides the complete todo entity with all fields populated,
+   * enabling detailed viewing and editing workflows. Users typically access
+   * this endpoint when they want to view full details of a todo item, edit its
+   * properties, or review task information before marking it complete.
    *
    * @param connection
-   * @param todoId Unique identifier of the todo item to retrieve
+   * @param todoId Unique identifier of the target todo item
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":todoId")
@@ -218,46 +174,37 @@ export class TodolistUserTodosController {
   }
 
   /**
-   * Update an existing todo item with new title, description, or completion
-   * status.
+   * Update an existing todo item for the authenticated user.
    *
-   * Update an existing todo item in the user's personal task list. This
-   * operation allows authenticated users to modify the title, description, and
-   * completion status of their own todo items. The operation enforces strict
-   * ownership verification - users can only update todos they created, ensuring
-   * complete data isolation between different user accounts.
+   * Updates the details of an existing todo item in the todo_list_todos table.
+   * This operation enables users to modify their task information, including
+   * the title, description, and completion status. Users can correct mistakes,
+   * add more details, update task descriptions, or change the completion status
+   * as tasks progress.
    *
-   * The update process validates all input data according to business rules
-   * defined in the requirements. The title must be between 1 and 200 characters
-   * and contain at least one non-whitespace character. The description, when
-   * provided, must not exceed 2000 characters. The completion status must be a
-   * valid boolean value (true for completed, false for incomplete).
+   * The operation enforces strict ownership verification - users can only
+   * update their own todo items. The system validates that the provided todoId
+   * exists and belongs to the authenticated user before allowing any
+   * modifications. If a user attempts to update another user's todo item, the
+   * request is denied with an authorization error.
    *
-   * When a todo is successfully updated, the system automatically updates the
-   * updated_at timestamp to record when the modification occurred. The original
-   * creation timestamp (created_at) remains unchanged, preserving the
-   * historical record of when the todo was first created. This operation
-   * supports partial updates - only the fields included in the request body
-   * will be modified, while other fields retain their existing values.
+   * All updated data undergoes the same validation as creation: the title must
+   * be non-empty and within length limits (1-200 characters), the description
+   * must not exceed maximum length (2000 characters), and the status must be
+   * either 'complete' or 'incomplete'. The system automatically updates the
+   * updated_at timestamp to the current time while preserving the original
+   * created_at timestamp and user ownership. The deleted_at field remains
+   * unchanged during updates.
    *
-   * The operation returns the complete updated todo item upon success,
-   * including all current field values and system-generated timestamps. If the
-   * specified todo does not exist or belongs to another user, the operation
-   * returns an appropriate error response. If the provided data fails
-   * validation (empty title, title too long, description too long), the
-   * operation rejects the request and returns detailed validation error
-   * information.
-   *
-   * This update operation is essential for the daily todo management workflow,
-   * enabling users to refine task details, correct typos, add context through
-   * descriptions, and manage their tasks effectively throughout their
-   * lifecycle. The operation maintains data integrity by preventing cross-user
-   * data access and enforcing all business validation rules defined in the
-   * requirements documentation.
+   * This operation supports partial updates, allowing users to modify
+   * individual fields without requiring all fields to be provided. Users can
+   * update just the title, just the description, just the status, or any
+   * combination of these fields. The unchanged fields retain their existing
+   * values.
    *
    * @param connection
-   * @param todoId Unique identifier of the todo item to update
-   * @param body Updated todo information including title, description, and
+   * @param todoId Unique identifier of the target todo item (global scope)
+   * @param body Updated todo item information including title, description, and
    *   completion status
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
@@ -283,48 +230,38 @@ export class TodolistUserTodosController {
   }
 
   /**
-   * Delete a todo item from the user's task list.
+   * Soft delete a todo item by setting its deleted_at timestamp.
    *
-   * Delete a todo item from the authenticated user's personal task list. This
-   * operation allows users to remove todos they no longer need, whether
-   * completed tasks they want to clear from their list or tasks that have
-   * become obsolete or irrelevant. The operation implements soft delete
-   * functionality by setting the deleted_at timestamp on the todo record,
-   * marking it as deleted while preserving the data in the database for
-   * referential integrity and potential recovery processes.
+   * Performs soft deletion of a todo item from the todo_list_todos table by
+   * setting the deleted_at timestamp to the current date and time. This
+   * operation enables users to remove todos they no longer need while
+   * preserving the data for potential recovery or audit purposes. The todo item
+   * remains in the database but is marked as deleted and will no longer appear
+   * in the user's active todo list.
    *
-   * The deletion process enforces strict ownership verification - users can
-   * only delete todos they created. The system validates that the specified
-   * todo exists and belongs to the authenticated user before proceeding with
-   * deletion. If the todo does not exist or belongs to another user, the
-   * operation returns an appropriate error response denying the deletion
-   * request.
+   * The operation enforces strict ownership verification - users can only
+   * delete their own todo items. The system validates that the provided todoId
+   * exists and belongs to the authenticated user before allowing deletion. If a
+   * user attempts to delete another user's todo item, the request is denied
+   * with an authorization error. If the todo item does not exist or has already
+   * been deleted, the system returns an appropriate not found error.
    *
-   * As per the Prisma schema, this table includes a deleted_at field,
-   * indicating soft delete implementation. When a todo is deleted, the system
-   * sets the deleted_at timestamp to the current date and time, marking the
-   * todo as deleted. The todo is then excluded from normal query results and
-   * user views, effectively removing it from the user's active todo list.
-   * However, the data remains in the database to support data lifecycle
-   * management and maintain referential integrity.
+   * Once a todo is soft deleted, it is immediately removed from all todo list
+   * views and queries for active items. The deleted_at timestamp is set to the
+   * current time, while all other fields (title, description, status,
+   * created_at, updated_at) remain unchanged. This soft delete approach
+   * maintains the complete history of the todo item while making it
+   * inaccessible to normal operations.
    *
-   * The operation returns a success confirmation when the deletion completes
-   * successfully. Deleted todos are immediately removed from the user's todo
-   * list view and cannot be accessed through normal todo retrieval operations.
-   * Users should be aware that deletion is permanent from their perspective -
-   * once deleted, todos cannot be easily recovered through the user interface
-   * (though the data is retained in the database with the deleted_at
-   * timestamp).
-   *
-   * This delete operation is essential for maintaining a clean, manageable todo
-   * list. It enables users to remove completed tasks to reduce clutter,
-   * eliminate outdated or cancelled tasks, and keep their task list focused on
-   * current, actionable items. The soft delete approach supports data
-   * management requirements while providing a clean user experience where
-   * deleted items disappear from view immediately.
+   * Soft deletion provides several benefits over hard deletion: it enables
+   * potential future recovery features where users could restore accidentally
+   * deleted todos, maintains referential integrity in the database, supports
+   * audit trails and compliance requirements, and preserves historical data for
+   * analytics purposes.
    *
    * @param connection
-   * @param todoId Unique identifier of the todo item to delete
+   * @param todoId Unique identifier of the target todo item to be soft deleted
+   *   (global scope)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":todoId")
@@ -333,9 +270,105 @@ export class TodolistUserTodosController {
     user: UserPayload,
     @TypedParam("todoId")
     todoId: string & tags.Format<"uuid">,
-  ): Promise<void> {
+  ): Promise<ITodoListTodo> {
     try {
       return await deleteTodoListUserTodosTodoId({
+        user,
+        todoId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mark a todo item as complete.
+   *
+   * This operation changes the completion status of a specific todo item from
+   * 'incomplete' to 'complete', allowing users to track their progress and mark
+   * tasks as finished. When a todo is marked complete, the system updates the
+   * status field to 'complete' and automatically sets the updated_at timestamp
+   * to the current time, providing an audit trail of when tasks were
+   * completed.
+   *
+   * The operation enforces strict authorization rules to ensure users can only
+   * mark their own todo items as complete. The system verifies that the todo
+   * item identified by todoId belongs to the authenticated user by checking the
+   * todo_list_user_id foreign key relationship. If a user attempts to mark
+   * another user's todo item as complete, the system denies access with an
+   * authorization error.
+   *
+   * This operation is idempotent - if a todo item is already marked as
+   * complete, the operation succeeds without error and updates the updated_at
+   * timestamp. The completion status change is immediately visible to the user,
+   * and the todo item will appear in filtered views showing completed tasks.
+   * This operation is fundamental to the todo list workflow, enabling users to
+   * experience the satisfaction of completing tasks and maintaining an
+   * organized view of finished versus pending work.
+   *
+   * @param connection
+   * @param todoId Unique identifier of the target todo item to mark as complete
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":todoId/complete")
+  public async complete(
+    @UserAuth()
+    user: UserPayload,
+    @TypedParam("todoId")
+    todoId: string & tags.Format<"uuid">,
+  ): Promise<ITodoListTodo> {
+    try {
+      return await putTodoListUserTodosTodoIdComplete({
+        user,
+        todoId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mark a todo item as incomplete.
+   *
+   * This operation changes the completion status of a specific todo item from
+   * 'complete' to 'incomplete', allowing users to revert the completion status
+   * when a task needs to be redone, was marked complete by mistake, or requires
+   * additional work. When a todo is marked incomplete, the system updates the
+   * status field to 'incomplete' and automatically sets the updated_at
+   * timestamp to the current time, maintaining an accurate audit trail of
+   * status changes.
+   *
+   * The operation enforces strict authorization rules to ensure users can only
+   * mark their own todo items as incomplete. The system verifies that the todo
+   * item identified by todoId belongs to the authenticated user by checking the
+   * todo_list_user_id foreign key relationship. If a user attempts to mark
+   * another user's todo item as incomplete, the system denies access with an
+   * authorization error, maintaining data isolation and privacy.
+   *
+   * This operation is idempotent - if a todo item is already marked as
+   * incomplete, the operation succeeds without error and updates the updated_at
+   * timestamp. The status change is immediately reflected in the user's todo
+   * list, and the item will reappear in filtered views showing active or
+   * incomplete tasks. This operation provides flexibility in task management,
+   * acknowledging that real-world workflows sometimes require revisiting
+   * completed tasks or correcting accidental status changes.
+   *
+   * @param connection
+   * @param todoId Unique identifier of the target todo item to mark as
+   *   incomplete
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":todoId/incomplete")
+  public async incomplete(
+    @UserAuth()
+    user: UserPayload,
+    @TypedParam("todoId")
+    todoId: string & tags.Format<"uuid">,
+  ): Promise<ITodoListTodo> {
+    try {
+      return await putTodoListUserTodosTodoIdIncomplete({
         user,
         todoId,
       });

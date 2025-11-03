@@ -1,66 +1,64 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Ip } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 import { postAuthSellerJoin } from "../../../providers/postAuthSellerJoin";
 import { postAuthSellerLogin } from "../../../providers/postAuthSellerLogin";
 import { postAuthSellerRefresh } from "../../../providers/postAuthSellerRefresh";
 
-import { IShoppingMallSeller } from "../../../api/structures/IShoppingMallSeller";
+import { IShoppingSeller } from "../../../api/structures/IShoppingSeller";
 
 @Controller("/auth/seller")
 export class AuthSellerController {
   /**
-   * Register a new seller and issue first JWT tokens (shopping_mall_sellers
-   * table).
+   * Register a new seller account (shopping_sellers) and issue initial JWT
+   * tokens.
    *
-   * This API allows a new seller to register for an account on the e-commerce
-   * platform by providing all legally required business information and
-   * credentials. It interacts directly with the shopping_mall_sellers table to
-   * create a new seller record and initializes the email_verified field to
-   * false until verification is completed.
+   * This operation registers a new seller in the 'shopping_sellers' table,
+   * requiring a unique business email, password (hashed), display name, and
+   * contact phone. Additional business verification fields such as business
+   * registration and legal entity information are completed after account
+   * creation, in separate flows.
    *
-   * After inserting the new record, the system generates a pending account
-   * requiring email verification by sending a verification record (referencing
-   * the user's new id) to shopping_mall_email_verifications, which is not
-   * exposed by this endpoint. The approval_status is set to 'pending', and KYC
-   * document upload is optional at registration. Passwords are securely hashed
-   * using BCrypt and only the hash is stored, with the response masking all
-   * sensitive values and tokens.
+   * The operation enforces that provided emails are unique and not already
+   * registered, in accordance with 'shopping_sellers.email' being a unique
+   * indexed column. A password is provided as a plain string during
+   * registration and securely hashed before storage in the 'password_hash'
+   * field. The initial 'status' for the created seller account is set to
+   * 'pending', which triggers downstream compliance and admin review workflows,
+   * as mandated in onboarding requirements.
    *
-   * This operation never allows registration if the seller email or business
-   * registration number are already present in the database, enforcing unique
-   * constraints for both. Any validation errors produce clear error responses,
-   * and rate limiting can be enforced as a security precaution for abuse
-   * prevention.
+   * Security is a primary concern: passwords are never stored in plaintext, and
+   * registration errors do not reveal whether a given email is already in use.
+   * Upon successful creation, the seller is authenticated automatically, with
+   * JWT access and refresh tokens issued and returned in the authorized DTO
+   * structure.
    *
-   * The response never includes the password_hash, kyc_document_uri, or
-   * approval_status. Upon successful registration, a JWT is issued in the
-   * response of type IShoppingMallSeller.IAuthorized. This token incorporates
-   * user id, role, permissions array, and expiry as required by the
-   * requirements and reflected in the schema.
+   * Seller registration is limited to this endpoint; admin or customer accounts
+   * must use their respective endpoints. This endpoint does not permit
+   * bypassing post-onboarding verification flows – sellers must be approved by
+   * an admin before listing products or receiving payments. Error handling
+   * follows strict business patterns, returning actionable error codes for
+   * duplicate emails, invalid formats, or password strength violations.
    *
-   * Security and business compliance are strictly enforced by only referencing
-   * fields that exist in the shopping_mall_sellers schema, and integration with
-   * the shopping_mall_email_verifications table for subsequent flows. Related
-   * API: email verification endpoint (external to this interface), login,
-   * refresh.
-   *
-   * This endpoint provides the initial step in the seller authentication
-   * workflow. To obtain tokens after email verification, use the login
-   * endpoint.
+   * This operation is related to the seller authentication (login) endpoint,
+   * the token refresh endpoint, and downstream business onboarding API
+   * operations (e.g., business info submission, document upload, compliance
+   * checks).
    *
    * @param connection
-   * @param body Seller registration form, including all legal business details
-   *   and credentials.
+   * @param body New seller registration information, including email, plaintext
+   *   password, display name, and contact phone.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
   public async join(
+    @Ip()
+    ip: string,
     @TypedBody()
-    body: IShoppingMallSeller.IJoin,
-  ): Promise<IShoppingMallSeller.IAuthorized> {
+    body: IShoppingSeller.IJoin,
+  ): Promise<IShoppingSeller.IAuthorized> {
     try {
       return await postAuthSellerJoin({
         body,
@@ -72,45 +70,44 @@ export class AuthSellerController {
   }
 
   /**
-   * Authenticate a seller by email/password and issue session JWT tokens
-   * (shopping_mall_sellers table).
+   * Authenticate seller (shopping_sellers) and issue JWT tokens upon successful
+   * login.
    *
-   * Authenticates a seller by checking the email/password combination against
-   * the shopping_mall_sellers schema. The endpoint requires the provided email
-   * to match an existing seller with email_verified true and approval_status
-   * 'approved'. The seller's password is checked using a secure BCrypt
-   * comparison with the stored password_hash, and no sensitive credential data
-   * is ever returned.
+   * This operation logs in a seller by validating email and password against
+   * the 'shopping_sellers' table. The email must exist and be unique (enforced
+   * by schema), and passwords are verified against the stored 'password_hash'
+   * using secure password comparison logic. The operation also checks the
+   * seller's account status (such as 'active', 'pending', 'suspended') and
+   * 'is_active' flag to ensure only eligible accounts can log in. If
+   * credentials are valid, a new JWT access token and refresh token are
+   * generated and returned inside the authorized DTO response struct
+   * (IShoppingSeller.IAuthorized).
    *
-   * If authentication is successful, the system creates a new record in the
-   * shopping_mall_user_sessions table, generating a new pair of JWT tokens
-   * (access + refresh) as per platform session policy. The response consists of
-   * these tokens inside the IShoppingMallSeller.IAuthorized response body,
-   * which encodes the seller's id, their role, permissions, and expiry in JWT
-   * claims.
+   * Account lockouts are enforced after multiple failed login attempts,
+   * according to business policy, with any lockout status signaled using
+   * structured business error codes. This endpoint does not reveal whether a
+   * non-existent email is used for login, to prevent user enumeration. Success
+   * returns the complete seller authorization profile, while errors return
+   * actionable, business-friendly codes.
    *
-   * The API strictly enforces business and security rules: rejected or
-   * suspended seller accounts, unverified emails, or pending admin approval
-   * status all prevent authentication. Any failed login attempt is recorded for
-   * brute-force detection and rate-limited as necessary. The tokens are
-   * securely formed and never expose underlying user or session secrets.
-   *
-   * This API does not return profile or business details, only the
-   * authentication envelope. For session refresh, use the dedicated refresh
-   * endpoint with a valid refresh token. This is the core login operation for
-   * authorized sessions of sellers.
+   * This endpoint is related to the registration ('join') and token refresh
+   * endpoints, as well as session management APIs. It does not handle password
+   * resets (handled via separate flows referencing shopping_password_resets).
+   * Audit trails are generated for all login attempts.
    *
    * @param connection
-   * @param body Seller credential (login) form with email and password.
+   * @param body Seller login credentials: email and password.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
   public async login(
+    @Ip()
+    ip: string,
     @TypedBody()
-    body: IShoppingMallSeller.ILogin,
-  ): Promise<IShoppingMallSeller.IAuthorized> {
+    body: IShoppingSeller.ILogin,
+  ): Promise<IShoppingSeller.IAuthorized> {
     try {
       return await postAuthSellerLogin({
         body,
@@ -122,35 +119,33 @@ export class AuthSellerController {
   }
 
   /**
-   * Exchange a seller's refresh token for a new access token
-   * (shopping_mall_user_sessions table).
+   * Refresh seller JWT tokens (access/refresh) using a valid refresh token, for
+   * shopping_sellers.
    *
-   * Refreshes the authentication token for a seller given a valid refresh
-   * token. The endpoint validates the provided refresh token by checking it
-   * against the shopping_mall_user_sessions table, ensuring the token is
-   * active, not expired, and not revoked. Only matching tokens granted to
-   * approved and fully verified seller accounts are permitted to be refreshed.
+   * This operation allows a seller to refresh their JWT access and refresh
+   * tokens using a valid, non-expired refresh token, leveraging session records
+   * in 'shopping_seller_sessions'. The API validates that the provided refresh
+   * token corresponds to a currently valid, non-expired session for the seller
+   * (checked with the 'expired_at' field in the session record). If the refresh
+   * token is valid and the session is not expired or revoked, the API issues
+   * new tokens (access and refresh) and updates relevant session timestamps
+   * (where necessary), returning the new tokens in an authorized response DTO.
+   * If the refresh token is expired or invalid, the endpoint returns structured
+   * authentication error codes and does not issue new tokens.
    *
-   * If validation succeeds, a new access and refresh token are issued and
-   * returned using the IShoppingMallSeller.IAuthorized DTO, encoding the
-   * seller's id, role, and updated JWT expiry in the payload. No business or
-   * sensitive profile information is returned.
+   * This operation is strictly for sellers and is not available to customers or
+   * admins, who must use their own dedicated endpoints. All token refresh
+   * requests are securely audited and rate limited to mitigate abuse. This
+   * endpoint directly relates to the seller session management and login flows,
+   * as well as overall account security policy.
    *
-   * Any invalid, expired, or revoked refresh tokens trigger an explicit error
-   * response. Tokens are securely rotated and blacklisted as necessary, per
-   * shopping_mall_user_sessions logic. The session's device_info, if present,
-   * may be used for additional security validations but is not exposed via this
-   * endpoint.
-   *
-   * The refresh endpoint is a key part of the seller authentication lifecycle,
-   * providing seamless session extension while enforcing security and
-   * compliance. For registration and initial login, use the /auth/seller/join
-   * and /auth/seller/login endpoints respectively, as required by business
-   * rules.
+   * For password reset and account unlocking, sellers must use other endpoints
+   * managed via the password reset model (shopping_password_resets). Error
+   * handling is uniform and does not expose excessive details.
    *
    * @param connection
-   * @param body Refresh token envelope for sellers. Must include valid
-   *   refresh_token.
+   * @param body Valid refresh token issued during seller authentication
+   *   process.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
@@ -158,8 +153,8 @@ export class AuthSellerController {
   @TypedRoute.Post("refresh")
   public async refresh(
     @TypedBody()
-    body: IShoppingMallSeller.IRefresh,
-  ): Promise<IShoppingMallSeller.IAuthorized> {
+    body: IShoppingSeller.IRefresh,
+  ): Promise<IShoppingSeller.IAuthorized> {
     try {
       return await postAuthSellerRefresh({
         body,

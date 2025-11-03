@@ -1,0 +1,135 @@
+/// Complete audit trail of all moderation actions taken by moderators
+/// including content removal, user suspension, account bans, and other
+/// enforcement actions. Every moderator decision is logged with full context
+/// for compliance, transparency, and accountability. Supports polymorphic
+/// targeting of articles, comments, or user accounts through target_type
+/// discriminator pattern.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the moderator who performed this action. {@link
+  /// discussion_board_moderators.id}.
+  discussion_board_moderator_id String
+  
+  /// Reference to the member affected by this moderation action (if the action
+  /// targets a user account, such as suspension or ban). Nullable if action
+  /// targets content rather than user. {@link discussion_board_members.id}.
+  affected_discussion_board_member_id String?
+  
+  /// Type of moderation action taken. Valid values: 'remove_article',
+  /// 'remove_comment', 'suspend_user', 'ban_user', 'restore_article',
+  /// 'restore_comment', 'warning_issued', 'flag_content'. Standardized
+  /// enumeration ensures consistent action tracking.
+  action_type String
+  
+  /// Type of entity targeted by this moderation action. Valid values:
+  /// 'article', 'comment', 'member'. Used as polymorphic discriminator with
+  /// target_id to determine the specific entity affected.
+  target_type String
+  
+  /// UUID of the entity affected by this moderation action. Combined with
+  /// target_type: if 'article' then references discussion_board_articles.id;
+  /// if 'comment' then references discussion_board_comments.id; if 'member'
+  /// then references discussion_board_members.id. Application must validate
+  /// referential integrity based on target_type.
+  target_id String
+  
+  /// Moderator-provided reason or explanation for the moderation action (max
+  /// 500 characters). Documents why the action was taken and what violation
+  /// occurred. Enables transparent communication with users.
+  reason String?
+  
+  /// Timestamp when the moderation action was executed. Stored in UTC ISO 8601
+  /// format. Used for audit trails and chronological action sequencing.
+  created_at DateTime
+  
+  /// Timestamp when the moderation log record was last modified. Stored in UTC
+  /// ISO 8601 format. Used for audit trail tracking of changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderators @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  affectedMember discussion_board_members? @relation(fields: [affected_discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_moderation_logs_discussion_board_mode_a10dc83a")
+  @@index([target_type, target_id])
+  // spellchecker: ignore-next-line
+  @@index([affected_discussion_board_member_id, created_at], map: "discussion_board_moderation_logs_affected_discussion_b_897768fc")
+  @@index([created_at])
+  @@index([action_type])
+}
+
+/// Tracks cumulative violations per member for automatic enforcement of
+/// community guidelines. Records when users violate policies (spam,
+/// harassment, inappropriate content, etc.) and enables automatic account
+/// restrictions: 3+ violations in 30 days triggers 7-day suspension, 5+
+/// violations in 90 days triggers permanent ban. Maintains violation history
+/// linked to moderation actions for complete audit trail.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_violations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who committed the violation. {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Category or type of violation committed. Valid values: 'spam',
+  /// 'harassment', 'inappropriate_content', 'off_topic', 'misinformation',
+  /// 'copyright_violation', 'illegal_content'. Enables violation
+  /// categorization and pattern analysis.
+  violation_type String
+  
+  /// Brief description of the specific violation that occurred. Explains what
+  /// policy was violated and provides context for moderation decisions.
+  /// Supports compliance documentation and user communication.
+  reason String?
+  
+  /// Optional reference to the associated discussion_board_moderation_logs
+  /// record if this violation triggered a moderation action. {@link
+  /// discussion_board_moderation_logs.id}. Links violation tracking to
+  /// enforcement actions for complete audit trail. Nullable if violation is
+  /// recorded but no action taken yet.
+  moderation_log_id String?
+  
+  /// Timestamp when the violation occurred (when user committed the policy
+  /// violation). Stored in UTC ISO 8601 format. Used for calculating 30-day
+  /// and 90-day violation windows that trigger automatic suspension and
+  /// banning. Critical for time-based enforcement thresholds.
+  violation_date DateTime
+  
+  /// Timestamp when this violation record was created in the system. Stored in
+  /// UTC ISO 8601 format. May differ from violation_date if violation is
+  /// recorded after the fact. Used for audit trail tracking.
+  created_at DateTime
+  
+  /// Timestamp when this violation record was last modified. Stored in UTC ISO
+  /// 8601 format. Used for audit trail tracking of violation record changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, violation_date], map: "discussion_board_user_violations_discussion_board_memb_78c942c4")
+  @@index([violation_date])
+  @@index([moderation_log_id])
+  @@index([violation_type])
+}

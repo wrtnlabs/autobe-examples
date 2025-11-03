@@ -1,0 +1,259 @@
+/// Promotional campaign definitions used to drive discounts, coupon
+/// issuance, and program-level rules. A promotion defines the business-level
+/// parameters (name, discount type, value, validity window, and usage
+/// limits). Promotions may be created by platform administrators and
+/// optionally associated with a seller when promotions are seller-scoped.
+/// Promotion definitions are ground-truth for coupon generation and
+/// evaluation during checkout. Related entities: {@link
+/// shopping_mall_coupons.id}, {@link
+/// shopping_mall_promotion_redemptions.id}.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creator administrator's {@link shopping_mall_admins.id}. The admin
+  /// account that created or last approved the promotion.
+  created_by_admin_id String
+  
+  /// Optional owning seller's {@link shopping_mall_sellers.id} when the
+  /// promotion is seller-scoped. Null for global/platform promotions.
+  shopping_mall_seller_id String?
+  
+  /// Optional promotion-level code (human-friendly identifier) used for
+  /// administrative lookup. Not required for every promotion.
+  code String?
+  
+  /// Display name of the promotion used in admin UIs and reports.
+  name String
+  
+  /// Long-form description explaining business rules, targeting and usage
+  /// notes for the promotion.
+  description String?
+  
+  /// Discount type (e.g., 'percentage' or 'fixed'). Handled as business enum
+  /// in application logic.
+  discount_type String
+  
+  /// Discount magnitude: percentage (0-100) when discount_type='percentage',
+  /// or currency amount when discount_type='fixed'.
+  discount_value Float
+  
+  /// Total allowed redemptions across all coupons under this promotion. Null
+  /// means unlimited.
+  usage_limit Int?
+  
+  /// Maximum redemptions allowed per customer for this promotion. Null means
+  /// unlimited per customer.
+  per_customer_limit Int?
+  
+  /// Priority for promotion application when multiple promotions apply. Higher
+  /// values indicate higher precedence.
+  priority Int
+  
+  /// UTC start datetime when the promotion becomes active.
+  starts_at DateTime
+  
+  /// UTC end datetime when the promotion expires. Null indicates no automatic
+  /// expiry.
+  ends_at DateTime?
+  
+  /// Whether the promotion is currently active for evaluation. Administrators
+  /// can toggle this to pause promotion evaluation.
+  active Boolean
+  
+  /// Record creation timestamp (snapshot of when promotion was created).
+  created_at DateTime
+  
+  /// Record last-modified timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Non-null if promotion was soft-deleted/archived.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  createdByAdmin shopping_mall_admins @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_promotion_redemptions shopping_mall_promotion_redemptions[]
+  
+  @@unique([code])
+  @@index([created_by_admin_id])
+  @@index([shopping_mall_seller_id])
+  @@index([active, starts_at, ends_at])
+  @@index([priority, active])
+}
+
+/// Coupon entities issued under promotions. Coupons represent redeemable
+/// codes (single-use or multi-use) and carry usage limits, validity windows,
+/// and optional currency scoping. Coupons reference their parent {@link
+/// shopping_mall_promotions.id} and record administrative metadata for
+/// auditing.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged promotion's {@link shopping_mall_promotions.id}.
+  shopping_mall_promotion_id String
+  
+  /// Administrator who created the coupon {@link shopping_mall_admins.id}.
+  created_by_admin_id String
+  
+  /// Optional currency reference for fixed-value coupons {@link
+  /// shopping_mall_currencies.id}. Null if coupon uses promotion-level
+  /// currency rules or percentage discount.
+  currency_id String?
+  
+  /// Coupon code string used by customers at checkout. Unique across platform
+  /// to prevent ambiguity.
+  code String
+  
+  /// Short title for the coupon for admin display.
+  title String?
+  
+  /// Administrative notes and business rules associated with the coupon.
+  description String?
+  
+  /// Coupon issuance type (e.g., 'single_use', 'multi_use',
+  /// 'one_time_per_customer'). Application logic enforces behavior.
+  coupon_type String
+  
+  /// Numeric value used by coupon evaluation. Interpretation depends on
+  /// promotion.discount_type (percentage or fixed amount).
+  value Float
+  
+  /// Maximum total uses for this coupon across all customers. Null indicates
+  /// unlimited uses.
+  max_uses Int?
+  
+  /// Maximum uses per single customer for this coupon. Null indicates no
+  /// per-customer limit.
+  per_customer_limit Int?
+  
+  /// UTC datetime from which the coupon is redeemable.
+  valid_from DateTime
+  
+  /// UTC datetime after which the coupon is no longer redeemable. Null means
+  /// no automatic expiry.
+  valid_to DateTime?
+  
+  /// Whether the coupon is active and can be evaluated by the promotion engine.
+  active Boolean
+  
+  /// Coupon creation timestamp.
+  created_at DateTime
+  
+  /// Coupon last-modified timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for the coupon.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  createdByAdmin shopping_mall_admins @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  currency shopping_mall_currencies? @relation(fields: [currency_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_promotion_redemptions shopping_mall_promotion_redemptions[]
+  
+  @@unique([code])
+  @@index([shopping_mall_promotion_id, active])
+  @@index([created_by_admin_id, created_at])
+  @@index([currency_id])
+}
+
+/// Append-only redemption records created each time a coupon or promotion is
+/// redeemed. Captures the acting customer, optional session information,
+/// associated order, redeemed amount and timestamps for auditing,
+/// reconciliation, and analysis. This table is append-only and used for
+/// historical reporting and fraud analysis. Related entities: {@link
+/// shopping_mall_coupons.id}, {@link shopping_mall_promotions.id}, {@link
+/// shopping_mall_customers.id}, {@link shopping_mall_orders.id}.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotion_redemptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced coupon that was redeemed. {@link shopping_mall_coupons.id}
+  shopping_mall_coupon_id String?
+  
+  /// Referenced promotion that triggered the redemption. {@link
+  /// shopping_mall_promotions.id}
+  shopping_mall_promotion_id String
+  
+  /// Customer who performed the redemption. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Order created as a result of redemption, if applicable. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String?
+  
+  /// Optional customer session context for the redemption (traceability).
+  /// {@link shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String?
+  
+  /// Resolved coupon or promotion code used at redemption time for quick
+  /// lookup and de-normalized reporting.
+  code String?
+  
+  /// Monetary value applied by the redemption in the order's currency (stored
+  /// as double).
+  amount Float
+  
+  /// Currency of the redemption. References {@link
+  /// shopping_mall_currencies.id} for reconciliation.
+  currency_id String
+  
+  /// Timestamp when the redemption occurred.
+  redeemed_at DateTime
+  
+  /// Redemption lifecycle status (e.g., 'applied', 'voided', 'reversed').
+  status String
+  
+  /// Record creation timestamp (same as redeemed_at for append-only events).
+  created_at DateTime
+  
+  /// Optional administrative notes for reconciliation or fraud flags.
+  notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  coupon shopping_mall_coupons? @relation(fields: [shopping_mall_coupon_id], references: [id], onDelete: Cascade)
+  promotion shopping_mall_promotions @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions? @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_promotion_redemptions_shopping_mall_cust_d9e12355")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_coupon_id, shopping_mall_customer_id, shopping_mall_order_id], map: "shopping_mall_promotion_redemptions_shopping_mall_coup_7ef9e0df")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, redeemed_at], map: "shopping_mall_promotion_redemptions_shopping_mall_cust_19a98bbe")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_promotion_id, redeemed_at], map: "shopping_mall_promotion_redemptions_shopping_mall_prom_dbfe9f0f")
+}

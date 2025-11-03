@@ -15,78 +15,83 @@ export async function postAuthMemberJoin(props: {
   member: MemberPayload;
   body: IDiscussionBoardMember.ICreate;
 }): Promise<IDiscussionBoardMember.IAuthorized> {
-  const { body } = props;
+  const existingMember =
+    await MyGlobal.prisma.discussion_board_members.findFirst({
+      where: { email: props.body.email, deleted_at: null },
+    });
 
-  const existing = await MyGlobal.prisma.discussion_board_members.findFirst({
-    where: {
-      email: body.email,
-      deleted_at: null,
-    },
-  });
-  if (existing !== null) {
+  if (existingMember !== null) {
     throw new HttpException("Email already registered", 409);
   }
 
-  const passwordHash = await PasswordUtil.hash(body.password);
-
-  const newId = v4() as string & tags.Format<"uuid">;
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
 
   const now = toISOStringSafe(new Date());
+  const newMemberId = v4();
 
-  const created = await MyGlobal.prisma.discussion_board_members.create({
+  const member = await MyGlobal.prisma.discussion_board_members.create({
     data: {
-      id: newId,
-      email: body.email,
-      password_hash: passwordHash,
-      display_name: body.display_name,
+      id: newMemberId,
+      email: props.body.email,
+      password_hash: hashedPassword,
       created_at: now,
       updated_at: now,
     },
   });
 
-  const accessExpiredAt = toISOStringSafe(new Date(Date.now() + 3600 * 1000));
-  const refreshExpiredAt = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 3600 * 1000),
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const sessionId = v4();
+  const session = await MyGlobal.prisma.discussion_board_member_sessions.create(
+    {
+      data: {
+        id: sessionId,
+        discussion_board_member_id: member.id,
+        created_at: now,
+        expired_at: accessExpires,
+        ip: "",
+        href: "",
+        referrer: "",
+      },
+    },
   );
 
-  const accessToken = jwt.sign(
-    {
-      userId: created.id,
-      email: created.email,
-      display_name: created.display_name,
-      type: "member",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
-
-  const refreshToken = jwt.sign(
-    {
-      userId: created.id,
-      tokenType: "refresh",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "member",
+        id: member.id as string & tags.Format<"uuid">,
+        session_id: session.id as string & tags.Format<"uuid">,
+        created_at: now as string & tags.Format<"date-time">,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "member",
+        id: member.id as string & tags.Format<"uuid">,
+        session_id: session.id as string & tags.Format<"uuid">,
+        tokenType: "refresh",
+        created_at: now as string & tags.Format<"date-time">,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
   return {
-    id: created.id,
-    email: created.email,
-    display_name: created.display_name,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at: undefined,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiredAt,
-      refreshable_until: refreshExpiredAt,
-    },
+    id: member.id as string & tags.Format<"uuid">,
+    token,
   };
 }

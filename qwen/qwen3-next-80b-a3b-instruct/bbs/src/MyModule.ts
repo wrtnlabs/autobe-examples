@@ -1,42 +1,62 @@
 import { Module } from "@nestjs/common";
 
-import { AuthGuestController } from "./controllers/auth/guest/AuthGuestController";
-import { AuthMemberController } from "./controllers/auth/member/AuthMemberController";
-import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
-import { AdminPostsController } from "./controllers/admin/posts/AdminPostsController";
-import { EconomicboardAdminTopicsController } from "./controllers/economicBoard/admin/topics/EconomicboardAdminTopicsController";
-import { EconomicboardAdminGuestsController } from "./controllers/economicBoard/admin/guests/EconomicboardAdminGuestsController";
-import { EconomicboardGuestsController } from "./controllers/economicBoard/guests/EconomicboardGuestsController";
-import { EconomicboardAdminMembersController } from "./controllers/economicBoard/admin/members/EconomicboardAdminMembersController";
-import { EconomicboardMemberMembersController } from "./controllers/economicBoard/member/members/EconomicboardMemberMembersController";
-import { EconomicboardAdminAdminsController } from "./controllers/economicBoard/admin/admins/EconomicboardAdminAdminsController";
-import { EconomicboardMemberMeController } from "./controllers/economicBoard/member/me/EconomicboardMemberMeController";
-import { EconomicboardPostsController } from "./controllers/economicBoard/posts/EconomicboardPostsController";
-import { EconomicboardMemberPostsController } from "./controllers/economicBoard/member/posts/EconomicboardMemberPostsController";
-import { EconomicboardAdminPostsController } from "./controllers/economicBoard/admin/posts/EconomicboardAdminPostsController";
-import { EconomicboardPostsRepliesController } from "./controllers/economicBoard/posts/replies/EconomicboardPostsRepliesController";
-import { EconomicboardMemberPostsRepliesController } from "./controllers/economicBoard/member/posts/replies/EconomicboardMemberPostsRepliesController";
-import { EconomicboardAdminPostsRepliesController } from "./controllers/economicBoard/admin/posts/replies/EconomicboardAdminPostsRepliesController";
+import { AuthCitizenController } from "./controllers/auth/citizen/AuthCitizenController";
+import { AuthModeratorController } from "./controllers/auth/moderator/AuthModeratorController";
+import { DiscussionboardSystemConfigController } from "./controllers/discussionBoard/system/config/DiscussionboardSystemConfigController";
+import { DiscussionboardModeratorSystemConfigController } from "./controllers/discussionBoard/moderator/system/config/DiscussionboardModeratorSystemConfigController";
+import { DiscussionboardAuthCitizenJoinController } from "./controllers/discussionBoard/auth/citizen/join/DiscussionboardAuthCitizenJoinController";
+import { DiscussionboardAuthCitizenLoginController } from "./controllers/discussionBoard/auth/citizen/login/DiscussionboardAuthCitizenLoginController";
+import { DiscussionboardAuthCitizenRefreshController } from "./controllers/discussionBoard/auth/citizen/refresh/DiscussionboardAuthCitizenRefreshController";
+import { DiscussionboardAuthModeratorJoinController } from "./controllers/discussionBoard/auth/moderator/join/DiscussionboardAuthModeratorJoinController";
+import { DiscussionboardAuthModeratorLoginController } from "./controllers/discussionBoard/auth/moderator/login/DiscussionboardAuthModeratorLoginController";
+import { DiscussionboardModeratorAuthModeratorController } from "./controllers/discussionBoard/moderator/auth/moderator/refresh/DiscussionboardModeratorAuthModeratorController";
+import { DiscussionboardPostsController } from "./controllers/discussionBoard/posts/DiscussionboardPostsController";
+import { DiscussionboardCitizenPostsController } from "./controllers/discussionBoard/citizen/posts/DiscussionboardCitizenPostsController";
+import { DiscussionboardModeratorPostsController } from "./controllers/discussionBoard/moderator/posts/DiscussionboardModeratorPostsController";
+import { DiscussionboardCitizenPostsCommentsController } from "./controllers/discussionBoard/citizen/posts/comments/DiscussionboardCitizenPostsCommentsController";
+import { DiscussionboardModeratorPostsCommentsController } from "./controllers/discussionBoard/moderator/posts/comments/DiscussionboardModeratorPostsCommentsController";
+import { DiscussionboardPostsCommentsController } from "./controllers/discussionBoard/posts/comments/DiscussionboardPostsCommentsController";
+import { DiscussionboardPostsAttachmentsController } from "./controllers/discussionBoard/posts/attachments/DiscussionboardPostsAttachmentsController";
+import { DiscussionboardModeratorPostsAttachmentsController } from "./controllers/discussionBoard/moderator/posts/attachments/DiscussionboardModeratorPostsAttachmentsController";
+import { DiscussionboardSearchPostsController } from "./controllers/discussionBoard/search/posts/DiscussionboardSearchPostsController";
+import { DiscussionboardCommentsController } from "./controllers/discussionBoard/comments/DiscussionboardCommentsController";
+import { DiscussionboardCitizenCommentsController } from "./controllers/discussionBoard/citizen/comments/DiscussionboardCitizenCommentsController";
+import { DiscussionboardModeratorCommentsController } from "./controllers/discussionBoard/moderator/comments/DiscussionboardModeratorCommentsController";
+import { DiscussionboardCitizenAttachmentfilesController } from "./controllers/discussionBoard/citizen/attachmentFiles/DiscussionboardCitizenAttachmentfilesController";
+import { DiscussionboardModeratorAttachmentfilesController } from "./controllers/discussionBoard/moderator/attachmentFiles/DiscussionboardModeratorAttachmentfilesController";
+import { DiscussionboardAttachmentfilesController } from "./controllers/discussionBoard/attachmentFiles/DiscussionboardAttachmentfilesController";
+import { DiscussionboardModeratorReportsController } from "./controllers/discussionBoard/moderator/reports/DiscussionboardModeratorReportsController";
+import { DiscussionboardModeratorModeration_actionsController } from "./controllers/discussionBoard/moderator/moderation-actions/DiscussionboardModeratorModeration_actionsController";
 
 @Module({
   controllers: [
-    AuthGuestController,
-    AuthMemberController,
-    AuthAdminController,
-    AdminPostsController,
-    EconomicboardAdminTopicsController,
-    EconomicboardAdminGuestsController,
-    EconomicboardGuestsController,
-    EconomicboardAdminMembersController,
-    EconomicboardMemberMembersController,
-    EconomicboardAdminAdminsController,
-    EconomicboardMemberMeController,
-    EconomicboardPostsController,
-    EconomicboardMemberPostsController,
-    EconomicboardAdminPostsController,
-    EconomicboardPostsRepliesController,
-    EconomicboardMemberPostsRepliesController,
-    EconomicboardAdminPostsRepliesController,
+    AuthCitizenController,
+    AuthModeratorController,
+    DiscussionboardSystemConfigController,
+    DiscussionboardModeratorSystemConfigController,
+    DiscussionboardAuthCitizenJoinController,
+    DiscussionboardAuthCitizenLoginController,
+    DiscussionboardAuthCitizenRefreshController,
+    DiscussionboardAuthModeratorJoinController,
+    DiscussionboardAuthModeratorLoginController,
+    DiscussionboardModeratorAuthModeratorController,
+    DiscussionboardPostsController,
+    DiscussionboardCitizenPostsController,
+    DiscussionboardModeratorPostsController,
+    DiscussionboardCitizenPostsCommentsController,
+    DiscussionboardModeratorPostsCommentsController,
+    DiscussionboardPostsCommentsController,
+    DiscussionboardPostsAttachmentsController,
+    DiscussionboardModeratorPostsAttachmentsController,
+    DiscussionboardSearchPostsController,
+    DiscussionboardCommentsController,
+    DiscussionboardCitizenCommentsController,
+    DiscussionboardModeratorCommentsController,
+    DiscussionboardCitizenAttachmentfilesController,
+    DiscussionboardModeratorAttachmentfilesController,
+    DiscussionboardAttachmentfilesController,
+    DiscussionboardModeratorReportsController,
+    DiscussionboardModeratorModeration_actionsController,
   ],
 })
 export class MyModule {}

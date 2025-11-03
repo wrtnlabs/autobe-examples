@@ -1,1 +1,1 @@
-export * as user from "./user/index";
+export * as todoUser from "./todoUser/index";

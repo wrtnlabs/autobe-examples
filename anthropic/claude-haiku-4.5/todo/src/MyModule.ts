@@ -1,32 +1,42 @@
 import { Module } from "@nestjs/common";
 
-import { AuthGuestuserController } from "./controllers/auth/guestUser/AuthGuestuserController";
-import { AuthAuthenticateduserController } from "./controllers/auth/authenticatedUser/AuthAuthenticateduserController";
-import { AuthAdministratorController } from "./controllers/auth/administrator/AuthAdministratorController";
-import { TodoappAuthController } from "./controllers/todoApp/auth/TodoappAuthController";
-import { TodoappAuthenticateduserAuthProfileController } from "./controllers/todoApp/authenticatedUser/auth/profile/TodoappAuthenticateduserAuthProfileController";
-import { TodoappAuthVerify_emailController } from "./controllers/todoApp/auth/verify-email/TodoappAuthVerify_emailController";
-import { TodoappAuthRequest_password_resetController } from "./controllers/todoApp/auth/request-password-reset/TodoappAuthRequest_password_resetController";
-import { TodoappAuthReset_passwordController } from "./controllers/todoApp/auth/reset-password/TodoappAuthReset_passwordController";
-import { TodoappAuthenticateduserAuthChange_passwordController } from "./controllers/todoApp/authenticatedUser/auth/change-password/TodoappAuthenticateduserAuthChange_passwordController";
-import { TodoappAuthenticateduserAuthDelete_accountController } from "./controllers/todoApp/authenticatedUser/auth/delete-account/TodoappAuthenticateduserAuthDelete_accountController";
-import { TodoappAuthenticateduserTodosController } from "./controllers/todoApp/authenticatedUser/todos/TodoappAuthenticateduserTodosController";
-import { TodoappTodosController } from "./controllers/todoApp/todos/TodoappTodosController";
+import { AuthUserController } from "./controllers/auth/user/AuthUserController";
+import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
+import { TodoappAuthRegisterController } from "./controllers/todoApp/auth/register/TodoappAuthRegisterController";
+import { TodoappAuthLoginController } from "./controllers/todoApp/auth/login/TodoappAuthLoginController";
+import { TodoappUserAuthController } from "./controllers/todoApp/user/auth/TodoappUserAuthController";
+import { TodoappAuthPassword_resetController } from "./controllers/todoApp/auth/password-reset/TodoappAuthPassword_resetController";
+import { TodoappUserAuthChange_passwordController } from "./controllers/todoApp/user/auth/change-password/TodoappUserAuthChange_passwordController";
+import { TodoappAdminUsersController } from "./controllers/todoApp/admin/users/TodoappAdminUsersController";
+import { TodoappUsersController } from "./controllers/todoApp/users/TodoappUsersController";
+import { TodoappUserUsersController } from "./controllers/todoApp/user/users/TodoappUserUsersController";
+import { TodoappUsersMeController } from "./controllers/todoApp/users/me/TodoappUsersMeController";
+import { TodoappUserTodosController } from "./controllers/todoApp/user/todos/TodoappUserTodosController";
+import { TodoappUserDashboardController } from "./controllers/todoApp/user/dashboard/TodoappUserDashboardController";
+import { TodoappAdminStatisticsController } from "./controllers/todoApp/admin/statistics/TodoappAdminStatisticsController";
+import { TodoappAdminBackupsController } from "./controllers/todoApp/admin/backups/TodoappAdminBackupsController";
+import { TodoappUserSessionsController } from "./controllers/todoApp/user/sessions/TodoappUserSessionsController";
+import { TodoappAdminSessionsController } from "./controllers/todoApp/admin/sessions/TodoappAdminSessionsController";
 
 @Module({
   controllers: [
-    AuthGuestuserController,
-    AuthAuthenticateduserController,
-    AuthAdministratorController,
-    TodoappAuthController,
-    TodoappAuthenticateduserAuthProfileController,
-    TodoappAuthVerify_emailController,
-    TodoappAuthRequest_password_resetController,
-    TodoappAuthReset_passwordController,
-    TodoappAuthenticateduserAuthChange_passwordController,
-    TodoappAuthenticateduserAuthDelete_accountController,
-    TodoappAuthenticateduserTodosController,
-    TodoappTodosController,
+    AuthUserController,
+    AuthAdminController,
+    TodoappAuthRegisterController,
+    TodoappAuthLoginController,
+    TodoappUserAuthController,
+    TodoappAuthPassword_resetController,
+    TodoappUserAuthChange_passwordController,
+    TodoappAdminUsersController,
+    TodoappUsersController,
+    TodoappUserUsersController,
+    TodoappUsersMeController,
+    TodoappUserTodosController,
+    TodoappUserDashboardController,
+    TodoappAdminStatisticsController,
+    TodoappAdminBackupsController,
+    TodoappUserSessionsController,
+    TodoappAdminSessionsController,
   ],
 })
 export class MyModule {}

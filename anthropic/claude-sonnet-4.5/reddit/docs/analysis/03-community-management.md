@@ -1,712 +1,1013 @@
 
 # Community Management Requirements
 
-## 1. Community Concept and Purpose
-
-### 1.1 What Are Communities?
-
-Communities (analogous to subreddits in Reddit) are the foundational organizational structure of this platform. Each community serves as a dedicated space where users gather around shared interests, topics, or themes. Communities provide:
-
-- **Content Organization**: All posts belong to a specific community, creating focused discussion spaces
-- **Moderation Boundaries**: Each community has its own moderation team and rules
-- **User Affiliation**: Users subscribe to communities that interest them, creating personalized content feeds
-- **Identity and Culture**: Each community develops its own culture, rules, and norms
-
-### 1.2 Business Value of Community Structure
-
-The community-centric architecture provides several business advantages:
-
-- **Scalable Content Organization**: As the platform grows, communities naturally segment content without requiring centralized taxonomy management
-- **Distributed Moderation**: Community-specific moderators reduce the burden on platform administrators
-- **User Engagement**: Subscription-based feeds increase user retention and session duration
-- **Content Discovery**: Users can easily find content matching their interests by browsing and subscribing to relevant communities
-- **Network Effects**: Popular communities attract more users, driving platform growth
-
-## 2. Community Creation Requirements
-
-### 2.1 Community Creation Authorization
-
-**Role-Based Creation Permission**:
-- THE system SHALL allow authenticated members, moderators, and administrators to create new communities
-- THE system SHALL deny community creation requests from guest users
-- WHEN a guest user attempts to create a community, THE system SHALL redirect them to the registration or login page with a message explaining that account creation is required
-
-### 2.2 Community Creation Workflow
-
-**User Journey for Creating a Community**:
-
-1. User navigates to the "Create Community" interface
-2. User fills out required community information (name, description)
-3. User optionally configures additional settings (icon, banner, privacy, posting rules)
-4. User submits the community creation request
-5. System validates all inputs
-6. System creates the community and assigns the creator as the primary moderator
-7. User is redirected to the newly created community page
-
-```mermaid
-graph LR
-    A["User Clicks Create Community"] --> B{"User Authenticated?"}
-    B -->|"No"| C["Redirect to Login"]
-    B -->|"Yes"| D["Display Community Creation Form"]
-    D --> E["User Fills Required Fields"]
-    E --> F["User Submits Form"]
-    F --> G{"Validation Passes?"}
-    G -->|"No"| H["Display Error Messages"]
-    H --> D
-    G -->|"Yes"| I["Create Community"]
-    I --> J["Assign Creator as Moderator"]
-    J --> K["Redirect to Community Page"]
-```
-
-### 2.3 Required Community Information
-
-**Community Name Requirements**:
-- THE system SHALL require a unique community name
-- THE community name SHALL be between 3 and 25 characters long
-- THE community name SHALL contain only alphanumeric characters and underscores
-- THE community name SHALL not contain spaces
-- THE community name SHALL be case-insensitive for uniqueness (e.g., "Gaming" and "gaming" are considered duplicates)
-- WHEN a user submits a community name that already exists, THE system SHALL display an error message indicating the name is taken and suggest available alternatives
-
-**Community Description Requirements**:
-- THE system SHALL require a community description
-- THE description SHALL be between 10 and 500 characters long
-- THE description SHALL clearly explain the community's purpose and topic
-- THE system SHALL validate that the description does not contain prohibited content (spam links, profanity, etc.)
-
-### 2.4 Optional Community Information
-
-**Community Icon**:
-- THE system SHALL allow users to upload a community icon during creation
-- IF a user uploads an icon, THE system SHALL validate the file format (JPEG, PNG, GIF allowed)
-- IF a user uploads an icon, THE system SHALL validate the file size does not exceed 2MB
-- IF a user uploads an icon, THE system SHALL resize the image to 256x256 pixels
-- IF no icon is uploaded, THE system SHALL assign a default placeholder icon
-
-**Community Banner**:
-- THE system SHALL allow users to upload a community banner during creation
-- IF a user uploads a banner, THE system SHALL validate the file format (JPEG, PNG allowed)
-- IF a user uploads a banner, THE system SHALL validate the file size does not exceed 5MB
-- IF a user uploads a banner, THE system SHALL resize the image to maintain aspect ratio with maximum width of 1920 pixels
-- IF no banner is uploaded, THE system SHALL use a default banner or no banner
-
-### 2.5 Community Creation Validation Rules
-
-**Input Validation**:
-- THE system SHALL validate all required fields are filled before allowing submission
-- THE system SHALL validate community names against a blacklist of prohibited terms
-- THE system SHALL validate community names do not impersonate platform entities (e.g., "admin", "moderator", "official")
-- THE system SHALL validate descriptions do not contain spam or malicious links
-
-**Creation Limits**:
-- THE system SHALL allow users to create a maximum of 3 communities per day to prevent abuse
-- WHEN a user reaches the daily creation limit, THE system SHALL display an error message indicating they must wait until the next day
-- THE system SHALL allow administrators to bypass creation limits
-
-### 2.6 Community Name Uniqueness Enforcement
-
-**Real-time Name Availability Check**:
-- WHILE a user types a community name, THE system SHALL check availability in real-time and display immediate feedback
-- THE system SHALL show a green checkmark when a name is available
-- THE system SHALL show a red X with an error message when a name is already taken
-- THE system SHALL suggest 3-5 similar available names when the desired name is unavailable
-
-## 3. Community Settings and Configuration
-
-### 3.1 Editable Community Metadata
-
-**Post-Creation Settings Management**:
-- THE system SHALL allow community moderators to edit community settings after creation
-- THE system SHALL allow the following settings to be modified:
-  - Community description
-  - Community icon
-  - Community banner
-  - Community rules
-  - Posting permissions
-  - Privacy settings
-  - Content categorization tags
-
-**Non-Editable Fields**:
-- THE community name SHALL NOT be editable after creation to maintain URL stability and prevent confusion
-- IF a community needs a name change, THE system SHALL require administrator approval and manual intervention
-
-### 3.2 Community Description and Branding
-
-**Description Updates**:
-- WHEN a moderator updates the community description, THE system SHALL validate the new description meets length requirements (10-500 characters)
-- THE system SHALL save description edit history for audit purposes
-- THE system SHALL display the updated description immediately to all users
-
-**Visual Branding**:
-- WHEN a moderator uploads a new icon or banner, THE system SHALL apply the same validation rules as during creation
-- THE system SHALL replace the old image with the new one immediately
-- THE system SHALL optimize images for fast loading across all devices
-
-### 3.3 Content Posting Rules Configuration
-
-**Who Can Post**:
-- THE system SHALL provide the following posting permission options:
-  - "Anyone Subscribed" - All subscribed members can create posts
-  - "Approved Users Only" - Only users approved by moderators can create posts
-  - "Moderators Only" - Only community moderators can create posts
-- THE default posting permission SHALL be "Anyone Subscribed"
-- WHEN a moderator changes posting permissions, THE system SHALL enforce the new rules immediately for all subsequent post attempts
-
-**Post Type Restrictions**:
-- THE system SHALL allow moderators to restrict which post types are allowed in their community
-- THE system SHALL provide toggles for:
-  - Text posts (enabled/disabled)
-  - Link posts (enabled/disabled)
-  - Image posts (enabled/disabled)
-- THE default configuration SHALL allow all post types
-- WHEN a user attempts to create a post type that is disabled, THE system SHALL display an error message explaining which post types are allowed
-
-### 3.4 Community Categorization and Tags
-
-**Category Assignment**:
-- THE system SHALL provide a predefined list of categories including but not limited to:
-  - Technology
-  - Gaming
-  - Sports
-  - Entertainment
-  - Education
-  - Science
-  - Arts & Crafts
-  - News & Politics
-  - Lifestyle
-  - Business & Finance
-  - Other
-- THE system SHALL allow moderators to assign one primary category to their community
-- THE system SHALL allow moderators to assign up to 3 additional secondary tags for better discoverability
-
-**Tag Usage**:
-- THE system SHALL use category tags to power community discovery and recommendation features
-- THE system SHALL display the primary category prominently on the community page
-- THE system SHALL use tags to group communities in browse and search interfaces
-
-### 3.5 Community Content Appearance Settings
-
-**Content Display Options**:
-- THE system SHALL allow moderators to configure the default post sorting method for their community (hot, new, top, controversial)
-- THE system SHALL allow moderators to enable or disable thumbnail previews for link and image posts
-- THE system SHALL allow moderators to set a default comment sort order (best, new, top, controversial)
-
-## 4. Community Subscription System
-
-### 4.1 Discovering Communities
-
-**Community Browse Interface**:
-- THE system SHALL provide a community directory accessible to all users (including guests)
-- THE system SHALL display communities organized by:
-  - Most popular (highest subscriber count)
-  - Fastest growing (highest recent subscriber growth rate)
-  - Newest (most recently created)
-  - By category (grouped by primary category tag)
-- THE system SHALL display for each community:
-  - Community name
-  - Community icon
-  - Subscriber count
-  - Short description (truncated to 100 characters)
-  - Primary category
-
-**Community Search**:
-- THE system SHALL provide a search bar for finding communities
-- WHEN a user enters a search query, THE system SHALL search community names and descriptions
-- THE system SHALL display search results ranked by relevance and subscriber count
-- THE system SHALL show at least the top 50 matching communities
-- THE system SHALL allow filtering search results by category
-
-### 4.2 Subscription Workflow
-
-**Subscribing to a Community**:
-- WHEN an authenticated user clicks the "Subscribe" button on a community, THE system SHALL add that community to the user's subscribed communities list
-- WHEN an authenticated user subscribes to a community, THE system SHALL increment the community's subscriber count by 1
-- WHEN a user subscribes to a community, THE system SHALL immediately include posts from that community in the user's personalized home feed
-- THE system SHALL provide immediate visual feedback (button changes to "Subscribed" or "Unsubscribe")
-- THE system SHALL allow users to subscribe from:
-  - The community page
-  - The community directory
-  - Search results
-
-**Guest User Subscription Attempts**:
-- WHEN a guest user attempts to subscribe to a community, THE system SHALL display a prompt to register or log in
-- THE system SHALL remember the community the guest wanted to subscribe to and automatically subscribe them after successful authentication
-
-### 4.3 Unsubscription Workflow
-
-**Unsubscribing from a Community**:
-- WHEN an authenticated user clicks the "Unsubscribe" button on a community they are subscribed to, THE system SHALL remove that community from the user's subscribed communities list
-- WHEN an authenticated user unsubscribes from a community, THE system SHALL decrement the community's subscriber count by 1
-- WHEN a user unsubscribes from a community, THE system SHALL immediately stop including posts from that community in the user's personalized home feed
-- THE system SHALL provide immediate visual feedback (button changes to "Subscribe")
-
-**Unsubscription Access Points**:
-- THE system SHALL allow users to unsubscribe from:
-  - The community page
-  - The user's subscription management page
-  - The sidebar of the home feed
-
-### 4.4 Subscription Limits and Management
-
-**Subscription Limits**:
-- THE system SHALL allow users to subscribe to an unlimited number of communities
-- THE system SHALL display the total count of subscribed communities on the user's profile
-
-**Subscription Management Interface**:
-- THE system SHALL provide a dedicated "My Communities" or "Subscriptions" page for each user
-- THE system SHALL display all subscribed communities with:
-  - Community icon
-  - Community name
-  - Subscriber count
-  - Quick unsubscribe action
-- THE system SHALL allow users to sort their subscribed communities by:
-  - Alphabetically
-  - Most recently subscribed
-  - Most active (based on recent post volume)
-
-### 4.5 Subscriber Count Tracking
-
-**Public Subscriber Metrics**:
-- THE system SHALL display the current subscriber count on every community page
-- THE system SHALL update subscriber counts in real-time or with minimal delay (within 60 seconds)
-- THE system SHALL use subscriber count as a key metric for community ranking in discovery interfaces
-
-## 5. Moderator Assignment and Management
-
-### 5.1 Community Creator as Default Moderator
-
-**Automatic Moderator Assignment**:
-- WHEN a user creates a new community, THE system SHALL automatically assign them as the primary moderator with full moderator permissions
-- THE primary moderator SHALL have the role designation "Founder" or "Creator" to distinguish them from subsequently added moderators
-- THE primary moderator SHALL have permissions that cannot be revoked by other moderators
-
-### 5.2 Adding Additional Moderators
-
-**Moderator Invitation Workflow**:
-- THE system SHALL allow the primary moderator and existing moderators with "manage moderators" permission to invite additional moderators
-- WHEN a moderator invites a new moderator, THE system SHALL:
-  1. Verify the invited user is a registered member
-  2. Send an invitation notification to the invited user
-  3. Add a pending invitation record
-- WHEN an invited user accepts the moderator invitation, THE system SHALL grant them moderator permissions for that specific community
-- WHEN an invited user declines the moderator invitation, THE system SHALL remove the pending invitation
-
-**Moderator Invitation Requirements**:
-- THE invited user SHALL be an existing registered member
-- THE invited user SHALL NOT already be a moderator of the community
-- THE system SHALL allow a community to have up to 25 moderators
-
-### 5.3 Moderator Hierarchy and Permissions
-
-**Moderator Permission Levels**:
-- THE system SHALL support granular moderator permissions including:
-  - **Manage Posts**: Remove posts, approve posts, mark as spam
-  - **Manage Comments**: Remove comments, approve comments
-  - **Manage Users**: Ban users from the community, mute users
-  - **Manage Settings**: Edit community settings, rules, appearance
-  - **Manage Moderators**: Invite new moderators, remove moderators, adjust permissions
-  - **Access Reports**: View and manage content reports
-- THE primary moderator (creator) SHALL have ALL permissions by default and cannot have permissions revoked
-- THE system SHALL allow the primary moderator to assign custom permission sets to each additional moderator
-
-**Permission Assignment**:
-- WHEN a primary moderator invites a new moderator, THE system SHALL allow them to select which permissions to grant
-- THE default permission set for new moderators SHALL include "Manage Posts", "Manage Comments", and "Access Reports"
-- THE system SHALL allow the primary moderator to modify permissions of existing moderators at any time
-
-### 5.4 Removing Moderators
-
-**Moderator Removal Authority**:
-- THE system SHALL allow the primary moderator to remove any other moderator from the community
-- THE system SHALL allow moderators with "Manage Moderators" permission to remove moderators who were added after them (seniority-based removal)
-- THE system SHALL NOT allow the primary moderator to be removed by any other moderator
-
-**Moderator Removal Process**:
-- WHEN a moderator is removed, THE system SHALL immediately revoke all their moderator permissions for that community
-- WHEN a moderator is removed, THE system SHALL send them a notification informing them of the removal
-- WHEN a moderator is removed, THE system SHALL retain their status as a regular community member (they remain subscribed unless they choose to unsubscribe)
-
-### 5.5 Moderator Resignation
-
-**Voluntary Resignation**:
-- THE system SHALL allow any moderator to resign from their moderator position at any time
-- WHEN a moderator resigns, THE system SHALL immediately revoke their moderator permissions
-- WHEN a moderator resigns, THE system SHALL retain their status as a regular community member
-
-**Primary Moderator Resignation**:
-- IF the primary moderator resigns, THE system SHALL promote the longest-serving remaining moderator to primary moderator status
-- IF the primary moderator resigns and no other moderators exist, THE system SHALL flag the community for administrator review
-
-## 6. Community Rules and Guidelines
-
-### 6.1 Defining Community-Specific Rules
-
-**Rule Creation Interface**:
-- THE system SHALL allow community moderators to create and edit community-specific rules
-- THE system SHALL allow moderators to add up to 15 custom rules per community
-- WHEN creating a rule, moderators SHALL provide:
-  - Rule title (required, 3-100 characters)
-  - Rule description (optional, up to 500 characters providing additional context)
-  - Rule type (e.g., "Required", "Prohibited", "Etiquette")
-
-**Rule Examples**:
-- Communities may define rules such as:
-  - "No self-promotion or spam"
-  - "Be respectful and civil in discussions"
-  - "Posts must be related to [topic]"
-  - "No memes or low-effort content"
-  - "Use appropriate post flair"
-
-### 6.2 Rule Display to Users
-
-**Rule Visibility**:
-- THE system SHALL display community rules prominently in the community sidebar
-- THE system SHALL display community rules on the post creation page before users submit content
-- THE system SHALL allow users to expand and collapse rule descriptions
-- THE system SHALL display a "Read the Rules" link accessible from all community pages
-
-**Rule Acceptance**:
-- WHEN a user creates their first post in a community, THE system SHALL display a one-time acknowledgment prompt asking them to confirm they have read the community rules
-- THE system SHALL require users to check an "I have read and agree to follow the community rules" checkbox before submitting their first post
-
-### 6.3 Rule Enforcement Mechanisms
-
-**Moderator Enforcement Tools**:
-- WHEN moderators remove content, THE system SHALL allow them to select which rule was violated from the community's rule list
-- WHEN content is removed for a rule violation, THE system SHALL send the user a notification citing the specific rule that was broken
-- THE system SHALL track rule violation patterns per user within each community to identify repeat offenders
-
-**Automated Rule Hints**:
-- WHEN a user attempts to post content, THE system SHALL display relevant rules as hints (e.g., if the title contains "I'm selling...", show the "No self-promotion" rule)
-- THE system SHALL provide keyword-based rule suggestions to help users comply before posting
-
-### 6.4 Platform-Wide Rules
-
-**Global Rules**:
-- THE system SHALL enforce platform-wide rules that apply to all communities regardless of community-specific rules
-- THE platform-wide rules SHALL include:
-  - No illegal content
-  - No harassment or hate speech
-  - No doxxing or sharing personal information
-  - No vote manipulation or brigading
-  - No sexual or suggestive content involving minors
-  - No spam or excessive self-promotion across multiple communities
-- THE system SHALL NOT allow community moderators to override or disable platform-wide rules
-
-**Rule Priority**:
-- WHEN community rules conflict with platform-wide rules, THE platform-wide rules SHALL take precedence
-- THE system SHALL allow administrators to remove content that violates platform-wide rules even if community moderators approve it
-
-## 7. Community Discovery and Search
-
-### 7.1 Community Browsing Mechanisms
-
-**Browse Categories**:
-- THE system SHALL provide category-based browsing allowing users to explore communities by topic
-- WHEN a user selects a category, THE system SHALL display all communities tagged with that category sorted by subscriber count
-- THE system SHALL display the top 100 communities in each category
-
-**Trending Communities**:
-- THE system SHALL calculate and display trending communities based on:
-  - Recent subscriber growth rate (past 7 days)
-  - Recent post activity increase
-  - Recent upvote velocity
-- THE system SHALL update the trending communities list every 6 hours
-- THE system SHALL display the top 20 trending communities on the platform homepage
-
-**Popular Communities**:
-- THE system SHALL display the most popular communities based on total subscriber count
-- THE system SHALL update popular community rankings daily
-- THE system SHALL feature the top 50 popular communities on the community directory page
-
-### 7.2 Search Functionality
-
-**Community Search**:
-- THE system SHALL provide a search interface for finding communities by name or keywords in their description
-- WHEN a user enters a search query, THE system SHALL return results within 1 second for common queries
-- THE system SHALL rank search results by:
-  - Exact name matches (highest priority)
-  - Partial name matches
-  - Keyword matches in description
-  - Subscriber count (as a tiebreaker)
-- THE system SHALL display up to 100 search results per query
-
-**Search Filters**:
-- THE system SHALL allow users to filter community search results by:
-  - Category
-  - Minimum subscriber count (e.g., "communities with 1000+ subscribers")
-  - Activity level (active, moderate, low)
-- THE system SHALL persist filter selections during the user's session
-
-### 7.3 Featured and Recommended Communities
-
-**Featured Communities**:
-- THE system SHALL allow administrators to feature specific communities on the platform homepage
-- THE system SHALL display up to 5 featured communities with custom promotional banners
-- THE administrators SHALL rotate featured communities weekly to promote diverse content
-
-**Personalized Recommendations**:
-- WHEN a user is authenticated, THE system SHALL recommend communities based on:
-  - Categories of communities they are already subscribed to
-  - Communities popular among users with similar subscription patterns
-  - Communities related to topics the user frequently engages with
-- THE system SHALL display up to 10 personalized community recommendations on the user's home page
-- THE system SHALL update recommendations weekly or when subscription patterns change significantly
-
-### 7.4 Community Directory Organization
-
-**Directory Interface**:
-- THE system SHALL provide a comprehensive community directory page accessible from the main navigation
-- THE directory SHALL display communities in a grid or list layout with:
-  - Community icon
-  - Community name (clickable link)
-  - Subscriber count
-  - Brief description (100 character limit)
-  - Primary category tag
-  - Subscribe button
-- THE system SHALL support infinite scroll or pagination for browsing large numbers of communities
-
-## 8. Community Privacy Settings
-
-### 8.1 Public vs Private Communities
-
-**Public Communities (Default)**:
-- THE system SHALL create all new communities as public by default
-- THE public communities SHALL be:
-  - Visible in community directories and search results
-  - Accessible to all users (guests and members) for viewing posts and comments
-  - Open for subscription by any authenticated user
-  - Indexed for internal search
-
-**Private Communities**:
-- THE system SHALL allow community moderators to change a community from public to private
-- THE private communities SHALL be:
-  - Hidden from community directories and general search results
-  - Accessible only to approved members
-  - Visible by name only to users who have been invited or approved
-  - Not indexed for public search
-
-### 8.2 Access Control for Private Communities
-
-**Joining Private Communities**:
-- WHEN a user wants to join a private community, THE system SHALL require them to submit a request to join
-- WHEN a join request is submitted, THE system SHALL notify community moderators
-- THE system SHALL allow moderators to approve or deny join requests
-- WHEN a moderator approves a join request, THE system SHALL grant the user access to view and participate in the community
-- WHEN a moderator denies a join request, THE system SHALL notify the user and optionally provide a reason
-
-**Private Community Invitations**:
-- THE system SHALL allow moderators of private communities to invite specific users directly
-- WHEN a user receives an invitation to a private community, THE system SHALL send them a notification
-- WHEN a user accepts a private community invitation, THE system SHALL grant them immediate access
-
-**Private Community Visibility**:
-- WHEN a non-member attempts to access a private community, THE system SHALL display a message indicating the community is private and provide an option to request access
-- THE system SHALL NOT display posts, comments, or subscriber counts from private communities to non-members
-
-### 8.3 Changing Privacy Settings
-
-**Public to Private Conversion**:
-- WHEN a moderator changes a community from public to private, THE system SHALL:
-  - Remove the community from public directories
-  - Maintain existing subscribers as approved members
-  - Require new users to request access
-  - Display a notification to all current members explaining the change
-
-**Private to Public Conversion**:
-- WHEN a moderator changes a community from private to public, THE system SHALL:
-  - Add the community to public directories
-  - Make all content visible to all users
-  - Allow any authenticated user to subscribe freely
-  - Display a notification to all current members explaining the change
-
-## 9. Community Deletion and Archival
-
-### 9.1 Community Deletion Requirements
-
-**Who Can Delete Communities**:
-- THE system SHALL allow only the primary moderator (community creator) to delete a community
-- THE system SHALL allow platform administrators to delete any community if it violates platform policies
-- THE system SHALL NOT allow regular moderators (non-creators) to delete communities
-
-### 9.2 Community Deletion Process
-
-**Deletion Workflow**:
-- WHEN a primary moderator initiates community deletion, THE system SHALL display a confirmation dialog warning them that this action is irreversible
-- THE system SHALL require the moderator to type the community name exactly to confirm deletion
-- WHEN confirmed, THE system SHALL:
-  - Mark the community as deleted
-  - Remove the community from all directories and search results
-  - Unsubscribe all members
-  - Archive all posts and comments (not permanently delete, for potential recovery)
-  - Prevent new posts or comments
-  - Display a "This community has been deleted" message to anyone attempting to access it
-
-**Deletion Cooldown Period**:
-- THE system SHALL enforce a 30-day cooldown period before permanent deletion
-- DURING the cooldown period, THE system SHALL allow the primary moderator or administrators to restore the community
-- AFTER 30 days, THE system SHALL permanently archive all community data
-
-### 9.3 Community Archival for Inactive Communities
-
-**Automatic Archival Criteria**:
-- THE system SHALL identify communities as inactive if:
-  - No posts have been created in the past 6 months
-  - The community has fewer than 10 subscribers
-  - No moderators have logged in during the past 6 months
-
-**Archival Process**:
-- WHEN a community meets inactivity criteria, THE system SHALL send notifications to all moderators warning of potential archival
-- IF no moderator activity occurs within 30 days of the warning, THE system SHALL mark the community as archived
-- THE archived communities SHALL:
-  - Remain viewable but marked as "Archived"
-  - Prevent new posts or comments
-  - Remain searchable
-  - Be eligible for adoption by new moderators via administrator request
-
-### 9.4 Community Restoration
-
-**Restoring Deleted Communities**:
-- DURING the 30-day cooldown period, THE primary moderator SHALL be able to restore a deleted community
-- WHEN a community is restored, THE system SHALL:
-  - Reactivate the community
-  - Restore all posts and comments
-  - Re-add the community to directories and search
-  - Notify previously subscribed users of the restoration (optional re-subscription)
-
-**Adopting Archived Communities**:
-- THE system SHALL allow users to request to adopt archived communities by submitting a request to administrators
-- THE administrators SHALL review adoption requests and assign new primary moderators to archived communities
-- WHEN a new moderator is assigned, THE system SHALL reactivate the community and remove the archived status
-
-## 10. Community Permission Matrix
-
-The following table defines what each user role can do with respect to community management:
-
-| Action | Guest | Member | Moderator (of community) | Admin |
-|--------|-------|--------|--------------------------|-------|
-| View public community | ✅ | ✅ | ✅ | ✅ |
-| View private community | ❌ | ❌ (unless approved member) | ✅ | ✅ |
-| Create community | ❌ | ✅ | ✅ | ✅ |
-| Subscribe to public community | ❌ | ✅ | ✅ | ✅ |
-| Request access to private community | ❌ | ✅ | ✅ | ✅ |
-| Edit community settings | ❌ | ❌ | ✅ (own community only) | ✅ |
-| Create community rules | ❌ | ❌ | ✅ (own community only) | ✅ |
-| Invite moderators | ❌ | ❌ | ✅ (with permission) | ✅ |
-| Remove moderators | ❌ | ❌ | ✅ (primary mod or with permission) | ✅ |
-| Delete community | ❌ | ❌ | ✅ (primary moderator only) | ✅ |
-| Change community privacy | ❌ | ❌ | ✅ (own community only) | ✅ |
-| Archive community | ❌ | ❌ | ❌ | ✅ |
-| Restore archived community | ❌ | ❌ | ❌ | ✅ |
-| Override community rules | ❌ | ❌ | ❌ | ✅ |
-
-## 11. Community Performance and User Experience Requirements
-
-### 11.1 Performance Expectations
-
-**Community Page Load Time**:
-- WHEN a user navigates to a community page, THE system SHALL load and display the page within 2 seconds on standard broadband connections
-- THE system SHALL display initial content (community header, description) within 1 second and load posts progressively
-
-**Subscription Actions**:
-- WHEN a user subscribes or unsubscribes from a community, THE system SHALL provide immediate visual feedback (button state change) within 200 milliseconds
-- THE system SHALL update the user's feed to reflect the subscription change within 60 seconds
-
-**Search Performance**:
-- WHEN a user searches for communities, THE system SHALL return results within 1 second for queries matching common terms
-- THE system SHALL display at least the first 20 results immediately and load additional results as the user scrolls
-
-### 11.2 Scalability Requirements
-
-**Community Growth**:
-- THE system SHALL support up to 100,000 active communities without performance degradation
-- THE system SHALL support individual communities with up to 10,000,000 subscribers
-- THE system SHALL handle up to 1,000 new community creations per day
-
-### 11.3 Error Handling and User Feedback
-
-**Community Creation Errors**:
-- WHEN community creation fails due to validation errors, THE system SHALL display specific error messages for each field with issues
-- WHEN community creation fails due to technical errors, THE system SHALL display a user-friendly message and allow the user to retry
-- THE system SHALL preserve user input when errors occur so users don't need to re-enter all information
-
-**Subscription Errors**:
-- WHEN a subscription action fails, THE system SHALL display an error message and automatically retry once
-- IF the retry fails, THE system SHALL provide a manual retry button
-- THE system SHALL log subscription failures for debugging
-
-**Access Denied Scenarios**:
-- WHEN a user attempts to access a private community without permission, THE system SHALL display a clear message explaining the community is private and provide a "Request Access" button
-- WHEN a guest attempts an action requiring authentication, THE system SHALL display a modal prompting them to log in or register
-
-## 12. Business Rules Summary
-
-### 12.1 Core Community Business Rules
-
-1. **Community Uniqueness**: Each community name must be globally unique (case-insensitive)
-2. **Creator Ownership**: Community creators are automatically assigned as primary moderators with irrevocable permissions
-3. **Subscription Freedom**: Users can subscribe to unlimited communities at no cost
-4. **Public by Default**: All new communities are public unless explicitly changed to private by moderators
-5. **Distributed Moderation**: Each community manages its own rules and moderation independently within platform-wide guidelines
-6. **Platform Rule Supremacy**: Platform-wide rules always override community-specific rules
-
-### 12.2 Content and User Interaction Rules
-
-1. **Posting Permissions**: By default, any subscribed member can post in a community unless moderators restrict permissions
-2. **Rule Visibility**: Community rules must be visible to users before they post content
-3. **Moderator Hierarchy**: Moderators can only remove moderators who were added after them (seniority-based)
-4. **Deletion Protection**: Only primary moderators and administrators can delete communities
-
-### 12.3 Privacy and Access Rules
-
-1. **Private Community Access**: Private communities require explicit approval for membership
-2. **Guest Limitations**: Guests can view public communities but cannot subscribe or create communities
-3. **Search Visibility**: Only public communities appear in general search and directories
-4. **Invitation System**: Private communities can invite users directly, bypassing the request process
-
-## 13. Integration Points with Other System Components
-
-### 13.1 User Authentication Integration
-
-**Community Creation and User Roles**:
-- Community creation features SHALL integrate with the user authentication system defined in [User Roles and Authentication Document](./02-user-roles-authentication.md)
-- User role verification SHALL occur before allowing community creation, moderator assignment, or permission changes
-- Session management SHALL ensure authenticated users maintain their moderator status across sessions
-
-### 13.2 Content Creation Integration
-
-**Post Creation in Communities**:
-- All posts SHALL belong to a specific community as defined in the content creation requirements
-- Community posting permissions SHALL be enforced before allowing post submission
-- Community-specific rules SHALL be displayed during the post creation workflow
-
-### 13.3 Moderation Integration
-
-**Content Moderation Workflow**:
-- Community moderators SHALL access reported content through the content moderation system
-- Moderator actions (post removal, user bans) SHALL be scoped to their specific communities
-- Platform administrators SHALL have override capabilities across all communities
-
-### 13.4 Feed and Discovery Integration
-
-**Personalized Feed Generation**:
-- User subscriptions SHALL determine which community posts appear in personalized home feeds
-- Community popularity metrics (subscriber count, activity) SHALL influence content ranking in feeds
-- Community discovery features SHALL integrate with search and recommendation algorithms
-
-## 14. Future Considerations
-
-While not required for the initial release, the following features may be considered for future iterations:
-
-1. **Community Flairs**: Allow communities to define custom post and user flair tags
-2. **Community Wikis**: Enable communities to maintain wiki pages with community information and resources
-3. **Community Events**: Allow communities to schedule and promote events
-4. **Cross-Community Interactions**: Enable multi-community posts or cross-posting features
-5. **Community Analytics**: Provide moderators with detailed analytics on community growth, engagement, and demographics
-6. **Community Customization**: Allow advanced CSS or theme customization for community pages
-7. **Community Partnerships**: Enable communities to form partnerships or alliances
-8. **Community Verification**: Introduce verified community badges for official or high-quality communities
+## Introduction
+
+This document defines the complete business requirements for community management functionality in the Reddit-like community platform. Communities (analogous to subreddits) serve as the fundamental organizational structure that groups related content and users around shared interests, topics, or themes.
+
+Communities are the backbone of the platform, providing users with focused spaces for discussions, content sharing, and social interaction. Every post created on the platform belongs to a specific community, and users curate their content experience by subscribing to communities that match their interests.
+
+This document covers the entire community lifecycle including creation, configuration, membership management, moderation, and discovery. It defines what authenticated members can do as community creators, how moderators manage their communities, and how users discover and join communities.
+
+## Community Concept and Purpose
+
+### Business Value
+
+Communities serve multiple critical business functions:
+
+- **Content Organization**: Communities categorize and organize content into focused topic areas, making it easier for users to find relevant discussions and information
+- **User Engagement**: Communities create focused spaces that encourage regular participation and build loyalty among members who share common interests
+- **Distributed Moderation**: By empowering community creators as moderators, the platform scales content moderation across thousands of communities without requiring massive centralized moderation teams
+- **Network Effects**: Communities enable niche interest groups to form and thrive, creating a diverse ecosystem that attracts users across many different topics and demographics
+- **Content Quality**: Focused communities with clear purposes tend to produce higher quality, more relevant content than general-purpose forums
+
+### Platform Architecture
+
+Communities function as containers that:
+
+- Group related posts together under a common theme or topic
+- Define their own rules and cultural norms within platform guidelines
+- Maintain their own moderation teams and policies
+- Build distinct identities through names, descriptions, and visual customization
+- Track membership and activity metrics independently
+
+### User Relationship Model
+
+Users interact with communities through:
+
+- **Discovery**: Finding communities that match their interests through search, recommendations, and browsing
+- **Subscription**: Choosing to subscribe to communities to see their content in personalized feeds
+- **Participation**: Creating posts, commenting, and voting on content within communities
+- **Moderation**: Managing communities they created or were assigned to moderate
+
+## Community Creation and Setup
+
+### Creator Permissions
+
+**WHEN a member is authenticated, THE system SHALL allow the member to create new communities.**
+
+Any authenticated member can create communities. There is no special permission level required beyond being a logged-in member. This democratized approach enables organic community growth and allows niche interest groups to form freely.
+
+### Community Creation Workflow
+
+**WHEN a member initiates community creation, THE system SHALL present a community setup form requesting required information.**
+
+The community creation process follows these steps:
+
+1. Member accesses community creation interface
+2. System presents form requesting community details (name, description, visibility, category)
+3. Member fills in required and optional community information
+4. Member submits community creation request
+5. System validates all inputs against business rules
+6. System creates the community if validation passes
+7. System automatically assigns the creator as the first moderator
+8. System redirects member to the newly created community page
+9. System displays success confirmation
+
+**WHEN community creation validation fails, THE system SHALL display specific error messages indicating which requirements were not met.**
+
+### Required Community Information
+
+**THE system SHALL require the following information when creating a community:**
+
+- **Community Name**: A unique, human-readable display name for the community
+- **Community Identifier**: A unique URL-safe identifier derived from the community name or specified separately
+- **Description**: A brief explanation of the community's purpose and topic (minimum 20 characters, maximum 500 characters)
+- **Visibility Setting**: Whether the community is public or private
+
+### Optional Community Information
+
+**THE system SHALL allow community creators to optionally specify:**
+
+- **Community Rules**: Specific rules members must follow when participating (maximum 10 rules, each up to 200 characters)
+- **Category/Topic**: One or more predefined categories the community belongs to (e.g., Technology, Gaming, Sports, Art, Science)
+- **Welcome Message**: A message displayed to new subscribers (maximum 1000 characters)
+
+### Automatic Moderator Assignment
+
+**WHEN a member successfully creates a community, THE system SHALL automatically assign that member as a moderator of the new community.**
+
+The community creator receives full moderator permissions for their community immediately upon creation. This ensures every community has at least one moderator from inception.
+
+**THE system SHALL permanently maintain the creator as a moderator unless a site administrator removes this assignment.**
+
+Community creators cannot remove their own moderator status to prevent communities from becoming unmoderated. Only site administrators can remove a creator's moderator status in exceptional circumstances.
+
+### Community Creation Limits
+
+**WHEN a member attempts to create a community, THE system SHALL check if the member has reached the creation limit.**
+
+**THE system SHALL limit each member to creating a maximum of 50 communities to prevent spam and abuse.**
+
+**IF a member has already created 50 communities, THEN THE system SHALL prevent additional community creation and display an error message indicating the limit has been reached.**
+
+Members who need to create additional communities beyond this limit must contact site administrators with justification.
+
+### Creation Validation Rules
+
+**THE system SHALL enforce the following validation rules during community creation:**
+
+#### Community Name Validation
+
+- **Length**: Minimum 3 characters, maximum 50 characters
+- **Characters**: Letters, numbers, spaces, hyphens, and underscores only
+- **Uniqueness**: Community names must be unique across the platform (case-insensitive comparison)
+- **Prohibited Terms**: Names cannot contain profanity, slurs, or impersonate official entities
+
+**WHEN a member submits a community name that violates validation rules, THE system SHALL reject the creation and display specific error messages.**
+
+#### Community Identifier Validation
+
+- **Length**: Minimum 3 characters, maximum 25 characters
+- **Characters**: Lowercase letters, numbers, and underscores only (no spaces or special characters)
+- **Format**: Must start with a letter
+- **Uniqueness**: Identifiers must be globally unique across all communities
+- **Auto-generation**: If not provided, system generates identifier from community name by converting to lowercase, replacing spaces with underscores, and removing invalid characters
+
+**THE system SHALL use the community identifier in URLs to access the community (e.g., /c/technology, /c/gaming_news).**
+
+#### Description Validation
+
+- **Minimum Length**: 20 characters to ensure meaningful descriptions
+- **Maximum Length**: 500 characters to keep descriptions concise
+- **Content**: Must not contain prohibited content (profanity, hate speech, illegal content promotion)
+
+**WHEN a description is too short or contains prohibited content, THE system SHALL reject community creation with appropriate error messages.**
+
+## Community Settings and Configuration
+
+### Modifiable Settings
+
+**WHEN a moderator accesses community settings, THE system SHALL allow the moderator to modify community configuration.**
+
+Moderators can update community settings at any time after creation. Changes take effect immediately upon saving.
+
+### Community Display Information
+
+#### Community Name
+
+**THE system SHALL allow moderators to change the community display name.**
+
+**WHEN changing the community name, THE system SHALL enforce the same validation rules as during creation.**
+
+Name changes do not affect the community identifier/URL, ensuring bookmarks and links remain valid.
+
+#### Community Description
+
+**THE system SHALL allow moderators to update the community description at any time.**
+
+**THE system SHALL enforce description length requirements (20-500 characters) when updating.**
+
+Description changes are immediately visible to all users viewing the community.
+
+#### Community Rules
+
+**THE system SHALL allow moderators to add, edit, or remove community-specific rules.**
+
+**THE system SHALL support up to 10 community rules, each up to 200 characters.**
+
+Rules appear in a numbered list on the community page and in the post creation interface to remind members of community guidelines before posting.
+
+**WHEN a moderator adds or updates rules, THE system SHALL display the updated rules to all community members immediately.**
+
+#### Welcome Message
+
+**THE system SHALL allow moderators to set or update a welcome message for new subscribers.**
+
+**WHEN a user subscribes to a community with a welcome message, THE system SHALL display this message to the new subscriber.**
+
+Welcome messages help orient new members and communicate community culture.
+
+### Visual Customization
+
+**THE system SHALL allow moderators to customize community appearance through:**
+
+- **Community Icon**: A square image representing the community (recommended 256x256 pixels, maximum 2MB)
+- **Community Banner**: A wide banner image displayed at the top of the community page (recommended 1920x384 pixels, maximum 5MB)
+- **Theme Color**: A primary color used in community page accents (hexadecimal color code)
+
+**WHEN moderators upload images, THE system SHALL validate file types (PNG, JPG, GIF only) and file sizes.**
+
+**IF uploaded images exceed size limits or use unsupported formats, THEN THE system SHALL reject the upload and display appropriate error messages.**
+
+### Category and Topic Classification
+
+**THE system SHALL allow moderators to assign up to 5 categories/topics to their community from a predefined list.**
+
+Categories help users discover communities and improve search relevance. Predefined categories include:
+
+- Technology & Programming
+- Gaming
+- Sports & Fitness
+- Entertainment & Media
+- Science & Education
+- Art & Design
+- Music
+- Food & Cooking
+- Travel & Places
+- Business & Finance
+- Health & Wellness
+- Politics & News
+- Lifestyle & Hobbies
+- DIY & Crafts
+- Vehicles & Transportation
+- Animals & Pets
+- Relationships & Dating
+- Philosophy & Religion
+- History
+- Other
+
+**THE system SHALL use category assignments to improve community discovery and search results.**
+
+### Settings Persistence
+
+**WHEN moderators save community settings changes, THE system SHALL validate all inputs before persisting changes.**
+
+**IF validation fails for any setting, THE system SHALL display error messages and preserve the moderator's input for correction without losing unsaved changes to other fields.**
+
+## Community Visibility and Privacy
+
+### Visibility Types
+
+Communities support two visibility modes that determine who can view content and participate:
+
+#### Public Communities
+
+**THE system SHALL set communities to public visibility by default unless the creator specifies otherwise.**
+
+Public communities have the following characteristics:
+
+- **Discovery**: Appear in community search results, browse lists, and trending sections
+- **Content Visibility**: All posts and comments are visible to anyone, including non-authenticated users
+- **Participation**: Any authenticated member can post, comment, and vote
+- **Subscription**: Any user can subscribe without approval
+
+**WHEN a non-authenticated user views a public community, THE system SHALL display all posts and comments but require authentication for participation actions (posting, commenting, voting).**
+
+#### Private Communities
+
+**THE system SHALL allow moderators to set communities to private visibility.**
+
+Private communities have the following characteristics:
+
+- **Discovery**: Do not appear in public search results or browse lists
+- **Content Visibility**: Posts and comments are only visible to approved members
+- **Access Control**: Users must request membership or be invited by moderators
+- **Subscription**: Requires moderator approval
+
+**WHEN a non-member attempts to access a private community, THE system SHALL display a message indicating the community is private and provide an option to request membership.**
+
+**WHEN a non-member attempts to view posts in a private community, THE system SHALL deny access and prompt for membership request.**
+
+### Changing Visibility Settings
+
+**THE system SHALL allow moderators to change community visibility from public to private or private to public.**
+
+**WHEN a moderator changes a public community to private, THE system SHALL:**
+
+1. Remove the community from public search results and browse lists
+2. Maintain existing subscriptions (existing subscribers become approved members)
+3. Restrict new content visibility to approved members only
+4. Display a confirmation warning before applying the change
+
+**WHEN a moderator changes a private community to public, THE system SHALL:**
+
+1. Make all existing posts and comments publicly visible
+2. Add the community to search results and browse lists
+3. Convert all approved members to regular subscribers
+4. Display a confirmation warning before applying the change
+
+### Private Community Membership Requests
+
+**WHEN a user requests membership in a private community, THE system SHALL:**
+
+1. Create a membership request record
+2. Notify all moderators of the community about the pending request
+3. Display the request in the moderator queue
+4. Show the requesting user's profile information to moderators for review
+
+**WHEN a moderator approves a membership request, THE system SHALL:**
+
+1. Grant the user access to view and participate in the private community
+2. Subscribe the user to the community
+3. Notify the user of approval
+4. Remove the request from the moderator queue
+
+**WHEN a moderator denies a membership request, THE system SHALL:**
+
+1. Remove the request from the moderator queue
+2. Optionally notify the user of denial (if moderator chooses)
+3. Allow the user to submit a new request after 30 days
+
+## Subscription and Membership
+
+### Subscription Functionality
+
+Subscriptions allow users to curate their content experience by choosing which communities appear in their personalized feed.
+
+**WHEN an authenticated member views a public community, THE system SHALL display a subscribe button.**
+
+**WHEN a member clicks the subscribe button, THE system SHALL:**
+
+1. Create a subscription record linking the member to the community
+2. Update the button to show "Subscribed" state with an unsubscribe option
+3. Include posts from this community in the member's personalized feed
+4. Increment the community's subscriber count by one
+
+**WHEN a member clicks unsubscribe, THE system SHALL:**
+
+1. Remove the subscription record
+2. Update the button to show subscribe option again
+3. Stop including posts from this community in the member's personalized feed
+4. Decrement the community's subscriber count by one
+
+### Subscription Restrictions
+
+**WHEN a non-authenticated user attempts to subscribe, THE system SHALL prompt for login or registration.**
+
+**THE system SHALL prevent users from subscribing to the same community multiple times.**
+
+### Private Community Subscription
+
+**WHEN a user requests membership in a private community, THE system SHALL not create a subscription until a moderator approves the request.**
+
+**WHEN a moderator approves a membership request for a private community, THE system SHALL automatically subscribe the user to that community.**
+
+### Subscriber Count Display
+
+**THE system SHALL display the total number of subscribers on each community page.**
+
+**THE system SHALL update subscriber counts in real-time as users subscribe and unsubscribe.**
+
+Subscriber counts are visible to all users and serve as a popularity indicator for communities.
+
+### Member Benefits
+
+**WHEN a user subscribes to a community, THE system SHALL:**
+
+- Include the community's posts in the user's personalized home feed
+- Display the community in the user's list of subscribed communities
+- Allow the user to post content in the community (if they have posting permissions)
+- Allow the user to participate in discussions through comments and voting
+
+### Default Community Subscriptions
+
+**WHEN a new user completes registration, THE system SHALL not automatically subscribe them to any communities.**
+
+Users start with a blank slate and choose which communities to subscribe to based on their interests. This ensures users have full control over their content experience from the beginning.
+
+**THE system SHALL recommend popular or trending communities to new users to help them discover content and start subscribing.**
+
+### Subscription Management
+
+**THE system SHALL provide users with a dedicated page listing all their subscribed communities.**
+
+**THE system SHALL allow users to sort their subscribed communities by:**
+
+- Name (alphabetical)
+- Subscriber count (popularity)
+- Subscription date (recently subscribed)
+- Activity level (most active communities)
+
+**THE system SHALL allow users to quickly unsubscribe from communities directly from their subscription management page.**
+
+## Community Moderation Features
+
+### Moderator Roles and Responsibilities
+
+Moderators are community administrators responsible for maintaining content quality, enforcing community rules, and managing member behavior within their assigned communities.
+
+**WHEN a user is assigned as a moderator of a community, THE system SHALL grant that user moderator permissions exclusively within that specific community.**
+
+Moderator permissions are community-scoped, not platform-wide. A moderator of Community A has no special permissions in Community B unless separately assigned there.
+
+### Moderator Assignment
+
+**THE system SHALL assign the community creator as the first moderator automatically upon community creation.**
+
+**THE system SHALL allow existing moderators to appoint additional moderators for their community.**
+
+**WHEN a moderator appoints another member as a moderator, THE system SHALL:**
+
+1. Verify the appointing user has moderator permissions for the community
+2. Verify the appointed user is a member (subscriber) of the community
+3. Create a moderator assignment record
+4. Grant moderator permissions to the new moderator
+5. Notify the new moderator of their appointment
+6. Display the updated moderator list on the community page
+
+**THE system SHALL support multiple moderators per community with no fixed limit.**
+
+Large communities may require teams of moderators to manage content volume effectively.
+
+### Moderator Removal
+
+**THE system SHALL allow moderators to remove other moderators from the moderation team.**
+
+**THE system SHALL prevent moderators from removing themselves if they are the only moderator, to ensure communities always have at least one moderator.**
+
+**WHEN a moderator removes another moderator, THE system SHALL:**
+
+1. Remove the moderator assignment record
+2. Revoke moderator permissions for that community
+3. Notify the removed moderator
+4. Update the community's moderator list
+
+**THE system SHALL allow site administrators to remove any moderator from any community regardless of appointment hierarchy.**
+
+### Content Management Tools
+
+#### Post Removal
+
+**THE system SHALL allow moderators to remove posts within their communities.**
+
+**WHEN a moderator removes a post, THE system SHALL:**
+
+1. Mark the post as removed
+2. Hide the post content from public view
+3. Display a message indicating the post was removed by moderators
+4. Preserve the post in the moderation log for record-keeping
+5. Optionally allow the moderator to provide a removal reason
+6. Notify the post author that their content was removed with the reason
+
+**WHEN a post is removed, THE system SHALL:**
+
+- Keep the post URL accessible but display removal notice instead of content
+- Maintain comment thread structure (comments remain visible with context showing post was removed)
+- Prevent the removed post from appearing in feeds and search results
+- Preserve vote counts in the moderation log for abuse analysis
+
+#### Comment Removal
+
+**THE system SHALL allow moderators to remove individual comments within their communities.**
+
+**WHEN a moderator removes a comment, THE system SHALL:**
+
+1. Hide the comment content
+2. Display a removal notice
+3. Preserve child replies in the comment thread
+4. Log the removal action
+5. Optionally notify the comment author with removal reason
+
+**THE system SHALL allow moderators to remove entire comment threads by removing a parent comment and all its children.**
+
+#### Post Pinning
+
+**THE system SHALL allow moderators to pin important posts to the top of their community.**
+
+**THE system SHALL support up to 2 pinned posts per community simultaneously.**
+
+Pinned posts appear at the top of the community page regardless of sorting algorithm, ensuring important announcements or discussions remain visible.
+
+**WHEN a moderator pins a post, THE system SHALL:**
+
+1. Mark the post as pinned
+2. Display the post at the top of the community with a distinctive pin indicator
+3. Keep the post pinned until a moderator unpins it
+
+**WHEN a moderator attempts to pin a third post while two posts are already pinned, THE system SHALL require the moderator to unpin one of the existing pinned posts first.**
+
+#### Post Locking
+
+**THE system SHALL allow moderators to lock posts to prevent new comments.**
+
+**WHEN a moderator locks a post, THE system SHALL:**
+
+1. Mark the post as locked
+2. Display a lock icon on the post
+3. Prevent any user (including other moderators) from adding new comments
+4. Preserve all existing comments
+5. Allow moderators to unlock the post later
+
+Locking is useful when discussions become heated, off-topic, or when a question has been definitively answered.
+
+### User Management
+
+#### Community Bans
+
+**THE system SHALL allow moderators to ban users from their communities.**
+
+**WHEN a moderator bans a user from a community, THE system SHALL:**
+
+1. Create a ban record for that user in that specific community
+2. Prevent the banned user from posting or commenting in the community
+3. Prevent the banned user from voting on content in the community
+4. Automatically unsubscribe the banned user from the community
+5. Hide the community from the banned user's feed and search results
+6. Allow the moderator to specify a ban duration (temporary) or permanent ban
+7. Optionally allow the moderator to provide a ban reason
+
+**WHEN a banned user attempts to post, comment, or vote in a community they are banned from, THE system SHALL display an error message indicating they are banned.**
+
+**THE system SHALL allow moderators to unban users, restoring their ability to participate.**
+
+Community bans are scoped to individual communities. A user banned from Community A can still participate normally in Community B.
+
+#### Temporary Bans
+
+**THE system SHALL support temporary bans with specific durations (e.g., 7 days, 30 days, 90 days).**
+
+**WHEN a temporary ban expires, THE system SHALL automatically remove the ban and restore the user's participation permissions.**
+
+**THE system SHALL notify users when their temporary ban has expired if they attempt to visit the community.**
+
+### Moderation Queue and Tools
+
+#### Reported Content Queue
+
+**THE system SHALL provide moderators with a moderation queue showing all reported content within their communities.**
+
+**THE system SHALL display reports in chronological order with the most recent first.**
+
+**WHEN a moderator views the moderation queue, THE system SHALL show:**
+
+- Reported posts and comments
+- Number of reports received for each item
+- Report reasons and user-submitted details
+- Reporter usernames (visible only to moderators)
+- Direct action buttons (approve, remove, ban user)
+
+**WHEN a moderator takes action on a reported item, THE system SHALL remove it from the moderation queue.**
+
+#### Moderation Log
+
+**THE system SHALL maintain a permanent moderation log recording all moderator actions within each community.**
+
+**THE system SHALL record the following information for each moderation action:**
+
+- Action type (post removed, comment removed, user banned, post pinned, etc.)
+- Moderator who performed the action
+- Target content or user
+- Timestamp
+- Reason provided (if any)
+
+**THE system SHALL make the moderation log visible to all moderators of the community for transparency and coordination.**
+
+**THE system SHALL make the moderation log visible to site administrators for oversight purposes.**
+
+### Moderator Permissions Summary
+
+**THE system SHALL grant moderators the following permissions within their assigned communities:**
+
+- Remove posts and comments
+- Pin and unpin posts
+- Lock and unlock posts
+- Ban and unban users
+- Approve and deny membership requests (for private communities)
+- Edit community settings and configuration
+- Appoint and remove other moderators
+- View and act on reported content
+- Access moderation logs
+
+**THE system SHALL prevent moderators from:**
+
+- Deleting the community entirely (only site administrators can delete communities)
+- Modifying other communities they don't moderate
+- Overriding site-wide administrative actions
+
+## Community Rules and Guidelines
+
+### Setting Community Rules
+
+**THE system SHALL allow moderators to define up to 10 community-specific rules.**
+
+**WHEN creating or editing a rule, THE system SHALL require:**
+
+- Rule title (maximum 50 characters)
+- Rule description (maximum 200 characters)
+
+**THE system SHALL display community rules in a numbered list on:**
+
+- The community page sidebar
+- The post creation interface when creating posts in that community
+- The report submission interface when reporting content
+
+**THE system SHALL allow moderators to reorder rules by changing their numbered position.**
+
+### Displaying Rules to Members
+
+**WHEN a member views a community, THE system SHALL prominently display the community rules.**
+
+**WHEN a member creates a post in a community, THE system SHALL show the community rules before the member submits the post.**
+
+This reminder helps reduce rule violations by ensuring members are aware of expectations.
+
+### Rule Enforcement
+
+**THE system SHALL allow moderators to select which rule was violated when removing posts or comments.**
+
+**WHEN removing content for a rule violation, THE system SHALL:**
+
+1. Allow the moderator to select the specific rule number that was violated
+2. Include the rule reference in the removal notice sent to the content author
+3. Record the rule violation in the moderation log
+
+**THE system SHALL track rule violation frequency for each user within each community to help moderators identify repeat offenders.**
+
+### Rule Violation Handling
+
+**WHEN a user repeatedly violates community rules, THE system SHALL allow moderators to:**
+
+1. Issue warnings (recorded in user's history for that community)
+2. Remove content with escalating notice severity
+3. Temporarily ban the user
+4. Permanently ban the user
+
+**THE system SHALL provide moderators with a history of each user's rule violations within their community to inform moderation decisions.**
+
+### Platform-Wide Content Policy
+
+**THE system SHALL enforce platform-wide content policies that apply to all communities regardless of community-specific rules.**
+
+Platform-wide policies prohibit:
+
+- Illegal content
+- Harassment and hate speech
+- Spam and manipulation
+- Sexual or suggestive content involving minors
+- Content that encourages or incites violence
+- Personal information sharing (doxxing)
+
+**WHEN content violates platform-wide policies, THE system SHALL allow both community moderators and site administrators to take action.**
+
+**THE system SHALL allow site administrators to override community rules that conflict with platform-wide policies.**
+
+## Community Discovery and Browsing
+
+### Community Search
+
+**THE system SHALL provide a search function allowing users to find communities by name, description, or topic.**
+
+**WHEN a user searches for communities, THE system SHALL:**
+
+1. Search community names for matching text
+2. Search community descriptions for matching text
+3. Search assigned categories/topics
+4. Rank results by relevance and popularity (subscriber count)
+5. Display matching public communities
+6. Exclude private communities from search results
+
+**THE system SHALL support partial name matching and ignore case when searching.**
+
+**WHEN a search query matches multiple communities, THE system SHALL display results ordered by:**
+
+1. Exact name matches first
+2. Name prefix matches second
+3. Description matches third
+4. Sorted by subscriber count within each group (highest first)
+
+### Browse All Communities
+
+**THE system SHALL provide a browse interface showing all public communities.**
+
+**WHEN a user accesses the community browse page, THE system SHALL display communities in a paginated list with:**
+
+- Community name and icon
+- Community description (truncated if necessary)
+- Subscriber count
+- Number of posts
+- Subscribe button
+
+**THE system SHALL allow users to sort the browse list by:**
+
+- **Subscriber Count**: Most popular communities first
+- **Activity**: Communities with most recent posts first
+- **Newest**: Recently created communities first
+- **Name**: Alphabetical order
+
+**THE system SHALL display 25 communities per page with pagination controls.**
+
+### Trending and Popular Communities
+
+**THE system SHALL feature a "Trending Communities" section showing communities experiencing rapid growth or activity.**
+
+**THE system SHALL calculate trending status based on:**
+
+- Recent subscriber growth rate (new subscribers in the last 7 days)
+- Recent post activity (posts created in the last 7 days)
+- Recent engagement (comments and votes in the last 7 days)
+
+**THE system SHALL update trending communities calculation daily.**
+
+**THE system SHALL display the top 10 trending communities on:**
+
+- The platform homepage
+- The community browse page
+- User feed sidebars
+
+### Category-Based Discovery
+
+**THE system SHALL allow users to browse communities by category.**
+
+**WHEN a user selects a category, THE system SHALL display all public communities assigned to that category.**
+
+**THE system SHALL display category-based results sorted by subscriber count (most popular first).**
+
+### Community Recommendations
+
+**THE system SHALL recommend communities to users based on:**
+
+- Categories of communities they already subscribe to
+- Communities popular among users with similar subscription patterns
+- New communities in topics the user has shown interest in
+
+**WHEN a user views a community, THE system SHALL display 3-5 related community recommendations in a sidebar.**
+
+**THE system SHALL allow users to dismiss recommendations they are not interested in.**
+
+### New User Discovery Experience
+
+**WHEN a newly registered user first logs in, THE system SHALL display a community discovery interface.**
+
+**THE system SHALL present popular communities across diverse categories to help new users find initial subscriptions.**
+
+**THE system SHALL allow new users to skip the discovery process and explore on their own.**
+
+## Community Metadata and Analytics
+
+### Basic Community Information
+
+**THE system SHALL display the following metadata on every community page:**
+
+- Community name
+- Community identifier (URL)
+- Community description
+- Creation date
+- Total subscriber count
+- Total post count
+- Number of moderators
+- Community visibility (public/private indicator)
+- Assigned categories/topics
+
+### Activity Metrics
+
+**THE system SHALL track and display community activity metrics:**
+
+- **Posts Today**: Number of posts created in the last 24 hours
+- **Posts This Week**: Number of posts created in the last 7 days
+- **Posts This Month**: Number of posts created in the last 30 days
+- **Total Posts**: All-time post count
+- **Active Members**: Count of unique users who posted or commented in the last 7 days
+
+**THE system SHALL update activity metrics in near real-time (within 5 minutes of activity).**
+
+### Moderator Information
+
+**THE system SHALL display the list of all moderators on the community page.**
+
+**THE system SHALL show moderators in order of appointment (creator first, then chronologically).**
+
+**THE system SHALL display for each moderator:**
+
+- Username
+- How long they have been a moderator of this community
+- Total karma (if user profile is public)
+
+### Community Growth Tracking
+
+**THE system SHALL track community growth over time for moderator analytics:**
+
+- Daily new subscribers
+- Daily new posts
+- Daily engagement (comments and votes)
+- Weekly/monthly growth trends
+
+**THE system SHALL make growth analytics available to community moderators through a statistics dashboard.**
+
+**THE system SHALL display growth trends as simple line charts showing subscriber count and post activity over time.**
+
+### Content Distribution
+
+**THE system SHALL show moderators the distribution of posts by type within their community:**
+
+- Percentage of text posts
+- Percentage of link posts  
+- Percentage of image posts
+
+**THE system SHALL show moderators top contributors (members with most posts and highest-rated posts).**
+
+### Community Health Indicators
+
+**THE system SHALL calculate community health indicators for moderators:**
+
+- **Engagement Rate**: Average comments per post
+- **Growth Rate**: Subscriber increase percentage over 30 days
+- **Activity Level**: Posts per day average over 30 days
+- **Moderation Load**: Average reports per day over 30 days
+
+These metrics help moderators understand their community's vitality and identify areas needing attention.
+
+## Business Rules and Validation
+
+### Community Name Uniqueness
+
+**THE system SHALL enforce global uniqueness of community names using case-insensitive comparison.**
+
+**WHEN a user attempts to create a community with a name that already exists (ignoring case differences), THE system SHALL reject the creation and display an error message suggesting the user choose a different name.**
+
+### Community Identifier Uniqueness
+
+**THE system SHALL enforce global uniqueness of community identifiers.**
+
+**THE system SHALL generate community identifiers by:**
+
+1. Converting the community name to lowercase
+2. Replacing spaces with underscores
+3. Removing all characters except letters, numbers, and underscores
+4. Ensuring the identifier starts with a letter
+5. Truncating to 25 characters if necessary
+6. Appending a numeric suffix if the generated identifier already exists
+
+### Character Limits Summary
+
+**THE system SHALL enforce the following character limits:**
+
+| Field | Minimum | Maximum |
+|-------|---------|---------| 
+| Community Name | 3 | 50 |
+| Community Identifier | 3 | 25 |
+| Community Description | 20 | 500 |
+| Community Rule Title | 3 | 50 |
+| Community Rule Description | 10 | 200 |
+| Welcome Message | 0 | 1000 |
+
+### Prohibited Content in Community Settings
+
+**THE system SHALL scan community names, descriptions, and rules for prohibited content.**
+
+**WHEN prohibited content is detected, THE system SHALL reject the creation or update with a specific error message.**
+
+Prohibited content includes:
+
+- Profanity and offensive language
+- Hate speech or slurs
+- References to illegal activities
+- Impersonation of official entities, brands, or other communities
+- Misleading or deceptive descriptions
+- Spam or commercial advertisements in descriptions
+
+### Image Upload Validation
+
+**WHEN moderators upload community icons or banners, THE system SHALL validate:**
+
+- **File Format**: Only PNG, JPG, and GIF files are accepted
+- **File Size**: Icons maximum 2MB, banners maximum 5MB
+- **Image Dimensions**: 
+  - Icons: Recommended 256x256, must be square (1:1 ratio)
+  - Banners: Recommended 1920x384, must be wide format (5:1 ratio minimum)
+- **Content**: Images must not contain prohibited content
+
+**IF image validation fails, THE system SHALL reject the upload and provide specific error messages indicating which validation rule failed.**
+
+### Community Deletion Rules
+
+**THE system SHALL prevent moderators from deleting communities.**
+
+Only site administrators can delete communities to prevent accidental or malicious destruction of established communities.
+
+**WHEN a site administrator deletes a community, THE system SHALL:**
+
+1. Require confirmation with warning about permanent data loss
+2. Mark all posts in the community as belonging to a deleted community
+3. Preserve post content and comments for archival purposes
+4. Remove the community from search results and browse lists
+5. Remove all subscriptions
+6. Remove all moderator assignments
+7. Notify all moderators of the deletion
+
+### Community Transfer
+
+**THE system SHALL allow the original community creator to transfer ownership to another moderator.**
+
+**WHEN ownership is transferred, THE system SHALL:**
+
+1. Verify the recipient is already a moderator of the community
+2. Update the creator record to the new owner
+3. Maintain both users as moderators
+4. Notify both parties of the transfer
+5. Record the transfer in the moderation log
+
+Ownership transfer is primarily symbolic but may affect future platform features like community monetization or verified community status.
+
+## Performance and User Experience Requirements
+
+### Page Load Performance
+
+**WHEN a user accesses a community page, THE system SHALL load and display the community information and post list within 2 seconds under normal conditions.**
+
+**THE system SHALL load community metadata and the first page of posts as a single optimized operation.**
+
+### Search Responsiveness
+
+**WHEN a user types in the community search interface, THE system SHALL provide autocomplete suggestions instantly as the user types.**
+
+**THE system SHALL return complete search results within 1 second of query submission.**
+
+### Subscription Actions
+
+**WHEN a user clicks subscribe or unsubscribe, THE system SHALL provide immediate visual feedback and complete the operation within 500 milliseconds.**
+
+The button state should update instantly on the client side while the server processes the subscription in the background.
+
+### Real-Time Updates
+
+**WHILE a user views a community page, THE system SHALL automatically refresh post counts and subscriber counts every 30 seconds without requiring page reload.**
+
+**THE system SHALL use efficient background updates that do not interrupt the user's browsing or scrolling experience.**
+
+### Scalability Requirements
+
+**THE system SHALL support communities ranging from 1 subscriber to 10 million subscribers without degradation in performance.**
+
+**THE system SHALL support up to 100,000 posts per community with efficient pagination and sorting.**
+
+**THE system SHALL support an unlimited number of communities on the platform, with efficient indexing for search and discovery.**
+
+## Integration with Other Platform Features
+
+### Relationship with Posts
+
+**WHEN a user creates a post, THE system SHALL require the user to select a community for the post.**
+
+**THE system SHALL only allow users to post in communities where they are not banned.**
+
+**THE system SHALL display community rules during post creation to remind users of guidelines.**
+
+### Relationship with User Profiles
+
+**THE system SHALL display a user's subscribed communities on their profile page (if the profile is public).**
+
+**THE system SHALL display a list of communities a user moderates on their profile page.**
+
+**THE system SHALL show community-specific karma for each community where the user has participated.**
+
+### Relationship with Search
+
+**THE system SHALL include community names and descriptions in the platform's global search functionality.**
+
+**WHEN users search for content, THE system SHALL allow filtering results by specific communities.**
+
+### Relationship with Notifications
+
+**WHEN a user subscribes to a community, THE system SHALL allow the user to opt into notifications for:**
+
+- New posts in the community (for highly active users)
+- Posts that reach trending status in the community
+- Community announcements from moderators
+
+**THE system SHALL default notification settings to off to prevent overwhelming users with alerts.**
+
+### Relationship with Moderation System
+
+**THE system SHALL integrate community moderation tools with the platform-wide reporting and moderation system.**
+
+**THE system SHALL route community-level reports to community moderators first, with escalation to site administrators for platform policy violations.**
+
+## Error Handling and Edge Cases
+
+### Community Not Found
+
+**WHEN a user attempts to access a community that does not exist, THE system SHALL display a "Community Not Found" error page with suggestions for similar communities or a link to create the community.**
+
+### Deleted or Removed Communities
+
+**WHEN a user attempts to access a community that has been deleted by administrators, THE system SHALL display an error message indicating the community is no longer available.**
+
+**THE system SHALL provide a link to browse other communities in similar categories.**
+
+### Permission Denied Scenarios
+
+**WHEN a non-member attempts to access a private community, THE system SHALL display a message explaining the community is private with an option to request membership.**
+
+**WHEN a banned user attempts to access a community they are banned from, THE system SHALL display a message indicating they are banned and cannot participate, along with the ban reason and duration (if applicable).**
+
+### Concurrent Moderation Actions
+
+**WHEN multiple moderators attempt to perform conflicting actions simultaneously (e.g., both trying to remove the same post), THE system SHALL process the first action and inform the second moderator that the action has already been taken.**
+
+### Community Name Conflicts
+
+**WHEN the auto-generated identifier conflicts with an existing identifier, THE system SHALL append a numeric suffix (e.g., technology_2, technology_3) until a unique identifier is found.**
+
+**THE system SHALL suggest the modified identifier to the user during creation and allow them to choose a different custom identifier if preferred.**
 
 ---
 
-> *Developer Note: This documentation defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+## Document Summary
+
+This document has comprehensively defined all business requirements for community management functionality within the Reddit-like community platform. Communities serve as the foundational organizational structure, enabling focused discussions, distributed moderation, and personalized content curation.
+
+Key aspects covered include:
+
+- **Community Creation**: Any authenticated member can create communities with configurable settings and automatic moderator assignment
+- **Community Configuration**: Moderators control settings, appearance, rules, and privacy settings
+- **Membership Management**: Public and private communities with subscription and access control mechanisms
+- **Moderation Tools**: Comprehensive tools for content management, user management, and community health
+- **Discovery Systems**: Multiple pathways for users to find and join communities matching their interests
+- **Integration**: Deep integration with posting, profiles, search, and platform-wide moderation
+
+The requirements defined here enable a scalable, user-driven community ecosystem that empowers both community creators and participants while maintaining platform quality and safety standards.
+
+---
+
+> *Developer Note: This document defines business requirements only. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

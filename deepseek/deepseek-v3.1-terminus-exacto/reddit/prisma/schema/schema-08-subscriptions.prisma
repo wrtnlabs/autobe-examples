@@ -1,0 +1,150 @@
+/// Core subscription relationship between users and communities. Tracks
+/// which communities users are subscribed to and manages subscription
+/// status. Users can independently subscribe/unsubscribe from communities,
+/// and this table enables personalized feed generation based on subscription
+/// relationships. {@link reddit_clone_members.id} {@link
+/// reddit_clone_communities.id}
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscribed member's identifier. {@link reddit_clone_members.id}
+  reddit_clone_member_id String
+  
+  /// Subscribed community's identifier. {@link reddit_clone_communities.id}
+  reddit_clone_community_id String
+  
+  /// Subscription status indicating whether the subscription is active,
+  /// inactive, or pending.
+  status String
+  
+  /// Timestamp when the subscription was created.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the subscription was soft deleted, allowing for recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  
+  reddit_clone_subscription_feeds reddit_clone_subscription_feeds[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_member_id, reddit_clone_community_id], map: "reddit_clone_subscriptions_reddit_clone_member_id_redd_8b325413")
+  @@index([reddit_clone_member_id, status])
+  @@index([reddit_clone_community_id, status])
+  @@index([created_at])
+}
+
+/// Materialized view for optimized subscription feed generation.
+/// Pre-computes and caches personalized feed data for efficient content
+/// delivery to subscribed users. This denormalized view improves performance
+/// by aggregating subscription relationships and community content. {@link
+/// reddit_clone_subscriptions.id} {@link reddit_clone_members.id} {@link
+/// reddit_clone_communities.id}
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_subscription_feeds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member identifier for personalized feed. {@link reddit_clone_members.id}
+  reddit_clone_member_id String
+  
+  /// Subscription relationship identifier. {@link
+  /// reddit_clone_subscriptions.id}
+  reddit_clone_subscription_id String
+  
+  /// JSON structure containing aggregated feed content from subscribed
+  /// communities.
+  feed_data String
+  
+  /// Timestamp when the feed data was last refreshed.
+  last_updated DateTime
+  
+  /// Type of feed (hot, new, top, controversial) for sorting algorithm.
+  feed_type String
+  
+  /// Number of content items in the current feed for pagination optimization.
+  content_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  subscription reddit_clone_subscriptions @relation(fields: [reddit_clone_subscription_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_subscription_id], map: "reddit_clone_subscription_feeds_reddit_clone_subscript_9974ed27")
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_member_id, feed_type], map: "reddit_clone_subscription_feeds_reddit_clone_member_id_fa5adacc")
+  @@index([last_updated])
+  @@index([feed_type])
+}
+
+/// User-specific preferences for feed customization and display settings.
+/// Stores individual user preferences for how their subscribed content is
+/// presented, including sorting preferences, content filters, and display
+/// options. {@link reddit_clone_members.id}
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member identifier for preference association. {@link
+  /// reddit_clone_members.id}
+  reddit_clone_member_id String
+  
+  /// Default sorting preference for the user's feed (hot, new, top,
+  /// controversial).
+  default_sort String
+  
+  /// Whether to show NSFW (Not Safe For Work) content in feeds.
+  show_nsfw Boolean
+  
+  /// Automatically expand media content in feed displays.
+  auto_expand_media Boolean
+  
+  /// Use compact view for feed display to show more content per page.
+  compact_view Boolean
+  
+  /// Preferred language for content filtering and display.
+  language_preference String?
+  
+  /// Timestamp when preferences were initially set.
+  created_at DateTime
+  
+  /// Timestamp when preferences were last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([reddit_clone_member_id])
+  
+  @@index([reddit_clone_member_id])
+  @@index([default_sort])
+}

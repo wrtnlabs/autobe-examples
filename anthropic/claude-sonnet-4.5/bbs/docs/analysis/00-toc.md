@@ -1,427 +1,419 @@
+# Table of Contents - Economic/Political Discussion Board Requirements
 
-# Discussion Board Documentation - Table of Contents
+## Welcome to the Project Documentation
 
-## Introduction
+This documentation set defines the complete business requirements for a web-based discussion board focused on economic and political discourse. The platform enables users to publish articles with supporting materials (images and documents), engage in discussions through comments, and discover content through search and categorization.
 
-This documentation suite provides comprehensive business requirements for developing an economic and political discussion board platform. The documentation is organized into 11 interconnected documents that cover business strategy, functional requirements, user experience, and system constraints.
-
-**Target Audience**: This documentation is written primarily for backend developers who will implement the discussion board system. Business stakeholders and project managers will also find the strategic and functional requirements valuable for understanding the platform's scope and objectives.
-
-**Documentation Philosophy**: These documents focus on **business requirements only**. All technical implementation decisions—including architecture, API design, database schemas, technology stack, and deployment strategies—are at the discretion of the development team.
+The documentation follows a waterfall approach, where each document builds upon previous foundations to create a comprehensive specification for backend development. All requirements are written in natural language from a business perspective, giving developers complete autonomy over technical implementation decisions.
 
 ## Project Context
 
-The **Discussion Board** platform is a specialized online community designed for civil, organized discussions on economic and political topics. The platform addresses the need for structured, moderated conversations on sensitive subjects while maintaining high standards of discourse quality.
+**Project Name**: Economic/Political Discussion Board  
+**Service Prefix**: `discussion`  
+**Primary Goal**: Create a simple, focused platform for substantive discussions on economic and political topics  
+**Core Philosophy**: Simplicity over complexity - essential features only, executed excellently
 
-**Core Platform Capabilities**:
-- User registration and role-based access control
-- Topic creation and threaded discussion management
-- Content voting and engagement mechanisms
-- Community-driven moderation with professional oversight
-- Advanced search and content discovery
-- Personalized user experience with notifications
-- Comprehensive business rules ensuring platform integrity
+**User Actors**:
+- **Guest**: Unauthenticated visitors who can browse and read content
+- **Member**: Registered users who can create articles, post comments, and manage their profiles
+- **Moderator**: Trusted users with elevated permissions to manage content and enforce community guidelines
 
 ## Documentation Structure
 
-The documentation is organized into three logical categories:
+This documentation set consists of 10 comprehensive requirement documents, each focusing on a specific aspect of the discussion board system. Together, they provide complete business specifications for backend implementation.
 
-### Business Foundation Documents
-Documents that establish the strategic context and business model:
-- **01-service-overview.md** - Business strategy and market positioning
+### Core Documents
 
-### Core Functional Requirements
-Documents defining the primary platform functionality:
-- **02-user-roles-and-authentication.md** - Security and access control foundation
-- **03-discussion-management.md** - Core discussion features
-- **04-voting-and-engagement.md** - User interaction mechanisms
-- **05-moderation-system.md** - Content management and community standards
-- **06-user-profiles-and-preferences.md** - User personalization
-- **07-search-and-discovery.md** - Content discovery features
-- **08-notification-system.md** - User engagement and alerts
+#### [01 - Service Overview](./01-service-overview.md)
+Establishes the foundational vision, business justification, and success criteria for the discussion board platform.
 
-### System Rules and Constraints
-Documents defining business logic and system requirements:
-- **09-business-rules-and-validation.md** - Platform-wide business rules
-- **10-performance-and-security.md** - Non-functional requirements
+**What You'll Find**:
+- Service vision and purpose: Why this platform exists and what problems it solves
+- Target audience and user demographics: Who will use this platform
+- Core value proposition: What makes this platform valuable to users
+- Business model and justification: How the platform sustains itself
+- Key differentiators: What sets this platform apart from alternatives
+- Success criteria and metrics: How success will be measured
 
-## Document Summaries
+**Why It Matters**: Provides business context for all technical decisions. Understanding the "why" helps developers make informed choices about the "how."
 
-### 00-toc.md (This Document)
-**Purpose**: Provides navigation guidance and overview of the complete documentation suite.
-
-**Key Content**: Document organization, reading recommendations, dependency relationships.
-
-**Audience**: All stakeholders seeking to understand the documentation structure.
+**Who Should Read**: Everyone - this is the foundation for understanding the entire project.
 
 ---
 
-### [Service Overview](./01-service-overview.md)
-**Purpose**: Establishes the foundational business context, market need, and strategic vision for the discussion board platform.
+#### [02 - User Actors and Authentication](./02-user-actors-and-authentication.md)
+Defines all user types, their permissions, and the complete authentication system.
 
-**Key Content**:
-- Executive summary of the platform vision
-- Problem statement and market opportunity
-- Target audience and user demographics
-- Business model and revenue strategy
-- Competitive landscape analysis
-- Success metrics and KPIs
-- Long-term strategic goals
+**What You'll Find**:
+- User actor definitions: Guest, Member, and Moderator roles with complete capability descriptions
+- Permission matrix: Detailed table showing exactly what each user type can and cannot do
+- Authentication requirements: JWT-based authentication specifications
+- User registration and login flows: Complete business process for user onboarding
+- Session management: How user sessions are maintained and secured
+- Password management and recovery: Processes for password changes and resets
+- Account security requirements: Security measures to protect user accounts
 
-**Why Read This**: Understand the "why" behind the platform—what market need it addresses, how it generates value, and what makes it unique in the discussion board landscape.
+**Why It Matters**: Authentication is the foundation of access control. Every feature in the system depends on correctly identifying and authorizing users.
 
-**Audience**: Business stakeholders, product managers, development team leads.
-
----
-
-### [User Roles and Authentication](./02-user-roles-and-authentication.md)
-**Purpose**: Defines the complete authentication system and user role hierarchy that forms the security foundation of the platform.
-
-**Key Content**:
-- User registration and email verification process
-- Login, logout, and session management
-- JWT token strategy and management
-- Complete user role hierarchy (Guest, Member, Moderator, Administrator)
-- Comprehensive permission matrix for all roles
-- Password security and account recovery
-- Role transition rules and requirements
-
-**Why Read This**: Understand how users authenticate, what each role can do, and how the platform controls access to features based on user permissions.
-
-**Audience**: Backend developers, security engineers, QA teams.
-
-**Dependencies**: Foundation for all subsequent functional documents.
+**Who Should Read**: All developers, especially those implementing authentication, authorization, and user management features.
 
 ---
 
-### [Discussion Management](./03-discussion-management.md)
-**Purpose**: Details the core discussion functionality—topic creation, threading, categorization, and organization.
+#### [03 - Article Management](./03-article-management.md)
+Specifies all requirements for creating, reading, updating, and deleting articles, including attachment handling.
 
-**Key Content**:
-- Discussion topic creation workflow
-- Category system for Economics and Politics
-- Threaded reply structure and hierarchy
-- Post editing and deletion rules
-- Discussion search and filtering
-- Topic organization and sorting
-- Discussion status management
+**What You'll Find**:
+- Article structure and data model: All fields and properties of an article
+- Article creation requirements: Complete workflow for publishing articles
+- Image and file attachment requirements: Supported formats, size limits, and validation rules
+- Article editing and deletion rules: Who can modify or remove articles and when
+- Article visibility and access control: Permission-based article access
+- Article listing and pagination: How articles are displayed in lists
+- Article categorization and tagging: Organization and discovery features
 
-**Why Read This**: Understand the primary value proposition of the platform—how users create, organize, and participate in economic and political discussions.
+**Why It Matters**: Articles are the primary content type. This document defines the core functionality of the platform.
 
-**Audience**: Backend developers, UX designers, product managers.
-
-**Dependencies**: Requires understanding of user roles from 02-user-roles-and-authentication.md.
+**Who Should Read**: All backend developers, particularly those implementing content management and file handling.
 
 ---
 
-### [Voting and Engagement](./04-voting-and-engagement.md)
-**Purpose**: Specifies user interaction mechanisms including voting, favoriting, and engagement features that surface quality content.
+#### [04 - Comment System](./04-comment-system.md)
+Defines how users engage in discussions through comments on articles.
 
-**Key Content**:
-- Upvote and downvote mechanics
-- Vote counting and display rules
-- Content ranking algorithm requirements
-- Favorite and bookmark functionality
-- User reputation system
-- Engagement notifications
-- Anti-gaming and vote manipulation prevention
+**What You'll Find**:
+- Comment creation requirements: How users post comments
+- Comment structure and fields: Data model for comments
+- Comment threading and nesting: Single-level reply structure
+- Comment editing and deletion rules: Ownership and permission rules
+- Comment moderation requirements: How moderators manage comments
+- Comment listing and ordering: Display and pagination of comments
 
-**Why Read This**: Understand how users interact with content, how quality contributions are rewarded, and how the platform prevents abuse.
+**Why It Matters**: Comments enable discussion and community engagement, transforming articles from static content into dynamic conversations.
 
-**Audience**: Backend developers, product managers.
-
-**Dependencies**: Builds on discussion management (03) and user roles (02).
+**Who Should Read**: Developers implementing commenting functionality and moderation tools.
 
 ---
 
-### [Moderation System](./05-moderation-system.md)
-**Purpose**: Defines the content moderation workflow critical for maintaining civil discourse on sensitive economic and political topics.
+#### [05 - Search and Discovery](./05-search-and-discovery.md)
+Specifies how users find content through search, filtering, and browsing features.
 
-**Key Content**:
-- Content reporting and flagging system
-- Moderation queue and workflow
-- Moderator tools and actions
-- User warning system
-- Suspension and ban mechanics
-- Appeal process for moderation decisions
-- Moderation audit trail
-- Community guidelines enforcement
+**What You'll Find**:
+- Search functionality requirements: Keyword search across articles
+- Filtering options: Category, tag, author, and date-based filtering
+- Sorting capabilities: Multiple sort orders for content display
+- Category and tag browsing: Topic-based content discovery
+- Search results display: How results are presented to users
+- Performance expectations for search: Response time requirements
 
-**Why Read This**: Understand how inappropriate content is identified, reviewed, and handled to maintain platform integrity and civil discourse.
+**Why It Matters**: Content discovery is essential for user engagement. Users must be able to find relevant discussions easily.
 
-**Audience**: Backend developers, community managers, moderators.
-
-**Dependencies**: Requires user roles (02) and discussion management (03) context.
+**Who Should Read**: Developers implementing search, filtering, and content discovery features.
 
 ---
 
-### [User Profiles and Preferences](./06-user-profiles-and-preferences.md)
-**Purpose**: Specifies user profile management and personalization features that enhance user experience.
+### Supporting Documents
 
-**Key Content**:
-- User profile structure and information
-- Profile editing and customization
-- User activity history tracking
-- Notification preference controls
-- Privacy settings management
-- Blocked users functionality
-- Email and display preferences
+#### [06 - Moderation and Content Management](./06-moderation-and-content-management.md)
+Defines moderation capabilities, content reporting, and administrative functions.
 
-**Why Read This**: Understand how users manage their accounts, customize their experience, and control their privacy.
+**What You'll Find**:
+- Moderator capabilities: Complete list of moderator permissions and tools
+- Content reporting system: How users report inappropriate content
+- Content review and approval workflows: Moderation processes
+- User management for moderators: Account suspension, banning, and warnings
+- Moderation action logging: Audit trail requirements
+- Community guidelines enforcement: Violation categories and progressive discipline
 
-**Audience**: Backend developers, UX designers.
+**Why It Matters**: Maintaining discussion quality requires effective moderation. This document ensures moderators have the tools they need.
 
-**Dependencies**: Builds on user authentication (02) and notification system (08).
-
----
-
-### [Search and Discovery](./07-search-and-discovery.md)
-**Purpose**: Details search functionality and content discovery mechanisms that help users find relevant discussions efficiently.
-
-**Key Content**:
-- Full-text search across topics and replies
-- Search filters and advanced options
-- Search result ranking algorithm
-- Trending topics identification
-- Recommended discussion features
-- Category and tag-based browsing
-- Discovery mechanisms for new users
-
-**Why Read This**: Understand how users find relevant economic and political discussions through search, trending, and recommendations.
-
-**Audience**: Backend developers, search engineers.
-
-**Dependencies**: Requires discussion management (03) and voting system (04) context.
+**Who Should Read**: Developers implementing moderation features and administrative tools.
 
 ---
 
-### [Notification System](./08-notification-system.md)
-**Purpose**: Specifies the notification system that keeps users engaged by alerting them to relevant activity.
+#### [07 - User Profiles and Settings](./07-user-profiles-and-settings.md)
+Specifies user profile information, account settings, and personalization options.
 
-**Key Content**:
-- Notification types and triggering events
-- In-app notification delivery
-- Email notification system
-- Notification delivery rules
-- User notification preferences
-- Notification history and management
-- Notification batching to prevent spam
+**What You'll Find**:
+- User profile information: Required and optional profile fields
+- Profile editing capabilities: What users can customize
+- Account settings: Password, email, and preference management
+- Privacy controls: Visibility settings for profiles and activity
+- User activity history: Tracking and displaying user contributions
+- Account deletion and data export: GDPR-compliant data management
 
-**Why Read This**: Understand how users stay informed about replies, mentions, votes, and other platform activity.
+**Why It Matters**: User profiles establish identity and enable personalization. Privacy controls build user trust.
 
-**Audience**: Backend developers, email system engineers.
-
-**Dependencies**: Relates to user preferences (06) and all feature documents that trigger notifications.
+**Who Should Read**: Developers implementing user management and privacy features.
 
 ---
 
-### [Business Rules and Validation](./09-business-rules-and-validation.md)
-**Purpose**: Consolidates all business rules, validation requirements, and constraints that govern platform behavior.
+#### [08 - File Storage and Media Handling](./08-file-storage-and-media-handling.md)
+Defines requirements for handling file uploads, storage, and delivery of images and documents.
 
-**Key Content**:
-- Content validation rules and constraints
-- User input validation requirements
-- Rate limiting rules to prevent abuse
-- Reputation and privilege requirements
-- Content length and formatting limits
-- Time-based restrictions (editing windows, etc.)
-- Automated content checks
-- Cross-cutting business logic constraints
+**What You'll Find**:
+- File upload requirements: Complete upload workflow
+- Supported file types: Images (JPEG, PNG, GIF, WebP) and documents (PDF, DOCX, TXT, etc.)
+- File size limits: Individual and total attachment limits
+- Image processing requirements: Thumbnail generation and optimization
+- File storage and retrieval: Performance and access requirements
+- File access control: Permission-based file access
+- File deletion and cleanup: Lifecycle management
 
-**Why Read This**: Understand the comprehensive set of business rules that ensure consistent platform behavior and prevent abuse.
+**Why It Matters**: Supporting evidence through attachments is core to the platform's value proposition for informed discussions.
 
-**Audience**: Backend developers, QA engineers.
-
-**Dependencies**: Synthesizes rules from all functional documents (03-08).
+**Who Should Read**: Developers implementing file upload, storage, and media delivery systems.
 
 ---
 
-### [Performance and Security](./10-performance-and-security.md)
-**Purpose**: Defines performance expectations, security requirements, and compliance needs for the platform.
+#### [09 - Performance and Scalability](./09-performance-and-scalability.md)
+Specifies performance expectations and scalability requirements from a user experience perspective.
 
-**Key Content**:
-- Response time requirements for user actions
-- System scalability expectations
-- Security measures and data protection
-- Privacy compliance requirements
-- Error handling strategy from user perspective
-- System availability expectations
-- Concurrent user handling requirements
+**What You'll Find**:
+- Response time expectations: Page load and API response times
+- Concurrent user support: Expected user load and peak handling
+- Content loading performance: Article and comment display speed
+- Search performance requirements: Search response time expectations
+- File upload and download performance: Transfer speed requirements
+- System availability expectations: Uptime targets and maintenance windows
 
-**Why Read This**: Understand the non-functional requirements that ensure the platform is fast, secure, reliable, and compliant.
+**Why It Matters**: Performance directly impacts user satisfaction. Clear expectations ensure developers optimize appropriately.
 
-**Audience**: Backend developers, DevOps engineers, security teams.
-
-**Dependencies**: Applies to all functional requirements defined in documents 02-08.
+**Who Should Read**: All developers, particularly those responsible for architecture and optimization.
 
 ---
 
-## Reading Guide
+#### [10 - Error Handling and Validation](./10-error-handling-and-validation.md)
+Defines how the system validates input and handles errors gracefully.
 
-### For Backend Developers (Complete Implementation)
-**Recommended Reading Order**:
+**What You'll Find**:
+- Input validation requirements: Validation rules for all user inputs
+- Error message standards: Guidelines for clear, helpful error messages
+- Common error scenarios: Expected error conditions and handling
+- User feedback mechanisms: How errors are communicated to users
+- Data validation rules: Field-specific validation requirements
+- Error recovery processes: Auto-save, draft recovery, and graceful degradation
 
-1. **Start Here**: [Service Overview](./01-service-overview.md) - Understand the business context
-2. **Security Foundation**: [User Roles and Authentication](./02-user-roles-and-authentication.md) - Implement authentication first
-3. **Core Features** (Read in Order):
-   - [Discussion Management](./03-discussion-management.md) - Core platform functionality
-   - [Voting and Engagement](./04-voting-and-engagement.md) - User interaction features
-   - [Moderation System](./05-moderation-system.md) - Content management
-4. **User Experience Features**:
-   - [User Profiles and Preferences](./06-user-profiles-and-preferences.md) - Profile management
-   - [Search and Discovery](./07-search-and-discovery.md) - Content discovery
-   - [Notification System](./08-notification-system.md) - User engagement
-5. **System Rules**: [Business Rules and Validation](./09-business-rules-and-validation.md) - Comprehensive validation
-6. **Non-Functional Requirements**: [Performance and Security](./10-performance-and-security.md) - System quality attributes
+**Why It Matters**: Effective error handling prevents data loss and frustration. Good validation ensures data integrity.
 
-### For Business Stakeholders
-**Recommended Reading Order**:
+**Who Should Read**: All developers - every feature requires validation and error handling.
 
-1. [Service Overview](./01-service-overview.md) - Complete business strategy and model
-2. [User Roles and Authentication](./02-user-roles-and-authentication.md) - Understand user types and access control
-3. [Discussion Management](./03-discussion-management.md) - Core platform capabilities
-4. [Moderation System](./05-moderation-system.md) - Content quality and community management
-5. [Business Rules and Validation](./09-business-rules-and-validation.md) - Platform governance rules
-
-### For Project Managers
-**Recommended Reading Order**:
-
-1. [Service Overview](./01-service-overview.md) - Project vision and scope
-2. All functional requirements documents (02-08) - Feature scope understanding
-3. [Business Rules and Validation](./09-business-rules-and-validation.md) - Constraint awareness
-4. [Performance and Security](./10-performance-and-security.md) - Quality requirements
-
-### For QA Engineers
-**Recommended Reading Order**:
-
-1. [User Roles and Authentication](./02-user-roles-and-authentication.md) - Test different user permissions
-2. All functional requirements documents (03-08) - Feature testing scenarios
-3. [Business Rules and Validation](./09-business-rules-and-validation.md) - Validation test cases
-4. [Performance and Security](./10-performance-and-security.md) - Non-functional testing requirements
-
-## Document Dependency Map
-
-```mermaid
-graph LR
-    A["00-toc.md<br/>(This Document)"] --> B["01-service-overview.md<br/>(Business Foundation)"]
-    
-    B --> C["02-user-roles-and-authentication.md<br/>(Security Foundation)"]
-    
-    C --> D["03-discussion-management.md<br/>(Core Features)"]
-    C --> E["04-voting-and-engagement.md<br/>(User Engagement)"]
-    C --> F["05-moderation-system.md<br/>(Content Management)"]
-    C --> G["06-user-profiles-and-preferences.md<br/>(User Experience)"]
-    
-    D --> H["07-search-and-discovery.md<br/>(Content Discovery)"]
-    E --> H
-    
-    D --> I["08-notification-system.md<br/>(User Alerts)"]
-    E --> I
-    F --> I
-    G --> I
-    
-    D --> J["09-business-rules-and-validation.md<br/>(Business Logic)"]
-    E --> J
-    F --> J
-    G --> J
-    H --> J
-    
-    C --> K["10-performance-and-security.md<br/>(Non-Functional Requirements)"]
-    J --> K
-```
-
-**Dependency Explanation**:
-
-- **Service Overview** provides business context for all documents
-- **User Roles and Authentication** is the security foundation required by all functional features
-- **Core functional documents** (03-05) depend on the authentication foundation
-- **User experience documents** (06-08) build on core features
-- **Business Rules** synthesize validation requirements from all functional documents
-- **Performance and Security** applies to the entire implemented system
+---
 
 ## How to Use This Documentation
 
-### Quick Reference
-- Use this ToC to quickly navigate to specific functional areas
-- Click document links to jump directly to detailed requirements
-- Refer to the dependency map to understand document relationships
+### For First-Time Readers
 
-### Implementation Planning
-- Follow the recommended reading order for your role
-- Start with foundational documents (01-02) before implementation
-- Implement features following the dependency order shown in the map
-- Cross-reference related documents when implementing interconnected features
+**Start Here**:
+1. **Service Overview** (Document 01) - Understand the business context and goals
+2. **User Actors and Authentication** (Document 02) - Understand who uses the system and how
+3. **Article Management** (Document 03) - Understand the core content functionality
 
-### Requirement Clarification
-- Each document includes specific "Key Questions" it answers
-- Use document summaries to identify which document contains specific information
-- Follow document links in the "Dependencies" sections for related context
+**Then Explore Based on Your Role**:
+- **Backend Developers**: Read all documents sequentially for comprehensive understanding
+- **Frontend Developers**: Focus on user interaction flows, validation, and error handling
+- **Business Stakeholders**: Service Overview, User Actors, and Success Criteria sections
+- **Project Managers**: Service Overview and all "Why It Matters" sections
 
-### Continuous Reference
-- Keep this ToC open as a quick reference during development
-- Use it to verify you've consulted all relevant requirements for a feature
-- Refer back when questions arise about platform scope or business rules
+### Recommended Reading Order
 
-## Document Conventions
+**For Backend Implementation**:
+1. Service Overview - Business foundation
+2. User Actors and Authentication - Access control foundation
+3. Article Management - Core feature
+4. Comment System - Engagement feature
+5. File Storage and Media Handling - Supporting feature
+6. User Profiles and Settings - User management
+7. Search and Discovery - Content discovery
+8. Moderation and Content Management - Quality maintenance
+9. Performance and Scalability - Non-functional requirements
+10. Error Handling and Validation - Quality assurance
 
-### EARS Format
-All applicable requirements throughout the documentation use **EARS (Easy Approach to Requirements Syntax)** format:
-- **WHEN** [trigger], **THE** [system] **SHALL** [function] (Event-driven)
-- **WHILE** [state], **THE** [system] **SHALL** [function] (State-driven)
-- **IF** [condition], **THEN THE** [system] **SHALL** [function] (Unwanted behavior)
-- **WHERE** [feature], **THE** [system] **SHALL** [function] (Optional features)
-- **THE** [system] **SHALL** [function] (Ubiquitous requirements)
+**For Understanding User Journeys**:
+1. Service Overview - What users will experience
+2. User Actors and Authentication - How users join and access
+3. Article Management - How users create and consume content
+4. Comment System - How users engage in discussions
+5. Search and Discovery - How users find content
+6. User Profiles and Settings - How users manage their presence
 
-### Diagram Usage
-- **Mermaid diagrams** illustrate complex workflows, user journeys, and system states
-- **Markdown tables** present structured data like permission matrices
-- All visual elements include descriptive captions
+### Document Relationships
 
-### Linking Conventions
-- All document links use descriptive text (not raw filenames)
-- Links use relative paths within the documentation folder
-- Cross-references help navigate between related requirements
+```mermaid
+graph TB
+    A["01-Service Overview"]
+    B["02-User Actors and Authentication"]
+    C["03-Article Management"]
+    D["04-Comment System"]
+    E["05-Search and Discovery"]
+    F["06-Moderation and Content Management"]
+    G["07-User Profiles and Settings"]
+    H["08-File Storage and Media Handling"]
+    I["09-Performance and Scalability"]
+    J["10-Error Handling and Validation"]
+    
+    A --> B
+    B --> C
+    B --> G
+    C --> D
+    C --> H
+    C --> E
+    B --> F
+    F --> C
+    F --> D
+    I --> C
+    I --> D
+    I --> E
+    I --> H
+    J --> C
+    J --> D
+    J --> G
+    J --> H
+```
 
-## Project Scope Summary
+**Key Relationships**:
+- **Service Overview** provides context for all other documents
+- **User Actors and Authentication** is referenced by all feature documents
+- **Article Management** is central, connecting to comments, files, search, and moderation
+- **Performance** and **Error Handling** are cross-cutting concerns affecting all features
 
-**In Scope**:
-- User authentication and role-based access control
-- Discussion topic creation and threaded replies
-- Voting and engagement mechanisms
-- Content moderation and community management
-- User profiles and personalization
-- Search and content discovery
-- Notification system
-- Business rules and validation
-- Performance and security requirements
+### Cross-Document References
 
-**Out of Scope** (Technical Implementation Details):
-- Database schema design and ERD
+Many documents reference each other to avoid duplication. When you see a reference like "[User Actors and Authentication Document](./02-user-actors-and-authentication.md)", it points to related requirements in another document.
+
+**Common Reference Patterns**:
+- Permission checks reference User Actors document
+- Content features reference Article Management and Comment System
+- File operations reference File Storage document
+- All features reference Error Handling for validation rules
+
+### Finding Specific Information
+
+**Use Case Examples**:
+
+**"How do users create articles?"**
+→ [Article Management](./03-article-management.md) - Article Creation section
+
+**"What can moderators do?"**
+→ [User Actors and Authentication](./02-user-actors-and-authentication.md) - Moderator definition  
+→ [Moderation and Content Management](./06-moderation-and-content-management.md) - Complete capabilities
+
+**"What file types are supported?"**
+→ [File Storage and Media Handling](./08-file-storage-and-media-handling.md) - Supported File Types section
+
+**"How fast should pages load?"**
+→ [Performance and Scalability](./09-performance-and-scalability.md) - Response Time Expectations
+
+**"What validation is needed for user input?"**
+→ [Error Handling and Validation](./10-error-handling-and-validation.md) - Input Validation Requirements
+
+## Documentation Principles
+
+### Business Requirements, Not Technical Specifications
+
+All documents focus on **WHAT** the system should do from a business and user perspective, not **HOW** to implement it technically.
+
+**You WILL Find**:
+- User workflows and scenarios
+- Business rules and validation requirements
+- Permission and access control rules
+- Performance expectations in user-experience terms
+- Error scenarios and user feedback requirements
+
+**You WILL NOT Find**:
+- Database schemas or table definitions
 - API endpoint specifications
-- Frontend UI/UX design
-- System architecture and infrastructure
-- Technology stack selection
-- Deployment strategies
+- Technology stack recommendations
+- Code examples or implementation patterns
+- Architecture diagrams
 
-## Getting Started
+**Developer Autonomy**: Backend developers have complete freedom to choose technologies, design APIs, structure databases, and implement architecture as they see fit, as long as the business requirements are met.
 
-**New to the Project?**
-1. Read [Service Overview](./01-service-overview.md) to understand the business vision
-2. Review this ToC to familiarize yourself with the documentation structure
-3. Follow the reading guide for your role
-4. Keep this ToC bookmarked for quick navigation
+### EARS Format for Requirements
 
-**Ready to Implement?**
-1. Start with [User Roles and Authentication](./02-user-roles-and-authentication.md) as the foundation
-2. Progress through functional documents in dependency order
-3. Reference [Business Rules and Validation](./09-business-rules-and-validation.md) throughout implementation
-4. Validate against [Performance and Security](./10-performance-and-security.md) requirements
+Many requirements use the EARS (Easy Approach to Requirements Syntax) format for clarity and testability:
 
-**Questions or Clarifications?**
-- Each document includes "Key Questions" sections to help you find answers
-- Cross-reference related documents using the dependency map
-- All requirements use specific, measurable EARS format for clarity
+- **WHEN** [trigger/condition] **THE system SHALL** [required behavior]
+- **IF** [condition] **THEN THE system SHALL** [consequence]
+- **WHILE** [state] **THE system SHALL** [behavior during that state]
+- **WHERE** [feature exists] **THE system SHALL** [requirement for that feature]
+
+**Example**:
+- "WHEN a member creates an article, THE system SHALL validate the title is between 5 and 200 characters."
+
+This format makes requirements unambiguous and testable.
+
+### Completeness and Specificity
+
+Requirements are detailed and comprehensive to eliminate ambiguity. Each document includes:
+- Complete user workflows
+- Specific validation rules
+- Error scenarios and handling
+- Success criteria
+- Business rules and constraints
+
+If something is not specified, developers should make reasonable decisions aligned with the overall simplicity philosophy.
+
+## Project Scope and Constraints
+
+### In Scope
+- Article creation, editing, and deletion with rich media attachments
+- Comment-based discussions with single-level threading
+- User registration, authentication, and profile management
+- Category and tag-based content organization
+- Keyword search and filtering
+- Moderator tools for content management
+- File upload and storage for images and documents
+
+### Out of Scope (Explicitly NOT Included)
+- Social networking features (followers, friends, direct messaging)
+- Real-time chat or instant messaging
+- Video or audio content
+- Advanced analytics or reporting dashboards
+- Multi-language content support (English only initially)
+- Mobile native applications (responsive web only)
+- Payment processing or monetization features (initially)
+
+### Core Constraints
+1. **Simplicity First**: Every feature must justify its existence. When in doubt, leave it out.
+2. **Focus on Content**: The platform prioritizes quality discussions over social features.
+3. **Performance Matters**: Users expect fast, responsive interactions.
+4. **Privacy by Design**: User data protection is non-negotiable.
+5. **Moderation Enabled**: Community health requires effective moderation tools.
+
+## Success Criteria
+
+The documentation is successful when:
+
+1. **Developers Can Build Without Ambiguity**: Every business requirement is clear enough to implement without guessing
+2. **Stakeholders Can Validate**: Business stakeholders can verify that requirements match their vision
+3. **Testers Can Verify**: Requirements are specific enough to create test cases
+4. **Users Will Benefit**: The implemented system delivers the intended user experience
+
+## Getting Help
+
+### Understanding Requirements
+
+If requirements seem unclear or contradictory:
+1. Check cross-referenced documents for additional context
+2. Review related user scenarios and workflows
+3. Consider the simplicity principle - the simpler interpretation is usually correct
+4. Refer to the Service Overview for business context
+
+### Developer Autonomy
+
+When technical implementation details are not specified:
+- Developers have full autonomy to make technical decisions
+- Choose technologies and approaches that best serve the business requirements
+- Optimize for maintainability, performance, and simplicity
+- Document technical decisions for future reference
+
+### Feedback and Improvements
+
+This documentation represents the initial requirements baseline. As development progresses:
+- Clarifications may be needed and should be documented
+- Edge cases may be discovered and should be addressed
+- Improvements may be identified and should be considered for future versions
 
 ---
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+**Developer Note**: This documentation set provides complete business requirements for a simple yet functional discussion board focused on economic and political discourse. The emphasis on simplicity is intentional - this is not a complex social network, but a focused platform for substantive discussions with essential features executed well. Developers have complete technical autonomy to implement these requirements using their expertise and best judgment.

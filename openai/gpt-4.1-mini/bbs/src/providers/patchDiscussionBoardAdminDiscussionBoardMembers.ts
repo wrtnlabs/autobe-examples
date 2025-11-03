@@ -7,62 +7,48 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IDiscussionBoardDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardDiscussionBoardMember";
-import { IPageIDiscussionBoardDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardDiscussionBoardMember";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
+import { IPageIDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardMember";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function patchDiscussionBoardAdminDiscussionBoardMembers(props: {
   admin: AdminPayload;
-  body: IDiscussionBoardDiscussionBoardMember.IRequest;
-}): Promise<IPageIDiscussionBoardDiscussionBoardMember> {
+  body: IDiscussionBoardMember.IRequest;
+}): Promise<IPageIDiscussionBoardMember.ISummary> {
   const { body } = props;
 
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 20;
-  const skip = (page - 1) * limit;
+  const search = body.search;
+  const page = (body.page ?? 1) as number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> as number;
+  let limit = (body.limit ?? 20) as number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100> as number;
+  if (limit > 100) limit = 100;
+  const sortBy = body.sortBy ?? "created_at";
+  const sortOrder = body.sortOrder ?? "desc";
+  const includeDeleted = body.includeDeleted ?? false;
 
   const where = {
-    deleted_at: null as null,
-    ...(body.search !== undefined && body.search !== null
-      ? {
-          OR: [
-            { email: { contains: body.search } },
-            { display_name: { contains: body.search } },
-          ],
-        }
-      : {}),
-  };
-
-  const orderByFieldMap: Record<
-    string,
-    "email" | "display_name" | "created_at"
-  > = {
-    email: "email",
-    displayName: "display_name",
-    createdAt: "created_at",
-  };
-
-  const orderByField = body.orderBy ?? "createdAt";
-  const orderFieldName = orderByFieldMap[orderByField] ?? "created_at";
-
-  const orderDirection =
-    body.orderDirection !== undefined &&
-    body.orderDirection !== null &&
-    body.orderDirection.toUpperCase() === "ASC"
-      ? "asc"
-      : "desc";
-
-  const orderBy = {
-    [orderFieldName]: orderDirection,
+    ...(includeDeleted ? {} : { deleted_at: null }),
+    ...(search !== undefined &&
+      search !== null && { email: { contains: search } }),
   };
 
   const [members, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_members.findMany({
       where,
-      orderBy,
-      skip,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * limit,
       take: limit,
+      select: {
+        id: true,
+        email: true,
+        created_at: true,
+        updated_at: true,
+      },
     }),
     MyGlobal.prisma.discussion_board_members.count({ where }),
   ]);
@@ -74,14 +60,11 @@ export async function patchDiscussionBoardAdminDiscussionBoardMembers(props: {
       records: total,
       pages: Math.ceil(total / limit),
     },
-    data: members.map((member) => ({
-      id: member.id,
-      email: member.email,
-      display_name: member.display_name,
-      password_hash: member.password_hash,
-      created_at: toISOStringSafe(member.created_at),
-      updated_at: toISOStringSafe(member.updated_at),
-      deleted_at: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
+    data: members.map((m) => ({
+      id: m.id,
+      email: m.email,
+      created_at: toISOStringSafe(m.created_at),
+      updated_at: toISOStringSafe(m.updated_at),
     })),
   };
 }

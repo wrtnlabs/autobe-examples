@@ -3,41 +3,45 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IShoppingMallAdmin } from "../../../structures/IShoppingMallAdmin";
+import { IShoppingAdmin } from "../../../structures/IShoppingAdmin";
 
 /**
- * Register a new admin account in the shopping_mall_admins table (admin join).
+ * Register a new admin account in shopping_admins table for platform
+ * administration.
  *
- * This operation allows a new system administrator to register an admin account
- * in the shoppingMall platform. The core purpose is to facilitate initial
- * onboarding for platform administrators by creating a secure and unique admin
- * record in the 'shopping_mall_admins' table.
+ * This operation enables registration of a new administrator for the shopping
+ * mall platform. The shopping_admins table defines the required fields: email
+ * (unique identifier for admin login and notifications), password_hash
+ * (securely stored password for authentication), name (real name for audit and
+ * communications), role (privilege level string for RBAC), and status (account
+ * state such as active, suspended, pending).
  *
- * All required authentication fields—including 'email', 'password_hash', and
- * 'full_name'—must be provided and validated for uniqueness. The system
- * enforces email uniqueness at the database level, ensuring no duplicate
- * accounts. Upon registration, a status (such as 'pending') is set, and a
- * timestamp is created. Email verification and two-factor authentication are
- * configured separately.
+ * The endpoint ensures that only unique emails are registered, leveraging the
+ * shopping_admins.email unique constraint. Passwords are never stored as plain
+ * text, aligning with the password_hash field and security best practices.
+ * Additional admin attributes (such as MFA configuration) are handled
+ * separately and not within this registration flow.
  *
- * The implementation strictly uses the fields defined in the schema—email,
- * password_hash, full_name, status, two_factor_secret, with password_hash being
- * securely hashed (never plaintext). The response returns a new JWT for the
- * admin, following issuance standards for access and refresh tokens.
+ * Upon account creation, the admin is automatically assigned a role and an
+ * active status, unless specified otherwise by an authorized superadmin. Role
+ * assignment and status settings must match the permissible values supported by
+ * the shopping_admins table. If any required field is invalid or missing, the
+ * endpoint returns detailed error feedback.
  *
- * This endpoint is accessed by unauthenticated users only (public), and does
- * not interact with any business entities, product records, or customer
- * accounts. Registration validation occurs at both API and database levels,
- * returning errors for constraint violations or invalid payloads.
+ * Security measures enforced by this endpoint include confirmation of email
+ * uniqueness, the use of secure password hashing (never directly exposed), and
+ * dedicated audit logging via related tables. Only actors with sufficient
+ * privileges can invoke this operation.
  *
- * Related endpoints include admin login (authenticate and issue token with
- * credentials) and refresh (token renewal), but these are handled independently
- * and reference this admin record for credentials. All admin registration
- * attempts are logged for audit purposes.
+ * Related operations include: login for admin authentication (handled via a
+ * different endpoint), update admin information, suspend/reactivate admin, and
+ * enable MFA for an admin account, all of which have their own workflows and
+ * endpoints. This operation serves as the dedicated entry point for onboarding
+ * new admin accounts on the Shopping Mall platform.
  *
  * @param props.connection
- * @param props.body Admin registration information (email, password_hash,
- *   full_name, etc.)
+ * @param props.body New admin registration data. Only email, password_hash,
+ *   name, role, and status fields are accepted as per shopping_admins schema.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -73,13 +77,13 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Admin registration information (email, password_hash, full_name,
-     * etc.)
+     * New admin registration data. Only email, password_hash, name, role,
+     * and status fields are accepted as per shopping_admins schema.
      */
-    body: IShoppingMallAdmin.ICreate;
+    body: IShoppingAdmin.IJoin;
   };
-  export type Body = IShoppingMallAdmin.ICreate;
-  export type Response = IShoppingMallAdmin.IAuthorized;
+  export type Body = IShoppingAdmin.IJoin;
+  export type Response = IShoppingAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -95,8 +99,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/admin/join";
-  export const random = (): IShoppingMallAdmin.IAuthorized =>
-    typia.random<IShoppingMallAdmin.IAuthorized>();
+  export const random = (): IShoppingAdmin.IAuthorized =>
+    typia.random<IShoppingAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -123,34 +127,30 @@ export namespace join {
 }
 
 /**
- * Authenticate an admin using 'shopping_mall_admins' table credentials; issue
- * JWT tokens on success.
+ * Authenticate and log in an admin account via shopping_admins table.
  *
- * This operation handles system administrator login for the shoppingMall
- * platform, providing core authentication by comparing submitted credentials to
- * fields in the 'shopping_mall_admins' table. It references only existing
- * schema fields: 'email', 'password_hash', and 'status' for verifying identity
- * and account state.
+ * This operation enables a registered admin to authenticate and establish a new
+ * session on the platform. It is mapped to the shopping_admins table, which
+ * contains the necessary fields for authentication: email (unique login
+ * identifier) and password_hash (for credential validation). Status and role
+ * fields are validated to ensure only active admins are granted access. The
+ * operation checks that the status of the admin account is not suspended or
+ * pending, before issuing JWT tokens.
  *
- * Credentials are validated by comparing the submitted (hashed) password to the
- * stored 'password_hash' field, and the email must match a unique record. If
- * two-factor is enabled for this admin (presence of 'two_factor_secret'), the
- * system enforces code verification.
+ * On successful login, the endpoint issues both access and refresh tokens as
+ * part of the IShoppingAdmin.IAuthorized DTO, enabling administration functions
+ * according to RBAC. The password_hash or other sensitive fields are never
+ * included in the response. Failed authentication, due to invalid credentials
+ * or account status, leads to appropriate error messaging. All login attempts
+ * are audit-logged for compliance and security analysis.
  *
- * Upon successful match and status verification, the system issues a JWT set
- * (access and refresh tokens) with all required role/permissions in the
- * payload. This endpoint is public and stateless; on error, standard
- * 401/403/409 codes are returned depending on reason—invalid credentials,
- * account locked, or conflict. Failed logins and suspicious attempts are logged
- * for security audit in the admin logs.
- *
- * The login operation never returns password data or partial credentials in any
- * response. After successful login, 'last_login_at' is updated for audit.
- * Related endpoints include admin registration (join) for account creation and
- * refresh for token renewal.
+ * Other related API operations include join (registration for new admin),
+ * refresh (token renewal), and enableMfa (enabling multifactor authentication
+ * for the admin account), each handled on their own endpoints. This endpoint is
+ * critical for secure backend platform management access.
  *
  * @param props.connection
- * @param props.body Admin login credentials (email and password)
+ * @param props.body Admin login request payload, containing email and password.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -185,11 +185,11 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Admin login credentials (email and password) */
-    body: IShoppingMallAdmin.ILogin;
+    /** Admin login request payload, containing email and password. */
+    body: IShoppingAdmin.ILogin;
   };
-  export type Body = IShoppingMallAdmin.ILogin;
-  export type Response = IShoppingMallAdmin.IAuthorized;
+  export type Body = IShoppingAdmin.ILogin;
+  export type Response = IShoppingAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -205,8 +205,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/admin/login";
-  export const random = (): IShoppingMallAdmin.IAuthorized =>
-    typia.random<IShoppingMallAdmin.IAuthorized>();
+  export const random = (): IShoppingAdmin.IAuthorized =>
+    typia.random<IShoppingAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -233,31 +233,31 @@ export namespace login {
 }
 
 /**
- * Refresh admin JWT session tokens using a stored valid refresh token.
+ * Refresh JWT tokens for authenticated admins with valid refresh token, via
+ * shopping_admins table.
  *
- * Handles admin token renewal for authenticated sessions in the shoppingMall
- * platform, aligning with JWT session best practices. This operation checks the
- * presence and validity of the admin's refresh token against stored sessions in
- * 'shopping_mall_user_sessions', following the schema's session, expiry, and
- * revocation fields.
+ * Allows an authenticated admin to renew JWT access and refresh tokens. This
+ * process checks token validity, admin account status, and ensures the admin
+ * has not been suspended or deleted. Utilizes shopping_admins fields for
+ * identity validation, while ensuring no sensitive information is leaked in
+ * responses. Any misuse or expired tokens are reported with specific error
+ * codes.
  *
- * On valid, unexpired, and active session, it generates a new access and
- * refresh token for the admin, encoding necessary context (admin id, role,
- * permissions, expiry, etc.) in the JWT payload. Invalid, expired, or revoked
- * tokens lead to immediate rejection and security logging.
+ * The operation is mapped directly to the shopping_admins table for account
+ * validation, but does not read or mutate any fields other than those required
+ * for permission verification and session audit. Session and MFA configuration
+ * reside outside of this refresh path. The endpoint is part of the robust
+ * authentication model for admin actors.
  *
- * Account status (active, disabled, or suspended) is enforced by referencing
- * the 'status' field in 'shopping_mall_admins', preventing token renewal for
- * non-active admins. Related operations include login (for initial
- * authentication), join (for admin account creation), and logout (to revoke the
- * refresh token/session).
- *
- * This endpoint requires a valid refresh token and returns only new JWT
- * tokens—never sensitive account details or password data. All refresh actions
- * are logged for admin session audit and monitoring compliance.
+ * Related endpoints include join (admin registration), login (admin
+ * authentication), and enableMfa (enabling multifactor authentication – handled
+ * on a separate endpoint). This refresh endpoint provides for rotation of
+ * tokens and session extension, integral for continuous administrator access
+ * while maintaining security boundaries.
  *
  * @param props.connection
- * @param props.body Refresh token provided after admin login
+ * @param props.body Admin token refresh request parameters (must include the
+ *   current refresh token).
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -292,11 +292,14 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token provided after admin login */
-    body: IShoppingMallAdmin.IRefresh;
+    /**
+     * Admin token refresh request parameters (must include the current
+     * refresh token).
+     */
+    body: IShoppingAdmin.IRefresh;
   };
-  export type Body = IShoppingMallAdmin.IRefresh;
-  export type Response = IShoppingMallAdmin.IAuthorized;
+  export type Body = IShoppingAdmin.IRefresh;
+  export type Response = IShoppingAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -312,8 +315,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/admin/refresh";
-  export const random = (): IShoppingMallAdmin.IAuthorized =>
-    typia.random<IShoppingMallAdmin.IAuthorized>();
+  export const random = (): IShoppingAdmin.IAuthorized =>
+    typia.random<IShoppingAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

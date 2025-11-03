@@ -1,0 +1,338 @@
+/// Member cast votes for posts. Each record represents the current vote
+/// state by a specific member on a specific post (upvote = +1, downvote =
+/// -1). Ensures one active vote per member per post and supports audit
+/// through temporal fields. Related entities: {@link
+/// community_platform_members} (voter) and {@link community_platform_posts}
+/// (target post).
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voting member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Target post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Vote direction: +1 for upvote, -1 for downvote. Only these values are
+  /// valid by business rule.
+  value Int
+  
+  /// Vote creation timestamp.
+  created_at DateTime
+  
+  /// Vote last update timestamp (e.g., when toggled).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when the vote is cleared to neutral (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  community_platform_vote_integrity_flag_of_post_votes community_platform_vote_integrity_flag_of_post_votes[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_post_id], map: "community_platform_post_votes_community_platform_membe_38b1ddb3")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_votes_community_platform_post__80871491")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_post_votes_community_platform_membe_59eaad49")
+}
+
+/// Member cast votes for comments. Each record represents the current vote
+/// state by a specific member on a specific comment (upvote = +1, downvote =
+/// -1). Ensures one active vote per member per comment and supports audit
+/// via temporal fields. Related entities: {@link community_platform_members}
+/// (voter) and {@link community_platform_comments} (target comment).
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voting member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Target comment's {@link community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Vote direction: +1 for upvote, -1 for downvote. Only these values are
+  /// valid by business rule.
+  value Int
+  
+  /// Vote creation timestamp.
+  created_at DateTime
+  
+  /// Vote last update timestamp (e.g., when toggled).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when the vote is cleared to neutral (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  community_platform_vote_integrity_flag_of_comment_votes community_platform_vote_integrity_flag_of_comment_votes[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_comment_id], map: "community_platform_comment_votes_community_platform_me_8e8bf05c")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_votes_community_platform_co_68a9b5f7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_votes_community_platform_me_2c59b90a")
+}
+
+/// Integrity and anti-manipulation flags for votes. This main entity stores
+/// shared attributes (reason, severity, lifecycle) without directly
+/// referencing targets to avoid polymorphic nullable FKs. Exact target
+/// binding is normalized into 1:1 subtype entities: {@link
+/// community_platform_vote_integrity_flag_of_post_votes} and {@link
+/// community_platform_vote_integrity_flag_of_comment_votes}.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_integrity_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Programmatic reason code for the integrity flag (e.g.,
+  /// suspected_brigading, automation_pattern, sockpuppet_cluster).
+  reason_code String
+  
+  /// Business severity label used for prioritization (e.g., low, medium, high,
+  /// critical).
+  severity String
+  
+  /// Optional human-readable notes for reviewers.
+  notes String?
+  
+  /// Whether the integrity flag is currently active (true) or has been
+  /// resolved (false).
+  active Boolean
+  
+  /// Timestamp when the flag was resolved or deactivated.
+  resolved_at DateTime?
+  
+  /// Flag creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for the flag record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the flag entry is removed from active
+  /// consideration.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_vote_integrity_flag_of_post_votes community_platform_vote_integrity_flag_of_post_votes?
+  community_platform_vote_integrity_flag_of_comment_votes community_platform_vote_integrity_flag_of_comment_votes?
+  
+  @@index([active, created_at])
+}
+
+/// Visibility masking windows applied to content scores to mitigate
+/// bandwagon effects or integrity concerns. Main entity keeps lifecycle and
+/// scheduling fields. Target binding is normalized into subtypes: {@link
+/// community_platform_vote_mask_of_posts} and {@link
+/// community_platform_vote_mask_of_comments}.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_masks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reason for masking (e.g., youth_masking, integrity_review,
+  /// policy_override).
+  reason_code String
+  
+  /// Whether the mask is currently active.
+  active Boolean
+  
+  /// Masking start time (UTC).
+  starts_at DateTime
+  
+  /// Masking end time (UTC).
+  ends_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when this mask is retired.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_vote_mask_of_posts community_platform_vote_mask_of_posts?
+  community_platform_vote_mask_of_comments community_platform_vote_mask_of_comments?
+  
+  @@index([active, starts_at])
+  @@index([ends_at])
+}
+
+/// Subtype entity binding a vote integrity flag to a specific post vote.
+/// Ensures strict referential integrity via a 1:1 relation with {@link
+/// community_platform_vote_integrity_flags} and a required link to {@link
+/// community_platform_post_votes}.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_integrity_flag_of_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent flag’s {@link community_platform_vote_integrity_flags.id}.
+  community_platform_vote_integrity_flag_id String
+  
+  /// Target post vote’s {@link community_platform_post_votes.id}.
+  community_platform_post_vote_id String
+  
+  /// Subtype creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  flag community_platform_vote_integrity_flags @relation(fields: [community_platform_vote_integrity_flag_id], references: [id], onDelete: Cascade)
+  postVote community_platform_post_votes @relation(fields: [community_platform_post_vote_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_vote_integrity_flag_id], map: "community_platform_vote_integrity_flag_of_post_votes_c_0d15cb57")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_vote_id, created_at], map: "community_platform_vote_integrity_flag_of_post_votes_c_8e6560db")
+}
+
+/// Subtype entity binding a vote integrity flag to a specific comment vote.
+/// Ensures strict referential integrity via a 1:1 relation with {@link
+/// community_platform_vote_integrity_flags} and a required link to {@link
+/// community_platform_comment_votes}.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_integrity_flag_of_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent flag’s {@link community_platform_vote_integrity_flags.id}.
+  community_platform_vote_integrity_flag_id String
+  
+  /// Target comment vote’s {@link community_platform_comment_votes.id}.
+  community_platform_comment_vote_id String
+  
+  /// Subtype creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  flag community_platform_vote_integrity_flags @relation(fields: [community_platform_vote_integrity_flag_id], references: [id], onDelete: Cascade)
+  commentVote community_platform_comment_votes @relation(fields: [community_platform_comment_vote_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_vote_integrity_flag_id], map: "community_platform_vote_integrity_flag_of_comment_vote_4899b0fe")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_vote_id, created_at], map: "community_platform_vote_integrity_flag_of_comment_vote_c6398fa1")
+}
+
+/// Subtype entity binding a vote mask to a specific post. Enforces 1:1
+/// relationship with {@link community_platform_vote_masks} and a required
+/// link to {@link community_platform_posts}.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_mask_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent mask’s {@link community_platform_vote_masks.id}.
+  community_platform_vote_mask_id String
+  
+  /// Target post’s {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Subtype creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  mask community_platform_vote_masks @relation(fields: [community_platform_vote_mask_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_vote_mask_id], map: "community_platform_vote_mask_of_posts_community_platfo_c9809884")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_vote_mask_of_posts_community_platfo_0c9ce666")
+}
+
+/// Subtype entity binding a vote mask to a specific comment. Enforces 1:1
+/// relationship with {@link community_platform_vote_masks} and a required
+/// link to {@link community_platform_comments}.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_mask_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent mask’s {@link community_platform_vote_masks.id}.
+  community_platform_vote_mask_id String
+  
+  /// Target comment’s {@link community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Subtype creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  mask community_platform_vote_masks @relation(fields: [community_platform_vote_mask_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_vote_mask_id], map: "community_platform_vote_mask_of_comments_community_pla_3c85186a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_vote_mask_of_comments_community_pla_8a7ff359")
+}

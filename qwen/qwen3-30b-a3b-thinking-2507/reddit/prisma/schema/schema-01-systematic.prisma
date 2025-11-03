@@ -1,0 +1,71 @@
+/// System configuration settings that control platform behavior, such as
+/// feature toggles and application parameters.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_system_config {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the configuration setting, following the pattern
+  /// <namespace>_<setting_name>.
+  config_key String
+  
+  /// Value of the configuration setting, may be string, JSON, or other
+  /// supported formats based on configuration type.
+  config_value String
+  
+  /// Timestamp when this configuration entry was first created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this configuration entry was logically deleted (soft
+  /// delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key])
+  @@index([created_at, updated_at])
+}
+
+/// Foundational content categories that organize community content for
+/// better navigation and discovery.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_category {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable name of the content category, used for display purposes.
+  name String
+  
+  /// Detailed description of the content category and its purpose within the
+  /// community.
+  description String?
+  
+  /// Timestamp when this content category was first created.
+  created_at DateTime
+  
+  /// Timestamp when this content category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this content category was logically deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@index([created_at, updated_at])
+}

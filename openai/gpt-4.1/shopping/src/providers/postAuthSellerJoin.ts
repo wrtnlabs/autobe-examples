@@ -7,102 +7,100 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IShoppingSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingSeller";
+import { IShoppingAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAuthorizationToken";
 
 export async function postAuthSellerJoin(props: {
-  body: IShoppingMallSeller.IJoin;
-}): Promise<IShoppingMallSeller.IAuthorized> {
+  body: IShoppingSeller.IJoin;
+}): Promise<IShoppingSeller.IAuthorized> {
+  // 1. Email uniqueness check
+  const existing = await MyGlobal.prisma.shopping_sellers.findFirst({
+    where: { email: props.body.email },
+  });
+  if (existing) {
+    throw new HttpException("Email already registered", 409);
+  }
+
+  // 2. Hash password
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
+
   const now = toISOStringSafe(new Date());
-  const { body } = props;
 
-  // Duplicate email check
-  const emailExists = await MyGlobal.prisma.shopping_mall_sellers.findUnique({
-    where: { email: body.email },
-  });
-  if (emailExists) throw new HttpException("이미 등록된 이메일입니다.", 409);
-
-  // Duplicate registration number check
-  const regNumExists = await MyGlobal.prisma.shopping_mall_sellers.findUnique({
-    where: { business_registration_number: body.business_registration_number },
-  });
-  if (regNumExists)
-    throw new HttpException("이미 등록된 사업자 등록번호입니다.", 409);
-
-  // Hash password
-  const password_hash = await PasswordUtil.hash(body.password);
-
-  // Create seller row
-  const sellerId = v4();
-  const createData = {
-    id: sellerId,
-    email: body.email,
-    password_hash,
-    business_name: body.business_name,
-    contact_name: body.contact_name,
-    phone: body.phone,
-    kyc_document_uri: body.kyc_document_uri ?? null,
-    approval_status: "pending",
-    business_registration_number: body.business_registration_number,
-    email_verified: false,
-    created_at: now,
-    updated_at: now,
-  };
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.create({
-    data: createData,
+  // 3. Create seller record
+  const seller = await MyGlobal.prisma.shopping_sellers.create({
+    data: {
+      id: v4(),
+      email: props.body.email,
+      password_hash: hashedPassword,
+      display_name: props.body.display_name,
+      contact_phone: props.body.contact_phone,
+      status: "pending",
+      created_at: now,
+      updated_at: now,
+    },
   });
 
-  // Generate tokens
-  const accessToken = jwt.sign(
-    { id: seller.id, type: "seller" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    { id: seller.id, type: "seller", tokenType: "refresh" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-
-  // Token expiry calculation
-  const expired_at = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshable_until = toISOStringSafe(
+  // 4. Create session
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
 
-  // Create email verification record (valid 24h)
-  await MyGlobal.prisma.shopping_mall_email_verifications.create({
+  const session = await MyGlobal.prisma.shopping_seller_sessions.create({
     data: {
       id: v4(),
-      user_id: seller.id,
-      email: seller.email,
-      token: v4(),
-      expires_at: toISOStringSafe(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+      shopping_seller_id: seller.id,
+      ip: "",
+      href: "",
+      referrer: "",
       created_at: now,
+      expired_at: accessExpires,
     },
   });
 
-  // Return authorized seller
+  // 5. Create JWT tokens
+  const token = {
+    access: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
+
+  // 6. Build and return response
   return {
     id: seller.id,
     email: seller.email,
-    business_name: seller.business_name,
-    contact_name: seller.contact_name,
-    phone: seller.phone,
-    kyc_document_uri: seller.kyc_document_uri ?? null,
-    approval_status: seller.approval_status,
-    business_registration_number: seller.business_registration_number,
-    email_verified: seller.email_verified,
+    display_name: seller.display_name,
+    contact_phone: seller.contact_phone,
+    status: seller.status,
+    is_active: seller.deleted_at == null,
     created_at: toISOStringSafe(seller.created_at),
     updated_at: toISOStringSafe(seller.updated_at),
-    deleted_at: seller.deleted_at
-      ? toISOStringSafe(seller.deleted_at)
-      : undefined,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at,
-      refreshable_until,
-    },
+    token: token,
   };
 }

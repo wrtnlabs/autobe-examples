@@ -1,0 +1,236 @@
+/// Centralized audit log capturing system-level and domain events
+/// (visibility changes, exports, deletions, moderation flags). Append-only
+/// snapshot of events for forensic analysis and compliance. References
+/// actors (admins or users), sessions, and optional domain targets such as
+/// lists or tasks. FK relations intentionally use non-cascading behaviors to
+/// preserve audit records when referenced entities are removed.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Acting administrator {@link todo_app_admin.id}. Nullable so audit
+  /// persists when admin account removed.
+  todo_app_admin_id String?
+  
+  /// Admin session used for the action {@link todo_app_admin_sessions.id}.
+  /// Nullable to preserve record when session removed.
+  todo_app_admin_session_id String?
+  
+  /// Acting user (owner or collaborator) {@link todo_app_todouser.id}.
+  /// Nullable so audit persists when user account removed.
+  todo_app_todouser_id String?
+  
+  /// User session used for the action {@link todo_app_todouser_sessions.id}.
+  /// Nullable to preserve record when session removed.
+  todo_app_todouser_session_id String?
+  
+  /// Referenced list (when applicable) {@link todo_app_lists.id}. Nullable so
+  /// audit persists when lists are deleted or purged.
+  todo_app_list_id String?
+  
+  /// Referenced task (when applicable) {@link todo_app_tasks.id}. Nullable so
+  /// audit persists when tasks are deleted or purged.
+  todo_app_task_id String?
+  
+  /// Canonical event type (e.g.,
+  /// 'export','delete','visibility_change','moderation_action').
+  event_type String
+  
+  /// Polymorphic target type when applicable (e.g.,
+  /// 'list','task','invitation').
+  target_type String?
+  
+  /// Polymorphic target id when applicable.
+  target_id String?
+  
+  /// Free-text details or JSON payload (stored as text) describing the event
+  /// for forensic analysis.
+  details String?
+  
+  /// Source IP address for the event.
+  ip String?
+  
+  /// Optional request URL or resource href associated with the event.
+  href String?
+  
+  /// User agent string captured at time of event.
+  user_agent String?
+  
+  /// Event ingestion time (snapshot timestamp).
+  created_at DateTime
+  
+  /// Record last-updated time for operational corrections.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for the audit record (rare; used for legal
+  /// redaction).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_app_admin? @relation(fields: [todo_app_admin_id], references: [id], onDelete: Cascade)
+  adminSession todo_app_admin_sessions? @relation(fields: [todo_app_admin_session_id], references: [id], onDelete: Cascade)
+  user todo_app_todouser? @relation(fields: [todo_app_todouser_id], references: [id], onDelete: Cascade)
+  userSession todo_app_todouser_sessions? @relation(fields: [todo_app_todouser_session_id], references: [id], onDelete: Cascade)
+  list todo_app_lists? @relation(fields: [todo_app_list_id], references: [id], onDelete: Cascade)
+  task todo_app_tasks? @relation(fields: [todo_app_task_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_admin_session_id])
+  @@index([todo_app_todouser_session_id])
+  @@index([todo_app_list_id])
+  @@index([todo_app_task_id])
+  
+  @@index([event_type, created_at])
+  @@index([todo_app_todouser_id, created_at])
+  @@index([todo_app_admin_id, created_at])
+  @@index([target_type, created_at])
+}
+
+/// Detailed record of administrator moderation actions and policy
+/// operations. Each record is authored by an admin and captures reason,
+/// target, and related session for compliance review and audit trails. Admin
+/// FK uses non-cascading semantics to preserve records.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_admin_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Acting administrator {@link todo_app_admin.id}. Required. Use Restrict on
+  /// delete to preserve moderation history and prevent accidental removal.
+  todo_app_admin_id String
+  
+  /// Admin session that initiated the action {@link
+  /// todo_app_admin_sessions.id}. Nullable to preserve record when session
+  /// removed.
+  todo_app_admin_session_id String?
+  
+  /// Optional affected user account {@link todo_app_todouser.id}. Nullable to
+  /// preserve record when affected account removed.
+  todo_app_todouser_id String?
+  
+  /// Administrative action code (e.g.,
+  /// 'suspend_account','remove_public_list','apply_legal_hold').
+  action String
+  
+  /// Admin-supplied reason or policy code for the action.
+  reason String?
+  
+  /// Polymorphic target type for the admin action (e.g.,
+  /// 'list','task','account').
+  target_type String?
+  
+  /// Polymorphic target id for the admin action.
+  target_id String?
+  
+  /// Free-text details, investigative notes, or references to external case
+  /// ids.
+  details String?
+  
+  /// Optional internal case identifier linking related moderation records.
+  audit_case_id String?
+  
+  /// Action timestamp.
+  created_at DateTime
+  
+  /// Last modification time for the record (e.g., annotation added).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for redaction or legal expiry.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_app_admin @relation(fields: [todo_app_admin_id], references: [id], onDelete: Cascade)
+  adminSession todo_app_admin_sessions? @relation(fields: [todo_app_admin_session_id], references: [id], onDelete: Cascade)
+  affectedUser todo_app_todouser? @relation(fields: [todo_app_todouser_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_admin_session_id])
+  @@index([todo_app_todouser_id])
+  
+  @@index([todo_app_admin_id, created_at])
+  @@index([audit_case_id, created_at])
+  @@index([target_type, created_at])
+}
+
+/// Append-only activity log capturing user interactions and behavioral
+/// events (login, logout, invitation responses, import/export requests).
+/// Designed for auditing, behavioral analysis, and security investigations.
+/// All actor FKs are nullable and use non-cascading semantics to preserve
+/// history even when source objects are removed.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor user {@link todo_app_todouser.id}. Nullable to retain activity logs
+  /// when user account is removed.
+  todo_app_todouser_id String?
+  
+  /// User session for this activity {@link todo_app_todouser_sessions.id}.
+  /// Nullable to preserve records when session removed.
+  todo_app_todouser_session_id String?
+  
+  /// Optional list context for the activity {@link todo_app_lists.id}.
+  /// Nullable to preserve logs when lists are purged.
+  todo_app_list_id String?
+  
+  /// Optional task context for the activity {@link todo_app_tasks.id}.
+  /// Nullable to preserve logs when tasks are purged.
+  todo_app_task_id String?
+  
+  /// Activity code (e.g.,
+  /// 'login','logout','invite_accept','import_request','export_request').
+  activity_type String
+  
+  /// Optional free-text or structured payload (stored as text) describing the
+  /// activity.
+  details String?
+  
+  /// Source IP address for the activity.
+  ip String?
+  
+  /// Optional associated URL or request href.
+  href String?
+  
+  /// Activity timestamp.
+  created_at DateTime
+  
+  /// Record last-updated time for operational corrections.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for the log entry (used rarely for redaction).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_todouser? @relation(fields: [todo_app_todouser_id], references: [id], onDelete: Cascade)
+  userSession todo_app_todouser_sessions? @relation(fields: [todo_app_todouser_session_id], references: [id], onDelete: Cascade)
+  list todo_app_lists? @relation(fields: [todo_app_list_id], references: [id], onDelete: Cascade)
+  task todo_app_tasks? @relation(fields: [todo_app_task_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_todouser_session_id])
+  @@index([todo_app_list_id])
+  @@index([todo_app_task_id])
+  
+  @@index([todo_app_todouser_id, created_at])
+  @@index([activity_type, created_at])
+}

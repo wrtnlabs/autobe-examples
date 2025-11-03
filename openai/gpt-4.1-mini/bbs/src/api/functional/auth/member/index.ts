@@ -6,15 +6,19 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMember } from "../../../structures/IDiscussionBoardMember";
 
 /**
- * Create a new member user account (discussion_board_members).
+ * Creates a new discussion board member account and issues JWT tokens.
  *
- * Register a new member user account by providing email, password, and display
- * name. Creates discussion_board_members record and returns authorized JWT
- * token.
+ * Creates a new member account by registering the user's email and password.
+ * This process involves securely storing the password hash in the
+ * discussion_board_members table. The operation ensures the uniqueness of the
+ * email to maintain user account integrity. Upon successful creation, the
+ * system issues JWT tokens for authenticated session management. This operation
+ * is public and does not require prior authentication, allowing new users to
+ * join the discussion board platform.
  *
  * @param props.connection
- * @param props.body New member account creation payload including email,
- *   password, and display name.
+ * @param props.body Member registration credentials including email and
+ *   password.
  * @setHeader token.access Authorization
  *
  * @path /auth/member/join
@@ -49,10 +53,7 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /**
-     * New member account creation payload including email, password, and
-     * display name.
-     */
+    /** Member registration credentials including email and password. */
     body: IDiscussionBoardMember.ICreate;
   };
   export type Body = IDiscussionBoardMember.ICreate;
@@ -100,9 +101,14 @@ export namespace join {
 }
 
 /**
- * Member user login authentication.
+ * Authenticates member and returns JWT tokens.
  *
- * Authenticate member user credentials and issue JWT access and refresh tokens.
+ * Authenticates a member user by verifying their email and password. Uses the
+ * password_hash stored in discussion_board_members. If credentials match an
+ * active member account (deleted_at is null), this operation returns access and
+ * refresh JWT tokens encapsulated in the IDiscussionBoardMember.IAuthorized
+ * response type. The operation is public and intended for member login
+ * purposes.
  *
  * @param props.connection
  * @param props.body Member login credentials including email and password.
@@ -188,12 +194,16 @@ export namespace login {
 }
 
 /**
- * Refresh JWT token for member user.
+ * Refreshes member JWT token.
  *
- * Refresh member user JWT access tokens using a valid refresh token.
+ * Refreshes the JWT token for a member user to extend session validity without
+ * requiring re-login. Uses a valid refresh token to issue new access and
+ * refresh tokens. The operation ensures the account exists and is active in
+ * discussion_board_members. Returns updated JWT tokens in the
+ * IDiscussionBoardMember.IAuthorized response type.
  *
  * @param props.connection
- * @param props.body Valid refresh token payload for token renewal.
+ * @param props.body Refresh token for obtaining new JWT tokens.
  * @setHeader token.access Authorization
  *
  * @path /auth/member/refresh
@@ -228,7 +238,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Valid refresh token payload for token renewal. */
+    /** Refresh token for obtaining new JWT tokens. */
     body: IDiscussionBoardMember.IRefresh;
   };
   export type Body = IDiscussionBoardMember.IRefresh;

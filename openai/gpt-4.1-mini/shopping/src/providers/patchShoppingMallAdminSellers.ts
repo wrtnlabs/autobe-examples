@@ -15,94 +15,113 @@ import { AdminPayload } from "../decorators/payload/AdminPayload";
 export async function patchShoppingMallAdminSellers(props: {
   admin: AdminPayload;
   body: IShoppingMallSeller.IRequest;
-}): Promise<IPageIShoppingMallSeller> {
+}): Promise<IPageIShoppingMallSeller.ISummary> {
   const { body } = props;
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 20;
-  const skip = (page - 1) * limit;
 
   const where = {
-    ...(body.email !== undefined &&
-      body.email !== null && {
-        email: { contains: body.email },
-      }),
-    ...(body.company_name !== undefined &&
-      body.company_name !== null && {
-        company_name: { contains: body.company_name },
-      }),
-    ...(body.contact_name !== undefined &&
-      body.contact_name !== null && {
-        contact_name: { contains: body.contact_name },
-      }),
-    ...(body.phone_number !== undefined &&
-      body.phone_number !== null && {
-        phone_number: { contains: body.phone_number },
-      }),
-    ...(body.status !== undefined &&
-      body.status !== null && {
-        status: body.status,
-      }),
     deleted_at: null,
-  };
+    ...(body.email !== undefined && { email: { contains: body.email } }),
+    ...(body.store_name !== undefined && {
+      store_name: { contains: body.store_name },
+    }),
+    ...(body.created_at_from !== undefined || body.created_at_to !== undefined
+      ? {
+          created_at: {
+            ...(body.created_at_from !== undefined && {
+              gte: body.created_at_from as string,
+            }),
+            ...(body.created_at_to !== undefined && {
+              lte: body.created_at_to as string,
+            }),
+          },
+        }
+      : {}),
+  } satisfies Prisma.shopping_mall_sellersWhereInput as Prisma.shopping_mall_sellersWhereInput;
 
-  const allowedOrderByFields = [
-    "id",
-    "email",
-    "company_name",
-    "contact_name",
-    "phone_number",
-    "status",
-    "created_at",
-    "updated_at",
-  ];
+  const page = Number(body.page);
+  const limit = Number(body.limit);
+  const skip = (page - 1) * limit;
 
-  const orderByField =
-    body.order_by && allowedOrderByFields.includes(body.order_by)
-      ? body.order_by
-      : "created_at";
+  const orderBy =
+    body.sort_by === "store_name"
+      ? {
+          store_name: (body.sort_order === "asc"
+            ? "asc"
+            : "desc") as Prisma.SortOrder,
+        }
+      : {
+          created_at: (body.sort_order === "asc"
+            ? "asc"
+            : "desc") as Prisma.SortOrder,
+        };
 
-  const orderDirection =
-    body.order_direction &&
-    (body.order_direction.toLowerCase() === "asc" ||
-      body.order_direction.toLowerCase() === "desc")
-      ? body.order_direction.toLowerCase() === "asc"
-        ? "asc"
-        : "desc"
-      : "desc";
-
-  const [data, total] = await Promise.all([
+  const [sellers, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_sellers.findMany({
       where,
-      orderBy: { [orderByField]: orderDirection },
+      orderBy,
       skip,
       take: limit,
+      select: {
+        id: true,
+        email: true,
+        store_name: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        shopping_mall_seller_profiles: {
+          select: {
+            business_registration_number: true,
+            contact_email: true,
+            contact_phone: true,
+            profile_description: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
+      },
     }),
     MyGlobal.prisma.shopping_mall_sellers.count({ where }),
   ]);
 
-  const mappedData = data.map((seller) => ({
-    id: seller.id,
-    email: seller.email,
-    password_hash: seller.password_hash,
-    company_name:
-      seller.company_name === null ? undefined : seller.company_name,
-    contact_name:
-      seller.contact_name === null ? undefined : seller.contact_name,
-    phone_number:
-      seller.phone_number === null ? undefined : seller.phone_number,
-    status: seller.status,
-    created_at: toISOStringSafe(seller.created_at),
-    updated_at: toISOStringSafe(seller.updated_at),
-    deleted_at: seller.deleted_at ? toISOStringSafe(seller.deleted_at) : null,
-  }));
+  const data = sellers.map((seller) => {
+    const profile = seller.shopping_mall_seller_profiles;
+    return {
+      id: seller.id,
+      email: seller.email,
+      store_name: seller.store_name,
+      created_at: toISOStringSafe(seller.created_at),
+      updated_at: toISOStringSafe(seller.updated_at),
+      deleted_at: seller.deleted_at ? toISOStringSafe(seller.deleted_at) : null,
+      is_active: seller.deleted_at === null,
+      profile: profile
+        ? {
+            business_registration_number:
+              profile.business_registration_number ?? undefined,
+            contact_email: profile.contact_email,
+            contact_phone: profile.contact_phone ?? undefined,
+            profile_description: profile.profile_description ?? undefined,
+            created_at: profile.created_at
+              ? toISOStringSafe(profile.created_at)
+              : undefined,
+            updated_at: profile.updated_at
+              ? toISOStringSafe(profile.updated_at)
+              : undefined,
+            deleted_at: profile.deleted_at
+              ? toISOStringSafe(profile.deleted_at)
+              : null,
+          }
+        : undefined,
+    };
+  });
 
   return {
     pagination: {
-      current: Number(page),
-      limit: Number(limit),
+      current: page,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     },
-    data: mappedData,
-  };
+    data,
+  } satisfies IPageIShoppingMallSeller.ISummary as IPageIShoppingMallSeller.ISummary;
 }

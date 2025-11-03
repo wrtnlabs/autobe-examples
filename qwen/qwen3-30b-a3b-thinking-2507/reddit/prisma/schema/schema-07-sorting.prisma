@@ -1,0 +1,81 @@
+/// User-specific sorting preferences for communities. Each user can define
+/// their preferred sorting method per community independently. Supports hot,
+/// new, top, and controversial sorting criteria.
+///
+/// @namespace Sorting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_sorting_preference {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community for which the sorting preference applies.
+  /// {@link community_platform_community.id}.
+  community_id String
+  
+  /// Reference to the member who owns this sorting preference. {@link
+  /// community_platform_member.id}.
+  user_id String
+  
+  /// The user's preferred sorting method for the community. Valid options:
+  /// 'hot', 'new', 'top', 'controversial'.
+  sort_type String
+  
+  /// Timestamp when the preference was first created.
+  created_at DateTime
+  
+  /// Timestamp when the preference was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the preference was deleted (soft delete). Nullable, only
+  /// populated if profile is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_community @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  
+  @@unique([community_id, user_id])
+}
+
+/// System-wide configuration for sorting algorithms. Defines the parameters
+/// and behavior of different sorting methods like hot, new, top, and
+/// controversial. Managed by platform administrators.
+///
+/// @namespace Sorting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_sorting_algorithm {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The unique name of the sorting algorithm (e.g., 'hot', 'new', 'top',
+  /// 'controversial').
+  algorithm_name String
+  
+  /// JSON configuration for the algorithm (e.g., weight parameters for hot
+  /// sort).
+  config String
+  
+  /// Timestamp when the algorithm configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the algorithm configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the algorithm configuration was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([algorithm_name])
+}

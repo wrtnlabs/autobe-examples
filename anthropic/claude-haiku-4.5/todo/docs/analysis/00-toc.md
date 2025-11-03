@@ -1,833 +1,645 @@
-# Todo List Application - Documentation Overview
+# Todo Application - Complete Documentation
 
-## Executive Summary
+## Project Overview
 
-This comprehensive documentation suite defines all business requirements, functional specifications, and operational guidance for the **Todo List Application** - a minimal, focused productivity tool designed to help users create, manage, and track their daily tasks.
+Welcome to the **Todo Application** documentation suite. This project delivers a minimal, focused todo list management system designed for users to create, organize, and track their tasks efficiently.
 
-The Todo List Application represents a deliberate commitment to simplicity in task management. By focusing exclusively on essential CRUD operations (Create, Read, Update, Delete) and eliminating unnecessary complexity, the application delivers authentic value to users who want a straightforward tool without feature bloat.
+### What This Project Delivers
 
-This documentation table of contents serves as your navigation guide through the complete specification suite, helping you find exactly what you need to understand, build, implement, or manage the Todo List Application.
+A straightforward todo application that enables users to:
+- Create and manage personal todo items
+- Track completion status of tasks
+- Maintain a persistent list of todos
+- Authenticate securely and access their data anytime
+- Efficiently manage their daily workload
 
----
+### Project Philosophy
 
-## Documentation Structure and Complete Map
+**Minimum Viable Functionality** - This application includes only essential features needed for a functional todo management system. Every feature serves a clear user need without unnecessary complexity. Our guiding principle: *Simplicity is a feature.*
 
-The Todo List Application documentation consists of 11 comprehensive documents, each addressing specific aspects of the system. This table provides the complete documentation map:
+### Key Objectives
 
-| Document | Filename | Type | Purpose | Audience |
-|----------|----------|------|---------|----------|
-| **Table of Contents** | 00-toc.md | Overview | Navigation guide and project orientation | All stakeholders |
-| **Service Overview** | 01-service-overview.md | Strategic | Business justification, value proposition, market opportunity | Business stakeholders, Product managers, Development team |
-| **User Roles & Authentication** | 02-user-roles-authentication.md | Technical Requirements | User roles, authentication systems, authorization, JWT tokens | Development team |
-| **Functional Requirements** | 03-functional-requirements.md | Technical Requirements | Core system functionality, CRUD operations, business requirements | Development team |
-| **User Scenarios** | 04-user-scenarios.md | User Stories | Real-world user interactions, step-by-step workflows, error scenarios | Development team, Product managers |
-| **Data Requirements** | 05-data-requirements.md | Technical Requirements | Todo data structure, properties, validation, constraints | Development team |
-| **User Flows** | 06-user-flows.md | Technical Requirements | Detailed step-by-step user interaction flows, decision points, error paths | Development team |
-| **Business Rules** | 07-business-rules.md | Technical Requirements | Business logic, validation rules, operational constraints, workflows | Development team |
-| **Performance Requirements** | 08-performance-requirements.md | Technical Requirements | Performance expectations, response times, reliability, availability | Development team |
-| **Security & Compliance** | 09-security-compliance.md | Technical Requirements | Security measures, data protection, authentication, compliance | Development team |
-| **Error Handling** | 10-error-handling.md | Technical Requirements | Error scenarios, messages, recovery procedures, edge cases | Development team |
+- Provide a simple, intuitive way to manage daily tasks
+- Enable users to maintain organized todo lists  
+- Ensure data persistence and reliability
+- Support multiple users with secure authentication
+- Deliver production-ready code that compiles without errors
 
 ---
 
-## Detailed Document Descriptions
+## Documentation Structure
 
-### 01 - Service Overview Document
+This documentation suite consists of **9 comprehensive documents** organized by purpose and audience. Each document focuses on specific aspects of the Todo application requirements and is designed to be implementation-ready for backend developers.
 
-**Filename:** 01-service-overview.md
+### How Documents Are Organized
 
-**Document Type:** Strategic Business Documentation
+```
+00-toc.md (This Document)
+├── Navigation & Overview
+├── Document Index  
+├── Cross-Document References
+└── Complete Project Information
 
-**Purpose:** Establish the complete business context and strategic justification for the Todo List Application
+01-service-overview.md (Service Vision & Business Model)
+├── Business Justification
+├── Core Features
+├── Target Users
+├── Competitive Advantages
+└── Success Metrics
 
-**Key Topics Covered:**
-- Why the application exists and market opportunity
-- Core value proposition for end users  
-- Target user profiles and motivations
-- Business model and differentiation strategy
-- Core features included in minimum viable product
-- Features explicitly excluded to maintain focus
-- Single-user model justification
-- Success metrics and acceptance criteria
-- Project scope boundaries
-- Technical foundation approach
-- Future vision and extensibility
+02-user-actors-authentication.md (User Roles & Authentication)
+├── User Actor Definitions
+├── Authentication Flows
+├── Permission Matrix
+├── JWT Token Requirements
+└── Session Management
 
-**Key Questions Answered:**
-- Why should this Todo application exist?
-- What problems does it solve?
-- Who are the intended users?
-- What features are included/excluded?
-- How will success be measured?
-- What is the competitive differentiation?
+03-functional-requirements.md (Feature Specifications)
+├── Todo Management Features
+├── Complete Workflows
+├── Business Rules
+├── Validation Requirements
+├── Error Handling
+└── Performance Expectations
 
-**Audience:** Business stakeholders, product managers, development team leads
+04-user-scenarios.md (Real-World Usage Examples)
+├── Primary User Scenarios
+├── Alternative Scenarios
+├── Edge Cases & Exception Handling
+├── User Journey Flows
+└── Error Recovery Scenarios
 
-**When to Reference:** When understanding business rationale, objectives, market positioning, or product strategy
+05-data-model-concepts.md (Data Entities & Properties)
+├── Core Data Entities
+├── Entity Attributes
+├── Data Relationships
+├── Data Lifecycle States
+└── Data Constraints & Rules
 
-**Length:** Comprehensive business overview with market analysis, value proposition, and strategic direction
+06-business-rules.md (Validation & Logic Rules)
+├── Validation Rules (all data types)
+├── Business Logic & Constraints
+├── Data Consistency Rules
+├── State Management Rules
+├── User Action Constraints
+└── Complete Rules Matrix
 
----
+07-admin-features.md (Administrative Capabilities)
+├── Admin Role Definition
+├── User Management Operations
+├── System Monitoring & Visibility
+├── Administrative Operations
+├── Admin Security & Audit
+└── Error Handling for Admin Tasks
 
-### 02 - User Roles and Authentication Guide
+08-api-interaction-patterns.md (User Workflows)
+├── Registration & Authentication Flow
+├── Todo Management Patterns
+├── Data Query Patterns
+├── Error Response Scenarios
+└── Complete User Journey Diagrams
 
-**Filename:** 02-user-roles-authentication.md
-
-**Document Type:** Technical Requirements
-
-**Purpose:** Define all user roles, authentication mechanisms, authorization rules, and security protocols
-
-**Key Topics Covered:**
-- Complete authentication system overview
-- User registration and login processes
-- Three user roles: Guest, Authenticated User, Administrator
-- Guest user permissions and restrictions
-- Authenticated user capabilities and permissions
-- Administrator role and responsibilities
-- JWT token-based authentication system
-- Token structure, claims, and lifecycle
-- Session management and timeouts
-- Complete permission matrix
-- Authentication error scenarios and handling
-
-**Key Requirements:**
-- JWT tokens expire after 30 minutes
-- All user roles clearly defined with distinct permissions
-- Each role has specific CRUD operation permissions
-- Data isolation enforced between users
-- Secure session management implemented
-
-**Audience:** Development team implementing authentication and authorization
-
-**When to Reference:** When building login/registration systems, authorization checks, or securing endpoints
-
-**Length:** Detailed specification with complete permission matrices and security requirements
-
----
-
-### 03 - Functional Requirements Document
-
-**Filename:** 03-functional-requirements.md
-
-**Document Type:** Technical Requirements
-
-**Purpose:** Comprehensively specify all functional requirements from business perspective
-
-**Key Topics Covered:**
-- User authentication context and role-based access
-- Todo creation requirements and validations
-- Todo reading and display requirements
-- Todo update requirements and constraints
-- Todo delete procedures
-- Data validation rules for all fields
-- Business rules governing operations
-- Complete CRUD operation workflows
-- Constraints and limitations
-- Summary of all functional requirements
-
-**Core Functionality:**
-- Users can create todos with title and description
-- Users can view all their todos in organized list
-- Users can mark todos as complete/incomplete
-- Users can edit todo titles and descriptions
-- Users can permanently delete todos
-
-**Excluded Features:** Due dates, priorities, categories, tags, sharing, attachments, recurring tasks, advanced search
-
-**Audience:** Development team implementing core functionality
-
-**When to Reference:** When understanding what the system must do and business constraints on operations
-
-**Length:** Detailed specification of all CRUD operations with validation and business rules
+09-non-functional-requirements.md (Performance & Quality)
+├── Performance Requirements
+├── Security & Privacy
+├── Reliability & Availability
+├── Data Persistence & Backup
+├── Scalability Expectations
+└── Compliance & Standards
+```
 
 ---
 
-### 04 - User Scenarios Document
+## Complete Document Index
 
-**Filename:** 04-user-scenarios.md
+### Document 1: Service Overview
+**[Service Vision & Business Model](./01-service-overview.md)**
 
-**Document Type:** User Stories and Workflows
+Provides high-level context about the Todo application including why it exists, what problem it solves, and its core value proposition.
 
-**Purpose:** Illustrate real-world user interactions through practical scenarios
-
-**Scenarios Included:**
-1. Creating a new todo - step-by-step with validation
-2. Viewing all todos - empty state and populated states
-3. Marking a todo as complete - status change workflow
-4. Marking a todo as incomplete - reopening completed tasks
-5. Editing a todo - updating title and description
-6. Deleting a todo - confirmation and removal
-7. Managing multiple todos efficiently - rapid operations
-8. Reviewing completed todos - progress tracking
-9. Re-activating completed todos - reversing completion
-10. Validation error handling - user correction flows
-11. Failed operation recovery - retry mechanisms
-12. Concurrent operations - multi-device scenarios
-13. Empty todo list - new user experience
-14. Large todo lists - performance with many items
-15. Session persistence - data across sessions
-
-**Additional Coverage:**
-- Error scenarios and recovery procedures
-- Edge cases and boundary conditions
-- User experience consistency principles
-- Performance expectations implied by scenarios
-
-**Audience:** Development team, product managers, QA engineers
-
-**When to Reference:** When understanding typical user interactions and expected system behavior
-
-**Length:** Comprehensive coverage of all primary, secondary, and edge case scenarios
+- **Purpose**: Establish business justification and project vision
+- **Audience**: All stakeholders, project managers, business teams
+- **Key Topics**: Market opportunity, core features, target users, success metrics, business model, competitive advantage
+- **Length**: ~3,500 characters
+- **Read First**: Yes - provides essential context for understanding the project
 
 ---
 
-### 05 - Data Requirements Document
+### Document 2: User Actors & Authentication
+**[User Actors and Authentication Architecture](./02-user-actors-authentication.md)**
 
-**Filename:** 05-data-requirements.md
+Defines all user types (actors) in the system, how users authenticate, and what permissions each user type has.
 
-**Document Type:** Technical Requirements
-
-**Purpose:** Specify complete data structure, properties, validation, and persistence requirements
-
-**Data Model:**
-Todo entity contains these properties:
-- **todoId:** Unique UUID identifier (auto-generated, immutable)
-- **title:** Text string, 1-255 characters (required)
-- **description:** Optional text field, up to 2000 characters
-- **isCompleted:** Boolean (true/false), defaults to false
-- **createdAt:** ISO 8601 timestamp (auto-generated, immutable)
-- **updatedAt:** ISO 8601 timestamp (auto-updated on changes)
-
-**Key Topics Covered:**
-- Complete property specifications with data types
-- Required vs optional fields
-- Data types and format specifications
-- Validation rules for each field
-- Data constraints and limits
-- Data lifecycle (creation, update, deletion)
-- Immutable field protections
-- Data persistence requirements
-- Business rules governing data
-
-**Validation Standards:**
-- Title must be 1-255 characters, non-empty
-- Status only accepts "complete" or "incomplete"
-- Timestamps in UTC ISO 8601 format
-- All timestamps automatically managed by system
-
-**Audience:** Development team designing data models and database schema
-
-**When to Reference:** When designing database, validation logic, or data models
-
-**Length:** Complete specification of all todo properties and validation rules
+- **Purpose**: Establish user roles, authentication mechanisms, and access control
+- **Audience**: Development team, security team, architects
+- **Key Topics**: User actors (User/Member, Admin), authentication flows, JWT tokens, permission matrix, session management, password requirements
+- **Length**: ~6,500 characters
+- **Dependencies**: Requires understanding from 01-service-overview.md
+- **Read After**: 01-service-overview.md
 
 ---
 
-### 06 - User Flows Document
+### Document 3: Functional Requirements
+**[Functional Requirements for Todo Management](./03-functional-requirements.md)**
 
-**Filename:** 06-user-flows.md
+Complete specification of all business functionality including todo CRUD operations, user workflows, validation rules, and error handling.
 
-**Document Type:** Detailed Workflows
-
-**Purpose:** Provide step-by-step user interaction flows for all major operations
-
-**Flows Documented:**
-1. Authentication and access flow - initial entry point
-2. User registration flow - new user setup
-3. User login flow - authentication process
-4. Create todo flow - task creation with validation
-5. Read/view todos flow - list retrieval and display
-6. Update todo flow - editing todos
-7. Complete todo flow - marking todos done/undone
-8. Delete todo flow - permanent removal with confirmation
-9. Authentication error flow - session expiration handling
-10. Validation error flow - input correction
-11. Authorization error flow - access denial
-12. Resource not found flow - missing todo handling
-13. Database/system error flow - server issues
-14. Network error flow - connectivity problems
-
-**Flow Components:**
-- User actions in each step
-- System responses and validation
-- Decision points and branches
-- Success and error paths
-- Data flow through operations
-- Success criteria for completion
-
-**Included Diagrams:** Mermaid flow diagrams for visual understanding
-
-**Audience:** Development team implementing features and workflows
-
-**When to Reference:** When understanding complete operation sequences and decision points
-
-**Length:** Detailed step-by-step flows covering all operations and error scenarios
+- **Purpose**: Define all business processes and user-facing features in complete detail
+- **Audience**: Development team, QA team, product managers
+- **Key Topics**: Todo creation, editing, deletion, completion tracking, data validation, error scenarios, performance expectations, EARS-formatted requirements
+- **Length**: ~9,000+ characters
+- **Dependencies**: Requires context from 01-service-overview.md and 02-user-actors-authentication.md
+- **Read After**: 01-service-overview.md, 02-user-actors-authentication.md
 
 ---
 
-### 07 - Business Rules Document
+### Document 4: User Scenarios
+**[User Scenarios and Interaction Flows](./04-user-scenarios.md)**
 
-**Filename:** 07-business-rules.md
+Documents realistic user scenarios showing step-by-step how users interact with the Todo application in daily use, including edge cases and error recovery.
 
-**Document Type:** Technical Requirements
-
-**Purpose:** Define all business rules, validation logic, and constraints
-
-**Rules Categories:**
-- Todo creation rules and user authorization
-- Title requirements and constraints
-- Initial status assignment
-- Timestamp management requirements
-- Todo modification rules and authorization
-- Title and status modification rules
-- Partial update support
-- Todo deletion rules and permanence
-- Access control enforcement
-- Status management and transitions
-- Data validation requirements
-- Business logic workflows
-- Edge cases and special scenarios
-- Immutable field protections
-
-**Key Rules Examples:**
-- Every todo belongs to exactly one user
-- Initial status always "incomplete"
-- Title required, 1-255 characters, non-empty
-- Status only "complete" or "incomplete"
-- Deletion is permanent, no undo/restore
-- User can only access their own todos
-- Timestamps automatically managed
-
-**Audience:** Development team implementing business logic
-
-**When to Reference:** When building validation, authorization, and business logic
-
-**Length:** Comprehensive specification of all business rules and constraints
+- **Purpose**: Show concrete examples of how users work with the system
+- **Audience**: Development team, QA team, product managers, UX stakeholders
+- **Key Topics**: Primary user workflows, alternative scenarios, edge cases, error handling from user perspective, complete journey diagrams
+- **Length**: ~8,000+ characters
+- **Dependencies**: Requires understanding from 03-functional-requirements.md
+- **Read After**: 03-functional-requirements.md
 
 ---
 
-### 08 - Performance Requirements Document
+### Document 5: Data Model Concepts
+**[Conceptual Data Model and Entities](./05-data-model-concepts.md)**
 
-**Filename:** 08-performance-requirements.md
+Describes the core data entities (users, todos, etc.) from a business perspective, including their attributes, relationships, and lifecycle.
 
-**Document Type:** Technical Requirements
-
-**Purpose:** Define performance expectations and non-functional requirements
-
-**Performance Targets:**
-- User action response: < 500 milliseconds
-- Todo list load: < 500 milliseconds  
-- Search/filter response: < 300 milliseconds
-- Initial app load: < 2 seconds
-- System uptime: 99% availability
-- Database reconnect: < 5 seconds
-- Todo storage capacity: 1,000+ items minimum
-
-**Non-Functional Requirements:**
-- Concurrent user handling (single-user focus)
-- Data scalability
-- System reliability
-- Error recovery performance
-- Data persistence reliability
-- Browser compatibility
-
-**Availability Standards:**
-- 99% uptime during normal operation
-- Graceful error handling
-- Reliable data persistence
-- Recovery from transient failures
-
-**Audience:** Development team, DevOps, quality assurance
-
-**When to Reference:** When optimizing performance, setting SLAs, or testing response times
-
-**Length:** Specific, measurable performance expectations with acceptance criteria
+- **Purpose**: Establish what information is stored and why
+- **Audience**: Development team, architects, business analysts
+- **Key Topics**: User entity, Todo entity, entity attributes, relationships, data states, data constraints, lifecycle management
+- **Length**: ~5,000+ characters
+- **Note**: Describes business concepts, not technical database schema
+- **Read After**: 02-user-actors-authentication.md, 03-functional-requirements.md
 
 ---
 
-### 09 - Security and Compliance Document
+### Document 6: Business Rules
+**[Business Rules and Validation Requirements](./06-business-rules.md)**
 
-**Filename:** 09-security-compliance.md
+Defines all validation rules, business logic constraints, state management rules, and operational constraints that govern system behavior.
 
-**Document Type:** Technical Requirements
-
-**Purpose:** Define security requirements, data protection, and compliance measures
-
-**Security Coverage:**
-- Authentication security and JWT tokens
-- Password security and hashing
-- Authorization and access control
-- Role-based permission enforcement
-- Data encryption at rest and in transit
-- Input validation and sanitization
-- XSS and SQL injection prevention
-- CSRF protection
-- Secure error handling
-- Session security and timeout
-- User data privacy
-- Compliance requirements
-- Security testing and validation
-
-**Key Security Standards:**
-- HTTPS/TLS encryption required for all communication
-- Passwords hashed using bcrypt or similar
-- JWT tokens expire after 30 minutes
-- All inputs validated server-side
-- User data encrypted in database
-- No sensitive data in logs or error messages
-- Rate limiting on failed login attempts
-- Audit logging of security events
-
-**Data Protection:**
-- Encryption in transit (TLS 1.2+)
-- Encryption at rest (AES-256)
-- Secure key management
-- Data backup encryption
-- Regular security testing
-
-**Audience:** Development team, security team, compliance officers
-
-**When to Reference:** When implementing authentication, authorization, data protection, or security features
-
-**Length:** Comprehensive security specification covering all security domains
+- **Purpose**: Specify all rules and constraints that drive business logic
+- **Audience**: Development team, QA team
+- **Key Topics**: Validation rules (data format, length, required fields), state transitions, user action constraints, data consistency rules, EARS-formatted rules matrix
+- **Length**: ~8,000+ characters
+- **Dependencies**: Requires context from 03-functional-requirements.md and 05-data-model-concepts.md
+- **Read After**: 03-functional-requirements.md, 05-data-model-concepts.md
 
 ---
 
-### 10 - Error Handling Document
+### Document 7: Admin Features
+**[Administrative Capabilities and System Management](./07-admin-features.md)**
 
-**Filename:** 10-error-handling.md
+Documents all administrative operations including user management, system monitoring, and admin-only features.
 
-**Document Type:** Technical Requirements
-
-**Purpose:** Define error scenarios, messages, and recovery procedures
-
-**Error Categories:**
-- Authentication and session errors
-- Validation errors (empty fields, length violations, invalid types)
-- Todo operation errors (create, read, update, delete failures)
-- System-level errors (database, server, storage)
-- Data integrity errors
-- Network and connectivity errors
-- Concurrent operation conflicts
-- Timeout and recovery scenarios
-
-**Error Handling Standards:**
-- Clear, user-friendly error messages
-- Specific information about what went wrong
-- Suggested corrective actions
-- Unique error codes for tracking
-- User data preservation during errors
-- Automatic retry for transient failures
-- Graceful degradation when possible
-- Offline mode support
-
-**Error Recovery Mechanisms:**
-- Automatic retry with exponential backoff
-- Cache-based recovery
-- State rollback on failure
-- User-initiated retry options
-- Undo capabilities for deletions
-- Transaction rollback for data integrity
-
-**Edge Cases Covered:**
-- Network interruption during operations
-- Rapid successive operations
-- Concurrent modification conflicts
-- Data boundary conditions
-- Timing-related edge cases
-- State consistency mismatches
-
-**Audience:** Development team implementing error handling and user feedback
-
-**When to Reference:** When building error handling, validation, or recovery mechanisms
-
-**Length:** Comprehensive error scenarios with recovery procedures and edge cases
+- **Purpose**: Define administrative functionality and system management capabilities
+- **Audience**: Development team, system administrators, operations team
+- **Key Topics**: Admin operations (user management, system statistics), administrative security, audit logging, error handling for admin tasks
+- **Length**: ~5,000+ characters
+- **Dependencies**: Requires context from 02-user-actors-authentication.md
+- **Read After**: 02-user-actors-authentication.md, 03-functional-requirements.md
 
 ---
 
-## User Roles Summary and Permission Model
+### Document 8: API Interaction Patterns
+**[User Interaction and Data Flow Patterns](./08-api-interaction-patterns.md)**
 
-The Todo List Application implements three distinct user roles with specific permissions and capabilities. Each role represents a different level of system access and functionality.
+Documents typical interaction patterns from the user perspective, showing how data flows through the system during common operations.
 
-### Role Definitions
-
-**1. Guest User (Unauthenticated)**
-- Status: Visitor without authentication
-- Primary Purpose: Entry point to application
-- Permissions:
-  - View landing page and public information
-  - Access registration page
-  - Access login page
-  - Recover forgotten password
-- Restrictions:
-  - Cannot create, read, update, or delete todos
-  - Cannot access authenticated features
-  - Cannot view any user data
-  - Cannot access administrative functions
-
-**2. Authenticated User (Member)**
-- Status: Logged-in user
-- Primary Purpose: Primary user persona managing personal todos
-- Permissions:
-  - Create new todos
-  - View their own todos
-  - Update their own todos
-  - Delete their own todos
-  - Mark todos as complete/incomplete
-  - Edit todo titles and descriptions
-  - Manage their own account
-  - Logout and manage sessions
-- Restrictions:
-  - Cannot view other users' todos
-  - Cannot modify other users' todos
-  - Cannot delete other users' todos
-  - Cannot access administrative functions
-  - Cannot view system logs or monitoring data
-
-**3. Administrator**
-- Status: System operator with elevated privileges
-- Primary Purpose: System management and maintenance
-- Permissions:
-  - Perform all authenticated user operations
-  - Access administrative endpoints
-  - Monitor system health and performance
-  - Manage user accounts (if expanded in future)
-  - Access audit logs and security events
-  - Configure system settings (if expanded in future)
-  - View system diagnostics and monitoring
-- Restrictions:
-  - Same access boundaries as authenticated users for their own todos
-  - All admin actions subject to audit logging
-
-### Complete Permission Matrix
-
-| Operation | Guest User | Authenticated User | Administrator |
-|-----------|:----------:|:------------------:|:--------------:|
-| **Authentication** | | | |
-| View Login Page | ✅ | ✅ | ✅ |
-| View Registration Page | ✅ | ❌ | ❌ |
-| Register Account | ✅ | ❌ | ❌ |
-| Login | ✅ | ❌ | ✅ |
-| Logout | ❌ | ✅ | ✅ |
-| **Todo Operations** | | | |
-| Create Todo | ❌ | ✅ | ✅ |
-| View Own Todos | ❌ | ✅ | ✅ |
-| View All Todos | ❌ | ❌ | ✅ |
-| Update Own Todo | ❌ | ✅ | ✅ |
-| Update Any Todo | ❌ | ❌ | ✅ |
-| Delete Own Todo | ❌ | ✅ | ✅ |
-| Delete Any Todo | ❌ | ❌ | ✅ |
-| Mark Todo Complete | ❌ | ✅ | ✅ |
-| **Account Management** | | | |
-| View Own Account Info | ❌ | ✅ | ✅ |
-| Change Own Password | ❌ | ✅ | ✅ |
-| **User Management** | | | |
-| View User Accounts | ❌ | ❌ | ✅ |
-| Manage User Status | ❌ | ❌ | ✅ |
-| Reset User Password | ❌ | ❌ | ✅ |
-| **System Operations** | | | |
-| Access Admin Panel | ❌ | ❌ | ✅ |
-| View System Status | ❌ | ❌ | ✅ |
-| View Audit Logs | ❌ | ❌ | ✅ |
-| Modify System Settings | ❌ | ❌ | ✅ |
-
-**Legend:** ✅ = Permitted | ❌ = Not Permitted
+- **Purpose**: Show how users interact with the system from a business process perspective
+- **Audience**: Development team, system architects, business analysts
+- **Key Topics**: Authentication workflow, todo management interactions, data query patterns, error response scenarios, complete journey flows
+- **Length**: ~7,000+ characters
+- **Note**: Describes business interactions, not technical API specifications
+- **Read After**: 02-user-actors-authentication.md, 03-functional-requirements.md
 
 ---
 
-## Getting Started Guide by Role
+### Document 9: Non-Functional Requirements
+**[Non-Functional Requirements and Quality Standards](./09-non-functional-requirements.md)**
 
-### For Business Stakeholders
+Specifies performance, security, reliability, and other quality requirements that ensure the system meets user expectations.
 
-**Goal:** Understand why this application exists and its business value
-
-**Reading Path:**
-1. Start with [Service Overview](./01-service-overview.md) - Understand market opportunity and value proposition
-2. Review [Performance Requirements](./08-performance-requirements.md) - Understand service level expectations
-3. Review [User Scenarios](./04-user-scenarios.md) - See how users interact with the system
-4. Check this Table of Contents - Get oriented to complete documentation
-
-**Key Questions Answered:**
-- Why does this application exist?
-- What problems does it solve?
-- Who are the target users?
-- What is the competitive differentiation?
-- How will success be measured?
-- What features are included and excluded?
+- **Purpose**: Define quality standards, performance expectations, and security requirements
+- **Audience**: Development team, operations team, security team, architects
+- **Key Topics**: Response time expectations, security measures, data persistence, system reliability, scalability expectations, compliance standards
+- **Length**: ~5,000+ characters
+- **Dependencies**: Requires context from all previous documents
+- **Read After**: All previous documents
 
 ---
 
-### For Product Managers
+## Reading Guides for Different Audiences
 
-**Goal:** Understand the complete system functionality and user experience
+### For Backend Developers
 
-**Reading Path:**
-1. Start with [Service Overview](./01-service-overview.md) - Business context
-2. Review [Functional Requirements](./03-functional-requirements.md) - What the system does
-3. Study [User Scenarios](./04-user-scenarios.md) - Real-world user interactions
-4. Check [Business Rules](./07-business-rules.md) - System constraints and logic
-5. Review [Error Handling](./10-error-handling.md) - User experience with errors
-6. Reference this Table of Contents - Navigate to specific topics
+**Recommended reading order (2-3 hours)**
 
-**Key Questions Answered:**
-- What are all the features?
-- How do users interact with the system?
-- What are the system constraints?
-- What's the user experience for errors?
-- What business rules govern operations?
+1. **01-service-overview.md** - Understand the project context and vision (10 min)
+2. **02-user-actors-authentication.md** - Understand user roles and auth requirements (15 min)
+3. **03-functional-requirements.md** - Comprehensive feature requirements (30 min)
+4. **05-data-model-concepts.md** - Understand data entities and relationships (20 min)
+5. **06-business-rules.md** - Learn validation and business logic rules (25 min)
+6. **09-non-functional-requirements.md** - Performance and quality standards (15 min)
+7. **04-user-scenarios.md** - See real user workflows (20 min)
+8. **08-api-interaction-patterns.md** - Understand typical interaction flows (15 min)
+9. **07-admin-features.md** - Implement admin functionality (15 min)
 
----
-
-### For Development Team
-
-**Goal:** Complete understanding of requirements for implementation
-
-**Reading Path (Foundation First):**
-1. Start with this Table of Contents - Get project orientation
-2. Read [Service Overview](./01-service-overview.md) - Understand business context
-3. Review [Functional Requirements](./03-functional-requirements.md) - Understand what to build
-
-**Reading Path (Implementation):**
-4. Study [User Roles and Authentication](./02-user-roles-authentication.md) - Authorization model
-5. Review [Data Requirements](./05-data-requirements.md) - Data structure
-6. Study [Business Rules](./07-business-rules.md) - Validation and logic
-7. Reference [User Flows](./06-user-flows.md) - Implementation sequences
-8. Review [User Scenarios](./04-user-scenarios.md) - Real-world workflows
-
-**Reading Path (Quality):**
-9. Study [Performance Requirements](./08-performance-requirements.md) - Performance targets
-10. Review [Security and Compliance](./09-security-compliance.md) - Security implementation
-11. Reference [Error Handling](./10-error-handling.md) - Error scenarios and recovery
-
-**Key Questions Answered:**
-- What are all requirements?
-- What am I building and why?
-- How should data be structured?
-- What business rules apply?
-- What are expected workflows?
-- What about errors and edge cases?
-- What performance is expected?
-- What security measures are needed?
+**After reading this order, you'll have complete understanding of all business requirements needed for implementation.**
 
 ---
 
-### For QA and Testing Team
+### For Project Managers & Stakeholders
 
-**Goal:** Understand system behavior for comprehensive testing
+**Recommended reading order (30 minutes)**
 
-**Reading Path:**
-1. Start with [User Scenarios](./04-user-scenarios.md) - Test case basis
-2. Review [Functional Requirements](./03-functional-requirements.md) - Required functionality
-3. Study [Business Rules](./07-business-rules.md) - Validation rules to test
-4. Review [Error Handling](./10-error-handling.md) - Error scenarios to test
-5. Check [Performance Requirements](./08-performance-requirements.md) - Performance targets
-6. Reference [Security and Compliance](./09-security-compliance.md) - Security testing
+1. **01-service-overview.md** - Project vision and objectives
+2. **04-user-scenarios.md** - Understand how users will use the system
+3. **09-non-functional-requirements.md** - Quality and performance expectations
+4. **03-functional-requirements.md** - Feature details (as needed for specific questions)
 
-**Key Questions Answered:**
-- What are all the test scenarios?
-- What functionality must be tested?
-- What validation rules apply?
-- What errors can occur?
-- What are performance targets?
-- What security testing is needed?
+**Focus**: These documents provide business context and user-facing information without overwhelming technical detail.
 
 ---
 
-## Project Key Characteristics
+### For QA & Testing Teams
 
-### Minimal, Focused Scope
+**Recommended reading order (1.5 hours)**
 
-The Todo List Application is intentionally designed with minimal functionality to deliver maximum value through simplicity:
+1. **01-service-overview.md** - Project context
+2. **03-functional-requirements.md** - Feature specifications and test scenarios
+3. **04-user-scenarios.md** - User workflows to test
+4. **06-business-rules.md** - Validation and constraint testing requirements
+5. **09-non-functional-requirements.md** - Performance and security testing
+6. **07-admin-features.md** - Admin functionality testing
+7. **02-user-actors-authentication.md** - Authentication testing scenarios
 
-- **Core Features Only:** The system provides exactly four operations: create, read, update, delete todos
-- **No Advanced Features:** The application deliberately excludes due dates, priorities, categories, tags, recurring tasks, and other features
-- **Single Purpose:** The entire system focuses on one objective: helping users manage their daily tasks
-- **User-Centered Design:** Every feature decision prioritizes user experience and ease of use over technical sophistication
-
-### Single-User Architecture
-
-The application is optimized for individual users managing their personal todo lists:
-
-- **No Multi-User Complexity:** The system doesn't require complex permission models, user management, or data isolation at scale
-- **Simplified Authentication:** While JWT-based authentication is implemented for security, there's no complex multi-tenant architecture
-- **Focused Access Control:** Each user can only manage their own todos; no sharing or collaboration features
-- **Streamlined Operations:** All system operations optimize for one user at a time
-
-### Data Persistence Guarantee
-
-The application commits to reliable data storage:
-
-- **Permanent Storage:** All todos are saved immediately to persistent storage
-- **No Data Loss:** Users can trust that their todos will be preserved across sessions and application restarts
-- **Recovery from Errors:** The system implements recovery mechanisms to prevent data loss during error conditions
-- **Backup and Reliability:** Data persistence is a core architectural principle, not an afterthought
-
-### Performance and Reliability
-
-The application prioritizes responsive, reliable operation:
-
-- **Fast Responses:** All user actions respond within milliseconds for perceived instant response
-- **Quick Load Times:** Todo lists load within seconds regardless of quantity
-- **99% Availability:** The system maintains high reliability for user access
-- **Graceful Error Handling:** Errors are handled without losing user data or breaking functionality
-
-### Design Philosophy
-
-The Todo List Application follows these core principles:
-
-- **Simplicity:** Every feature is questioned; only essential functionality is included
-- **Reliability:** Data preservation and consistency are non-negotiable requirements
-- **Usability:** The interface and workflows are optimized for ease of use
-- **Performance:** The system is fast and responsive to user actions
-- **Clarity:** All requirements are specified clearly for implementation
+**Focus**: These documents provide complete test scenarios and acceptance criteria.
 
 ---
 
-## Documentation Standards and Approach
+### For System Architects
 
-### Natural Language Business Requirements
+**Recommended reading order (1.5 hours)**
 
-All documentation in this suite is written in natural language that describes business requirements from a user and business perspective:
+1. **01-service-overview.md** - Project overview
+2. **02-user-actors-authentication.md** - Authentication architecture requirements
+3. **05-data-model-concepts.md** - Data entity relationships and structures
+4. **03-functional-requirements.md** - Feature requirements for architectural decisions
+5. **08-api-interaction-patterns.md** - Interaction patterns and data flows
+6. **09-non-functional-requirements.md** - Non-functional requirements for architecture
+7. **06-business-rules.md** - Business logic rules affecting architecture
+8. **07-admin-features.md** - Admin system requirements
 
-- Documents explain WHAT the system should do and WHY
-- Documents avoid prescribing HOW to implement features (that's the development team's expertise)
-- Requirements are specific and measurable
-- All business processes are described step-by-step
-
-### EARS Format for Clarity
-
-Where applicable, requirements use the EARS (Easy Approach to Requirements Syntax) format for clarity:
-
-- **WHEN:** Specifies the condition that triggers the requirement
-- **THE:** Specifies the system or component being discussed
-- **SHALL:** Specifies the mandatory action or behavior
-- **IF/THEN:** Specifies conditional logic
-
-**Example:** "WHEN a user creates a new todo, THE system SHALL validate that the title is not empty and does not exceed 255 characters. IF the title is invalid, THEN the system SHALL display a validation error."
-
-### Technology-Agnostic Specifications
-
-All documentation focuses on business requirements without prescribing technical implementation:
-
-- No database schema definitions
-- No API endpoint specifications
-- No programming language or framework requirements
-- No infrastructure or deployment details
-- Development team has full autonomy for technology choices
-
-### Complete and Comprehensive
-
-Each document is self-contained and comprehensive:
-
-- All outline sections are fully developed
-- No placeholder text or incomplete sections
-- Every requirement is specified completely
-- Related information is cross-referenced
-- Readers don't need to search other documents for basic information
+**Focus**: These documents provide architectural guidance on system design and component structure.
 
 ---
 
-## Related Documents Reference
+## Cross-Document Navigation
 
-### Document Interconnections
+### By Topic
 
-The documentation suite is designed as an integrated whole where documents reference and complement each other:
+#### Authentication & Authorization
+- **Primary**: [02-user-actors-authentication.md](./02-user-actors-authentication.md) - Complete authentication and permission system
+- **Related**: [06-business-rules.md](./06-business-rules.md) sections on permission constraints
+- **Related**: [07-admin-features.md](./07-admin-features.md) sections on admin security
+- **Related**: [09-non-functional-requirements.md](./09-non-functional-requirements.md) sections on security
 
-- [Service Overview](./01-service-overview.md) provides business context for all other documents
-- [Functional Requirements](./03-functional-requirements.md) defines WHAT the system does
-- [User Scenarios](./04-user-scenarios.md) shows HOW users interact
-- [User Flows](./06-user-flows.md) provides detailed step-by-step workflows
-- [Business Rules](./07-business-rules.md) specifies the constraints on operations
-- [Data Requirements](./05-data-requirements.md) defines the information structure
-- [Error Handling](./10-error-handling.md) covers failure scenarios
-- All technical requirements documents reference [User Roles and Authentication](./02-user-roles-authentication.md) for permission context
+#### Todo Management Features
+- **Primary**: [03-functional-requirements.md](./03-functional-requirements.md) - All CRUD operations and workflows
+- **Related**: [04-user-scenarios.md](./04-user-scenarios.md) - Real-world usage examples
+- **Related**: [06-business-rules.md](./06-business-rules.md) - Validation and business logic
+- **Related**: [08-api-interaction-patterns.md](./08-api-interaction-patterns.md) - Interaction flows
 
-### Consistency Across Documents
+#### User Workflows & Scenarios
+- **Primary**: [04-user-scenarios.md](./04-user-scenarios.md) - Step-by-step user interactions
+- **Related**: [03-functional-requirements.md](./03-functional-requirements.md) - Feature specifications
+- **Related**: [08-api-interaction-patterns.md](./08-api-interaction-patterns.md) - Complete interaction patterns
+- **Related**: [02-user-actors-authentication.md](./02-user-actors-authentication.md) - Authentication flows
 
-All documents follow these standards for consistency:
+#### Data & Entities
+- **Primary**: [05-data-model-concepts.md](./05-data-model-concepts.md) - Entity definitions and relationships
+- **Related**: [06-business-rules.md](./06-business-rules.md) - Data constraints and validation
+- **Related**: [03-functional-requirements.md](./03-functional-requirements.md) - How data is used in operations
+- **Related**: [09-non-functional-requirements.md](./09-non-functional-requirements.md) - Data persistence requirements
 
-- Terminology is consistent across all documents
-- User roles and permissions are referenced uniformly
-- Cross-references use descriptive link text
-- Examples and scenarios are realistic and relatable
-- Business rules stated in one document are referenced in related documents
+#### Validation & Business Logic
+- **Primary**: [06-business-rules.md](./06-business-rules.md) - Complete rules matrix and specifications
+- **Related**: [03-functional-requirements.md](./03-functional-requirements.md) - Business rules in context of features
+- **Related**: [05-data-model-concepts.md](./05-data-model-concepts.md) - Data constraints behind rules
+- **Related**: [04-user-scenarios.md](./04-user-scenarios.md) - Rules in user interactions
 
----
+#### Admin & System Management
+- **Primary**: [07-admin-features.md](./07-admin-features.md) - All admin operations and capabilities
+- **Related**: [02-user-actors-authentication.md](./02-user-actors-authentication.md) - Admin role definition and permissions
+- **Related**: [06-business-rules.md](./06-business-rules.md) - Admin action constraints
 
-## Support and Question Resolution
+#### Performance & Quality Standards
+- **Primary**: [09-non-functional-requirements.md](./09-non-functional-requirements.md) - Complete quality requirements
+- **Related**: [03-functional-requirements.md](./03-functional-requirements.md) - Performance expectations by operation
+- **Related**: [01-service-overview.md](./01-service-overview.md) - Success metrics
 
-### Finding Answers to Common Questions
-
-**Question:** "Why does this system exist?"  
-→ Reference: [Service Overview](./01-service-overview.md) - Business justification and value proposition
-
-**Question:** "What can the system do?"  
-→ Reference: [Functional Requirements](./03-functional-requirements.md) - All system capabilities
-
-**Question:** "How do users interact with the system?"  
-→ Reference: [User Scenarios](./04-user-scenarios.md) - Step-by-step user interactions
-
-**Question:** "What data does the system store?"  
-→ Reference: [Data Requirements](./05-data-requirements.md) - Complete data structure
-
-**Question:** "What business rules apply to operations?"  
-→ Reference: [Business Rules](./07-business-rules.md) - Validation and operational constraints
-
-**Question:** "What should happen when errors occur?"  
-→ Reference: [Error Handling](./10-error-handling.md) - Error scenarios and recovery
-
-**Question:** "How fast should operations be?"  
-→ Reference: [Performance Requirements](./08-performance-requirements.md) - Response time expectations
-
-**Question:** "What security measures are needed?"  
-→ Reference: [Security and Compliance](./09-security-compliance.md) - Security requirements
-
-**Question:** "What are the step-by-step workflows?"  
-→ Reference: [User Flows](./06-user-flows.md) - Detailed workflow sequences
-
-**Question:** "Who has permission to do what?"  
-→ Reference: [User Roles and Authentication](./02-user-roles-authentication.md) - Permission matrix
-
-### Documentation Updates and Maintenance
-
-The documentation suite is maintained and updated as the project evolves:
-
-- Updates to requirements are synchronized across related documents
-- Changes to user roles affect permission matrices in multiple documents
-- New features are added to all relevant documents
-- Deprecated features are removed completely
-- Documentation reflects the current system state
-
-### Getting Help and Support
-
-For questions about the Todo List Application:
-
-- **Implementation Questions:** Reference the relevant technical requirements document
-- **Business Questions:** Reference the Service Overview
-- **User Experience Questions:** Reference User Scenarios and User Flows
-- **Testing Questions:** Reference all functional documents and Error Handling
-- **Architecture Questions:** Development team determines technical approach; requirements documents define WHAT must be achieved, not HOW
+#### Business Context & Vision
+- **Primary**: [01-service-overview.md](./01-service-overview.md) - Complete business justification
+- **Related**: [04-user-scenarios.md](./04-user-scenarios.md) - Real user value
+- **Related**: [02-user-actors-authentication.md](./02-user-actors-authentication.md) - Actor definitions
 
 ---
 
-## Document Completion and Quality Assurance
+## Project Information
 
-This documentation suite has been developed with the following quality standards:
+### Service Identifier
 
-✅ **Complete:** All sections in each document are fully developed  
-✅ **Comprehensive:** All requirements are specified without gaps  
-✅ **Consistent:** Terminology and approach are uniform across documents  
-✅ **Clear:** Business perspective with natural language specifications  
-✅ **Actionable:** Requirements are specific and measurable  
-✅ **Navigable:** Documents clearly reference each other for interconnected information  
-✅ **Authoritative:** This is the single source of truth for system requirements  
+- **Service Name**: Todo Application
+- **Service Prefix**: todoApp
+- **Project Type**: Minimum Viable Product (MVP)
+- **Development Approach**: Requirements-driven, waterfall planning with compiler-validated implementation
+- **Status**: Complete requirements documentation, ready for development
+
+### Defined User Actors
+
+The following user actors have been established for this system:
+
+#### 1. User (Member Actor)
+
+**Type**: Standard authenticated user
+
+**Capabilities**:
+- WHEN a user accesses the registration interface, THE system SHALL allow creation of a new account with email and password
+- WHEN a user provides valid credentials, THE system SHALL authenticate and provide session access
+- WHEN an authenticated user creates a todo, THE system SHALL associate the todo exclusively with that user
+- WHEN an authenticated user requests their todo list, THE system SHALL return only their todos
+- WHEN an authenticated user modifies or deletes a todo, THE system SHALL only allow modification of their own todos
+- WHEN an authenticated user attempts to access another user's data, THE system SHALL deny access
+
+**Scope**: Can only access their own todos, preferences, and account information. Cannot access admin features or other users' data.
+
+**Primary Use Case**: Individual managing their personal task list independently.
+
+**Restrictions**: 
+- Cannot view or modify other users' todos
+- Cannot access administrative functions
+- Cannot manage user accounts
+- Cannot view system statistics
+
+---
+
+#### 2. Admin (Administrator Actor)
+
+**Type**: System administrator with elevated permissions
+
+**Capabilities**:
+- WHEN an admin accesses the admin interface, THE system SHALL display all user accounts and their information
+- WHEN an admin performs a user management action, THE system SHALL execute the action if the admin has permission
+- WHEN an admin accesses system monitoring, THE system SHALL display system statistics and metrics
+- WHEN an admin performs sensitive operations, THE system SHALL log all actions for audit purposes
+- WHEN an admin attempts to access a user's private data, THE system MAY access for support/audit but MUST log the access
+
+**Scope**: Can view all user accounts, manage user statuses, access system statistics, and perform administrative maintenance.
+
+**Primary Use Case**: System operator ensuring platform stability and managing users.
+
+**Restrictions**:
+- Cannot directly modify other users' todos
+- Cannot access user todos without explicit audit requirement
+- Cannot bypass security and validation rules
+
+---
+
+### Naming Conventions
+
+- **Service Identifier**: todoApp
+- **Document Naming**: NN-document-name.md (where NN is the document number from 00-09)
+- **Actor Identifiers**: "user" for standard users, "admin" for administrators
+- **Constant Values**: Specific enum/constant values in exact case as defined (e.g., "active", "completed", "low", "medium", "high")
+
+### Service Scope
+
+**INCLUDED - Core Features**:
+- User authentication and account management
+- Todo creation, viewing, updating, and deletion
+- Todo status tracking (active/completed)
+- Personal todo list organization
+- Session management with JWT tokens
+- Basic user permissions and data isolation
+- Admin user management and system monitoring
+- Audit logging for admin actions
+
+**EXCLUDED - Not in MVP Scope**:
+- Real-time collaboration or sharing
+- Recurring or recurring todos
+- Reminders and notifications
+- File attachments or comments
+- Custom categories or tags
+- Advanced priority systems
+- Team workspaces or group management
+- Premium tiers or subscription features
+- Third-party integrations
+
+---
+
+## Documentation Standards & Quality Assurance
+
+### Content Quality Standards
+
+✅ **All requirements** follow EARS (Easy Approach to Requirements Syntax) format
+- Format: WHEN [condition], THE system SHALL [action]
+- Format: IF [condition], THEN THE system SHALL [action]
+- All requirements are testable and unambiguous
+
+✅ **All examples** are concrete and specific, not abstract
+- Include realistic scenarios and data
+- Show user perspective and system response
+- Demonstrate complete workflows
+
+✅ **All sections** are fully developed
+- No placeholder text or "TBD" sections
+- Every topic area is explained thoroughly
+- Cross-references point to relevant sections
+
+✅ **All business logic** is explicitly documented
+- Validation rules clearly specified
+- State transitions defined with conditions
+- Error scenarios include recovery mechanisms
+- Permission rules documented in matrices
+
+✅ **No technical specifications** included
+- Business requirements focus, not technical implementation
+- No database schemas or technical architecture
+- No API endpoint specifications or code examples
+- Implementation details deferred to development team
+
+### Document Completeness Checklist
+
+- ✅ **01-service-overview.md**: Business vision, features, target users, success metrics
+- ✅ **02-user-actors-authentication.md**: User actors, authentication flows, JWT requirements, permission matrix
+- ✅ **03-functional-requirements.md**: Complete CRUD operations, workflows, validation rules, EARS format
+- ✅ **04-user-scenarios.md**: Primary scenarios, alternative flows, edge cases, error recovery, journey diagrams
+- ✅ **05-data-model-concepts.md**: Entity definitions, attributes, relationships, lifecycle, constraints
+- ✅ **06-business-rules.md**: Validation rules, business logic, state management, complete rules matrix
+- ✅ **07-admin-features.md**: Admin operations, user management, monitoring, audit logging
+- ✅ **08-api-interaction-patterns.md**: Registration, authentication, todo operations, queries, errors
+- ✅ **09-non-functional-requirements.md**: Performance, security, reliability, scalability, compliance
+
+### Constraints & Principles
+
+**Minimum Viable Functionality**: Only essential features are included; every feature must justify its existence with clear business value.
+
+**Business Focus**: Documentation emphasizes business requirements and user needs, not technical solutions.
+
+**User-Centric Design**: Features are described from the user's perspective and in terms of user value.
+
+**Implementation-Ready**: All requirements are specific enough for immediate development without need for clarification or guesswork.
+
+**One-Pass Documentation**: All requirements are documented comprehensively in a single complete pass with no iterations required.
+
+**Waterfall Completeness**: Each phase builds upon previous documentation; all information needed for implementation is present.
+
+---
+
+## Quick Reference: Topics to Documents
+
+Use this table to quickly find which document contains information about a specific topic:
+
+| Topic | Primary Document | Related Documents | Key Section |
+|-------|-----------------|------------------|-------------|
+| Project vision & justification | 01-service-overview.md | 04-user-scenarios.md | Service Vision & Purpose |
+| User types & roles | 02-user-actors-authentication.md | 06-business-rules.md | User Actor Architecture |
+| Authentication process | 02-user-actors-authentication.md | 08-api-interaction-patterns.md | Authentication Requirements |
+| JWT & token management | 02-user-actors-authentication.md | 09-non-functional-requirements.md | Session Management |
+| Permission & access control | 02-user-actors-authentication.md | 06-business-rules.md | Permission Matrix |
+| Todo creation & editing | 03-functional-requirements.md | 04-user-scenarios.md | Core Todo Management Features |
+| Todo deletion & completion | 03-functional-requirements.md | 06-business-rules.md | Todo Deletion Rules |
+| Data validation rules | 06-business-rules.md | 03-functional-requirements.md | Validation Rules |
+| User workflows | 04-user-scenarios.md | 08-api-interaction-patterns.md | Primary User Scenarios |
+| Error handling examples | 04-user-scenarios.md | 08-api-interaction-patterns.md | Error Scenarios |
+| Todo entity details | 05-data-model-concepts.md | 03-functional-requirements.md | Todo Item Properties |
+| User entity details | 05-data-model-concepts.md | 02-user-actors-authentication.md | User Properties |
+| Data relationships | 05-data-model-concepts.md | 06-business-rules.md | Data Relationships |
+| Status transitions | 06-business-rules.md | 05-data-model-concepts.md | State Management Rules |
+| Admin capabilities | 07-admin-features.md | 02-user-actors-authentication.md | Admin Capabilities |
+| User management by admins | 07-admin-features.md | 06-business-rules.md | User Management |
+| System monitoring | 07-admin-features.md | 09-non-functional-requirements.md | System Monitoring |
+| Registration workflow | 08-api-interaction-patterns.md | 02-user-actors-authentication.md | User Registration Flow |
+| Login workflow | 08-api-interaction-patterns.md | 02-user-actors-authentication.md | User Login Flow |
+| Todo operations workflows | 08-api-interaction-patterns.md | 03-functional-requirements.md | Todo Management Patterns |
+| Response time expectations | 09-non-functional-requirements.md | 03-functional-requirements.md | Response Time Requirements |
+| Security requirements | 09-non-functional-requirements.md | 02-user-actors-authentication.md | Security & Privacy Requirements |
+| Data persistence | 09-non-functional-requirements.md | 05-data-model-concepts.md | Data Persistence & Backup |
+| System uptime & reliability | 09-non-functional-requirements.md | 04-user-scenarios.md | Reliability & Availability |
+| Scalability expectations | 09-non-functional-requirements.md | 01-service-overview.md | Scalability Expectations |
+| Performance metrics | 09-non-functional-requirements.md | 03-functional-requirements.md | Performance Requirements |
+
+---
+
+## Getting Started
+
+### For First-Time Readers
+
+1. **Start with [01-service-overview.md](./01-service-overview.md)** - Read this first to understand what the Todo application is and why it exists. (10 minutes)
+
+2. **Then read [04-user-scenarios.md](./04-user-scenarios.md)** - See realistic examples of how users interact with the system. (15 minutes)
+
+3. **Browse the Quick Reference table above** - Find specific topics you want to understand better and jump to the appropriate document.
+
+4. **Read documents in the order suggested for your role** - Follow the reading guide that matches your position (Developer, Manager, QA, or Architect).
+
+### For Implementation Teams
+
+1. **First: Follow the recommended reading order** for your role from the "Reading Guides for Different Audiences" section above.
+
+2. **Then: Use the Quick Reference table** to locate specific requirements quickly during implementation.
+
+3. **Refer to individual documents** for detailed specifications on each topic area.
+
+4. **Use Cross-Document Navigation** section to understand how topics relate across documents.
+
+### For Requirements Questions
+
+1. **Identify your topic** - What aspect of the system do you need information about?
+
+2. **Find in Quick Reference table** - Locate which document contains that topic
+
+3. **Read the Primary Document** - Start with the main document for that topic
+
+4. **Review Related Documents** - Read related sections for additional context
+
+5. **Check Cross-Document Navigation** - See how topics connect across the documentation suite
+
+---
+
+## Project Documentation Status
+
+- **Documentation Version**: 1.0 - Complete
+- **Total Documents**: 9 comprehensive requirements documents
+- **Total Content**: 50,000+ characters of detailed requirements
+- **Status**: Production-ready for backend development
+- **Last Updated**: 2025-10-31
+- **Next Phase**: Backend implementation based on these specifications
+
+### Documentation Validation Checklist
+
+✅ All 9 documents complete and cross-referenced
+✅ All user actors defined with clear permissions
+✅ All EARS-format requirements specified
+✅ All validation rules documented
+✅ All error scenarios described
+✅ All user workflows explained
+✅ All business rules specified
+✅ All performance requirements defined
+✅ All security requirements documented
+✅ All admin features described
+✅ Mermaid diagrams syntax validated
+✅ No technical specifications included
+✅ Business focus maintained throughout
+✅ Implementation-ready for developers
+
+---
+
+## Contact & Support for Developers
+
+### When Implementing This System
+
+- **For feature questions**: Refer to [03-functional-requirements.md](./03-functional-requirements.md)
+- **For validation rules**: Refer to [06-business-rules.md](./06-business-rules.md)
+- **For error scenarios**: Refer to [04-user-scenarios.md](./04-user-scenarios.md)
+- **For performance requirements**: Refer to [09-non-functional-requirements.md](./09-non-functional-requirements.md)
+- **For security requirements**: Refer to [02-user-actors-authentication.md](./02-user-actors-authentication.md) and [09-non-functional-requirements.md](./09-non-functional-requirements.md)
+- **For data model**: Refer to [05-data-model-concepts.md](./05-data-model-concepts.md)
+- **For admin features**: Refer to [07-admin-features.md](./07-admin-features.md)
+
+### Using These Requirements
+
+These requirements define **what the system must do and why** from a business perspective. They do NOT specify:
+
+- How to implement features (technical architecture decisions)
+- Which technologies to use (database, framework, libraries)
+- How to structure the code (design patterns, project layout)
+- API endpoint specifications (REST vs GraphQL vs gRPC)
+- Database schema details (tables, relationships, optimization)
+
+These implementation decisions are **yours to make** based on your technical expertise and project constraints. The requirements only define the business behavior that must be achieved.
 
 ---
 
 ## Conclusion
 
-The Todo List Application documentation suite provides a comprehensive, interconnected set of specifications that define all business requirements and operational guidance for building a minimal, focused productivity application. Whether you're a business stakeholder understanding the market opportunity, a product manager tracking features, or a developer implementing the system, this documentation suite provides the information you need in a clear, navigable format.
+The Todo Application documentation suite provides **complete, implementation-ready business requirements** for developing a production-quality todo list management system. Every feature, workflow, validation rule, and quality standard is specified in sufficient detail for backend developers to build the system without ambiguity.
 
-Use the guidance in this table of contents to find the right document for your role and questions. All documents are designed to work together as an integrated whole while remaining understandable on their own.
+The documentation follows the principle of **minimum viable functionality** - including only what's essential for a working todo application - making it focused, clear, and achievable. The EARS-formatted requirements ensure that every rule is testable and unambiguous.
 
-**Start with [Service Overview](./01-service-overview.md) to understand the business context, then reference other documents as needed for your specific role and questions.**
+All documentation is organized for quick reference and cross-navigation. Whether you're a developer implementing features, an architect designing the system, a QA engineer testing functionality, or a project manager tracking progress, you can quickly find the information you need.
+
+**Begin with the reading guide for your role, then use the Quick Reference table and Cross-Document Navigation to explore specific topics in depth.**
+
+---
+
+> *This documentation represents the complete business requirements for the Todo Application. Technical implementation is the responsibility of the development team, guided by these specifications.*

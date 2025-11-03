@@ -1,9 +1,16 @@
 import { Module } from "@nestjs/common";
 
-import { AuthUserController } from "./controllers/auth/user/AuthUserController";
-import { TodolistUserTodosController } from "./controllers/todoList/user/todos/TodolistUserTodosController";
+import { AuthTodouserController } from "./controllers/auth/todoUser/AuthTodouserController";
+import { TodolistTodouserTodousersController } from "./controllers/todoList/todoUser/todoUsers/TodolistTodouserTodousersController";
+import { TodolistTodouserTodousersSessionsController } from "./controllers/todoList/todoUser/todoUsers/sessions/TodolistTodouserTodousersSessionsController";
+import { TodolistTodouserTodosController } from "./controllers/todoList/todoUser/todos/TodolistTodouserTodosController";
 
 @Module({
-  controllers: [AuthUserController, TodolistUserTodosController],
+  controllers: [
+    AuthTodouserController,
+    TodolistTodouserTodousersController,
+    TodolistTodouserTodousersSessionsController,
+    TodolistTodouserTodosController,
+  ],
 })
 export class MyModule {}

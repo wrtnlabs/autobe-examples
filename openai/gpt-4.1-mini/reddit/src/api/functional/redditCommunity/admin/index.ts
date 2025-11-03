@@ -1,9 +1,9 @@
-export * as redditCommunityGuests from "./redditCommunityGuests/index";
-export * as redditCommunityMembers from "./redditCommunityMembers/index";
-export * as redditCommunityCommunityModerators from "./redditCommunityCommunityModerators/index";
-export * as redditCommunityAdmins from "./redditCommunityAdmins/index";
+export * as guests from "./guests/index";
+export * as users from "./users/index";
+export * as moderators from "./moderators/index";
+export * as admins from "./admins/index";
 export * as communities from "./communities/index";
-export * as posts from "./posts/index";
-export * as comments from "./comments/index";
-export * as reports from "./reports/index";
-export * as reportStatuses from "./reportStatuses/index";
+export * as content_reports from "./content_reports/index";
+export * as redditCommunitySystemConfigurations from "./redditCommunitySystemConfigurations/index";
+export * as redditCommunityContentTypes from "./redditCommunityContentTypes/index";
+export * as redditCommunityReportReasons from "./redditCommunityReportReasons/index";

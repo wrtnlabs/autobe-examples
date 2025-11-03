@@ -15,101 +15,94 @@ export async function postAuthGuestRefresh(props: {
 }): Promise<IDiscussionBoardGuest.IAuthorized> {
   const { body } = props;
 
-  // Step 1: Verify and decode the refresh token
-  let decoded: unknown;
+  // Verify and decode the refresh token
+  let decoded: {
+    id: string;
+    session_id: string;
+    type: "guest";
+    created_at: string;
+  };
+
   try {
     decoded = jwt.verify(body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    });
+    }) as {
+      id: string;
+      session_id: string;
+      type: "guest";
+      created_at: string;
+    };
   } catch (error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  // Validate decoded token structure
-  if (
-    typeof decoded !== "object" ||
-    decoded === null ||
-    !("id" in decoded) ||
-    !("type" in decoded) ||
-    typeof decoded.id !== "string" ||
-    typeof decoded.type !== "string"
-  ) {
-    throw new HttpException("Malformed refresh token payload", 401);
+  // Validate type matches expected actor type
+  if (decoded.type !== "guest") {
+    throw new HttpException("Invalid token type for guest refresh", 403);
   }
 
-  const payload = decoded as { id: string; type: string };
-
-  // Validate token type is for guest
-  if (payload.type !== "guest") {
-    throw new HttpException("Invalid token type for guest refresh", 401);
-  }
-
-  // Step 2: Fetch guest session from database
+  // Validate guest exists
   const guest = await MyGlobal.prisma.discussion_board_guests.findUnique({
-    where: { id: payload.id },
+    where: { id: decoded.id },
   });
 
   if (!guest) {
-    throw new HttpException("Guest session not found", 404);
+    throw new HttpException("Guest session not found or expired", 401);
   }
 
-  if (guest.deleted_at !== null) {
-    throw new HttpException("Guest session has been terminated", 401);
-  }
+  // Generate new tokens with SAME session_id
+  const now = toISOStringSafe(new Date());
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
-  // Step 3: Update last visit timestamp
-  const now = new Date();
-  const nowISO = toISOStringSafe(now);
+  const token: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: "guest",
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "guest",
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "14d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
 
-  await MyGlobal.prisma.discussion_board_guests.update({
-    where: { id: guest.id },
+  // Update guest's last activity timestamp
+  const updatedGuest = await MyGlobal.prisma.discussion_board_guests.update({
+    where: { id: decoded.id },
     data: {
-      last_visit: nowISO,
-      updated_at: nowISO,
+      last_activity_at: now,
     },
   });
 
-  // Step 4: Calculate token expiration times
-  const accessTokenExpiration = new Date(now);
-  accessTokenExpiration.setMinutes(accessTokenExpiration.getMinutes() + 30);
-
-  const refreshTokenExpiration = new Date(now);
-  refreshTokenExpiration.setDate(refreshTokenExpiration.getDate() + 7);
-
-  // Step 5: Generate new access token (30-minute expiration)
-  const newAccessToken = jwt.sign(
-    {
-      id: guest.id,
-      type: "guest",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "30m",
-      issuer: "autobe",
-    },
-  );
-
-  // Step 6: Generate new refresh token (7-day expiration) for token rotation security
-  const newRefreshToken = jwt.sign(
-    {
-      id: guest.id,
-      type: "guest",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-
-  // Step 7: Return authorized response with new tokens
+  // Return complete guest information with new tokens
   return {
-    id: guest.id,
-    token: {
-      access: newAccessToken,
-      refresh: newRefreshToken,
-      expired_at: toISOStringSafe(accessTokenExpiration),
-      refreshable_until: toISOStringSafe(refreshTokenExpiration),
-    },
+    id: updatedGuest.id as string & tags.Format<"uuid">,
+    session_token: updatedGuest.session_token,
+    ip_address: updatedGuest.ip_address,
+    user_agent: updatedGuest.user_agent ?? null,
+    last_activity_at: toISOStringSafe(updatedGuest.last_activity_at),
+    created_at: toISOStringSafe(updatedGuest.created_at),
+    token,
   };
 }

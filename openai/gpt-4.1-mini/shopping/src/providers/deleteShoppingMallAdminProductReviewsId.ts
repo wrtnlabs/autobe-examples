@@ -13,9 +13,29 @@ export async function deleteShoppingMallAdminProductReviewsId(props: {
   admin: AdminPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const { id } = props;
-  await MyGlobal.prisma.shopping_mall_product_reviews.findUniqueOrThrow({
-    where: { id },
+  const { admin, id } = props;
+
+  // Verify admin existence and non-deletion
+  const adminRecord = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+    where: { id: admin.id, deleted_at: null },
+    select: { id: true },
   });
-  await MyGlobal.prisma.shopping_mall_product_reviews.delete({ where: { id } });
+
+  if (!adminRecord) {
+    throw new HttpException("Unauthorized: Admin not found or deleted", 403);
+  }
+
+  try {
+    await MyGlobal.prisma.shopping_mall_product_reviews.delete({
+      where: { id },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      throw new HttpException("Product review not found", 404);
+    }
+    throw error;
+  }
 }

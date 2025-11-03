@@ -1,0 +1,313 @@
+/// Records individual upvotes and downvotes cast by members on posts. Each
+/// vote is a separate record enabling vote reversal, change tracking, and
+/// accurate karma calculation. Tracks voting behavior for reputation system
+/// and sorting algorithms.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post being voted on. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Reference to the member casting the vote. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Type of vote: 'upvote' or 'downvote'. Determines karma impact on post
+  /// author.
+  vote_type String
+  
+  /// Timestamp when vote was cast. Used for vote history and sorting.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id, community_platform_member_id], map: "community_platform_post_votes_community_platform_post__67424e40")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, vote_type], map: "community_platform_post_votes_community_platform_post__6071049b")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_post_votes_community_platform_membe_59eaad49")
+}
+
+/// Records individual upvotes and downvotes cast by members on comments.
+/// Parallel structure to post votes enabling independent voting on comments
+/// with separate karma tracking and sorting mechanics.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment being voted on. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// Reference to the member casting the vote. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Type of vote: 'upvote' or 'downvote'. Determines karma impact on comment
+  /// author.
+  vote_type String
+  
+  /// Timestamp when vote was cast. Used for vote history and trending
+  /// algorithms.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id, community_platform_member_id], map: "community_platform_comment_votes_community_platform_co_c5f3e82e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, vote_type], map: "community_platform_comment_votes_community_platform_co_61fbd00c")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_votes_community_platform_me_2c59b90a")
+}
+
+/// Tracks global karma points earned by each member across all communities.
+/// Aggregated from post and comment votes platform-wide. Determines
+/// reputation tier, privileges, and community discovery ranking.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_karma_global {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member whose global karma is tracked. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Total cumulative karma points earned from upvotes and downvotes across
+  /// all communities. Can be negative.
+  total_karma Int
+  
+  /// Karma earned specifically from post votes (upvotes - downvotes on posts).
+  post_karma Int
+  
+  /// Karma earned specifically from comment votes (upvotes - downvotes on
+  /// comments).
+  comment_karma Int
+  
+  /// Current reputation tier based on karma: Bronze (10-99), Silver (100-499),
+  /// Gold (500-1999), Platinum (2000-9999), Diamond (10000+).
+  current_reputation_tier String
+  
+  /// Timestamp when karma was last recalculated. Used to identify stale karma
+  /// records.
+  last_calculated_at DateTime
+  
+  /// Timestamp when karma record was created for this member (typically at
+  /// registration).
+  created_at DateTime
+  
+  /// Timestamp when karma was last updated due to voting activity or
+  /// moderation actions.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id], map: "community_platform_user_karma_global_community_platfor_e99e56aa")
+  
+  @@index([total_karma])
+  // spellchecker: ignore-next-line
+  @@index([current_reputation_tier, total_karma], map: "community_platform_user_karma_global_current_reputatio_bf0d7c40")
+}
+
+/// Tracks community-specific karma points earned by each member within
+/// individual communities. Separate from global karma, enabling expertise
+/// recognition within specific communities. Used for moderator eligibility
+/// and community-specific privileges.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_karma_community {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member whose community karma is tracked. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Reference to the community where karma is earned. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Total cumulative karma points earned in this specific community from
+  /// posts and comments.
+  total_karma Int
+  
+  /// Karma earned from posts created in this community.
+  post_karma Int
+  
+  /// Karma earned from comments created in this community.
+  comment_karma Int
+  
+  /// Total number of posts and comments created in this community by this
+  /// member.
+  contribution_count Int
+  
+  /// Member's ranking within this community by karma (1st, 2nd, 3rd, etc).
+  /// Recalculated periodically.
+  community_rank Int?
+  
+  /// Timestamp when community karma was last recalculated.
+  last_calculated_at DateTime
+  
+  /// Timestamp when member first earned karma in this community.
+  created_at DateTime
+  
+  /// Timestamp when community karma was last updated due to voting.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_community_id], map: "community_platform_user_karma_community_community_plat_ebcba696")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, total_karma], map: "community_platform_user_karma_community_community_plat_3e13ceea")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, total_karma], map: "community_platform_user_karma_community_community_plat_c51ff32d")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, community_rank], map: "community_platform_user_karma_community_community_plat_806ac17b")
+}
+
+/// Defines available badge types and their earning criteria. Badge
+/// definitions are static and reusable; actual badge awards to members are
+/// tracked in a separate table. Examples: 'Verified Expert in [Community]',
+/// 'Helpful Contributor', 'Content Creator', etc.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_badge_definitions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier code for badge type (e.g., 'verified_expert',
+  /// 'helpful_contributor'). Used for system references.
+  badge_code String
+  
+  /// Display name for badge shown to users (e.g., 'Verified Expert', 'Helpful
+  /// Contributor').
+  badge_name String
+  
+  /// Description explaining what the badge represents and how it's earned.
+  badge_description String
+  
+  /// URL to badge icon image for display on profiles and content.
+  badge_icon_url String?
+  
+  /// Category organizing badges: 'achievement', 'longevity', 'contribution',
+  /// 'moderation', 'special'.
+  badge_category String
+  
+  /// Description of criteria required to earn this badge (e.g., '5000+ karma
+  /// in specific community').
+  earning_criteria String
+  
+  /// Whether this badge type is hidden until earned (affects UI display of
+  /// badge progress).
+  is_hidden Boolean
+  
+  /// Display order for badges (lower numbers displayed first on user profiles).
+  sort_order Int
+  
+  /// Timestamp when badge definition was created in the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_user_badges community_platform_user_badges[]
+  
+  @@unique([badge_code])
+  // spellchecker: ignore-next-line
+  @@index([badge_category, sort_order], map: "community_platform_badge_definitions_badge_category_so_fd08fe09")
+}
+
+/// Tracks badges earned by members. Records which members have earned which
+/// badge definitions, when they earned them, and achievement context.
+/// Enables leaderboards and achievement displays on user profiles.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_badges {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who earned the badge. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Reference to the badge definition being awarded. {@link
+  /// community_platform_badge_definitions.id}
+  community_platform_badge_definition_id String
+  
+  /// Reference to community context if badge is community-specific (e.g.,
+  /// 'Verified Expert in [Community]'). Null for global badges. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String?
+  
+  /// Timestamp when badge was earned by member. Used for 'achievement
+  /// timeline' and sorting.
+  earned_at DateTime
+  
+  /// Context or metadata about badge earning (e.g., 'Reached 5000+ karma in
+  /// photography community'). Displayed in achievement details.
+  achievement_context String?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  badgeDefinition community_platform_badge_definitions @relation(fields: [community_platform_badge_definition_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_badge_definition_id, community_platform_community_id], map: "community_platform_user_badges_community_platform_memb_211ad3f6")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, earned_at], map: "community_platform_user_badges_community_platform_memb_d8e7116a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_badge_definition_id], map: "community_platform_user_badges_community_platform_badg_2f56848d")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, earned_at], map: "community_platform_user_badges_community_platform_comm_fde37caa")
+}

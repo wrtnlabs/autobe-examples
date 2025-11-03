@@ -5,12 +5,11 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
 
 /**
- * Authentication provider function for admin role.
- * Verifies JWT token, checks admin type, and authorizes against the database.
+ * Verifies authentication and existence for Admin role.
  *
- * @param request Express HTTP request object with headers
- * @returns AdminPayload if authenticated and enrolled
- * @throws ForbiddenException if not admin or not enrolled
+ * @param request Incoming HTTP request containing Bearer token
+ * @returns Authenticated AdminPayload
+ * @throws ForbiddenException if not an admin or not enrolled/active
  */
 export async function adminAuthorize(request: {
   headers: {
@@ -21,17 +20,16 @@ export async function adminAuthorize(request: {
   if (payload.type !== "admin") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
-  // payload.id is the admin id (top-level user table for admin)
-  // Validate admin exists and is not deleted or disabled
-  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+  // Validate admin exists and is not soft-deleted or inactive
+  const admin = await MyGlobal.prisma.shopping_admins.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
-      status: "active",
+      status: "active"
     },
   });
   if (admin === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("You're not enrolled or not active");
   }
   return payload;
 }

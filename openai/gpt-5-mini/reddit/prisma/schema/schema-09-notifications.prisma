@@ -1,0 +1,245 @@
+/// Durable notification records representing an attempt to notify a specific
+/// recipient about an application event. Reworked to use a polymorphic
+/// discriminator (target_type, target_id) rather than multiple nullable FK
+/// columns to avoid nullable-FK polymorphic anti-pattern and to ensure a
+/// single canonical reference to the target entity. Keeps deduplication via
+/// (recipient_id, notification_key), supports delivery metadata, and indexes
+/// for delivery queues and moderation queries.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target recipient's {@link community_bbs_communitymember.id}.
+  recipient_id String
+  
+  /// Initiating actor's {@link community_bbs_communitymember.id}. Nullable
+  /// when system-generated.
+  actor_id String?
+  
+  /// Polymorphic target type discriminator (e.g.,
+  /// 'post','comment','community','user'). Application resolves target_id
+  /// against the type.
+  target_type String
+  
+  /// Identifier of the target entity referenced by target_type.
+  target_id String
+  
+  /// Canonical deduplication key for this logical notification event (used
+  /// with recipient_id to prevent duplicate deliveries).
+  notification_key String
+  
+  /// Semantic type of the notification (e.g.,
+  /// 'reply','mention','moderator_action').
+  notification_type String
+  
+  /// Primary delivery channel intended (e.g., 'in_app','email','push').
+  channel String
+  
+  /// Delivery priority (e.g., 'critical','high','medium','low').
+  priority String
+  
+  /// Operational delivery status (e.g.,
+  /// 'pending','attempting','delivered','failed','suppressed').
+  status String
+  
+  /// Number of delivery attempts performed.
+  attempts Int
+  
+  /// Timestamp of the most recent delivery attempt.
+  last_attempt_at DateTime?
+  
+  /// Timestamp when the notification was successfully delivered to at least
+  /// one channel.
+  delivered_at DateTime?
+  
+  /// Scheduled send time for delayed/batched notifications (digest scheduling
+  /// or throttled delivery).
+  scheduled_at DateTime?
+  
+  /// Optional message body or excerpt used for in-app display or search; heavy
+  /// payloads should reference external URIs.
+  body String?
+  
+  /// Optional URI to an external JSON payload or media used by delivery
+  /// services.
+  payload_uri String?
+  
+  /// Short result code or message from the last delivery attempt (provider
+  /// responses, error codes).
+  delivery_result String?
+  
+  /// Flag set when notification is suppressed due to user preferences or rate
+  /// limiting.
+  suppressed Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp when the notification is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  recipient community_bbs_communitymember @relation("community_bbs_notifications_of_recipient_id", fields: [recipient_id], references: [id], onDelete: Cascade)
+  actor community_bbs_communitymember? @relation("community_bbs_notifications_of_actor_id", fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_id])
+  
+  @@unique([recipient_id, notification_key])
+  @@index([recipient_id, created_at])
+  @@index([status, priority, created_at])
+  // spellchecker: ignore-next-line
+  @@index([target_type, target_id, created_at], map: "community_bbs_notifications_target_type_target_id_crea_331896c0")
+}
+
+/// Batched email digest records for recipients. Each digest represents a
+/// scheduled aggregation window (window_start..window_end) for a particular
+/// recipient, tracks attempts and delivery result, and prevents duplicate
+/// digests via a unique key. These records are subsidiary operational
+/// artifacts used by the digesting pipeline.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_email_digests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Recipient community member who will receive the digest. {@link
+  /// community_bbs_communitymember.id}.
+  recipient_id String
+  
+  /// Optional admin/system actor who triggered the digest generation. {@link
+  /// community_bbs_systemadmin.id}.
+  generated_by_id String?
+  
+  /// Canonical deduplication key for this digest (for idempotent scheduling).
+  digest_key String
+  
+  /// Inclusive start of aggregation window for this digest.
+  window_start DateTime
+  
+  /// Exclusive end of aggregation window for this digest.
+  window_end DateTime
+  
+  /// When the digest is scheduled to be generated/sent.
+  scheduled_at DateTime
+  
+  /// When the digest was successfully sent (if sent).
+  sent_at DateTime?
+  
+  /// Number of delivery attempts for this digest.
+  attempt_count Int
+  
+  /// Digest lifecycle status (e.g., 'scheduled','processing','sent','failed').
+  status String
+  
+  /// Email subject used when sending the digest; nullable when subject is
+  /// generated at send time.
+  subject String?
+  
+  /// Rendered HTML/text body for the digest; large payloads may be stored
+  /// externally and referenced via payload_uri.
+  body String?
+  
+  /// Optional external URI to the digest payload (for large renders or
+  /// archival).
+  payload_uri String?
+  
+  /// Provider response or final status message for delivery.
+  delivery_result String?
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// Record update time.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for this digest record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  recipient community_bbs_communitymember @relation(fields: [recipient_id], references: [id], onDelete: Cascade)
+  generatedBy community_bbs_systemadmin? @relation(fields: [generated_by_id], references: [id], onDelete: Cascade)
+  
+  @@index([generated_by_id])
+  
+  @@unique([recipient_id, window_start])
+  @@index([scheduled_at, status])
+  @@index([recipient_id, created_at])
+}
+
+/// Device push token registry for community members. Stores per-device
+/// token, platform, provider details, last_seen timestamp and
+/// revocation/expiry flags. Used by delivery services to fan-out push
+/// notifications reliably and to manage token lifecycle and pruning.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_push_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning community member. {@link community_bbs_communitymember.id}.
+  community_member_id String
+  
+  /// Client-supplied device identifier (optional).
+  device_id String?
+  
+  /// Opaque push token issued by provider (should be stored encrypted at rest).
+  token String
+  
+  /// Push provider name (e.g., 'fcm','apns').
+  provider String
+  
+  /// Client platform (e.g., 'android','ios','web').
+  platform String?
+  
+  /// Last time the device checked in or was used for delivery.
+  last_seen DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Optional expiry timestamp after which token must not be used.
+  expired_at DateTime?
+  
+  /// Revocation flag; when true, token must not be used for delivery.
+  revoked Boolean
+  
+  /// Optional short client-provided fingerprint to help deduplicate device
+  /// entries without storing the full device_id.
+  fingerprint String?
+  
+  /// IP address where the registration request originated (for telemetry and
+  /// abuse detection).
+  created_by_ip String?
+  
+  /// Soft-delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  communityMember community_bbs_communitymember @relation(fields: [community_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  @@index([community_member_id, last_seen])
+}

@@ -1,0 +1,79 @@
+/// Core user identity and profile information for platform members
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_profile {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's unique identifier as seen in the interface. Must be 5-30
+  /// characters in length.
+  username String
+  
+  /// Brief description of the user in 10-200 characters. Optional field for
+  /// additional profile context.
+  bio String?
+  
+  /// URL to the user's profile picture (100x100px thumbnail and 500x500px main
+  /// image). Optional field.
+  profile_picture_url String?
+  
+  /// Timestamp when the user profile was first created.
+  created_at DateTime
+  
+  /// Timestamp when the user profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user profile was deleted (soft delete). Nullable, only
+  /// populated if profile is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_user_activity community_platform_user_activity[]
+  
+  @@unique([username])
+}
+
+/// Tracks user activities and interactions across the platform for activity
+/// monitoring and analytics
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_activity {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the activity. {@link
+  /// community_platform_user_profile.id}.
+  user_id String
+  
+  /// Type of user activity (e.g., 'post_created', 'comment_created', 'upvote',
+  /// 'downvote').
+  activity_type String
+  
+  /// ID of the content that was interacted with. Nullable for activities
+  /// without specific content (like profile updates).
+  related_content_id String?
+  
+  /// Precise timestamp when the activity occurred.
+  timestamp DateTime
+  
+  /// Additional context or metadata about the activity. Optional field for
+  /// additional information.
+  context String?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_user_profile @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+}

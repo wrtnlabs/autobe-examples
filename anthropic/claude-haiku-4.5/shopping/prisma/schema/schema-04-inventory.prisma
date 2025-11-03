@@ -1,0 +1,391 @@
+/// Current inventory state tracking at the SKU (Stock Keeping Unit) level.
+/// This table maintains the latest inventory counts for each product
+/// variant, including on-hand quantity, reserved units, and committed sales.
+/// The SKU-level approach enables precise tracking of variant-specific
+/// availability without aggregating across different colors, sizes, or
+/// configurations. This table is the authoritative source for real-time
+/// inventory status displayed to customers and sellers.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_skus {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to product variant being tracked. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Reference to seller who owns this SKU inventory. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Unique SKU identifier for this variant (e.g., SHIRT-BLUE-M-001). Maximum
+  /// 50 characters, alphanumeric with hyphens and underscores allowed.
+  sku_code String
+  
+  /// Current physical inventory count available in warehouse. Non-negative
+  /// integer representing units physically in stock.
+  quantity_on_hand Int
+  
+  /// Units temporarily held for active customer shopping carts. These units
+  /// are unavailable for other customers but not yet committed to orders.
+  quantity_reserved Int
+  
+  /// Units allocated to confirmed orders awaiting fulfillment. These represent
+  /// sold inventory in the fulfillment pipeline.
+  quantity_committed Int
+  
+  /// Calculated field: quantity_on_hand minus quantity_reserved minus
+  /// quantity_committed. Represents units available for immediate purchase.
+  quantity_available Int
+  
+  /// Inventory threshold that triggers low-stock alerts to seller. When
+  /// quantity_on_hand falls to or below this level, seller receives
+  /// notification. Default value 10 units.
+  reorder_level Int
+  
+  /// Suggested reorder amount when stock falls below reorder level. Calculated
+  /// based on sales velocity and storage capacity. Default 50 units.
+  reorder_quantity Int
+  
+  /// Physical warehouse or storage location for this SKU (e.g., 'Warehouse A -
+  /// Shelf 3-B'). Optional field for sellers with multiple fulfillment
+  /// locations.
+  warehouse_location String?
+  
+  /// Inventory status: 'on_hand' (in stock and available), 'back_order'
+  /// (temporarily out, reorder pending), 'discontinued' (no longer stocked).
+  /// Determines product availability to customers.
+  status String
+  
+  /// Timestamp of most recent physical inventory count or audit for this SKU.
+  /// Used to identify stale inventory data.
+  last_inventory_count_date DateTime?
+  
+  /// Timestamp when any inventory field was last modified. Updated on every
+  /// inventory change (purchase, restock, adjustment).
+  last_updated DateTime
+  
+  /// Timestamp when this SKU inventory record was first created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_inventory_movements shopping_mall_inventory_movements[]
+  shopping_mall_stock_levels_by_location shopping_mall_stock_levels_by_location[]
+  shopping_mall_inventory_alerts shopping_mall_inventory_alerts[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id], map: "shopping_mall_inventory_skus_shopping_mall_product_var_9102cba1")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id, shopping_mall_seller_id], map: "shopping_mall_inventory_skus_shopping_mall_product_var_e057bb62")
+  @@unique([sku_code])
+  @@index([shopping_mall_seller_id, status])
+  @@index([quantity_available])
+  @@index([last_updated])
+}
+
+/// Tracks temporary inventory holds for items in customer shopping carts.
+/// When a customer adds items to cart, inventory is reserved to prevent
+/// overselling during the checkout window. Reservations are automatically
+/// released after inactivity timeout (15 minutes default) or converted to
+/// committed sales when order is placed. This table enables accurate
+/// real-time availability display to multiple concurrent customers.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_reservations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the SKU being reserved. {@link
+  /// shopping_mall_inventory_skus.id}
+  shopping_mall_inventory_sku_id String
+  
+  /// Reference to customer who created the reservation. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Reference to shopping cart containing this reservation. {@link
+  /// shopping_mall_shopping_carts.id}
+  shopping_mall_shopping_cart_id String?
+  
+  /// Number of units reserved for this customer's cart. Positive integer
+  /// representing held inventory.
+  quantity_reserved Int
+  
+  /// Timestamp when inventory was reserved (when customer added item to cart).
+  reserved_at DateTime
+  
+  /// Timestamp when reservation automatically expires if not converted to
+  /// order. Typically 15 minutes after reserved_at. After this time, inventory
+  /// is automatically released.
+  expires_at DateTime
+  
+  /// Reservation status: 'active' (currently reserved), 'expired' (reservation
+  /// timed out), 'released' (customer removed from cart), 'converted'
+  /// (converted to committed sales). Used to track reservation lifecycle.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  inventorySku shopping_mall_inventory_skus @relation(fields: [shopping_mall_inventory_sku_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  shoppingCart shopping_mall_shopping_carts? @relation(fields: [shopping_mall_shopping_cart_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_sku_id], map: "shopping_mall_inventory_reservations_shopping_mall_inv_ae92d13a")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_inventory_reservations_shopping_mall_cus_a770fac9")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shopping_cart_id], map: "shopping_mall_inventory_reservations_shopping_mall_sho_8b63ee9b")
+  @@index([status, expires_at])
+  @@index([expires_at])
+}
+
+/// Immutable audit trail of every inventory change (purchase, restock,
+/// return, adjustment, damage). Each movement record captures the complete
+/// context of the inventory change including reason, actor, and before/after
+/// quantities. This append-only table prevents data loss and enables
+/// complete compliance reporting and historical analysis. Movements are
+/// never updated, only added; inventory corrections are recorded as new
+/// movements.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_movements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to SKU affected by this movement. {@link
+  /// shopping_mall_inventory_skus.id}
+  shopping_mall_inventory_sku_id String
+  
+  /// Reference to seller owning the inventory affected by this movement.
+  /// {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Reference to order if movement is purchase-related. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String?
+  
+  /// Type of inventory movement: 'sale' (customer purchase), 'restock' (new
+  /// inventory received), 'return' (customer returned item), 'adjustment'
+  /// (manual correction), 'damage' (damaged items removed), 'loss' (inventory
+  /// loss/theft), 'correction' (system correction)
+  movement_type String
+  
+  /// Quantity affected by movement. Positive for increases (restock), negative
+  /// for decreases (sale, damage). Can be zero for no-op movements.
+  quantity_change Int
+  
+  /// Inventory on-hand quantity before this movement. Snapshot of the state
+  /// before change.
+  quantity_before Int
+  
+  /// Inventory on-hand quantity after this movement. Should equal
+  /// quantity_before + quantity_change.
+  quantity_after Int
+  
+  /// Explanation for the inventory movement (e.g., 'Customer order placed',
+  /// 'Damaged in warehouse', 'Supplier restock received', 'Inventory count
+  /// discrepancy'). Maximum 500 characters.
+  reason String
+  
+  /// Who initiated the movement: 'customer' (via purchase), 'seller' (via
+  /// restock upload), 'admin' (manual adjustment), 'system' (automatic process
+  /// like failed payment release)
+  initiated_by_actor_type String
+  
+  /// ID of the actor (customer/seller/admin user) who initiated the movement.
+  /// NULL for system-initiated movements.
+  initiated_by_actor_id String?
+  
+  /// External reference for tracing the movement to source (e.g., order ID,
+  /// return authorization number, receipt number). Optional context for audit
+  /// purposes.
+  reference_id String?
+  
+  /// Exact timestamp when inventory movement occurred. Used for complete audit
+  /// trail and chronological ordering.
+  timestamp DateTime
+  
+  /// Additional notes about the movement (e.g., 'Items received in damaged
+  /// condition', 'Partial return accepted'). Maximum 1000 characters,
+  /// optional.
+  notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  inventorySku shopping_mall_inventory_skus @relation(fields: [shopping_mall_inventory_sku_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_sku_id, timestamp], map: "shopping_mall_inventory_movements_shopping_mall_invent_14e7a300")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, timestamp], map: "shopping_mall_inventory_movements_shopping_mall_seller_bb81fc78")
+  @@index([shopping_mall_order_id])
+  @@index([movement_type])
+  @@index([timestamp])
+}
+
+/// Optional multi-location inventory tracking for sellers with multiple
+/// warehouses or fulfillment centers. Tracks inventory quantities at
+/// specific geographic locations or facilities. Enables sellers to manage
+/// stock across warehouses and make location-based fulfillment decisions.
+/// Only used if seller has multiple locations; single-location sellers use
+/// main inventory_skus table.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_stock_levels_by_location {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to SKU tracked at this location. {@link
+  /// shopping_mall_inventory_skus.id}
+  shopping_mall_inventory_sku_id String
+  
+  /// Reference to seller who owns this location inventory. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Unique identifier for warehouse/fulfillment location (e.g.,
+  /// 'WAREHOUSE_NYC', 'WAREHOUSE_LA', 'FULFILLMENT_CENTER_1'). Maximum 50
+  /// characters.
+  location_code String
+  
+  /// Human-readable location name (e.g., 'New York Warehouse', 'Los Angeles
+  /// Distribution Center'). Maximum 200 characters.
+  location_name String
+  
+  /// Physical address of the warehouse location for reference and shipping
+  /// purposes. Maximum 500 characters.
+  location_address String?
+  
+  /// Physical inventory quantity at this specific location. Non-negative
+  /// integer.
+  quantity_on_hand Int
+  
+  /// Units reserved for orders at this location (should sum to
+  /// quantity_on_hand across all locations).
+  quantity_reserved Int
+  
+  /// Timestamp when inventory was last synchronized across locations. Used to
+  /// identify stale data.
+  last_inventory_sync DateTime?
+  
+  /// Whether this location is currently active for fulfillment. Inactive
+  /// locations may be archived or temporarily closed.
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  inventorySku shopping_mall_inventory_skus @relation(fields: [shopping_mall_inventory_sku_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inventory_sku_id, location_code], map: "shopping_mall_stock_levels_by_location_shopping_mall_i_f43722e2")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, is_active], map: "shopping_mall_stock_levels_by_location_shopping_mall_s_cedcaa70")
+  @@index([location_code])
+}
+
+/// Notifications triggered when inventory reaches threshold conditions (low
+/// stock, stockout, overstock). Tracks alert generation and acknowledgment
+/// status. Helps sellers proactively manage inventory before stockouts
+/// occur. Supports both automatic threshold-based alerts and manual alerts
+/// for inventory issues.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to SKU that triggered the alert. {@link
+  /// shopping_mall_inventory_skus.id}
+  shopping_mall_inventory_sku_id String
+  
+  /// Reference to seller who owns the SKU and receives the alert. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Type of inventory condition triggering alert: 'low_stock' (below reorder
+  /// level), 'stockout' (zero available), 'overstock' (exceeds warehouse
+  /// capacity), 'slow_moving' (high inventory but low sales), 'discrepancy'
+  /// (inventory mismatch)
+  alert_type String
+  
+  /// Severity level: 'info' (informational only), 'warning' (action
+  /// recommended), 'critical' (immediate action required). Determines
+  /// notification urgency.
+  alert_level String
+  
+  /// Current inventory level when alert was triggered. Snapshot for reference.
+  current_quantity Int
+  
+  /// Threshold that was crossed to trigger this alert (e.g., reorder level,
+  /// zero for stockout, warehouse capacity limit).
+  threshold_quantity Int
+  
+  /// Alert message description (e.g., 'Stock level fell below reorder
+  /// threshold of 10 units'). Maximum 500 characters.
+  message String
+  
+  /// Timestamp when alert was generated.
+  created_at DateTime
+  
+  /// Timestamp when seller acknowledged/dismissed the alert. NULL if not yet
+  /// acknowledged.
+  acknowledged_at DateTime?
+  
+  /// Whether alert is still active or has been resolved. Alert becomes
+  /// inactive when inventory recovers to normal levels.
+  is_active Boolean
+  
+  /// Timestamp when notification was sent to seller (email, SMS, in-app). Used
+  /// to track notification delivery.
+  notification_sent_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inventorySku shopping_mall_inventory_skus @relation(fields: [shopping_mall_inventory_sku_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inventory_sku_id], map: "shopping_mall_inventory_alerts_shopping_mall_inventory_a29fea76")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, is_active], map: "shopping_mall_inventory_alerts_shopping_mall_seller_id_e6919b0c")
+  @@index([alert_type, alert_level])
+  @@index([created_at])
+}

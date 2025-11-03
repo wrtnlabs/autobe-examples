@@ -1,0 +1,147 @@
+/// Platform channels that organize content streams and communities. Channels
+/// represent distinct content categories or streams that users can subscribe
+/// to and browse. Each channel contains multiple communities and provides a
+/// way to categorize content across the platform. {@link
+/// reddit_clone_communities.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel name that identifies the content stream.
+  name String
+  
+  /// Detailed description explaining the channel's purpose and content focus.
+  description String?
+  
+  /// Unique channel code used for URL generation and API references.
+  code String
+  
+  /// Whether the channel is currently active and visible to users.
+  is_active Boolean
+  
+  /// Order in which channels should be displayed in listings.
+  display_order Int
+  
+  /// Timestamp when the channel was created.
+  created_at DateTime
+  
+  /// Timestamp when the channel was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the channel was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@unique([name])
+  @@index([is_active, display_order])
+  @@index([created_at])
+}
+
+/// Organizational sections that group channels and content for better
+/// navigation. Sections provide a higher-level organizational structure for
+/// the platform, allowing content to be grouped into logical categories that
+/// span multiple channels. {@link reddit_clone_channels.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Section name that identifies the organizational category.
+  name String
+  
+  /// Detailed description explaining the section's purpose and content scope.
+  description String?
+  
+  /// Unique section code used for URL generation and API references.
+  code String
+  
+  /// Whether the section is currently active and visible to users.
+  is_active Boolean
+  
+  /// Order in which sections should be displayed in navigation.
+  display_order Int
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@unique([name])
+  @@index([is_active, display_order])
+  @@index([created_at])
+}
+
+/// Platform-wide configuration settings that control system behavior and
+/// features. These configurations store global platform settings that affect
+/// all users and communities, including feature flags, limits, and system
+/// parameters.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key that identifies the setting.
+  key String
+  
+  /// Configuration value stored as string for flexibility.
+  value String
+  
+  /// Detailed description explaining the configuration's purpose and usage.
+  description String?
+  
+  /// Data type of the configuration value (string, boolean, integer, double).
+  data_type String
+  
+  /// Whether the configuration is currently active and being applied.
+  is_active Boolean
+  
+  /// Category grouping for organizing related configurations.
+  category String
+  
+  /// Configuration version for tracking changes and updates.
+  version Int
+  
+  /// Timestamp when the configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the configuration was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([category, is_active])
+  @@index([created_at])
+  @@index([version])
+}

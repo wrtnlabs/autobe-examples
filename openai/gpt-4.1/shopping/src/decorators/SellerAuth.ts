@@ -5,8 +5,9 @@ import { Singleton } from "tstl";
 import { sellerAuthorize } from "../providers/authorize/sellerAuthorize";
 
 /**
- * Decorator to inject the authenticated seller payload into controller methods.
- * Adds bearer token security scheme for Swagger UI.
+ * Seller authentication decorator for NestJS controller parameters.
+ *
+ * Usage: In controller method parameters, use `@SellerAuth() seller: SellerPayload`
  */
 export const SellerAuth =
   (): ParameterDecorator =>

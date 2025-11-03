@@ -1,0 +1,385 @@
+/// Represents commission calculations for each order item, tracking seller
+/// and platform revenue share based on category rates
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_commissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Commission calculated for this order item. {@link
+  /// shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// Seller who earned this commission. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Product category for commission rate application. {@link
+  /// shopping_mall_product_categories.id}
+  shopping_mall_product_category_id String
+  
+  /// Percentage rate applied to calculate commission (e.g., 0.08 for 8%)
+  commission_rate Float
+  
+  /// Base amount used for commission calculation from order item
+  order_item_amount Float
+  
+  /// Commission amount charged to seller (platform's share)
+  platform_commission Float
+  
+  /// Net amount seller receives after commission deduction
+  seller_commission Float
+  
+  /// Status: 'pending', 'calculated', 'paid', 'refunded'
+  commission_status String
+  
+  /// When commission was calculated from order
+  calculated_at DateTime
+  
+  /// When commission was included in payout to seller
+  paid_at DateTime?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  category shopping_mall_product_categories @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, calculated_at], map: "shopping_mall_commissions_shopping_mall_seller_id_calc_307b45e1")
+  @@index([commission_status, created_at])
+  @@index([shopping_mall_product_category_id])
+}
+
+/// Defines commission percentage rates by product category with seller tier
+/// support and promotional adjustments
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_commission_rates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product category this rate applies to. {@link
+  /// shopping_mall_product_categories.id}
+  shopping_mall_product_category_id String
+  
+  /// Human-readable category name for commission rate identification
+  category_name String
+  
+  /// Base commission percentage (e.g., 0.08 for 8% electronics category)
+  commission_rate Float
+  
+  /// JSON configuration for tier-based discounts (bronze, silver, gold,
+  /// platinum)
+  seller_tier_discounts String?
+  
+  /// Minimum seller tier to qualify for this rate (bronze, silver, gold,
+  /// platinum)
+  minimum_seller_tier String?
+  
+  /// Temporary reduced rate during promotional campaigns
+  promotional_rate Float?
+  
+  /// When promotional rate becomes effective
+  promotion_start_at DateTime?
+  
+  /// When promotional rate expires
+  promotion_end_at DateTime?
+  
+  /// Whether this commission rate is currently active
+  is_active Boolean
+  
+  /// When commission rate becomes effective
+  effective_from DateTime
+  
+  /// When commission rate expires, null if ongoing
+  effective_until DateTime?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_product_categories @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_category_id], map: "shopping_mall_commission_rates_shopping_mall_product_c_768340c9")
+  @@index([is_active, effective_from])
+}
+
+/// Manages seller payout schedules and settlements with commission hold
+/// periods and transaction reconciliation
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_payouts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller receiving this payout. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Start of payout period (typically 14-day period)
+  payout_period_start DateTime
+  
+  /// End of payout period
+  payout_period_end DateTime
+  
+  /// Total sales revenue during period before deductions
+  gross_sales_amount Float
+  
+  /// Total commissions deducted from sales
+  platform_commissions Float
+  
+  /// Transaction fees charged by payment processors
+  payment_processing_fees Float
+  
+  /// Amount reversed due to returns/cancellations
+  refunds_adjustments Float
+  
+  /// Final amount paid to seller after all deductions
+  net_payout_amount Float
+  
+  /// Status: 'calculated', 'held', 'processing', 'paid', 'failed'
+  payout_status String
+  
+  /// Date when payout becomes eligible (14-day post-delivery hold)
+  hold_until_date DateTime
+  
+  /// When payout was processed and transferred
+  paid_at DateTime?
+  
+  /// Bank transfer or payment gateway reference ID
+  transaction_reference String?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id, payout_period_start, payout_period_end], map: "shopping_mall_seller_payouts_shopping_mall_seller_id_p_6dd4e8a9")
+  @@index([payout_status, hold_until_date])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, payout_status], map: "shopping_mall_seller_payouts_shopping_mall_seller_id_p_263e1865")
+}
+
+/// Tracks refund requests and processing with commission reversals and
+/// financial adjustments
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order being refunded. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Seller whose commission is being reversed. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Total refund amount issued to customer
+  refund_amount Float
+  
+  /// Reason for refund: 'customer_request', 'defective', 'not_as_described',
+  /// 'damaged', 'seller_cancellation'
+  refund_reason String
+  
+  /// Portion of commission reversed from platform to seller
+  commission_reversal_amount Float
+  
+  /// Amount refunded from seller's account
+  seller_refund_amount Float
+  
+  /// Amount absorbed by platform (if any)
+  platform_refund_amount Float
+  
+  /// Status: 'requested', 'approved', 'processing', 'completed', 'rejected'
+  refund_status String
+  
+  /// When refund was requested by customer
+  requested_at DateTime
+  
+  /// When refund was approved by admin/seller
+  approved_at DateTime?
+  
+  /// When refund was processed and funds transferred
+  completed_at DateTime?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  @@index([refund_status, created_at])
+  @@index([shopping_mall_seller_id, completed_at])
+  @@index([requested_at])
+}
+
+/// Complete audit trail of all financial movements including commissions,
+/// payouts, refunds, and account adjustments
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_financial_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Primary party in financial transaction (usually seller). {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Related transaction causing reversal/adjustment. {@link
+  /// shopping_mall_financial_transactions.id}
+  reference_transaction_id String?
+  
+  /// Transaction type: 'commission_earned', 'commission_reversed',
+  /// 'payout_processed', 'refund_issued', 'account_adjustment',
+  /// 'platform_adjustment'
+  transaction_type String
+  
+  /// Transaction amount (signed, positive for credits, negative for debits)
+  transaction_amount Float
+  
+  /// Transaction currency (typically USD or platform default)
+  transaction_currency String
+  
+  /// Human-readable description of the transaction for audit trail
+  description String
+  
+  /// Account balance after this transaction (derived from cumulative amounts)
+  running_balance Float
+  
+  /// External reference type: 'order', 'commission', 'payout', 'refund'
+  reference_type String?
+  
+  /// External reference ID linking to source transaction
+  reference_id String?
+  
+  /// Date when financial impact occurred
+  transaction_date DateTime
+  
+  /// When transaction was processed and recorded
+  processed_at DateTime
+  
+  /// Status: 'posted', 'pending', 'reversed', 'cancelled'
+  status String
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  referenceTransaction shopping_mall_financial_transactions? @relation("recursive", fields: [reference_transaction_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_financial_transactions[] @relation("recursive")
+  
+  // spellchecker: ignore-next-line
+  @@index([reference_transaction_id], map: "shopping_mall_financial_transactions_reference_transac_dd64925d")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, transaction_date], map: "shopping_mall_financial_transactions_shopping_mall_sel_38131ab1")
+  // spellchecker: ignore-next-line
+  @@index([transaction_type, status], map: "shopping_mall_financial_transactions_transaction_type__3b04e03b")
+  // spellchecker: ignore-next-line
+  @@index([reference_type, reference_id], map: "shopping_mall_financial_transactions_reference_type_re_5a21f006")
+}
+
+/// Real-time seller account balance tracking with snapshot history for
+/// accurate financial reporting and reconciliation
+///
+/// @namespace Financial
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_account_balances {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller whose account balance is being tracked. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Available balance eligible for payout (after hold periods)
+  available_balance Float
+  
+  /// Balance in holding period awaiting payout eligibility
+  held_balance Float
+  
+  /// Total account balance (available + held)
+  total_balance Float
+  
+  /// Account currency code (typically USD)
+  currency_code String
+  
+  /// Reference to last transaction affecting balance. {@link
+  /// shopping_mall_financial_transactions.id}
+  last_transaction_id String?
+  
+  /// When balance was last recalculated
+  calculated_at DateTime
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_seller_id])
+  @@index([calculated_at])
+}

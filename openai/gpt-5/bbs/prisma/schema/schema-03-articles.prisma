@@ -1,218 +1,212 @@
-/// Authored, published content items forming the core discussion surface.
-/// Each post is created by a user and is discoverable via search, topic
-/// associations, and timelines. Related entities like votes, bookmarks,
-/// polls, and live threads exist in other components and reference this
-/// table. Supports scheduled publishing via scheduled_publish_at and
-/// maintains publication timestamps for feeds. Version history is captured
-/// in {@link econ_discuss_post_snapshots}.
+/// Discussion board posts (articles) authored by users. Contains the title,
+/// body, and lifecycle status with publication and edit timestamps. Each
+/// post is created by a {@link civic_board_users} actor. Optionally links to
+/// the authoring {@link civic_board_user_sessions} for audit context without
+/// risking content deletion when sessions expire (nullable +
+/// onDelete:SetNull). Comments ({@link civic_board_comments}) and
+/// attachments ({@link civic_board_post_attachments}) reference this entity.
+/// Visibility and moderation operate via status (Published/Hidden/Deleted)
+/// and administrative records in {@link civic_board_moderation_actions}.
 ///
 /// @namespace Articles
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_discuss_posts {
+model civic_board_posts {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Author user's {@link econ_discuss_users.id}. Identifies who created the
-  /// post.
-  econ_discuss_user_id String
+  /// Author user's {@link civic_board_users.id}.
+  civic_board_user_id String
   
-  /// Human-readable post title for listing and SEO. Required at publish time.
+  /// Authoring session's {@link civic_board_user_sessions.id}. Nullable and
+  /// set null on session deletion to preserve content.
+  civic_board_user_session_id String?
+  
+  /// Post title. Business limits: 1–120 characters, trimmed, non-whitespace.
   title String
   
-  /// Main content body in sanitized, possibly markdown-like format. Used for
-  /// full-text search.
+  /// Post body text. Business limits: 1–20,000 characters, plain text with
+  /// line breaks allowed.
   body String
   
-  /// Optional short abstract or excerpt for previews and feeds.
-  summary String?
+  /// Lifecycle status of the post. Expected values: "Published", "Hidden", or
+  /// "Deleted". Used to control visibility and commenting eligibility.
+  status String
   
-  /// Publication timestamp. Supports chronological feeds and scheduling
-  /// validations. May equal created_at on immediate publish.
-  published_at DateTime?
+  /// Publication timestamp recorded when the post becomes publicly visible
+  /// (Published).
+  published_at DateTime
   
-  /// Optional scheduled time for future publication (stored in UTC, displayed
-  /// in user timezone). Used to validate scheduling windows and drive
-  /// publisher jobs.
-  scheduled_publish_at DateTime?
+  /// Last content edit timestamp within the allowed edit window; null if never
+  /// edited.
+  edited_at DateTime?
   
-  /// Creation timestamp for the post record.
+  /// Creation timestamp (auditable).
   created_at DateTime
   
-  /// Last update timestamp for the post record.
+  /// Last update timestamp for this record (auditable).
   updated_at DateTime
   
-  /// Soft deletion timestamp when the post is removed from public visibility.
+  /// Soft deletion timestamp. Null when active; set when Deleted to support
+  /// retention/purge policies.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  author econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  author civic_board_users @relation(fields: [civic_board_user_id], references: [id], onDelete: Cascade)
+  authorSession civic_board_user_sessions? @relation(fields: [civic_board_user_session_id], references: [id], onDelete: Cascade)
   
-  econ_discuss_reputation_events econ_discuss_reputation_events[]
-  econ_discuss_post_drafts econ_discuss_post_drafts[]
-  econ_discuss_post_topics econ_discuss_post_topics[]
-  econ_discuss_post_snapshots econ_discuss_post_snapshots[]
-  econ_discuss_post_votes econ_discuss_post_votes[]
-  econ_discuss_post_bookmarks econ_discuss_post_bookmarks[]
-  econ_discuss_polls econ_discuss_polls?
-  econ_discuss_live_threads econ_discuss_live_threads?
+  civic_board_post_attachments civic_board_post_attachments[]
+  civic_board_comments civic_board_comments[]
+  civic_board_report_of_posts civic_board_report_of_posts[]
+  civic_board_post_reactions civic_board_post_reactions[]
   
-  @@index([econ_discuss_user_id, created_at])
+  @@index([status, published_at])
+  @@index([civic_board_user_id, created_at])
+  @@index([civic_board_user_session_id, created_at])
   @@index([created_at])
-  @@index([published_at])
-  @@index([econ_discuss_user_id, published_at])
 }
 
-/// Private, autosaved drafts authored by users for long-form writing before
-/// publication. Drafts are not publicly visible and support cross-device
-/// synchronization and conflict resolution in application logic. Optionally
-/// linked to a resulting published post for traceability. {@link
-/// econ_discuss_users} authors; optional link to {@link econ_discuss_posts}.
+/// File attachments associated with posts. Attachments inherit visibility
+/// rules from their parent {@link civic_board_posts}. Each row stores
+/// immutable file metadata and storage URI. Only posts (not comments) can
+/// have attachments. Uploaded by a user through a session for auditability.
+/// Session link is nullable and set null on deletion to avoid unintended
+/// content loss.
 ///
 /// @namespace Articles
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_discuss_post_drafts {
+model civic_board_post_attachments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Author user's {@link econ_discuss_users.id}. Owner of this draft.
-  econ_discuss_user_id String
+  /// Parent post's {@link civic_board_posts.id}.
+  civic_board_post_id String
   
-  /// Optional linkage to the published post's {@link econ_discuss_posts.id}
-  /// created from this draft (if any). Multiple drafts may relate to one post.
-  econ_discuss_post_id String?
+  /// Uploader user's {@link civic_board_users.id}.
+  civic_board_user_id String
   
-  /// Working draft title. Optional to allow early autosave before title is
-  /// chosen.
-  title String?
+  /// Uploader session's {@link civic_board_user_sessions.id}. Nullable and set
+  /// null on session deletion to preserve the attachment record.
+  civic_board_user_session_id String?
   
-  /// Working draft body content. Optional to support early autosaves.
-  body String?
+  /// Storage URI pointing to the attached file object.
+  uri String
   
-  /// Creation timestamp for the draft.
+  /// User-facing original filename after sanitization; used for display and
+  /// duplicate prevention per post.
+  original_filename String
+  
+  /// MIME type detected/accepted (e.g., image/jpeg, image/png, image/gif,
+  /// application/pdf).
+  content_type String
+  
+  /// File size in bytes; used to enforce per-file and per-post total limits in
+  /// application logic.
+  byte_size Int
+  
+  /// Image width in pixels if the attachment is an image; null for non-image
+  /// types.
+  image_width Int?
+  
+  /// Image height in pixels if the attachment is an image; null for non-image
+  /// types.
+  image_height Int?
+  
+  /// Attachment creation timestamp.
   created_at DateTime
   
-  /// Last update timestamp for the draft (used by autosave sync and ordering).
+  /// Attachment last update timestamp.
   updated_at DateTime
   
-  /// Soft deletion timestamp when the draft is discarded.
+  /// Soft deletion timestamp for retention/purge handling.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  author econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
-  publishedPost econ_discuss_posts? @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
+  post civic_board_posts @relation(fields: [civic_board_post_id], references: [id], onDelete: Cascade)
+  uploader civic_board_users @relation(fields: [civic_board_user_id], references: [id], onDelete: Cascade)
+  uploaderSession civic_board_user_sessions? @relation(fields: [civic_board_user_session_id], references: [id], onDelete: Cascade)
   
-  @@index([econ_discuss_post_id])
-  
-  @@index([econ_discuss_user_id, updated_at])
-  @@index([updated_at])
+  // spellchecker: ignore-next-line
+  @@unique([civic_board_post_id, original_filename], map: "civic_board_post_attachments_civic_board_post_id_origi_62f65da8")
+  @@index([civic_board_post_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([content_type, civic_board_post_id], map: "civic_board_post_attachments_content_type_civic_board__e5372723")
+  @@index([civic_board_user_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([civic_board_user_session_id, created_at], map: "civic_board_post_attachments_civic_board_user_session__67e7f3cb")
 }
 
-/// Junction association between posts and curated topics to support
-/// filtering, discovery, and subscriptions. Enforces uniqueness per (post,
-/// topic). {@link econ_discuss_posts} to {@link econ_discuss_topics}.
-/// Includes additional recency index for topic pages.
+/// Plain-text comments on posts. Each comment belongs to a {@link
+/// civic_board_posts} and is authored by a {@link civic_board_users}.
+/// Optionally links the {@link civic_board_user_sessions} for audit context
+/// without risking content deletion (nullable + onDelete:SetNull). Lifecycle
+/// status governs visibility and moderation (Published/Hidden/Deleted).
+/// Comments are listed oldest-first under a post and support cross-post
+/// queries by author.
 ///
 /// @namespace Articles
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_discuss_post_topics {
+model civic_board_comments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Associated post's {@link econ_discuss_posts.id}.
-  econ_discuss_post_id String
+  /// Target post's {@link civic_board_posts.id}.
+  civic_board_post_id String
   
-  /// Associated topic's {@link econ_discuss_topics.id}.
-  econ_discuss_topic_id String
+  /// Author user's {@link civic_board_users.id}.
+  civic_board_user_id String
   
-  /// Creation timestamp for the association.
-  created_at DateTime
+  /// Authoring session's {@link civic_board_user_sessions.id}. Nullable and
+  /// set null on session deletion to preserve the comment.
+  civic_board_user_session_id String?
   
-  /// Last update timestamp for the association.
-  updated_at DateTime
-  
-  /// Soft deletion timestamp when the association is logically removed.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  post econ_discuss_posts @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
-  topic econ_discuss_topics @relation(fields: [econ_discuss_topic_id], references: [id], onDelete: Cascade)
-  
-  @@unique([econ_discuss_post_id, econ_discuss_topic_id], map: "econ_discuss_post_topics_econ_discuss_post_id_econ_dis_d9fdf66d")
-  @@index([econ_discuss_topic_id, econ_discuss_post_id], map: "econ_discuss_post_topics_econ_discuss_topic_id_econ_di_d667544f")
-  @@index([econ_discuss_topic_id, created_at])
-}
-
-/// Historical snapshots of {@link econ_discuss_posts} capturing the exact
-/// state of a post at a point in time for auditability and public version
-/// history. Each snapshot stores the full text fields and publication state.
-/// Versions are unique per post and are typically append-only.
-///
-/// @namespace Articles
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_discuss_post_snapshots {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Source post’s {@link econ_discuss_posts.id}.
-  econ_discuss_post_id String
-  
-  /// Editor/author’s {@link econ_discuss_users.id} responsible for this
-  /// snapshot.
-  econ_discuss_user_id String
-  
-  /// Monotonic version number per post. Combined with post_id to enforce
-  /// uniqueness.
-  version Int
-  
-  /// Snapshot of the post title at this version.
-  title String
-  
-  /// Snapshot of the post body at this version.
+  /// Comment body text. Business limits: 1–2,000 characters (minimal scope);
+  /// text-only (no attachments).
   body String
   
-  /// Snapshot of the post summary at this version.
-  summary String?
+  /// Lifecycle status of the comment. Expected values: "Published", "Hidden",
+  /// or "Deleted".
+  status String
   
-  /// Post’s published_at value at the time of snapshot (null if unpublished).
-  published_at DateTime?
+  /// Timestamp when the comment became publicly visible (Published).
+  published_at DateTime
   
-  /// Snapshot creation timestamp (when this version was recorded).
+  /// Last edit timestamp within the 15-minute window; null if never edited.
+  edited_at DateTime?
+  
+  /// Creation timestamp (auditable).
   created_at DateTime
   
-  /// Last update timestamp for this snapshot record (rarely used; retained for
-  /// consistency).
+  /// Last update timestamp for this record (auditable).
   updated_at DateTime
   
-  /// Soft deletion timestamp for exceptional corrections; normally null in
-  /// append-only operation.
+  /// Soft deletion timestamp for retention/purge policies.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  post econ_discuss_posts @relation(fields: [econ_discuss_post_id], references: [id], onDelete: Cascade)
-  editor econ_discuss_users @relation(fields: [econ_discuss_user_id], references: [id], onDelete: Cascade)
+  post civic_board_posts @relation(fields: [civic_board_post_id], references: [id], onDelete: Cascade)
+  author civic_board_users @relation(fields: [civic_board_user_id], references: [id], onDelete: Cascade)
+  authorSession civic_board_user_sessions? @relation(fields: [civic_board_user_session_id], references: [id], onDelete: Cascade)
   
-  @@index([econ_discuss_user_id])
+  civic_board_report_of_comments civic_board_report_of_comments[]
+  civic_board_comment_reactions civic_board_comment_reactions[]
   
-  @@unique([econ_discuss_post_id, version])
-  @@index([econ_discuss_post_id, created_at])
+  @@index([civic_board_post_id, created_at])
+  @@index([civic_board_user_id, created_at])
+  @@index([civic_board_user_session_id, created_at])
+  @@index([status, created_at])
 }

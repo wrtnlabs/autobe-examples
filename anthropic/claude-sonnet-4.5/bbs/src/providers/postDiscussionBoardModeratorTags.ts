@@ -17,29 +17,53 @@ export async function postDiscussionBoardModeratorTags(props: {
   const { moderator, body } = props;
 
   // Normalize tag name to lowercase for consistency
-  const normalizedName = body.name.toLowerCase();
+  const normalizedName = body.name.toLowerCase().trim();
 
-  // Prepare timestamp once
+  // Generate URL-friendly slug from normalized name
+  const slug = normalizedName
+    .replace(/\\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  // Validate slug is not empty after normalization
+  if (slug.length === 0) {
+    throw new HttpException(
+      "Tag name must contain at least one alphanumeric character",
+      400,
+    );
+  }
+
+  // Check for duplicate name or slug
+  const existingTag = await MyGlobal.prisma.discussion_board_tags.findFirst({
+    where: {
+      OR: [{ name: normalizedName }, { slug: slug }],
+    },
+  });
+
+  if (existingTag) {
+    throw new HttpException("Tag with this name or slug already exists", 409);
+  }
+
+  // Prepare timestamp once for reuse
   const now = toISOStringSafe(new Date());
 
-  // Create tag with status "pending_review" for moderator-created tags
+  // Create the tag with all required fields
   const created = await MyGlobal.prisma.discussion_board_tags.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
       name: normalizedName,
-      description: body.description ?? null,
-      status: "pending_review",
+      slug: slug,
       created_at: now,
       updated_at: now,
     },
   });
 
-  // Return formatted response matching IDiscussionBoardTag interface
+  // Return using prepared values
   return {
     id: created.id as string & tags.Format<"uuid">,
     name: created.name,
-    description: created.description === null ? undefined : created.description,
-    status: created.status,
+    slug: created.slug,
     created_at: now,
     updated_at: now,
   };

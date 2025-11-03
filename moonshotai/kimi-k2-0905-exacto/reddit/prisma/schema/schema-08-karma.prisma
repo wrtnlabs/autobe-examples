@@ -1,0 +1,307 @@
+/// Comprehensive karma event tracking system that records all karma-changing
+/// activities across the platform. This implementation captures upvotes,
+/// downvotes, milestone achievements, and other karma-altering events with
+/// full audit trail support. The events system uses type-based
+/// categorization to support complex calculation mechanics and historical
+/// analysis for reputation tracking.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_karma_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user who received this karma event. References
+  /// reddit_like_community_members.id
+  user_id String
+  
+  /// User who initiated this karma event (upvoter, downvoter, etc.).
+  /// References reddit_like_community_members.id
+  initiator_id String?
+  
+  /// Community where this karma event occurred. References
+  /// reddit_like_community_communities.id
+  community_id String
+  
+  /// Target post that was voted on. References reddit_like_community_posts.id
+  target_post_id String?
+  
+  /// Type of karma event: upvote, downvote, milestone_achievement,
+  /// system_award, penalty, decay
+  event_type String
+  
+  /// Category grouping for similar events: vote, achievement, penalty, system
+  event_category String
+  
+  /// Signed integer representing the karma change amount. Can be positive
+  /// (gain) or negative (loss)
+  karma_change Int
+  
+  /// Detailed reason for this karma event. Used for audits and user
+  /// notifications
+  reason String
+  
+  /// Whether this event affects comment karma calculation
+  affects_comment_karma Boolean
+  
+  /// Whether this event affects post karma calculation
+  affects_post_karma Boolean
+  
+  /// Whether this karma event can be reversed (for voting adjustments)
+  is_reversible Boolean
+  
+  /// Timestamp until which this event can be reversed. Null if not reversible
+  reversible_until DateTime?
+  
+  /// Serialized JSON context data for complex events. Contains additional
+  /// metadata needed for calculations
+  context_data String?
+  
+  /// When this karma event was recorded
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_community_members @relation("reddit_like_community_karma_events_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  initiator reddit_like_community_members? @relation("reddit_like_community_karma_events_of_initiator_id", fields: [initiator_id], references: [id], onDelete: Cascade)
+  community reddit_like_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  targetPost reddit_like_community_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  
+  @@index([initiator_id])
+  @@index([target_post_id])
+  
+  @@index([user_id, created_at])
+  @@index([community_id, created_at])
+  @@index([event_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([event_category, created_at], map: "reddit_like_community_karma_events_event_category_crea_1b04c819")
+}
+
+/// Real-time aggregated karma totals for platform members with comprehensive
+/// breakdown by karma types and communities. This table provides the current
+/// state of user reputation with support for different calculation periods
+/// and community-specific scoring. The totals are updated through
+/// event-driven architecture and maintain historical snapshots for audit
+/// trails.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_user_karma_totals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose karma is being tracked. References
+  /// reddit_like_community_members.id
+  user_id String
+  
+  /// Community for which these karma totals apply. References
+  /// reddit_like_community_communities.id
+  community_id String?
+  
+  /// Current total comment karma from all comments across the platform
+  total_comment_karma Int
+  
+  /// Current total post karma from all posts across the platform
+  total_post_karma Int
+  
+  /// Karma from milestone achievements and special recognition
+  total_achievement_karma Int
+  
+  /// Comment karma specific to the community when community_id is set
+  community_comment_karma Int
+  
+  /// Post karma specific to the community when community_id is set
+  community_post_karma Int
+  
+  /// Net karma change in the last 24 hours for trending calculations
+  daily_change Int
+  
+  /// Net karma change in the last 7 days for growth analysis
+  weekly_change Int
+  
+  /// Net karma change in the last 30 days for seasonal analysis
+  monthly_change Int
+  
+  /// Period these totals represent: all_time, year, month, week, day
+  calculation_period String
+  
+  /// Whether this represents the current active totals. Only one record per
+  /// user can be current per calculation period
+  is_current Boolean
+  
+  /// Timestamp of the most recent karma event that affected these totals
+  last_event_at DateTime
+  
+  /// When these karma totals were last recalculated
+  calculated_at DateTime
+  
+  /// When these karma totals were created
+  created_at DateTime
+  
+  /// When these karma totals were last updated
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_like_community_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  @@index([community_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([user_id, community_id, calculation_period, is_current], map: "reddit_like_community_user_karma_totals_user_id_commun_341b3988")
+  @@index([user_id])
+  @@index([calculation_period])
+  @@index([is_current])
+  // spellchecker: ignore-next-line
+  @@index([community_comment_karma, community_post_karma], map: "reddit_like_community_user_karma_totals_community_comm_c1b5f6c8")
+  @@index([daily_change])
+  @@index([last_event_at])
+}
+
+/// Achievement and milestone tracking system for user karma progression.
+/// This table manages community-specific milestones, global platform
+/// achievements, and recognition systems that reward users for reaching
+/// significant karma thresholds. The milestone system supports both
+/// automatic and manual achievement assignment with full customization
+/// capabilities.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_karma_milestones {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community for this milestone. Null for platform-wide achievements.
+  /// References reddit_like_community_communities.id
+  community_id String?
+  
+  /// Type of milestone: comment_karma, post_karma, total_karma,
+  /// community_specific, special_award
+  milestone_type String
+  
+  /// Display name for this milestone
+  name String
+  
+  /// Detailed description explaining how to achieve this milestone
+  description String
+  
+  /// Karma value needed to achieve this milestone. Can be total or specific
+  /// type
+  karma_threshold Int
+  
+  /// Type of threshold: total_comment, total_post, total_combined,
+  /// community_comment, community_post
+  threshold_type String
+  
+  /// Whether this milestone is hidden from public display
+  is_hidden Boolean
+  
+  /// Whether this milestone is automatically assigned when threshold is reached
+  auto_assign Boolean
+  
+  /// Bonus karma points awarded when milestone is achieved
+  award_points Int
+  
+  /// URL to milestone badge or icon image
+  icon_url String?
+  
+  /// Display order for milestones when shown together
+  sort_order Int
+  
+  /// When this milestone was created
+  created_at DateTime
+  
+  /// When this milestone was last updated
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_like_community_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_id, milestone_type], map: "reddit_like_community_karma_milestones_community_id_mi_e31e4642")
+  @@index([karma_threshold])
+  @@index([is_hidden])
+  @@index([auto_assign])
+  @@index([sort_order])
+}
+
+/// Materialized view for karma leaderboards with pre-computed rankings for
+/// optimal query performance. This table supports real-time leaderboard
+/// displays, community competitions, and achievement recognition systems by
+/// maintaining cached rankings that are updated through background
+/// processes. The leaderboard system supports multiple categorization and
+/// time-based filtering.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_karma_leaderboards {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community for this leaderboard entry. Null for platform-wide rankings.
+  /// References reddit_like_community_communities.id
+  community_id String?
+  
+  /// User featured in this leaderboard entry. References
+  /// reddit_like_community_members.id
+  user_id String
+  
+  /// Type of leaderboard: comment_karma, post_karma, total_karma, growth_rate,
+  /// community_specific
+  leaderboard_type String
+  
+  /// Current rank position in the leaderboard
+  rank Int
+  
+  /// Previous rank for change calculation. Null for new entries
+  previous_rank Int?
+  
+  /// Current karma score used for ranking
+  karma_score Int
+  
+  /// Time period this ranking covers: day, week, month, year, all_time
+  karma_change_period String
+  
+  /// Specific community karma type: post, comment, or combined
+  community_karma_type String
+  
+  /// Direction of rank change since last update: up, down, none
+  rank_change_direction String
+  
+  /// When this leaderboard entry was last refreshed
+  updated_at DateTime
+  
+  /// When these rankings were calculated from source data
+  calculated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_like_community_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user reddit_like_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([user_id, leaderboard_type, karma_change_period, community_id], map: "reddit_like_community_karma_leaderboards_user_id_leade_1f5b3021")
+  @@index([rank])
+  // spellchecker: ignore-next-line
+  @@index([leaderboard_type, karma_change_period], map: "reddit_like_community_karma_leaderboards_leaderboard_t_f422ef5e")
+  // spellchecker: ignore-next-line
+  @@index([community_id, karma_change_period], map: "reddit_like_community_karma_leaderboards_community_id__e5f0624c")
+}

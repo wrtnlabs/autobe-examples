@@ -1,0 +1,160 @@
+/// Core comment entity for the politics discussion board, supporting
+/// threaded discussions for articles. Comments maintain state, moderation
+/// status, and support polymorphic ownership through subtypes for visitors,
+/// members, and moderators.
+///
+/// @namespace Discussion
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged article's {@link politics_bbs_articles.id}
+  politics_bbs_article_id String
+  
+  /// Parent comment's {@link politics_bbs_comments.id} for threading
+  parent_id String?
+  
+  /// Comment content text supporting rich text formatting, 20-1000 characters
+  /// for meaningful dialogue.
+  content String
+  
+  /// Nesting level for threaded comments (0, 1, or 2) enforcing 3-level thread
+  /// limit.
+  depth Int
+  
+  /// Comment moderation status: pending, approved, rejected, or flagged.
+  status String
+  
+  /// Type of actor who created this comment: visitor, member, or moderator.
+  actor_type String
+  
+  /// Comment creation timestamp for audit trail.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article politics_bbs_articles @relation(fields: [politics_bbs_article_id], references: [id], onDelete: Cascade)
+  parent politics_bbs_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive politics_bbs_comments[] @relation("recursive")
+  politics_bbs_comment_of_visitors politics_bbs_comment_of_visitors?
+  politics_bbs_comment_of_members politics_bbs_comment_of_members?
+  politics_bbs_comment_of_moderators politics_bbs_comment_of_moderators?
+  
+  @@index([parent_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([politics_bbs_article_id, status, created_at], map: "politics_bbs_comments_politics_bbs_article_id_status_c_d44e6940")
+  @@index([actor_type, politics_bbs_article_id])
+  // spellchecker: ignore-next-line
+  @@index([depth, politics_bbs_article_id, created_at], map: "politics_bbs_comments_depth_politics_bbs_article_id_cr_c5d238cd")
+  @@index([status, created_at])
+}
+
+/// Subtype entity for comments created by visitor users. Maintains the
+/// polymorphic ownership relationship with proper referential integrity and
+/// audit tracking.
+///
+/// @namespace Discussion
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_comment_of_visitors {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment's {@link politics_bbs_comments.id} this subtype belongs to.
+  politics_bbs_comment_id String
+  
+  /// Visitor's {@link politics_bbs_visitors.id} who created this comment.
+  politics_bbs_visitor_id String
+  
+  /// Visitor-specific creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment politics_bbs_comments @relation(fields: [politics_bbs_comment_id], references: [id], onDelete: Cascade)
+  visitor politics_bbs_visitors @relation(fields: [politics_bbs_visitor_id], references: [id], onDelete: Cascade)
+  
+  @@unique([politics_bbs_comment_id])
+  @@index([politics_bbs_visitor_id])
+}
+
+/// Subtype entity for comments created by member users. Maintains the
+/// polymorphic ownership relationship with proper referential integrity and
+/// audit tracking.
+///
+/// @namespace Discussion
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_comment_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment's {@link politics_bbs_comments.id} this subtype belongs to.
+  politics_bbs_comment_id String
+  
+  /// Member's {@link politics_bbs_members.id} who created this comment.
+  politics_bbs_member_id String
+  
+  /// Member-specific creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment politics_bbs_comments @relation(fields: [politics_bbs_comment_id], references: [id], onDelete: Cascade)
+  member politics_bbs_members @relation(fields: [politics_bbs_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([politics_bbs_comment_id])
+  @@index([politics_bbs_member_id])
+}
+
+/// Subtype entity for comments created by moderator users. Maintains the
+/// polymorphic ownership relationship with proper referential integrity and
+/// audit tracking.
+///
+/// @namespace Discussion
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_comment_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment's {@link politics_bbs_comments.id} this subtype belongs to.
+  politics_bbs_comment_id String
+  
+  /// Moderator's {@link politics_bbs_moderators.id} who created this comment.
+  politics_bbs_moderator_id String
+  
+  /// Moderator-specific creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment politics_bbs_comments @relation(fields: [politics_bbs_comment_id], references: [id], onDelete: Cascade)
+  moderator politics_bbs_moderators @relation(fields: [politics_bbs_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([politics_bbs_comment_id])
+  // spellchecker: ignore-next-line
+  @@index([politics_bbs_moderator_id], map: "politics_bbs_comment_of_moderators_politics_bbs_modera_e3193ba9")
+}

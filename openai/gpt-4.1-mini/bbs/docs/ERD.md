@@ -4,251 +4,197 @@
 
 - [Systematic](#systematic)
 - [Actors](#actors)
-- [Discussions](#discussions)
-- [Moderation](#moderation)
+- [Articles](#articles)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"discussion_board_categories" {
+"placeholder_sys_config" {
   String id PK
-  String name UK
-  String description "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 ```
 
-### `discussion_board_categories`
+### `placeholder_sys_config`
 
-Discussion board categories representing the classification domains such
-as Economic and Political. Core to content organization and filtering.
-This table allows independent CRUD operations and is referenced by posts
-within the discussion board domain.
+Placeholder system configuration table for future extensibility within
+the Systematic domain. Maintains architectural clarity and readiness for
+system-wide settings without current business logic dependencies.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `name`: The unique name of the category, e.g., Economic or Political.
-- `description`: Optional detailed description of the category's purpose or scope.
-- `created_at`: Timestamp of when the category was created.
-- `updated_at`: Timestamp of the last update to the category.
-- `deleted_at`: Soft delete timestamp for the category, null if active.
+- `created_at`: Timestamp when the record was created.
+- `updated_at`: Timestamp when the record was last updated.
+- `deleted_at`: Timestamp when the record was soft deleted.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"discussion_board_guests" {
-  String id PK
-  String session_token UK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
 "discussion_board_members" {
   String id PK
   String email UK
   String password_hash
-  String display_name
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_moderators" {
+"discussion_board_member_sessions" {
   String id PK
-  String email UK
-  String password_hash
-  String display_name
+  String discussion_board_member_id FK
+  String ip
+  String href
+  String referrer
   DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
+  DateTime expired_at "nullable"
 }
 "discussion_board_admins" {
   String id PK
   String email UK
   String password_hash
-  String display_name
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
+"discussion_board_admin_sessions" {
+  String id PK
+  String discussion_board_admin_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at "nullable"
+}
+"discussion_board_member_sessions" }o--|| "discussion_board_members" : member
+"discussion_board_admin_sessions" }o--|| "discussion_board_admins" : admin
 ```
-
-### `discussion_board_guests`
-
-Guest users information who do not authenticate but may have session or
-visitor footprints. Used to track guest activity and enable browsing
-capabilities without login. This entity has minimal fields and no
-authentication credentials.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `session_token`: Unique session token to identify guest user session.
-- `created_at`: Timestamp when the guest session was created.
-- `updated_at`: Timestamp of the last guest session update.
-- `deleted_at`: Soft delete timestamp if guest session is invalidated.
 
 ### `discussion_board_members`
 
-Registered members who can create discussion topics and replies. Members
-have authenticated sessions using email and password hash and can manage
-their profiles.
+Members who are authenticated users authorized to create and manage
+articles and comments within the discussion board system. Members have
+personal credentials and are subject to soft deletion. This table stores
+member identity, authentication credentials, and metadata.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Member's unique email address for login and communication.
-- `password_hash`: Hashed password for member authentication.
-- `display_name`: Display name shown publicly in posts and replies.
-- `created_at`: Timestamp when the member account was created.
-- `updated_at`: Timestamp of the last update to the member account.
-- `deleted_at`: Soft delete timestamp if the member account is deactivated.
+- `email`: Unique email address of the member used for authentication.
+- `password_hash`: Password hash for secure authentication of member accounts.
+- `created_at`: Date and time when the member account was created.
+- `updated_at`: Date and time when the member account was last updated.
+- `deleted_at`: Optional deletion timestamp for soft delete.
 
-### `discussion_board_moderators`
+### `discussion_board_member_sessions`
 
-Moderator users with elevated privileges to manage and moderate posts and
-replies. Moderators authenticate with email and password hash, and can
-perform editing and deletion actions.
+Active sessions for members representing authenticated login instances.
+Each session records connection details, access timestamps, and
+expiration, supporting secure session management and auditing.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Moderator's unique email address for login and communication.
-- `password_hash`: Hashed password for moderator authentication.
-- `display_name`: Display name shown in moderation logs and actions.
-- `created_at`: Timestamp when the moderator account was created.
-- `updated_at`: Timestamp of last update to the moderator account.
-- `deleted_at`: Soft delete timestamp if the moderator account is deactivated.
+- `discussion_board_member_id`
+  > Referenced member id owning this session. {@link
+  > discussion_board_members.id}
+- `ip`: IP address of the client initiating this session.
+- `href`: The connection URL when the session was started.
+- `referrer`: The referrer URL for this session connection.
+- `created_at`: Timestamp when this session was created.
+- `expired_at`: Optional expiration timestamp of the session.
 
 ### `discussion_board_admins`
 
-Administrator users with full system privileges including user
-management, system configuration, and moderation oversight. Admins
-authenticate via email and password hash and have full control over
-system settings.
+Administrators with elevated privileges managing all content and user
+accounts on the discussion board system. Admin accounts are authenticated
+with password hashes and support soft deletion.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `email`: Administrator's unique email address for login and management.
-- `password_hash`: Hashed password for administrator authentication.
-- `display_name`
-  > Display name for administrator identification in audit and management
-  > logs.
-- `created_at`: Timestamp when the administrator account was created.
-- `updated_at`: Timestamp of last update to the administrator account.
-- `deleted_at`: Soft delete timestamp if the administrator account is deactivated.
+- `email`: Unique email address of the administrator for authentication purposes.
+- `password_hash`: Hashed password for administrator account authentication.
+- `created_at`: Timestamp when the admin account was created.
+- `updated_at`: Timestamp when the admin account was last updated.
+- `deleted_at`: Optional timestamp marking soft deletion of the admin account.
 
-## Discussions
+### `discussion_board_admin_sessions`
+
+Active session records for administrators managing the discussion board
+system. Sessions track connection metadata and support secure
+authentication and auditing.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_admin_id`
+  > Referenced administrator id owning this session. {@link
+  > discussion_board_admins.id}
+- `ip`: IP address of the connection client for this session.
+- `href`: The URL used to initiate this session connection.
+- `referrer`: Referrer URL leading to this session start.
+- `created_at`: Timestamp when this admin session was created.
+- `expired_at`: Optional expiration timestamp of this session.
+
+## Articles
 
 ```mermaid
 erDiagram
-"discussion_board_posts" {
+"discussion_board_articles" {
   String id PK
-  String category_id FK
-  String member_id FK
   String title
-  String body
-  String post_status
+  String content_markdown
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_replies" {
+"discussion_board_attachments" {
   String id PK
-  String post_id FK
-  String member_id FK
-  String content
-  String reply_status
+  String discussion_board_article_id FK
+  String filename
+  String file_type
+  String file_url
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_replies" }o--|| "discussion_board_posts" : post
+"discussion_board_attachments" }o--|| "discussion_board_articles" : discussionBoardArticle
 ```
 
-### `discussion_board_posts`
+### `discussion_board_articles`
 
-Discussion Board Posts representing user-generated discussion topics
-within economic or political categories. Each post is authored by a
-member and belongs to one category. Posts contain validated title and
-body content with timestamps and status fields for moderation and
-lifecycle management. Indexed for efficient searching and browsing with
-full-text search support on title and body content. Related to
-discussion_board_categories and discussion_board_members for category and
-owner relationships.
+Articles posted by members on the discussion board, containing a title
+and markdown content. Includes timestamps for creation, updating, and
+optional soft deletion. Serves as the main content entity users interact
+with.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `category_id`: Belonged category's discussion_board_categories.id.
-- `member_id`: Authoring member's discussion_board_members.id.
-- `title`: Post title between 5 and 100 characters, validated content.
-- `body`: Post body content up to 5000 characters, validated and profanity-checked.
-- `post_status`: Status of the post indicating moderation or visibility state.
-- `created_at`: Timestamp when the post was created.
-- `updated_at`: Timestamp when the post was last updated.
-- `deleted_at`: Timestamp when the post was soft deleted; null if active.
+- `title`: Title of the article, up to 200 characters.
+- `content_markdown`: Markdown formatted body content of the article.
+- `created_at`: Timestamp when the article was created.
+- `updated_at`: Timestamp when the article was last updated.
+- `deleted_at`: Soft delete timestamp, null if the article is active.
 
-### `discussion_board_replies`
+### `discussion_board_attachments`
 
-Replies to discussion board posts authored by members. Each reply is
-attached to a single post and contains validated textual content. Replies
-have status fields for moderation, timestamps for auditing, and support
-efficient retrieval and filtering. Linked to posts and members with
-referential integrity and indexed for performance on common queries
-including full-text search on content.
+Attachments associated with discussion board articles. Supports images
+and files linked securely to their parent article. Includes filename,
+file type, URL/path, and timestamps. Serves as a subsidiary supporting
+entity for richer article content.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `post_id`: Replied post's discussion_board_posts.id.
-- `member_id`: Authoring member's discussion_board_members.id.
-- `content`
-  > Reply content between 5 and 1000 characters, validated and
-  > profanity-checked.
-- `reply_status`: Status of the reply indicating moderation or visibility state.
-- `created_at`: Timestamp when the reply was created.
-- `updated_at`: Timestamp when the reply was last updated.
-- `deleted_at`: Timestamp when the reply was soft deleted; null if active.
-
-## Moderation
-
-```mermaid
-erDiagram
-"discussion_board_moderation_logs" {
-  String id PK
-  String post_id FK "nullable"
-  String reply_id FK "nullable"
-  String moderator_id FK "nullable"
-  String action_type
-  String action_details "nullable"
-  DateTime created_at
-}
-```
-
-### `discussion_board_moderation_logs`
-
-Audit log for moderator actions on posts and replies within the
-discussion board. This table records the user performing the action
-(moderator or admin), the type of action (edit, delete, etc.), associated
-post or reply IDs, detailed notes, and timestamps for auditing and
-compliance purposes. It ensures a historical record of all moderation
-activities and supports accountability and transparency.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `post_id`: Referenced post's discussion_board_posts.id.
-- `reply_id`: Referenced reply's discussion_board_replies.id.
-- `moderator_id`
-  > User performing the moderation action. Can be moderator or admin.
-  > References either discussion_board_moderators.id or
-  > discussion_board_admins.id but treated as nullable foreign key here.
-- `action_type`: Type of moderation action performed, e.g., 'edit', 'delete', 'approve'.
-- `action_details`: Detailed notes or comments about the moderation action.
-- `created_at`: Timestamp of when the moderation action was performed.
+- `discussion_board_article_id`: Belonged article's [discussion_board_articles.id](#discussion_board_articles).
+- `filename`: Original filename of the attachment.
+- `file_type`: MIME type or file type such as image, pdf, etc.
+- `file_url`: URL or storage path of the attachment file.
+- `created_at`: Timestamp when the attachment was created.
+- `updated_at`: Timestamp when the attachment was last updated.
+- `deleted_at`: Soft delete timestamp, null if active.

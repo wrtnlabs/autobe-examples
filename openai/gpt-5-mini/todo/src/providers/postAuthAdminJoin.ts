@@ -15,75 +15,105 @@ export async function postAuthAdminJoin(props: {
 }): Promise<ITodoAppAdmin.IAuthorized> {
   const { body } = props;
 
-  // Duplicate email check
-  const existing = await MyGlobal.prisma.todo_app_admin.findUnique({
+  // Check uniqueness
+  const existing = await MyGlobal.prisma.todo_app_admin.findFirst({
     where: { email: body.email },
   });
-  if (existing) throw new HttpException("Conflict: email already exists", 409);
+  if (existing) throw new HttpException("Email already registered", 409);
+
+  // Prepare timestamps and ids
+  const now = toISOStringSafe(new Date());
+  const adminId = v4() as string & tags.Format<"uuid">;
+  const sessionId = v4() as string & tags.Format<"uuid">;
 
   // Hash password
-  const passwordHash = await PasswordUtil.hash(body.password);
+  const hashedPassword = await PasswordUtil.hash(body.password);
 
-  // Prepare timestamps
-  const now = toISOStringSafe(new Date());
+  // Ensure role (Prisma requires role)
+  const role = body.role ?? "support";
 
-  // Create admin
-  const created = await MyGlobal.prisma.todo_app_admin.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      email: body.email,
-      password_hash: passwordHash,
-      is_super: body.is_super ?? false,
-      created_at: now,
-      last_active_at: null,
-    },
-  });
+  // Create admin and session inside try/catch to handle unique-constraint race
+  try {
+    const admin = await MyGlobal.prisma.todo_app_admin.create({
+      data: {
+        id: adminId,
+        email: body.email,
+        password_hash: hashedPassword,
+        display_name: body.display_name ?? null,
+        role,
+        is_active: true,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+    });
 
-  // Record audit entry
-  await MyGlobal.prisma.todo_app_audit_records.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      admin_id: created.id,
-      actor_role: "system",
-      action_type: "create_admin",
-      target_resource: "todo_app_admin",
-      target_id: created.id,
-      reason: null,
-      created_at: now,
-    },
-  });
+    const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+    const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  // Generate tokens
-  const access = jwt.sign(
-    { adminId: created.id, email: created.email, type: "admin" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
+    const session = await MyGlobal.prisma.todo_app_admin_sessions.create({
+      data: {
+        id: sessionId,
+        todo_app_admin_id: admin.id,
+        ip: body.ip ?? "",
+        href: body.href,
+        referrer: body.referrer,
+        created_at: now,
+        expired_at: toISOStringSafe(accessExpires),
+      },
+    });
 
-  const refresh = jwt.sign(
-    { adminId: created.id, tokenType: "refresh" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
+    const tokenCreatedAt = now; // reuse same creation timestamp
 
-  const expired_at = toISOStringSafe(new Date(Date.now() + 1 * 60 * 60 * 1000));
-  const refreshable_until = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+    const accessToken = jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        created_at: tokenCreatedAt,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    );
 
-  return {
-    id: created.id as string & tags.Format<"uuid">,
-    email: created.email,
-    is_super: created.is_super,
-    created_at: toISOStringSafe(created.created_at),
-    last_active_at: created.last_active_at
-      ? toISOStringSafe(created.last_active_at)
-      : null,
-    token: {
-      access,
-      refresh,
-      expired_at,
-      refreshable_until,
-    },
-  };
+    const refreshToken = jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: tokenCreatedAt,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    );
+
+    const token: IAuthorizationToken = {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
+    };
+
+    return {
+      id: admin.id,
+      email: admin.email,
+      display_name: admin.display_name ?? undefined,
+      role: admin.role,
+      is_active: admin.is_active,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+      token,
+    } satisfies ITodoAppAdmin.IAuthorized;
+  } catch (e: unknown) {
+    // Translate Prisma unique violation to 409
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      (e.code === "P2002" || e.code === "P2002")
+    ) {
+      throw new HttpException("Email already registered", 409);
+    }
+    throw new HttpException("Internal Server Error", 500);
+  }
 }

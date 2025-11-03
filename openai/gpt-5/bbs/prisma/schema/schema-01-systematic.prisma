@@ -1,0 +1,264 @@
+/// System-wide configuration entries stored as independent key-value
+/// records. Used to toggle features, define thresholds, or set URIs across
+/// the platform. This table is intentionally decoupled from domain content
+/// and identities to avoid dependency cycles. Managed primarily by
+/// administrators through configuration UIs or scripts; referenced by
+/// runtime services to read current settings. No foreign keys are declared
+/// to other domains.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration identifier (e.g., "public_read",
+  /// "attachments.max_count"). Serves as the business key for lookups.
+  key String
+  
+  /// String value for this configuration when applicable. Only one of the
+  /// typed value columns is expected to be used per row.
+  value_string String?
+  
+  /// Integer value for this configuration when applicable (e.g., numeric
+  /// limits).
+  value_int Int?
+  
+  /// Decimal value for this configuration when applicable (e.g., thresholds or
+  /// ratios).
+  value_double Float?
+  
+  /// Boolean value for this configuration when applicable (e.g., feature
+  /// toggle).
+  value_boolean Boolean?
+  
+  /// URI value for this configuration when applicable (e.g., callback URLs,
+  /// CDN endpoints).
+  value_uri String?
+  
+  /// Human-readable explanation of the configuration purpose and usage.
+  description String?
+  
+  /// Optional timestamp indicating when this configuration became effective.
+  effective_since DateTime?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for retention and operational safety.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([created_at])
+  @@index([effective_since, created_at])
+}
+
+/// System policies governing platform behavior such as public-read,
+/// moderation defaults, and feature switches. Each policy is an
+/// independently managed record with an optional effective window. This
+/// table is maintained by administrators and does not reference domain
+/// content directly. Related changes are recorded in {@link
+/// civic_board_audit_logs}.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Stable policy identifier (e.g., "public_read", "attachments.policy",
+  /// "report.duplicate_cooldown_hours"). Unique across the system.
+  policy_code String
+  
+  /// Human-friendly policy name for administrative UIs.
+  name String
+  
+  /// Optional category for grouping related policies (e.g., "visibility",
+  /// "attachments", "reporting").
+  category String?
+  
+  /// Whether the policy is currently enabled. For value-carrying policies,
+  /// this indicates if enforcement is active.
+  enabled Boolean
+  
+  /// Optional string value carried by the policy (e.g., textual rule).
+  value_string String?
+  
+  /// Optional integer value (e.g., max counts, cooldown hours).
+  value_int Int?
+  
+  /// Optional decimal value (e.g., size limits in MB with fractional
+  /// precision).
+  value_double Float?
+  
+  /// Optional start of the policy’s effective window (UTC).
+  starts_at DateTime?
+  
+  /// Optional end of the policy’s effective window (UTC).
+  ends_at DateTime?
+  
+  /// Administrative notes describing policy rationale or change context (not
+  /// shown to end users).
+  notes String?
+  
+  /// Creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for retention and operational safety.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([policy_code])
+  @@index([enabled, created_at])
+  @@index([category, created_at])
+}
+
+/// Append-only audit trail capturing security- and compliance-relevant
+/// events across the system. Records the acting entity (user/admin/system),
+/// optional session context, target reference, action name, outcome, and
+/// request metadata. Designed for historical analysis and investigations;
+/// not intended for direct user manipulation. This table provides the
+/// system’s audit history for changes in {@link civic_board_policies} and
+/// {@link civic_board_configurations}, as well as domain operations.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of actor that initiated the event (e.g., "user", "admin", "system").
+  /// Stored as raw text to avoid cross-domain foreign keys.
+  actor_type String
+  
+  /// Identifier of the actor, when applicable. Stored without a foreign key to
+  /// avoid domain coupling.
+  actor_id String?
+  
+  /// Identifier of the actor session when applicable. Stored without a foreign
+  /// key to avoid domain coupling.
+  actor_session_id String?
+  
+  /// Business action name (e.g., "post.create", "comment.delete",
+  /// "policy.update").
+  action String
+  
+  /// Outcome summary (e.g., "success", "failure:rate_limited").
+  outcome String
+  
+  /// Target table name when the action is scoped to a resource (e.g.,
+  /// "civic_board_posts").
+  target_table String?
+  
+  /// Target resource identifier when applicable. Stored without foreign key to
+  /// avoid coupling.
+  target_id String?
+  
+  /// IP address observed for the request context, when available.
+  ip String?
+  
+  /// Full request URL, when available.
+  href String?
+  
+  /// Referrer URL, when available.
+  referrer String?
+  
+  /// Optional human-readable message or error context to aid investigations.
+  message String?
+  
+  /// Event creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Timestamp for any administrative update (e.g., redaction). Normally equal
+  /// to created_at for immutable entries.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for retention or legal hold workflows.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+  @@index([actor_type, actor_id, created_at])
+  @@index([target_table, target_id, created_at])
+}
+
+/// Operational store for rate limiting windows and counters per actor and
+/// scope. Managed by the system to enforce anti-abuse policies (e.g.,
+/// post/comment/report creation, login attempts). Records are
+/// created/updated within short time windows and expired/cleaned by
+/// background tasks. No foreign keys to identities to avoid cross-domain
+/// coupling.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_rate_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Logical action scope for the rate limit (e.g., "post.create",
+  /// "comment.create", "report.create", "login.failed").
+  scope String
+  
+  /// Actor type constrained by business logic (e.g., "user", "admin", "ip").
+  /// Stored as text to avoid cross-domain keys.
+  actor_type String
+  
+  /// Identifier of the actor when applicable (e.g., user/admin). For IP-scoped
+  /// limits, this may be a surrogate or left null if not applicable.
+  actor_id String?
+  
+  /// Start timestamp (UTC) of the rate limit window represented by this record.
+  window_started_at DateTime
+  
+  /// End timestamp (UTC) of the rate limit window represented by this record.
+  window_ends_at DateTime
+  
+  /// Number of actions performed during the window at the time of update.
+  count Int
+  
+  /// Enforced maximum actions allowed during the window per actor and scope.
+  limit Int
+  
+  /// Record creation timestamp (UTC).
+  created_at DateTime
+  
+  /// Last update timestamp (UTC).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to permit safe retention before purge.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([scope, actor_type, actor_id, window_started_at], map: "civic_board_rate_limits_scope_actor_type_actor_id_wind_d9db7562")
+  @@index([actor_type, actor_id, created_at])
+  @@index([scope, created_at])
+  @@index([window_ends_at, created_at])
+}

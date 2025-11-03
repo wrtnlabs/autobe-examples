@@ -13,7 +13,13 @@ export async function deleteDiscussionBoardAdminDiscussionBoardAdminsDiscussionB
   admin: AdminPayload;
   discussionBoardAdminId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  const { admin, discussionBoardAdminId } = props;
+
+  await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow({
+    where: { id: discussionBoardAdminId },
+  });
+
   await MyGlobal.prisma.discussion_board_admins.delete({
-    where: { id: props.discussionBoardAdminId },
+    where: { id: discussionBoardAdminId },
   });
 }

@@ -15,12 +15,12 @@ export async function deleteShoppingMallAdminSellersId(props: {
 }): Promise<void> {
   const { admin, id } = props;
 
-  // Verify seller exists
+  // Check for existence of seller
   await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
     where: { id },
   });
 
-  // Hard delete seller
+  // Perform hard delete
   await MyGlobal.prisma.shopping_mall_sellers.delete({
     where: { id },
   });

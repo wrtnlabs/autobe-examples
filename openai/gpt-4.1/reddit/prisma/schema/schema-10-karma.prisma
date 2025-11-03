@@ -1,0 +1,116 @@
+/// Aggregated, up-to-date karma statistics for each user, tracking totals
+/// and separate breakdowns for post and comment activity. Maintains current
+/// karma, lifetime earned karma, and historical maximums for user management
+/// and privilege enforcement. Used for fast profile display and business
+/// logic (e.g., eligibility to create communities or penalties for low
+/// karma).
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced user's {@link community_platform_users.id}. Owner of these
+  /// karma stats.
+  community_platform_user_id String
+  
+  /// Current sum of all awarded karma points, posts plus comments. Used for
+  /// privilege and reputation enforcement.
+  total_karma Int
+  
+  /// Current karma earned from posts only. Used to break down user's
+  /// contribution reputation by content type.
+  post_karma Int
+  
+  /// Current karma earned from comments only. Enables per-type karma
+  /// enforcement/presentation.
+  comment_karma Int
+  
+  /// All-time sum of ever-awarded karma, before any penalties/removals. Used
+  /// for historical maximum tracking.
+  lifetime_karma Int
+  
+  /// Historical high watermark of user's total karma. Used for achievement
+  /// tracking and advanced privilege eligibility.
+  maximum_karma Int
+  
+  /// Timestamp when this karma summary record was created.
+  created_at DateTime
+  
+  /// Timestamp for the most recent update to this record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id])
+}
+
+/// Immutable, append-only audit logs capturing each karma-affecting event
+/// for a user, such as new votes, penalties, moderation reversals, or
+/// restoration. Provides full traceability for analytical, forensic, and
+/// recovery purposes. Records previous and resulting karma state, reason,
+/// actor, operation type, content references (as uuid), and timestamps.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced user's {@link community_platform_users.id} whose karma was
+  /// affected.
+  community_platform_user_id String
+  
+  /// Event type (e.g., vote_add, vote_remove, penalty, reversal, restore,
+  /// moderation_adjust) that caused the karma change.
+  action String
+  
+  /// Human readable reason or category for the karma modification (e.g.,
+  /// 'upvote on comment', 'manual penalty: abuse', 'restore by moderator').
+  reason String
+  
+  /// Signed amount of karma gained or lost by this event.
+  score_delta Int
+  
+  /// Total karma immediately before this event occurred. Snapshot for
+  /// audit/history purposes.
+  prior_karma Int
+  
+  /// Total karma immediately after this event completed. Enables
+  /// repair/reconstruction.
+  resulting_karma Int
+  
+  /// UUID of related content (post/comment) affected by this event. Not a
+  /// foreign key, to allow reference to deleted content.
+  content_reference_id String?
+  
+  /// UUID of the user (could be moderator/admin) who performed this action, if
+  /// system-initiated or by another actor. Not a foreign key, for historical
+  /// independence.
+  performed_by_user_id String?
+  
+  /// Timestamp the audit log entry was created (event time).
+  created_at DateTime
+  
+  /// If audit record is redacted (rare), timestamp of redaction. Ensures full
+  /// auditability and compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, created_at], map: "community_platform_karma_audit_logs_community_platform_86ac5b27")
+}

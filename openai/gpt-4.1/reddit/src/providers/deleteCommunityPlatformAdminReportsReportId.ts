@@ -13,63 +13,31 @@ export async function deleteCommunityPlatformAdminReportsReportId(props: {
   admin: AdminPayload;
   reportId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const { admin, reportId } = props;
-
-  // Step 1: Fetch the report
+  // Get the target report (to verify existence and for 404 case)
   const report = await MyGlobal.prisma.community_platform_reports.findUnique({
-    where: { id: reportId },
+    where: { id: props.reportId },
   });
   if (!report) {
-    throw new HttpException("Report does not exist", 404);
-  }
-  // Only allow deletion for resolved, dismissed, error, invalid, or erroneous status
-  const allowedStatuses = [
-    "resolved",
-    "dismissed",
-    "error",
-    "erroneous",
-    "invalid",
-  ];
-  if (!allowedStatuses.includes(report.status)) {
-    throw new HttpException(
-      "Report is not eligible for deletion; must be resolved, dismissed, or invalid",
-      400,
-    );
+    throw new HttpException("Report not found", 404);
   }
 
-  // Atomic deletion of related workflows + report + audit log
-  await MyGlobal.prisma.$transaction([
-    // Delete moderation queue entries for this report
-    MyGlobal.prisma.community_platform_moderation_queues.deleteMany({
-      where: { report_id: reportId },
-    }),
-    // Delete moderation actions related to this report
-    MyGlobal.prisma.community_platform_moderation_actions.deleteMany({
-      where: { report_id: reportId },
-    }),
-    // Delete escalation logs related to this report
-    MyGlobal.prisma.community_platform_escalation_logs.deleteMany({
-      where: { report_id: reportId },
-    }),
-    // Delete the report itself
-    MyGlobal.prisma.community_platform_reports.delete({
-      where: { id: reportId },
-    }),
-    // Audit log
-    MyGlobal.prisma.community_platform_audit_logs.create({
-      data: {
-        id: v4(),
-        actor_type: "admin",
-        actor_id: admin.id,
-        action_type: "delete",
-        target_table: "community_platform_reports",
-        target_id: reportId,
-        details: JSON.stringify({
-          reason: "staff_report_deletion",
-          pre_status: report.status,
-        }),
-        created_at: toISOStringSafe(new Date()),
-      },
-    }),
-  ]);
+  // Delete all linked report actions records (0+): actions must go before report
+  await MyGlobal.prisma.community_platform_report_actions.deleteMany({
+    where: { report_id: props.reportId },
+  });
+
+  // Delete linked moderation link (1:0..1 post, 1:0..1 comment link): first posts, then comments, as both are optional
+  await MyGlobal.prisma.community_platform_report_of_posts.deleteMany({
+    where: { report_id: props.reportId },
+  });
+  await MyGlobal.prisma.community_platform_report_of_comments.deleteMany({
+    where: { report_id: props.reportId },
+  });
+
+  // Delete the report itself
+  await MyGlobal.prisma.community_platform_reports.delete({
+    where: { id: props.reportId },
+  });
+
+  // No return (void)
 }

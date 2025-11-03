@@ -1,0 +1,214 @@
+/// Customer-facing inquiries and questions about products, orders, or the
+/// marketplace. Stores inquiry metadata, linkage to originating customer or
+/// session, optional context (product/order), assignment to support agent,
+/// and lifecycle fields for SLA and moderation. Primary business entity for
+/// inquiry creation, search, and management. Related entities: {@link
+/// shopping_mall_inquiry_responses}, {@link shopping_mall_support_cases}.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inquiries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Originating customer's {@link shopping_mall_customers.id}. Nullable for
+  /// guest-originated inquiries (use session).
+  shopping_mall_customer_id String?
+  
+  /// Originating customer's session for anonymous or guest inquiry. {@link
+  /// shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String?
+  
+  /// Optional related product context. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String?
+  
+  /// Optional related order context when inquiry pertains to an order. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String?
+  
+  /// Support agent assigned to the inquiry for SLA handling. {@link
+  /// shopping_mall_support_agents.id}.
+  shopping_mall_assigned_support_agent_id String?
+  
+  /// Short summary of the inquiry for quick scanning and search.
+  subject String
+  
+  /// Full inquiry text submitted by the customer or origin actor.
+  body String
+  
+  /// Lifecycle status of the inquiry (e.g., 'open', 'pending',
+  /// 'waiting_customer', 'resolved', 'closed').
+  status String
+  
+  /// Business priority for SLA routing (e.g., 'low','normal','high','urgent').
+  priority String
+  
+  /// Last responder type shortcut for quick filtering (e.g.,
+  /// 'support_agent','seller','admin','customer').
+  responder_type String?
+  
+  /// Inquiry creation timestamp.
+  created_at DateTime
+  
+  /// Last updated timestamp for the inquiry.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions? @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  assignedSupportAgent shopping_mall_support_agents? @relation(fields: [shopping_mall_assigned_support_agent_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inquiry_responses shopping_mall_inquiry_responses[]
+  shopping_mall_support_cases shopping_mall_support_cases[]
+  
+  @@index([shopping_mall_customer_session_id])
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_order_id])
+  
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_inquiries_shopping_mall_customer_id_crea_28c75a10")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_assigned_support_agent_id, status], map: "shopping_mall_inquiries_shopping_mall_assigned_support_b21ae624")
+}
+
+/// Responses/messages for inquiries. Reworked ownership representation to a
+/// polymorphic discriminator pattern to avoid multiple nullable foreign keys
+/// per responder type. Use responder_type (enum-like string) and
+/// responder_id (opaque UUID) to identify the author across actor tables:
+/// 'support_agent' | 'seller' | 'admin' | 'customer'. Application logic is
+/// responsible for referential interpretation. Includes internal-note flag,
+/// full-text searchable body, and temporal/audit fields.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inquiry_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent inquiry. {@link shopping_mall_inquiries.id}.
+  shopping_mall_inquiry_id String
+  
+  /// Response message body. Full-text searchable.
+  body String
+  
+  /// Actor type that authored the response. Allowed values: 'support_agent' |
+  /// 'seller' | 'admin' | 'customer'. Application layer must interpret this
+  /// with responder_id.
+  responder_type String
+  
+  /// Opaque actor UUID combined with responder_type to identify the author.
+  /// Nullable for internal notes or system-originated messages.
+  responder_id String?
+  
+  /// Flag indicating this is internal note (true) not visible to the customer.
+  is_internal Boolean
+  
+  /// Response creation timestamp.
+  created_at DateTime
+  
+  /// Response last updated timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for responses.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  inquiry shopping_mall_inquiries @relation(fields: [shopping_mall_inquiry_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inquiry_id, created_at], map: "shopping_mall_inquiry_responses_shopping_mall_inquiry__c18d4a78")
+  @@index([responder_type, responder_id])
+}
+
+/// Escalated support cases for issues requiring SLA tracking, multi-step
+/// remediation, or financial operations. Cases may link to a customer,
+/// order, or originating inquiry and are independently managed for routing,
+/// assignment, and closure. Used for operational workflows, reporting, and
+/// audit trails. Related entities: {@link shopping_mall_inquiries}.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_cases {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who raised or is affected by the support case. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Optional linked order for case context. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String?
+  
+  /// Optional originating inquiry that escalated into a support case. {@link
+  /// shopping_mall_inquiries.id}.
+  shopping_mall_inquiry_id String?
+  
+  /// Support agent assigned to handle the case. {@link
+  /// shopping_mall_support_agents.id}.
+  shopping_mall_assigned_support_agent_id String?
+  
+  /// Short title describing the support case.
+  title String
+  
+  /// Full case description and initial problem statement.
+  description String
+  
+  /// Case lifecycle status (e.g.,
+  /// 'open','investigating','escalated','resolved','closed').
+  status String
+  
+  /// Business severity level (e.g., 'low','medium','high','critical').
+  severity String
+  
+  /// SLA deadline for first response or resolution depending on case type.
+  sla_due_at DateTime?
+  
+  /// Case creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for the case.
+  updated_at DateTime
+  
+  /// Timestamp when case was closed.
+  closed_at DateTime?
+  
+  /// Soft-delete timestamp for case records.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  originInquiry shopping_mall_inquiries? @relation(fields: [shopping_mall_inquiry_id], references: [id], onDelete: Cascade)
+  assignedSupportAgent shopping_mall_support_agents? @relation(fields: [shopping_mall_assigned_support_agent_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_inquiry_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_assigned_support_agent_id], map: "shopping_mall_support_cases_shopping_mall_assigned_sup_1bf07fda")
+  
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_support_cases_shopping_mall_customer_id__16a2cecf")
+  @@index([severity, sla_due_at])
+}

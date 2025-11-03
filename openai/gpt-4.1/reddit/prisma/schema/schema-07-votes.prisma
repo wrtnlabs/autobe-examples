@@ -1,0 +1,97 @@
+/// Tracks upvotes and downvotes made by users on posts. Enforces
+/// one-user-one-vote policy with unique constraint on (user_id, post_id).
+/// Each vote can be toggled or undone (soft-deleted). Used for
+/// audit/logging, independent vote reversal, and moderation. Relates to
+/// {@link community_platform_posts.id} and {@link
+/// community_platform_users.id}. No aggregated metrics stored here.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter's {@link community_platform_users.id}. Each vote belongs to a user.
+  community_platform_user_id String
+  
+  /// Target post's {@link community_platform_posts.id}. Each vote relates to a
+  /// post.
+  community_platform_post_id String
+  
+  /// Whether the vote is an upvote (true) or downvote (false).
+  is_upvote Boolean
+  
+  /// Timestamp when the vote was first cast (for auditing).
+  created_at DateTime
+  
+  /// Timestamp when the vote was last changed (e.g., toggled, switched
+  /// direction).
+  updated_at DateTime
+  
+  /// Timestamp for vote undo/soft-deletion. Null if vote is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_id, community_platform_post_id], map: "community_platform_post_votes_community_platform_user__694703a3")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_votes_community_platform_post__80871491")
+  @@index([community_platform_user_id])
+}
+
+/// Tracks upvotes and downvotes made by users on comments. Enforces
+/// one-user-one-vote policy by unique constraint on (user_id, comment_id).
+/// Each row can be toggled or undone (soft-deleted). Used for audit/logging,
+/// moderation, and reversal. Relates to {@link
+/// community_platform_comments.id} and {@link community_platform_users.id}.
+/// No aggregated metrics stored here.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voter's {@link community_platform_users.id}. Each vote belongs to a user.
+  community_platform_user_id String
+  
+  /// Target comment's {@link community_platform_comments.id}. Each vote
+  /// relates to a comment.
+  community_platform_comment_id String
+  
+  /// Whether the vote is an upvote (true) or downvote (false).
+  is_upvote Boolean
+  
+  /// Timestamp when the vote was first cast (for auditing).
+  created_at DateTime
+  
+  /// Timestamp when the vote was last changed (e.g., toggled, switched
+  /// direction).
+  updated_at DateTime
+  
+  /// Timestamp for vote undo/soft-deletion. Null if vote is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_id, community_platform_comment_id], map: "community_platform_comment_votes_community_platform_us_29662574")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_votes_community_platform_co_68a9b5f7")
+  @@index([community_platform_user_id])
+}

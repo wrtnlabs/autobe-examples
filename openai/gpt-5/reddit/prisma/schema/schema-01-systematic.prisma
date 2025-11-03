@@ -1,0 +1,487 @@
+/// Global platform configurations for system-wide behavior (e.g., limits,
+/// toggles, validation bounds). Acts as a canonical key-value configuration
+/// registry referenced by services. Each configuration is independently
+/// managed and audited.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key (case-insensitive business identifier) such as
+  /// "posting.max_images" or "auth.session_idle_days".
+  key String
+  
+  /// Raw configuration value stored as text (interpretation is
+  /// application-specific; not computed).
+  value String
+  
+  /// Human-readable explanation of the configuration purpose and usage context.
+  description String?
+  
+  /// Optional logical grouping/category to assist discovery and management
+  /// (e.g., "posting", "auth").
+  category String?
+  
+  /// Whether this configuration entry is currently enabled by policy (soft
+  /// switch without deletion).
+  enabled Boolean
+  
+  /// Creation timestamp of the configuration entry.
+  created_at DateTime
+  
+  /// Last update timestamp of the configuration entry.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when the configuration is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([category, key])
+}
+
+/// Globally reserved terms and prefixes prohibited or protected across the
+/// platform (e.g., usernames, community names, system-reserved prefixes).
+/// Managed by admins with scope and lifecycle tracking. The admin reference
+/// is optional provenance and must not cause record deletion upon admin
+/// removal.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reserved_terms {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who created or last enforced this reservation. {@link
+  /// community_platform_admins.id}. Optional provenance; null if the admin
+  /// account is removed.
+  community_platform_admin_id String?
+  
+  /// Reservation scope (e.g., "username", "community_name", "prefix").
+  scope String
+  
+  /// Original reserved term or prefix as provided by policy or admin.
+  term String
+  
+  /// Normalized representation used for case-insensitive comparisons and
+  /// look-alikes.
+  normalized String
+  
+  /// Policy reason or context for the reservation.
+  reason String?
+  
+  /// Whether this reserved term is currently enforced.
+  active Boolean
+  
+  /// Creation timestamp of the reserved term entry.
+  created_at DateTime
+  
+  /// Last update timestamp of the reserved term entry.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the reserved term entry.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin community_platform_admins? @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([scope, normalized])
+  @@index([active, scope, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_reserved_terms_community_platform_a_65274d3d")
+}
+
+/// Global domain blocklist applied platform-wide for link posts and external
+/// references. Controls policy-based exclusions and can reference a
+/// governing policy rule for traceability. Admin and policy rule FKs are
+/// optional provenance and should be nulled—not cascaded—when referenced
+/// records are removed.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_blocked_domains {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated policy rule justifying the block. {@link
+  /// community_platform_policy_rules.id}. Optional; null if rule is removed.
+  community_platform_policy_rule_id String?
+  
+  /// Admin who created or last modified the block. {@link
+  /// community_platform_admins.id}. Optional; null if admin is removed.
+  community_platform_admin_id String?
+  
+  /// Registered domain name or pattern submitted for blocking (as provided).
+  domain String
+  
+  /// Canonical, normalized domain used for enforcement and uniqueness.
+  normalized_domain String
+  
+  /// Whether the block applies to all subdomains under the normalized domain.
+  include_subdomains Boolean
+  
+  /// Human-readable reason or context for the block entry.
+  reason String?
+  
+  /// Optional start time when the block becomes effective.
+  effective_from DateTime?
+  
+  /// Optional end time after which the block no longer applies.
+  effective_to DateTime?
+  
+  /// Creation timestamp of the block entry.
+  created_at DateTime
+  
+  /// Last update timestamp of the block entry.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp of the block entry.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  policyRule community_platform_policy_rules? @relation(fields: [community_platform_policy_rule_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins? @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([normalized_domain])
+  // spellchecker: ignore-next-line
+  @@index([include_subdomains, created_at], map: "community_platform_blocked_domains_include_subdomains__4fd0a15a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_blocked_domains_community_platform__3fb45534")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_policy_rule_id, created_at], map: "community_platform_blocked_domains_community_platform__682ece79")
+}
+
+/// Controlled vocabulary of supported languages for localization and policy
+/// gating (BCP‑47 compatible codes). Referenced across the platform for
+/// content and preference settings.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_languages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Language code (e.g., "en-US"). Treated as a business-unique identifier.
+  code String
+  
+  /// English-language name of the language (e.g., "English (United States)").
+  name String
+  
+  /// Endonym/native display name (e.g., "English", "Deutsch").
+  native_name String?
+  
+  /// Whether the language is right-to-left (RTL).
+  rtl Boolean
+  
+  /// Creation timestamp for the language entry.
+  created_at DateTime
+  
+  /// Last update timestamp for the language entry.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the language entry.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_communities community_platform_communities[]
+  community_platform_member_profiles community_platform_member_profiles[]
+  
+  @@unique([code])
+  @@index([rtl, code])
+}
+
+/// Controlled vocabulary of regions for policy and preference targeting
+/// (e.g., ISO region codes). Used by communities and profiles for
+/// locale-specific behavior.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_regions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Region code (e.g., "US", "KR"). Business-unique identifier.
+  code String
+  
+  /// Region name in English (e.g., "United States", "Korea").
+  name String
+  
+  /// Representative IANA timezone identifier, if applicable (e.g.,
+  /// "Asia/Seoul").
+  timezone String?
+  
+  /// Creation timestamp for the region entry.
+  created_at DateTime
+  
+  /// Last update timestamp for the region entry.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the region entry.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_communities community_platform_communities[]
+  community_platform_member_profiles community_platform_member_profiles[]
+  
+  @@unique([code])
+  @@index([code, created_at])
+}
+
+/// Platform policy rule catalog defining rule codes, titles, descriptions,
+/// severity, and category. Referenced by enforcement actions and blocklists.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_policy_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Stable business identifier for the policy rule (e.g., "SPAM", "HATE").
+  code String
+  
+  /// Human-readable rule title.
+  title String
+  
+  /// Detailed description of the rule and its scope.
+  description String
+  
+  /// Business severity classification (e.g., "low", "medium", "high",
+  /// "critical").
+  severity String
+  
+  /// Optional categorization/grouping for the rule (e.g., "safety",
+  /// "integrity").
+  category String?
+  
+  /// Whether this rule is currently active and applicable.
+  active Boolean
+  
+  /// Creation timestamp for the policy rule.
+  created_at DateTime
+  
+  /// Last update timestamp for the policy rule.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the policy rule.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_blocked_domains community_platform_blocked_domains[]
+  
+  @@unique([code])
+  @@index([active, severity, created_at])
+}
+
+/// Global feature toggle registry to control progressive rollouts and
+/// experiments. Supports percentage rollouts and scheduling windows.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_feature_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Business-unique feature key (e.g., "feeds.hot.v2").
+  key String
+  
+  /// Business description of the feature and intended audiences.
+  description String?
+  
+  /// Whether the flag is currently enabled (global allow).
+  enabled Boolean
+  
+  /// Rollout percentage (0–100) for gradual enablement.
+  rollout_percentage Int
+  
+  /// Optional start time for the flag to become effective.
+  starts_at DateTime?
+  
+  /// Optional end time for the flag to cease effect.
+  ends_at DateTime?
+  
+  /// Creation timestamp for the feature flag.
+  created_at DateTime
+  
+  /// Last update timestamp for the feature flag.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the feature flag.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([enabled, created_at])
+  @@index([starts_at, ends_at])
+}
+
+/// Records of legal holds applied to platform entities for compliance.
+/// Identifies target entity generically and the issuing admin, with
+/// lifecycle timestamps for release/expiry. Used to prevent purge and
+/// enforce retention. The admin reference is mandatory provenance and
+/// deletion of the admin must not cascade into legal holds.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_legal_holds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who issued the legal hold. {@link community_platform_admins.id}.
+  /// Mandatory provenance; prevent deletion while holds exist.
+  community_platform_admin_id String
+  
+  /// Target table name of the held entity (snake_case). Enables generic
+  /// cross-domain targeting without polymorphic FKs.
+  target_table String
+  
+  /// Target entity identifier (UUID).
+  target_id String
+  
+  /// Business reason or legal reference for the hold.
+  reason String
+  
+  /// Whether the legal hold is currently active. When false, the hold is
+  /// considered released or expired.
+  active Boolean
+  
+  /// Timestamp when the legal hold was released. Null when still active.
+  released_at DateTime?
+  
+  /// Optional expiration time for automatic release when applicable.
+  expires_at DateTime?
+  
+  /// Creation timestamp for the legal hold record.
+  created_at DateTime
+  
+  /// Last update timestamp for the legal hold record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the legal hold record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([target_table, target_id, active], map: "community_platform_legal_holds_target_table_target_id__c7cb213b")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_legal_holds_community_platform_admi_aef9bb14")
+}
+
+/// System-generated telemetry entries capturing rate limit evaluations and
+/// blocks across the platform. Used for abuse prevention analytics, incident
+/// reviews, and tuning. Actor fields are normalized via a discriminator
+/// without multiple nullable FKs.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_rate_limit_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor type that triggered the event (e.g., "guest", "member", "admin").
+  actor_type String
+  
+  /// Actor identifier if applicable (e.g., member/admin UUID); null for guests
+  /// or when unavailable.
+  actor_id String?
+  
+  /// Source IP address associated with the triggering request.
+  ip String
+  
+  /// Request URL at the time of evaluation for context.
+  href String
+  
+  /// Referrer URL supplied by the client, if any.
+  referrer String?
+  
+  /// Action type evaluated by the limiter (e.g., "post.create",
+  /// "comment.create", "vote.toggle", "login.attempt").
+  action String
+  
+  /// Scope of the limiter (e.g., "platform", "community:<uuid>", or a logical
+  /// grouping key).
+  scope String
+  
+  /// Optional targeted table associated with the event (when applicable).
+  target_table String?
+  
+  /// Optional targeted entity id associated with the event.
+  target_id String?
+  
+  /// Configured window size in seconds for the evaluated limiter.
+  window_seconds Int
+  
+  /// Configured maximum allowed actions within the window.
+  limit Int
+  
+  /// Observed count used in the evaluation at the time of the event.
+  observed_count Int
+  
+  /// Whether the limiter blocked the action due to exceeding the threshold.
+  blocked Boolean
+  
+  /// Event creation timestamp (when evaluation occurred).
+  created_at DateTime
+  
+  /// Last update timestamp for the event record; primarily system-maintained.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when a record is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+  @@index([actor_type, created_at])
+  @@index([ip, created_at])
+  @@index([action, created_at])
+  // spellchecker: ignore-next-line
+  @@index([target_table, target_id, created_at], map: "community_platform_rate_limit_events_target_table_targ_d29a2486")
+}

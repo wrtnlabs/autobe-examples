@@ -8,35 +8,28 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallWishlist";
+import { IShoppingMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallWishlistItem";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 
 export async function postShoppingMallCustomerWishlists(props: {
   customer: CustomerPayload;
-  body: IShoppingMallWishlist.ICreate;
 }): Promise<IShoppingMallWishlist> {
-  const { body } = props;
+  const { customer } = props;
 
-  const existedCustomer =
-    await MyGlobal.prisma.shopping_mall_customers.findFirst({
-      where: {
-        id: body.shopping_mall_customer_id,
-        status: "active",
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
-
-  if (existedCustomer === null) {
-    throw new HttpException("Customer does not exist or is not active", 403);
+  if (!customer.id || !customer.session_id) {
+    throw new HttpException(
+      "Invalid customer payload: missing id or session_id",
+      400,
+    );
   }
 
   const now = toISOStringSafe(new Date());
 
   const created = await MyGlobal.prisma.shopping_mall_wishlists.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      shopping_mall_customer_id: body.shopping_mall_customer_id as string &
-        tags.Format<"uuid">,
+      id: v4(),
+      shopping_mall_customer_id: customer.id,
+      shopping_mall_customer_session_id: customer.session_id,
       created_at: now,
       updated_at: now,
       deleted_at: null,
@@ -44,11 +37,14 @@ export async function postShoppingMallCustomerWishlists(props: {
   });
 
   return {
-    id: created.id as string & tags.Format<"uuid">,
-    shopping_mall_customer_id: created.shopping_mall_customer_id as string &
-      tags.Format<"uuid">,
+    id: created.id,
+    shopping_mall_customer_id: created.shopping_mall_customer_id,
+    shopping_mall_customer_session_id:
+      created.shopping_mall_customer_session_id,
     created_at: toISOStringSafe(created.created_at),
     updated_at: toISOStringSafe(created.updated_at),
-    deleted_at: created.deleted_at ? toISOStringSafe(created.deleted_at) : null,
+    deleted_at:
+      created.deleted_at !== null ? toISOStringSafe(created.deleted_at) : null,
+    shopping_mall_wishlist_items: undefined,
   };
 }

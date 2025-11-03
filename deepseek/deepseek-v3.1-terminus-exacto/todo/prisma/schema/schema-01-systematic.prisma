@@ -1,0 +1,48 @@
+/// System-wide application configuration settings for the Todo application.
+/// Stores key-value pairs for various application settings that can be
+/// modified by system administrators. Configuration changes are tracked with
+/// timestamps for audit purposes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the configuration setting. Used to reference
+  /// specific configuration values throughout the application.
+  config_key String
+  
+  /// The value associated with the configuration key. Stores configuration
+  /// data in string format that can be parsed based on the data_type field.
+  config_value String
+  
+  /// The data type of the configuration value (e.g., 'string', 'boolean',
+  /// 'number', 'json'). Used for proper parsing and validation of
+  /// configuration values.
+  data_type String
+  
+  /// Human-readable description of what this configuration setting controls
+  /// and how it affects application behavior.
+  description String
+  
+  /// Current status of the configuration setting (e.g., 'active', 'disabled',
+  /// 'deprecated'). Controls whether the setting is currently in effect.
+  status String
+  
+  /// Timestamp when the configuration setting was first created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration setting was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key])
+  @@index([status])
+  @@index([created_at])
+}

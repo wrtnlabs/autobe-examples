@@ -17,30 +17,26 @@ export async function putShoppingMallCustomerCustomersId(props: {
 }): Promise<IShoppingMallCustomer> {
   const { customer, id, body } = props;
 
-  // Authorization check: only the owner can update their info
   if (customer.id !== id) {
     throw new HttpException(
-      "Unauthorized: Cannot update other customer accounts",
+      "Forbidden: You can only update your own profile",
       403,
     );
   }
 
-  // Find existing customer record, throw if not found
-  const existing =
-    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
-      where: { id },
-    });
-
-  // Prepare update data
-  const now = toISOStringSafe(new Date());
+  const existing = await MyGlobal.prisma.shopping_mall_customers.findUnique({
+    where: { id },
+  });
+  if (existing === null) {
+    throw new HttpException("Customer not found", 404);
+  }
 
   const updated = await MyGlobal.prisma.shopping_mall_customers.update({
     where: { id },
     data: {
-      nickname: body.nickname ?? null,
-      phone_number: body.phone_number ?? null,
-      status: body.status,
-      updated_at: now,
+      email: body.email ?? undefined,
+      nickname: body.nickname ?? undefined,
+      updated_at: toISOStringSafe(new Date()),
     },
   });
 
@@ -48,11 +44,12 @@ export async function putShoppingMallCustomerCustomersId(props: {
     id: updated.id,
     email: updated.email,
     password_hash: updated.password_hash,
-    nickname: updated.nickname ?? null,
-    phone_number: updated.phone_number ?? null,
-    status: updated.status,
+    nickname: updated.nickname,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
+    deleted_at:
+      updated.deleted_at !== null && updated.deleted_at !== undefined
+        ? toISOStringSafe(updated.deleted_at)
+        : undefined,
   };
 }

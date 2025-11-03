@@ -1,103 +1,125 @@
-# Functional Requirements Analysis for Todo List Application
+# Requirements Analysis Report for Todo List Application
 
-## 1. Introduction
-This document specifies the business and functional requirements for a minimum viable Todo list application backend. The focus is on essential features allowing authenticated users to create, manage, complete, and delete personal tasks. The system does not support advanced features such as deadlines, reminders, or collaborative task management. It is intended for individual user use.
+## Document Scope and Intent
 
-This document provides business requirements only. All technical implementation decisions (system architecture, API design, database schema, etc.) are the full responsibility of the development team.
+This report defines comprehensive business requirements for the minimal viable Todo List Application backend service, focusing solely on the features necessary to create, read, update, and delete personal todo items by authenticated users. It excludes all technical implementation details such as database design, APIs, or frontend UI specifics. The document is intended for backend developers to unambiguously understand what the system must do.
 
-## 2. Business Model
+## User Actors and Authentication
 
-### Why This Service Exists
-- The Todo list application addresses a universal need for simple, personal task management.
-- It fills the gap for users seeking a lightweight tool without complex features.
-- The market includes many competitors; this service differentiates by providing minimalism and ease of use.
+### User Actor Definition
 
-### Revenue Strategy
-- As a minimal application, initial revenue may not be the focus.
-- Potential future monetization may include ads, premium features, or integrations.
+An authenticated individual who can register, log in, and manage their personal todo items. This user has the following capabilities:
+- Create new todo items
+- Retrieve their own todo items
+- Update their own todo items
+- Delete their own todo items
+- Cannot access other users' todo items
 
-### Growth Plan
-- Growth driven by simplicity and ease of onboarding new users.
-- Focus on retaining users by ensuring reliability and performance.
+### Authentication Flow
 
-### Success Metrics
-- Active user count (daily and monthly).
-- Task creation and completion rates.
-- User retention over time.
+- WHEN a prospective user submits registration data, THE system SHALL validate the input and create a new user account.
+- WHEN a registered user submits login credentials, THE system SHALL authenticate and establish a secure session.
+- WHEN a logged-in user requests logout, THE system SHALL terminate the session and invalidate tokens.
+- THE system SHALL securely store passwords using strong hashing algorithms with random salts.
+- THE system SHALL expire inactive sessions after 30 minutes of inactivity.
+- THE system SHALL support token-based authentication, issuing JSON Web Tokens (JWT) for access and refresh tokens.
+- THE access token SHALL expire 15 minutes after issuance.
+- THE refresh token SHALL expire 30 days after issuance or upon logout.
+- THE JWT payload SHALL include user identification and a permissions array.
 
-## 3. User Roles and Permissions
+### Permission Matrix
 
-| Role  | Description                                                                                                     | Permissions                                             |
-|-------|-----------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
-| Guest | Unauthenticated users with read-only access (viewing public information only).                                  | Cannot create, update, or delete tasks.                  |
-| User  | Authenticated users who can create, update, complete, and delete their own tasks.                               | Full CRUD on their own tasks.                            |
-| Admin | System administrators with permissions to manage all users and system-wide settings.                           | Manage all user accounts and oversee system operations. |
+| Action                        | User |
+|------------------------------|------|
+| Register                     | ✅   |
+| Login/Logout                 | ✅   |
+| Create Todo Items            | ✅   |
+| Read Own Todo Items          | ✅   |
+| Update Own Todo Items        | ✅   |
+| Delete Own Todo Items        | ✅   |
+| Access Others' Todo Items    | ❌   |
 
-## 4. Task Management
+## Functional Requirements
 
-### 4.1 Task Creation
-- WHEN a user submits a new task description, THE system SHALL create a new todo task associated with that user.
-- WHEN a task is created, THE system SHALL assign it a unique identifier.
-- THE task SHALL have a description text and a completion status set to "pending" by default.
+### Todo Item CRUD Operations
+- WHEN an authenticated user creates a todo item, THE system SHALL save the item with an associated unique user identifier.
+- WHEN a user requests retrieval of todo items, THE system SHALL return only those belonging to the authenticated user.
+- WHEN a user updates a todo item, THE system SHALL validate ownership and apply modifications.
+- WHEN a user deletes a todo item, THE system SHALL remove it only if it belongs to the requester.
 
-### 4.2 Task Update
-- WHEN a user updates the description of an existing task, THE system SHALL save the new description.
-- THE system SHALL NOT allow users to update tasks that do not belong to them.
+### Todo Item Data Attributes
+- THE todo item SHALL include a mandatory textual description field containing between 1 and 255 characters.
+- THE todo item SHALL include an optional completion status, which defaults to "pending" if unspecified.
+- THE todo item MAY include an optional creation timestamp in ISO 8601 format.
+- THE todo item MAY include an optional due date, which, if supplied, SHALL not be a date in the past.
 
-### 4.3 Task Completion
-- WHEN a user marks a task as completed, THE system SHALL update the task's status to "completed".
-- WHEN a user marks a task as pending again, THE system SHALL update the status to "pending".
+### Input Validation
+- WHEN creating or updating a todo item, THE system SHALL validate that the description is non-empty and does not exceed 255 characters.
+- IF the description is invalid, THEN THE system SHALL reject the request with an error message "Invalid description length".
+- WHEN a due date is provided, THE system SHALL validate it is a valid ISO 8601 date not earlier than the current date.
+- IF the due date is invalid, THEN THE system SHALL reject the request with an error message "Invalid due date".
 
-### 4.4 Task Deletion
-- WHEN a user requests deletion of a task, THE system SHALL delete that task.
-- THE system SHALL NOT allow users to delete tasks that do not belong to them.
+### Authorization
+- THE system SHALL enforce strict ownership checks to prevent users from accessing or modifying todo items they do not own.
+- IF a user attempts unauthorized access, THEN THE system SHALL return an authorization error.
 
-### 4.5 Task Listing
-- WHEN a user requests their task list, THE system SHALL return all tasks associated with that user.
-- THE system SHALL include task descriptions and completion statuses in the listing.
+## Business Rules
 
-## 5. Task Life Cycle
+- Each todo item SHALL be uniquely identifiable by a user.
+- Description text is mandatory; other fields are optional.
+- Completion status SHALL only accept the values "pending" or "completed".
+- Deleted items are permanently removed and cannot be recovered.
+- User authentication is mandatory before any CRUD operation.
 
-The task life cycle includes the following states and transitions:
-- Created (pending status)
-- Updated (description or status change)
-- Completed
-- Deleted
+## Error Handling
+
+- IF invalid input is detected, THEN THE system SHALL return meaningful error messages indicating the issue.
+- IF unauthorized access is attempted, THEN THE system SHALL return a clear authorization error.
+- IF system errors occur, THEN THE system SHALL return a generic error message and ensure errors are logged for audit.
+
+## Performance Requirements
+
+- THE system SHALL respond to all CRUD operations within 2 seconds under normal load conditions.
+- THE system SHALL support concurrent use by a minimum of 100 active users.
+- THE system SHALL ensure data consistency under concurrent access.
+
+## User Interaction Workflow
 
 ```mermaid
 graph LR
-  A["Task Created (Pending)"] --> B{"User Updates Task?"}
-  B -->|"Yes"| C["Update Task"]
-  B -->|"No"| D["No Change"]
-  C --> E{"User Marks Completed?"}
-  E -->|"Yes"| F["Status: Completed"]
-  E -->|"No"| G["Status: Pending"]
-  F --> H{"User Deletes Task?"}
-  G --> H
-  H -->|"Yes"| I["Task Deleted"]
-  H -->|"No"| D
+  A["User Authenticated"] --> B["Create Todo Item"]
+  B --> C["Validate Input"]
+  C --> D{"Valid?"}
+  D -->|"Yes"| E["Save Item"]
+  D -->|"No"| F["Return Validation Error"]
+  E --> G["Confirm Success"]
+
+  A --> H["Retrieve Todo List"]
+  H --> I["Fetch User's Items"]
+  I --> J["Return Todo List"]
+
+  A --> K["Update Todo Item"]
+  K --> L["Check Ownership"]
+  L --> M{"Owner?"}
+  M -->|"Yes"| N["Validate Update"]
+  M -->|"No"| O["Return Authorization Error"]
+  N --> P{"Valid?"}
+  P -->|"Yes"| Q["Save Update"]
+  P -->|"No"| F
+  Q --> G
+
+  A --> R["Delete Todo Item"]
+  R --> L
+  L --> S{"Owner?"}
+  S -->|"Yes"| T["Delete Item"]
+  S -->|"No"| O
+  T --> G
 ```
 
-## 6. Validation Rules
+## Summary
 
-- WHEN a user submits a new task description, THEN THE system SHALL validate that the description is a non-empty string.
-- IF the description is empty or only whitespace, THEN THE system SHALL reject the creation request with an error.
-- WHEN a user updates a task description, THEN THE system SHALL apply the same validation.
-- THE system SHALL enforce that only authenticated users can create, update, complete, or delete tasks.
+The requirements defined herein establish a secure, minimal, and functional Todo list application backend service. It mandates authenticated users managing their own todo items with strict validation, authorization, and error handling according to the EARS model. Performance and concurrency expectations ensure robust user experience.
 
-## 7. Error Handling
-
-- IF a user attempts to modify or delete a task that does not belong to them, THEN THE system SHALL respond with an authorization error.
-- IF a user submits invalid task data (e.g., empty description), THEN THE system SHALL provide a validation error with a descriptive message.
-- IF an unauthenticated user attempts to perform restricted actions, THEN THE system SHALL deny access and return an authentication error.
-
-## 8. Performance Requirements
-
-- WHEN a user requests their list of tasks, THEN THE system SHALL respond within 2 seconds under normal operating conditions.
-- WHEN a user creates, updates, completes, or deletes a task, THEN THE system SHALL reflect changes in the backend within 2 seconds.
-- THE system SHALL handle concurrent requests from multiple users without data loss or corruption.
+All implementation details, including database design and APIs, are at the discretion of the development team, with this document serving to define WHAT the system shall do, without prescribing HOW it shall be done.
 
 ---
-
-This document contains business requirements only. All technical implementation decisions about how to build the system, including APIs, database schema, and architecture, are fully delegated to the development team.
-The document specifies WHAT the system must do, not HOW to implement it.

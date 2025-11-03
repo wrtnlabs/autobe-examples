@@ -8,6 +8,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminSession";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function putDiscussionBoardAdminDiscussionBoardAdminsDiscussionBoardAdminId(props: {
@@ -15,31 +16,20 @@ export async function putDiscussionBoardAdminDiscussionBoardAdminsDiscussionBoar
   discussionBoardAdminId: string & tags.Format<"uuid">;
   body: IDiscussionBoardAdmin.IUpdate;
 }): Promise<IDiscussionBoardAdmin> {
-  const { admin, discussionBoardAdminId, body } = props;
-
-  const existingAdmin = await MyGlobal.prisma.discussion_board_admins.findFirst(
-    {
-      where: {
-        id: discussionBoardAdminId,
-        deleted_at: null,
-      },
-    },
-  );
-
-  if (!existingAdmin) {
-    throw new HttpException("Administrator user not found", 404);
-  }
-
-  const updated_at = body.updated_at ?? toISOStringSafe(new Date());
+  const { discussionBoardAdminId, body } = props;
+  const now = toISOStringSafe(new Date());
 
   const updated = await MyGlobal.prisma.discussion_board_admins.update({
-    where: { id: discussionBoardAdminId },
+    where: {
+      id: discussionBoardAdminId,
+      deleted_at: null,
+    },
     data: {
       email: body.email ?? undefined,
-      password_hash: body.password_hash ?? undefined,
-      display_name: body.display_name ?? undefined,
-      updated_at,
-      deleted_at: body.deleted_at !== undefined ? body.deleted_at : undefined,
+      updated_at: now,
+    },
+    include: {
+      discussion_board_admin_sessions: true,
     },
   });
 
@@ -47,9 +37,20 @@ export async function putDiscussionBoardAdminDiscussionBoardAdminsDiscussionBoar
     id: updated.id,
     email: updated.email,
     password_hash: updated.password_hash,
-    display_name: updated.display_name,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
     deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
+    discussion_board_admin_sessions:
+      updated.discussion_board_admin_sessions.map((session) => ({
+        id: session.id,
+        discussion_board_admin_id: session.discussion_board_admin_id,
+        ip: session.ip,
+        href: session.href,
+        referrer: session.referrer,
+        created_at: toISOStringSafe(session.created_at),
+        expired_at: session.expired_at
+          ? toISOStringSafe(session.expired_at)
+          : null,
+      })),
   };
 }

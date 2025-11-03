@@ -1,0 +1,327 @@
+/// Central entity for refund, return, or cancellation requests. Represents a
+/// standalone business process initiated by a customer or escalated by a
+/// seller/admin. Contains references to the original order and actor,
+/// request type, reason, context, and status. Attachments and request items
+/// are linked via subsidiary tables. Approval and override processes
+/// reference this model.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced order. {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// ID of the actor initiating the request (customer/seller/admin). {@link
+  /// shopping_customers.id}/{@link shopping_sellers.id}/{@link
+  /// shopping_admins.id} depending on actor_type.
+  shopping_actor_id String
+  
+  /// Type of actor initiating the request. Must be 'customer', 'seller', or
+  /// 'admin'.
+  actor_type String
+  
+  /// Business type of request: 'refund', 'return', or 'cancellation'.
+  request_type String
+  
+  /// Short non-nullable business provided reason for the request. E.g. 'item
+  /// defective', 'ordered by mistake', etc.
+  business_reason String
+  
+  /// Optional additional structured context or metadata associated with the
+  /// request (may contain JSON as string).
+  request_context String?
+  
+  /// Current business status of the request (e.g., 'pending',
+  /// 'awaiting_approval', 'approved', 'declined', 'completed', 'escalated',
+  /// etc).
+  status String
+  
+  /// Timestamp when the refund request was created.
+  created_at DateTime
+  
+  /// Timestamp when the request was last modified (status changed, reason
+  /// updated, etc).
+  updated_at DateTime
+  
+  /// Optional soft deletion of refund request for business/audit reasons.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  actor shopping_customers @relation(fields: [shopping_actor_id], references: [id], onDelete: Cascade)
+  
+  shopping_refund_request_items shopping_refund_request_items[]
+  shopping_refund_attachments shopping_refund_attachments[]
+  shopping_refund_status_histories shopping_refund_status_histories[]
+  shopping_refund_approvals shopping_refund_approvals[]
+  shopping_refund_admin_overrides shopping_refund_admin_overrides[]
+  
+  @@index([shopping_actor_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_order_id, actor_type, request_type], map: "shopping_refund_requests_shopping_order_id_actor_type__d0b7ecc8")
+  @@index([actor_type, created_at])
+  @@index([request_type])
+}
+
+/// Links individual order line items to a refund request. Used to itemize
+/// which order lines/SKUs are subject to refund, return, or cancellation
+/// claims. Contains FK refs to parent request, order, and order line item,
+/// and tracks quantity and item-specific reason if set. Always a child of a
+/// refund request.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_refund_request_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent refund request. {@link shopping_refund_requests.id}.
+  shopping_refund_request_id String
+  
+  /// Target order. {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Specific order line (SKU) being refunded. {@link shopping_order_lines.id}.
+  shopping_order_line_id String
+  
+  /// Number of units in the order line requested for
+  /// refund/return/cancellation (must be ≥1, ≤ order line quantity).
+  quantity Int
+  
+  /// Optional item-specific business reason for requesting refund. Overrides
+  /// parent reason if set.
+  item_business_reason String?
+  
+  /// Timestamp when the refund item was created.
+  created_at DateTime
+  
+  /// Timestamp of last modification to this item record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_refund_requests @relation(fields: [shopping_refund_request_id], references: [id], onDelete: Cascade)
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  orderLine shopping_order_lines @relation(fields: [shopping_order_line_id], references: [id], onDelete: Cascade)
+  
+  shopping_refund_attachments shopping_refund_attachments[]
+  
+  @@index([shopping_order_line_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_refund_request_id, shopping_order_line_id], map: "shopping_refund_request_items_shopping_refund_request__4914e6b5")
+  @@index([shopping_order_id])
+}
+
+/// Stores any evidence, photos, documents, or files attached to a refund
+/// request or refund item. Each attachment always references a parent
+/// request and optionally a specific request item. Links to generic
+/// attachment files handled in global file storage. Always subsidiary to a
+/// refund request.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_refund_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent refund request. {@link shopping_refund_requests.id}.
+  shopping_refund_request_id String
+  
+  /// Optional: refund request item this attachment is associated with. {@link
+  /// shopping_refund_request_items.id}.
+  shopping_refund_request_item_id String?
+  
+  /// FK to attachment file entity (managed in the file storage subsystem).
+  /// {@link shopping_product_images.id} or generic attachment.
+  attachment_file_id String
+  
+  /// Type of attachment (e.g., 'evidence', 'photo', 'invoice', etc).
+  attachment_type String
+  
+  /// Human-readable description of attachment purpose or content.
+  description String?
+  
+  /// Time attachment was uploaded.
+  uploaded_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_refund_requests @relation(fields: [shopping_refund_request_id], references: [id], onDelete: Cascade)
+  refundRequestItem shopping_refund_request_items? @relation(fields: [shopping_refund_request_item_id], references: [id], onDelete: Cascade)
+  attachmentFile shopping_product_images @relation(fields: [attachment_file_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_refund_request_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_refund_request_item_id], map: "shopping_refund_attachments_shopping_refund_request_it_0e7e8a41")
+  
+  @@unique([attachment_file_id])
+  @@index([attachment_type])
+}
+
+/// Append-only snapshot/audit log of all status transitions, actor actions,
+/// and context for a refund request. Every change to a refund's status,
+/// escalation, approval, or override creates a new record. Supports full
+/// audit trails. Provides a read-only chronological timeline.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_refund_status_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent refund request. {@link shopping_refund_requests.id}.
+  shopping_refund_request_id String
+  
+  /// ID of the actor making this status change. {@link
+  /// shopping_customers.id}/{@link shopping_sellers.id}/{@link
+  /// shopping_admins.id}.
+  shopping_actor_id String
+  
+  /// Type of actor making the status change: customer, seller, admin.
+  actor_type String
+  
+  /// Request status before this transition.
+  previous_status String
+  
+  /// Request status after the transition.
+  new_status String
+  
+  /// When this status change occurred.
+  timestamp DateTime
+  
+  /// Optional additional context or comments for audit/reference.
+  change_context String?
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_refund_requests @relation(fields: [shopping_refund_request_id], references: [id], onDelete: Cascade)
+  actor shopping_customers @relation(fields: [shopping_actor_id], references: [id], onDelete: Cascade)
+  
+  shopping_refund_approvals shopping_refund_approvals[]
+  
+  @@index([shopping_actor_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_refund_request_id, timestamp], map: "shopping_refund_status_histories_shopping_refund_reque_163e8ed7")
+}
+
+/// Record of approval or rejection actions for a given refund request.
+/// Includes compliance and workflow details; each approval is tied to the
+/// request and status history, and records actor and audit fields. Approval
+/// actions are explicitly recorded regardless of acceptance or rejection for
+/// traceability.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_refund_approvals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Refund request being approved/rejected. {@link
+  /// shopping_refund_requests.id}.
+  shopping_refund_request_id String
+  
+  /// Specific status change being approved/rejected. {@link
+  /// shopping_refund_status_histories.id}.
+  shopping_refund_status_history_id String
+  
+  /// Actor performing the approval/rejection action. {@link
+  /// shopping_admins.id}/{@link shopping_sellers.id}.
+  shopping_actor_id String
+  
+  /// Type of actor approving/rejecting (admin, seller).
+  actor_type String
+  
+  /// Approval action taken: 'approved', 'rejected', or relevant state.
+  action String
+  
+  /// Optional note or rationale for approval/rejection.
+  note String?
+  
+  /// Timestamp when the approval/rejection is recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_refund_requests @relation(fields: [shopping_refund_request_id], references: [id], onDelete: Cascade)
+  refundStatusHistory shopping_refund_status_histories @relation(fields: [shopping_refund_status_history_id], references: [id], onDelete: Cascade)
+  actor shopping_admins @relation(fields: [shopping_actor_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_refund_status_history_id], map: "shopping_refund_approvals_shopping_refund_status_histo_694fddea")
+  @@index([shopping_actor_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_refund_request_id, shopping_refund_status_history_id, shopping_actor_id], map: "shopping_refund_approvals_shopping_refund_request_id_s_05b7a2d2")
+  @@index([action])
+}
+
+/// Captures administrative override/escalation/forced-resolution actions by
+/// platform admin for refund cases. Used for compliance, legal, or
+/// regulatory interventions. References parent refund request, admin actor,
+/// context, and timestamps. Always subsidiary to a refund instance.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_refund_admin_overrides {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent refund request. {@link shopping_refund_requests.id}.
+  shopping_refund_request_id String
+  
+  /// Admin actor performing the override. {@link shopping_admins.id}.
+  shopping_admin_id String
+  
+  /// Type of override (e.g., 'force_accept', 'force_reject', 'reassign', etc).
+  override_type String
+  
+  /// Business or legal reason for performing the override.
+  reason String
+  
+  /// Optional detailed business/technical context or metadata for trace.
+  detailed_context String?
+  
+  /// Timestamp when the override was initiated.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_refund_requests @relation(fields: [shopping_refund_request_id], references: [id], onDelete: Cascade)
+  admin shopping_admins @relation(fields: [shopping_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_refund_request_id])
+  @@index([shopping_admin_id])
+  
+  @@index([override_type])
+}

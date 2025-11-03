@@ -1,34 +1,91 @@
-# Service Overview for Minimal Todo List Application
+# Functional Requirements for Todo List Application
 
-## Service Vision
-The vision of the minimal Todo list application is to offer individuals a simple, distraction-free way to organize and track daily tasks, empowering users to maintain focus and manage their productivity efficiently. The application prioritizes ease of use, absolute clarity, reliability, and minimalism, supporting users who wish for a frictionless, no-nonsense method to remember and complete their tasks.
+## Requirement Writing Principles
 
-## Problem Statement
-People often lose track of what needs to be done because task management tools can be overly complex, filled with unnecessary features, subscription demands, or intrusive notifications. The lack of a truly lightweight, user-controlled Todo app leaves a significant market gap for those who simply want to write down, check off, and delete tasks, without the onboarding burden or decision fatigue caused by bloatware.
+All requirements are written using the EARS (Easy Approach to Requirements Syntax) methodology. EARS ensures natural-language requirements are specific, clear, and testable. Each functional requirement is fully expressed in EARS template, using keywords WHEN, WHILE, IF, THEN, WHERE, THE, SHALL. All field- or item-specific rules are presented in clear, measurable terms. No implementation-level or UI requirements are included, focusing strictly on business rules and user intent.
 
-## Core Value Proposition
-- Simplicity: A single-purpose tool—creating and managing simple Todo lists with no extraneous features.
-- Privacy: User tasks are only accessible by the user; no public sharing or social features are built in.
-- Speed: Users can add, view, edit, and delete tasks quickly, with no distractions or multi-step forms.
-- Minimal Onboarding: Users register via API and immediately begin using the core Todo functions with only essential fields collected, and no advertisement or upsell interruptions.
+## Actionable Items and CRUD Operations
 
-## Business Model
+### Create Todo
+- WHEN a todoUser submits a new todo item with valid data, THE system SHALL create a new todo belonging exclusively to that user.
+- WHEN a todoUser attempts to create a todo, THE system SHALL require a non-empty title field not exceeding 200 characters.
+- WHEN a todoUser creates a todo, THE system SHALL accept an optional description field not exceeding 2000 characters.
+- WHEN a new todo is created, THE system SHALL set its completion status as "incomplete".
+- WHEN a new todo is created, THE system SHALL automatically assign the creation date and associate the todo with the creating user.
 
-### Why This Service Exists
-There is a persistent segment of users frustrated by complex, feature-bloated task apps. This service fills a market gap by offering a truly minimal, private Todo list app with only the essentials, lowering the cognitive load for users and removing the friction of competing apps that prioritize monetization or virality over actual usability. By stripping away non-core features, the app can attract users seeking a trustworthy productivity companion that "just works."
+### Read/List Todos
+- WHEN a todoUser requests a list of todos, THE system SHALL return only todos created by that specific user in descending order of creation date.
+- WHEN a todoUser requests details for a specific todo, THE system SHALL return the full data for that todo only if it belongs to the requesting user.
+- IF a todoUser requests details for a todo that does not exist or does not belong to them, THEN THE system SHALL notify the user of an access error and provide no data.
 
-### Revenue Strategy
-In its minimal version, the app does not include any paid features, advertisements, or monetization mechanisms. The long-term vision may include optional, non-intrusive paid upgrades (such as backup, multi-device sync, or pro support), but such elements are excluded from the MVP and roadmap until a loyal user base demands them. No user data is sold or shared under any circumstances.
+### Update/Edit Todos
+- WHEN a todoUser edits their own todo, THE system SHALL allow modification of the title to a non-empty string up to 200 characters.
+- WHEN a todoUser edits their own todo, THE system SHALL allow modification of the description to a string up to 2000 characters or to null (to delete/clear the description).
+- WHEN a todoUser attempts to modify a todo that is not theirs, THEN THE system SHALL deny the action and notify the user of insufficient permissions.
+- WHEN a todoUser updates a todo, THE system SHALL update the last modified date for that todo.
 
-### Growth Plan
-Initial user acquisition focuses on word-of-mouth and developer communities who value minimalism. Open-source exposure and social proof from satisfied users serve as primary acquisition channels. No marketing budget is allocated for ads or paid placement in the MVP phase.
+### Complete Todo
+- WHEN a todoUser marks a todo as complete, THE system SHALL set its status as "completed" and record the completion date.
+- WHEN a completed todo is reactivated (marked as incomplete), THE system SHALL remove the completion date and set the status as "incomplete".
+- WHEN a user attempts to complete or uncomplete a todo that is not theirs, THEN THE system SHALL deny the action and notify the user of insufficient permissions.
 
-### Success Metrics
-- Daily and Monthly Active Users (DAU, MAU)
-- Task completion rate per user
-- User retention metrics over 7/30 days
-- Average tasks created/checked-off per active user
-- Zero reported privacy/data-leak incidents
+### Delete Todo
+- WHEN a todoUser deletes one of their todos, THE system SHALL permanently remove that todo from the user's todo list and database.
+- IF a todoUser attempts to delete a todo not owned by them, THEN THE system SHALL deny the action and notify the user of insufficient permissions.
+- WHEN a todo is deleted, THE system SHALL ensure all references to that todo are removed for that user.
 
-## How this Document Informs Other Documents
-This overview serves as the anchoring reference for all requirements, features, and user journeys documented elsewhere, such as the [Functional Requirements Document](./05-functional-requirements.md), [User Roles and Authentication](./04-user-roles-and-authentication.md), [User Journey](./06-user-journey.md), and [Business Rules and Validation](./07-business-rules-and-validation.md). All future development must adhere to the values, principles, and user-first bias established in this document.
+## Constraints and Validation
+
+### Input Field Constraints
+- THE title field SHALL be required, non-empty after whitespace trimming, and have a maximum of 200 characters.
+- THE description field SHALL be optional but must not exceed 2000 characters if provided.
+- THE system SHALL reject creation or updates where the title or description exceed allowed character lengths.
+
+### Uniqueness and Ownership
+- THE system SHALL ensure each todo belongs exclusively to its creator (todoUser).
+- THE system SHALL prevent users from viewing, editing, completing, or deleting todos that are not their own.
+- WHEN a duplicate todo is created (identical title and description within the same day by the same user), THE system SHALL allow the operation unless non-functional requirements require change.
+
+## Edge Case Handling
+
+- IF a todoUser submits a todo without a title or only whitespace, THEN THE system SHALL reject the request and return a validation error specifying the title is required.
+- IF a todoUser attempts to create or update a todo with a title or description exceeding length limits, THEN THE system SHALL reject the request and specify which field is too long.
+- IF a todoUser attempts any operation on a todo not owned by them, THEN THE system SHALL deny access and provide a suitable error.
+- IF a todo is deleted or not found, THEN THE system SHALL notify the user and confirm the item is no longer accessible.
+- IF a todoUser attempts to complete a todo that is already completed, THEN THE system SHALL maintain the status without error.
+- IF a todoUser attempts to uncomplete a todo that is already marked as incomplete, THEN THE system SHALL maintain the status without error.
+
+## Success Criteria
+
+- All requirements are satisfied when each CRUD operation, business rule, and validation is implemented exactly as described, and every outcome is testable through clear pass/fail criteria derived from above.
+- WHEN a todoUser performs valid operations, THE system SHALL complete the action and confirm to the user that the change was successful.
+- WHEN a todoUser performs an invalid or unauthorized operation, THE system SHALL reject and return a clear business error without altering any data.
+- WHEN displaying todo lists or details, THE system SHALL ensure no cross-user data is ever returned.
+
+## Summary Table of Major Requirements
+
+| Requirement Area | EARS Example |
+|------------------|-------------|
+| Create Todo      | WHEN a todoUser submits valid data, THE system SHALL create a new todo for that user. |
+| Edit Todo        | WHEN a todoUser edits their todo, THE system SHALL update fields if they meet business rules. |
+| Complete Todo    | WHEN a todoUser completes their todo, THE system SHALL set it as completed and timestamp the action. |
+| Delete Todo      | WHEN a todoUser deletes their todo, THE system SHALL remove it permanently. |
+| View Todos       | WHEN a todoUser requests todos, THE system SHALL return only their own. |
+| Validation Error | IF a field exceeds limits, THEN THE system SHALL reject the request with a suitable error. |
+| Permission Error | IF a user acts on another's todo, THEN THE system SHALL deny access and notify the user. |
+
+## Mermaid Diagram: Todo CRUD User Flow
+
+```mermaid
+graph LR
+    subgraph "User-Driven Todo Management"
+        A["Start (User Authenticated)"] --> B["Create/Edit/Delete/List Action Requested"]
+        B --> C{"Is request valid and authorized?"}
+        C -->|"Yes"| D["Perform Operation"]
+        C -->|"No"| E["Reject with Business Error"]
+        D --> F["Return Success, Update Data"]
+        E --> G["Return Error Message"]
+    end
+```
+
+All requirements above are mandatory and constitute the full functional business contract for backend developers. No requirement may be omitted or relaxed without explicit business review and documentation update.

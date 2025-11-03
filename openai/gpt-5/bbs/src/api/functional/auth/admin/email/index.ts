@@ -1,2 +1,2 @@
-export * as resend from "./resend/index";
+export * as verification from "./verification/index";
 export * as verify from "./verify/index";

@@ -1,0 +1,196 @@
+import { IAuthorizationToken } from "./IAuthorizationToken";
+
+export namespace IDiscussionBoardCitizen {
+  /**
+   * Request body containing the credentials required to register a new
+   * citizen account in the discussion_board_citizens table.
+   *
+   * This schema defines exactly which fields the client must provide to
+   * create a new citizen account. It directly maps to the
+   * discussion_board_citizens database table, including only the fields that
+   * the client can provide during registration: email and password.
+   *
+   * The email field must be unique across all records in the
+   * discussion_board_citizens table and must follow standard email formatting
+   * rules. The password field must meet the system's security requirements
+   * (minimum length, complexity) and will be hashed before storage.
+   *
+   * Important: This schema does not include system-managed fields like id,
+   * created_at, updated_at, deleted_at, or email_verified as these are
+   * automatically handled by the system. The email_verified field is always
+   * initialized to false during registration and must be set to true through
+   * a separate email verification process.
+   *
+   * This schema ensures minimal attack surface by only allowing the two
+   * necessary fields for registration, preventing injection attacks or
+   * unauthorized field manipulation.
+   */
+  export type ICreate = {
+    /**
+     * Unique email address used for authentication and notifications. Must
+     * be verified before posting or commenting.
+     *
+     * This field is required for registration and must match the format of
+     * the email field in the discussion_board_citizens table.
+     *
+     * Must be a valid email address that follows RFC 5322 standards. The
+     * system will verify uniqueness in the discussion_board_citizens table
+     * during registration process.
+     *
+     * This field serves as the user's primary identifier for authentication
+     * and communication purposes.
+     */
+    email: string;
+
+    /**
+     * Plain text password for authentication. The system will hash this
+     * password using a secure algorithm (e.g., bcrypt) and compare it
+     * against the stored password_hash in the discussion_board_citizens
+     * table. Must meet security requirements (minimum length, complexity)
+     * as defined by the system policy.
+     *
+     * The password must be provided in plain text format as this is the
+     * input field for registration. The backend system will immediately
+     * hash this value using a secure algorithm (bcrypt) and store the hash
+     * in the password_hash field of the discussion_board_citizens table.
+     *
+     * For security: Must be at least 8 characters long and contain a mix of
+     * upper/lowercase letters, numbers, and special characters as defined
+     * by the system policy.
+     *
+     * This field is mandatory and must be included in every registration
+     * request. Never transmit or store the password in plain text beyond
+     * this request context.
+     */
+    password: string;
+  };
+
+  /**
+   * Response containing authentication tokens and user information for the
+   * authenticated citizen user.
+   *
+   * This schema defines the complete structure of the response returned after
+   * successful citizen authentication (login or registration). It follows the
+   * pattern I{PascalPrefixName}{ActorName}.IAuthorized where PascalPrefixName
+   * is 'DiscussionBoard' and ActorName is 'Citizen', as required by the
+   * system conventions.
+   *
+   * The schema contains two critical fields:
+   *
+   * 1. Id: The unique identifier of the authenticated citizen, referenced from
+   *    the discussion_board_citizens.id field
+   * 2. Token: A structured object containing all required authentication tokens
+   *
+   * The token field is an object that references the IAuthorizationToken
+   * schema, which contains:
+   *
+   * - Access token (JWT with 30-minute expiration)
+   * - Refresh token (JWT with 7-day expiration)
+   * - Expiration timestamps (expired_at, refreshable_until)
+   *
+   * This structure ensures standardized authentication across the
+   * application. The token is issued and validated by the system's secure
+   * authentication mechanism, using the citizen's data from the
+   * discussion_board_citizens table to populate the JWT claims.
+   *
+   * After successful authentication, the user's role ('citizen') is embedded
+   * in the JWT payload, which determines their access permissions in the
+   * system. The email_verified status is not included in the response as it's
+   * not needed for authentication - the system enforces this at the endpoint
+   * level instead.
+   */
+  export type IAuthorized = {
+    /**
+     * Unique identifier of the authenticated citizen user.
+     *
+     * This corresponds directly to the id field in the
+     * discussion_board_citizens table, which is a UUID generated by the
+     * system upon account creation.
+     *
+     * This identifier is included in the JWT token payload and is used to
+     * identify the user in all subsequent API requests. The system matches
+     * this ID against the discussion_board_citizens table to validate user
+     * ownership and permissions.
+     *
+     * Format: UUID v4 as defined by RFC 4122 with hexadecimal
+     * representation (32 characters, 8-4-4-4-12 pattern).
+     */
+    id: string;
+
+    /** JWT token information for authentication */
+    token: IAuthorizationToken;
+  };
+
+  /**
+   * Request body containing authentication credentials for a citizen user.
+   * Includes the email address and password required to authenticate against
+   * the discussion_board_citizens table. The email field is used to locate
+   * the user record, and the password is validated against the stored
+   * password_hash. This schema directly maps to the fields in the
+   * discussion_board_citizens Prisma model: email (unique identifier) and
+   * password_hash (hashed value). The schema requires both email (String, not
+   * nullable) and password (String) fields for authentication.
+   */
+  export type IRequest = string;
+
+  /**
+   * A success response confirming the registration request has been received
+   * and the verification email has been sent. The response contains the
+   * citizen ID and confirms that activation is pending email verification.
+   *
+   * ### Business Context
+   *
+   * This response schema represents the system's confirmation to a citizen
+   * who has successfully initiated account registration on the discussion
+   * board platform. It follows the two-step registration process outlined in
+   * the requirements:
+   *
+   * 1. The user provides an email address and password via the
+   *    IDiscussionBoardCitizen.ICreate request
+   * 2. The system creates a record in the discussion_board_citizens table with
+   *    email_verified set to false
+   * 3. The system sends a verification email to the provided address
+   * 4. The system returns this IRegisterResponse to signal successful
+   *    registration
+   *
+   * This response is deliberately minimal to prevent exposing sensitive
+   * information about the registration process. It does not include the
+   * user's password hash, creation timestamp, or other internal metadata that
+   * could potentially aid attackers.
+   *
+   * The schema contains only two fields:
+   *
+   * - Id: The unique UUID assigned by the system to the new citizen record
+   * - Email_verified: A boolean indicating the verification status (false, as
+   *   per business requirements)
+   *
+   * All other fields from the discussion_board_citizens table (email,
+   * password_hash, created_at, updated_at, deleted_at) are intentionally
+   * excluded from this response for security reasons. This follows the
+   * principle of least exposure - only providing the information necessary
+   * for the client to proceed with the registration workflow.
+   *
+   * The client's next step is to instruct the user to check their email for
+   * the verification link. In some implementations, the client may
+   * auto-navigate the user to a "verification pending" page on the website.
+   * The response does not include tokens or session identifiers because no
+   * session has been created yet - the user must complete email verification
+   * and then log in via the authentication endpoint.
+   *
+   * This approach enhances security by ensuring that:
+   *
+   * - User credentials are never exposed in response
+   * - Account creation cannot be abused through automated account enumeration
+   * - Email verification is mandatory before any account activity can occur
+   *
+   * The id field in this response allows the client to retrieve additional
+   * user information after the verification process is complete, but this ID
+   * should not be exposed publicly as it could be used to track users across
+   * different platforms.
+   *
+   * Note: While the discussion_board_citizens table contains several
+   * additional fields, they are intentionally omitted from this response to
+   * reduce attack surface and maintain user privacy.
+   */
+  export type IRegisterResponse = string;
+}

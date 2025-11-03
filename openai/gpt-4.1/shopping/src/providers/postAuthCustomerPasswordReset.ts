@@ -7,72 +7,63 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingCustomer";
 
 export async function postAuthCustomerPasswordReset(props: {
-  body: IShoppingMallCustomer.IResetPassword;
-}): Promise<IShoppingMallCustomer.IPasswordResetResult> {
-  const { token, newPassword } = props.body;
+  body: IShoppingCustomer.ICompletePasswordReset;
+}): Promise<IShoppingCustomer.IPasswordResetCompleted> {
+  const { reset_code, new_password } = props.body;
+
+  // Step 1: Lookup password reset record by code
+  const reset = await MyGlobal.prisma.shopping_password_resets.findUnique({
+    where: { reset_code },
+  });
+  if (!reset) throw new HttpException("Invalid or expired reset token", 404);
+  if (reset.consumed_at !== null)
+    throw new HttpException("Reset token has already been used", 400);
   const now = toISOStringSafe(new Date());
+  if (new Date(reset.expires_at) < new Date(now))
+    throw new HttpException("Reset token has expired", 400);
 
-  try {
-    const result = await MyGlobal.prisma.$transaction(async (tx) => {
-      // Step 1: Lookup reset token
-      const resetRecord = await tx.shopping_mall_password_resets.findUnique({
-        where: { token },
-        select: { token: true, expires_at: true, used_at: true, user_id: true },
-      });
-      if (!resetRecord) {
-        return { success: false, errorCode: "invalid_token" };
-      }
-
-      // Convert expires_at and used_at to ISO string for safe handling
-      const expiresAt = toISOStringSafe(resetRecord.expires_at);
-      const usedAt = resetRecord.used_at
-        ? toISOStringSafe(resetRecord.used_at)
-        : null;
-
-      // Compare times (use JS Date logic internally, never expose type)
-      if (
-        // Already used
-        usedAt !== null ||
-        // Expired: expiresAt < now
-        Date.parse(expiresAt) < Date.parse(now)
-      ) {
-        return { success: false, errorCode: "invalid_token" };
-      }
-
-      // Step 2: Find customer by user_id
-      const user = await tx.shopping_mall_customers.findUnique({
-        where: { id: resetRecord.user_id },
-        select: { id: true },
-      });
-      if (!user) {
-        return { success: false, errorCode: "invalid_token" };
-      }
-
-      // Step 3: Hash new password
-      const hashed = await PasswordUtil.hash(newPassword);
-      await tx.shopping_mall_customers.update({
-        where: { id: user.id },
-        data: { password_hash: hashed },
-      });
-
-      // Step 4: Mark token as used (now)
-      await tx.shopping_mall_password_resets.update({
-        where: { token },
-        data: { used_at: now },
-      });
-
-      // Step 5: Delete all user sessions
-      await tx.shopping_mall_user_sessions.deleteMany({
-        where: { user_id: user.id },
-      });
-
-      return { success: true };
-    });
-    return result;
-  } catch {
-    return { success: false, errorCode: "internal_error" };
+  // Step 2: Password strength validation (min 8 chars, upper, lower, number, symbol)
+  if (
+    !/^.*(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).*$/.test(
+      new_password,
+    )
+  ) {
+    throw new HttpException(
+      "Password does not meet complexity requirements",
+      400,
+    );
   }
+
+  // Step 3: Find customer
+  const customerId = reset.shopping_customer_id;
+  const customer = await MyGlobal.prisma.shopping_customers.findUnique({
+    where: { id: customerId ?? undefined },
+  });
+  if (!customer)
+    throw new HttpException("Customer not found for password reset", 404);
+
+  // Step 4: Securely hash new password
+  const hash = await PasswordUtil.hash(new_password);
+
+  // Step 5 (atomic): Update password and mark reset token consumed
+  await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_customers.update({
+      where: { id: customerId ?? undefined },
+      data: { password_hash: hash, updated_at: now },
+    }),
+    MyGlobal.prisma.shopping_password_resets.update({
+      where: { reset_code },
+      data: { consumed_at: now, updated_at: now },
+    }),
+  ]);
+
+  return {
+    success: true,
+    customer_id: (customerId ?? "") satisfies string as string &
+      tags.Format<"uuid">,
+    reset_token_consumed_at: now,
+  };
 }

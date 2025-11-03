@@ -7,42 +7,66 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserJoin(props: {
   user: UserPayload;
-}): Promise<ITodoListUser.IAuthorized> {
-  // The system is designed as a single-user application with no authentication
-  // credentials. The UserPayload.id is provided from context and must be used
-  // directly as the todo_list_user.id.
+  email: string & tags.Format<"email"> & tags.MinLength<1>;
+  password: string & tags.MinLength<8> & tags.MaxLength<128>;
+  body: ITodoUser.IJoin;
+}): Promise<ITodoUser.IAuthorized> {
+  // Extract the email and password from body
+  const { email, password } = props.body;
 
-  // The Prisma schema shows todo_list_user has only id, created_at, updated_at
-  // fields. No email, password, or username fields exist.
+  // Verify that the email doesn't already exist
+  const existingUser = await MyGlobal.prisma.todo_users.findFirst({
+    where: { email },
+  });
 
-  // Generate current ISO string using toISOStringSafe with Date constructed
-  // from system time (this is the only acceptable way to get current time)
-  const now = toISOStringSafe(new Date());
+  if (existingUser) {
+    throw new HttpException("Email already registered", 409);
+  }
 
-  // Create the user in the todo_list_user table using provided user.id
-  const newUser = await MyGlobal.prisma.todo_list_user.create({
+  // Hash the password using PasswordUtil
+  const hashedPassword = await PasswordUtil.hash(password);
+
+  // Create the new user record
+  const newUser = await MyGlobal.prisma.todo_users.create({
     data: {
-      id: props.user.id,
-      created_at: now,
-      updated_at: now,
+      id: v4() as string & tags.Format<"uuid">,
+      email,
+      password_hash: hashedPassword,
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
+      deleted_at: null,
     },
   });
 
-  // Create token expiration times using Date constructor and then toISOStringSafe
-  // This is the only permitted way to derive date strings within the system rules
-  const accessTokenExpires = toISOStringSafe(new Date(Date.now() + 3600000)); // 1 hour
-  const refreshTokenExpires = toISOStringSafe(new Date(Date.now() + 604800000)); // 7 days
+  // Create the session record
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  // Generate access token
+  const session = await MyGlobal.prisma.todo_user_sessions.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      todo_user_id: newUser.id,
+      ip: props.user ? props.user.id : "0.0.0.0",
+      href: "https://example.com/auth/join",
+      referrer: "",
+      created_at: toISOStringSafe(new Date()),
+      expired_at: toISOStringSafe(accessExpires),
+    },
+  });
+
+  // Generate JWT tokens
   const accessToken = jwt.sign(
     {
-      userId: newUser.id,
+      type: "user",
+      id: newUser.id,
+      session_id: session.id,
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -51,11 +75,13 @@ export async function postAuthUserJoin(props: {
     },
   );
 
-  // Generate refresh token
   const refreshToken = jwt.sign(
     {
-      userId: newUser.id,
+      type: "user",
+      id: newUser.id,
+      session_id: session.id,
       tokenType: "refresh",
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -64,14 +90,18 @@ export async function postAuthUserJoin(props: {
     },
   );
 
-  // Return the authorized user object with the token - all date fields properly formatted
+  // Return the authorized response
   return {
     id: newUser.id,
+    email: newUser.email,
+    created_at: toISOStringSafe(newUser.created_at),
+    updated_at: toISOStringSafe(newUser.updated_at),
+    deleted_at: toISOStringSafe(newUser.deleted_at ?? new Date(0)),
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessTokenExpires,
-      refreshable_until: refreshTokenExpires,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
     },
-  };
+  } satisfies ITodoUser.IAuthorized;
 }

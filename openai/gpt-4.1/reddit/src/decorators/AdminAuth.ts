@@ -4,10 +4,6 @@ import { Singleton } from "tstl";
 
 import { adminAuthorize } from "../providers/authorize/adminAuthorize";
 
-/**
- * Parameter decorator for authenticating admin in controller methods.
- * Injects AdminPayload if authorized.
- */
 export const AdminAuth =
   (): ParameterDecorator =>
   (

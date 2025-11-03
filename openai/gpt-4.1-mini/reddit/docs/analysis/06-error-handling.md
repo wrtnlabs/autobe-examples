@@ -1,143 +1,70 @@
-# Error Handling and Recovery Processes for redditCommunity
+# Error Handling and Recovery Requirements for redditCommunity
 
-This document describes all error handling scenarios, failure cases, and recovery mechanisms for the Reddit-like community platform redditCommunity. It defines how the system behaves when errors occur during authentication, content submission, voting, commenting, reporting, moderation, and system faults, along with how users are informed and allowed to recover.
+## 1. Introduction
+Effective error handling is critical to maintain a seamless user experience on redditCommunity. The system SHALL provide clear, specific, and actionable error messages to guide users in recovering from errors promptly. This document defines all error handling requirements across authentication, authorization, content submission, voting, commenting, and reporting processes.
 
-This document provides business requirements only. All technical implementation decisions belong to developers who have full autonomy over architecture, APIs, and database design. This report describes WHAT the system should do, not HOW to build it.
+## 2. Authentication Errors
+- WHEN a user registration attempt fails due to invalid data, THE system SHALL return an informative error message explaining which fields need correction within 2 seconds.
+- WHEN a user attempts to log in with invalid credentials, THE system SHALL deny access and return an error message within 2 seconds.
+- WHEN email verification is pending for a user, THE system SHALL prevent posting or other restricted actions and prompt the user to verify their email.
+- WHEN a password reset request fails (e.g., invalid email), THE system SHALL inform the user with clear instructions within 2 seconds.
 
-## 1. Authentication Errors
+## 3. Authorization Errors
+- WHEN a user attempts to access a resource without sufficient permissions, THE system SHALL deny access and return an authorization error message within 1 second.
+- WHEN a user attempts an action restricted to specific roles (e.g., moderator-only), THE system SHALL return a permission denied message immediately.
 
-### 1.1 Login Failures
-- WHEN a user submits invalid login credentials, THE system SHALL reject the login attempt and return an error indicating "invalid username or password." The response SHALL be returned within 2 seconds.
-- IF a user exceeds 5 failed login attempts within 10 minutes, THEN THE system SHALL temporarily lock the account for 15 minutes and notify the user of the lockout.
-- WHEN a user attempts to log in with an unverified email address, THE system SHALL deny login and prompt the user to verify their email.
+## 4. Content Submission Errors
+- WHEN a post submission fails validation due to content format or length, THE system SHALL reject the submission and provide detailed feedback within 2 seconds.
+- WHEN a comment submission exceeds maximum nesting depth or length, THE system SHALL reject the comment and notify the user.
+- WHEN an image upload fails due to unsupported format or size limits, THE system SHALL return a specific error explaining accepted formats and maximum sizes.
 
-### 1.2 Registration Issues
-- IF a new registration attempts to use an email already registered, THEN THE system SHALL reject the registration with an error "email already in use."
-- WHEN a user registers, THE system SHALL send an email verification link.
-- IF email verification fails (invalid or expired link), THEN THE system SHALL prompt the user to request a new verification email.
+## 5. Voting Errors
+- WHEN a user attempts to vote multiple times on the same post or comment, THE system SHALL reject the additional votes and notify the user immediately.
+- WHEN a user attempts to vote on their own content, THE system SHALL prevent the vote and inform the user.
 
-### 1.3 Session and Token Errors
-- WHEN a user attempts any action requiring authentication with an expired session or invalid token, THE system SHALL deny the request with an error requiring reauthentication.
-- IF refresh token is invalid or expired, THEN THE system SHALL force the user to log in again.
+## 6. Commenting Errors
+- WHEN the maximum allowed nesting depth is exceeded in replies, THE system SHALL reject the new comment and inform the user.
+- WHEN a comment exceeds the character limit, THE system SHALL reject the comment with an appropriate error message.
 
-## 2. Content Submission Errors
+## 7. Reporting Errors
+- WHEN a user attempts to report content that is non-existent or already removed, THE system SHALL notify the user of invalid report within 1 second.
+- WHEN a user submits multiple identical reports for the same content, THE system SHALL ignore duplicates silently but log the attempt.
 
-### 2.1 Community Creation
-- IF a user without permission attempts to create a community, THEN THE system SHALL deny the action with an authorization error.
-- WHEN community creation fails due to missing required fields (e.g., community name), THE system SHALL return a clear validation error.
+## 8. User Recovery and Retry Logic
+- The system SHALL provide users with clear instructions to correct errors and retry their actions.
+- Error responses SHALL be actionable, indicating the exact problem and suggested fixes.
+- THE system SHALL allow retrying failed operations after fixes.
 
-### 2.2 Post Creation, Editing, and Deleting
-- WHEN a user attempts to post content exceeding allowed lengths (text, image size), THE system SHALL reject with a validation error.
-- IF the post type is unsupported (e.g., unsupported media formats), THEN THE system SHALL reject the post creation.
-- WHEN a user attempts to edit or delete a post they do not own, THE system SHALL deny access and return an authorization error.
-- IF a post editing or deletion request fails due to concurrency conflicts, THEN THE system SHALL notify the user and allow retry.
+## 9. Error Message Specifications
+- Error messages SHALL be concise, clear, and free of technical jargon.
+- The system SHALL deliver error messages within 2 seconds of an error occurrence.
+- User-facing errors SHALL include context-sensitive help or links to relevant FAQs when appropriate.
 
-### 2.3 Comment Submission Errors
-- WHEN a comment exceeds the maximum length (e.g., 1000 characters), THE system SHALL reject the submission.
-- IF a user attempts to comment in a non-existent post or deleted content, THEN THE system SHALL respond with an error.
-- WHEN a user tries to edit or delete comments they do not own, THE system SHALL deny the action.
+## 10. Conclusion
+Robust error handling is essential for user satisfaction and system reliability. By clearly communicating problems and guiding recovery, redditCommunity ensures positive user experiences and maintains platform integrity.
 
-## 3. Voting and Commenting Errors
+## Mermaid Diagrams
 
-### 3.1 Voting Errors
-- WHEN a user tries to vote without being authenticated, THE system SHALL deny the vote and prompt login.
-- IF a user attempts to upvote/downvote on invalid or deleted posts/comments, THEN THE system SHALL reject the vote.
-- WHEN vote data is inconsistent (e.g., duplicate votes), THE system SHALL resolve conflicts by considering the latest vote and notify the user if applicable.
+### Error Scenario - Login Failure
+```mermaid
+graph LR
+  A["User submits login credentials"] --> B["Validate credentials"]
+  B --> C{"Credentials valid?"}
+  C -->|"No"| D["Return error message"]
+  C -->|"Yes"| E["Establish user session"]
+```
 
-### 3.2 Commenting Errors
-- When comment submission encounters server errors, THE system SHALL return a retry suggestion to the user.
-- If nested comment depth exceeds limits imposed by moderators, THE system SHALL reject the comment and notify the user.
-
-## 4. Reporting and Moderation Errors
-
-### 4.1 Reporting Content
-- WHEN users report inappropriate content (posts, comments, users), THE system SHALL validate the report reason and reject incomplete or invalid reports.
-- IF report processing fails due to system errors, THEN THE system SHALL queue the report for retry and notify reporting user of delay.
-
-### 4.2 Moderation Actions
-- WHEN community moderators or admins attempt moderation actions on non-existent content or users, THE system SHALL return proper errors.
-- IF moderation action results in too many concurrent changes (e.g., mass deletion), THE system SHALL throttle requests and notify moderators.
-
-## 5. System Recovery Procedures
-
-### 5.1 Fault Tolerance and Retry
-- WHEN transient failures occur during critical operations (posting, voting, reporting), THE system SHALL automatically retry up to 3 times before returning an error to the user.
-
-### 5.2 Data Consistency
-- IF concurrent updates lead to conflicts (e.g., voting counts), THEN THE system SHALL use last-write-wins strategy or other defined business rule to ensure consistency.
-
-### 5.3 User Notification and Recovery
-- WHEN errors occur, THE system SHALL provide clear, user-friendly error messages explaining the problem and suggested next steps (e.g., retry, contact support).
-
-### 5.4 Logging and Monitoring
-- THE system SHALL log all errors with sufficient detail for diagnostics.
-- Critical errors SHALL trigger alerts for system administrators for timely resolution.
+### Error Handling Flow
+```mermaid
+graph TD
+  A["User performs action"] --> B["System validates action"]
+  B --> C{"Action valid?"}
+  C -->|"No"| D["Return specific error message"]
+  D --> E["User corrects input"]
+  E --> A
+  C -->|"Yes"| F["Proceed with action"]
+```
 
 ---
 
-## Mermaid Diagram: Authentication Error Handling Flow
-
-```mermaid
-graph LR
-  A["User Submit Login"] --> B{"Credentials Valid?"}
-  B -->|"Yes"| C["Allow Access"]
-  B -->|"No"| D["Show Error Invalid Credentials"]
-  D --> E{"Attempts > 5?"}
-  E -->|"Yes"| F["Lock Account 15 min"]
-  E -->|"No"| G["Allow Retry"]
-  C --> H["Check Email Verified"]
-  H -->|"Yes"| I["Session Start"]
-  H -->|"No"| J["Prompt Email Verification"]
-```
-
-## Mermaid Diagram: Content Submission Error Handling Flow
-
-```mermaid
-graph LR
-  A["User Submit Post"] --> B{"Required Fields Present?"}
-  B -->|"No"| C["Show Validation Errors"]
-  B -->|"Yes"| D{"Post Type Supported?"}
-  D -->|"No"| E["Reject Post"]
-  D -->|"Yes"| F["Check Length and Size"]
-  F -->|"Exceeds Limit"| G["Reject Post"]
-  F -->|"Valid"| H["Accept Post"]
-  H --> I["Allow Edit/Delete By Owner"]
-  I --> J["Concurrency Conflict?" ]
-  J -->|"Yes"| K["Notify Retry"]
-  J -->|"No"| L["Success"]
-```
-
-## Mermaid Diagram: Voting Error Handling Flow
-
-```mermaid
-graph LR
-  A["User Vote"] --> B{"Is Authenticated?"}
-  B -->|"No"| C["Deny Vote Prompt Login"]
-  B -->|"Yes"| D{"Is Post/Comment Valid?"}
-  D -->|"No"| E["Reject Vote"]
-  D -->|"Yes"| F["Process Vote"]
-  F --> G{"Duplicate Vote?"}
-  G -->|"Yes"| H["Resolve to Latest Vote"]
-  G -->|"No"| I["Success"]
-```
-
-## Mermaid Diagram: Reporting and Moderation Error Handling Flow
-
-```mermaid
-graph LR
-  A["User Submit Report"] --> B{"Is Report Valid?"}
-  B -->|"No"| C["Reject Report"]
-  B -->|"Yes"| D["Queue Report"]
-  D --> E{"System Error?"}
-  E -->|"Yes"| F["Retry Later Notify User"]
-  E -->|"No"| G["Notify Moderator"]
-  G --> H{"Content Exists?"}
-  H -->|"No"| I["Return Error"]
-  H -->|"Yes"| J["Accept Moderation"]
-  J --> K{"Too Many Actions?"}
-  K -->|"Yes"| L["Throttle Requests"]
-  K -->|"No"| M["Process Actions"]
-```
-
-## Summary
-This document defines comprehensive business requirements for handling errors across all user touchpoints and system processes in redditCommunity. It enables developers to implement predictable, user-friendly error responses and robust recovery mechanisms that uphold system integrity and user satisfaction.
+This document specifies business-focused error handling and recovery requirements only. All technical implementation decisions such as specific API error codes, logging mechanisms, or retry delays are the responsibility of the development team. The primary goal is to ensure clear, measurable, and user-centric error communication to support a positive user experience.

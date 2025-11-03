@@ -21,78 +21,75 @@ export async function patchShoppingMallAdminOrders(props: {
   const page = (body.page ?? 1) as number &
     tags.Type<"int32"> &
     tags.Minimum<1> as number;
-  const limit = (body.limit ?? 100) as number &
+  const limit = (body.limit ?? 10) as number &
     tags.Type<"int32"> &
-    tags.Minimum<1> as number;
+    tags.Minimum<1> &
+    tags.Maximum<100> as number;
   const skip = (page - 1) * limit;
 
-  const where = {
+  const where: {
+    deleted_at: null;
+    order_code?: string;
+    status?: string;
+    payment_status?: string;
+    total_amount?: {
+      gte?: number;
+      lte?: number;
+    };
+    created_at?: {
+      gte?: string & tags.Format<"date-time">;
+      lte?: string & tags.Format<"date-time">;
+    };
+    customer?: {
+      email?: string;
+    };
+  } = {
     deleted_at: null,
-    ...(body.shopping_mall_customer_id !== undefined &&
-      body.shopping_mall_customer_id !== null && {
-        shopping_mall_customer_id: body.shopping_mall_customer_id,
-      }),
-    ...(body.shopping_mall_seller_id !== undefined &&
-      body.shopping_mall_seller_id !== null && {
-        shopping_mall_seller_id: body.shopping_mall_seller_id,
-      }),
-    ...(body.status !== undefined && {
-      status: body.status,
-    }),
-    ...(body.business_status !== undefined && {
-      business_status: body.business_status,
-    }),
-    ...(body.payment_method !== undefined && {
-      payment_method: body.payment_method,
-    }),
-    ...(body.order_number !== undefined && {
-      order_number: body.order_number,
-    }),
-    ...(body.search !== undefined && {
-      OR: [
-        { order_number: { contains: body.search } },
-        { shipping_address: { contains: body.search } },
-      ],
-    }),
-    ...((body.from_created_at !== undefined ||
-      body.to_created_at !== undefined) && {
-      created_at: {
-        ...(body.from_created_at !== undefined
-          ? { gte: body.from_created_at }
-          : {}),
-        ...(body.to_created_at !== undefined
-          ? { lte: body.to_created_at }
-          : {}),
-      },
-    }),
-    ...((body.from_updated_at !== undefined ||
-      body.to_updated_at !== undefined) && {
-      updated_at: {
-        ...(body.from_updated_at !== undefined
-          ? { gte: body.from_updated_at }
-          : {}),
-        ...(body.to_updated_at !== undefined
-          ? { lte: body.to_updated_at }
-          : {}),
-      },
-    }),
-  } as const;
+  };
+
+  if (body.order_code !== undefined) where.order_code = body.order_code;
+  if (body.status !== undefined) where.status = body.status;
+  if (body.payment_status !== undefined)
+    where.payment_status = body.payment_status;
+
+  if (
+    body.total_amount_min !== undefined ||
+    body.total_amount_max !== undefined
+  ) {
+    where.total_amount = {};
+    if (body.total_amount_min !== undefined)
+      where.total_amount.gte = body.total_amount_min;
+    if (body.total_amount_max !== undefined)
+      where.total_amount.lte = body.total_amount_max;
+  }
+
+  if (body.created_from !== undefined || body.created_to !== undefined) {
+    where.created_at = {};
+    if (body.created_from !== undefined)
+      where.created_at.gte = body.created_from;
+    if (body.created_to !== undefined) where.created_at.lte = body.created_to;
+  }
+
+  if (body.customer_email !== undefined) {
+    where.customer = { email: body.customer_email };
+  }
 
   const [orders, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_orders.findMany({
       where,
-      orderBy: { created_at: "desc" },
       skip,
       take: limit,
-      select: {
-        id: true,
-        order_number: true,
-        total_price: true,
-        status: true,
-        business_status: true,
-        payment_method: true,
-        created_at: true,
-        updated_at: true,
+      orderBy: { created_at: "desc" },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            nickname: true,
+            created_at: true,
+          },
+        },
+        shopping_mall_order_items: true,
       },
     }),
     MyGlobal.prisma.shopping_mall_orders.count({ where }),
@@ -102,18 +99,28 @@ export async function patchShoppingMallAdminOrders(props: {
     pagination: {
       current: Number(page),
       limit: Number(limit),
-      records: total,
-      pages: Math.ceil(total / limit),
+      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: Math.ceil(total / limit) as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
     },
     data: orders.map((order) => ({
       id: order.id as string & tags.Format<"uuid">,
-      order_number: order.order_number,
-      total_price: order.total_price,
+      order_code: order.order_code,
       status: order.status,
-      business_status: order.business_status,
-      payment_method: order.payment_method,
+      payment_status: order.payment_status,
+      total_amount: order.total_amount,
+      shipping_address: order.shipping_address,
       created_at: toISOStringSafe(order.created_at),
       updated_at: toISOStringSafe(order.updated_at),
+      customer: {
+        id: order.customer.id as string & tags.Format<"uuid">,
+        email: order.customer.email,
+        nickname: order.customer.nickname,
+        created_at: toISOStringSafe(order.customer.created_at),
+      },
+      order_items_count: order.shopping_mall_order_items.length,
+      comments: null,
     })),
   };
 }

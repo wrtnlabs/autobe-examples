@@ -1,0 +1,250 @@
+/// Visitor accounts with read-only access to published content. Visitors can
+/// browse articles, view attachments, and search content without
+/// authentication requirements.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_visitors {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for display purposes, 3-20 characters using letters,
+  /// numbers, and hyphens only.
+  username String
+  
+  /// Hashed password for visitor authentication using secure algorithms with
+  /// appropriate salting.
+  password_hash String
+  
+  /// Timestamp when the visitor account was created.
+  created_at DateTime
+  
+  /// Timestamp of the visitor's last activity on the platform.
+  last_seen_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  politics_bbs_visitor_sessions politics_bbs_visitor_sessions[]
+  politics_bbs_comment_of_visitors politics_bbs_comment_of_visitors[]
+  politics_bbs_attachment_of_visitors politics_bbs_attachment_of_visitors[]
+  
+  @@unique([username])
+  @@index([last_seen_at])
+}
+
+/// Member accounts with content creation privileges including article
+/// creation, commenting, and file uploads. Members can manage their own
+/// content within 24-hour editing window.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for member identification, 3-20 characters using letters,
+  /// numbers, and hyphens only.
+  username String
+  
+  /// Hashed password for member authentication using secure algorithms with
+  /// appropriate salting.
+  password_hash String
+  
+  /// Email address for account recovery and notifications, must be unique
+  /// across the system.
+  email String
+  
+  /// Timestamp when the member account was registered.
+  created_at DateTime
+  
+  /// Timestamp of the most recent profile update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for member account suspension.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  politics_bbs_member_sessions politics_bbs_member_sessions[]
+  politics_bbs_articles politics_bbs_articles[]
+  politics_bbs_comment_of_members politics_bbs_comment_of_members[]
+  politics_bbs_file_attachments politics_bbs_file_attachments[]
+  politics_bbs_attachment_of_members politics_bbs_attachment_of_members[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Moderator accounts with enhanced permissions for content review, approval
+/// workflows, and community management. Moderators can review all content
+/// and manage user violations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username for moderator identification, 3-20 characters using
+  /// letters, numbers, and hyphens only.
+  username String
+  
+  /// Hashed password for moderator authentication using secure algorithms with
+  /// appropriate salting.
+  password_hash String
+  
+  /// Email address for moderator communications and account recovery, must be
+  /// unique across the system.
+  email String
+  
+  /// Timestamp when the moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent moderator profile update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for moderator account suspension.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  politics_bbs_moderator_sessions politics_bbs_moderator_sessions[]
+  politics_bbs_comment_of_moderators politics_bbs_comment_of_moderators[]
+  politics_bbs_attachment_of_moderators politics_bbs_attachment_of_moderators[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Authentication sessions for visitor users to track activity and provide
+/// session-based functionality. These sessions support audit tracing of
+/// visitor actions on the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_visitor_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Visitor's {@link politics_bbs_visitors.id} who owns this session.
+  politics_bbs_visitor_id String
+  
+  /// IP address of the visitor for security and audit tracking.
+  ip String
+  
+  /// Connection URL or current page location for session context.
+  href String
+  
+  /// Referrer URL showing how the visitor arrived at the site.
+  referrer String
+  
+  /// Timestamp when the visitor session was initiated.
+  created_at DateTime
+  
+  /// Session expiration time, nullable to allow ongoing sessions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  visitor politics_bbs_visitors @relation(fields: [politics_bbs_visitor_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([politics_bbs_visitor_id, created_at], map: "politics_bbs_visitor_sessions_politics_bbs_visitor_id__bd9bc3a1")
+}
+
+/// Authentication sessions for member users to maintain secure access. These
+/// sessions support audit tracing of member actions across the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's {@link politics_bbs_members.id} who owns this session.
+  politics_bbs_member_id String
+  
+  /// IP address of the member for security and audit tracking.
+  ip String
+  
+  /// Connection URL or current page location for session context.
+  href String
+  
+  /// Referrer URL showing how the member arrived at the site.
+  referrer String
+  
+  /// Timestamp when the member session was initiated.
+  created_at DateTime
+  
+  /// Session expiration time, nullable to allow extended member sessions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member politics_bbs_members @relation(fields: [politics_bbs_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([politics_bbs_member_id, created_at], map: "politics_bbs_member_sessions_politics_bbs_member_id_cr_50b56b97")
+}
+
+/// Authentication sessions for moderator users to support administrative
+/// activities. These sessions provide secure access to moderation tools with
+/// audit tracking capabilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's {@link politics_bbs_moderators.id} who owns this session.
+  politics_bbs_moderator_id String
+  
+  /// IP address of the moderator for security and audit tracking.
+  ip String
+  
+  /// Connection URL or current page location for session context.
+  href String
+  
+  /// Referrer URL showing how the moderator arrived at the site.
+  referrer String
+  
+  /// Timestamp when the moderator session was initiated.
+  created_at DateTime
+  
+  /// Session expiration time, nullable to allow extended moderator sessions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator politics_bbs_moderators @relation(fields: [politics_bbs_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([politics_bbs_moderator_id, created_at], map: "politics_bbs_moderator_sessions_politics_bbs_moderator_0f4b9aae")
+}

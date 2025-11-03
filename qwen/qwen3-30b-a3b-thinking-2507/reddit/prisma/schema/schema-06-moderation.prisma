@@ -1,0 +1,142 @@
+/// User-reported content requiring moderation review. Contains report
+/// details from users and administrative status tracking.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_report {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target post being reported. {@link community_platform_post.id}
+  community_platform_post_id String
+  
+  /// User who submitted the report. {@link community_platform_member.id}
+  community_platform_member_reporter_id String
+  
+  /// Reason category selected by user (Hate Speech, Spam, etc.)
+  reason String
+  
+  /// User's additional explanation for the report
+  explanation String
+  
+  /// Current status of the report (pending, approved, rejected)
+  status String
+  
+  /// Timestamp when report was created
+  created_at DateTime
+  
+  /// Timestamp of last modification to the report
+  updated_at DateTime
+  
+  /// Timestamp when report was logically deleted
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_post @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  reporter community_platform_member @relation(fields: [community_platform_member_reporter_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_appeal community_platform_moderation_appeal[]
+  community_platform_moderation_log community_platform_moderation_log[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_reporter_id], map: "community_platform_moderation_report_community_platfor_d445f850")
+  
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id], map: "community_platform_moderation_report_community_platfor_9f9de76e")
+}
+
+/// User-submitted appeal against moderated content. Contains appeal details
+/// and status tracking.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_appeal {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Report being appealed. {@link community_platform_moderation_report.id}
+  community_platform_moderation_report_id String
+  
+  /// User who submitted the appeal. {@link community_platform_member.id}
+  community_platform_member_creator_id String
+  
+  /// Category for the appeal (False Positives, Misunderstanding, New Evidence)
+  appeal_reason String
+  
+  /// Additional evidence provided with the appeal
+  evidence String
+  
+  /// Current status of the appeal (pending, approved, rejected)
+  status String
+  
+  /// Timestamp when appeal was created
+  created_at DateTime
+  
+  /// Timestamp of last modification to the appeal
+  updated_at DateTime
+  
+  /// Timestamp when appeal was logically deleted
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_moderation_report @relation(fields: [community_platform_moderation_report_id], references: [id], onDelete: Cascade)
+  creator community_platform_member @relation(fields: [community_platform_member_creator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_creator_id], map: "community_platform_moderation_appeal_community_platfor_8747db94")
+  
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderation_report_id], map: "community_platform_moderation_appeal_community_platfor_601da3d0")
+}
+
+/// Historical record of moderation actions. Captures who did what and when
+/// for auditing purposes.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_log {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Report being logged. {@link community_platform_moderation_report.id}
+  community_platform_moderation_report_id String
+  
+  /// Moderator who performed the action. {@link community_platform_admin.id}
+  community_platform_admin_moderator_id String
+  
+  /// Type of action taken (approve, reject, request_more_info)
+  action String
+  
+  /// Reason for the moderation action
+  action_reason String
+  
+  /// Timestamp when the moderation action occurred
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_moderation_report @relation(fields: [community_platform_moderation_report_id], references: [id], onDelete: Cascade)
+  moderator community_platform_admin @relation(fields: [community_platform_admin_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_moderator_id], map: "community_platform_moderation_log_community_platform_a_210c30e4")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderation_report_id], map: "community_platform_moderation_log_community_platform_m_6dd4611b")
+}

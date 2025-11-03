@@ -1,0 +1,219 @@
+/// Enhanced daily snapshots of platform-wide metrics with improved indexing
+/// and data integrity. Tracks overall system health, user growth, content
+/// creation rates, and engagement patterns over time with optimized query
+/// performance for business intelligence and capacity planning.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_platform_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Date for which the metrics snapshot was recorded. Used for time-series
+  /// analysis and trend tracking.
+  metric_date DateTime
+  
+  /// Total number of registered users on the platform as of the metric date.
+  total_users Int
+  
+  /// Number of users who were active during the metric period (logged in or
+  /// performed actions).
+  active_users Int
+  
+  /// Number of new discussion posts created during the metric period.
+  new_posts Int
+  
+  /// Total number of posts available on the platform as of the metric date.
+  total_posts Int
+  
+  /// Number of new comments added during the metric period.
+  new_comments Int
+  
+  /// Total number of comments available on the platform as of the metric date.
+  total_comments Int
+  
+  /// Total number of page views recorded during the metric period.
+  page_views Int
+  
+  /// Number of file attachments uploaded during the metric period.
+  attachment_uploads Int
+  
+  /// Number of content reports submitted during the metric period.
+  report_count Int
+  
+  /// Average system response time in milliseconds for user interactions during
+  /// the period.
+  avg_response_time Float
+  
+  /// Platform uptime percentage for the metric period, calculated from
+  /// monitoring data.
+  uptime_percentage Float
+  
+  /// System error rate percentage for the metric period.
+  error_rate Float
+  
+  /// Aggregated user satisfaction score based on feedback and engagement
+  /// patterns.
+  user_satisfaction_score Float?
+  
+  /// Timestamp when this metric snapshot was recorded and stored.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([metric_date])
+  @@index([metric_date, total_users])
+  @@index([metric_date, active_users])
+  // spellchecker: ignore-next-line
+  @@index([metric_date, avg_response_time], map: "discussion_board_platform_metrics_metric_date_avg_resp_6777219d")
+  @@index([created_at])
+}
+
+/// Enhanced tracking of individual user engagement patterns with proper
+/// referential integrity. Captures user-level statistics including session
+/// duration, content creation frequency, interaction patterns, and platform
+/// usage intensity with optimized performance for user retention analysis.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_engagement {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the specific member whose engagement is being tracked.
+  /// {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Date for which the user engagement metrics are recorded and analyzed.
+  tracking_date DateTime
+  
+  /// Number of user sessions initiated during the tracking period.
+  session_count Int
+  
+  /// Total time spent on platform in seconds across all sessions during the
+  /// period.
+  session_duration Int
+  
+  /// Number of discussion posts created by the user during the tracking period.
+  posts_created Int
+  
+  /// Number of comments posted by the user during the tracking period.
+  comments_made Int
+  
+  /// Number of posts and comments viewed by the user during the period.
+  content_viewed Int
+  
+  /// Number of file attachments uploaded by the user during the period.
+  attachments_uploaded Int
+  
+  /// Number of content reports submitted by the user during the period.
+  reports_submitted Int
+  
+  /// Number of new users followed by the member during the tracking period.
+  follows_added Int
+  
+  /// Number of posts or comments saved/bookmarked by the user during the
+  /// period.
+  saved_content Int
+  
+  /// Calculated engagement score based on weighted activity metrics for the
+  /// period.
+  engagement_score Float
+  
+  /// Indicator of whether the user is likely to return based on engagement
+  /// patterns.
+  retention_indicator Boolean
+  
+  /// Timestamp when this engagement record was created and stored.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_member_id, tracking_date], map: "discussion_board_user_engagement_discussion_board_memb_3ba23b20")
+  // spellchecker: ignore-next-line
+  @@index([tracking_date, engagement_score], map: "discussion_board_user_engagement_tracking_date_engagem_25d3a1b4")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_user_engagement_discussion_board_memb_515b69a9")
+  // spellchecker: ignore-next-line
+  @@index([tracking_date, retention_indicator], map: "discussion_board_user_engagement_tracking_date_retenti_70259dae")
+  @@index([engagement_score])
+}
+
+/// Enhanced performance logging with proper data typing and optimized
+/// indexing. Records technical performance metrics, system errors, and
+/// operational data for platform optimization and reliability monitoring
+/// with improved query performance for troubleshooting and analysis.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_performance_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Precise timestamp when the performance event or metric was recorded.
+  log_timestamp DateTime
+  
+  /// Type of performance metric being logged (response_time, error_rate,
+  /// cpu_usage, memory_usage, database_queries, cache_hit_rate).
+  metric_type String
+  
+  /// Numeric value of the performance metric recorded at the specified
+  /// timestamp.
+  metric_value Float
+  
+  /// Specific API endpoint or page that generated the performance metric, if
+  /// applicable.
+  endpoint String?
+  
+  /// HTTP status code associated with the performance event, for error
+  /// tracking.
+  http_status Int?
+  
+  /// Response time in milliseconds for the recorded transaction or request.
+  response_time Int?
+  
+  /// User agent string from the client making the request, for performance
+  /// analysis.
+  user_agent String?
+  
+  /// IP address of the client for geographic performance analysis and
+  /// troubleshooting.
+  ip_address String?
+  
+  /// Error message or exception details if the log entry represents an error
+  /// condition.
+  error_message String?
+  
+  /// Identifier for the server instance that recorded the performance metric.
+  server_id String?
+  
+  /// Severity level of the performance event (info, warning, error, critical).
+  severity_level String
+  
+  /// Timestamp when this performance log entry was stored in the database.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([log_timestamp, metric_type])
+  @@index([metric_type, created_at])
+  @@index([endpoint, http_status])
+  // spellchecker: ignore-next-line
+  @@index([severity_level, log_timestamp], map: "discussion_board_performance_logs_severity_level_log_t_3ead12cd")
+  @@index([response_time])
+}

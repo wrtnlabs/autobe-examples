@@ -6,32 +6,23 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardAdmin } from "../../../structures/IDiscussionBoardAdmin";
 
 /**
- * Admin role registration operation creating new admin account in
- * 'discussion_board_admins' table.
+ * Register a new admin account in the discussion board system using the
+ * discussion_board_admins table.
  *
- * This is the registration (join) API for the Admin role. It enables creation
- * of a new admin account using the unique email and a secure hashed password.
- * The database schema 'discussion_board_admins' table includes fields such as
- * 'email', 'password_hash', 'display_name', and timestamps. This operation
- * ensures that only valid registration data is accepted and stored. Email must
- * be unique.
- *
- * Upon successful registration, a JWT access token and a refresh token are
- * issued, granting authorized access.
- *
- * This endpoint is publicly accessible without prior authentication.
- *
- * Related operations: login (authenticate admin), refresh (renew tokens).
- *
- * Security considerations include proper password hashing and input validation
- * to prevent duplicate accounts and security breaches.
- *
- * This operation reflects the member lifecycle starting point specifically
- * tailored for admin users.
+ * This operation enables administrators to register accounts in the discussion
+ * board system. It creates a new admin user with a unique email and securely
+ * hashed password. The operation persists the user in the
+ * 'discussion_board_admins' table, setting 'created_at' and 'updated_at'
+ * timestamps, with 'deleted_at' initially null indicating an active account.
+ * Upon successful account creation, the system issues JWT-based access and
+ * refresh tokens, enabling session management and authenticated requests. This
+ * operation is open publicly (no prior authentication) to allow new admin
+ * registrations. It forms the entry point for admin onboarding within the
+ * authentication workflow.
  *
  * @param props.connection
- * @param props.body Admin registration data: unique email, password, display
- *   name
+ * @param props.body Admin registration information including email and
+ *   password.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -66,7 +57,7 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Admin registration data: unique email, password, display name */
+    /** Admin registration information including email and password. */
     body: IDiscussionBoardAdmin.IJoin;
   };
   export type Body = IDiscussionBoardAdmin.IJoin;
@@ -114,28 +105,21 @@ export namespace join {
 }
 
 /**
- * Admin role login operation authenticating existing admin accounts.
+ * Authenticate admin credentials and obtain JWT tokens for session management
+ * using discussion_board_admins and discussion_board_admin_sessions tables.
  *
- * This is the login API for the Admin role. Admin users provide their email and
- * password for authentication. Credentials are checked against the
- * 'discussion_board_admins' table storing unique emails and hashed passwords.
- *
- * On successful validation, JWT tokens are issued for access and refresh.
- *
- * This endpoint is publicly accessible and serves as the primary authentication
- * gateway for system administrators.
- *
- * Security considerations include protection against brute force attacks and
- * secure password verification.
- *
- * This operation depends on the join operation for account creation.
- *
- * Related operations include join and refresh.
- *
- * Soft delete is not relevant here.
+ * This operation authenticates an existing administrator using email and
+ * password credentials. It validates the provided credentials against the
+ * stored 'password_hash' in 'discussion_board_admins'. On success, it creates a
+ * session record in 'discussion_board_admin_sessions' associating login
+ * metadata (e.g., IP, user agent). The system issues fresh JWT access and
+ * refresh tokens, enabling authenticated API calls. This operation is public,
+ * allowing admins to log in independently. It integrates with other security
+ * mechanisms like rate limiting and account lockout policies to protect against
+ * brute force attacks.
  *
  * @param props.connection
- * @param props.body Admin login credentials: email and password
+ * @param props.body Admin login credentials including email and password.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -170,7 +154,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Admin login credentials: email and password */
+    /** Admin login credentials including email and password. */
     body: IDiscussionBoardAdmin.ILogin;
   };
   export type Body = IDiscussionBoardAdmin.ILogin;
@@ -218,27 +202,19 @@ export namespace login {
 }
 
 /**
- * Admin role token refresh operation renewing JWT access tokens.
+ * Refresh JWT tokens for an authenticated admin using valid refresh tokens and
+ * session records.
  *
- * This is the token refresh API for the Admin role. It accepts a valid refresh
- * token and issues a new JWT access token to maintain an active session.
- *
- * This endpoint requires a valid refresh token and is accessible only to
- * authenticated admins.
- *
- * Security is paramount: the refresh token is validated rigorously to prevent
- * token misuse.
- *
- * Related endpoints are join (registration) and login (authentication).
- *
- * This operation helps maintain uninterrupted admin sessions with reduced login
- * frequency.
- *
- * The underlying schema is 'discussion_board_admins' reflecting the admin user
- * base.
+ * This operation allows an authenticated administrator to refresh their JWT
+ * access tokens using a valid refresh token. It validates the refresh token
+ * against active sessions maintained within 'discussion_board_admin_sessions'.
+ * Upon successful validation, it issues new access and refresh JWT tokens,
+ * extending session validity and enabling continued authenticated API requests.
+ * This operation requires authentication and is essential for maintaining
+ * secure admin sessions without re-login.
  *
  * @param props.connection
- * @param props.body Admin refresh token request
+ * @param props.body Refresh token for obtaining new access tokens.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -273,7 +249,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Admin refresh token request */
+    /** Refresh token for obtaining new access tokens. */
     body: IDiscussionBoardAdmin.IRefresh;
   };
   export type Body = IDiscussionBoardAdmin.IRefresh;

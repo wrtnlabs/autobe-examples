@@ -1,0 +1,98 @@
+/// Tracks user subscriptions (follows) to each community. Defines the active
+/// set of communities a user has opted in to receive content and
+/// notifications from. Serves as the canonical linkage for feed
+/// construction, notification dispatching, and personalized recommendations.
+/// Foreign keys link to {@link community_platform_users.id} and {@link
+/// community_platform_communities.id}. Enforces uniqueness for each
+/// user/community pair (one subscription per user per community). Removing a
+/// row signifies user has unsubscribed. Soft delete and timestamped for
+/// retention/audit. Used as a 'primary' stance table as business operations
+/// include direct CRUD and business rule enforcement for subscription-based
+/// actions.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The subscribing user's {@link community_platform_users.id}.
+  user_id String
+  
+  /// Target community's {@link community_platform_communities.id}.
+  community_id String
+  
+  /// Subscription creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for subscription or notification settings.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; set when user unsubscribes or subscription is
+  /// system-removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([user_id, community_id], map: "community_platform_community_subscriptions_user_id_com_d85384be")
+  // spellchecker: ignore-next-line
+  @@index([user_id, created_at], map: "community_platform_community_subscriptions_user_id_cre_9cb4f52d")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_community_subscriptions_community_i_bf13bd51")
+}
+
+/// User-specific per-community notification delivery settings. Allows each
+/// user to customize notification preferences for each community they
+/// follow, supporting default, enabled, or disabled state with potential for
+/// granular notification-type extension. Linked by user_id and community_id,
+/// supports future expansion for feature toggles or notification methods.
+/// Used for personalized notification dispatch, opt-out logic, and audit.
+/// Managed as a subsidiary to primary subscriptions: updated when user
+/// subscribes/unsubscribes or changes notification preferences.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscription_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The subscribing user's {@link community_platform_users.id}.
+  user_id String
+  
+  /// The community's {@link community_platform_communities.id}.
+  community_id String
+  
+  /// Whether notifications are enabled for this user/community subscription
+  /// (true=enabled, false=disabled).
+  notification_enabled Boolean
+  
+  /// Preference creation timestamp.
+  created_at DateTime
+  
+  /// Last update to notification preferences.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([user_id, community_id], map: "community_platform_community_subscription_notification_449e6f1a")
+  // spellchecker: ignore-next-line
+  @@index([user_id, created_at], map: "community_platform_community_subscription_notification_e7e052b4")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_community_subscription_notification_e1286616")
+}

@@ -1,60 +1,53 @@
-/// Platform-wide configuration settings stored as key-value pairs. This
-/// table contains system parameters that control platform behavior, such as
-/// content limits, rate limiting rules, feature toggles, and other
-/// configurable aspects of the system. Settings can be categorized and
-/// marked as public or internal-only. Values are stored as strings with a
-/// type indicator for proper deserialization.
+/// System-level reference table defining predefined categories for
+/// organizing and discovering communities. Categories enable users to filter
+/// communities by topic areas such as Technology, Gaming, Sports, etc.
+/// Managed by site administrators. Referenced by
+/// community_platform_community_categories for community categorization.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_system_settings {
+model community_platform_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the setting (e.g., 'max_post_length',
-  /// 'rate_limit_posts_per_hour'). This key is used to retrieve the setting
-  /// value throughout the application.
-  key String
+  /// Category name displayed to users. Examples: Technology & Programming,
+  /// Gaming, Sports & Fitness, Entertainment & Media. Must be unique across
+  /// all categories.
+  name String
   
-  /// The setting value stored as a string. Complex values (objects, arrays)
-  /// can be stored as JSON strings. The value_type field indicates how to
-  /// deserialize this value.
-  value String
-  
-  /// Human-readable description explaining what this setting controls and its
-  /// purpose. Helps administrators understand the impact of changing this
-  /// setting.
+  /// Detailed explanation of what types of communities belong in this
+  /// category. Helps administrators and users understand the category scope
+  /// and purpose.
   description String?
   
-  /// Indicates the data type of the value for proper deserialization. Common
-  /// values: 'string', 'int', 'double', 'boolean', 'json'. This helps the
-  /// application correctly parse the value string.
-  value_type String
+  /// Integer controlling the presentation order of categories in UI elements
+  /// like dropdowns and filter lists. Lower numbers appear first. Allows
+  /// administrators to prioritize popular categories.
+  display_order Int
   
-  /// Grouping category for organizing related settings (e.g., 'content',
-  /// 'moderation', 'performance', 'features'). Allows filtering and grouping
-  /// settings in admin interfaces.
-  category String?
-  
-  /// Whether this setting can be exposed via public API or is internal-only.
-  /// Public settings may be displayed to users (e.g., max post length), while
-  /// internal settings are admin-only (e.g., API keys, security parameters).
-  is_public Boolean
-  
-  /// Timestamp when this setting was first created in the system.
+  /// Timestamp when this category was created. Used for audit trails and
+  /// tracking category system evolution.
   created_at DateTime
   
-  /// Timestamp when this setting was last modified. Updated whenever the value
-  /// or other fields change. Provides audit trail for configuration changes.
+  /// Timestamp of the most recent update to this category. Updated whenever
+  /// name, description, or display_order changes.
   updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the category is archived and hidden from
+  /// active use while preserving historical references in
+  /// community_platform_community_categories. Prevents breaking existing
+  /// community categorizations.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([key])
-  @@index([category])
-  @@index([is_public])
+  community_platform_community_categories community_platform_community_categories[]
+  
+  @@unique([name])
+  @@index([display_order])
+  @@index([deleted_at])
 }

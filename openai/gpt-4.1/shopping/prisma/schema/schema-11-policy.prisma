@@ -1,0 +1,156 @@
+/// Defines named business policies for platform-wide application or specific
+/// domains. Used to codify and audit enforceable business rules such as
+/// return windows, commission rates, and user eligibility thresholds.
+/// Referenced by other domains for outward enforcement; never contains
+/// operational data itself.
+///
+/// @namespace Policy
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_business_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name for the business policy (e.g., 'order_return_window',
+  /// 'seller_onboarding_requirement'). Used for outward reference and
+  /// enforcement in other domains.
+  policy_name String
+  
+  /// Scope or domain where this policy applies (e.g., 'global', 'orders',
+  /// 'sellers').
+  scope String
+  
+  /// Value or threshold for the policy (e.g., '30', 'approved'). Can be
+  /// interpreted as string, integer, or enum as required by consuming domain.
+  value String
+  
+  /// Detailed description of the business purpose and operational impact of
+  /// this policy.
+  description String
+  
+  /// Whether this policy is currently active and enforced platform-wide.
+  active Boolean
+  
+  /// Policy creation timestamp.
+  created_at DateTime
+  
+  /// Policy update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, if the policy is archived or replaced. Null if
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_policy_violations shopping_policy_violations[]
+  
+  @@unique([policy_name, scope])
+  @@index([active])
+}
+
+/// Defines system-wide or domain-specific constraints (e.g., rate limits,
+/// maximum SKU count, min/max purchase values). Used for enforcing
+/// quantitative limits or operational boundaries across the platform.
+/// Referenced by other domains by outward FK, never inward.
+///
+/// @namespace Policy
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_business_constraints {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the constraint (e.g., 'max_orders_per_user_day',
+  /// 'sku_max_per_product'). Used for lookups and enforcement.
+  constraint_name String
+  
+  /// Scope or domain for the constraint (e.g., 'global', 'carts', 'checkout',
+  /// 'products').
+  scope String
+  
+  /// Constraint value, typically an integer or decimal encoded as string
+  /// (actual enforcement handled in consuming domain).
+  limit_value String
+  
+  /// Unit for the constraint's value (e.g., 'count', 'seconds', 'amount').
+  unit String
+  
+  /// Full business explanation of what limit this constraint applies and its
+  /// operational significance.
+  description String
+  
+  /// Whether the constraint is currently in force.
+  active Boolean
+  
+  /// Constraint creation timestamp.
+  created_at DateTime
+  
+  /// Constraint last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null if constraint is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([constraint_name, scope])
+  @@index([active])
+}
+
+/// Manages feature toggles and rollout switches for platform capabilities
+/// (e.g., beta features, A/B experiments, domain-scoped rollouts). Admins
+/// can independently enable/disable features or set percentage rollout.
+/// Outward referenced for controlled enablement, not bound to specific
+/// session or user here.
+///
+/// @namespace Policy
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_feature_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the feature flag (e.g., 'new_checkout_flow',
+  /// 'wishlist_enabled'). Used for outward reference and API enablement.
+  flag_name String
+  
+  /// Domain or context where this feature applies (e.g., 'global', 'orders',
+  /// 'checkout', 'frontend').
+  scope String
+  
+  /// Indicates whether the feature is enabled system-wide for the associated
+  /// scope.
+  enabled Boolean
+  
+  /// (Optional) Percentage 0-100 for gradual rollout/experimentation. 100 =
+  /// fully enabled, 0 = off (used for A/B testing).
+  rollout Float?
+  
+  /// Explanation of feature flag purpose and behavior under enabled/disabled
+  /// conditions.
+  description String
+  
+  /// Feature flag creation timestamp.
+  created_at DateTime
+  
+  /// Update timestamp for the feature flag.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null if flag is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([flag_name, scope])
+  @@index([enabled])
+}

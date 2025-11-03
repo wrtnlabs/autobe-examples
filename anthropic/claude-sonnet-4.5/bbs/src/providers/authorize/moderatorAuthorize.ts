@@ -12,16 +12,15 @@ export async function moderatorAuthorize(request: {
   const payload: ModeratorPayload = jwtAuthorize({ request }) as ModeratorPayload;
 
   if (payload.type !== "moderator") {
-    throw new ForbiddenException(`You're not moderator`);
+    throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
   const moderator = await MyGlobal.prisma.discussion_board_moderators.findFirst({
     where: {
       id: payload.id,
-      email_verified: true,
-      account_status: "active",
-      is_active: true,
       deleted_at: null,
+      email_verified: true,
+      status: "active",
     },
   });
 

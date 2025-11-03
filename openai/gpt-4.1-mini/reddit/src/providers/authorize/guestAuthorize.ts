@@ -15,7 +15,7 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guest = await MyGlobal.prisma.reddit_community_guests.findFirst({
+  const guest = await MyGlobal.prisma.reddit_community_guest.findFirst({
     where: {
       id: payload.id
     },

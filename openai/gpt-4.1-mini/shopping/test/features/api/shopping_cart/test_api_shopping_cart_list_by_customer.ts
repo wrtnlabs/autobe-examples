@@ -12,125 +12,102 @@ import type { IShoppingMallShoppingCart } from "@ORGANIZATION/PROJECT-api/lib/st
 export async function test_api_shopping_cart_list_by_customer(
   connection: api.IConnection,
 ) {
-  // 1. Customer joins and authenticates
-  const joinBody1 = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: "P@ssw0rd1234",
-  } satisfies IShoppingMallCustomer.IJoin;
-  const customer1: IShoppingMallCustomer.IAuthorized =
-    await api.functional.auth.customer.join(connection, { body: joinBody1 });
-  typia.assert(customer1);
-
-  // 2. Create multiple shopping carts for this authenticated customer
-  const shoppingCarts: IShoppingMallShoppingCart[] = [];
-  for (let i = 0; i < 3; i++) {
-    const createBody = {
-      shopping_mall_customer_id: customer1.id,
-      session_id: null,
-    } satisfies IShoppingMallShoppingCart.ICreate;
-    const cart =
-      await api.functional.shoppingMall.customer.shoppingCarts.create(
-        connection,
-        { body: createBody },
-      );
-    typia.assert(cart);
-    shoppingCarts.push(cart);
-  }
-
-  // 3. Retrieve the shopping cart list filtered by the authenticated customer
-  const indexBody = {
-    shopping_mall_customer_id: customer1.id,
-    page: 1,
-    limit: 10,
-    sort: "created_at desc",
-  } satisfies IShoppingMallShoppingCart.IRequest;
-  const pageResult: IPageIShoppingMallShoppingCart.ISummary =
-    await api.functional.shoppingMall.customer.shoppingCarts.index(connection, {
-      body: indexBody,
+  // 1. Customer signs up and obtains authentication token
+  const email = typia.random<string & tags.Format<"email">>();
+  const customer: IShoppingMallCustomer.IAuthorized =
+    await api.functional.auth.customer.join(connection, {
+      body: {
+        email,
+        password: "securePassword123",
+        nickname: RandomGenerator.name(),
+      } satisfies IShoppingMallCustomer.ICreate,
     });
-  typia.assert(pageResult);
+  typia.assert(customer);
 
-  // 4. Validate that all returned carts belong to the authenticated customer
-  for (const cart of pageResult.data) {
-    TestValidator.predicate(
-      "cart belongs to the authenticated customer",
-      cart.shopping_mall_customer_id === customer1.id,
+  // 2. Query shopping carts without filter - expect pagination and data
+  const unfilteredResult: IPageIShoppingMallShoppingCart.ISummary =
+    await api.functional.shoppingMall.customer.shoppingCarts.index(connection, {
+      body: {
+        page: 1,
+        limit: 10,
+      } satisfies IShoppingMallShoppingCart.IRequest,
+    });
+  typia.assert(unfilteredResult);
+
+  // Check pagination info is reasonable
+  TestValidator.predicate(
+    "pagination.current is 1",
+    unfilteredResult.pagination.current === 1,
+  );
+  TestValidator.predicate(
+    "pagination.limit is 10",
+    unfilteredResult.pagination.limit === 10,
+  );
+
+  // 3. Query shopping carts filtered by this customer's id - expect data only related to customer
+  const filteredByCustomerId: IPageIShoppingMallShoppingCart.ISummary =
+    await api.functional.shoppingMall.customer.shoppingCarts.index(connection, {
+      body: {
+        shopping_mall_customer_id: customer.id,
+        page: 1,
+        limit: 5,
+      } satisfies IShoppingMallShoppingCart.IRequest,
+    });
+  typia.assert(filteredByCustomerId);
+
+  // Check all returned carts belong to the customer
+  for (const cart of filteredByCustomerId.data) {
+    TestValidator.equals(
+      "cart.shopping_mall_customer_id equals customer.id",
+      cart.shopping_mall_customer_id,
+      customer.id,
     );
   }
 
-  // 5. Validate that created carts appear in the listing
-  for (const createdCart of shoppingCarts) {
-    const found = pageResult.data.find((cart) => cart.id === createdCart.id);
-    TestValidator.predicate(
-      `created cart ${createdCart.id} appears in listing`,
-      found !== undefined,
-    );
-    if (found) {
-      TestValidator.equals(
-        `created cart ${createdCart.id} matches authenticated customer`,
-        found.shopping_mall_customer_id,
-        customer1.id,
+  // 4. Query shopping carts with a date range filter (created_at_from) - expects results created after date
+  if (filteredByCustomerId.data.length > 0) {
+    const firstCartCreatedAt = filteredByCustomerId.data[0].created_at;
+    const createdAtFilter = new Date(
+      new Date(firstCartCreatedAt).getTime() - 1000 * 60 * 60 * 24,
+    ).toISOString();
+
+    const filteredByCreatedAt: IPageIShoppingMallShoppingCart.ISummary =
+      await api.functional.shoppingMall.customer.shoppingCarts.index(
+        connection,
+        {
+          body: {
+            shopping_mall_customer_id: customer.id,
+            created_at_from: createdAtFilter,
+            page: 1,
+            limit: 5,
+          } satisfies IShoppingMallShoppingCart.IRequest,
+        },
+      );
+    typia.assert(filteredByCreatedAt);
+
+    // Check returned carts are created at or after filter date
+    for (const cart of filteredByCreatedAt.data) {
+      TestValidator.predicate(
+        "cart created_at >= created_at_from",
+        cart.created_at >= createdAtFilter,
       );
     }
   }
 
-  // 6. Validate pagination metadata
-  TestValidator.predicate(
-    "pagination current page is 1",
-    pageResult.pagination.current === 1,
-  );
-  TestValidator.predicate(
-    "pagination limit of at least number of created carts",
-    pageResult.pagination.limit >= shoppingCarts.length,
-  );
-
-  // 7. Create a second customer to verify isolation
-  const joinBody2 = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: "P@ssw0rd1234",
-  } satisfies IShoppingMallCustomer.IJoin;
-  const customer2: IShoppingMallCustomer.IAuthorized =
-    await api.functional.auth.customer.join(connection, { body: joinBody2 });
-  typia.assert(customer2);
-
-  // 8. Create shopping carts for second customer
-  const createBody2 = {
-    shopping_mall_customer_id: customer2.id,
-    session_id: null,
-  } satisfies IShoppingMallShoppingCart.ICreate;
-  const cart2 = await api.functional.shoppingMall.customer.shoppingCarts.create(
-    connection,
-    { body: createBody2 },
-  );
-  typia.assert(cart2);
-
-  // 9. Retrieve listing for second customer
-  const indexBody2 = {
-    shopping_mall_customer_id: customer2.id,
-    page: 1,
-    limit: 10,
-    sort: "created_at desc",
-  } satisfies IShoppingMallShoppingCart.IRequest;
-  const pageResult2: IPageIShoppingMallShoppingCart.ISummary =
+  // 5. Check pagination providing a page beyond data count returns empty array or proper page
+  const highPageNumber = 1000;
+  const emptyPageResult: IPageIShoppingMallShoppingCart.ISummary =
     await api.functional.shoppingMall.customer.shoppingCarts.index(connection, {
-      body: indexBody2,
+      body: {
+        shopping_mall_customer_id: customer.id,
+        page: highPageNumber,
+        limit: 10,
+      } satisfies IShoppingMallShoppingCart.IRequest,
     });
-  typia.assert(pageResult2);
+  typia.assert(emptyPageResult);
 
-  // 10. Validate that returned carts belong only to second customer
-  for (const cart of pageResult2.data) {
-    TestValidator.predicate(
-      "cart belongs to the second authenticated customer",
-      cart.shopping_mall_customer_id === customer2.id,
-    );
-  }
-
-  // 11. Validate no carts from first customer appear in second customer's listing
-  for (const createdCart of shoppingCarts) {
-    const found = pageResult2.data.find((cart) => cart.id === createdCart.id);
-    TestValidator.predicate(
-      `first customer's cart ${createdCart.id} does not appear in second customer's listing`,
-      found === undefined,
-    );
-  }
+  TestValidator.predicate(
+    "empty page data is array",
+    Array.isArray(emptyPageResult.data),
+  );
 }

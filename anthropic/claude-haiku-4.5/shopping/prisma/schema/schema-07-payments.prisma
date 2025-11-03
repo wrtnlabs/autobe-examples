@@ -1,0 +1,722 @@
+/// Core payment records for customer orders. Stores order-level payment
+/// information including customer, order reference, payment method, and
+/// final payment status. This is separate from detailed payment processor
+/// transactions to maintain clean separation of concerns between order-level
+/// payment state and gateway-level transaction details.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order being paid for. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Customer making the payment. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Payment method used for this transaction. {@link
+  /// shopping_mall_payment_methods.id}
+  shopping_mall_payment_method_id String?
+  
+  /// Human-readable order number for reference (e.g., ORD-20250115-ABC123)
+  order_number String
+  
+  /// Payment amount in platform currency (stored in cents to avoid floating
+  /// point errors)
+  amount Float
+  
+  /// ISO 4217 currency code (USD, EUR, INR, etc.)
+  currency String
+  
+  /// Current payment status: pending_payment, payment_processing,
+  /// payment_confirmed, payment_failed, payment_pending, refund_processing,
+  /// refund_completed, refund_failed
+  payment_status String
+  
+  /// Type of payment method: credit_card, debit_card, paypal, bank_transfer,
+  /// digital_wallet
+  payment_method_type String
+  
+  /// Last 4 digits of card (if card payment), masked for security
+  card_last_four String?
+  
+  /// Name on the payment method
+  cardholder_name String?
+  
+  /// Billing address provided at payment time (JSON formatted for address
+  /// components)
+  billing_address String?
+  
+  /// Authorization code from payment processor if transaction was approved
+  authorization_code String?
+  
+  /// Unique transaction ID from payment processor
+  transaction_id String?
+  
+  /// Standardized response code from payment processor (00 for success, etc.)
+  response_code String?
+  
+  /// Human-readable response message from payment processor
+  response_message String?
+  
+  /// Error code if transaction failed (insufficient funds, expired card, etc.)
+  error_code String?
+  
+  /// Detailed error explanation if transaction declined or failed
+  error_message String?
+  
+  /// Risk assessment score from payment processor (0-100, higher = more risky)
+  fraud_score Float?
+  
+  /// 3D Secure authentication status: not_applicable, authenticated,
+  /// attempted, not_enrolled
+  three_d_secure_status String?
+  
+  /// Unique key for idempotent payment processing to prevent duplicate charges
+  idempotency_key String?
+  
+  /// Customer IP address when payment was attempted
+  ip_address String?
+  
+  /// Browser/device user agent information
+  user_agent String?
+  
+  /// When the payment request was received
+  request_timestamp DateTime
+  
+  /// When payment authorization was received from processor
+  authorization_timestamp DateTime?
+  
+  /// Payment record creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp for this payment record
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  paymentMethod shopping_mall_payment_methods? @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  shopping_mall_refunds shopping_mall_refunds[]
+  
+  @@unique([shopping_mall_order_id])
+  @@index([shopping_mall_payment_method_id])
+  
+  @@unique([transaction_id])
+  @@unique([idempotency_key])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([payment_status])
+  @@index([created_at])
+}
+
+/// Detailed payment processor transaction records. Captures every
+/// interaction with the payment gateway including authorization, capture,
+/// decline, refund, reversal events. Maintains complete audit trail of
+/// payment processor responses. Separate from shopping_mall_payments to
+/// preserve immutable transaction history while allowing payment status
+/// updates.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent payment record. {@link shopping_mall_payments.id}
+  shopping_mall_payment_id String
+  
+  /// Type of transaction: authorization, capture, decline, refund, reversal,
+  /// adjustment, chargeback
+  transaction_type String
+  
+  /// Status of this specific transaction: pending, successful, failed,
+  /// cancelled
+  transaction_status String
+  
+  /// Transaction amount (may differ from original payment if partial refund,
+  /// etc.)
+  amount Float
+  
+  /// Currency code for this transaction
+  currency String
+  
+  /// Transaction ID from payment processor
+  gateway_transaction_id String?
+  
+  /// Reference ID from payment processor (for linking related transactions)
+  gateway_reference_id String?
+  
+  /// Authorization code if applicable
+  authorization_code String?
+  
+  /// Response code from payment processor
+  response_code String?
+  
+  /// Response message from payment processor
+  response_message String?
+  
+  /// Error code if transaction failed
+  error_code String?
+  
+  /// Error message if transaction failed
+  error_message String?
+  
+  /// Address Verification System response (if card transaction)
+  avs_response String?
+  
+  /// CVV verification response (if card transaction)
+  cvv_response String?
+  
+  /// Full request JSON sent to payment processor (for audit trail, no
+  /// sensitive data)
+  request_payload String?
+  
+  /// Full response JSON received from payment processor (for audit trail)
+  response_payload String?
+  
+  /// When request was sent to payment processor
+  request_timestamp DateTime
+  
+  /// When response was received from payment processor
+  response_timestamp DateTime?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([gateway_transaction_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payment_id, transaction_type], map: "shopping_mall_payment_transactions_shopping_mall_payme_8b97725a")
+  @@index([transaction_status])
+  @@index([created_at])
+}
+
+/// Refund request and processing records. Tracks lifecycle of refunds from
+/// initiation through completion. Separate entity (not nullable fields on
+/// payments) enables proper refund state management and audit trail. Refunds
+/// can be partial, have multiple statuses, and require approval workflows.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original payment being refunded. {@link
+  /// shopping_mall_payments.id}
+  shopping_mall_payment_id String
+  
+  /// Reference to the order. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Unique refund identifier (REF-YYYYMMDD-XXXXXX format)
+  refund_number String
+  
+  /// Reason for refund: customer_request, payment_failure,
+  /// seller_cancellation, order_cancellation, return_accepted,
+  /// dispute_resolution, chargeback, other
+  refund_reason String
+  
+  /// Amount to be refunded (may be less than original payment for partial
+  /// refunds)
+  refund_amount Float
+  
+  /// Original payment amount (for reference)
+  original_amount Float
+  
+  /// Current refund status: initiated, approved, processing, completed,
+  /// failed, reversed, cancelled
+  refund_status String
+  
+  /// How refund will be issued: original_payment_method, store_credit,
+  /// bank_transfer, other
+  refund_method String
+  
+  /// Amount deducted from refund (restocking fee, condition deduction, etc.)
+  deduction_amount Float?
+  
+  /// Reason for deduction (e.g., item condition, restocking fee)
+  deduction_reason String?
+  
+  /// Internal notes about this refund (admin comments, investigation notes,
+  /// etc.)
+  notes String?
+  
+  /// Who initiated the refund: customer, seller, admin, system
+  initiated_by String
+  
+  /// Admin ID who approved the refund (if applicable)
+  approved_by String?
+  
+  /// When refund was initiated
+  initiation_timestamp DateTime
+  
+  /// When refund was approved for processing
+  approval_timestamp DateTime?
+  
+  /// When refund processing was initiated with payment processor
+  processing_timestamp DateTime?
+  
+  /// When refund was completed/credited to customer
+  completion_timestamp DateTime?
+  
+  /// Expected date/time refund will appear in customer account
+  expected_completion_date DateTime?
+  
+  /// Refund ID from payment processor
+  gateway_refund_id String?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([refund_number])
+  @@unique([gateway_refund_id])
+  @@index([shopping_mall_payment_id])
+  @@index([shopping_mall_order_id])
+  @@index([refund_status])
+  @@index([initiation_timestamp])
+}
+
+/// Customer payment methods stored on file. Tokenized payment references for
+/// reuse, avoiding storage of complete sensitive data. Each payment method
+/// is linked to a customer and can be marked as primary or deleted. Supports
+/// credit cards, digital wallets, and bank accounts.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this payment method. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Type of payment method: credit_card, debit_card, paypal, bank_account,
+  /// digital_wallet
+  payment_method_type String
+  
+  /// Tokenized reference from payment processor (never stores actual
+  /// card/account data)
+  payment_token String
+  
+  /// Customer-friendly name for this payment method (e.g., "My VISA", "PayPal
+  /// Account")
+  display_name String?
+  
+  /// Last 4 digits of card (if card payment) for display
+  card_last_four String?
+  
+  /// Card brand for card payments: visa, mastercard, amex, discover
+  card_brand String?
+  
+  /// Expiration month (1-12) for card payments
+  expiration_month Int?
+  
+  /// Expiration year (4-digit) for card payments
+  expiration_year Int?
+  
+  /// Name on the card
+  cardholder_name String?
+  
+  /// Bank name for bank account payments
+  bank_name String?
+  
+  /// Last 4 digits of bank account
+  account_last_four String?
+  
+  /// Whether this is the customer's default payment method
+  is_primary Boolean
+  
+  /// Whether this payment method is active/available for use
+  is_active Boolean
+  
+  /// When this payment method was added
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp if payment method is no longer available
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payments shopping_mall_payments[]
+  
+  @@unique([payment_token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, is_primary], map: "shopping_mall_payment_methods_shopping_mall_customer_i_8f8ca36c")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, is_active], map: "shopping_mall_payment_methods_shopping_mall_customer_i_0f178e28")
+}
+
+/// Reconciliation records comparing system payment records with payment
+/// processor settlements. Ensures all transactions are accounted for and any
+/// discrepancies are detected. Tracks daily or periodic reconciliation runs.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_transaction_reconciliation {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Date for which reconciliation was performed
+  reconciliation_date DateTime
+  
+  /// Type of reconciliation: daily, weekly, monthly, manual, processor_report
+  reconciliation_type String
+  
+  /// Which payment processor this reconciliation is for
+  processor_name String
+  
+  /// Number of transactions recorded in our system for this period
+  system_transaction_count Int
+  
+  /// Number of transactions reported by payment processor
+  processor_transaction_count Int
+  
+  /// Total transaction amount in our system
+  system_total_amount Float
+  
+  /// Total transaction amount reported by processor
+  processor_total_amount Float
+  
+  /// Status of reconciliation: matched, discrepancy_found,
+  /// pending_investigation, resolved
+  reconciliation_status String
+  
+  /// Description of any discrepancies found
+  discrepancy_details String?
+  
+  /// JSON array of transaction IDs missing from system
+  missing_transaction_ids String?
+  
+  /// JSON array of transaction IDs in system but not in processor report
+  extra_transaction_ids String?
+  
+  /// Admin user ID who performed or approved the reconciliation
+  reconciled_by String?
+  
+  /// When reconciliation was performed
+  reconciliation_timestamp DateTime
+  
+  /// Notes on how discrepancies were resolved
+  resolution_notes String?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reconciliation_date, processor_name], map: "shopping_mall_transaction_reconciliation_reconciliatio_6ef316b8")
+  // spellchecker: ignore-next-line
+  @@index([reconciliation_status], map: "shopping_mall_transaction_reconciliation_reconciliatio_c4b956bc")
+  // spellchecker: ignore-next-line
+  @@index([reconciliation_date], map: "shopping_mall_transaction_reconciliation_reconciliatio_79b106b2")
+}
+
+/// Seller payment records tracking when payouts are issued to sellers.
+/// Records amount, status, and settlement details. Separate from customer
+/// refunds - this is seller compensation for successful sales.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_payouts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller receiving the payout. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Unique payout identifier (PAYOUT-YYYYMMDD-XXXXXX format)
+  payout_number String
+  
+  /// Start date of the period covered by this payout
+  payout_period_start DateTime
+  
+  /// End date of the period covered by this payout
+  payout_period_end DateTime
+  
+  /// Gross sales amount before commissions and fees
+  total_sales_amount Float
+  
+  /// Platform commission deducted from sales
+  commission_amount Float
+  
+  /// Total refunds processed in this period
+  refunds_amount Float
+  
+  /// Other fees deducted (payment processing, etc.)
+  fees_amount Float?
+  
+  /// Final amount to be paid to seller (gross - commissions - refunds - fees)
+  net_payout_amount Float
+  
+  /// Status of payout: pending, approved, processing, completed, failed,
+  /// cancelled
+  payout_status String
+  
+  /// How payout is issued: bank_transfer, wire, check, digital_wallet
+  payout_method String
+  
+  /// Reference to seller's saved bank account for payout (if applicable)
+  bank_account_id String?
+  
+  /// Transaction ID or reference from payment processor
+  transaction_reference String?
+  
+  /// When payout was initiated
+  initiated_timestamp DateTime
+  
+  /// When payout was completed/deposited
+  completed_timestamp DateTime?
+  
+  /// Expected date funds will appear in seller's account
+  expected_delivery_date DateTime?
+  
+  /// Reason for payout failure if applicable
+  failure_reason String?
+  
+  /// Internal notes about this payout
+  notes String?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([payout_number])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, payout_period_start], map: "shopping_mall_seller_payouts_shopping_mall_seller_id_p_d6c288ae")
+  @@index([payout_status])
+  @@index([initiated_timestamp])
+}
+
+/// Current account balance for each seller. Tracks the amount owed to seller
+/// from completed sales, updated as orders are fulfilled and refunds
+/// processed. Enables sellers to view their current available balance for
+/// payout requests.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_account_balances {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller whose balance this tracks. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Current available balance ready for payout
+  current_balance Float
+  
+  /// Balance from orders not yet confirmed delivered
+  pending_balance Float
+  
+  /// Balance held due to disputes or pending investigation
+  reserved_balance Float
+  
+  /// Total cumulative earnings since seller joined platform
+  lifetime_earnings Float
+  
+  /// Total cumulative payouts already processed
+  lifetime_payouts Float
+  
+  /// Last time balance was updated
+  last_balance_update DateTime
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id], map: "shopping_mall_seller_account_balances_shopping_mall_se_7ba2e853")
+  
+  @@index([current_balance])
+}
+
+/// Commission rate configuration by product category. Defines what
+/// percentage of each sale the platform retains as commission. Supports
+/// variable rates to optimize for different categories. Historical records
+/// track rate changes over time.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_commission_rates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product category this commission rate applies to. {@link
+  /// shopping_mall_categories.id}
+  shopping_mall_category_id String
+  
+  /// Category name for reference (denormalized from category table)
+  category_name String
+  
+  /// Commission percentage (0-100) that platform retains from each sale
+  commission_percentage Float
+  
+  /// Minimum commission amount even if percentage would be less
+  minimum_commission_amount Float?
+  
+  /// Maximum commission amount capped at this value
+  maximum_commission_amount Float?
+  
+  /// Date when this commission rate becomes effective
+  effective_date DateTime
+  
+  /// Date when this commission rate expires (null if current)
+  expiration_date DateTime?
+  
+  /// Description of why this rate was set (e.g., promotional rate, category
+  /// adjustment)
+  description String?
+  
+  /// Admin ID who created this rate
+  created_by String
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_category_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([effective_date, expiration_date], map: "shopping_mall_commission_rates_effective_date_expirati_f36e0891")
+}
+
+/// General ledger tracking all financial movements: customer payments,
+/// seller payouts, refunds, commissions, adjustments. Immutable audit trail
+/// of financial transactions for accounting and compliance. Supports
+/// platform financial reporting and reconciliation.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_financial_ledger {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related order if applicable. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String?
+  
+  /// Date of the financial transaction
+  ledger_date DateTime
+  
+  /// Type of financial transaction: sale, refund, payout, commission,
+  /// adjustment, chargeback, fee
+  transaction_type String
+  
+  /// Account being debited (reduced) - typically customer or seller account ID
+  debit_account String?
+  
+  /// Account being credited (increased) - typically platform or seller account
+  credit_account String?
+  
+  /// Transaction amount
+  amount Float
+  
+  /// Currency code
+  currency String
+  
+  /// Description of the transaction
+  description String?
+  
+  /// Reference ID from related transaction (payment ID, refund ID, payout ID,
+  /// etc.)
+  reference_id String?
+  
+  /// Platform balance after this transaction (for reconciliation)
+  balance_after Float?
+  
+  /// System or user who initiated this transaction
+  created_by String
+  
+  /// Additional notes about this transaction
+  notes String?
+  
+  /// Record creation timestamp (immutable)
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  
+  @@index([ledger_date])
+  @@index([transaction_type])
+  @@index([debit_account])
+  @@index([credit_account])
+  @@index([reference_id])
+}

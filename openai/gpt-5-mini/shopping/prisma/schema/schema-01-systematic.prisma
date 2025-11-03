@@ -1,35 +1,45 @@
-/// Hierarchical category taxonomy for the shoppingMall catalog. Categories
-/// support optional parent-child nesting for multi-level organization. Used
-/// by product listing, search, and navigation. Contains canonical business
-/// identity (slug) and temporal audit fields. Related entity references:
-/// {@link shopping_mall_product_categories}.
+/// Platform-wide configuration key/value store. Stores namespaced settings
+/// used by administrative and operational flows (feature flags, thresholds,
+/// toggles). Added explicit value format metadata to make structured
+/// settings (JSON) and schema versioning explicit for safe evolution and
+/// validation.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_categories {
+model shopping_mall_system_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Self-referential parent category reference. {@link
-  /// shopping_mall_categories.id}.
-  parent_id String?
+  /// Logical namespace for the setting (e.g., "shopping", "payments",
+  /// "notifications").
+  namespace String
   
-  /// Human-friendly category name used in navigation and search.
-  name String
+  /// Setting key within the namespace (unique per namespace).
+  key String
   
-  /// Unique URL-friendly identifier for the category (business key).
-  slug String
+  /// Serialized setting value (string). For structured content the
+  /// `value_is_json` flag indicates JSON payload.
+  value String
   
-  /// Optional textual description for the category used in admin and SEO.
+  /// Indicates whether `value` contains JSON serialized text (true) or plain
+  /// string (false). Allows safe parsing by consumers during migration to Json
+  /// column.
+  value_is_json Boolean
+  
+  /// Optional schema identifier or version for structured JSON config (e.g.,
+  /// "featureFlag:v1"). Useful for validation and migration tooling.
+  value_schema String?
+  
+  /// Human-friendly description and operational guidance for the setting.
   description String?
   
-  /// Record creation timestamp (Asia/Seoul timezone interpretation).
+  /// Record creation timestamp.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Record last modification timestamp.
   updated_at DateTime
   
   /// Soft-delete timestamp; null when active.
@@ -38,138 +48,225 @@ model shopping_mall_categories {
   //----
   // RELATIONS
   //----
-  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
-  
-  recursive shopping_mall_categories[] @relation("recursive")
-  shopping_mall_product_categories shopping_mall_product_categories[]
-  
-  @@index([parent_id])
-  
-  @@unique([slug])
-  @@index([name, created_at])
+  @@unique([namespace, key])
+  @@index([namespace, created_at])
 }
 
-/// Junction table linking products to categories. Represents M:N
-/// relationship between shopping_mall_products and shopping_mall_categories.
-/// Enforces uniqueness per product/category pair to avoid duplicate
-/// assignments. Managed as subsidiary data from product/category
-/// administration flows.
+/// Currency reference table. Contains ISO currency code, display name,
+/// symbol, decimal precision and active flag. Serves as authoritative
+/// currency metadata for pricing, formatting, and settlement flows.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_categories {
+model shopping_mall_currencies {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged product's {@link shopping_mall_products.id}.
-  shopping_mall_product_id String
+  /// ISO 4217 currency code (e.g., "USD", "KRW"). Unique business key.
+  code String
   
-  /// Belonged category's {@link shopping_mall_categories.id}.
-  shopping_mall_category_id String
+  /// Human-readable currency name (e.g., "US Dollar").
+  name String
   
-  /// When the product was assigned to the category.
+  /// Display symbol for the currency (e.g., "$", "₩").
+  symbol String?
+  
+  /// Number of decimal digits used for the currency (e.g., 2 for USD, 0 for
+  /// JPY).
+  decimal_digits Int
+  
+  /// Whether this currency is currently enabled for use on the platform.
+  is_active Boolean
+  
+  /// Record creation timestamp.
   created_at DateTime
   
-  /// Actor who created the assignment (nullable; may reference admin or system
-  /// user).
-  created_by String?
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  shopping_mall_countries shopping_mall_countries[]
+  shopping_mall_shipping_profiles shopping_mall_shipping_profiles[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_payments shopping_mall_payments[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_disputes shopping_mall_disputes[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_payouts shopping_mall_payouts[]
+  shopping_mall_settlements shopping_mall_settlements[]
+  shopping_mall_seller_balances shopping_mall_seller_balances[]
   
-  @@index([shopping_mall_category_id])
-  
-  @@unique([shopping_mall_product_id, shopping_mall_category_id], map: "shopping_mall_product_categories_shopping_mall_product_b5030199")
-  @@index([shopping_mall_product_id, shopping_mall_category_id, created_at], map: "shopping_mall_product_categories_shopping_mall_product_f70f052c")
+  @@unique([code])
+  @@index([is_active, updated_at])
 }
 
-/// Append-only audit and event log for platform-level critical actions
-/// (admin operations, moderation events, system escalations). Designed for
-/// immutable historical records, forensic queries, and admin reporting.
-/// Entries are append-only and include free-text details for later
-/// investigation.
+/// Country and region metadata used by shipping, tax, and localization
+/// subsystems. Added nullable FK to shopping_mall_currencies to avoid drift
+/// between string codes and canonical currency records while preserving
+/// `default_currency_code` for compatibility.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_audit_logs {
+model shopping_mall_countries {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Identifier of the actor that caused the event (user/admin/system). May
-  /// reference other user tables; nullable for system events.
-  actor_id String?
+  /// Optional canonical currency reference for the country. {@link
+  /// shopping_mall_currencies.id}. Nullable for countries without assigned
+  /// currency in platform configuration.
+  shopping_mall_currency_id String?
   
-  /// Short action code or verb (e.g., 'product_publish', 'refund_approved').
-  action String
+  /// ISO 3166-1 alpha-2 country code (e.g., "KR", "US"). Unique key.
+  iso_code String
   
-  /// Target entity type (e.g., 'product','order','review').
-  entity String
+  /// Country display name.
+  name String
   
-  /// Identifier of the affected entity (if applicable).
-  entity_id String?
+  /// Geographic region grouping (e.g., "Asia", "Europe").
+  region String?
   
-  /// Human-readable or structured details about the event (JSON-as-string or
-  /// text).
-  details String?
+  /// International dialing code (E.164 prefix, e.g., "+82").
+  calling_code String?
   
-  /// Event timestamp (immutable).
+  /// Optional ISO currency code commonly used in the country. Retained for
+  /// backward compatibility; prefer shopping_mall_currency_id when present.
+  default_currency_code String?
+  
+  /// Record creation timestamp.
   created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@index([entity, entity_id, created_at])
+  currency shopping_mall_currencies? @relation(fields: [shopping_mall_currency_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_tax_profiles shopping_mall_tax_profiles[]
+  
+  @@unique([iso_code])
+  @@index([region, updated_at])
+  @@index([shopping_mall_currency_id, iso_code])
 }
 
-/// Append-only inventory event stream capturing SKU-level inventory changes
-/// (adjustments, reservations, commits, releases). Each event ties to a SKU
-/// and optionally to an order or actor. Used for inventory audit,
-/// reconciliation, and prevention of oversells.
+/// Shipping profile definitions that describe carrier rules, base pricing,
+/// and optional free-shipping thresholds. Added explicit currency FK and
+/// store monetary amounts in minor units (int) to avoid floating point
+/// rounding and multi-currency ambiguity.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_inventory_events {
+model shopping_mall_shipping_profiles {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Affected SKU reference. {@link shopping_mall_skus.id}.
-  shopping_mall_sku_id String
+  /// Currency used for profile amounts. {@link shopping_mall_currencies.id}.
+  shopping_mall_currency_id String
   
-  /// Signed quantity change (positive for inbound, negative for outbound).
-  delta Int
+  /// Unique machine-friendly code for the shipping profile (e.g.,
+  /// "standard_domestic").
+  code String
   
-  /// Reason for the inventory change (e.g., 'sale', 'adjustment', 'return',
-  /// 'reservation_expiry').
-  reason String?
+  /// Human-friendly shipping profile name.
+  name String
   
-  /// Optional order id associated with this event (if applicable). {@link
-  /// shopping_mall_orders.id}.
-  reference_order_id String?
+  /// Operational notes describing the profile behavior and carrier mapping.
+  description String?
   
-  /// Actor who performed the change (seller/admin/system).
-  actor_id String?
+  /// Base shipping price in minor currency units (e.g., cents) to avoid
+  /// floating-point rounding issues.
+  base_price Int
   
-  /// Event timestamp (append-only).
+  /// Order subtotal threshold in minor currency units above which shipping is
+  /// free for this profile; null if not applicable.
+  free_threshold Int?
+  
+  /// Whether the shipping profile is currently available for selection.
+  is_active Boolean
+  
+  /// Record creation timestamp.
   created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  currency shopping_mall_currencies @relation(fields: [shopping_mall_currency_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_inventory shopping_mall_inventory[]
+  @@unique([code])
+  @@unique([name])
+  @@index([is_active, updated_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_currency_id, is_active], map: "shopping_mall_shipping_profiles_shopping_mall_currency_58472164")
+}
+
+/// Tax profile definitions used to compute taxes during checkout. Each tax
+/// profile is associated with a country (shopping_mall_countries) and
+/// defines a percentage rate and whether the tax is inclusive. Profiles are
+/// versionable by creating new records (historical snapshots handled by
+/// separate components if needed).
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_tax_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
   
-  @@index([shopping_mall_sku_id, created_at], map: "shopping_mall_inventory_events_shopping_mall_sku_id_cr_730de2f1")
+  /// Referenced country's {@\link shopping_mall_countries.id}.
+  shopping_mall_country_id String
+  
+  /// Tax profile name (e.g., "VAT 10% - Domestic").
+  name String
+  
+  /// Tax rate expressed as a percentage (e.g., 10.0 for 10%).
+  rate Float
+  
+  /// Whether tax is price-inclusive (true) or added on top of price (false).
+  is_inclusive Boolean
+  
+  /// Operational notes and jurisdictional guidance for the tax profile.
+  description String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  country shopping_mall_countries @relation(fields: [shopping_mall_country_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_country_id, name])
+  @@index([shopping_mall_country_id, rate])
 }

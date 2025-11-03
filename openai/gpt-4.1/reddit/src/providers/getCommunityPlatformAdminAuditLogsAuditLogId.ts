@@ -14,18 +14,28 @@ export async function getCommunityPlatformAdminAuditLogsAuditLogId(props: {
   admin: AdminPayload;
   auditLogId: string & tags.Format<"uuid">;
 }): Promise<ICommunityPlatformAuditLog> {
-  const log =
+  const record =
     await MyGlobal.prisma.community_platform_audit_logs.findUniqueOrThrow({
       where: { id: props.auditLogId },
+      select: {
+        id: true,
+        actor_type: true,
+        actor_id: true,
+        action: true,
+        target_type: true,
+        target_id: true,
+        metadata: true,
+        created_at: true,
+      },
     });
   return {
-    id: log.id,
-    actor_type: log.actor_type,
-    actor_id: log.actor_id,
-    action_type: log.action_type,
-    target_table: log.target_table,
-    target_id: log.target_id ?? undefined,
-    details: log.details ?? undefined,
-    created_at: toISOStringSafe(log.created_at),
+    id: record.id,
+    actor_type: record.actor_type,
+    actor_id: record.actor_id,
+    action: record.action,
+    target_type: record.target_type,
+    target_id: record.target_id,
+    metadata: record.metadata,
+    created_at: toISOStringSafe(record.created_at),
   };
 }

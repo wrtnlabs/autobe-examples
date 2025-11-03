@@ -7,117 +7,102 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IShoppingCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingCustomer";
+import { IShoppingAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAuthorizationToken";
 
 export async function postAuthCustomerJoin(props: {
-  body: IShoppingMallCustomer.IJoin;
-}): Promise<IShoppingMallCustomer.IAuthorized> {
-  const { body } = props;
-
-  // Check for duplicate email (ignore soft-deleted accounts)
-  const existing = await MyGlobal.prisma.shopping_mall_customers.findFirst({
-    where: { email: body.email, deleted_at: null },
+  body: IShoppingCustomer.ICreate;
+}): Promise<IShoppingCustomer.IAuthorized> {
+  // Step 1: Check for duplicate email or phone
+  const dup = await MyGlobal.prisma.shopping_customers.findFirst({
+    where: {
+      OR: [{ email: props.body.email }, { phone: props.body.phone }],
+    },
+    select: { email: true, phone: true },
   });
-  if (existing) {
+  if (dup?.email === props.body.email)
     throw new HttpException("Email already registered.", 409);
-  }
+  if (dup?.phone === props.body.phone)
+    throw new HttpException("Phone already registered.", 409);
 
-  // Hash password
-  const password_hash = await PasswordUtil.hash(body.password);
+  // Step 2: Hash password
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // Prepare values
+  // Step 3: Create customer
   const now = toISOStringSafe(new Date());
-  const customer_id = v4();
-
-  // Create customer
-  const customer = await MyGlobal.prisma.shopping_mall_customers.create({
+  const customerId = v4();
+  const customer = await MyGlobal.prisma.shopping_customers.create({
     data: {
-      id: customer_id,
-      email: body.email,
-      password_hash,
-      full_name: body.full_name,
-      phone: body.phone,
-      status: "pending",
-      email_verified: false,
+      id: customerId,
+      email: props.body.email,
+      password_hash: hashedPassword,
+      name: props.body.name,
+      phone: props.body.phone,
+      is_active: true,
       created_at: now,
       updated_at: now,
-      deleted_at: null,
     },
   });
 
-  // Create address
-  await MyGlobal.prisma.shopping_mall_customer_addresses.create({
+  // Step 4: Create session
+  const sessionId = v4();
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const session = await MyGlobal.prisma.shopping_customer_sessions.create({
     data: {
-      id: v4(),
-      customer_id,
-      recipient_name: body.address.recipient_name,
-      phone: body.address.phone,
-      region: body.address.region,
-      postal_code: body.address.postal_code,
-      address_line1: body.address.address_line1,
-      address_line2: body.address.address_line2 ?? null,
-      is_default: body.address.is_default,
+      id: sessionId,
+      shopping_customer_id: customerId,
+      ip:
+        props.body.ip === undefined || props.body.ip === null
+          ? ""
+          : props.body.ip,
+      href: props.body.href,
+      referrer: props.body.referrer,
       created_at: now,
-      updated_at: now,
-      deleted_at: null,
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
 
-  // Issue JWT tokens (access & refresh)
-  const payload = { id: customer.id, type: "customer" };
-  const accessToken = jwt.sign(payload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refreshToken = jwt.sign(payload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "7d",
-    issuer: "autobe",
-  });
+  // Step 5: Generate JWT tokens
+  const token = {
+    access: jwt.sign(
+      {
+        type: "customer",
+        id: customerId,
+        session_id: sessionId,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "customer",
+        id: customerId,
+        session_id: sessionId,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
 
-  // Compute expiry from tokens
-  const decodeAccess = jwt.decode(accessToken);
-  const decodeRefresh = jwt.decode(refreshToken);
-  let expired_at = now;
-  let refreshable_until = now;
-  if (
-    decodeAccess &&
-    typeof decodeAccess === "object" &&
-    "exp" in decodeAccess &&
-    decodeAccess.exp
-  ) {
-    expired_at = toISOStringSafe(new Date(Number(decodeAccess.exp) * 1000));
-  }
-  if (
-    decodeRefresh &&
-    typeof decodeRefresh === "object" &&
-    "exp" in decodeRefresh &&
-    decodeRefresh.exp
-  ) {
-    refreshable_until = toISOStringSafe(
-      new Date(Number(decodeRefresh.exp) * 1000),
-    );
-  }
-
+  // Step 6: Return authorized customer object
   return {
     id: customer.id,
     email: customer.email,
-    full_name: customer.full_name,
+    name: customer.name,
     phone: customer.phone,
-    status: customer.status,
-    email_verified: customer.email_verified,
+    is_active: customer.is_active,
+    deleted_at: customer.deleted_at
+      ? toISOStringSafe(customer.deleted_at)
+      : null,
     created_at: toISOStringSafe(customer.created_at),
     updated_at: toISOStringSafe(customer.updated_at),
-    deleted_at:
-      customer.deleted_at === null
-        ? null
-        : toISOStringSafe(customer.deleted_at),
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: expired_at,
-      refreshable_until: refreshable_until,
-    },
+    token,
+    role: "customer",
   };
 }

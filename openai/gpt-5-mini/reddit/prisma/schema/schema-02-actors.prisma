@@ -1,242 +1,365 @@
-/// Primary user accounts for communityPortal. Stores authentication and
-/// profile data referenced by role tables and content entities. Key
-/// relationships: referenced by {@\link community_portal_members.id},
-/// {@\link community_portal_moderators.id}, {@\link
-/// community_portal_admins.id}, and content tables (posts, comments, votes)
-/// in other components. Use soft-delete (deleted_at) in practice; primary
-/// operations should prefer soft-delete to preserve audit trails.
+/// Records unauthenticated visitor identities for analytics, rate-limiting
+/// fingerprints and soft-tracking. Stores lightweight connection metadata
+/// (IP, user-agent, first_seen/last_seen) used for session creation in
+/// {@link community_bbs_visitor_sessions.id}. This table is used for
+/// transient visitor attribution and must not contain authentication
+/// credentials.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_portal_users {
+model community_bbs_visitor {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique login handle used for authentication and public identity.
-  username String
+  /// IP address observed for the visitor session (string).
+  ip String
   
-  /// Primary email address for the account. Must be unique. Used for
-  /// verification and notifications.
-  email String
+  /// User agent string captured for attribution and analytics.
+  user_agent String?
   
-  /// Password hash using secure algorithm (never store plain passwords).
-  password_hash String
+  /// When this visitor fingerprint was first observed.
+  first_seen_at DateTime
   
-  /// Optional human-friendly display name shown in the UI.
-  display_name String?
+  /// Most recent observation time for this visitor fingerprint.
+  last_seen_at DateTime
   
-  /// Optional profile biography text. Indexed for text search (GIN) to support
-  /// fuzzy matching.
-  bio String?
-  
-  /// Optional avatar image URI for the user profile.
-  avatar_uri String?
-  
-  /// Aggregated user karma score used for reputation and gating. Stored as
-  /// integer; authoritative calculation may be driven by vote events in other
-  /// components.
-  karma Int
-  
-  /// Record creation timestamp.
-  created_at DateTime
-  
-  /// Last modification timestamp for the user record.
-  updated_at DateTime
-  
-  /// Soft-delete timestamp. When set, the user is considered deleted/archived
-  /// for business logic while preserving audit trails.
+  /// Soft-delete timestamp for visitor record when required by retention or
+  /// privacy.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community_portal_communities community_portal_communities[]
-  community_portal_guests community_portal_guests?
-  community_portal_members community_portal_members?
-  community_portal_moderators_of_user_id community_portal_moderators[] @relation("community_portal_moderators_of_user_id")
-  community_portal_moderators_of_appointed_by_user_id community_portal_moderators[] @relation("community_portal_moderators_of_appointed_by_user_id")
-  community_portal_admins community_portal_admins?
-  community_portal_posts community_portal_posts[]
-  community_portal_comments community_portal_comments[]
-  community_portal_votes community_portal_votes[]
-  community_portal_subscriptions community_portal_subscriptions[]
-  community_portal_reports community_portal_reports[]
+  community_bbs_visitor_sessions community_bbs_visitor_sessions[]
   
-  @@unique([username])
-  @@unique([email])
-  @@index([created_at])
-  @@index([karma, updated_at])
+  @@index([first_seen_at, last_seen_at])
 }
 
-/// Subsidiary table capturing guest-specific metadata linked to a primary
-/// user account. Guests are lightweight accounts with limited privileges;
-/// this table exists to track guest enrollment or ephemeral metadata without
-/// polluting the main user record.
+/// Actor-specific session table for anonymous visitors. Follows the exact
+/// session table pattern: stores connection context and expiry for each
+/// visitor session. Referencing visitor via {@link
+/// community_bbs_visitor.id}. This table is subsidiary and used for tracking
+/// ephemeral sessions.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_portal_guests {
+model community_bbs_visitor_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged user's {@\link community_portal_users.id}.
-  user_id String
+  /// Belonged visitor's {@link community_bbs_visitor.id}.
+  community_bbs_visitor_id String
   
-  /// Optional short-lived token or metadata for guest sessions or invitations.
-  guest_token String?
+  /// IP address that initiated the session.
+  ip String
   
-  /// When the guest record was created.
+  /// Connection URL / landing href for the session (if available).
+  href String?
+  
+  /// Referrer URL for the session (if available).
+  referrer String?
+  
+  /// Session creation timestamp.
   created_at DateTime
   
-  /// Optional expiration timestamp for guest status or token.
+  /// Session expiration timestamp (nullable if session is open-ended).
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user community_portal_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  visitor community_bbs_visitor @relation(fields: [community_bbs_visitor_id], references: [id], onDelete: Cascade)
   
-  @@unique([user_id])
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_visitor_id, created_at], map: "community_bbs_visitor_sessions_community_bbs_visitor_i_8a415b50")
+}
+
+/// Authenticated community member accounts. Extended to include account
+/// lifecycle, verification, lockout and password-reset metadata required by
+/// authentication EARS: email verification, status lifecycle, failed login
+/// tracking, lockout, last_login, and password reset token hash and expiry.
+/// This model is the primary actor entity for community members and must
+/// support secure account management, session revocation, and auditability.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_communitymember {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Verified email address for the member; business-unique contact. Used for
+  /// password reset and notifications.
+  email String
+  
+  /// Password hash used for authentication. Never store plain passwords.
+  password_hash String
+  
+  /// Unique username chosen by the member for display and discovery.
+  username String
+  
+  /// Optional display name; used for presentation separate from username.
+  display_name String?
+  
+  /// Reputation score aggregated from votes and system adjustments.
+  karma Int
+  
+  /// Whether the member's email has been verified. Default false until
+  /// verification completes.
+  email_verified Boolean
+  
+  /// Account lifecycle status:
+  /// 'registered_unverified'|'registered_verified'|'suspended'|'banned'|'deleted_soft'.
+  /// Application enforces allowed values.
+  status String
+  
+  /// Count of recent failed login attempts used for progressive lockout rules.
+  failed_login_attempts Int
+  
+  /// If set, the account is locked until this timestamp as part of progressive
+  /// lockout policies.
+  lockout_until DateTime?
+  
+  /// Timestamp of the most recent successful login for operational reporting
+  /// and stale-account detection.
+  last_login_at DateTime?
+  
+  /// Hash of the active password reset token when issued. Store only a hash,
+  /// not the token itself.
+  password_reset_token_hash String?
+  
+  /// Expiration time for the active password reset token, if any.
+  password_reset_expires_at DateTime?
+  
+  /// Whether multi-factor authentication is enabled for this account.
+  mfa_enabled Boolean
+  
+  /// Account creation time.
+  created_at DateTime
+  
+  /// Last profile or account update time.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for account recovery and retention.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_bbs_communitymember_sessions community_bbs_communitymember_sessions[]
+  community_bbs_profiles community_bbs_profiles?
+  community_bbs_communities community_bbs_communities[]
+  community_bbs_community_moderators_of_community_member_id community_bbs_community_moderators[] @relation("community_bbs_community_moderators_of_community_member_id")
+  community_bbs_community_moderators_of_assigned_by_id community_bbs_community_moderators[] @relation("community_bbs_community_moderators_of_assigned_by_id")
+  community_bbs_community_memberships_of_community_member_id community_bbs_community_memberships[] @relation("community_bbs_community_memberships_of_community_member_id")
+  community_bbs_community_memberships_of_invited_by_id community_bbs_community_memberships[] @relation("community_bbs_community_memberships_of_invited_by_id")
+  community_bbs_posts community_bbs_posts[]
+  community_bbs_post_snapshots community_bbs_post_snapshots[]
+  community_bbs_comments community_bbs_comments[]
+  community_bbs_comment_edits community_bbs_comment_edits[]
+  community_bbs_comment_snapshots community_bbs_comment_snapshots[]
+  community_bbs_post_votes community_bbs_post_votes[]
+  community_bbs_comment_votes community_bbs_comment_votes[]
+  community_bbs_reports community_bbs_reports[]
+  community_bbs_report_attachments community_bbs_report_attachments[]
+  community_bbs_community_subscriptions community_bbs_community_subscriptions[]
+  community_bbs_user_subscriptions community_bbs_user_subscriptions[]
+  community_bbs_notification_preferences community_bbs_notification_preferences[]
+  community_bbs_notifications_of_recipient_id community_bbs_notifications[] @relation("community_bbs_notifications_of_recipient_id")
+  community_bbs_notifications_of_actor_id community_bbs_notifications[] @relation("community_bbs_notifications_of_actor_id")
+  community_bbs_email_digests community_bbs_email_digests[]
+  community_bbs_push_tokens community_bbs_push_tokens[]
+  community_bbs_audit_logs community_bbs_audit_logs[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at, username])
+  @@index([status, email_verified])
+  @@index([last_login_at])
+}
+
+/// Session table for community members. Conforms strictly to the Session
+/// Table Pattern: contains only allowed session fields and references the
+/// community member via {@link community_bbs_communitymember.id}. Used for
+/// session listing, revocation, and audit trails.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_communitymember_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged community member's {@link community_bbs_communitymember.id}.
+  community_bbs_communitymember_id String
+  
+  /// IP address for the session.
+  ip String
+  
+  /// Connection URL for the session (landing page).
+  href String?
+  
+  /// Referrer URL for the session.
+  referrer String?
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session expiration time (nullable).
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  communityMember community_bbs_communitymember @relation(fields: [community_bbs_communitymember_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_communitymember_id, created_at], map: "community_bbs_communitymember_sessions_community_bbs_c_982b1831")
+}
+
+/// Platform administrator accounts. Administrators are primary actor
+/// entities with elevated privileges; this table stores authentication data,
+/// admin role metadata, and temporal fields for audit. Admin sessions are
+/// stored in {@link community_bbs_systemadmin_sessions.id}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_systemadmin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator email, used for authentication and official notifications.
+  email String
+  
+  /// Password hash for admin authentication.
+  password_hash String
+  
+  /// Administrator display name for audit logs and UI.
+  display_name String?
+  
+  /// Flag indicating super-administrator privileges.
+  is_super_admin Boolean
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for admin accounts.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_bbs_system_settings community_bbs_system_settings[]
+  community_bbs_reserved_names community_bbs_reserved_names[]
+  community_bbs_community_categories community_bbs_community_categories[]
+  community_bbs_systemadmin_sessions community_bbs_systemadmin_sessions[]
+  community_bbs_community_moderators community_bbs_community_moderators[]
+  community_bbs_post_media community_bbs_post_media[]
+  community_bbs_email_digests community_bbs_email_digests[]
+  
+  @@unique([email])
   @@index([created_at])
 }
 
-/// Subsidiary table for member-specific attributes tied to a primary user
-/// account. Holds membership metadata such as verification and suspension
-/// state and membership start date. One-to-one with community_portal_users
-/// to support member-only attributes without bloating the core user table.
+/// Session table for system administrators. Implements the Session Table
+/// Pattern exactly: references {@link community_bbs_systemadmin.id},
+/// contains only allowed session context fields, and includes the composite
+/// index required for session queries.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_portal_members {
+model community_bbs_systemadmin_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged user's {@\link community_portal_users.id}.
-  user_id String
+  /// Belonged admin's {@link community_bbs_systemadmin.id}.
+  community_bbs_systemadmin_id String
   
-  /// Timestamp when the user became a member (verified).
-  member_since DateTime
+  /// IP address initiating the admin session.
+  ip String
   
-  /// Whether the member's email has been verified.
-  is_email_verified Boolean
+  /// Connection URL context for this session.
+  href String?
   
-  /// Flag indicating whether the member account is suspended (platform action).
-  is_suspended Boolean
+  /// Referrer URL for the admin session.
+  referrer String?
   
-  /// Record creation timestamp for membership record.
+  /// Session creation timestamp.
   created_at DateTime
   
-  /// Last update timestamp for membership record.
-  updated_at DateTime
+  /// Session expiration timestamp (nullable).
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user community_portal_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  systemadmin community_bbs_systemadmin @relation(fields: [community_bbs_systemadmin_id], references: [id], onDelete: Cascade)
   
-  @@unique([user_id])
-  @@index([member_since, is_suspended])
+  // spellchecker: ignore-next-line
+  @@index([community_bbs_systemadmin_id, created_at], map: "community_bbs_systemadmin_sessions_community_bbs_syste_7903c0a7")
 }
 
-/// Moderator assignments with robust auditability. Each appointment
-/// references the moderator user and the appointing user. The model
-/// preserves timestamps and activation flags. Appointing actor is a foreign
-/// key to community_portal_users to ensure referential integrity and easier
-/// audit queries. Community reference is nullable to support global
-/// moderators.
+/// Member profile data supporting community_bbs_communitymember. Contains
+/// presentation fields such as display_name, bio and avatar_uri. Managed as
+/// a subsidiary table with a 1:1 relationship to
+/// community_bbs_communitymember (enforced via unique FK). Snapshots and
+/// audit trails are handled by other components.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_portal_moderators {
+model community_bbs_profiles {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Moderator's user reference. {@link community_portal_users.id}.
-  user_id String
+  /// Belonged community member's {@link community_bbs_communitymember.id}.
+  community_bbs_communitymember_id String
   
-  /// Assigned community's {@link community_portal_communities.id}. Nullable to
-  /// allow global moderators without single-community assignment.
-  community_id String?
+  /// Optional display name for public profile presentation.
+  display_name String?
   
-  /// Appointing user's {@link community_portal_users.id}. Nullable when
-  /// appointed by system or for legacy/backfill records.
-  appointed_by_user_id String?
+  /// Short biography or profile description (business-limited length enforced
+  /// at application layer).
+  bio String?
   
-  /// Timestamp when the moderator appointment was made.
-  appointed_at DateTime
+  /// URI to the profile avatar image stored in media service.
+  avatar_uri String?
   
-  /// Whether the moderator assignment is currently active.
-  is_active Boolean
-  
-  /// Record creation timestamp for the moderator assignment.
+  /// Profile creation timestamp.
   created_at DateTime
   
-  /// Last update timestamp for the moderator assignment.
+  /// Last profile update timestamp.
   updated_at DateTime
+  
+  /// Soft-delete timestamp for profile data.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user community_portal_users @relation("community_portal_moderators_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
-  community community_portal_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  appointedByUser community_portal_users? @relation("community_portal_moderators_of_appointed_by_user_id", fields: [appointed_by_user_id], references: [id], onDelete: Cascade)
+  communityMember community_bbs_communitymember @relation(fields: [community_bbs_communitymember_id], references: [id], onDelete: Cascade)
   
-  community_portal_reports_of_assigned_moderator_id community_portal_reports[] @relation("community_portal_reports_of_assigned_moderator_id")
-  community_portal_reports_of_closed_by_moderator_id community_portal_reports[] @relation("community_portal_reports_of_closed_by_moderator_id")
-  
-  @@unique([user_id, community_id])
-  @@index([community_id, is_active])
-  @@index([user_id, appointed_at])
-  @@index([appointed_by_user_id, appointed_at], map: "community_portal_moderators_appointed_by_user_id_appoi_0ff5b43f")
-}
-
-/// Subsidiary table for platform admin accounts and admin-scoped metadata.
-/// One-to-one with the primary user record. Stores admin level and
-/// activation flag for elevated privileges; admin actions should always be
-/// audited in external audit logs.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_portal_admins {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Belonged user's {@\link community_portal_users.id}.
-  user_id String
-  
-  /// Admin level or role string (e.g., 'super', 'moderator_coordinator').
-  /// Defines scope of privileges; exact semantics are platform-defined.
-  admin_level String
-  
-  /// Whether the admin account is active and may perform admin actions.
-  is_active Boolean
-  
-  /// Timestamp when admin role was granted.
-  created_at DateTime
-  
-  /// Last updated timestamp for admin record.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  user community_portal_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
-  @@unique([user_id])
-  @@index([admin_level, is_active])
+  @@unique([community_bbs_communitymember_id])
+  @@index([created_at])
 }

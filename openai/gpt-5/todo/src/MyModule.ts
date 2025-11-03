@@ -1,26 +1,24 @@
 import { Module } from "@nestjs/common";
 
-import { AuthGuestvisitorController } from "./controllers/auth/guestVisitor/AuthGuestvisitorController";
-import { AuthTodomemberController } from "./controllers/auth/todoMember/AuthTodomemberController";
-import { AuthTodomemberPasswordController } from "./controllers/auth/todoMember/password/AuthTodomemberPasswordController";
-import { AuthSystemadminController } from "./controllers/auth/systemAdmin/AuthSystemadminController";
-import { TodolistTodomemberTodosController } from "./controllers/todoList/todoMember/todos/TodolistTodomemberTodosController";
-import { TodolistTodosController } from "./controllers/todoList/todos/TodolistTodosController";
-import { TodolistSystemadminTodomembersController } from "./controllers/todoList/systemAdmin/todoMembers/TodolistSystemadminTodomembersController";
-import { TodolistSystemadminSystemadminsController } from "./controllers/todoList/systemAdmin/systemAdmins/TodolistSystemadminSystemadminsController";
-import { TodolistSystemadminGuestvisitorsController } from "./controllers/todoList/systemAdmin/guestVisitors/TodolistSystemadminGuestvisitorsController";
+import { AuthUserController } from "./controllers/auth/user/AuthUserController";
+import { AuthUserPasswordController } from "./controllers/auth/user/password/AuthUserPasswordController";
+import { AuthUserSessionsExpireController } from "./controllers/auth/user/sessions/expire/AuthUserSessionsExpireController";
+import { TodoUserTodosController } from "./controllers/todo/user/todos/TodoUserTodosController";
+import { TodoUserTodosCompletionController } from "./controllers/todo/user/todos/completion/TodoUserTodosCompletionController";
+import { TodoUserAuditeventsController } from "./controllers/todo/user/auditEvents/TodoUserAuditeventsController";
+import { TodoUserReportsPersonaldataController } from "./controllers/todo/user/reports/personalData/TodoUserReportsPersonaldataController";
+import { TodoUserUsersController } from "./controllers/todo/user/users/TodoUserUsersController";
 
 @Module({
   controllers: [
-    AuthGuestvisitorController,
-    AuthTodomemberController,
-    AuthTodomemberPasswordController,
-    AuthSystemadminController,
-    TodolistTodomemberTodosController,
-    TodolistTodosController,
-    TodolistSystemadminTodomembersController,
-    TodolistSystemadminSystemadminsController,
-    TodolistSystemadminGuestvisitorsController,
+    AuthUserController,
+    AuthUserPasswordController,
+    AuthUserSessionsExpireController,
+    TodoUserTodosController,
+    TodoUserTodosCompletionController,
+    TodoUserAuditeventsController,
+    TodoUserReportsPersonaldataController,
+    TodoUserUsersController,
   ],
 })
 export class MyModule {}

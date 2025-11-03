@@ -1,0 +1,248 @@
+/// Shopping cart entity storing temporary product collections before
+/// checkout. Supports both authenticated customer carts (persisted across
+/// sessions for 90 days) and guest carts (session-based, retained for 7
+/// days). Carts maintain items from multiple sellers for unified checkout
+/// experience. Related entities: {@link shopping_mall_shopping_cart_items}
+/// for cart contents, {@link shopping_mall_customers} for authenticated cart
+/// ownership.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this cart. Nullable to support guest carts identified
+  /// by session_id. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Session identifier for guest cart tracking. Used when
+  /// shopping_mall_customer_id is null. Enables cart persistence across guest
+  /// browsing sessions.
+  session_id String?
+  
+  /// Timestamp when the cart was created. Used for cart expiration and cleanup
+  /// policies.
+  created_at DateTime
+  
+  /// Timestamp when the cart was last modified. Updated when items are added,
+  /// removed, or quantities changed.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for cart cleanup. Guest carts deleted after 7 days,
+  /// authenticated carts after 90 days of inactivity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_shopping_cart_items shopping_mall_shopping_cart_items[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_shopping_carts_shopping_mall_customer_id_6f543853")
+  @@index([session_id, created_at])
+  @@index([deleted_at])
+}
+
+/// Individual items within shopping carts. Each cart item references a
+/// specific product SKU with quantity selection. Supports multi-seller carts
+/// where items from different sellers coexist. Cart items are managed
+/// exclusively through cart operations and removed when cart is cleared or
+/// order is placed. Related entities: {@link shopping_mall_shopping_carts}
+/// for parent cart, {@link shopping_mall_product_skus} for product variant.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shopping_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent shopping cart containing this item. {@link
+  /// shopping_mall_shopping_carts.id}
+  shopping_mall_shopping_cart_id String
+  
+  /// Specific product SKU variant selected by customer. References exact
+  /// variant with color, size, and other attributes. {@link
+  /// shopping_mall_product_skus.id}
+  shopping_mall_product_sku_id String
+  
+  /// Number of units of this SKU in the cart. Must be positive integer between
+  /// 1-99 per business rules.
+  quantity Int
+  
+  /// Timestamp when item was added to cart. Used for sorting and display order.
+  created_at DateTime
+  
+  /// Timestamp when item quantity was last modified. Updated when customer
+  /// changes quantity.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_shopping_carts @relation(fields: [shopping_mall_shopping_cart_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id], map: "shopping_mall_shopping_cart_items_shopping_mall_produc_c0096a44")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_shopping_cart_id, shopping_mall_product_sku_id], map: "shopping_mall_shopping_cart_items_shopping_mall_shoppi_f1169fb2")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shopping_cart_id, created_at], map: "shopping_mall_shopping_cart_items_shopping_mall_shoppi_4e2ca514")
+}
+
+/// Customer wishlist for saving products for future purchase. Each
+/// authenticated customer has exactly one wishlist that persists
+/// indefinitely across sessions. Supports price drop notifications and
+/// back-in-stock alerts. Wishlists are customer-only features not available
+/// to guest users. Related entities: {@link shopping_mall_wishlist_items}
+/// for saved products, {@link shopping_mall_customers} for ownership.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this wishlist. Not nullable as wishlists require
+  /// authentication. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Timestamp when wishlist was created. Typically created on first item
+  /// addition.
+  created_at DateTime
+  
+  /// Timestamp when wishlist was last modified. Updated when items are added
+  /// or removed.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for wishlist cleanup. Used when customer account is
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_mall_customer_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_wishlists_shopping_mall_customer_id_crea_13b2d35f")
+}
+
+/// Individual products saved in customer wishlists. Each item references the
+/// product (not specific SKU) as customers may want different variants when
+/// purchasing. System monitors wishlisted products for price changes and
+/// stock availability to send notifications. Items stored in reverse
+/// chronological order (most recent first). Related entities: {@link
+/// shopping_mall_wishlists} for parent wishlist, {@link
+/// shopping_mall_products} for saved product.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent wishlist containing this item. {@link shopping_mall_wishlists.id}
+  shopping_mall_wishlist_id String
+  
+  /// Product saved to wishlist. References product level (not SKU) as
+  /// customers select variants when adding to cart. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Timestamp when product was added to wishlist. Used for sorting wishlist
+  /// items (most recent first).
+  created_at DateTime
+  
+  /// Timestamp when wishlist item was last modified. Tracks any updates to the
+  /// wishlist entry.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_wishlist_id, shopping_mall_product_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_57096080")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_wishlist_id, created_at], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_57e5e679")
+}
+
+/// Tracking of recently viewed products for recommendation and discovery
+/// features. Maintains last 20 products viewed per customer or guest
+/// session. Used for personalized recommendations and Recently Viewed
+/// sections. Automatically cleaned up when exceeding 20 items per
+/// customer/session. Supports both authenticated customers and guest
+/// tracking. Related entities: {@link shopping_mall_customers} for
+/// authenticated tracking, {@link shopping_mall_products} for viewed
+/// product.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_recently_viewed_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who viewed the product. Nullable for guest user tracking via
+  /// session_id. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Product that was viewed by the customer or guest. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Session identifier for guest user tracking. Used when
+  /// shopping_mall_customer_id is null to track guest browsing history.
+  session_id String?
+  
+  /// Timestamp when the product was viewed. Used for sorting (most recent
+  /// first) and enforcing 20-item limit per customer.
+  viewed_at DateTime
+  
+  /// Record creation timestamp. Typically same as viewed_at for new entries.
+  created_at DateTime
+  
+  /// Record last update timestamp. Updated if same product is viewed again to
+  /// bump it to top of list.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id], map: "shopping_mall_recently_viewed_products_shopping_mall_p_842ad1c5")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, viewed_at], map: "shopping_mall_recently_viewed_products_shopping_mall_c_97f0f9e1")
+  @@index([session_id, viewed_at])
+  @@index([viewed_at])
+}

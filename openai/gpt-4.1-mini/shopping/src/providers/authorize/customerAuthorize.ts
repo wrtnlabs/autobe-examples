@@ -15,17 +15,15 @@ export async function customerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
   const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
-      status: "active",
+      deleted_at: null
     },
   });
 
   if (customer === null) {
-    throw new ForbiddenException("You're not enrolled or inactive");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

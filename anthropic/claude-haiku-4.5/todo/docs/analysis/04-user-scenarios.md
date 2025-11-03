@@ -1,796 +1,731 @@
-# User Scenarios for Todo List Application
+# User Scenarios for Todo Application
 
-## User Scenario Overview
+## Overview
 
-This document describes the primary and secondary user scenarios for the Todo list application, illustrating how authenticated users interact with the system in real-world situations. These scenarios form the foundation for system implementation and testing, showing the step-by-step interactions between users and the application.
+This document describes how users interact with the Todo application through detailed, step-by-step scenarios. These scenarios represent real-world usage patterns and help developers understand the complete user experience, including both successful operations and error handling.
 
-### Scope and Context
-
-The scenarios documented here focus on authenticated users who have successfully logged into the system. Each scenario describes:
-
-- The user's objective and motivation
-- The step-by-step actions the user takes
-- The system's responses and behavior
-- Expected outcomes and success criteria
-- Validation checks and error handling
-
-### Scenario Format
-
-Each scenario follows a consistent structure:
-
-- **Scenario Title**: Clear description of the user's goal
-- **User Role**: Which user role performs this scenario
-- **User Goal**: What the user wants to accomplish
-- **Preconditions**: System state before the scenario begins
-- **Steps**: Numbered sequence of user actions and system responses
-- **Success Criteria**: What constitutes successful completion
-- **Alternative Paths**: What happens if things go differently
+Each scenario is written from the user's perspective, showing what they see, what they do, and how the system responds. These scenarios complement the functional requirements by providing context and workflow details.
 
 ---
 
 ## Primary User Scenarios
 
-### Scenario 1: Creating a New Todo
+### Scenario 1: New User Registration and First Todo Creation
 
-**User Role**: Authenticated User
+**User Type:** New, unregistered person
+**Goal:** Create an account and add their first todo item
+**Context:** User visits the Todo application for the first time
 
-**User Goal**: Add a new task to their todo list because they want to track something they need to do.
+#### Step-by-Step Interaction:
 
-**Preconditions**:
-- User is logged into the application
-- User has navigated to the todo list view
-- The create todo form is accessible
+1. User arrives at the application and sees a welcome screen
+2. User clicks or selects "Sign Up" / "Create Account" option
+3. System presents registration form requesting:
+   - Email address
+   - Password
+   - Password confirmation
+4. User enters their email (e.g., john@example.com)
+5. User enters a password and confirms it
+6. User submits the registration form
+7. **System validation:** Checks if email is valid format and not already registered
+8. **System validation:** Checks if passwords match and meet minimum requirements (8 characters)
+9. IF validation passes: System creates the account and automatically logs the user in
+10. IF validation fails: System displays clear error message (e.g., "Email already exists" or "Passwords don't match")
+11. User is taken to their empty todo list view
+12. User sees a message indicating they have no todos yet
+13. User clicks "Create New Todo" button
+14. System shows a form with a text field for todo description
+15. User enters a todo description (e.g., "Buy groceries")
+16. User submits the form
+17. System validates the todo is not empty and not excessively long
+18. System creates the todo item with default properties:
+    - Status: Active/Incomplete
+    - Created date: Current date/time
+    - Completion date: Empty (not yet completed)
+    - Priority: Medium (default)
+19. System displays the new todo in the list
+20. User sees their first todo item displayed with options to complete or delete it
 
-**Steps**:
+#### Expected System Behavior:
+- Registration confirmation is immediate (no email verification for MVP)
+- User session is automatically created after successful registration
+- Empty todo list displays helpful guidance
+- New todos appear immediately in the list
+- User remains logged in throughout the process
 
-1. User opens the application and views their current todo list
-2. User clicks the "Create New Todo" or similar action button
-3. System displays a form with a text field for the todo title/description
-4. User enters a meaningful title (e.g., "Buy groceries for dinner")
-5. User submits the form by clicking "Add Todo" or pressing Enter
-6. System validates the input:
-   - WHEN user submits a todo creation request, THE system SHALL validate that the title field is not empty
-   - WHEN user submits a todo creation request, THE system SHALL validate that the title does not exceed 500 characters
-   - WHEN user submits a todo creation request, THE system SHALL validate that the title does not contain invalid characters or encoding
-7. System creates the todo with:
-   - A unique identifier
-   - The user-provided title
-   - Completion status set to "incomplete"
-   - A creation timestamp
-   - Associated with the authenticated user's account
-8. System saves the todo to the database
-9. System displays the new todo in the list view with incomplete status
-10. System displays a success confirmation message to the user
-11. The form clears and is ready for the next todo entry
-
-**Success Criteria**:
-- WHEN a user creates a new todo with valid input, THE new todo SHALL appear immediately in the todo list
-- THE todo SHALL display the exact title the user entered
-- THE todo SHALL show "incomplete" or similar status indicator
-- THE form SHALL be cleared and ready for new entries
-- THE user SHALL receive visual confirmation of the creation
-
-**Alternative Paths**:
-
-**Path A: Empty Title Submitted**
-- WHEN user enters an empty title, THE system SHALL display a validation error message
-- THE system SHALL prevent submission and keep the form open
-- THE user SHALL correct the input and try again
-
-**Path B: Title Exceeds Maximum Length**
-- WHEN user enters a title exceeding 500 characters, THE system SHALL display an error indicating the limit
-- THE system MAY auto-truncate or prevent submission depending on implementation
-- THE user SHALL be informed of the character limit
-
-**Path C: Network or Database Error During Creation**
-- WHEN there is a network or database error during creation, THE system SHALL display an error message
-- THE form SHALL remain open with user's input preserved
-- THE user SHALL be able to retry the submission
+#### Success Criteria:
+- User account created with correct email and secure password
+- First todo item created and visible in the list
+- User is authenticated and can continue using the app
+- Default values are properly assigned (status: active, priority: medium)
 
 ---
 
-### Scenario 2: Viewing All Todos
+### Scenario 2: Daily Todo List Management
 
-**User Role**: Authenticated User
+**User Type:** Existing authenticated user
+**Goal:** Review, add, and manage todos for the day
+**Context:** User logs in on a regular workday
 
-**User Goal**: See all the todos they have created to understand their task list and current workload.
+#### Step-by-Step Interaction:
 
-**Preconditions**:
-- User is logged into the application
-- User has previously created one or more todos
+1. User opens the Todo application
+2. User sees login screen (because session has expired or device was closed)
+3. User enters their email address
+4. User enters their password
+5. User submits login form
+6. **System validation:** Checks if email exists and password is correct
+7. IF validation passes: System authenticates user and creates a new session
+8. IF validation fails: System shows error message (e.g., "Email or password incorrect")
+9. User is presented with their complete todo list
+10. User reviews all active/incomplete todos from previous days and today
+11. User scans through the list to understand their workload
+12. User decides to add a new todo for today
+13. User clicks "Add New Todo" button
+14. User types description: "Prepare presentation slides"
+15. User optionally adds priority "High" and due date "2025-11-02"
+16. User submits the new todo
+17. System validates:
+    - Title is not empty
+    - Title does not exceed 255 characters
+    - Due date (if provided) is not in the past
+    - Priority (if provided) is one of: Low, Medium, High
+18. System creates the todo and displays it in the list
+19. User sees the new todo added to the list (sorted by creation date, newest first)
+20. User notices several completed todos from past days are still shown
+21. User wants to focus on active todos only
+22. User selects or clicks "Show Active Todos Only" filter/view
+23. System filters the display to show only incomplete todos
+24. User now sees a cleaner view with just active tasks
+25. User reviews the filtered list and understands their current workload
 
-**Steps**:
+#### Expected System Behavior:
+- Session is properly authenticated with valid credentials
+- Todo list loads showing all todos by default (active and completed)
+- New todos are immediately visible after creation
+- Filtering/viewing options work instantly
+- User can switch between views without losing data
+- Error messages are specific about validation failures
 
-1. User opens or navigates to the main todo list page
-2. System retrieves all todos associated with the authenticated user
-3. WHEN user opens the main todo list page, THE system SHALL retrieve all todos belonging to the authenticated user
-4. System displays todos in a single list view
-5. Todos are shown in the following format for each item:
-   - Todo title/description
-   - Completion status indicator (completed/incomplete)
-   - Creation timestamp or last modified date
-   - Action buttons (edit, delete, complete/incomplete)
-6. WHEN the system displays todos, THE system SHALL organize todos in logical order (e.g., newest first or by creation date)
-7. For each todo, the system displays:
-   - Clear visual distinction between completed and incomplete todos
-   - Completed todos may appear grayed out or have a checkmark
-   - Incomplete todos appear with normal styling
-8. IF the user has many todos (e.g., more than 20), THE system MAY implement pagination or lazy loading
-9. User can scroll through the list to see all todos
-
-**Success Criteria**:
-- WHEN user opens the todo list, ALL todos created by the user SHALL be displayed
-- COMPLETED and incomplete todos SHALL be visually distinguished
-- EACH todo SHALL show its title, status, and action options
-- THE list SHALL be organized in a logical and consistent order
-- THE data SHALL load within expected timeframe (within 2 seconds)
-- USERS SHALL be able to quickly identify which todos are complete and which need attention
-
-**Alternative Paths**:
-
-**Path A: User Has No Todos**
-- WHEN the user has no todos, THE system SHALL display an empty state message
-- THE message SHALL encourage user to create their first todo
-- THE create new todo button SHALL be prominently displayed
-
-**Path B: Very Large Todo List (Hundreds of Items)**
-- WHEN the todo list is very large, THE system SHALL implement pagination or infinite scroll
-- THE user SHALL be able to navigate through pages or load more items
-- PERFORMANCE SHALL remain acceptable
-
-**Path C: Network Error While Loading**
-- WHEN there is a network error while loading, THE system SHALL display an error message
-- THE system MAY show previously cached todos if available
-- THE user SHALL be able to retry loading
-
----
-
-### Scenario 3: Marking a Todo as Complete
-
-**User Role**: Authenticated User
-
-**User Goal**: Mark a todo as complete to indicate they have finished the task and update their progress.
-
-**Preconditions**:
-- User is logged into the application
-- User is viewing their todo list
-- At least one todo exists with incomplete status
-
-**Steps**:
-
-1. User views their todo list showing multiple incomplete todos
-2. User identifies a todo they have completed (e.g., "Buy groceries for dinner")
-3. User clicks the "Complete" button, checkbox, or action for that specific todo
-4. System receives the completion action for that todo
-5. WHEN user clicks the complete action, THE system SHALL validate that the todo belongs to the authenticated user
-6. WHEN user clicks the complete action, THE system SHALL validate that the todo is not already marked as complete
-7. WHEN user clicks the complete action, THE system SHALL verify that the user has permission to update this todo
-8. System updates the todo's status from "incomplete" to "complete"
-9. System records the completion timestamp
-10. System saves the updated todo to the database
-11. System reflects the change in the UI:
-    - Todo now shows "complete" status
-    - Visual styling changes (e.g., strikethrough text, different color)
-    - Todo may move to a different section if applicable
-12. System displays a confirmation message to the user
-
-**Success Criteria**:
-- WHEN user marks a todo as complete, THE todo status SHALL change from incomplete to complete
-- THE visual indication SHALL show the todo is complete
-- THE completion change SHALL persist when the user refreshes or returns later
-- THE action SHALL be immediate and responsive
-- THE user SHALL receive confirmation of the state change
-
-**Alternative Paths**:
-
-**Path A: User Accidentally Completes a Todo**
-- WHEN user accidentally marks a todo as complete, THE user SHALL be able to click "Undo" or a similar option
-- THE system SHALL revert the status back to incomplete
-- THE change SHALL be saved immediately
-
-**Path B: Database Error During Update**
-- WHEN there is a database error during update, THE system SHALL display an error message
-- THE todo status MAY temporarily revert to incomplete
-- THE system SHALL inform the user and offer to retry
-
-**Path C: User Not Authorized**
-- WHEN user is not authorized (attempted tampering), THE system SHALL reject the action
-- THE system SHALL display a security error message
-- THE todo status SHALL remain unchanged
+#### Success Criteria:
+- User successfully authenticates with email and password
+- Todo list displays correctly with all user's todos
+- New todo appears immediately after creation
+- Filtering works as expected
+- User can effectively manage their todos
+- Default priority (Medium) is assigned if not specified
 
 ---
 
-### Scenario 4: Marking a Todo as Incomplete
+### Scenario 3: Completing and Tracking Progress
 
-**User Role**: Authenticated User
+**User Type:** Authenticated user working through their todos
+**Goal:** Mark todos as complete and see progress
+**Context:** User has multiple active todos and completes them throughout the day
 
-**User Goal**: Mark a previously completed todo as incomplete because they realize it still needs work or it was completed incorrectly.
+#### Step-by-Step Interaction:
 
-**Preconditions**:
-- User is logged into the application
-- User is viewing their todo list
-- At least one todo exists with complete status
+1. User views their active todo list with 5 items
+2. User completes their first task (e.g., "Call client")
+3. User clicks the checkbox or "Mark Complete" button next to that todo
+4. System validates the action (user owns this todo, todo exists, user is authenticated)
+5. System marks the todo as complete and records the completion timestamp
+6. System updates the display:
+   - Todo appears with completed styling (e.g., strikethrough, different color)
+   - OR todo disappears from active view if using active-only filter
+7. User sees the visual feedback that todo is complete
+8. User continues working and completes another todo
+9. User marks it complete using the same process
+10. System records completion timestamp for the second todo
+11. User wants to see all their completed work for today
+12. User switches view to "Show Completed Todos" or similar option
+13. System displays only the completed todos with timestamps
+14. User sees a list of completed items with completion dates/times (e.g., "Completed today at 2:30 PM")
+15. User feels a sense of accomplishment seeing completed work
+16. User returns to active todo view to continue with remaining tasks
+17. System shows only incomplete todos again
 
-**Steps**:
+#### Expected System Behavior:
+- Completion action is instant and provides visual feedback
+- Completed todos are marked with clear visual indicators
+- User can switch between views (active/completed) without losing data
+- Completion timestamps are recorded automatically in system
+- Todos do not disappear unexpectedly from the system
+- Status can be changed back from completed to active if needed
 
-1. User views their todo list which includes completed todos (showing as strikethrough or grayed out)
-2. User identifies a todo that was marked complete but needs more work (e.g., "Review budget report")
-3. User clicks the "Incomplete" button, unchecks the checkbox, or uses a similar action
-4. System receives the request to change status from complete to incomplete
-5. WHEN user clicks the incomplete action, THE system SHALL validate that the todo belongs to the authenticated user
-6. WHEN user clicks the incomplete action, THE system SHALL validate that the todo is currently marked as complete
-7. WHEN user clicks the incomplete action, THE system SHALL verify that the user has permission to update this todo
-8. System updates the todo's status from "complete" to "incomplete"
-9. System records the timestamp of the status change
-10. System saves the updated todo to the database
-11. System updates the UI to reflect the change:
-    - Todo now shows "incomplete" status
-    - Visual styling reverts (text is no longer strikethrough, color returns to normal)
-    - Todo moves to the incomplete section if applicable
-12. System displays a confirmation message
-
-**Success Criteria**:
-- WHEN user marks a todo as incomplete, THE todo status SHALL change from complete to incomplete
-- THE visual indication SHALL show the todo is now incomplete
-- THE change SHALL persist across sessions
-- THE action SHALL respond immediately
-- THE user SHALL receive confirmation
-
-**Alternative Paths**:
-
-**Path A: User Wants to Re-Complete**
-- WHEN user wants to quickly re-complete the todo, THE user SHALL be able to immediately click complete again
-- THE system SHALL process this as a normal status change
-
-**Path B: Network Issue**
-- WHEN there is a network issue, THE system SHALL display an error message
-- THE todo status MAY remain as complete temporarily
-- THE user SHALL be able to retry the action
+#### Success Criteria:
+- Todos can be marked complete successfully
+- Completion status persists correctly across sessions
+- View filtering shows appropriate todos based on status
+- User can track what has been completed
+- Visual feedback is clear and immediate
+- Completion timestamps are recorded and visible to user
 
 ---
 
-### Scenario 5: Editing a Todo
+### Scenario 4: Editing and Organizing Todos
 
-**User Role**: Authenticated User
+**User Type:** Authenticated user refining their todo list
+**Goal:** Update, edit, and reorganize existing todos
+**Context:** User realized a todo needs different wording or priority
 
-**User Goal**: Update the title or description of a todo because they want to clarify, correct, or improve the wording.
+#### Step-by-Step Interaction:
 
-**Preconditions**:
-- User is logged into the application
-- User is viewing their todo list
-- At least one todo exists
-- User has identified the todo they want to edit
+1. User is viewing their active todo list
+2. User sees a todo they created: "Buy groceris" (typo)
+3. User wants to fix the typo
+4. User clicks the edit button/icon on that todo
+5. System displays an edit form with:
+   - Current todo description: "Buy groceris"
+   - Current priority: "Medium"
+   - Current due date (if any)
+   - Any other editable fields
+6. User modifies the text to: "Buy groceries"
+7. User optionally changes priority to "Low"
+8. User submits the edit form
+9. **System validation:** Checks new description is not empty and valid
+10. **System validation:** Checks priority is one of the allowed values (Low, Medium, High)
+11. System saves the changes
+12. System updates the modified timestamp
+13. System updates the display with the corrected text and priority
+14. User sees the todo now correctly displays: "Buy groceries" with "Low" priority
+15. User receives confirmation message: "Todo updated successfully"
+16. Later, user wants to delete a todo they no longer need
+17. User finds the todo: "Clean garage" (decided not to do it)
+18. User clicks the delete button/icon
+19. System shows a confirmation message: "Are you sure you want to delete this todo? This action cannot be undone."
+20. User confirms deletion by clicking "Yes" or "Delete" button
+21. System removes the todo from the list permanently
+22. System updates the display immediately
+23. User no longer sees that todo in their list
+24. User receives confirmation: "Todo deleted successfully"
+25. User feels their list is now clean and accurate
 
-**Steps**:
+#### Expected System Behavior:
+- Edit form displays current data
+- Changes are saved immediately after validation
+- Deletion requires explicit confirmation before permanent removal
+- Display updates instantly after changes are made
+- No data loss occurs unless explicitly deleted by user
+- Edit and delete operations only work on user's own todos
+- All changes are validated before being saved
+- Appropriate error messages if validation fails
 
-1. User views their todo list
-2. User identifies a todo they want to edit (e.g., "Buy milk" needs to be "Buy milk and eggs")
-3. User clicks the "Edit" button or similar action for that specific todo
-4. System opens an edit form or inline editing mode showing:
-   - The current todo title/description
-   - An input field with the existing text
-   - Action buttons (Save, Cancel)
-5. User modifies the text as needed:
-   - User may add additional details
-   - User may correct spelling or grammar
-   - User may completely change the title
-6. User clicks "Save" to confirm the changes
-7. WHEN user submits the edited title, THE system SHALL validate that the title is not empty
-8. WHEN user submits the edited title, THE system SHALL validate the length does not exceed 500 characters
-9. WHEN user submits the edited title, THE system SHALL validate that the title is not just whitespace
-10. System updates the todo with the new title
-11. System records the modification timestamp
-12. System saves the changes to the database
-13. System returns to the list view and displays the updated todo with new text
-14. System displays a confirmation message to the user
-
-**Success Criteria**:
-- WHEN user edits a todo, THE todo title SHALL be updated to the new text provided
-- THE change SHALL be immediately visible in the list view
-- THE modification SHALL be persistent (persists on reload)
-- THE todo's completion status SHALL NOT be affected
-- THE user SHALL receive confirmation of the edit
-
-**Alternative Paths**:
-
-**Path A: User Clicks Cancel During Editing**
-- WHEN user clicks "Cancel" during editing, THE system SHALL discard the changes
-- THE system SHALL return to the list view
-- THE original todo text SHALL remain unchanged
-
-**Path B: User Enters Invalid Input**
-- WHEN user enters invalid input, THE system SHALL display a validation error
-- THE system SHALL keep the edit form open
-- THE user SHALL correct and retry
-
-**Path C: User Enters Empty Text**
-- WHEN user enters empty text, THE system SHALL display an error preventing the update
-- THE user SHALL be prompted to enter a valid title
-- THE edit form SHALL remain open
-
-**Path D: Database Error**
-- WHEN there is a database error, THE system SHALL display an error message
-- THE original todo text SHALL be preserved
-- THE user SHALL be able to retry the edit
+#### Success Criteria:
+- Todos can be edited and changes persist
+- Edited todos display updated information
+- Modified timestamp is updated on changes
+- Todos can be deleted with confirmation
+- Deleted todos are permanently removed
+- User cannot accidentally lose data without confirmation
+- Only the todo owner can edit/delete their todos
+- Invalid data (empty title, etc.) is rejected with clear messages
 
 ---
 
-### Scenario 6: Deleting a Todo
+## Alternative Scenarios
 
-**User Role**: Authenticated User
+### Scenario 5: Attempting to Add Invalid Todo
 
-**User Goal**: Remove a todo from their list because it is no longer needed, was added by mistake, or is no longer relevant.
+**User Type:** Authenticated user
+**Goal:** Attempting to create a todo
+**Context:** User attempts various invalid inputs
 
-**Preconditions**:
-- User is logged into the application
-- User is viewing their todo list
-- At least one todo exists
-- User has identified the todo to delete
+#### Step-by-Step Interaction:
 
-**Steps**:
+1. User clicks "Add New Todo"
+2. User sees the todo creation form
+3. User accidentally submits without entering any text (empty field)
+4. System validates the input
+5. System detects empty todo description
+6. System shows an error message: "Todo title cannot be empty. Please enter a title for your todo."
+7. Todo is NOT created
+8. User sees the form is still ready for input with any previous text preserved
+9. User enters a description: "This is an extremely long todo that goes on and on and on... [continues for thousands of characters beyond system limits]"
+10. User submits the form
+11. System validates the length of the todo
+12. System detects the todo exceeds maximum length (255 characters)
+13. System shows error: "Todo title is too long (maximum 255 characters). Please shorten your title."
+14. Todo is NOT created
+15. User sees the form still has their text and can edit it
+16. User modifies the text to a reasonable length: "Prepare quarterly budget report"
+17. User submits again
+18. **System validation:** Passes all checks
+19. System creates the todo successfully
+20. User sees their valid todo in the list
+21. User receives confirmation: "Todo created successfully"
 
-1. User views their todo list
-2. User identifies a todo they want to delete (e.g., an old todo that is no longer relevant)
-3. User clicks the "Delete" button or similar action for that specific todo
-4. System may display a confirmation dialog:
-   - Message: "Are you sure you want to delete this todo?"
-   - Shows the todo title
-   - Offers "Confirm Delete" and "Cancel" buttons
-5. User confirms the deletion by clicking "Confirm Delete" or similar
-6. WHEN user confirms deletion, THE system SHALL validate that the todo belongs to the authenticated user
-7. WHEN user confirms deletion, THE system SHALL verify that the user has permission to delete this todo
-8. System removes the todo from the database
-9. System updates the list view to remove the deleted todo
-10. The todo no longer appears in any view
-11. System displays a confirmation message (e.g., "Todo deleted successfully")
+#### Expected System Behavior:
+- Empty todos are rejected with clear messages
+- Oversized todos are rejected with clear messages
+- Validation errors show what went wrong and how to fix it
+- User can resubmit after fixing the issue
+- User's input is preserved after errors (where safe to do so)
+- No partial/corrupted todos are created
+- Validation happens before saving to database
 
-**Success Criteria**:
-- WHEN user deletes a todo, THE todo SHALL be completely removed from the list
-- THE deleted todo SHALL NOT appear anywhere in the application
-- THE deletion SHALL be permanent (does not appear on refresh)
-- THE user SHALL receive confirmation of deletion
-- OTHER todos SHALL NOT be affected
-
-**Alternative Paths**:
-
-**Path A: User Cancels the Confirmation Dialog**
-- WHEN user cancels the confirmation dialog, THE system SHALL close the dialog
-- THE system SHALL return to the list view
-- THE todo SHALL remain in the list unchanged
-
-**Path B: Database Error During Deletion**
-- WHEN there is a database error during deletion, THE system SHALL display an error message
-- THE todo SHALL remain in the list
-- THE user SHALL be able to retry the deletion
-
-**Path C: User Not Authorized**
-- WHEN user is not authorized, THE system SHALL reject the deletion
-- THE system SHALL display a security error
-- THE todo SHALL remain in the list
-
-**Path D: Accidental Deletion**
-- WHEN user deletes a todo, SOME implementations MAY provide an "Undo" option for a limited time
-- IF implemented, THE user SHALL be able to click "Undo" to restore the deleted todo
-- IF not implemented, THE deletion SHALL be permanent
+#### Success Criteria:
+- Invalid todos are never created
+- User receives clear feedback about what went wrong
+- Error messages guide user on how to correct the problem
+- User can correct and resubmit successfully
+- Valid todos are successfully created after correction
 
 ---
 
-## Secondary User Scenarios
+### Scenario 6: Viewing Completed Work from Previous Days
 
-### Scenario 7: Managing Multiple Todos Efficiently
+**User Type:** Authenticated user with history
+**Goal:** Review past completed work
+**Context:** User wants to see what they accomplished last week
 
-**User Role**: Authenticated User
+#### Step-by-Step Interaction:
 
-**User Goal**: Manage a growing list of todos efficiently, including viewing, completing, and organizing tasks without getting overwhelmed.
+1. User is viewing their active todo list (default view)
+2. User wants to see completed todos from previous days
+3. User selects "Show Completed Todos" view option
+4. System displays todos marked as complete with their completion dates
+5. User sees todos completed from today, yesterday, and previous days
+6. User can see when each todo was completed (date and time)
+7. User reviews their productivity over time
+8. User sees they completed:
+   - "Buy groceries" - completed today at 2:30 PM
+   - "Fix bug in login" - completed yesterday at 5:00 PM
+   - "Team meeting" - completed 2 days ago at 10:00 AM
+   - "Review design mockups" - completed 5 days ago at 3:15 PM
+9. User feels satisfied with their productivity
+10. User can click on any completed todo to see full details
+11. User can switch back to active todos view
+12. System returns to showing only incomplete todos
+13. User's history is preserved and accessible whenever they want to review it
 
-**Preconditions**:
-- User is logged into the application
-- User has created multiple todos (e.g., 10-50 items)
-- User wants to process several todos in one session
+#### Expected System Behavior:
+- Completed todos are preserved with timestamps
+- User can access history easily through view switching
+- Completion times are recorded accurately
+- User can navigate between views without data loss
+- System maintains both active and completed data
+- Deleted todos do not appear in completed view
 
-**Steps**:
-
-1. User opens the application and views their todo list with many items
-2. WHEN user opens a list with multiple todos, THE system SHALL display both completed and incomplete todos in a single view
-3. User can see both completed and incomplete todos in a single view
-4. User quickly scans the list to identify what needs attention
-5. User rapidly completes several todos by clicking the complete button for each
-6. WHEN user completes each todo, THE system SHALL immediately update each todo's status as completed
-7. Completed todos visually change appearance (strikethrough, grayed out)
-8. Incomplete todos remain visible and actionable
-9. User identifies a todo that needs editing and clicks edit
-10. User modifies the title quickly
-11. WHEN user saves edited todo, THE system SHALL save the change immediately and return to the list
-12. User continues to review, complete, or edit other todos
-13. User can delete outdated or unnecessary todos
-14. WHEN user deletes todos, THE system SHALL remove deleted todos from the view
-
-**Success Criteria**:
-- WHEN user performs multiple todo operations in sequence, MULTIPLE todo operations SHALL complete quickly without delays
-- EACH action SHALL complete quickly and provide immediate feedback
-- THE list SHALL remain organized and understandable with many items
-- THE user SHALL be able to efficiently manage their workload
-- PERFORMANCE SHALL remain acceptable with dozens of todos
-
----
-
-### Scenario 8: Reviewing Completed Todos
-
-**User Role**: Authenticated User
-
-**User Goal**: Review what they have accomplished by looking at their completed todos to feel a sense of progress and verify their completed work.
-
-**Preconditions**:
-- User is logged into the application
-- User has completed multiple todos
-- Completed todos are visible in the list alongside incomplete todos
-
-**Steps**:
-
-1. User views their todo list
-2. WHEN user views the todo list, COMPLETED todos SHALL be visually distinct (strikethrough, different color, grayed out)
-3. User can see both the title and completion status of each completed todo
-4. User can review completed todos to see what they have accomplished
-5. WHEN user views completed todos, THE user SHALL still be able to interact with completed todos (edit, reopen, delete)
-6. WHEN user views completed todos, THE user SHALL be able to identify when each todo was completed (if timestamp is shown)
-7. User can compare their progress over time by reviewing completed todos
-
-**Success Criteria**:
-- WHEN user views the todo list, COMPLETED todos SHALL be easily distinguished from incomplete todos
-- COMPLETED todos SHALL remain visible in the list for review
-- THE user SHALL be able to see evidence of their progress and accomplishments
-- COMPLETED todos SHALL still be editable or reopenable if needed
-- THE list SHALL provide a complete view of both work done and work remaining
+#### Success Criteria:
+- Completed todos remain in the system after marking complete
+- Completion dates/times are visible and accurate
+- User can view their history of completed work
+- User can return to active view without data loss
+- Switching views shows appropriate todos
 
 ---
 
-### Scenario 9: Re-activating Completed Todos
+### Scenario 7: Forgotten Password Recovery
 
-**User Role**: Authenticated User
+**User Type:** Existing user with forgotten password
+**Goal:** Regain access to their account
+**Context:** User forgot their password and cannot log in
 
-**User Goal**: Change a completed todo back to incomplete because they realize it needs more work or it was completed prematurely.
+#### Step-by-Step Interaction:
 
-**Preconditions**:
-- User is logged into the application
-- User is viewing their todo list
-- At least one todo has been marked as complete
+1. User attempts to log in with their email
+2. User cannot remember their password
+3. User looks for a "Forgot Password" link on login screen
+4. User clicks "Forgot Password"
+5. System displays a password reset form asking for email
+6. User enters their email: "jane@example.com"
+7. User submits the password reset request
+8. **System validation:** Checks if email exists in system
+9. IF email exists: System shows message "If an account exists with this email, you will receive password reset instructions"
+10. System sends password reset link to the email (or indicates it would in MVP)
+11. User checks their email inbox
+12. User receives email with subject "Password Reset Request for Todo App"
+13. User clicks the reset link in the email
+14. System validates the reset token/link is valid and not expired
+15. System displays password reset form
+16. User enters new password: "NewSecurePassword123"
+17. User confirms new password: "NewSecurePassword123"
+18. User submits the form
+19. **System validation:** Checks passwords match and meet requirements (8+ characters)
+20. IF validation fails: System shows error about password requirements
+21. User corrects password if needed
+22. System updates the password in the database
+23. System shows success message: "Password has been reset successfully. You can now log in with your new password."
+24. User is redirected to login page
+25. User enters email and new password
+26. System authenticates with new credentials
+27. User can now log in successfully
 
-**Steps**:
+#### Expected System Behavior:
+- Password reset is accessible from login screen
+- Reset email/process indicates whether email was found (security best practice)
+- Reset links/tokens are time-limited (expire after 1 hour)
+- New password is immediately usable for login
+- User is not automatically logged in after reset (security)
+- Old sessions are invalidated after password change
+- Password requirements are enforced during reset
 
-1. User reviews their completed todos
-2. User realizes one of the completed todos still needs work (e.g., "Submit project report" was marked complete but needs revisions)
-3. User clicks the status button/checkbox for the completed todo to mark it incomplete
-4. WHEN user changes the status, THE system SHALL change the todo's status back to incomplete
-5. WHEN user changes the status, THE system SHALL update the visual presentation (removes strikethrough, returns to normal color)
-6. Todo is now treated as an active, incomplete task again
-7. User can work with this todo as normal
+#### Success Criteria:
+- User can request password reset from login page
+- Reset process is secure (token-based, time-limited)
+- User can set a new password
+- User can log in with new password immediately
+- Account access is restored successfully
 
-**Success Criteria**:
-- WHEN user marks a completed todo as incomplete, COMPLETED todos SHALL be easily reopened/marked incomplete
-- THE status change SHALL be immediate and visible
-- THE todo SHALL be treated as an active incomplete task
-- THE user SHALL be able to continue working with the re-activated todo
+---
+
+### Scenario 8: Session Timeout and Re-authentication
+
+**User Type:** Authenticated user with expired session
+**Goal:** Resume using the app after session expires
+**Context:** User was idle for extended period and session expired
+
+#### Step-by-Step Interaction:
+
+1. User is actively using their todo list
+2. User gets called away and leaves the browser open
+3. User is away for several hours (session expires after 30 minutes of inactivity)
+4. User returns and tries to add a new todo
+5. System checks the user's session/authentication token
+6. System detects the session is expired
+7. System prevents the action and shows: "Your session has expired. Please log in again to continue."
+8. User is redirected to the login screen
+9. User enters their email and password again
+10. System authenticates the user with fresh credentials
+11. System creates a new session/authentication token
+12. User is returned to their todo list
+13. User sees all their todos are still there (no data was lost)
+14. User can immediately continue adding/managing todos
+15. User's new session is active and ready for use
+
+#### Expected System Behavior:
+- Expired sessions are properly detected before attempting operations
+- User receives clear message about what happened and why
+- Login is simple and straightforward after session expiration
+- User data is never lost due to session expiration
+- New session is created after successful re-authentication
+- Previous session is properly invalidated
+- User can resume work immediately after re-authentication
+
+#### Success Criteria:
+- Expired sessions are handled gracefully
+- User is informed why they need to re-authenticate
+- Re-authentication is successful and quick
+- User data is preserved after session expiration
+- User can continue using app immediately after login
+- No todos are lost due to session timeout
+
+---
+
+## Edge Cases & Exception Handling
+
+### Case 1: Duplicate Todo Prevention Attempt
+
+**Scenario:** User attempts to create the same todo multiple times
+
+**User Interaction:**
+1. User has todo: "Call mom"
+2. User clicks "Add New Todo" and enters: "Call mom"
+3. User submits the form
+4. System checks if this exact todo already exists
+5. **System Behavior:** The system allows users to create identical todos (duplicates are permitted)
+6. System creates the second "Call mom" todo
+7. User now has two identical todos in their list
+8. Both todos have different IDs and can be managed independently
+
+**Alternative Behavior (if duplicates are NOT allowed):**
+1. System checks for existing todo with same title
+2. System detects duplicate and prevents creation
+3. System shows message: "You already have a todo with this title. Did you mean to edit the existing one?"
+4. Todo is NOT created
+5. User can either create a different todo or edit the existing one
+
+**Expected Behavior:**
+- System clearly communicates whether duplicates are allowed
+- User is not surprised by the result
+- Duplicates are either prevented or allowed consistently
+
+---
+
+### Case 2: Concurrent Edit by Same User
+
+**Scenario:** User makes changes on two different devices/windows simultaneously
+
+**User Interaction:**
+1. User has todo list open on laptop and phone
+2. User marks a todo complete on laptop
+3. Simultaneously, user edits that same todo on phone (changes title to "Buy groceries for dinner")
+4. System handles the conflict appropriately using last-write-wins strategy:
+   - The phone edit is processed after laptop completion
+   - Final state: Todo is marked completed AND has new title "Buy groceries for dinner"
+5. User ends up with a consistent state (no corrupted data)
+6. One action takes precedence clearly
+7. When user opens both devices, they see the consistent final state
+
+**Expected Behavior:**
+- No data corruption occurs
+- System handles conflict gracefully
+- User may be informed of any recent changes
+- Final state is consistent and predictable
+- Both operations complete successfully
+
+---
+
+### Case 3: Delete Confirmation Cancellation
+
+**Scenario:** User starts to delete a todo but cancels
+
+**User Interaction:**
+1. User clicks delete button on a todo titled "Clean house"
+2. System shows confirmation dialog: "Are you sure you want to delete 'Clean house'? This action cannot be undone."
+3. User thinks: "Actually, I still need to do this"
+4. User clicks "Cancel" button
+5. System closes the confirmation dialog
+6. Todo remains in the list unchanged
+7. User can continue working with the todo
+
+**Expected Behavior:**
+- Confirmation dialog has clear Cancel option
+- Cancellation is effective immediately
+- No accidental deletions occur
+- User can try again if needed
+- Todo data is completely preserved
+
+---
+
+### Case 4: Network Interruption During Todo Creation
+
+**Scenario:** User's network connection drops while creating a todo
+
+**User Interaction:**
+1. User enters a todo description: "Prepare presentation"
+2. User submits the form (network is still connected)
+3. Network connection drops before server responds
+4. System cannot confirm creation
+5. User sees an error message: "Could not save todo. Please check your connection and try again."
+6. User's entered text is still in the form (not lost)
+7. User checks their connection
+8. User's connection is restored
+9. User clicks "Save" button again
+10. System successfully creates the todo
+11. Todo appears in the list with unique ID
+12. System confirms: "Todo created successfully"
+
+**Expected Behavior:**
+- User input is never lost due to network issues
+- Error messages are clear about what happened
+- User can retry the operation after connection restored
+- No duplicate todos are created from multiple retries
+- System gracefully handles network failures
+- User knows to check their connection
+
+#### Success Criteria:
+- Todo is eventually created after network recovery
+- User data is not lost
+- No duplicate todos created from retries
+- Clear communication about network state
+
+---
+
+### Case 5: Invalid Email During Registration
+
+**Scenario:** User enters invalid email format
+
+**User Interaction:**
+1. User fills registration form
+2. User enters email: "notanemail" (missing @domain)
+3. User submits form
+4. System validates email format
+5. System detects invalid format
+6. System shows error: "Please enter a valid email address (example: user@example.com)"
+7. Registration form is displayed again with error highlighted
+8. User sees form is still filled with their previous input
+9. User corrects email to: "user@example.com"
+10. User re-enters password
+11. User resubmits form
+12. System validates the valid email
+13. System validates passwords match and meet requirements
+14. System accepts the valid email and completes registration
+15. User account is created successfully
+
+**Expected Behavior:**
+- Email format validation is enforced
+- User is shown what format is expected
+- User's data is preserved for correction
+- Valid emails are accepted without delay
+- Clear guidance on fixing the error
+
+#### Success Criteria:
+- Invalid emails are rejected
+- User knows what format is needed
+- Valid emails are accepted
+- Registration completes after correction
+
+---
+
+## User Journey Flows
+
+### Journey 1: Complete New User Onboarding
+
+```mermaid
+graph LR
+    A["User Arrives at App"] --> B["See Registration Option"]
+    B --> C["Click Sign Up"]
+    C --> D["Enter Email & Password"]
+    D --> E["Submit Registration"]
+    E --> F{\"Validation Passes?\"}
+    F -->|"No"| G["Show Error Message"]
+    G --> D
+    F -->|"Yes"| H["Account Created"]
+    H --> I["Auto-Login User"]
+    I --> J["Show Empty Todo List"]
+    J --> K["User Clicks Add Todo"]
+    K --> L["Enter Todo Description"]
+    L --> M["Submit Todo"]
+    M --> N{\"Valid Todo?\"}
+    N -->|"No"| O["Show Error Message"]
+    O --> L
+    N -->|"Yes"| P["Todo Created"]
+    P --> Q["Display in List"]
+    Q --> R["User Sees First Todo"]
+    R --> S["Onboarding Complete"]
+```
+
+**Journey Duration:** 5-10 minutes
+**Success Criteria:** User has working account with first todo
+**Pain Points:** Password requirements, form validation errors
+
+---
+
+### Journey 2: Daily Todo Management Workflow
+
+```mermaid
+graph LR
+    A["User Opens App"] --> B["See Login Screen"]
+    B --> C["Enter Email & Password"]
+    C --> D["Submit Login"]
+    D --> E{\"Auth Successful?\"}
+    E -->|"No"| F["Show Error"]
+    F --> C
+    E -->|"Yes"| G["Show Todo List"]
+    G --> H["Review Active Todos"]
+    H --> I["Add New Todo"]
+    I --> J["Complete a Todo"]
+    J --> K["Mark as Done"]
+    K --> L["View Updated List"]
+    L --> M["Edit a Todo"]
+    M --> N["Save Changes"]
+    N --> O["Logout or Close App"]
+```
+
+**Journey Duration:** 5-30 minutes (varies by user workload)
+**Success Criteria:** User completes/updates todos, changes persist
+**Pain Points:** Finding todos to manage, remembering what needs doing
+
+---
+
+### Journey 3: Productivity Tracking and Reflection
+
+```mermaid
+graph LR
+    A["User Logs In"] --> B["View Active Todos"]
+    B --> C["Complete Several Todos"]
+    C --> D["Decide to Check Progress"]
+    D --> E["Switch to Completed View"]
+    E --> F["See Completed Todos with Timestamps"]
+    F --> G["Review Accomplishments"]
+    G --> H["Feel Sense of Progress"]
+    H --> I["Return to Active Todos"]
+    I --> J["Continue Working"]
+```
+
+**Journey Duration:** 15-60 minutes (throughout day)
+**Success Criteria:** User sees accomplishments and motivation maintained
+**Pain Points:** Tracking progress, maintaining motivation
 
 ---
 
 ## Error Recovery Scenarios
 
-### Scenario 10: Handling Validation Errors
+### Scenario: Handling Password Requirement Failures
 
-**User Role**: Authenticated User
+**User Attempts:** Password is too short (less than 8 characters)
 
-**User Goal**: Understand and recover from validation errors when creating or editing todos.
+1. User enters password: "pass123" (only 7 characters)
+2. User submits registration
+3. System validates password length
+4. System shows error: "Password must be at least 8 characters long"
+5. **User Recovery Option:**
+   - User sees form still has email filled in
+   - User enters longer password: "password123"
+   - User submits again successfully
+6. Registration proceeds normally
+7. Account is created
 
-**Preconditions**:
-- User is creating or editing a todo
-- User's input does not meet system requirements
-
-**Steps**:
-
-1. User attempts to create a new todo without entering a title (leaves the field empty)
-2. User clicks "Add Todo" or presses Enter
-3. WHEN user submits a todo without a title, THE system SHALL validate the input and detect the empty title
-4. System displays a clear error message (e.g., "Please enter a todo title")
-5. System prevents the todo from being created
-6. System keeps the form open so the user can correct the issue
-7. User sees the error message and understands what needs to be fixed
-8. User enters a valid title
-9. WHEN user resubmits with valid input, THE system SHALL accept the input and create the todo successfully
-
-**Additional Validation Scenarios**:
-
-**Scenario 10A: Title Exceeds Maximum Length**
-- WHEN user enters a title with more characters than the maximum allowed, THE system SHALL display an error showing the character limit
-- THE system MAY show how many characters are used vs. allowed
-- THE user SHALL shorten the text and resubmit
-
-**Scenario 10B: Special Characters or Invalid Input**
-- WHEN user enters special characters or invalid input, THE system SHALL display an appropriate error message
-- THE system SHALL explain what characters are not allowed
-- THE user SHALL correct the input
-
-**Success Criteria**:
-- WHEN validation fails, ERROR messages SHALL be clear and actionable
-- THE user SHALL understand what went wrong
-- THE form SHALL remain available for correction
-- THE user SHALL be able to easily fix the issue and resubmit
-- WHEN input becomes valid, THE system SHALL immediately accept it
+**System Behavior:** Clear error about what failed, allows retry without losing data
 
 ---
 
-### Scenario 11: Recovering from Failed Operations
+### Scenario: Handling Duplicate Email Registration
 
-**User Role**: Authenticated User
+**User Attempts:** Email already registered
 
-**User Goal**: Recover from operations that fail due to network or system issues.
+1. User enters email: "john@example.com" (already exists)
+2. User creates password and submits
+3. System checks email uniqueness
+4. System shows error: "An account with this email already exists. Please log in instead or use a different email."
+5. **User Recovery Options:**
+   - Use forgot password to recover existing account
+   - Use different email for new account
+   - Proceed to login screen
+6. User chooses to log in and regains access
 
-**Preconditions**:
-- User is performing a todo operation
-- A network or system error occurs
-
-**Steps**:
-
-1. User attempts to create a new todo while experiencing network connectivity issues
-2. User submits the form
-3. System attempts to save to the database but encounters an error
-4. WHEN an operation fails, THE system SHALL display an error message (e.g., "Failed to save todo. Please try again.")
-5. WHEN an operation fails, THE system SHALL preserve the user's input so it is not lost
-6. User's data remains in the form field
-7. User network connectivity is restored
-8. User clicks "Retry" or "Save" again
-9. WHEN user retries, THE system SHALL attempt the operation again
-10. System successfully saves the todo this time
-11. User receives confirmation of successful creation
-
-**Alternative Recovery Paths**:
-
-**Path A: Todo Status Update Fails**
-- WHEN a todo status update fails, THE system SHALL inform the user of the failure
-- THE todo status MAY temporarily show the old state
-- THE user SHALL be able to retry the operation
-
-**Path B: Todo Deletion Fails**
-- WHEN a todo deletion fails, THE system SHALL inform the user
-- THE todo SHALL remain in the list
-- THE user SHALL be able to retry the deletion
-
-**Success Criteria**:
-- WHEN errors occur, ERRORS SHALL be clearly communicated to the user
-- THE user's data SHALL NOT be lost during failures
-- THE user SHALL be able to easily retry the operation
-- WHEN network/system issues are resolved, OPERATIONS SHALL eventually succeed
-- THE system SHALL maintain data consistency
+**System Behavior:** Informative message about the problem with clear recovery options
 
 ---
 
-### Scenario 12: Managing Concurrent Operations
+### Scenario: Todo Already Exists (If Applicable)
 
-**User Role**: Authenticated User
+**User Attempts:** Create exact duplicate todo
 
-**User Goal**: Use the application safely even when performing multiple operations or when the application is used on multiple devices simultaneously.
+1. User has todo: "Buy milk"
+2. User tries to create: "Buy milk" again
+3. System detects that duplicates are allowed
+4. System creates the second "Buy milk" todo
+5. User now has two "Buy milk" todos
+6. Both todos have different IDs and timestamps
+7. User can manage them independently
 
-**Preconditions**:
-- User is logged in on one or more devices
-- User performs operations (create, update, delete, complete) on multiple devices or in rapid succession
-
-**Steps**:
-
-1. User opens the application on their desktop and creates a todo: "Review meeting notes"
-2. WHEN user creates a todo on desktop, THE system SHALL create and display the todo on the desktop
-3. User also opens the application on their mobile device
-4. User wants to see the same todo list on mobile
-5. WHEN user opens the application on mobile, THE system SHALL retrieve and display all todos, including the newly created one
-6. User completes the todo on the desktop
-7. WHEN user completes the todo on desktop, THE system SHALL update the status to complete
-8. WHEN user navigates on mobile, THE system SHALL show the updated status
-9. User now edits the todo on mobile to improve the description
-10. WHEN user edits the todo on mobile, THE system SHALL update the todo
-11. WHEN user returns to desktop, THE system SHALL show the updated description
-
-**Success Criteria**:
-- WHEN todos are created on one device, TODOS SHALL appear on all devices
-- WHEN status changes are made, STATUS changes SHALL be synchronized across devices
-- WHEN editing occurs on one device, EDITING SHALL be reflected on other devices
-- DATA SHALL remain consistent across all sessions
-- WHEN conflicts or duplicates occur, NO conflicts or duplicates SHALL happen
-
-**Alternative Paths**:
-
-**Path A: Simultaneous Operations on Different Devices**
-- WHEN user performs operations simultaneously on different devices, THE system SHALL handle concurrent updates safely
-- WHEN conflicts occur, LAST update typically "wins" or system merges changes
-- USER data SHALL remain consistent
-- NO data SHALL be lost
+**System Behavior:** Allows duplicate todos since no restriction is defined for MVP
 
 ---
 
-## Edge Case Scenarios
+## Summary of User Interaction Patterns
 
-### Scenario 13: Working with Empty Todo List
+### Common Workflow Sequence:
+1. **Authentication:** User logs in or registers
+2. **View:** User sees their current todo list
+3. **Action:** User adds, edits, completes, or deletes a todo
+4. **Feedback:** System provides immediate visual confirmation
+5. **Persistence:** Changes are saved automatically
+6. **Continuation:** User can perform more actions or log out
 
-**User Role**: Authenticated User
+### Key User Expectations:
+- **Immediate Feedback:** Actions should feel instant, not delayed (within 1-2 seconds)
+- **Data Preservation:** User data should never be lost unexpectedly
+- **Clear Error Messages:** If something fails, user knows why and how to fix it
+- **Easy Recovery:** User can correct mistakes easily and resubmit
+- **Intuitive Navigation:** User can find what they need without confusion
+- **Reliable Persistence:** Todos are always saved and available
+- **Confirmation for Destructive Actions:** Delete requires confirmation to prevent accidents
 
-**User Goal**: Start using the application or begin fresh with an empty todo list.
-
-**Preconditions**:
-- User is logged into the application
-- No todos exist (new user or all todos were deleted)
-
-**Steps**:
-
-1. User opens the application
-2. WHEN no todos exist, THE system SHALL detect that no todos exist for this user
-3. System displays an empty state view with:
-   - A message like "No todos yet" or "You're all caught up!"
-   - Encouragement to create the first todo
-   - Prominent "Create New Todo" button
-4. User understands they can start adding todos
-5. User clicks "Create New Todo"
-6. System displays the todo creation form
-7. User enters their first todo
-8. WHEN user creates the first todo, THE system SHALL create the todo
-9. Empty state disappears
-10. Todo list now shows the newly created todo
-
-**Success Criteria**:
-- WHEN no todos exist, EMPTY state SHALL be handled gracefully
-- USER SHALL be encouraged to take action
-- CREATING the first todo SHALL be easy and clear
-- WHEN first todo is created, SYSTEM SHALL transition from empty state to populated list smoothly
+### Design Implications for Developers:
+- All operations should provide immediate response feedback within 1-3 seconds
+- Errors should be descriptive and actionable, not generic
+- Confirmations should be required for destructive actions (delete)
+- User data must be validated before storage
+- Sessions should persist appropriately with clear expiration messaging
+- System should handle network interruptions gracefully
+- All interactions should work consistently across devices
+- Validation errors should preserve user input for correction
+- System should provide clear status updates for all operations
 
 ---
 
-### Scenario 14: Handling Large Todo Lists
-
-**User Role**: Authenticated User
-
-**User Goal**: Manage a very large number of todos (e.g., 100+ items) without experiencing performance issues.
-
-**Preconditions**:
-- User has accumulated a large number of todos
-- System needs to handle performance and usability
-
-**Steps**:
-
-1. User opens the application with hundreds of todos in their list
-2. WHEN user opens the application with many todos, THE system MAY implement one of these approaches:
-   - Pagination: Display 20 todos per page with navigation controls
-   - Infinite Scroll: Load more todos as user scrolls down
-   - Virtual Scrolling: Only render visible todos for performance
-3. WHEN system implements pagination, THE system SHALL load the first set of todos quickly
-4. Initial view SHALL be responsive and display immediately
-5. User can navigate through pages or scroll to see more todos
-6. WHEN user navigates through pages, ADDITIONAL todos SHALL load as needed without excessive lag
-7. User can still perform operations (complete, edit, delete) efficiently
-8. WHEN user performs operations, OPERATIONS SHALL remain responsive even with large dataset
-
-**Success Criteria**:
-- WHEN initial page loads, INITIAL page load SHALL be fast (under 2-3 seconds)
-- APPLICATION SHALL remain responsive with large lists
-- USER SHALL be able to navigate through all todos
-- WHEN user performs operations, OPERATIONS SHALL complete quickly even with many todos
-- NO significant lag or freezing SHALL occur
-
----
-
-### Scenario 15: Session Management and Data Persistence
-
-**User Role**: Authenticated User
-
-**User Goal**: Have their todos safely preserved across sessions and device restarts.
-
-**Preconditions**:
-- User has created todos
-- User closes the application or shuts down their device
-
-**Steps**:
-
-1. User creates multiple todos: "Buy groceries", "Call dentist", "Finish report"
-2. User completes "Call dentist"
-3. User closes the application completely
-4. Time passes (minutes, hours, or days)
-5. User opens the application again
-6. WHEN user opens the application again, THE system SHALL retrieve all todos from the database
-7. WHEN user opens the application again, THE system SHALL display the same three todos in the same state:
-   - "Buy groceries" - incomplete
-   - "Call dentist" - complete
-   - "Finish report" - incomplete
-8. All data is exactly as the user left it
-9. User can continue working with their todos
-
-**Additional Persistence Scenarios**:
-
-**Scenario 15A: User Device Crashes or Loses Power**
-- WHEN user device crashes or loses power, WHEN user reopens the application, ALL data SHALL be preserved
-- NO todos SHALL be lost
-- COMPLETED/incomplete status SHALL be maintained
-
-**Scenario 15B: User Logs Out and Logs Back In**
-- WHEN user logs out and logs back in, ALL todos SHALL be available
-- DATA SHALL NOT have been lost
-- USER SHALL be in the same state as before logout
-
-**Success Criteria**:
-- ALL todos SHALL be preserved between sessions
-- STATUS and modifications SHALL be saved permanently
-- NO data SHALL be lost during shutdown or crashes
-- USER SHALL see the same todo list every time they open the app
-- DATA persistence SHALL be 100% reliable
-
----
-
-## Scenario Summary Matrix
-
-| Scenario | Operation | User Action | System Response | Validation |
-|----------|-----------|------------|-----------------|-----------:|
-| 1 | CREATE | User enters title and clicks Add | Todo created, added to list, success message | Title not empty, length valid |
-| 2 | READ | User opens application | All user todos displayed with status | Data loads correctly, organized view |
-| 3 | UPDATE STATUS | User clicks Complete | Todo status changes to complete, visual change | Status change persists, immediate feedback |
-| 4 | UPDATE STATUS | User clicks Incomplete | Todo status changes to incomplete, visual change | Status change persists, immediate feedback |
-| 5 | UPDATE | User edits title and saves | Todo title updated in list | New title not empty, length valid |
-| 6 | DELETE | User confirms delete | Todo removed from list and database | Todo gone, confirmation provided |
-| 7 | MANAGE MULTIPLE | User performs multiple operations | Each operation completes quickly | All changes persist, responsive |
-| 8 | REVIEW | User views completed todos | Completed todos visible and distinguished | Progress visible, todos remain accessible |
-| 9 | REACTIVATE | User marks complete todo incomplete | Todo status changes back to incomplete | State change persists, visual update |
-| 10 | ERROR HANDLING | User enters invalid input | Error message displayed, form remains open | User can correct and retry |
-| 11 | ERROR RECOVERY | Operation fails due to network | Error message shown, input preserved | User can retry successfully |
-| 12 | SYNC | Multiple devices/rapid operations | Changes synchronized, data consistent | No conflicts, data integrity maintained |
-| 13 | EMPTY STATE | New user or no todos | Empty state with encouragement to create | Easy creation path, smooth transition |
-| 14 | LARGE LIST | User has 100+ todos | System handles performance gracefully | Fast load, responsive operations |
-| 15 | PERSISTENCE | User closes and reopens app | All todos restored in same state | 100% data preservation, reliable |
-
----
-
-## Cross-Scenario Consistency
-
-### User Experience Consistency
-
-Across all scenarios, users SHALL experience:
-- **Immediate Feedback**: WHEN user performs any action, THE system SHALL produce visible confirmation
-- **Error Clarity**: WHEN errors occur, THE system SHALL provide error messages that explain problems and suggest solutions
-- **Data Safety**: THE system SHALL maintain data integrity with no data loss, ensuring operations are reliable
-- **Responsiveness**: THE application SHALL remain responsive during all operations
-- **Logical Organization**: WHEN todos are displayed, TODOS SHALL be displayed in a consistent, understandable manner
-- **Accessibility**: ALL actions SHALL be easy to discover and perform
-
-### System Requirements Implied by Scenarios
-
-From these scenarios, the system must support:
-- Persistent storage of all todo data
-- Real-time validation of input
-- Immediate UI updates after operations
-- Error handling and recovery mechanisms
-- Session management for authenticated users
-- Concurrent operation support
-- Efficient handling of large datasets
-- Clear visual distinction between todo states
-- Cross-device synchronization of todo data
-
-### Performance Expectations
-
-Based on scenarios, the system SHALL meet:
-- **Create Operation**: WHEN user creates a todo, THE system SHALL complete within 1 second
-- **Read/View Operation**: WHEN user views their list, THE system SHALL load initial view within 2 seconds
-- **Update Operation**: WHEN user updates a todo, THE system SHALL complete within 1 second
-- **Delete Operation**: WHEN user deletes a todo, THE system SHALL complete within 1 second
-- **List Display**: WHEN system displays many todos, THE system SHALL remain responsive even with 100+ items
-- **Status Change**: WHEN user changes status, THE system SHALL provide immediate visual feedback
-
----
-
-## Scenario Testing Recommendations
-
-### Test Coverage by Scenario
-
-All scenarios documented in this section should be covered by functional and integration testing before system release:
-
-1. **Unit Tests**: Individual operations (create, read, update, delete, status toggle)
-2. **Integration Tests**: Complete workflows from user action to UI update
-3. **Error Handling Tests**: All alternative paths and error scenarios
-4. **Performance Tests**: Large dataset handling and response time validation
-5. **Concurrency Tests**: Multiple operations and cross-device synchronization
-6. **Data Persistence Tests**: Session management and data recovery
-
-### Acceptance Criteria Validation
-
-All success criteria specified for each scenario must be validated in testing to confirm the implementation meets business requirements.
+> *Developer Note: This document defines **business requirements and user scenarios only**. All technical implementations (architecture, APIs, database design, session management specifics, etc.) are at the discretion of the development team.*

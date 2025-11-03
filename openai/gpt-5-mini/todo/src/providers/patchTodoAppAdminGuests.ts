@@ -18,141 +18,104 @@ export async function patchTodoAppAdminGuests(props: {
 }): Promise<IPageITodoAppGuest.ISummary> {
   const { admin, body } = props;
 
-  // Authorization: ensure admin exists
-  await MyGlobal.prisma.todo_app_admin.findUniqueOrThrow({
-    where: { id: admin.id },
-  });
+  // Normalize pagination with safe defaults
+  const page = Number(body.page ?? 1);
+  const limit = Number(body.pageSize ?? 25);
 
-  // Rate limiting: allow up to 10 searches per minute per admin
-  const oneMinuteAgo = toISOStringSafe(new Date(Date.now() - 60_000));
-  const recentSearchCount = await MyGlobal.prisma.todo_app_audit_records.count({
-    where: {
-      admin_id: admin.id,
-      action_type: "search_guests",
-      created_at: { gte: oneMinuteAgo },
-    },
-  });
-
-  const RATE_LIMIT_PER_MINUTE = 10;
-  if (recentSearchCount >= RATE_LIMIT_PER_MINUTE) {
-    throw new HttpException("Too Many Requests", 429);
+  if (!Number.isFinite(page) || page < 1) {
+    throw new HttpException("Bad Request: invalid page", 400);
+  }
+  if (!Number.isFinite(limit) || limit < 1 || limit > 200) {
+    throw new HttpException("Bad Request: invalid pageSize", 400);
   }
 
-  // Pagination defaults and caps
-  const page = Number(body.page ?? 1);
-  const pageSizeRequested = Number(body.pageSize ?? 20);
-  const MAX_PAGE_SIZE = 1000;
-  const limit =
-    pageSizeRequested > 0 ? Math.min(pageSizeRequested, MAX_PAGE_SIZE) : 20;
+  // Validate anonymous label search length
+  if (
+    body.anonymousLabelSearch !== undefined &&
+    body.anonymousLabelSearch !== null &&
+    body.anonymousLabelSearch.length > 256
+  ) {
+    throw new HttpException("Bad Request: anonymousLabelSearch too long", 400);
+  }
+
+  // includeDeleted is admin-only
+  if (body.includeDeleted === true && !admin) {
+    throw new HttpException("Forbidden: includeDeleted requires admin", 403);
+  }
+
+  // Build created_at range condition only when any bound present
+  const createdAtCondition: Record<string, unknown> | undefined =
+    (body.createdAtFrom !== undefined && body.createdAtFrom !== null) ||
+    (body.createdAtTo !== undefined && body.createdAtTo !== null)
+      ? {
+          ...(body.createdAtFrom !== undefined &&
+            body.createdAtFrom !== null && { gte: body.createdAtFrom }),
+          ...(body.createdAtTo !== undefined &&
+            body.createdAtTo !== null && { lte: body.createdAtTo }),
+        }
+      : undefined;
+
+  // Build where condition with safe conditional inclusions
+  const whereCondition = {
+    ...(body.includeDeleted !== true && { deleted_at: null }),
+    ...(createdAtCondition !== undefined && { created_at: createdAtCondition }),
+    ...(body.anonymousLabelSearch !== undefined &&
+      body.anonymousLabelSearch !== null && {
+        anonymous_label: { contains: body.anonymousLabelSearch },
+      }),
+  };
+
+  // Determine sorting field and direction (map to Prisma column names)
+  const sortField =
+    body.sortBy === "updatedAt"
+      ? "updated_at"
+      : body.sortBy === "anonymousLabel"
+        ? "anonymous_label"
+        : "created_at";
+  const direction = body.order === "desc" ? "desc" : "asc";
+
   const skip = (page - 1) * limit;
 
-  // Build where condition inline following null/undefined rules
-  const where = {
-    ...(body.email !== undefined &&
-      body.email !== null && { email: body.email }),
-    ...(body.status !== undefined &&
-      body.status !== null && { status: body.status }),
-    ...((body.created_at_from !== undefined && body.created_at_from !== null) ||
-    (body.created_at_to !== undefined && body.created_at_to !== null)
-      ? {
-          created_at: {
-            ...(body.created_at_from !== undefined &&
-              body.created_at_from !== null && {
-                gte: toISOStringSafe(body.created_at_from as any),
-              }),
-            ...(body.created_at_to !== undefined &&
-              body.created_at_to !== null && {
-                lte: toISOStringSafe(body.created_at_to as any),
-              }),
-          },
-        }
-      : {}),
-    ...((body.last_active_at_from !== undefined &&
-      body.last_active_at_from !== null) ||
-    (body.last_active_at_to !== undefined && body.last_active_at_to !== null)
-      ? {
-          last_active_at: {
-            ...(body.last_active_at_from !== undefined &&
-              body.last_active_at_from !== null && {
-                gte: toISOStringSafe(body.last_active_at_from as any),
-              }),
-            ...(body.last_active_at_to !== undefined &&
-              body.last_active_at_to !== null && {
-                lte: toISOStringSafe(body.last_active_at_to as any),
-              }),
-          },
-        }
-      : {}),
-  };
-
-  // Sorting
-  const sortField =
-    body.sortBy === "last_active_at" ? "last_active_at" : "created_at";
-  const sortOrder = body.sortOrder === "asc" ? "asc" : "desc";
-
-  // Query database: results and total count
-  const [rows, total] = await Promise.all([
-    MyGlobal.prisma.todo_app_guest.findMany({
-      where,
-      orderBy: { [sortField]: sortOrder },
-      skip,
-      take: limit,
-      select: {
-        id: true,
-        email: true,
-        created_at: true,
-        last_active_at: true,
-        status: true,
-      },
-    }),
-    MyGlobal.prisma.todo_app_guest.count({ where }),
-  ]);
-
-  // Map rows to DTO summaries
-  const data = rows.map((r) => ({
-    id: r.id,
-    email: r.email ?? null,
-    created_at: toISOStringSafe(r.created_at as any),
-    last_active_at: r.last_active_at
-      ? toISOStringSafe(r.last_active_at as any)
-      : null,
-    status: r.status ?? null,
-  }));
-
-  // Audit logging for the search action
   try {
-    await MyGlobal.prisma.todo_app_audit_records.create({
-      data: {
-        id: v4(),
-        admin_id: admin.id,
-        user_id: null,
-        actor_role: "admin",
-        action_type: "search_guests",
-        target_resource: "todo_app_guest",
-        target_id: null,
-        reason: null,
-        created_at: toISOStringSafe(new Date()),
-      },
-    });
-  } catch (err) {
-    // Non-fatal: Do not break the main response for audit failures
-    // Log via MyGlobal if available
-    if (MyGlobal && typeof (MyGlobal as any).logger?.error === "function") {
-      try {
-        (MyGlobal as any).logger.error(
-          "Failed to create audit record for guest search",
-          err,
-        );
-      } catch {}
-    }
+    const [rows, total] = await Promise.all([
+      MyGlobal.prisma.todo_app_guest.findMany({
+        where: whereCondition,
+        orderBy: { [sortField]: direction },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          anonymous_label: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+        },
+      }),
+      MyGlobal.prisma.todo_app_guest.count({ where: whereCondition }),
+    ]);
+
+    const data = rows.map((r) => ({
+      id: r.id,
+      anonymousLabel: r.anonymous_label ?? null,
+      createdAt: toISOStringSafe(r.created_at),
+      updatedAt: toISOStringSafe(r.updated_at),
+      // Present deletedAt field as nullable; consumers may request includeDeleted
+      deletedAt: r.deleted_at ? toISOStringSafe(r.deleted_at) : null,
+    }));
+
+    const pagination = {
+      current: Number(page),
+      limit: Number(limit),
+      records: total,
+      pages: Math.ceil(total / limit),
+    };
+
+    return {
+      pagination,
+      data,
+    };
+  } catch (error) {
+    if (error instanceof HttpException) throw error;
+    throw new HttpException("Internal Server Error", 500);
   }
-
-  const pagination = {
-    current: Number(page),
-    limit: Number(limit),
-    records: Number(total),
-    pages: Number(Math.ceil(total / limit)),
-  };
-
-  return { pagination, data };
 }

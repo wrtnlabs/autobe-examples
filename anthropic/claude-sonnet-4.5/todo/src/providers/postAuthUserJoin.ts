@@ -11,70 +11,67 @@ import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoLis
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserJoin(props: {
-  body: ITodoListUser.ICreate;
+  body: ITodoListUser.IRegister;
 }): Promise<ITodoListUser.IAuthorized> {
   const { body } = props;
 
-  // Normalize email to lowercase
-  const normalizedEmail = body.email.toLowerCase();
-
-  // Check if email already exists (excluding deleted accounts)
+  // Check for duplicate email
   const existingUser = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: {
-      email: normalizedEmail,
-      deleted_at: null,
-    },
+    where: { email: body.email },
   });
 
   if (existingUser) {
-    throw new HttpException(
-      "An account with this email address already exists",
-      409,
-    );
+    throw new HttpException("Email already registered", 409);
   }
 
-  // Hash the password securely
-  const passwordHash = await PasswordUtil.hash(body.password);
+  // Hash password securely
+  const hashedPassword: string = await PasswordUtil.hash(body.password);
 
-  // Generate user ID
-  const userId = v4() as string & tags.Format<"uuid">;
-
-  // Prepare timestamps
-  const now = toISOStringSafe(new Date());
-
-  // Create the user account
-  await MyGlobal.prisma.todo_list_users.create({
+  // Create user record
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const user = await MyGlobal.prisma.todo_list_users.create({
     data: {
-      id: userId,
-      email: normalizedEmail,
-      password_hash: passwordHash,
+      id: v4() as string & tags.Format<"uuid">,
+      email: body.email,
+      password_hash: hashedPassword,
       created_at: now,
       updated_at: now,
     },
   });
 
-  // Calculate token expiration times
-  const accessTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-  const refreshTokenExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  // Create session record
+  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-  // Generate JWT access token with UserPayload structure
-  const accessToken = jwt.sign(
-    {
-      id: userId,
-      type: "user",
+  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      todo_list_user_id: user.id,
+      ip: body.ip ?? "",
+      href: body.href,
+      referrer: body.referrer,
+      created_at: now,
+      expired_at: toISOStringSafe(accessExpires),
     },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "30m",
-      issuer: "autobe",
-    },
-  );
+  });
 
-  // Generate JWT refresh token
+  // Generate JWT tokens
+  const tokenPayload = {
+    type: "user",
+    id: user.id,
+    session_id: session.id,
+    created_at: now,
+  };
+
+  const accessToken = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "15m",
+    issuer: "autobe",
+  });
+
   const refreshToken = jwt.sign(
     {
-      id: userId,
-      type: "refresh",
+      ...tokenPayload,
+      tokenType: "refresh",
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -83,28 +80,18 @@ export async function postAuthUserJoin(props: {
     },
   );
 
-  // Hash and store the refresh token
-  const refreshTokenHash = await PasswordUtil.hash(refreshToken);
-  const refreshTokenId = v4() as string & tags.Format<"uuid">;
-
-  await MyGlobal.prisma.todo_list_refresh_tokens.create({
-    data: {
-      id: refreshTokenId,
-      todo_list_user_id: userId,
-      token_hash: refreshTokenHash,
-      expires_at: toISOStringSafe(refreshTokenExpiry),
-      created_at: now,
-    },
-  });
-
-  // Return authenticated user response
+  // Return user profile with tokens
   return {
-    id: userId,
+    id: user.id,
+    email: user.email,
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: toISOStringSafe(accessTokenExpiry),
-      refreshable_until: toISOStringSafe(refreshTokenExpiry),
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
     },
   };
 }

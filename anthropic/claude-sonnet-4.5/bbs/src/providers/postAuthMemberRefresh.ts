@@ -15,93 +15,86 @@ export async function postAuthMemberRefresh(props: {
 }): Promise<IDiscussionBoardMember.IAuthorized> {
   const { body } = props;
 
-  let decoded: any;
+  // Step 1: Verify and decode the refresh token
+  let decoded: {
+    id: string;
+    session_id: string;
+    type: "member";
+  };
   try {
-    decoded = jwt.verify(body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    });
+    }) as {
+      id: string;
+      session_id: string;
+      type: "member";
+    };
   } catch (error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  const allRefreshTokens =
-    await MyGlobal.prisma.discussion_board_refresh_tokens.findMany({
+  // Step 2: Validate type matches expected actor type
+  if (decoded.type !== "member") {
+    throw new HttpException("Invalid token type", 403);
+  }
+
+  // Step 3: Validate session exists and is active
+  const session =
+    await MyGlobal.prisma.discussion_board_member_sessions.findFirst({
       where: {
-        is_revoked: false,
+        id: decoded.session_id,
+        discussion_board_member_id: decoded.id,
       },
       include: {
-        session: {
-          include: {
-            member: true,
-          },
-        },
+        member: true,
       },
     });
 
-  let refreshTokenRecord = null;
-  for (const tokenRecord of allRefreshTokens) {
-    const isMatch = await PasswordUtil.verify(
-      body.refresh_token,
-      tokenRecord.refresh_token_hash,
-    );
-    if (isMatch) {
-      refreshTokenRecord = tokenRecord;
-      break;
-    }
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  if (!refreshTokenRecord) {
-    throw new HttpException("Refresh token not found or has been revoked", 401);
-  }
-
-  const now = new Date();
-  if (new Date(refreshTokenRecord.expires_at) < now) {
-    throw new HttpException("Refresh token has expired", 401);
-  }
-
-  if (!refreshTokenRecord.session.is_active) {
-    throw new HttpException("Session is no longer active", 401);
-  }
-
-  const member = refreshTokenRecord.session.member;
-  if (!member) {
-    throw new HttpException("Member account not found", 404);
-  }
-
-  if (member.account_status !== "active") {
-    throw new HttpException("Account is not active", 403);
-  }
-
-  if (!member.email_verified) {
-    throw new HttpException("Email not verified", 403);
-  }
-
-  if (member.deleted_at !== null) {
+  // Step 4: Validate member account status
+  if (session.member.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
 
-  const accessTokenExpiresAt = new Date(now.getTime() + 30 * 60 * 1000);
-  const newAccessToken = jwt.sign(
+  if (!session.member.email_verified) {
+    throw new HttpException("Email not verified", 403);
+  }
+
+  if (session.member.status !== "active") {
+    throw new HttpException("Account is not active", 403);
+  }
+
+  // Step 5: Generate new access and refresh tokens with SAME session_id
+  const now = toISOStringSafe(new Date());
+  const accessExpiresTime = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpiresTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpires = toISOStringSafe(accessExpiresTime);
+  const refreshExpires = toISOStringSafe(refreshExpiresTime);
+
+  const accessToken = jwt.sign(
     {
-      userId: member.id,
-      username: member.username,
-      email: member.email,
-      type: "member",
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "30m",
+      expiresIn: "1h",
       issuer: "autobe",
     },
   );
 
-  const refreshTokenExpiresAt = new Date(
-    now.getTime() + 7 * 24 * 60 * 60 * 1000,
-  );
-  const newRefreshToken = jwt.sign(
+  const refreshToken = jwt.sign(
     {
-      userId: member.id,
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
       tokenType: "refresh",
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -110,52 +103,55 @@ export async function postAuthMemberRefresh(props: {
     },
   );
 
-  const newRefreshTokenHash = await PasswordUtil.hash(newRefreshToken);
-  const newAccessTokenHash = await PasswordUtil.hash(newAccessToken);
-
-  await MyGlobal.prisma.discussion_board_refresh_tokens.update({
-    where: { id: refreshTokenRecord.id },
+  // Step 6: Update session expiration time
+  await MyGlobal.prisma.discussion_board_member_sessions.update({
+    where: {
+      id: decoded.session_id,
+    },
     data: {
-      is_revoked: true,
-      revoked_at: toISOStringSafe(now),
+      expired_at: refreshExpiresTime,
     },
   });
 
-  await MyGlobal.prisma.discussion_board_refresh_tokens.create({
-    data: {
-      id: v4(),
-      discussion_board_session_id:
-        refreshTokenRecord.discussion_board_session_id,
-      refresh_token_hash: newRefreshTokenHash,
-      expires_at: toISOStringSafe(refreshTokenExpiresAt),
-      is_revoked: false,
-      created_at: toISOStringSafe(now),
-    },
-  });
-
-  await MyGlobal.prisma.discussion_board_sessions.update({
-    where: { id: refreshTokenRecord.discussion_board_session_id },
-    data: {
-      access_token_hash: newAccessTokenHash,
-      expires_at: toISOStringSafe(accessTokenExpiresAt),
-      last_activity_at: toISOStringSafe(now),
-    },
-  });
-
-  await MyGlobal.prisma.discussion_board_members.update({
-    where: { id: member.id },
-    data: {
-      last_activity_at: toISOStringSafe(now),
-    },
-  });
-
+  // Step 7: Return member data with new tokens
   return {
-    id: member.id,
+    id: session.member.id,
+    username: session.member.username,
+    email: session.member.email,
+    display_name:
+      session.member.display_name !== null
+        ? session.member.display_name
+        : undefined,
+    bio: session.member.bio !== null ? session.member.bio : undefined,
+    location:
+      session.member.location !== null ? session.member.location : undefined,
+    website_url:
+      session.member.website_url !== null
+        ? session.member.website_url
+        : undefined,
+    profile_picture_url:
+      session.member.profile_picture_url !== null
+        ? session.member.profile_picture_url
+        : undefined,
+    email_verified: session.member.email_verified,
+    status: session.member.status,
+    profile_visibility: session.member.profile_visibility,
+    activity_visibility: session.member.activity_visibility,
+    last_login_at:
+      session.member.last_login_at !== null
+        ? toISOStringSafe(session.member.last_login_at)
+        : undefined,
+    created_at: toISOStringSafe(session.member.created_at),
+    updated_at: toISOStringSafe(session.member.updated_at),
+    deleted_at:
+      session.member.deleted_at !== null
+        ? toISOStringSafe(session.member.deleted_at)
+        : undefined,
     token: {
-      access: newAccessToken,
-      refresh: newRefreshToken,
-      expired_at: toISOStringSafe(accessTokenExpiresAt),
-      refreshable_until: toISOStringSafe(refreshTokenExpiresAt),
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
   };
 }

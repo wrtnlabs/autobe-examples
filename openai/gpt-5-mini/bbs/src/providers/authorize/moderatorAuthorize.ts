@@ -1,4 +1,3 @@
-// File path: src/providers/authorize/moderatorAuthorize.ts
 import { ForbiddenException } from "@nestjs/common";
 
 import { MyGlobal } from "../../MyGlobal";
@@ -6,7 +5,8 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { ModeratorPayload } from "../../decorators/payload/ModeratorPayload";
 
 /**
- * Verifies JWT and ensures the caller is a valid, active moderator.
+ * Authorize middleware for moderator role.
+ * Verifies JWT, validates role, and ensures the session and moderator are active.
  */
 export async function moderatorAuthorize(request: {
   headers: {
@@ -19,21 +19,20 @@ export async function moderatorAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id is the top-level registered user ID.
-  const moderator = await MyGlobal.prisma.econ_political_forum_moderator.findFirst({
+  // payload.id is the top-level moderator id and payload.session_id is the session id
+  const session = await MyGlobal.prisma.discussion_board_moderator_sessions.findFirst({
     where: {
-      registereduser_id: payload.id,
-      deleted_at: null,
-      is_active: true,
-      registereduser: {
+      id: payload.session_id,
+      discussion_board_moderator_id: payload.id,
+      expired_at: null,
+      moderator: {
         deleted_at: null,
-        is_banned: false,
       },
     },
   });
 
-  if (moderator === null) {
-    throw new ForbiddenException("You're not enrolled as moderator");
+  if (session === null) {
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

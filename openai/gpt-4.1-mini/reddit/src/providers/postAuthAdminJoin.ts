@@ -8,90 +8,114 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IRedditCommunityAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityAdmin";
-import { IRedditCommunityReportAction } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityReportAction";
-import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IRedditCommunityUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUser";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminJoin(props: {
   admin: AdminPayload;
   body: IRedditCommunityAdmin.ICreate;
 }): Promise<IRedditCommunityAdmin.IAuthorized> {
-  const { body } = props;
+  const { user_id } = props.body;
 
-  // Check if email already exists
-  const existingAdmin =
-    await MyGlobal.prisma.reddit_community_admins.findUnique({
-      where: { email: body.email },
-    });
-  if (existingAdmin) {
-    throw new HttpException("Email is already registered", 409);
-  }
-
-  // Hash the password
-  const hashedPassword = await PasswordUtil.hash(body.password);
-
-  // Generate id and timestamps
-  const newId: string & tags.Format<"uuid"> = v4() as string &
-    tags.Format<"uuid">;
-  const nowMillis = Date.now();
-  const now: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(nowMillis),
-  );
-  const expiredAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(nowMillis + 3600 * 1000),
-  );
-  const refreshableUntil: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(nowMillis + 7 * 24 * 3600 * 1000),
-  );
-
-  // Create the new admin user with admin_level 1
-  const createdAdmin = await MyGlobal.prisma.reddit_community_admins.create({
-    data: {
-      id: newId,
-      email: body.email,
-      password_hash: hashedPassword,
-      admin_level: 1,
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
+  // Validate user existence
+  const user = await MyGlobal.prisma.reddit_community_user.findUnique({
+    where: { id: user_id },
+    select: {
+      id: true,
+      email: true,
+      created_at: true,
     },
   });
 
-  // Generate JWT Access Token
+  if (user === null) {
+    throw new HttpException(`User with id ${user_id} not found`, 404);
+  }
+
+  // Generate UUID and timestamps
+  const adminId = v4();
+  const createdAt = toISOStringSafe(new Date());
+
+  // Create admin record
+  const admin = await MyGlobal.prisma.reddit_community_admin.create({
+    data: {
+      id: adminId,
+      user_id: user_id,
+      created_at: createdAt,
+    },
+    select: {
+      id: true,
+      user_id: true,
+      created_at: true,
+    },
+  });
+
+  // Create session record
+  const sessionId = v4();
+  const now = toISOStringSafe(new Date());
+  const accessExpireDate = toISOStringSafe(
+    new Date(Date.now() + 1_800_000 * 2),
+  ); // 1 hour
+  const refreshExpireDate = toISOStringSafe(new Date(Date.now() + 604_800_000)); // 7 days
+
+  const session = await MyGlobal.prisma.reddit_community_admin_sessions.create({
+    data: {
+      id: sessionId,
+      reddit_community_admin_id: adminId,
+      created_at: now,
+      expired_at: accessExpireDate,
+      ip: "",
+      href: "",
+      referrer: "",
+    },
+    select: {
+      id: true,
+      created_at: true,
+      expired_at: true,
+    },
+  });
+
+  // Generate JWT tokens
+  const issuedAt = toISOStringSafe(new Date());
   const accessToken = jwt.sign(
     {
-      userId: createdAdmin.id,
-      email: createdAdmin.email,
+      type: "admin",
+      id: user.id,
+      session_id: session.id,
+      created_at: issuedAt,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
 
-  // Generate JWT Refresh Token
   const refreshToken = jwt.sign(
     {
-      userId: createdAdmin.id,
+      type: "admin",
+      id: user.id,
+      session_id: session.id,
       tokenType: "refresh",
+      created_at: issuedAt,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
 
+  // Compose token response
+  const token = {
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpireDate,
+    refreshable_until: refreshExpireDate,
+  };
+
   return {
-    id: createdAdmin.id,
-    email: createdAdmin.email,
-    password_hash: createdAdmin.password_hash,
-    admin_level: createdAdmin.admin_level,
-    created_at: toISOStringSafe(createdAdmin.created_at),
-    updated_at: toISOStringSafe(createdAdmin.updated_at),
-    deleted_at: null,
-    reddit_community_report_actions: undefined,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: expiredAt,
-      refreshable_until: refreshableUntil,
+    id: admin.id,
+    user_id: admin.user_id,
+    created_at: createdAt,
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
     },
   };
 }

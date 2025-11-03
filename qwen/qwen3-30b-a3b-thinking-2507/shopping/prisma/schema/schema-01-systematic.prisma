@@ -1,0 +1,119 @@
+/// Defines distinct sales channels (e.g., web, mobile, physical store) used
+/// for transaction routing and analytics
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique channel name (e.g., 'web', 'mobile')
+  name String
+  
+  /// Channel operating status (active/inactive)
+  status String
+  
+  /// Marketing description of the channel
+  description String?
+  
+  /// Channel creation timestamp
+  created_at DateTime
+  
+  /// Last channel modification timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp when channel is deactivated
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_sections shopping_sections[]
+  
+  @@unique([name])
+  @@index([status])
+}
+
+/// Defines platform navigation sections (e.g., new arrivals, best sellers)
+/// that can be associated with multiple channels
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel to which this section belongs. {@link shopping_channels.id}.
+  channel_id String
+  
+  /// Section name (e.g., 'New Arrivals')
+  name String
+  
+  /// Display position in navigation menu (lower numbers appear first)
+  position Int
+  
+  /// Section description for user interface
+  description String?
+  
+  /// Section creation timestamp
+  created_at DateTime
+  
+  /// Last section modification timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp when section is deactivated
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  
+  @@unique([name, channel_id])
+  @@index([channel_id, position])
+}
+
+/// Stores system configuration key-value pairs with environment-specific values
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Configuration key (e.g., 'product_search_timeout')
+  key String
+  
+  /// Configuration value
+  value String
+  
+  /// Environment context (production, staging, development)
+  environment String
+  
+  /// Purpose and usage context of this configuration
+  description String?
+  
+  /// Configuration creation timestamp
+  created_at DateTime
+  
+  /// Last configuration modification timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp when configuration is deactivated
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key, environment])
+  @@index([environment])
+}

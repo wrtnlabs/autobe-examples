@@ -1,289 +1,245 @@
-# Minimal Todo List – Requirements Analysis (Business Terms)
+# Minimal Todo Service (prefix: "todo") — Requirements Analysis
 
 ## Vision and Goals
-Provide the smallest complete set of capabilities for a person to capture, review, update, complete, and delete personal tasks with minimal friction. Emphasize clarity, predictability, and speed over feature breadth. Maintain strict boundaries to avoid scope creep and keep the experience simple and dependable.
+Provide the smallest set of capabilities for an individual to capture, review, complete, and remove personal tasks with minimal friction.
 
-Value goals
-- Simplicity: Single-field task entry with clear Active/Completed states.
-- Predictability: Consistent outcomes for creation, edits, completion toggles, deletion, and listings.
-- Focus: No collaboration, tags, reminders, or other advanced features in the minimal product.
+Business goals:
+- THE "todo" service SHALL enable a single authenticated user to manage only personal todo items.
+- THE "todo" service SHALL require a non-empty title for every todo item.
+- THE "todo" service SHALL keep todos private to their owner at all times.
+- THE "todo" service SHALL avoid complexity beyond create, list, read, update, complete/reopen, and delete for MVP.
 
-## Scope
+Success indicators (business-level):
+- WHEN a new user signs up, THE service SHALL allow creation of the first todo within 1 minute under normal conditions.
+- WHEN core actions are performed, THE service SHALL provide responses that feel immediate for typical personal lists.
 
-In-Scope (Minimal Feature Set)
-- Create a Todo with a required title; optional note is allowed.
-- Read and list personal Todos only.
-- Update title and optional note.
-- Mark complete/uncomplete.
-- Delete.
-- Basic filtering by state (All, Active, Completed).
-- Default ordering (newest first); page-based listing sized for readability.
-- Basic business-level timestamps (created and last updated; completion time when completed).
+## Actors and Permissions
 
-Out-of-Scope (Initial Release)
-- Sharing or collaboration; assigning tasks to others.
-- Subtasks/checklists; tags/labels; priorities; due dates; reminders; recurring tasks.
-- Attachments/images; import/export automation.
-- Advanced filters/search; analytics; reports.
-- UI/visual design and layout specifications.
-- Technical specifications (APIs, database schemas, infrastructure, libraries).
+Actors:
+- User: An authenticated individual who owns and manages personal todos.
+- Unauthenticated State: A non-actor state where no access to user-owned todos is permitted.
 
-## Users and Roles (Business Terms)
-- guestVisitor: Unauthenticated visitor; cannot view or manage Todo content.
-- todoMember: Authenticated user; manages only their own Todos.
-- systemAdmin: Administrative oversight for policies and settings; no routine access to private Todos.
+Permissions (business terms):
+- THE service SHALL allow only the User to create, list, read, update, delete, and toggle completion of that User’s own todos.
+- IF a request targets a todo not owned by the requesting User, THEN THE service SHALL deny access without revealing whether the item exists.
+- IF an Unauthenticated State attempts any todo action, THEN THE service SHALL deny access and indicate that sign-in is required.
 
-Role principles (EARS)
-- THE service SHALL implement least-privilege access across all roles.
-- THE service SHALL restrict personal Todo visibility to the owner by default.
-- IF a user is unauthenticated, THEN THE service SHALL deny all Todo actions.
+## Scope Definition
 
-## Business Processes and Lifecycle Overview
-Tasks move through the smallest useful lifecycle: create (Active) → optionally complete (Completed) → optionally uncomplete (Active) → optionally delete (removed from user view). Listing returns only personal items according to filter and ordering rules. Timestamps are system-managed for user clarity.
+### In-Scope (MVP)
+- Registration, login, and logout in business terms (no technical details).
+- Personal todo lifecycle: create, list, read, update, toggle completion, delete.
+- Fields per todo: title (required), description (optional), due date (optional date-only), completion status (boolean).
+- Default list ordering by newest first; basic status filter (All, Active, Completed).
 
-Lifecycle (Mermaid)
-```mermaid
-graph LR
-  A["Create Todo"] --> B["Active"]
-  B -->|"Edit"| B
-  B -->|"Complete"| C["Completed"]
-  C -->|"Uncomplete"| B
-  B -->|"Delete"| D["Deleted"]
-  C -->|"Delete"| D
-```
+### Out-of-Scope (MVP)
+- Collaboration, shared lists, assignments, or roles beyond the single User.
+- Notifications, reminders, recurring tasks, or scheduling automation.
+- Tags, projects, priorities, attachments, subtasks, or custom fields.
+- Search or advanced filtering beyond status.
+- Administrative actors or dashboards.
+- API designs, database schemas, storage details, or infrastructure prescriptions.
+
+## User Scenarios (Narratives)
+
+Scenario A: First-Time Use
+- WHEN a person completes valid registration, THE service SHALL consider the person a User and allow immediate creation of a first todo with a required title.
+- IF the first title is missing or whitespace-only, THEN THE service SHALL reject creation and explain that a title is required.
+
+Scenario B: Daily Management
+- WHEN a User returns, THE service SHALL show only that User’s todo list in a predictable default order.
+- WHEN a User edits fields within limits, THE service SHALL save and reflect changes immediately in subsequent views.
+- WHEN a User completes or reopens an item, THE service SHALL reflect the new completion state immediately.
+- WHEN a User deletes an item, THE service SHALL remove it from lists immediately.
+
+Scenario C: Optional Due Dates
+- WHERE a User sets a due date, THE service SHALL treat it as date-only and compute simple status such as overdue (past date and not completed) and due today (current date and not completed) for conceptual presentation.
+- WHEN a User clears a due date, THE service SHALL remove the due date and cease any due-based status for that item.
 
 ## Functional Requirements (EARS)
 
-Item definition (business-level)
-- Fields: Identifier (unique), Title (required), Note (optional), Completed (boolean), CreatedAt, UpdatedAt, CompletedAt (when applicable), Owner (system-managed).
+### Account Lifecycle (business-level)
+- WHEN a person submits valid registration details, THE service SHALL create a User account.
+- WHEN a User submits valid credentials, THE service SHALL establish authenticated access.
+- IF credentials are invalid, THEN THE service SHALL deny access without revealing whether an account exists.
+- WHEN a User requests logout, THE service SHALL end authenticated access for subsequent requests.
+- WHILE a User remains authenticated, THE service SHALL allow permitted actions described in this report.
+
+### Todo Lifecycle
+Fields:
+- Title: required, single-line, 1–120 characters after trimming.
+- Description: optional, up to 1,000 characters after trimming.
+- Due date: optional, date-only value; may be past, present, or future; interpreted consistently.
+- Completion status: boolean; defaults to not completed on creation.
 
 Create
-- THE service SHALL require Title to be non-empty after trimming.
-- THE service SHALL accept Title length from 1 to 100 characters after trimming.
-- WHEN a todoMember submits a valid Title, THE service SHALL create a Todo owned by that member with Completed=false, set CreatedAt and UpdatedAt, and return it in newest-first ordering.
-- IF Title is missing or invalid, THEN THE service SHALL reject creation with a clear validation message.
-- IF actor is guestVisitor, THEN THE service SHALL deny creation and guide to sign in.
+- WHEN a User submits a todo with a non-empty title within 1–120 characters, THE service SHALL create the item with completion set to not completed.
+- WHERE a description is provided within 0–1,000 characters, THE service SHALL store it.
+- WHERE a due date is provided and is a valid calendar date, THE service SHALL store it as date-only.
+- IF the title is empty, exceeds 120 characters, contains line breaks, or the due date is invalid, THEN THE service SHALL reject creation with clear field messages.
 
-Read (single)
-- WHEN a todoMember requests a Todo they own, THE service SHALL return Identifier, Title, Note (if any), Completed, CreatedAt, UpdatedAt, and CompletedAt (if any).
-- IF the Todo is not found in the requester’s scope, THEN THE service SHALL return a not-available message without leaking existence.
-- IF actor is guestVisitor, THEN THE service SHALL deny access and guide to sign in.
+Read (Single)
+- WHEN a User requests a todo owned by that User, THE service SHALL return the item’s business fields.
+- IF the todo does not exist or is deleted, THEN THE service SHALL indicate that the item is not available.
 
-List and filter
-- WHEN a todoMember requests a list without a filter, THE service SHALL return only the member’s Todos.
-- THE service SHALL support status filters: All, Active (Completed=false), and Completed (Completed=true).
-- THE service SHALL order results by CreatedAt descending by default.
-- THE service SHALL provide page-based listing with a default page size of 20 items and allow 10–50 inclusive when a custom size is requested.
-- IF actor is guestVisitor, THEN THE service SHALL deny listing and guide to sign in.
+List (Overview)
+- WHEN a User requests a list, THE service SHALL return only that User’s items.
+- THE service SHALL present a default ordering of newest first by creation time.
+- WHERE a status filter is requested (All, Active, Completed), THE service SHALL include only items matching the selected status.
 
-Update
-- WHEN a todoMember submits a valid new Title and/or Note for an owned Todo, THE service SHALL update the fields and set UpdatedAt, preserving CreatedAt and ownership.
-- IF the new Title is invalid, THEN THE service SHALL reject the update with a clear validation message.
-- IF the Todo does not exist or is not owned by the requester, THEN THE service SHALL deny with a privacy-safe message.
+Update (Fields)
+- WHEN a User updates title, description, or due date on an owned item within constraints, THE service SHALL persist and reflect the changes.
+- IF an updated field violates constraints, THEN THE service SHALL reject the update and preserve existing values.
 
-Complete/Uncomplete
-- WHEN a todoMember marks an owned Todo complete, THE service SHALL set Completed=true, set CompletedAt, and set UpdatedAt.
-- WHEN a todoMember marks an owned Todo uncomplete, THE service SHALL set Completed=false, clear CompletedAt, and set UpdatedAt.
-- IF the Todo is already in the requested state, THEN THE service SHALL return the current state without error (idempotent).
+Toggle Completion
+- WHEN a User marks an item complete, THE service SHALL set completion to completed and preserve other fields.
+- WHEN a User reopens a completed item, THE service SHALL set completion to not completed and preserve other fields.
+- WHERE the requested completion state matches the current state, THE service SHALL succeed without error.
 
 Delete
-- WHEN a todoMember confirms deletion of an owned Todo, THE service SHALL permanently remove it from subsequent listings in the minimal release.
-- IF the Todo does not exist or is not owned by the requester, THEN THE service SHALL deny with a privacy-safe message.
+- WHEN a User deletes an owned item, THE service SHALL remove it from subsequent listings immediately.
+- THE deletion behavior SHALL be irreversible for MVP (no recycle bin).
+- IF deletion targets a non-existent item, THEN THE service SHALL indicate that the item is not available.
 
-Authentication and sessions (business terms)
-- WHEN a visitor registers and signs in successfully, THE service SHALL treat them as a todoMember and bind created Todos to that user.
-- WHEN a signed-in user requests sign-out, THE service SHALL end the session and restrict access to guestVisitor capabilities only.
-- WHERE Single-User Local Mode is enabled, THE service SHALL operate with an implicit member and disable registration/sign-in flows.
+## Business Rules and Validations
 
-Ownership and permissions
-- THE service SHALL bind each Todo to exactly one owner.
-- WHEN listing or reading, THE service SHALL return only Todos owned by the requester.
-- IF a non-owner attempts to act on a Todo, THEN THE service SHALL deny without revealing whether the item exists.
+Normalization
+- WHEN text fields are received, THE service SHALL trim leading and trailing whitespace.
+- WHEN a title trims to empty or includes line breaks, THE service SHALL treat it as invalid.
 
-Ordering and pagination
-- THE service SHALL default to newest-first ordering by CreatedAt.
-- THE service SHALL include page metadata sufficient to understand result boundaries without prescribing a specific format.
+Title
+- THE title SHALL be single-line and 1–120 characters after trimming.
+- IF title is missing/empty/too long/contains line breaks, THEN THE service SHALL reject the change with a specific message.
 
-Performance (user-centric)
-- THE service SHALL complete create, read, update, complete/uncomplete, delete, and list operations within about 1 second for at least 95% of attempts under normal conditions for up to 100 personal Todos.
+Description
+- THE description SHALL be optional and up to 1,000 characters after trimming.
+- IF description exceeds 1,000 characters, THEN THE service SHALL reject the change with a specific message.
 
-## Non-Functional Requirements (EARS)
+Due Date (date-only)
+- THE due date SHALL be optional and a valid calendar date.
+- WHERE time-of-day is included, THE service SHALL ignore time-of-day and use only the date.
+- THE service SHALL compute “overdue” when the current date is after the due date and the item is not completed, and “due today” when equal.
 
-Performance
-- THE service SHALL complete typical Todo creation within 800 ms for at least 95% of attempts and within 2 seconds at worst under normal conditions.
-- THE service SHALL return the first page of the list (up to 20 items by default) within 1 second for at least 95% of attempts and within 2.5 seconds at worst.
-- THE service SHALL toggle completion with a user-visible confirmation within 600 ms for at least 95% of attempts and within 1.5 seconds at worst.
+Ownership and Isolation
+- THE service SHALL associate each todo with exactly one owner (the creating User) in MVP.
+- THE service SHALL restrict all todo actions to the owner only.
+- IF a request references another User’s item, THEN THE service SHALL deny access without revealing existence.
 
-Availability and reliability
-- THE service SHALL provide at least 99.5% availability monthly for core actions, excluding scheduled maintenance with prior notice.
-- WHEN an operation is confirmed to the user as successful, THE service SHALL ensure the result is durable and visible afterward.
-- IF a partially processed operation cannot be completed, THEN THE service SHALL revert to the last known good state and inform the user succinctly.
+Deletion
+- THE service SHALL perform immediate, irreversible deletion in MVP.
+- IF an item is already deleted, THEN THE service SHALL acknowledge unavailability and advise refreshing the list.
 
-Usability and accessibility
-- THE service SHALL present concise confirmations after create, update, toggle, and delete actions.
-- THE service SHALL be fully operable using keyboard-only for core actions.
-- WHERE color indicates state, THE service SHALL provide an additional non-color cue.
+## Authentication and Authorization (Business-Level)
+- WHEN a User attempts a protected action without an active authenticated state, THE service SHALL deny the action and request sign-in.
+- WHEN a User attempts to access or modify another User’s item, THE service SHALL deny access and avoid disclosing existence.
+- WHILE a session remains active, THE service SHALL allow only owner-scoped operations.
 
-Security and privacy
-- THE service SHALL protect Todo confidentiality so only the owner can access content during normal operations.
-- THE service SHALL enforce least-privilege permissions on every action.
-- THE service SHALL collect only minimal personal data necessary to operate accounts and Todos.
+## Error Handling and Recovery (Business-Level)
+Categories and outcomes:
+- Authentication: WHEN not signed in, THE service SHALL prompt sign-in and allow retry.
+- Authorization: IF acting on non-owned items, THEN THE service SHALL deny with a non-disclosing message.
+- Validation: WHEN input fails rules, THE service SHALL return field-specific guidance and perform no partial writes.
+- Not Found: WHEN an item is unavailable, THE service SHALL inform and suggest refreshing the list.
+- Idempotency: WHERE a completion toggle repeats the current state, THE service SHALL confirm the state without error.
+- Transient/System: WHEN temporary issues occur, THE service SHALL advise retrying shortly and preserve user-entered data where feasible.
 
-Localization and timezone
-- THE service SHALL present user-facing timestamps in the user’s local timezone and, where no preference exists, default to Asia/Seoul for display of date-only values.
+## Non-Functional Requirements (User-Perceived)
+Performance (targets under normal conditions):
+- THE service SHALL complete registration/login within 2 seconds (typical cases).
+- THE service SHALL list a page of todos within 1 second for typical personal lists.
+- THE service SHALL complete single-item create/update/delete within 0.7 seconds.
+- THE service SHALL toggle completion within 0.5 seconds.
 
-## Error Handling and Recovery
+Availability and Reliability:
+- THE service SHALL target 99.9% monthly availability.
+- WHERE partial outages occur, THE service SHALL provide clear messages and safe retries without duplicating items.
 
-Taxonomy
-- Validation errors (input rules), authentication errors (not signed in), authorization errors (not owner), missing resource (not found or already deleted), conflict-like situations (stale updates or rapid duplicate actions), temporary system conditions.
+Privacy and Security:
+- THE service SHALL isolate user data such that no cross-user visibility is possible.
+- THE service SHALL minimize personal data collection to what is necessary for core functionality.
 
-EARS rules
-- WHEN validation fails, THE service SHALL present clear, field-specific messages and preserve user input for correction.
-- WHEN unauthenticated access is attempted, THE service SHALL invite sign-in and avoid exposing content.
-- WHEN a non-owner acts on an item, THE service SHALL deny and avoid revealing existence.
-- WHEN a referenced item no longer exists, THE service SHALL inform the user and offer to refresh the list.
-- WHEN rapid repeated actions are detected, THE service SHALL serialize outcomes and present the final state clearly.
+Timezone Note (business interpretation):
+- WHILE no user-specific timezone is selected, THE service SHALL interpret date-only due dates consistently; default assumption may align with "Asia/Seoul" for evaluation consistency.
 
-Example messages (business-level)
-- Validation: "Title is required." / "Title is too long. Use 100 characters or fewer."
-- Authentication: "Please sign in to manage your Todos."
-- Permission: "This item is not available."
-- Missing: "This item is no longer available. Refresh your list."
+## Data Lifecycle and Privacy
+Creation → Access → Update → Delete (hard delete for MVP). Backups exist for disaster recovery only; users cannot access backup copies.
 
-## Data Lifecycle and Retention
+Retention (business targets):
+- THE service SHALL retain backup copies for disaster recovery for up to 30 calendar days.
+- THE service SHALL retain operational logs/audit events in minimal form for up to 90 calendar days.
 
-- Creation: Todo enters Active state owned by the creator.
-- Update: Owner may edit allowed fields; UpdatedAt changes.
-- Completion/Uncompletion: Owner toggles Completed and CompletedAt accordingly.
-- Deletion: Permanent removal in minimal scope; no recovery window.
-- Export: Optional future enhancement; out of scope for the minimal product.
+User Control:
+- WHEN a User deletes an item, THE service SHALL remove it from active views immediately.
+- WHEN a User requests account deletion, THE service SHALL remove all active items from the User’s access immediately after success.
+- WHEN a User requests a data export, THE service SHALL provide a machine-readable export to the authenticated requester within a reasonable window (e.g., within 24 hours) under normal conditions.
 
-Lifecycle diagram (Mermaid)
+## Conceptual User Flows (Mermaid)
+
+High-Level Access and Operations
 ```mermaid
 graph LR
-  A["Active"] -->|"Complete"| B["Completed"]
-  B -->|"Uncomplete"| A
-  A -->|"Delete"| C["Removed"]
-  B -->|"Delete"| C
+  A["Start"] --> B["Authenticate Or Register"]
+  B --> C{"Authenticated?"}
+  C -->|"No"| D["Deny & Prompt Sign-In"]
+  C -->|"Yes"| E["List My Todos(Newest First)"]
+  E --> F["Create Todo(Title, Optional Fields)"]
+  E --> G["Edit Fields(Title/Desc/Due)"]
+  E --> H["Toggle Complete/Reopen"]
+  E --> I["Delete Todo(Immediate)"]
+  F --> E
+  G --> E
+  H --> E
+  I --> E
 ```
 
-## Permissions and Guardrails
-
-Ownership boundaries
-- THE service SHALL ensure only the owner can view or modify a Todo.
-- THE service SHALL prevent cross-user visibility by default and avoid confirming item existence across users.
-
-Optional single-user local mode
-- WHERE enabled, THE service SHALL function with an implicit member on the local device and disable multi-user features.
-
-Administrative guardrails (business terms)
-- THE service SHALL treat access to private member content by administrators as exceptional and policy-gated; routine access is not allowed in the minimal product.
-
-## User Flows (Mermaid)
-
-Create and update
+Todo Lifecycle (State Transitions)
 ```mermaid
 graph LR
-  A["Start(Create/Update)"] --> B["Collect Title(and optional Note)"]
-  B --> C["Validate Input"]
-  C --> D{"Valid?"}
-  D -->|"No"| E["Show Validation Message"]
-  D -->|"Yes"| F{"Create or Update?"}
-  F -->|"Create"| G["Create Todo(Default Not Completed)"]
-  F -->|"Update"| H["Apply Changes and Set UpdatedAt"]
-  G --> I["Confirm Creation"]
-  H --> J["Confirm Update"]
+  A["Created (Completed=false)"] --> B["Edit Fields"]
+  A --> C["Mark Complete"]
+  C --> D["Completed=true"]
+  D --> E["Reopen"]
+  E --> A
+  A --> F["Delete (Hard)"]
+  D --> F
 ```
 
-List and filter
-```mermaid
-graph LR
-  A["Request List"] --> B["Scope To Owner"]
-  B --> C{"Filter"}
-  C -->|"All"| D["All Owned Todos"]
-  C -->|"Active"| E["Completed=false"]
-  C -->|"Completed"| F["Completed=true"]
-  D --> G["Order Newest First"]
-  E --> G
-  F --> G
-  G --> H["Paginate(Default 20)"]
-  H --> I["Return Results With Metadata"]
-```
-
-Toggle completion
-```mermaid
-graph LR
-  A["Select Owned Todo"] --> B{"State?"}
-  B -->|"Active"| C["Set Completed=true; Set CompletedAt"]
-  B -->|"Completed"| D["Set Completed=false; Clear CompletedAt"]
-  C --> E["Confirm Completed"]
-  D --> F["Confirm Uncompleted"]
-```
-
-Delete
-```mermaid
-graph LR
-  A["Select Owned Todo"] --> B["Show Delete Confirmation"]
-  B --> C{"Confirm?"}
-  C -->|"No"| D["Cancel"]
-  C -->|"Yes"| E["Permanently Remove"]
-  E --> F["Confirm Deletion"]
-```
-
-Sign in/out (business-level)
-```mermaid
-graph LR
-  A["Guest"] --> B["Provide Credentials"]
-  B --> C["Validate"]
-  C --> D{"Valid?"}
-  D -->|"No"| E["Show Sign-In Error"]
-  D -->|"Yes"| F["Establish Session(todoMember)"]
-  F --> G["Manage Personal Todos"]
-  G --> H["Sign Out"]
-  H --> I["Guest State"]
-```
-
-## Acceptance Criteria Summary (EARS)
+## Acceptance Criteria (Testable EARS)
+Registration and Login
+- WHEN valid registration details are submitted, THE service SHALL create a User account and allow login.
+- WHEN valid credentials are submitted, THE service SHALL establish authenticated access.
+- IF credentials are invalid, THEN THE service SHALL deny access with a non-disclosing message.
 
 Create
-- THE service SHALL require Title length 1–100 after trimming.
-- WHEN Title is valid, THE service SHALL create a Todo with Completed=false, set CreatedAt/UpdatedAt, and return it.
-- IF Title is invalid or missing, THEN THE service SHALL reject with a clear validation message.
+- WHEN a title of 1–120 single-line characters is provided, THE service SHALL create the todo with completion=false.
+- IF title is empty/too long/contains line breaks, THEN THE service SHALL reject creation with a clear field message.
+- WHERE a valid date-only due date is provided, THE service SHALL store it; IF invalid, THEN THE service SHALL reject it.
 
-Read/List
-- WHEN a member requests their list, THE service SHALL return only their Todos, ordered newest-first, with optional filters All/Active/Completed.
-- THE service SHALL paginate with default size 20 and allow 10–50 inclusive on request.
-- IF unauthenticated, THEN THE service SHALL deny and guide to sign in.
+List and Read
+- WHEN a User lists todos with no filter, THE service SHALL return only that User’s items ordered newest-first.
+- WHERE a status filter is selected (All/Active/Completed), THE service SHALL return only matching items.
+- WHEN a User requests a todo they own, THE service SHALL return its fields; IF not available, THEN THE service SHALL report unavailability.
 
 Update
-- WHEN a member submits a valid new Title/Note, THE service SHALL apply updates and set UpdatedAt.
-- IF validation fails or ownership is missing, THEN THE service SHALL deny or reject with a clear message.
+- WHEN a User updates owned fields within limits, THE service SHALL persist and reflect changes; IF invalid, THEN THE service SHALL reject and preserve prior values.
 
-Complete/Uncomplete
-- WHEN completion is requested, THE service SHALL set Completed=true and set CompletedAt.
-- WHEN uncompletion is requested, THE service SHALL set Completed=false and clear CompletedAt.
-- IF already in the requested state, THEN THE service SHALL return the current state without error.
+Toggle
+- WHEN a User marks complete or reopens, THE service SHALL set the requested state and confirm it; WHERE no state change applies, THE service SHALL confirm the current state.
 
 Delete
-- WHEN deletion is confirmed by the owner, THE service SHALL permanently remove the Todo from subsequent listings.
-- IF not owned or not found, THEN THE service SHALL deny without leaking existence.
+- WHEN a User deletes an owned item, THE service SHALL remove it from subsequent listings immediately; IF already absent, THEN THE service SHALL report unavailability.
 
-Non-Functional
-- THE service SHALL meet responsiveness targets for core actions (generally within ~1 second P95 under normal conditions for small lists).
-- THE service SHALL maintain at least 99.5% monthly availability for core actions excluding scheduled maintenance with notice.
+Isolation and Privacy
+- IF a request references another User’s item, THEN THE service SHALL deny access without revealing existence.
+- THE service SHALL keep user data private and inaccessible to other users.
 
-## Assumptions and Constraints
-- Single personal list per member; no collaboration features.
-- Default display timezone when unspecified: Asia/Seoul.
-- Language and messages in en-US.
-- No technical implementation details mandated; developers choose architecture and storage.
+Performance (user-perceived)
+- WHEN core actions occur under normal conditions, THE service SHALL meet response targets listed in Non-Functional Requirements.
 
 ## Glossary
-- Todo: A task entry with a required Title and optional Note.
-- Active: Todo not marked as completed.
-- Completed: Todo marked as done by its owner.
-- Owner: The member to whom the Todo belongs; only the owner may act on it.
-- List: A presentation of the owner’s Todos using newest-first ordering and optional filters.
-- Pagination: Presenting results in fixed-size groups (default 20; allowed 10–50).
-- Validation: Business rules that input must satisfy to be accepted.
-- Idempotent: Repeating the same action yields the same outcome without unintended duplication.
+- Todo: A personal task item owned by a User.
+- User: An authenticated individual managing personal todos.
+- Unauthenticated State: A non-actor state without access to user-owned data.
+- Date-Only Due Date: A calendar date without time-of-day component.
+- Default Ordering: Newest first by creation time in listings.
+- MVP: Minimal Viable Product, restricted to essential behaviors only.

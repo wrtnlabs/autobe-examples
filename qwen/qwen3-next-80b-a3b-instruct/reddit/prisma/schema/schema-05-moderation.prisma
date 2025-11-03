@@ -1,0 +1,222 @@
+/// Main report entity for content moderation. This model stores shared
+/// attributes
+/// of all reports regardless of submission actor. Reports can be submitted
+/// by guests or members
+/// and are processed by admins. This model is the primary interface for
+/// moderation workflows.
+/// To maintain referential integrity, actor-specific data is stored in
+/// subtype tables:
+/// {@link community_platform_report_of_guests} and {@link
+/// community_platform_report_of_members}.
+///
+/// Actor type is tracked via actor_type field to enable efficient filtering
+/// (e.g., find all guest reports).
+///
+/// This entity is a primary table because:
+/// - Admins must be able to search across all reports regardless of actor type
+/// - Moderators need direct access to view, filter, and action on reports in
+/// bulk
+/// - The report status and reason are maintained at this level for audit trails
+///
+/// The presentation of report content (e.g., post title, comment text)
+/// should be fetched
+/// via the join with original content models: {@link
+/// community_platform_posts}, {@link community_platform_comments}.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post being reported. References the original post content. {@link
+  /// community_platform_posts.id}.
+  reported_post_id String?
+  
+  /// The comment being reported. References the original comment content.
+  /// {@link community_platform_comments.id}.
+  reported_comment_id String?
+  
+  /// The admin who initiated this report (for internal moderation or system
+  /// flags). {@link community_platform_admin.id}.
+  reported_by_admin_id String?
+  
+  /// Type of actor who submitted the report. Must be either 'guest' or
+  /// 'member'.
+  /// This field supports efficient filtering and joins with subtype tables.
+  actor_type String
+  
+  /// The category of violation selected by the reporter from a predefined list
+  /// (e.g., 'spam', 'harassment', 'NSFW', 'false information').
+  reason String
+  
+  /// Optional additional context provided by the reporter. For example: 'This
+  /// user is attacking other members.'
+  description String?
+  
+  /// Current moderation status of the report.
+  /// Valid values: 'pending', 'under_review', 'removed', 'dismissed'.
+  status String
+  
+  /// Timestamp when this report was submitted by the user. Used for audit
+  /// trails and sorting reports by age.
+  created_at DateTime
+  
+  /// Timestamp of the last status update. Used to track how long reports
+  /// remain in review.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When not null, this record is considered removed
+  /// from active moderation queues.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reportedPost community_platform_posts? @relation(fields: [reported_post_id], references: [id], onDelete: Cascade)
+  reportedComment community_platform_comments? @relation(fields: [reported_comment_id], references: [id], onDelete: Cascade)
+  reportedByAdmin community_platform_admin? @relation(fields: [reported_by_admin_id], references: [id], onDelete: Cascade)
+  
+  community_platform_report_of_guests community_platform_report_of_guests?
+  community_platform_report_of_members community_platform_report_of_members?
+  
+  @@index([reported_by_admin_id])
+  
+  @@unique([reported_post_id])
+  @@unique([reported_comment_id])
+  @@index([status, created_at])
+  @@index([actor_type])
+  @@index([created_at])
+}
+
+/// Subtype entity for reports submitted by guests. This table captures
+/// actor-specific data
+/// when a guest (unauthenticated user) submits a report. This design avoids
+/// nullable FKs by using
+/// the Polymorphic Ownership Pattern: a main entity {@link
+/// community_platform_reports} has a 1:1
+/// relationship with this subtype.
+///
+/// This table is subsidiary because:
+/// - It is never accessed directly by users
+/// - It is always accessed through the main report entity
+/// - It contains only audit-specific fields tied to guest sessions
+/// - No independent CRUD operations are needed
+///
+/// All guest report data is linked to the main report via the unique foreign
+/// key.
+///
+/// Relationship: One main report has exactly one guest-submitted report record.
+/// Referenced by: {@link community_platform_reports} via report_id.
+/// Reference: {@link community_platform_guest}, {@link
+/// community_platform_guest_sessions}.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_of_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main report entity. This is a 1:1 relationship used to
+  /// link
+  /// the guest-specific data to the main report. {@link
+  /// community_platform_reports.id}.
+  community_platform_report_id String
+  
+  /// The guest who submitted this report. References the guest account.
+  /// {@link community_platform_guest.id}.
+  community_platform_guest_id String
+  
+  /// The session in which this report was submitted. References the guest
+  /// session.
+  /// {@link community_platform_guest_sessions.id}.
+  community_platform_guest_session_id String
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  guest community_platform_guest @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
+  guestSession community_platform_guest_sessions @relation(fields: [community_platform_guest_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_report_id], map: "community_platform_report_of_guests_community_platform_2b970b15")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guest_id], map: "community_platform_report_of_guests_community_platform_cbe72aa8")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guest_session_id], map: "community_platform_report_of_guests_community_platform_155c6048")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_report_id], map: "community_platform_report_of_guests_community_platform_1e4253f1")
+}
+
+/// Subtype entity for reports submitted by members. This table captures
+/// actor-specific data
+/// when an authenticated member submits a report. This design avoids
+/// nullable FKs by using
+/// the Polymorphic Ownership Pattern: a main entity {@link
+/// community_platform_reports} has a 1:1
+/// relationship with this subtype.
+///
+/// This table is subsidiary because:
+/// - It is never accessed directly by users
+/// - It is always accessed through the main report entity
+/// - It contains only actor-specific audit fields
+/// - No independent CRUD operations are needed
+///
+/// All member report data is linked to the main report via the unique
+/// foreign key.
+///
+/// Relationship: One main report has exactly one member-submitted report
+/// record.
+/// Referenced by: {@link community_platform_reports} via report_id.
+/// Reference: {@link community_platform_member}, {@link
+/// community_platform_member_sessions}.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main report entity. This is a 1:1 relationship used to
+  /// link
+  /// the member-specific data to the main report. {@link
+  /// community_platform_reports.id}.
+  community_platform_report_id String
+  
+  /// The member who submitted this report. References the member account.
+  /// {@link community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// The session in which this report was submitted. References the member
+  /// session.
+  /// {@link community_platform_member_sessions.id}.
+  community_platform_member_session_id String
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  memberSession community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_report_id], map: "community_platform_report_of_members_community_platfor_57b535f7")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_report_of_members_community_platfor_21bd4fd3")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_report_of_members_community_platfor_860986de")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_report_id], map: "community_platform_report_of_members_community_platfor_75f29c29")
+}

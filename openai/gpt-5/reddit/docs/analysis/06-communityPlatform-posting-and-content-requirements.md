@@ -1,322 +1,328 @@
-# communityPlatform – Posting and Content Requirements (Text, Link, Image)
+# communityPlatform — Posting and Content Requirements
 
-## 1. Introduction and Scope
-Defines business requirements for creating, validating, editing, deleting, locking, labeling, duplicating, and controlling visibility of posts on communityPlatform. Covers three post types: Text, Link, and Image. Excludes technical architectures, API definitions, database schemas, vendor choices, or UI wireframes. Uses EARS to ensure clarity and testability. Role capabilities reference the User Roles and Permissions specification.
+This document provides business-level requirements for creating, validating, and governing the lifecycle of posts within communities on the communityPlatform service. It defines what content can be posted, the constraints and flags that apply to different post types, and how edits and deletions impact visibility. It does not prescribe technical implementation, APIs, or storage details.
 
-Scope boundaries:
-- In scope: post submission flows, validations, rate limiting, labels/tags, moderation interactions on posts, visibility/removal states, archiving, locking, performance/latency expectations, error semantics, auditability, and accessibility.
-- Out of scope: multi-image galleries, video/livestreams, polls, marketplace/commerce, private messaging, and UI visual design.
+Related context is defined in the following documents:
+- See the [Community Management Requirements](./05-communityPlatform-community-management.md) for community creation, ownership, moderator roles, and community-level rules.
+- See the [Comments and Threads Requirements](./07-communityPlatform-comments-and-threads.md) for comment behaviors on posts.
+- See the [Voting and Ranking Requirements](./08-communityPlatform-voting-and-ranking.md) for vote rules and sort semantics including hot, new, top, and controversial.
+- See the [Subscriptions and Feeds Requirements](./09-communityPlatform-subscriptions-and-feeds.md) for feed assembly rules involving posts.
+- See the [User Profile and Karma Requirements](./10-communityPlatform-user-profile-and-karma.md) for how posts contribute to karma and profile displays.
+- See the [Reporting and Moderation Process Requirements](./11-communityPlatform-reporting-and-moderation-process.md) for report handling and enforcement actions that affect post visibility.
+- See the [Non-Functional Requirements](./13-communityPlatform-non-functional-requirements.md) for global performance, reliability, and security constraints.
+- See the [Exception Handling and Abuse Prevention Requirements](./14-communityPlatform-exception-handling-and-abuse-prevention.md) for anti-spam and abuse policies that intersect with posting.
+- See the [Data Lifecycle and Retention Requirements](./15-communityPlatform-data-lifecycle-and-retention.md) for deletion, archival, and legal hold behaviors.
 
-## 2. Post Types and Use Cases
-### 2.1 Type definitions and constraints
-- Text Post: Purely textual content authored within the platform.
-  - Use cases: Announcements, discussions, guides, Q&A, opinions.
-- Link Post: A hyperlink to an external resource.
-  - Use cases: Sharing articles, research, media, references.
-- Image Post: A single uploaded image with title and optional description/alt text.
-  - Use cases: Artwork, photography, memes, infographics.
+## 1. Scope and Definitions
 
-EARS requirements:
-- THE platform SHALL support exactly three post types: "Text", "Link", and "Image".
-- THE platform SHALL associate each post with exactly one community and exactly one author.
-- WHERE a community restricts allowed post types, THE platform SHALL enforce the community configuration and deny disallowed types.
+- “Post” refers to a top-level content item created within a specific community by a member. Post types supported are Text, Link, and Image.
+- “Author” refers to the member who created the post.
+- “Moderator” refers to a member granted moderation privileges for a specific community.
+- “Admin” refers to a platform administrator.
+- “Guest” refers to unauthenticated users who can view public content but cannot post or interact.
+- “NSFW” refers to content not suitable for work and requiring age/consent gates.
+- “Spoiler” refers to content that reveals plot or outcome details and should be masked.
+- “Soft delete” refers to hiding a post from public view while retaining a tombstone for context and audit per business policies.
+- “Archive” refers to a state where posting interactions (e.g., votes, comments, edits) are disabled due to age or policy.
 
-### 2.2 Role-based access summary (posting capabilities)
+EARS Ubiquitous Requirements (general constraints)
+- THE platform SHALL allow the following post types: text, link, image.
+- THE platform SHALL restrict posting actions to authenticated members with permission to post in the target community.
+- THE platform SHALL record community association and author ownership for each post.
+- THE platform SHALL treat all posts as public within the visibility of their community unless restricted by flags or state.
 
-| Action | guestUser | memberUser | communityOwner | communityModerator | adminUser |
-|---|---|---|---|---|---|
-| Create post in public community (if type allowed) | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Create post in restricted/private community | ❌ | WHERE approved: ✅ | WHERE approved: ✅ | WHERE approved: ✅ | ✅ |
-| Edit/delete own post (subject to rules) | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Lock/Unlock a post | ❌ | ❌ | ✅ (owned community) | ✅ (assigned community) | ✅ (site-wide) |
-| Apply/remove tags/flairs | ❌ | WHERE permitted | ✅ | ✅ | ✅ |
-| Mark/Unmark NSFW or Spoiler | ❌ | ✅ (own) | ✅ (scoped) | ✅ (scoped) | ✅ (any) |
-| Remove others' posts | ❌ | ❌ | ✅ (scoped) | ✅ (scoped) | ✅ (site-wide) |
+## 2. Post Types (Text/Link/Image)
 
-EARS role gating:
-- WHERE a user is guestUser, THE platform SHALL deny all posting, editing, and deletion actions.
-- WHERE a user is memberUser admitted to a community, THE platform SHALL permit creating posts within allowed post types for that community.
-- WHERE a user holds communityOwner/communityModerator, THE platform SHALL permit locking/unlocking and removing posts within that scoped community.
-- WHERE a user is adminUser, THE platform SHALL permit performing all moderation actions on any community.
+### 2.1 Text Post
+- THE platform SHALL require a title and may include an optional text body.
+- THE platform SHALL allow zero attachments for text posts.
+- THE platform SHALL allow Markdown or plain text in the body as content, with allowed features defined as business policy; any disallowed features SHALL be rejected.
 
-## 3. Content Submission Rules and Validation
-### 3.1 Common fields and validations (all post types)
-Required fields (conceptual):
-- Title: headline text, 1–300 characters inclusive.
-- Community: destination community identifier.
-- Post Type: one of Text, Link, Image.
-- Author: implied from authenticated session (memberUser+).
+EARS
+- WHEN a member creates a text post, THE platform SHALL require a title meeting the validation limits in Section 3.
+- WHEN a member includes a body, THE platform SHALL validate body length and content rules per Section 3.
 
-Optional fields (conceptual):
-- Tags/Flairs: community-defined labels.
-- Labels: NSFW, Spoiler.
-- Language/Warnings: optional community policy.
+### 2.2 Link Post
+- THE platform SHALL require a title and a single destination URL.
+- THE platform SHALL prohibit body content for link posts beyond an optional short summary up to 280 characters.
+- THE platform SHALL allow zero attachments for link posts.
 
-Common validation rules:
-- THE platform SHALL require title length 1–300 characters inclusive and reject titles comprised solely of whitespace or repeated punctuation.
-- THE platform SHALL reject posts if the destination community disallows the selected post type per configuration.
-- THE platform SHALL allow up to 5 tags per post by default unless the community sets a stricter limit and SHALL reject tags not defined by that community.
-- WHERE a post is labeled NSFW or Spoiler, THE platform SHALL enforce downstream visibility preferences and gating per sensitive content policies.
-- WHERE rate limits or eligibility gating apply, THE platform SHALL evaluate them prior to content validation and provide business reasons upon denial.
+EARS
+- WHEN a member creates a link post, THE platform SHALL validate the URL per Section 3 (URL format and length) and restrict summaries per Section 3.
+- IF the URL violates community-level banned domains, THEN THE platform SHALL reject the post with a specific error message.
 
-Privacy and safety (business):
-- THE platform SHALL prevent exposure of sensitive creator metadata embedded in submissions (e.g., image EXIF GPS) in public contexts and SHALL apply platform policies to sanitize or withhold such metadata from public display.
+### 2.3 Image Post
+- THE platform SHALL require a title and at least one image attachment.
+- THE platform SHALL allow up to 10 image attachments per post.
+- THE platform SHALL prohibit a separate body for image posts beyond optional captions on each image (up to 280 characters per image caption).
 
-### 3.2 Type-specific validations (Text, Link, Image)
-Text Post:
-- THE platform SHALL require body text length between 1 and 40,000 Unicode characters inclusive after trimming.
-- THE platform SHALL treat content as plain text with preserved line breaks (rendering specifics are out of scope).
-- WHERE body contains prohibited terms per community/site policy, THE platform SHALL block submission with a rule reference and recovery guidance.
+EARS
+- WHEN a member uploads images for an image post, THE platform SHALL validate file type and size limits per Section 4 before accepting the post.
+- IF any image fails validation, THEN THE platform SHALL reject the post and enumerate failing attachments.
 
-Link Post:
-- THE platform SHALL require a valid http(s) URL up to 2,048 characters inclusive.
-- THE platform SHALL canonicalize URLs for duplicate detection and domain checks in business terms (implementation is out of scope).
-- IF the link’s domain is disallowed by community or platform policy, THEN THE platform SHALL block submission with a policy reason.
-- IF the submitted link duplicates an existing link post in the same community within the last 30 days after canonicalization, THEN THE platform SHALL block submission and reference the existing post.
-- WHERE link preview enrichment fails, THE platform SHALL still accept a valid post and SHALL allow preview to be attached asynchronously when available.
+## 3. Title and Body Validation Rules
 
-Image Post:
-- THE platform SHALL allow JPEG, PNG, GIF formats only.
-- THE platform SHALL enforce maximum file size of 10 MB and minimum dimensions 320x320 pixels.
-- THE platform SHALL reject images that are corrupt or contain only transparent pixels.
-- WHERE animated GIFs are submitted, THE platform SHALL enforce a maximum duration of 15 seconds or file size of 10 MB, whichever limit is reached first.
-- WHERE alt text is provided, THE platform SHALL allow up to 500 characters; WHERE a community requires alt text, THE platform SHALL enforce its presence at submission.
-- WHERE image orientation metadata exists, THE platform SHALL display imagery correctly oriented without exposing sensitive EXIF data as public content.
+### 3.1 Title Validation
+- THE platform SHALL require a non-empty title for all post types.
+- THE platform SHALL enforce title length between 1 and 300 Unicode characters.
+- THE platform SHALL allow Unicode characters, excluding control characters other than standard whitespace.
+- THE platform SHALL disallow titles that consist solely of whitespace.
+- THE platform SHALL disallow titles that match known spam or prohibited patterns per policy in the [Exception Handling and Abuse Prevention Requirements](./14-communityPlatform-exception-handling-and-abuse-prevention.md).
 
-### 3.3 Submission workflow (Mermaid)
+EARS
+- WHEN a title exceeds 300 characters, THE platform SHALL reject with an error specifying the maximum limit and the observed length.
+- IF a title is empty or whitespace-only, THEN THE platform SHALL reject with an error indicating the requirement for at least one non-whitespace character.
+
+### 3.2 Body Validation (Text Posts)
+- THE platform SHALL allow an optional body up to 40,000 Unicode characters.
+- THE platform SHALL allow newlines and standard whitespace; disallow embedded control characters.
+- THE platform SHALL disallow executable code, script injection, and tracking pixels by policy (see abuse prevention).
+- THE platform SHALL strip or reject unsupported formatting per business policy; validation SHALL indicate which parts are disallowed.
+
+EARS
+- WHEN a body exceeds 40,000 characters, THE platform SHALL reject the post and report the limit.
+- IF disallowed content patterns are detected, THEN THE platform SHALL reject and enumerate the violations.
+
+### 3.3 URL Validation (Link Posts)
+- THE platform SHALL accept only HTTP or HTTPS URLs.
+- THE platform SHALL enforce a maximum URL length of 2,048 characters.
+- THE platform SHALL require a valid host and path; data URIs and file URIs SHALL be rejected.
+- THE platform SHALL normalize and compare URLs for duplicate detection per Section 10.
+- THE platform SHALL reject self-referential URLs that point to the platform’s own post permalink to prevent loops.
+
+EARS
+- WHEN a URL is not HTTP or HTTPS, THE platform SHALL reject with an “unsupported scheme” error.
+- IF a URL exceeds 2,048 characters, THEN THE platform SHALL reject and report the limit.
+
+### 3.4 Caption/Summary Limits
+- THE platform SHALL limit link post summaries and image captions to 280 characters per item.
+- THE platform SHALL reject any summary or caption exceeding 280 characters and indicate the overage.
+
+## 4. Attachments and Size Constraints
+
+- THE platform SHALL allow attachments only for image posts and SHALL restrict to image formats: JPEG (.jpg/.jpeg), PNG (.png), and GIF (.gif).
+- THE platform SHALL enforce per-image maximum size of 10 MB and minimum size of 1 KB.
+- THE platform SHALL enforce an image dimension limit of up to 10,000 pixels on the longest side; images exceeding this dimension SHALL be rejected.
+- THE platform SHALL limit the number of images per post to 10.
+- THE platform SHALL compute total attachment size per post and SHALL reject posts exceeding 50 MB aggregate.
+- THE platform SHALL reject corrupted or unreadable files with a specific error.
+
+EARS
+- WHEN any attachment exceeds 10 MB, THE platform SHALL reject the post and identify the failing file(s).
+- IF total image size exceeds 50 MB, THEN THE platform SHALL reject with an aggregate size error.
+- WHERE the community disallows GIFs, THE platform SHALL reject GIF attachments with an appropriate message.
+
+## 5. Content Policy Flags (NSFW/Spoiler)
+
+### 5.1 NSFW Flag
+- THE platform SHALL support an NSFW flag at the post level.
+- THE platform SHALL require explicit user confirmation that the content is NSFW when posting NSFW content.
+- THE platform SHALL inherit NSFW default = true for posts created in communities designated NSFW by policy in the [Community Management Requirements](./05-communityPlatform-community-management.md).
+- THE platform SHALL restrict NSFW post visibility to age-verified members who have opted in to view NSFW content.
+- THE platform SHALL hide NSFW thumbnails and previews from guests and non-opted-in members.
+
+EARS
+- WHEN a post is created in an NSFW community without an explicit NSFW flag, THE platform SHALL auto-apply the NSFW flag.
+- IF a non-age-verified member attempts to view an NSFW post, THEN THE platform SHALL deny access and present an age gate requirement.
+
+### 5.2 Spoiler Flag
+- THE platform SHALL support a Spoiler flag at the post level.
+- THE platform SHALL require explicit spoiler labeling when the content reveals plot or outcome details.
+- THE platform SHALL mask spoiler content in feeds and post views until a user explicitly reveals it.
+
+EARS
+- WHEN a post is marked Spoiler, THE platform SHALL mask previews and defer content reveal until user confirmation.
+- IF a post is incorrectly flagged or not flagged per community rules, THEN THE platform SHALL allow moderators to correct the flag per [Reporting and Moderation Process Requirements](./11-communityPlatform-reporting-and-moderation-process.md).
+
+### 5.3 Flag Interactions
+- THE platform SHALL allow NSFW and Spoiler flags to co-exist.
+- THE platform SHALL ensure flags propagate to all derivative displays (feeds, search results, embeds) as visibility constraints.
+
+## 6. Creation Workflow and Validation
+
+The creation process must validate inputs and flags before publishing.
+
 ```mermaid
 graph LR
-  A["Start Submission"] --> B["Check Auth & Eligibility"]
-  B -->|"Eligible"| C["Validate Common Fields"]
-  B -->|"Not Eligible"| X["Deny with Policy Reason"]
-  C --> D{"Post Type?"}
-  D -->|"Text"| E["Validate Text Body"]
-  D -->|"Link"| F["Validate URL & Domain"]
-  D -->|"Image"| G["Validate Image Constraints"]
-  E --> H{"Valid?"}
-  F --> H
-  G --> H
-  H -->|"No"| Y["Return Validation Error"]
-  H -->|"Yes"| I["Apply Rate Limits"]
-  I --> J{"Within Limits?"}
-  J -->|"No"| Z["Deny with Rate Limit Reason"]
-  J -->|"Yes"| K["Create Post Record"]
-  K --> L["Set Initial State: Active"]
-  L --> M["Emit Events for Feeds/Notifications"]
-  M --> N["End"]
+  subgraph "Author Action"
+    A1["Open Create Post"] --> A2["Select Post Type(Text/Link/Image)"]
+    A2 --> A3["Enter Title/Content"]
+    A3 --> A4["Set Flags(NSFW/Spoiler)"]
+  end
+  subgraph "Validation"
+    V1["Validate Title"] --> V2["Validate Body/URL/Captions"]
+    V2 --> V3["Validate Attachments(Size/Type/Count)"]
+    V3 --> V4{"All Checks Pass?"}
+  end
+  subgraph "Outcome"
+    O1["Publish Post"]
+    O2["Reject with Errors"]
+  end
+  A4 --> V1
+  V4 -->|"Yes"| O1
+  V4 -->|"No"| O2
 ```
 
-## 4. Editing, Deleting, Locking, and Archiving
-### 4.1 Editing rules and history
-Editorial constraints:
-- THE platform SHALL prohibit changing the post type after submission.
-- THE platform SHALL prohibit changing the URL of a Link Post post-submission to prevent bait-and-switch.
-- THE platform SHALL prohibit replacing the image file of an Image Post post-submission; metadata edits may be allowed per below.
+EARS
+- WHEN a member submits a post for creation, THE platform SHALL validate title, content, attachments, and flags according to Sections 3–5.
+- IF any validation fails, THEN THE platform SHALL reject creation and return all validation errors in a single response.
+- WHILE validation errors persist, THE platform SHALL prevent publication.
 
-Author editing privileges:
-- THE platform SHALL allow authors to edit Text Post bodies at any time the post is neither locked, archived, nor removed.
-- THE platform SHALL allow authors to edit titles for any post within 15 minutes of submission provided the post has fewer than 5 votes and 0 comments; otherwise deny title edits.
-- THE platform SHALL allow authors to edit tags/flairs, NSFW, and Spoiler on their own posts unless locked, archived, or removed.
-- WHERE alt text exists on an Image Post, THE platform SHALL allow the author to edit alt text any time unless locked, archived, or removed.
+## 7. Editing and Deletion Windows
 
-Edit transparency:
-- WHEN a post is edited, THE platform SHALL record an edit timestamp and increment an edit count.
-- WHERE prior content is material to moderation, THE platform SHALL retain an immutable history visible to moderators/admins but not public.
-- THE platform SHALL display an "edited" indicator with latest edit timestamp to viewers.
+### 7.1 Editing
+- THE platform SHALL allow authors to edit their posts within 2 hours of publication for all editable fields of the given post type.
+- THE platform SHALL allow authors to edit only the following after 2 hours: text body (for text posts) and image captions (for image posts); title edits SHALL be locked after 2 hours unless a moderator unlocks.
+- THE platform SHALL prohibit URL changes for link posts after 15 minutes of publication.
+- THE platform SHALL allow moderators and admins to edit titles and flags at any time for policy compliance.
+- THE platform SHALL record an edit timestamp and SHALL indicate that a post has been edited in the post metadata.
 
-### 4.2 Deletion semantics and recovery
-Author-initiated deletion:
-- THE platform SHALL allow authors to delete their own post at any time unless under legal hold.
-- WHEN an author deletes a post, THE platform SHALL replace content with a "[deleted by author]" marker, remove it from feeds, and retain for audit per retention policy.
-- THE platform SHALL preserve comments under a deleted post unless separate policies remove or collapse them.
+EARS
+- WHEN an author edits a post within 2 hours, THE platform SHALL accept changes subject to the same validations as on creation.
+- IF an author attempts to change a link URL after 15 minutes, THEN THE platform SHALL reject the change and retain the original URL.
+- WHERE a moderator unlocks title edits, THE platform SHALL allow the author a 30-minute window to update the title once.
 
-Moderator/Admin removals:
-- THE platform SHALL allow communityOwner/communityModerator to remove any post within scope, and adminUser to remove site-wide.
-- WHEN a moderator removes a post, THE platform SHALL set state to "Removed by Moderation", hide content from general viewers, and retain visibility to the author, moderators, and administrators.
-- WHEN an admin removes a post for platform policy, THE platform SHALL set state to "Removed by Admin", hide content from all but administrators, and notify the author with the policy reason.
+### 7.2 Deletion
+- THE platform SHALL allow authors to delete their own posts at any time.
+- THE platform SHALL soft-delete author-deleted posts, replacing content with a tombstone message visible where applicable.
+- THE platform SHALL preserve comment threads under a deleted post in a readable state unless removed by moderation policy (see comments doc).
+- THE platform SHALL allow moderators and admins to remove posts for policy violations, placing them into “Removed” visibility state.
+- THE platform SHALL allow admins to hard-delete posts only under legal/compliance directives (see data lifecycle doc).
 
-Recovery:
-- WHERE a post was removed by a community moderator, THE platform SHALL allow restoration by communityOwner/communityModerator within 30 days unless superseded by adminUser or legal hold.
-- WHERE a post was deleted by the author, THE platform SHALL not allow restoration by the author via self-service; moderators may not restore author-deleted content.
+EARS
+- WHEN an author deletes a post, THE platform SHALL transition it to the “Deleted by Author” state and hide original content from all users except where policy requires retention for audit.
+- IF a moderator removes a post, THEN THE platform SHALL transition it to the “Removed by Moderator” state and display an appropriate notice.
 
-### 4.3 Locking and archiving
-Locking:
-- THE platform SHALL allow moderators/owners/admins to lock a post, preventing new comments and vote changes.
-- WHEN a post is locked, THE platform SHALL keep it visible but disallow new comments and vote changes.
-- WHERE a post is locked, THE platform SHALL allow unlocking by eligible roles.
+## 8. Visibility States and Restrictions
 
-Archiving:
-- THE platform SHALL automatically archive posts 180 days after creation unless the community sets a stricter threshold not less than 30 days.
-- WHEN a post is archived, THE platform SHALL prevent new comments and votes and disallow any edits; content remains visible.
-- THE platform SHALL exclude archived posts from "Hot" sorting and from promotion in discovery contexts while keeping them available by direct link and historical browsing.
+### 8.1 State Definitions
+- Draft: An optional pre-publication state; not visible to other users.
+- Published: Visible according to community visibility and flags; fully interactive.
+- Deleted by Author (Soft Deleted): Not visible to general users; tombstone may appear where needed for context.
+- Removed by Moderator: Not visible in public feeds; may be visible to moderators/admins for case handling.
+- Quarantined: Limited visibility due to policy review; not shown in general feeds or search; accessible via direct link to moderators/admins.
+- Locked: Readable but new comments and votes are disallowed.
+- Archived: Readable but votes, comments, and edits disabled due to age/policy.
 
-### 4.4 Decision flow (Mermaid)
+### 8.2 State Transitions
+
 ```mermaid
 graph LR
-  A["Action Requested"] --> B{"Role?"}
-  B -->|"Author"| C["Check Post State"]
-  B -->|"Moderator/Owner"| D["Check Community Scope"]
-  B -->|"Admin"| E["Check Site Scope"]
-  C --> F{"State Allows Edit/Delete?"}
-  F -->|"Yes"| G["Apply Author Rules"]
-  F -->|"No"| H["Deny with State Reason"]
-  D --> I{"Within Community?"}
-  I -->|"Yes"| J["Allow Lock/Remove/Restore"]
-  I -->|"No"| K["Deny Scope"]
-  E --> L["Allow Lock/Remove/Restore Site-wide"]
-  G --> M["Execute (Edit/Delete)"]
-  J --> N["Execute (Lock/Remove/Restore)"]
-  L --> O["Execute (Admin Action)"]
+  P1["Draft"] -->|"Publish"| P2["Published"]
+  P2 -->|"Author Delete"| P3["Deleted by Author"]
+  P2 -->|"Moderator Remove"| P4["Removed by Moderator"]
+  P2 -->|"Quarantine"| P5["Quarantined"]
+  P2 -->|"Lock"| P6["Locked"]
+  P6 -->|"Unlock"| P2
+  P2 -->|"Archive by Age"| P7["Archived"]
+  P5 -->|"Resolve/Restore"| P2
+  P4 -->|"Appeal Upheld"| P2
 ```
 
-## 5. Content Labels (NSFW, Spoilers) and Tags
-### 5.1 Label definitions and defaults
-- NSFW: content inappropriate for minors or professional settings.
-- Spoiler: content revealing critical plot/game/event details.
+### 8.3 Interactions by State
 
-EARS requirements:
-- THE platform SHALL default NSFW=false and Spoiler=false unless overridden by policy or community defaults.
-- WHERE a post is labeled NSFW, THE platform SHALL restrict previews and demand explicit user choice to view based on user preferences and age-gating.
-- WHERE a post is labeled Spoiler, THE platform SHALL shield thumbnails and excerpts in discovery contexts until the user opts to reveal.
+| Capability | Draft | Published | Deleted by Author | Removed by Moderator | Quarantined | Locked | Archived |
+|------------|-------|----------|-------------------|----------------------|-------------|--------|----------|
+| Visible to guests | ❌ | ✅ (subject to flags) | ❌ | ❌ | ❌ | ✅ (subject to flags) | ✅ (subject to flags) |
+| Visible to members | ❌ | ✅ (subject to flags) | ❌ | ❌ | ❌ | ✅ (subject to flags) | ✅ (subject to flags) |
+| Visible to moderators/admins | ✅ (author only for Draft; mods/admins not by default) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| New comments allowed | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| New votes allowed | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Author edits allowed | ✅ | ✅ (per Section 7.1 windows) | ❌ | ❌ | ❌ | ❌ | ❌ |
 
-### 5.2 Community configurations and enforcement
-- WHERE a community is marked NSFW, THE platform SHALL default new posts NSFW=true unless a moderator explicitly clears the label.
-- WHERE a community disallows NSFW, THE platform SHALL block posts marked NSFW.
-- WHEN moderators change labels, THE platform SHALL notify the author with updated labels and reason category.
-- IF repeated mislabeling is detected for an author (e.g., 3 NSFW mislabels within 30 days), THEN THE platform SHALL restrict that author’s posting eligibility for 7 days in that community and notify both author and moderators.
+EARS
+- WHILE a post is Locked, THE platform SHALL prevent new comments and votes but SHALL allow reading where visibility rules permit.
+- WHILE a post is Archived, THE platform SHALL prevent edits, comments, and votes for all users including moderators, except admins who may alter state for compliance.
+- WHERE a post is Quarantined, THE platform SHALL exclude it from public feeds and search and restrict access to moderators/admins.
 
-### 5.3 Flair/Tags rules
-- THE platform SHALL support 0–5 tags per post by default; communities may reduce this maximum.
-- THE platform SHALL ensure only community-defined tags can be applied.
-- WHERE communities grant tagging rights to members, THE platform SHALL allow members to apply tags at submission and during the edit window.
-- THE platform SHALL allow moderators and owners to change tags at any time.
+### 8.4 Archival Policy
+- THE platform SHALL archive posts 180 days after the later of publication date or last comment activity.
+- THE platform SHALL display an “archived” indicator when posts reach Archived state.
 
-## 6. Spam, Duplicate, and Anti-manipulation Policies
-### 6.1 Rate limits and eligibility gating
-- THE platform SHALL enforce minimum account age of 24 hours and verified email before allowing posting unless a community explicitly waives this.
-- WHERE an account has negative karma or fewer than 10 total karma points, THE platform SHALL restrict posting to 1 post per community per 12 hours.
-- THE platform SHALL enforce a default limit of 5 posts per user per 24 hours across the site and 3 per 24 hours per community; communities may configure stricter limits.
-- THE platform SHALL apply 50% tighter limits for 30 days after confirmed spam violations.
+EARS
+- WHEN a post reaches 180 days without new activity, THE platform SHALL transition it to Archived state and disable new interactions.
 
-### 6.2 Duplicate detection and cross-posting
-- THE platform SHALL treat Link Post duplicates within the same community within 30 days as disallowed and SHALL reference the prior submission.
-- WHERE cross-posting is enabled, THE platform SHALL allow a post to be cross-posted to another community by referencing the original post with attribution and link back to source.
-- THE platform SHALL allow at most one cross-post per destination community per original post.
-- THE platform SHALL flag potential duplicate Text Posts when title+body match an author’s own prior submission in the same community within 24 hours; authors may proceed only if moderators allow duplicates.
-- THE platform SHALL flag potential duplicate Image Posts via perceptual similarity concepts and route to moderator review where configured.
+## 9. Community-Level Controls and Overrides
 
-### 6.3 Anti-manipulation safeguards
-- IF a user rapidly deletes and recreates similar posts to reset votes within 60 minutes, THEN THE platform SHALL block recreation for 60 minutes.
-- IF a domain accumulates 3 spam removals across 2 communities within 7 days, THEN THE platform SHALL add the domain to a temporary watchlist for 14 days requiring moderator approval for new link posts to that domain.
-- WHERE automated signals exceed spam thresholds (community-configured), THE platform SHALL route submission to a "Pending Review" queue visible to moderators and the author until actioned.
+- THE platform SHALL allow communities to restrict allowed post types (e.g., link-only) per community rules defined in the [Community Management Requirements](./05-communityPlatform-community-management.md).
+- THE platform SHALL allow communities to enforce required tags or templates (business-level) for titles or text bodies.
+- THE platform SHALL allow communities to ban specific domains for link posts.
+- THE platform SHALL allow communities to disallow GIF attachments.
 
-## 7. Content Visibility and Removal States
-### 7.1 Conceptual states and transitions
-States:
-- Active: visible, open to comments and votes.
-- Locked: visible; new comments and vote changes disabled.
-- Archived: visible; comments, votes, and edits disabled.
-- Removed by Moderation: hidden from general viewers; visible to author, moderators, admins.
-- Removed by Admin: hidden from all but admins.
-- Deleted by Author: hidden from general viewers; marker shown to the author; comments treated per commenting policy.
-- Pending Review: temporarily limited visibility pending moderation.
-- Legal Hold: preserved and non-editable; visibility per policy direction.
+EARS
+- WHERE a community disallows text posts, THE platform SHALL reject attempts to create text posts in that community with a rule-specific message.
+- WHEN a post uses a banned domain, THE platform SHALL reject creation and name the domain in the error.
 
-EARS requirements:
-- WHEN a new post is created, THE platform SHALL set state to Active unless policy routes to Pending Review.
-- WHERE a post is Locked, THE platform SHALL prevent new comments and vote changes and allow unlocking by eligible roles.
-- WHERE a post is Archived, THE platform SHALL prevent edits, comments, and votes, and keep visibility unchanged.
-- WHERE a post is Removed by Moderation, THE platform SHALL restrict visibility to author, moderators of that community, and administrators.
-- WHERE a post is Removed by Admin, THE platform SHALL restrict visibility to administrators only and SHALL notify the author with a policy reason.
-- WHERE a post is Deleted by Author, THE platform SHALL hide content from others and keep an audit marker for authorized viewers.
+## 10. Duplicate and Low-Value Content Rules
 
-### 7.2 Who can see what (by state)
-- Active/Locked/Archived: everyone with access to the community (guests if public; members if private/restricted).
-- Pending Review: author, scoped moderators/owners, administrators.
-- Removed by Moderation: author, scoped moderators/owners, administrators.
-- Removed by Admin: administrators only.
-- Deleted by Author: author, moderators/owners, administrators (with marker and prior content redacted to general viewers).
-- Legal Hold: visibility directed by legal instruction; default to moderators/owners and administrators; exclude general viewers.
+- THE platform SHALL prevent immediate duplicates by the same author within the same community.
+- THE platform SHALL prevent link duplicate submissions of the same normalized URL within the same community for 7 days, regardless of author.
+- THE platform SHALL flag potential duplicates within the last 30 days to authors before publication, allowing override with justification where community permits.
+- THE platform SHALL prevent title-only near-duplicates by the same author within 24 hours in the same community (case-insensitive match ignoring punctuation).
 
-### 7.3 Notifications and transparency
-- WHEN moderators/admins change a post’s state, THE platform SHALL notify the author with action, reason category, and appeal path if applicable.
-- WHERE visibility state changes, THE platform SHALL adjust feed eligibility immediately to prevent surfacing in general listings.
-- THE platform SHALL maintain public indicators for locked/archived states so users understand interaction limits (display specifics are out of scope).
+EARS
+- WHEN a link post URL matches a normalized URL of a recent submission within 7 days, THE platform SHALL reject the post with a duplicate message including a reference to the prior submission.
+- WHERE a community permits duplicate overrides, THE platform SHALL accept the post only when the author provides a justification up to 500 characters.
 
-### 7.4 Lifecycle state transitions (Mermaid)
-```mermaid
-graph LR
-  A["Active"] --> B["Locked"]
-  A --> C["Archived"]
-  A --> D["Removed by Moderation"]
-  A --> E["Removed by Admin"]
-  A --> F["Deleted by Author"]
-  A --> G["Pending Review"]
-  G --> A
-  B --> A
-  B --> C
-  D --> A
-  D --> E
-  E --> H["Legal Hold"]
-  F --> C
-```
+## 11. Rate Limits and Anti-Spam Controls (Posting Scope)
 
-## 8. Error Handling and Recovery (business semantics)
-Error categories (business keys map to the Exception Handling and Error Model):
-- POST_VALIDATION_FAILED, POST_DUPLICATE_DETECTED, POST_QUOTA_EXCEEDED, POST_SPAM_SUSPECTED, POST_LOCKED, POST_ARCHIVED, COMMUNITY_RULE_VIOLATION, LINK_UNREACHABLE, IMAGE_POLICY_VIOLATION.
+- THE platform SHALL enforce a baseline posting rate limit per member: maximum 10 posts per hour across all communities.
+- THE platform SHALL enforce a per-community rate limit per member: maximum 5 posts per hour in a single community.
+- THE platform SHALL apply stricter limits to new accounts: accounts under 7 days old are limited to 3 posts per hour across all communities.
+- THE platform SHALL enforce a per-IP safety cap for unauthenticated creation attempts (e.g., failures): maximum 20 failed attempts per hour.
 
-EARS requirements:
-- WHEN an error occurs, THE platform SHALL present a human-readable summary, a stable error key, and recovery guidance consistent with the exception model.
-- WHERE recovery is possible (e.g., retry-after), THE platform SHALL include the earliest local-time retry estimate.
-- IF multiple validation failures occur, THEN THE platform SHALL prioritize the most critical failure and MAY include secondary hints.
-- WHEN link fetching fails, THE platform SHALL allow submission without preview and SHALL attempt preview enrichment later.
-- WHEN rate limits are exceeded, THE platform SHALL communicate the applicable window and earliest retry time.
+EARS
+- WHEN a member exceeds rate limits, THE platform SHALL reject additional posting attempts with a rate limit error including reset timing.
+- WHERE an account is under 7 days old, THE platform SHALL apply the stricter limit regardless of global limits.
 
-## 9. Performance and Experience Expectations
-- WHEN a valid post is submitted, THE platform SHALL complete creation and respond within 2 seconds for 95% of requests measured at the service boundary, excluding image upload transfer time.
-- WHERE an image upload is required, THE platform SHALL provide upload progress feedback and finalize the post within 3 seconds after the image is received for 95% of requests.
-- WHEN a post is created, THE platform SHALL make it discoverable in community feeds within 5 seconds and in home feeds within 10 seconds.
-- WHEN locking, removing, or restoring a post, THE platform SHALL reflect the state change in feeds within 5 seconds.
+## 12. Error Handling and User-Facing Outcomes
 
-## 10. Auditability, Logging, Privacy, and Accessibility
-Audit and logging:
-- THE platform SHALL log post lifecycle actions: create, edit, label/tag changes, lock/unlock, remove/restore, delete, archive transitions, and moderator/admin actions with actor, reason category, and timestamp.
-- WHERE a post is removed or restored, THE platform SHALL require a reason category selected from a standardized policy taxonomy.
-- THE platform SHALL preserve audit logs for at least 365 days or per legal requirement, whichever is greater.
+Validation Errors
+- WHEN validation fails (title, body, URL, attachments, flags), THE platform SHALL return a list of specific issues including field, rule, and measured value.
 
-Privacy and metadata:
-- THE platform SHALL avoid exposing sensitive media metadata (e.g., GPS EXIF) in public contexts and SHALL align with privacy policy regarding retention and sanitization.
+Permission Errors
+- IF a guest attempts to create a post, THEN THE platform SHALL deny with an authentication required message.
+- IF a member is banned from a community, THEN THE platform SHALL deny posting with a community-ban message.
 
-Accessibility:
-- WHERE alt text is required by community or platform policy, THE platform SHALL block image submission without alt text and SHALL provide guidance.
-- WHERE Spoiler is true, THE platform SHALL ensure previews do not reveal spoilered content in discovery contexts.
-- THE platform SHALL uphold localization and timezone display expectations per non-functional requirements.
+Flag/Policy Errors
+- IF NSFW content is detected without NSFW flag, THEN THE platform SHALL require the author to add the flag before publishing.
+- IF Spoiler content is detected without Spoiler flag where community rules require it, THEN THE platform SHALL require spoiler labeling.
 
-## 11. Dependencies and Related Documents
-- [Service Overview](./01-communityPlatform-service-overview.md)
-- [User Roles and Permissions](./03-communityPlatform-user-roles-and-permissions.md)
-- [Authentication and Account Lifecycle](./04-communityPlatform-authentication-and-account-lifecycle.md)
-- [Community and Moderation Rules](./05-communityPlatform-community-and-moderation-rules.md)
-- [Voting and Karma System](./07-communityPlatform-voting-and-karma-system.md)
-- [Commenting and Nested Replies](./08-communityPlatform-commenting-and-nested-replies.md)
-- [Feed Sorting and Discovery](./09-communityPlatform-feed-sorting-and-discovery.md)
-- [User Profiles and Subscriptions](./10-communityPlatform-user-profiles-and-subscriptions.md)
-- [Reporting, Safety, and Trust](./11-communityPlatform-reporting-safety-and-trust.md)
-- [Non-functional Requirements](./12-communityPlatform-nonfunctional-requirements.md)
-- [Exception Handling and Error Model](./13-communityPlatform-exception-handling-and-error-model.md)
-- [Data Lifecycle and Governance](./14-communityPlatform-data-lifecycle-and-governance.md)
+State Errors
+- IF an author attempts to edit a post outside allowed windows, THEN THE platform SHALL deny the edit and indicate the rule preventing it.
+- IF an author attempts to delete an already deleted post, THEN THE platform SHALL indicate the post’s current state without changing it.
 
-## 12. Acceptance Criteria (business-focused)
-- GIVEN guestUser, WHEN attempting to submit a post, THEN submission is denied with guidance to register/login.
-- GIVEN memberUser with unverified email, WHEN attempting to submit a post, THEN submission is denied with AUTH_EMAIL_NOT_VERIFIED and resend option.
-- GIVEN memberUser admitted to a community that disallows Image posts, WHEN submitting an Image post, THEN POST_VALIDATION_FAILED with community policy reference.
-- GIVEN a Link Post duplicate within 30 days (canonicalized), WHEN author submits, THEN POST_DUPLICATE_DETECTED and reference to existing post is presented.
-- GIVEN an Image Post of 12 MB, WHEN author submits, THEN POST_VALIDATION_FAILED with IMAGE_POLICY_VIOLATION and size guidance.
-- GIVEN a Text Post with prohibited terms, WHEN author submits, THEN COMMUNITY_RULE_VIOLATION with rule reference.
-- GIVEN a post labeled NSFW and viewer without opt-in, WHEN the viewer encounters the post in discovery, THEN content is gated until opt-in.
-- GIVEN a locked post, WHEN any user tries to comment or change votes, THEN POST_LOCKED denial occurs and state is indicated.
-- GIVEN a post archived after 180 days, WHEN author attempts to edit or label, THEN POST_ARCHIVED denial occurs.
-- GIVEN a moderator removes a post, WHEN author views it, THEN the state is "Removed by Moderation" with appeal path visible to the author.
-- GIVEN a community-level rate limit exceeded, WHEN author attempts new submission, THEN POST_QUOTA_EXCEEDED with retry-after is shown.
-- GIVEN a watchlisted domain, WHEN a new Link Post is submitted, THEN submission is placed in Pending Review and the author is informed.
-- GIVEN restoration by a moderator within 30 days, WHEN the post is restored, THEN it reappears in feeds within 5 seconds and notifications are sent.
+## 13. Performance and Responsiveness Expectations (Posting Scope)
+
+- THE platform SHALL validate and respond to post creation requests within 2 seconds for posts without attachments under normal load.
+- THE platform SHALL validate and respond to post creation with attachments within 5 seconds after upload completion for up to 10 images totaling 50 MB under normal load.
+- THE platform SHALL reflect successful edits and deletions in feeds and profile views within 5 seconds of confirmation.
+
+EARS
+- WHEN a valid post is submitted, THE platform SHALL confirm creation within 2 seconds (no attachments) or 5 seconds (with attachments) under normal load.
+
+## 14. Acceptance Criteria and Examples
+
+Post Types
+- WHEN creating a text post with title length 50 and body length 10,000, THE platform SHALL accept if all other rules pass.
+- WHEN creating a link post with URL length 150 and summary length 200, THE platform SHALL accept if the URL scheme is HTTPS and the domain is not banned.
+- WHEN creating an image post with 3 PNG images (2 MB each) and captions 120 characters each, THE platform SHALL accept.
+
+Validation Failures
+- IF a title is 0 characters, THEN THE platform SHALL reject with “Title must be 1–300 characters.”
+- IF a URL uses ftp://, THEN THE platform SHALL reject with “Only http and https schemes are allowed.”
+- IF an image is 12 MB, THEN THE platform SHALL reject with “Image exceeds 10 MB limit.”
+
+Flags
+- WHEN posting in an NSFW community without setting NSFW flag, THE platform SHALL auto-apply NSFW and proceed; visibility remains restricted per Section 5.
+- WHEN marking a post as Spoiler, THE platform SHALL mask previews until user reveal.
+
+State and Lifecycle
+- WHEN a post reaches 180 days of inactivity, THE platform SHALL archive it and disable new comments and votes.
+- IF a moderator removes a post, THEN THE platform SHALL transition to “Removed by Moderator” and hide from public feeds while retaining for case handling.
+
+Compliance and Ownership
+- THE platform SHALL preserve authorship and timestamps for audit and display across post lifecycle states.
+- THE platform SHALL ensure that community-level posting rules are enforced uniformly and deterministically.
+
+This document defines business requirements only. All technical implementation decisions (architecture, APIs, and storage) are the responsibility of the development team and are intentionally left unspecified here.

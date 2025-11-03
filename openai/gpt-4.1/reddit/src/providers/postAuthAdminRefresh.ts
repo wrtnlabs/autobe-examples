@@ -13,123 +13,107 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthAdminRefresh(props: {
   body: ICommunityPlatformAdmin.IRefresh;
 }): Promise<ICommunityPlatformAdmin.IAuthorized> {
-  // Try to get refresh token from request context: cookies or headers
-  const req = (MyGlobal as any).requestContext?.req;
-  const refreshToken =
-    req?.cookies?.refresh ||
-    req?.cookies?.refresh_token ||
-    req?.headers?.["x-refresh-token"] ||
-    req?.headers?.refresh ||
-    req?.headers?.authorization ||
-    undefined;
-
-  if (!refreshToken || typeof refreshToken !== "string") {
-    throw new HttpException("Refresh token not provided", 401);
-  }
-
-  let decoded: any = null;
+  // 1. Decode and validate refresh token
+  let decoded: { id: string; session_id: string; type: string };
   try {
-    decoded = jwt.verify(refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    });
-  } catch (err) {
-    const t = toISOStringSafe(new Date());
-    await MyGlobal.prisma.community_platform_audit_logs.create({
-      data: {
-        id: v4(),
-        actor_type: "admin",
-        actor_id:
-          decoded && decoded.id
-            ? decoded.id
-            : "00000000-0000-0000-0000-000000000000",
-        action_type: "refresh",
-        target_table: "community_platform_admins",
-        target_id: decoded && decoded.id ? decoded.id : null,
-        details: "Refresh token invalid or expired",
-        created_at: t,
-      },
-    });
-    throw new HttpException("Refresh token invalid or expired", 401);
+    }) as { id: string; session_id: string; type: string };
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  const admin = await MyGlobal.prisma.community_platform_admins.findUnique({
-    where: { id: decoded.id },
-  });
-  if (!admin) {
-    const t = toISOStringSafe(new Date());
-    await MyGlobal.prisma.community_platform_audit_logs.create({
-      data: {
-        id: v4(),
-        actor_type: "admin",
-        actor_id: decoded.id,
-        action_type: "refresh",
-        target_table: "community_platform_admins",
-        target_id: decoded.id,
-        details: "Admin not found for refresh",
-        created_at: t,
+  // 2. Find valid, unexpired session and admin
+  const session =
+    await MyGlobal.prisma.community_platform_admin_sessions.findFirst({
+      where: {
+        id: decoded.session_id,
+        community_platform_admin_id: decoded.id,
+      },
+      include: {
+        admin: true,
       },
     });
-    throw new HttpException("Admin not found", 401);
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
   }
-  if (admin.status !== "active" || admin.deleted_at) {
-    const t = toISOStringSafe(new Date());
-    await MyGlobal.prisma.community_platform_audit_logs.create({
-      data: {
-        id: v4(),
-        actor_type: "admin",
-        actor_id: admin.id,
-        action_type: "refresh",
-        target_table: "community_platform_admins",
-        target_id: admin.id,
-        details: "Admin not active (status/deleted_at)",
-        created_at: t,
-      },
-    });
-    throw new HttpException("Admin is not active", 403);
+  if (
+    session.expired_at &&
+    new Date(session.expired_at).getTime() <= Date.now()
+  ) {
+    throw new HttpException("Session expired", 401);
+  }
+  if (session.admin.deleted_at !== null) {
+    throw new HttpException("Account deleted", 403);
   }
 
-  const now = new Date();
-  const accessExpiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const nowStr = toISOStringSafe(now);
-  const accessExpStr = toISOStringSafe(accessExpiresAt);
-  const refreshExpStr = toISOStringSafe(refreshExpiresAt);
-  const payload = { id: admin.id, type: "admin" };
-  const access = jwt.sign(payload, MyGlobal.env.JWT_SECRET_KEY, {
-    issuer: "autobe",
-    expiresIn: "1h",
-  });
-  const refresh = jwt.sign(payload, MyGlobal.env.JWT_SECRET_KEY, {
-    issuer: "autobe",
-    expiresIn: "7d",
+  // 3. Produce new tokens, expiration values
+  const now = Date.now();
+  const accessExpire = toISOStringSafe(new Date(now + 60 * 60 * 1000));
+  const refreshExpire = toISOStringSafe(
+    new Date(now + 7 * 24 * 60 * 60 * 1000),
+  );
+  const nowIso = toISOStringSafe(new Date());
+  const accessToken = jwt.sign(
+    {
+      type: "admin",
+      id: session.admin.id,
+      session_id: session.id,
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+  const refreshToken = jwt.sign(
+    {
+      type: "admin",
+      id: session.admin.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  // 4. Update session expiration (refreshExpire as date string parsed to Date by Prisma, but always use string in input)
+  await MyGlobal.prisma.community_platform_admin_sessions.update({
+    where: { id: session.id },
+    data: { expired_at: new Date(now + 7 * 24 * 60 * 60 * 1000) },
   });
 
-  await MyGlobal.prisma.community_platform_audit_logs.create({
+  // 5. Audit: log the refresh as a successful login attempt
+  await MyGlobal.prisma.community_platform_admin_login_attempts.create({
     data: {
       id: v4(),
-      actor_type: "admin",
-      actor_id: admin.id,
-      action_type: "refresh",
-      target_table: "community_platform_admins",
-      target_id: admin.id,
-      details: "Refresh token granted successfully",
-      created_at: nowStr,
+      community_platform_admin_id: session.admin.id,
+      attempted_at: nowIso,
+      ip: session.ip,
+      success: true,
     },
   });
 
+  // 6. Return full authorized DTO for admin: respect undefined/deleted_at and omit admin summary for refresh endpoint
   return {
-    id: admin.id,
-    email: admin.email,
-    superuser: admin.superuser,
-    status: admin.status,
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    id: session.admin.id,
+    email: session.admin.email,
+    display_name: session.admin.display_name,
+    created_at: toISOStringSafe(session.admin.created_at),
+    updated_at: toISOStringSafe(session.admin.updated_at),
+    deleted_at: session.admin.deleted_at
+      ? toISOStringSafe(session.admin.deleted_at)
+      : undefined,
     token: {
-      access,
-      refresh,
-      expired_at: accessExpStr,
-      refreshable_until: refreshExpStr,
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpire,
+      refreshable_until: refreshExpire,
     },
   };
 }

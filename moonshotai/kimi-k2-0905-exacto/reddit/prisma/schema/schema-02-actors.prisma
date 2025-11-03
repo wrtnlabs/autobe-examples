@@ -1,0 +1,393 @@
+/// Guest users who can browse public content without registration. Guests
+/// represent the entry point of the user journey, allowing content discovery
+/// before requiring commitment to register.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique guest identifier used for tracking guest sessions and browsing
+  /// behavior.
+  code String
+  
+  /// IP address for session management and basic analytics tracking.
+  ip_address String
+  
+  /// Browser user agent string for analytics and compatibility tracking.
+  user_agent String
+  
+  /// Timestamp of the last activity from this guest for session management.
+  last_activity_at DateTime
+  
+  /// Optional email address for notifications when provided by guest users.
+  email String?
+  
+  /// Whether the guest email has been verified when provided.
+  is_email_verified Boolean
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest session was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_guest_sessions reddit_like_community_guest_sessions[]
+  
+  @@unique([code])
+  @@index([last_activity_at])
+  @@index([ip_address])
+  @@index([is_email_verified])
+  @@index([deleted_at])
+}
+
+/// Guest session tracking for anonymous user activity monitoring. Manages
+/// guest authentication sessions through secure cookie-based tracking.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Guest user's {@link reddit_like_community_guests.id}
+  guest_id String
+  
+  /// IP address for session management and security tracking.
+  ip String
+  
+  /// Connection URL for session tracking and auditing.
+  href String
+  
+  /// Referrer URL for tracking user navigation patterns.
+  referrer String
+  
+  /// Session creation timestamp for session management.
+  created_at DateTime
+  
+  /// Session expiration timestamp for security and cleanup.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  guest reddit_like_community_guests @relation(fields: [guest_id], references: [id], onDelete: Cascade)
+  
+  @@index([guest_id, created_at])
+}
+
+/// Community members who actively participate in communities through
+/// posting, commenting, and voting. Members form the core user base of the
+/// platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's email address used for authentication and notifications.
+  email String
+  
+  /// Member's unique public username for community participation.
+  username String
+  
+  /// Hashed password for authentication security.
+  password_hash String
+  
+  /// Member's display name for community interactions.
+  nickname String
+  
+  /// Member's biography for community profile.
+  bio String?
+  
+  /// URL to member's profile avatar image.
+  avatar_url String?
+  
+  /// Whether the member's email address has been verified.
+  is_verified Boolean
+  
+  /// Whether the member is currently banned from the platform.
+  is_banned Boolean
+  
+  /// Timestamp when the member was banned, if applicable.
+  banned_at DateTime?
+  
+  /// Member's total karma score from posts and comments.
+  total_karma Int
+  
+  /// Timestamp when the member registered.
+  created_at DateTime
+  
+  /// Timestamp of the last profile update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_member_sessions reddit_like_community_member_sessions[]
+  reddit_like_community_posts reddit_like_community_posts[]
+  reddit_like_community_post_snapshots reddit_like_community_post_snapshots[]
+  reddit_like_community_comments reddit_like_community_comments[]
+  reddit_like_community_comment_snapshots reddit_like_community_comment_snapshots[]
+  reddit_like_community_votes reddit_like_community_votes[]
+  reddit_like_community_vote_fraud_alerts reddit_like_community_vote_fraud_alerts[]
+  reddit_like_community_vote_patterns reddit_like_community_vote_patterns[]
+  reddit_like_community_vote_behavior_analysis reddit_like_community_vote_behavior_analysis[]
+  reddit_like_community_memberships reddit_like_community_memberships[]
+  reddit_like_community_user_feeds reddit_like_community_user_feeds[]
+  reddit_like_community_reports_of_reddit_like_community_a5b61283 reddit_like_community_reports[] @relation("reddit_like_community_reports_of_reddit_like_community_a5b61283")
+  reddit_like_community_reports_of_content_author_id reddit_like_community_reports[] @relation("reddit_like_community_reports_of_content_author_id")
+  reddit_like_community_enforcement_actions reddit_like_community_enforcement_actions[]
+  reddit_like_community_appeals_of_reddit_like_community_8913a5c7 reddit_like_community_appeals[] @relation("reddit_like_community_appeals_of_reddit_like_community_8913a5c7")
+  reddit_like_community_appeals_of_reviewer_id reddit_like_community_appeals[] @relation("reddit_like_community_appeals_of_reviewer_id")
+  reddit_like_community_moderation_decisions reddit_like_community_moderation_decisions[]
+  reddit_like_community_karma_events_of_user_id reddit_like_community_karma_events[] @relation("reddit_like_community_karma_events_of_user_id")
+  reddit_like_community_karma_events_of_initiator_id reddit_like_community_karma_events[] @relation("reddit_like_community_karma_events_of_initiator_id")
+  reddit_like_community_user_karma_totals reddit_like_community_user_karma_totals?
+  reddit_like_community_karma_leaderboards reddit_like_community_karma_leaderboards[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([is_verified])
+  @@index([is_banned])
+  @@index([created_at])
+  @@index([total_karma])
+}
+
+/// Member authentication sessions for tracking user login activity and
+/// maintaining secure access to the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's {@link reddit_like_community_members.id}
+  member_id String
+  
+  /// IP address for session management and security monitoring.
+  ip String
+  
+  /// Connection URL for session tracking and auditing.
+  href String
+  
+  /// Referrer URL for tracking user navigation patterns.
+  referrer String
+  
+  /// Session creation timestamp for session management.
+  created_at DateTime
+  
+  /// Session expiration timestamp for security.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_like_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_community_posts reddit_like_community_posts[]
+  
+  @@index([member_id, created_at])
+}
+
+/// Community moderators who manage and moderate individual communities.
+/// Moderators have elevated permissions for content management and user
+/// oversight within their assigned communities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's email address used for authentication.
+  email String
+  
+  /// Moderator's unique public username for platform visibility.
+  username String
+  
+  /// Hashed password for authentication security.
+  password_hash String
+  
+  /// Moderator's display name for community interactions.
+  nickname String
+  
+  /// Moderator's total karma score from platform activities.
+  total_karma Int
+  
+  /// Whether the moderator's email has been verified.
+  is_verified Boolean
+  
+  /// Whether the moderator is currently active and authorized.
+  is_active Boolean
+  
+  /// Timestamp when the moderator registered.
+  created_at DateTime
+  
+  /// Timestamp of the last profile update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_moderator_sessions reddit_like_community_moderator_sessions[]
+  reddit_like_community_moderator_assignments reddit_like_community_moderator_assignments[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([is_verified])
+  @@index([is_active])
+  @@index([created_at])
+  @@index([total_karma])
+}
+
+/// Moderator authentication sessions for tracking admin-level access and
+/// maintaining security for elevated privileges.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's {@link reddit_like_community_moderators.id}
+  moderator_id String
+  
+  /// IP address for session management and security monitoring.
+  ip String
+  
+  /// Connection URL for session tracking and auditing.
+  href String
+  
+  /// Referrer URL for tracking user navigation patterns.
+  referrer String
+  
+  /// Session creation timestamp for session management.
+  created_at DateTime
+  
+  /// Session expiration timestamp for security.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator reddit_like_community_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([moderator_id, created_at], map: "reddit_like_community_moderator_sessions_moderator_id__de2ccf45")
+}
+
+/// Platform administrators who have system-wide permissions for managing the
+/// entire platform. Admins oversee community operations, user management,
+/// and platform policies.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin's email address used for authentication and notifications.
+  email String
+  
+  /// Admin's unique public username for platform administration.
+  username String
+  
+  /// Hashed password for authentication security.
+  password_hash String
+  
+  /// Admin's display name for platform interactions.
+  nickname String
+  
+  /// Admin role level determining permissions (super_admin, admin, support).
+  role String
+  
+  /// Whether the admin's email has been verified.
+  is_verified Boolean
+  
+  /// Whether the admin is currently active and authorized.
+  is_active Boolean
+  
+  /// Timestamp when the admin was added to the system.
+  created_at DateTime
+  
+  /// Timestamp of the last profile update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_admin_sessions reddit_like_community_admin_sessions[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([role])
+  @@index([is_verified])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Administrator authentication sessions for high-privilege access tracking
+/// and maintaining security oversight for platform management operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's {@link reddit_like_community_admins.id}
+  admin_id String
+  
+  /// IP address for session management and security monitoring.
+  ip String
+  
+  /// Connection URL for session tracking and auditing.
+  href String
+  
+  /// Referrer URL for tracking user navigation patterns.
+  referrer String
+  
+  /// Session creation timestamp for session management.
+  created_at DateTime
+  
+  /// Session expiration timestamp for security.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin reddit_like_community_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+}

@@ -1,10 +1,11 @@
 import { tags } from "typia";
 
-/** Customer 역할 JWT Payload */
+/** Authenticated payload injected for Customer role. */
 export interface CustomerPayload {
-  /** Top-level customer ID (shopping_mall_customers.id) */
+  /** Top-level customer ID (UUID). */
   id: string & tags.Format<"uuid">;
-
-  /** 역할 구분자 (discriminator) */
+  /** Session ID associated with this login. */
+  session_id: string & tags.Format<"uuid">;
+  /** Discriminator specifying actor type. */
   type: "customer";
 }

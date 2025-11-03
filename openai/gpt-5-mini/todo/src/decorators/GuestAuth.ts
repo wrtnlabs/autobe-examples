@@ -5,7 +5,7 @@ import { Singleton } from "tstl";
 import { guestAuthorize } from "../providers/authorize/guestAuthorize";
 
 /**
- * Parameter decorator to inject authenticated GuestPayload and add Bearer security to Swagger.
+ * Parameter decorator that injects an authenticated GuestPayload.
  */
 export const GuestAuth =
   (): ParameterDecorator =>
@@ -16,7 +16,9 @@ export const GuestAuth =
   ): void => {
     SwaggerCustomizer((props) => {
       props.route.security ??= [];
-      props.route.security.push({ bearer: [] });
+      props.route.security.push({
+        bearer: [],
+      });
     })(target, propertyKey as string, undefined!);
     singleton.get()(target, propertyKey, parameterIndex);
   };

@@ -1,0 +1,86 @@
+/// User accounts for the Todo application. Each user represents an
+/// individual who can create and manage their personal todo items. Users
+/// authenticate with email and password to access their todo dashboard.
+/// {@link todo_app_user_sessions.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address used for authentication and communication. Must be
+  /// unique across all users.
+  email String
+  
+  /// Securely hashed password for user authentication. Never stored in plain
+  /// text.
+  password_hash String
+  
+  /// Current status of the user account. Possible values: 'active',
+  /// 'inactive', 'suspended'.
+  status String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was soft deleted. Null if account is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_user_sessions todo_app_user_sessions[]
+  todo_app_todos todo_app_todos[]
+  
+  @@unique([email])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// User session records for authentication tracking. Each session represents
+/// an active login instance for a user. Used for audit tracing of user
+/// actions and secure session management. {@link todo_app_users.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// IP address from which the session was established.
+  ip String
+  
+  /// Connection URL where the session was initiated.
+  href String
+  
+  /// Referrer URL that directed the user to the application.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was terminated. Null if session is
+  /// still active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_user_id, created_at])
+}

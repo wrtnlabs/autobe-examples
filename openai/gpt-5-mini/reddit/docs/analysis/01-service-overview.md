@@ -1,357 +1,189 @@
-# 01-service-overview.md — Service overview and business model for communityPortal
+# Requirements Analysis Report — communityBbs (Reddit-like Community Platform)
 
-## Service Vision and Purpose
-communityPortal is a community-driven discussion platform that enables people to form and join focused communities, share text, links, and images, engage through comments and votes, and self-organize around shared interests. The platform exists to facilitate discovery of high-quality, community-relevant content, encourage constructive conversation, and provide tools for community moderation and safety.
+## 1. Executive Summary and Scope
+communityBbs enables community-driven discussion where users create topic-based communities, publish text/link/image posts, comment and reply in nested threads, vote on content, subscribe to communities, and report inappropriate content for moderation. The platform emphasizes transparent moderation, configurable community governance, measurable reputation through karma, and predictable feed behaviors (hot, new, top, controversial).
 
-Purpose summary (concise): Provide a scalable, moderation-aware community platform that balances open discussion with manageable moderation cost and fair, transparent community governance.
+Scope: Business-level functional and non-functional requirements for core features: user registration and login, community creation and management, post creation and lifecycle, comment threads with nested replies, voting and karma, feed sorting and pagination, subscriptions and notifications, user profiles, reporting and moderation workflows, data lifecycle and retention, and acceptance criteria. Implementation details (APIs, database schema, infrastructure) are intentionally out of scope and left to the development team.
 
-## Target Users and Market Positioning
-- Primary users: Individual members who seek topic-specific communities to read, discuss, and share content.
-- Community creators and moderators: Users who establish communities and maintain community rules.
-- Casual visitors (guests): Unauthenticated users who discover content and communities.
-- Platform administrators: Staff who oversee global policy, escalations, and platform health.
+Success metrics and KPIs: Monthly Active Users (MAU), Daily Active Users (DAU), posts per day, comments per post, report-to-action time, moderation resolution SLA, retention (30/60/90 days), and system availability.
 
-Market positioning: communityPortal targets niche- and interest-focused communities where members value clear community rules and lightweight tools for curation. It competes with general-purpose community platforms by prioritizing transparent moderation workflows, flexible community creation, and simple karma-driven reputation mechanics.
+## 2. Actors and Permissions
+Actors (business-level):
+- visitor: Unauthenticated user who can browse public communities and read posts and comments.
+- communityMember: Registered authenticated user who can create posts, comments, vote, subscribe, report, and manage their profile.
+- systemAdmin: Platform administrator who can act on escalated reports, suspend/ban accounts, manage community-level escalations, and access audit logs.
 
-## Core Value Proposition
-- Lower friction for community formation and subscription
-- Clear social signals (votes and karma) to surface valued content
-- Moderation tooling that scales with communities and reduces admin overhead
-- Member profiles that surface contributions and encourage healthy participation
+Permission matrix (business summary):
+- Browse public content: visitor, communityMember, systemAdmin
+- View private/community-restricted content: communityMember (if a member), systemAdmin
+- Create community: communityMember (subject to eligibility and rate limits), systemAdmin
+- Create post/comment: communityMember, systemAdmin
+- Vote: communityMember, systemAdmin
+- Subscribe to community: communityMember
+- Report content: communityMember
+- Moderate/resolve reports: community-level moderators and systemAdmin
 
-## High-level Goals and Success Metrics
-- Goal: Launch a Minimum Viable Product (MVP) supporting community creation, posting (text/link/image), commenting with nested replies, voting, subscription, profiles, and reporting.
-- Success metrics (measurable):
-  - Monthly Active Users (MAU) target for first 6 months: defined by stakeholders (example: 50k MAU)
-  - New communities created per month (MCC): target to be defined
-  - Average daily posts per community: baseline to be established during pilot
-  - Moderator resolution time for reports: median < 48 hours (business target)
-  - Content retention and recovery: percentage of posts restored on appeal (operational target)
+## 3. Authentication & Account Management (EARS requirements)
+- WHEN a visitor registers with email and password, THE system SHALL create an account in "unverified" state and SHALL send an email verification token valid for 7 days.
+- IF a user redeems a valid email verification token, THEN THE system SHALL transition the account to "verified" state and SHALL permit content-creation actions.
+- WHEN a verified user supplies valid credentials, THE system SHALL issue session tokens and SHALL allow authenticated actions for the lifetime of the token.
+- WHERE session tokens are used, THE system SHALL include at minimum the userId, role, and emailVerified flag in token claims; recommended access token lifetime is 15–30 minutes and recommended refresh token lifetime is 7–30 days (business recommendation).
+- WHEN a user requests password reset for a verified account, THE system SHALL send a single-use, time-limited reset token valid for 24 hours and SHALL allow password change only after token validation.
+- IF a user revokes sessions or resets password, THEN THE system SHALL invalidate refresh tokens for that account within 60 seconds.
+- WHEN an account is suspended by a systemAdmin, THE system SHALL prevent authentication and SHALL show a user-facing suspension message including reason code and appeal instructions.
 
-## Business Model: revenue and growth strategy
-### Why this service exists
-- Problem addressed: Existing community platforms can be noisy, costly to moderate, or limited in customization for community owners. There is demand for spaces where topic-focused communities can form and self-regulate with transparent reward mechanisms.
+Session and security advice (business): THE system SHALL require email verification before allowing state-changing actions, SHALL support per-device sessions with view-and-revoke capability in the account UI, and SHALL log authentication-related events (login success/failure, password-reset requests) to the audit log.
 
-### Revenue strategy (high-level)
-- Advertising: Native and community-targeted ads after reaching scale; ads should respect community rules and user privacy expectations.
-- Optional subscription tiers: Premium features for community creators or users (e.g., custom moderation tools, analytics, ad-free experience).
-- Marketplace or tipping (future): Voluntary payments to creators or communities.
-- Timeline: Monetization is optional for MVP; revenue features are deferred to post-MVP phases.
+## 4. Community Management and Governance (EARS requirements)
+- WHEN a verified communityMember requests to create a community, THE system SHALL validate that the community name is unique (case-insensitive) and SHALL reject names that are reserved or banned.
+- WHERE a community is approved, THE system SHALL record the creating user as community owner and SHALL allow the owner to appoint moderators and set visibility to public/private/restricted.
+- IF a community is set to "restricted" or "private", THEN THE system SHALL require membership approval for non-members to view or post.
+- WHEN a community receives sustained validated reports or escalations, THEN THE system SHALL permit systemAdmin to place it into "quarantine" state that restricts new postings until resolved.
+- THE system SHALL limit community creation to a configurable number per account (business default: 3 per 24 hours) to mitigate abuse.
 
-## Operating Assumptions and Constraints
-- Privacy and compliance: The platform SHALL operate with business-level commitments to privacy law compliance (e.g., GDPR, CCPA). Specific legal requirements and data retention policies will be defined with legal counsel.
-- Moderation cost constraint: Moderation workflows must balance human review workload and automated triage; moderation costs are a key constraint for business viability.
-- Feature scope constraint: Only the features explicitly requested by stakeholders are included in the MVP. No additional social features will be added without stakeholder approval.
+## 5. Post Management (text, link, image) (EARS requirements)
+- WHEN a verified communityMember creates a post, THE system SHALL accept type "text" (title + body), "link" (title + URL), or "image" (title + media attachments), and SHALL validate fields as follows:
+  - Title: non-empty, max 300 characters
+  - Text body (text posts): optional for link/image posts, max 40,000 characters for text posts
+  - URL (link posts): must use http or https and pass syntactic validation
+  - Images (image posts): allowed MIME types JPEG, PNG, GIF; single-file max 10 MB; total post payload max 20 MB; max images per post 10
+- IF a post exceeds content limits or violates format rules, THEN THE system SHALL reject the submission with a clear user-facing error indicating the violated constraint.
+- WHERE a community configures pre-approval for posts, THE system SHALL queue new posts in a moderation queue and SHALL mark them as unpublished until approved by moderator.
+- WHEN a post is published, THE system SHALL index it for feed inclusion and SHALL make it visible according to community visibility and user subscriptions.
 
-## Core Features — Detail, User Stories, Requirements, and Acceptance Criteria
-The following sections describe each feature requested by the user. For functional requirements that can be expressed in the EARS templates, requirements are written using EARS (WHEN, THE, SHALL, IF, THEN, WHERE, WHILE). All requirements are business-level and testable.
+Edit and deletion:
+- WHEN a post author edits their post within 24 hours of creation, THE system SHALL allow editing and SHALL record edit history (editorId, timestamp, previous content snapshot).
+- IF a post is deleted by its author, THE system SHALL perform a soft delete and SHALL retain the content for a configurable retention window (business default: 30 days) before permanent deletion unless legal hold applies.
 
-### 1) User registration and login
-Description: Allow new users to create accounts and existing users to authenticate. Unverified accounts may have limited capabilities.
+## 6. Commenting and Nested Replies (EARS requirements)
+- WHEN a verified communityMember comments on a post or replies to a comment, THE system SHALL accept the comment (max 10,000 characters) and SHALL attach metadata: authorId, timestamp, parentCommentId when applicable.
+- THE system SHALL support nested comment threads logically to unlimited depth but SHALL recommend UI-friendly rendering depth (example: collapse deeper than 8 levels). Presentation decisions are left to the frontend.
+- WHEN a comment is edited within an edit window (default 1 hour), THE system SHALL record edit metadata and preserve previous versions in the audit log for moderation purposes.
+- IF a comment accumulates multiple abuse reports (configurable threshold, business default: 5 reports within 48 hours), THEN THE system SHALL mark it for expedited moderator review and MAY hide it pending moderation.
 
-Representative user stories:
-- As a prospective member, I want to register an account with my email and password so that I can create posts and comments.
-- As a member, I want to log in and log out so that my identity is known and my actions are attributed to me.
+## 7. Voting and Karma System (EARS requirements)
+- WHEN a verified communityMember casts an upvote or downvote on a post or comment, THE system SHALL record exactly one active vote per user per target and SHALL update the content's visible vote counts immediately.
+- WHEN a user changes or removes their vote, THE system SHALL adjust the content's counts and recalculate any dependent karma changes.
+- THE system SHALL compute user karma using configurable point values (business example defaults: post upvote +10, post downvote -5, comment upvote +2, comment downvote -1). Point values SHALL be configurable by systemAdmin.
+- IF voting patterns consistent with coordinated manipulation are detected (heuristics and thresholds defined by product), THEN THE system SHALL flag affected accounts and SHALL temporarily exclude their votes from ranking and karma until reviewed.
 
-Functional requirements (EARS):
-- WHEN a user submits registration data (email, password), THE system SHALL validate the email format and password strength and create a pending account requiring email verification.
-- IF the submitted email is already in use, THEN THE system SHALL reject the registration and inform the user that the email is in use.
-- WHEN a verified user provides valid credentials, THE system SHALL authenticate the user and establish a user session.
-- IF authentication fails due to incorrect credentials, THEN THE system SHALL report an authentication error to the user and record the failed attempt for rate-limiting/anti-abuse analysis.
+## 8. Feed Sorting and Pagination (hot, new, top, controversial) (EARS requirements)
+- THE system SHALL present feed sorting modes: "hot" (time-decayed popularity), "new" (newest-first), "top" (highest score within a chosen time window), and "controversial" (posts with high disagreement between upvotes and downvotes).
+- WHEN a feed is requested, THE system SHALL return paginated results with a default page size of 25 items and SHALL support client-requested page sizes up to 100. The system SHALL enforce a maximum page size of 100.
+- IF a user requests "top" with a time window parameter (day/week/month/all), THEN THE system SHALL limit results to the selected window.
+- THE system SHALL document the hot ranking parameters and SHALL make them tunable by administrators; at minimum the algorithm SHALL favor recent engagement and decay older activity.
 
-Acceptance criteria:
-- The system accepts a registration with a properly formatted email and password meeting strength rules and sends a verification link to the email.
-- The system denies registration using an email already associated with an existing account.
-- Valid credentials result in an active user session; invalid credentials return an authentication error and do not create a session.
+## 9. Subscriptions and Notifications (EARS requirements)
+- WHEN a communityMember subscribes to a community, THE system SHALL record the subscription and SHALL include that community's new posts in the user's personalized feed.
+- THE system SHALL support in-app and email notifications. WHEN a user opts into email notifications, THE system SHALL batch notifications and SHALL not exceed 5 email digests per day by default per user.
+- IF a user unsubscribes from a community, THEN THE system SHALL cease sending new content notifications for that community and SHALL remove the community's prioritized content from the user's personalized recommendations in a timely manner.
 
-### 2) Create Communities (Subreddits)
-Description: Members may create named communities that group posts by topic. Community creation may be subject to rate limits, approval, or restrictions.
+## 10. User Profiles and Privacy (EARS requirements)
+- THE system SHALL provide public user profiles showing public posts and comments, cumulative karma, and community memberships.
+- WHEN a user views their own profile, THE system SHALL also display private metrics (pending reports, moderation actions) visible only to that user and systemAdmin.
+- IF a user sets profile privacy to private, THEN THE system SHALL not expose private fields to visitors or other members.
 
-Representative user stories:
-- As a member, I want to create a community about a specific topic so that other users can join and discuss that topic.
+## 11. Content Reporting and Moderation Workflow (EARS requirements)
+- THE system SHALL allow communityMember users to report posts and comments for predefined reasons (spam, harassment, illegal content, copyright infringement, other) with optional explanation up to 1,000 characters.
+- WHEN a report is submitted, THE system SHALL create a report record containing reporterId, targetId, reason, explanation, and timestamp.
+- IF a content item receives a report threshold within a given window (business default: 5 reports within 48 hours), THEN THE system SHALL flag the item for expedited moderator review and SHALL optionally hide it pending review.
+- WHEN a moderator or systemAdmin acts on a report (remove, warn, suspend), THE system SHALL record the action in an immutable audit trail including actorId, action, reason code, and timestamp, and SHALL notify the reporting user of resolution outcome respecting privacy.
+- Moderation SLAs (business objectives): expedite high-priority reports within 4 hours, resolve escalated systemAdmin reviews within 72 hours.
 
-Functional requirements (EARS):
-- WHEN a member requests creation of a new community, THE system SHALL validate the community name for uniqueness and compliance with naming rules.
-- WHERE community creation is subject to approval (business-configurable), THE system SHALL mark the community as "pending approval" until a moderator or admin approves it.
-- IF a member attempts to create communities > X per 30 days (stakeholder to define), THEN THE system SHALL reject the request and notify the user that they have reached the creation limit.
+## 12. Business Rules and Constraints (select highlights)
+- Title length: max 300 characters; text post body: max 40,000 characters; comment max 10,000 characters.
+- Allowed image formats: JPEG, PNG, GIF; max single-image size 10 MB; max images per post 10; total post payload max 20 MB.
+- Edit windows: posts editable by author for 24 hours; comments editable for 1 hour by default; administrators may perform edits with audit trail afterward.
+- Rate limits (business defaults): max 10 posts per hour per user; max 200 comments per day per user; max 100 votes per hour per user. All limits SHALL be configurable by administrators.
+- Soft-deletion retention: soft-deleted content retained for 30 days default before permanent deletion unless legal hold applies; audit logs retained for at least 2 years.
 
-Acceptance criteria:
-- A valid, unique community name results in a created community in active state or pending-approval state depending on platform policy.
-- Attempts to create duplicate or disallowed names are rejected with a clear message.
-- Creation rate limits, if configured, are enforced and yield a clear user-facing reason when exceeded.
+## 13. Data Lifecycle and Retention (EARS requirements)
+- WHEN a user requests account deletion, THE system SHALL initiate a deletion workflow that soft-deletes the account and associated content and SHALL retain data for a configurable recovery window (business default 30 days) before permanent removal subject to legal holds.
+- WHEN content is soft-deleted for moderation or by author, THE system SHALL retain content and metadata for 30 days and SHALL present restoration options to authorized actors.
+- IF a legal hold or legal takedown is required, THEN THE system SHALL preserve relevant content and metadata until legal clearance is provided.
 
-Notes: The precise limit for "X per 30 days" must be defined by stakeholders; until then, treat it as a configurable platform policy.
+## 14. Error Handling and User-Facing Recovery (EARS requirements)
+- IF authentication fails, THEN THE system SHALL present clear error reasons without exposing whether email or password was incorrect, and SHALL present remediation steps (reset password link).
+- IF a content upload fails due to size or type constraints, THEN THE system SHALL reject the upload and SHALL show a clear error, e.g., "IMAGE_TOO_LARGE: image exceeds 10 MB limit".
+- IF a rate-limit is hit, THEN THE system SHALL return a message with error code RATE_LIMIT_EXCEEDED and an estimated wait time.
+- WHEN transient processing delays occur (image moderation/backfill), THE system SHALL mark the post as "pending processing" and SHALL notify the author when processing completes or fails.
 
-### 3) Post Text, Links, or Images in Communities
-Description: Members can submit posts of three types: text, external link, or image post. Posts belong to a single community and inherit that community's rules.
+## 15. Non-Functional Requirements and Business SLAs (high-level)
+- Performance: 95% of authenticated read (feed retrieval) requests SHALL complete within 2 seconds under normal load; 95% of authenticated write requests (create post/comment/vote) SHALL complete within 3 seconds.
+- Availability: target 99.9% monthly availability for core APIs; developer teams to propose architecture to meet this business SLA.
+- Monitoring: THE system SHALL emit business metrics (MAU, DAU, posts/day, reports/day, moderation action rates) and SHALL alert on SLA breaches and anomalous abuse signals.
+- Security & Privacy: THE system SHALL require TLS for all client-server communications, SHALL store sensitive tokens securely, and SHALL comply with applicable data subject access and deletion requests.
 
-Representative user stories:
-- As a member, I want to create a text post in a community so others can read and comment.
-- As a member, I want to share an external link or upload an image in a post to share content.
+## 16. Acceptance Criteria and Example Scenarios (EARS formatted)
+- WHEN a new user registers with a valid email and completes verification, THEN THE system SHALL allow the user to create a post; acceptance test: account transitions to verified state and the user successfully posts a text post within 30 seconds of verification.
+- WHEN a verified user creates a text post with title length 250 and body 2,000 characters, THEN THE system SHALL accept and publish the post according to community visibility; acceptance test: post is retrievable in the community feed within 5 seconds.
+- WHEN a user upvotes a post, THEN THE system SHALL increment the post's visible upvote count immediately; acceptance test: vote count visible to the voting user increments and author's karma reflects the configured rule within 5 seconds.
+- WHEN 5 distinct users report the same post for harassment within 48 hours, THEN THE system SHALL add the post to the expedited review queue; acceptance test: moderator queue shows the aggregated reports and post is flagged for prioritized review.
 
-Functional requirements (EARS):
-- WHEN a member creates a post, THE system SHALL validate that the post includes required fields (title and either body/link/image) and that it is being submitted to an existing community.
-- IF the posted content includes an image, THEN THE system SHALL enforce platform-configurable limits on image size and total number of images per post (exact numeric limits to be defined by stakeholder).
-- WHEN a post is created, THE system SHALL associate the post with the creating member, the target community, and a timestamp.
+## 17. Process Flows and Mermaid Diagrams
+Registration/Login flow:
 
-Acceptance criteria:
-- Posts with required fields accepted and become visible according to community moderation settings (immediately or pending review).
-- Posts missing required fields are rejected with clear error messages.
-- Posts referencing non-existent communities are rejected.
-
-### 4) Upvote/Downvote Posts and Comments
-Description: Community members express content quality and relevance via upvotes and downvotes on posts and comments. Votes affect visibility and the user karma system.
-
-Representative user stories:
-- As a member, I want to upvote a helpful post so it appears more prominently.
-- As a member, I want to downvote spam or off-topic comments so they are deprioritized.
-
-Functional requirements (EARS):
-- WHEN an authenticated member casts a vote (upvote or downvote) on a post or comment, THE system SHALL record the vote and update the aggregated vote totals.
-- IF a member attempts to vote more than once on the same item, THEN THE system SHALL interpret that action as a vote change (e.g., switch from upvote to downvote) rather than creating duplicate votes.
-- WHERE voting restrictions apply (e.g., new account age or karma threshold), THE system SHALL prevent voting until restrictions are met (business-configurable).
-
-Acceptance criteria:
-- Single active vote per user per item is enforced; changing a vote updates totals appropriately.
-- Vote actions are rejected for unauthenticated users and for accounts that do not meet voting eligibility rules.
-- The effect of votes on content ranking is visible in sorting modes.
-
-Note: The specific impact of votes on karma and content ranking (score weighting, time decay) is undetermined and must be specified by stakeholders; it is treated as a configurable business rule.
-
-### 5) Comment on Posts with Nested Replies
-Description: Members can create comments on posts and reply to comments, supporting arbitrary nested threads (depth may be limited for usability).
-
-Representative user stories:
-- As a member, I want to reply to a comment so that discussion can branch into sub-topics.
-- As a member, I want to view nested replies to follow conversation context.
-
-Functional requirements (EARS):
-- WHEN a member submits a comment on a post or as a reply to another comment, THE system SHALL associate the comment with the parent entity and the creating member and record a timestamp.
-- WHERE the platform enforces a maximum comment nesting depth (configurable), THE system SHALL prevent deeper replies and return a clear message.
-- IF a member submits a comment exceeding allowed length, THEN THE system SHALL reject the comment with a validation message.
-
-Acceptance criteria:
-- Comments are stored with parent/child relationships and are retrievable in threaded order.
-- Attempts to exceed configured nesting depth or length limits are rejected with user-friendly messages.
-
-### 6) User Karma System
-Description: A reputation metric that reflects a user's contributions based on community voting and other actions. Karma influences privileges and community standing per business rules.
-
-Representative user stories:
-- As a member, I want to see my karma so I understand how my content is perceived.
-- As a moderator, I want to see a user's karma when evaluating behavior.
-
-Functional requirements (EARS):
-- WHEN a vote or other karma-affecting action occurs, THE system SHALL update the user's karma according to platform-configurable rules.
-- WHERE karma gates are in place (e.g., ability to vote, create communities), THE system SHALL enforce thresholds and deny actions that require higher karma.
-- IF the calculation method for karma is unspecified, THEN THE system SHALL mark karma calculation as "stakeholder-defined" and do not assume a calculation method.
-
-Acceptance criteria:
-- Karma is displayed on user profiles and is updated after karma-affecting events according to defined rules (when those rules are provided).
-- Actions restricted by karma thresholds are blocked when a user does not meet requirements.
-
-### 7) Sort Posts by Hot, New, Top, Controversial
-Description: Members can view community posts sorted by common discovery modes: hot (engagement/time blend), new (timestamp), top (highest score), controversial (mixed vote patterns).
-
-Representative user stories:
-- As a member, I want to switch sorting to "Top" to see the highest-scoring posts.
-
-Functional requirements (EARS):
-- WHEN a member requests a sorting mode for a community feed (hot, new, top, controversial), THE system SHALL return posts ordered according to business-defined sorting algorithms for each mode.
-- IF sorting algorithm parameters (e.g., time decay, weighting) are unspecified, THEN THE system SHALL treat them as "stakeholder-defined" and the default shall be "new" until specified.
-
-Acceptance criteria:
-- Each sorting mode yields a deterministically ordered list of posts according to documented sorting behavior (once algorithms are specified).
-- Sorting mode selection persists in session or user preferences where applicable.
-
-### 8) Subscribe to Communities
-Description: Members may subscribe to communities to follow and receive updates from them.
-
-Representative user stories:
-- As a member, I want to subscribe to a community so I can easily find its posts in my personal feed.
-
-Functional requirements (EARS):
-- WHEN a member subscribes to a community, THE system SHALL record the subscription and include the community's posts in the member's personal feed according to feed rules.
-- IF a member unsubscribes, THEN THE system SHALL remove the community from the member's subscriptions list and stop including its posts in the personalized feed.
-
-Acceptance criteria:
-- Subscriptions are stored and are reflected in personalized feed behavior.
-- Subscribing and unsubscribing actions are reversible and produce immediate feedback to the user.
-
-### 9) User Profiles Showing Their Posts and Comments
-Description: Each member has a profile page showing their public posts, comments, join date, and karma.
-
-Representative user stories:
-- As a member, I want to view my public activity so others can see my contributions.
-
-Functional requirements (EARS):
-- WHEN a user views a member's profile, THE system SHALL present a list of the member's public posts and comments and the member's displayed karma and join date.
-- IF a member has privacy controls (configurable), THEN THE system SHALL respect the member's visibility settings for which activities are public or private.
-
-Acceptance criteria:
-- Profile pages display public posts and comments and current karma.
-- Privacy settings (if implemented) correctly affect which activities are visible.
-
-### 10) Report Inappropriate Content
-Description: Members can report posts or comments for moderator review. Reports generate a moderation workflow that moderators and admins process.
-
-Representative user stories:
-- As a member, I want to report a comment that contains personal attacks so moderators can review and act.
-
-Functional requirements (EARS):
-- WHEN a member files a report on a post or comment, THE system SHALL record the report with reporter identity, target item, reason, and timestamp and mark it for moderator review in the appropriate community queue.
-- IF a report is marked as "urgent" by the reporter, THEN THE system SHALL flag it for elevated review by moderators and admins.
-- WHEN a moderator or admin takes action on a report (approve, remove, dismiss, escalate), THE system SHALL record the action, the actor, and a timestamp for auditability.
-
-Acceptance criteria:
-- Reports are visible to moderators responsible for the community and to admins for escalations.
-- Moderator actions on reports update the report state and are auditable.
-
-## Data Entities (Implied, minimal set)
-Below are the primary data entities implied directly by the features and their primary attributes (business-level only).
-
-- User: userId, username, displayName, email (verified flag), joinDate, karma, role(s), privacySettings
-- Community: communityId, name, description, creationDate, creatorUserId, visibility (public/private), moderatorList
-- Post: postId, communityId, authorUserId, title, body (for text), link (for link posts), images (reference), createdAt, score
-- Comment: commentId, postId, parentCommentId (nullable), authorUserId, body, createdAt, score
-- Vote: voteId, voterUserId, targetType (post/comment), targetId, voteValue (+1/-1), createdAt
-- Subscription: subscriptionId, userId, communityId, createdAt
-- Report: reportId, reporterUserId, targetType (post/comment), targetId, reason, createdAt, status, assignedModeratorId
-- Karma: (business view): userId, score (business-calculated)
-
-> Note: These entity attribute lists are the minimal business-level attributes implied by requested features. They intentionally avoid storage, index, or schema details.
-
-## Business Rules and Validation (Core)
-- Community Creation: Only authenticated members may request community creation. The maximum number of communities a single member can create within a configurable time window is "stakeholder-defined".
-- Posting Eligibility: Only verified accounts may create posts; guests may not create posts.
-- Voting Eligibility: Voting requires an authenticated account; optional gating may require minimum account age or minimum karma.
-- Vote Semantics: One active vote per user per item; repeat votes toggle or change the vote.
-- Karma Calculations: Karma rules are unspecified — THE system SHALL defer to stakeholder-defined formulas. Until defined, THE system SHALL display karma but not rely on karma for critical access control decisions.
-- Content Visibility: Posts and comments are publicly visible by default unless community privacy or post moderation states require otherwise.
-- Moderation Scope: Moderators can act only within assigned communities; admins have platform-wide moderation powers.
-
-## Error Handling and User-Facing Recovery
-EARS-style error handling examples (user-facing):
-- IF a user attempts to create a post with a missing title, THEN THE system SHALL reject the post and display an error explaining "Title is required.".
-- IF a user attempts to register with an email already in use, THEN THE system SHALL reject the registration and instruct the user to log in or use password recovery.
-- IF moderation actions fail due to internal error, THEN THE system SHALL inform the moderator that the action failed and provide an option to retry; the system SHALL also log the failure for ops (ops-level logging details left for implementers).
-
-Recovery expectations:
-- User-facing error messages shall be clear and actionable.
-- For transient failures (service unavailable), the system shall surface a friendly retry message and suggest possible next steps (try again later, contact support).
-
-## Performance and Non-Functional (Business-Facing) Expectations
-- WHEN a user performs critical interactions (login, post creation, vote), THE system SHALL respond to the user within 2 seconds under normal load conditions as a business target.
-- WHEN a user requests a community page of posts, THE system SHALL present paginated results (default page size configurable; example: 25 items) and respond within 3 seconds under normal load as a business expectation.
-- WHILE the site experiences traffic spikes, THE system SHALL prioritize moderation queues and reporting visibility to moderators so abusive content is surfaced quickly.
-
-Note: Engineers must translate these business-level expectations into measurable SLAs, capacity planning, and monitoring requirements.
-
-## Moderation and Reporting Workflows
-High-level workflow (business-level):
-- Member files report -> report enters community moderation queue -> assigned moderator reviews -> moderator acts (remove/approve/escalate) -> if escalated, admin reviews and resolves.
-
-Mermaid diagram: community report and moderation flow
 ```mermaid
 graph LR
-  A["Member Files Report"] --> B["Create Report Record"]
-  B --> C{"Is Community Moderator Assigned?"}
-  C -->|"Yes"| D["Moderator Queue"]
-  C -->|"No"| E["Admin Queue"]
-  D --> F["Moderator Reviews"]
+  A["User Visits Site"] --> B{"Is User Authenticated?"}
+  B -->|"No"| C["Show Registration/Login Options"]
+  C --> D["User Registers (Email/Password)"]
+  D --> E["Send Email Verification Token"]
+  E --> F{"Email Verified?"}
+  F -->|"Yes"| G["Activate Account"]
+  F -->|"No"| H["Restrict Content Creation"]
+  G --> I["Issue Tokens (Access + Refresh)"]
+  I --> J["Access Authenticated Features"]
+  B -->|"Yes"| J
+```
+
+Post creation and moderation flow:
+
+```mermaid
+graph LR
+  A["User Requests Community Creation"] --> B["Validate Name & Eligibility"]
+  B --> C{"Community Approved?"}
+  C -->|"Yes"| D["Create Community, Assign Owner"]
+  C -->|"No"| E["Reject Creation with Reason"]
+  D --> F["User Creates Post in Community"]
+  F --> G{"Community Requires Approval?"}
+  G -->|"Yes"| H["Queue Post for Moderation"]
+  G -->|"No"| I["Publish Post to Feed"]
+  I --> J["Users Vote and Comment"]
+  J --> K["Report or Moderate if Needed"]
+  K --> L{"Report Threshold Reached?"}
+  L -->|"Yes"| M["Flag for Expedited Review"]
+  L -->|"No"| N["Normal Visibility"]
+```
+
+Report handling and resolution flow:
+
+```mermaid
+graph LR
+  A["User Submits Report"] --> B["Create Report Record"]
+  B --> C{"Automated Triage"}
+  C -->|"spam/clear"| D["Auto-action (hide) and Notify Moderator"]
+  C -->|"uncertain"| E["Queue for Human Review"]
+  E --> F["Moderator Reviews"]
   F --> G{"Action Taken?"}
-  G -->|"Remove/Take Action"| H["Apply Moderation Action"]
-  G -->|"Dismiss"| I["Mark Report Resolved"]
-  H --> J["Record Action and Notify Reporter"]
-  I --> J
-  E --> K["Admin Reviews/Escalates"]
-  K --> H
+  G -->|"Remove Content"| H["Perform Removal and Notify Reporter"]
+  G -->|"No Action"| I["Close Report and Notify Reporter"]
+  H --> J["Log Action in Audit Trail"]
 ```
 
-Audit and traceability business rules:
-- WHEN a moderator or admin takes action on content, THE system SHALL record the action, actor identity, community scope, and timestamp for audit and dispute resolution.
+Note: All Mermaid labels above use double quotes on node labels and correct arrow syntax.
 
-## Acceptance Criteria and Success Metrics
-- Each core feature passes acceptance tests that exercise the EARS-level requirements listed above.
-- Moderation throughput: 95% of reports appear in moderator queues within 60 seconds of filing under normal operations.
-- Basic repository of posts: posts created with valid inputs show up in appropriate community feeds according to configured moderation policy.
-- Voting integrity: vote counts and single-vote semantics are enforced consistently.
+## 18. Appendix
+Glossary, change log, and references to related documents (service overview, business rules, data lifecycle, acceptance tests).
 
-## Open Questions and Decisions Required from Stakeholders
-These items must be clarified before engineering implementation begins (important, not optional):
-1. Karma calculation: Define exact formula (how post votes, comment votes, time decay, and penalties affect karma).
-2. Community creation policy: Are communities created immediately or require approval? What is the per-user creation limit per time period?
-3. Image hosting: Are images hosted by the platform or by third-party CDN/hosting? What are maximum allowed sizes and allowed formats?
-4. Moderation policy: What content categories require automatic holds (e.g., hate speech) and what are escalation rules for urgent reports?
-5. Sorting algorithms: Define exact algorithms for "hot" and "controversial" modes (weighting, time windows, decay factors).
-6. Voting eligibility gating: Will there be minimum account age or karma thresholds to vote?
-7. Profile privacy options: Which profile elements are configurable by users for privacy?
-8. Retention policy: How long are deleted posts/comments retained for audit or retrieval?
+### Glossary (selected)
+- communityMember: Registered user with content creation privileges.
+- karma: Numeric reputation score derived from votes and system actions.
+- moderator: Community-level or system-level human reviewer.
 
-## How to Use This Documentation Package
-Reading order recommendation:
-1. Read this document for business requirements and the ToC.
-2. Read the [Service Overview] (01-service-overview.md) for vision and high-level goals.
-3. Read the [Core Features Document] (03-core-features.md) for feature descriptions and user stories.
-4. Read the [User Roles and Authentication Guide] (04-user-roles-and-authentication.md) for auth flows and role responsibilities.
-5. Read the [Functional Requirements] (06-functional-requirements.md) for EARS-formatted requirements and acceptance criteria by feature.
-6. Read the [Business Rules and Validation] (07-business-rules-and-validation.md) for detailed rules like karma and voting caveats.
-7. For error handling and recovery expectations, read the [Exception Handling and Error Recovery] (08-exception-handling-and-error-recovery.md).
+### Change Log
+- v1.0 initial business requirement consolidation and enhancement on 2025-10-31
 
-(Links above are descriptive placeholders; link to the actual document files in the repository when integrating.)
+---
 
-## Document Relationships and Navigation
-- The [Service Overview] (01-service-overview.md) explains WHY the platform exists and the high-level business model.
-- The [Problem Definition] (02-problem-definition.md) documents the market problem and competitive position.
-- The [Core Features] (03-core-features.md) expands the feature list with user stories and acceptance criteria.
-- The [User Roles and Authentication] (04-user-roles-and-authentication.md) provides authentication flows and role matrices.
-- The [Functional Requirements] (06-functional-requirements.md) contains the EARS-format requirements expanded for development.
-- The [Business Rules and Validation] (07-business-rules-and-validation.md) provides rules like content constraints and karma calculation policy placeholders.
-- The [Exception Handling and Error Recovery] (08-exception-handling-and-error-recovery.md) clarifies error messages and recovery flows.
-- The [Performance, Security and Compliance] (09-performance-security-compliance.md) covers business-level non-functional expectations.
-- The [Implementation Questions and Roadmap] (10-implementation-questions-and-roadmap.md) lists decisions, roadmap, and MVP scope.
-
-## Glossary of Key Terms
-- Community: topic-focused space created by members to host posts and discussion.
-- Post: a user-created content item of type text, link, or image.
-- Comment: a reply attached to a post or another comment; supports nested threading.
-- Vote: expression of approval or disapproval (+1/-1) on posts or comments.
-- Karma: an accumulated reputation score for members derived from community interactions (business-defined).
-- Moderator: community-level user responsible for moderation of assigned communities.
-- Admin: global platform administrator for escalations and system-wide policy enforcement.
-
-## Appendix: Permission Matrix (Business-Level)
-| Action | Guest | Member | Moderator (assigned) | Admin |
-|--------|-------|--------|----------------------|-------|
-| Browse public communities | ✅ | ✅ | ✅ | ✅ |
-| Register / Login | ❌ | ✅ | ✅ | ✅ |
-| Create community | ❌ | ✅* | ✅ (approve) | ✅ |
-| Create post | ❌ | ✅ | ✅ | ✅ |
-| Comment | ❌ | ✅ | ✅ | ✅ |
-| Vote | ❌ | ✅** | ✅ | ✅ |
-| Report content | ❌ | ✅ | ✅ | ✅ |
-| Moderate assigned community | ❌ | ❌ | ✅ | ✅ |
-| Global moderation / ban | ❌ | ❌ | ❌ | ✅ |
-
-*Community creation may be subject to approval or rate limits (stakeholder-defined).
-**Voting may be gated by account age or karma thresholds (stakeholder-defined).
-
-## Appendix: Example User Flow Diagram (Post Creation and Publish Path)
-```mermaid
-graph LR
-  A["User Initiates Post Creation"] --> B["Validate Inputs (title, body/link/image)"]
-  B --> C{"Is User Verified?"}
-  C -->|"No"| D["Reject with 'Verify Email' Message"]
-  C -->|"Yes"| E{"Community Moderation Policy"}
-  E -->|"Immediate Publish"| F["Publish Post"]
-  E -->|"Pending Approval"| G["Queue for Moderator Review"]
-  G --> H["Moderator Approves/Removes"]
-  H -->|"Approve"| F
-  H -->|"Remove"| I["Notify Author and Record Action"]
-  F --> J["Visible in Community Feed"]
-```
-
-## Final Statements
-This document provides business requirements only. All technical implementation decisions (architecture, APIs, database design, hosting, and infrastructure) are the responsibility of the development team.
-
-> *Developer Note: This document defines business requirements only. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+End of requirements analysis for communityBbs.

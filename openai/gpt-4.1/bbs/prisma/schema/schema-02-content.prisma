@@ -1,0 +1,154 @@
+/// Discussion board article (post) entity. Represents a user-authored
+/// article allowing text, optional attachments, and subsequent comments.
+/// Soft deletes are supported via deleted_at. Each article references a
+/// {@link discussion_board_users.id} as the author. Attachments are
+/// associated via {@link discussion_board_article_attachments}. Comments are
+/// stored separately for normalization and permission logic.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who authored the article. {@link discussion_board_users.id}
+  author_user_id String
+  
+  /// Article title. Required, 1-100 characters per business rule.
+  title String
+  
+  /// Main article text body. Required, 1-10000 characters per business rule.
+  body String
+  
+  /// Datetime this article was created.
+  created_at DateTime
+  
+  /// Datetime this article was most recently updated.
+  updated_at DateTime
+  
+  /// Datetime for soft delete (if present, article is deleted and hidden from
+  /// normal user views).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  authorUser discussion_board_users @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_article_attachments discussion_board_article_attachments[]
+  discussion_board_article_comments discussion_board_article_comments[]
+  discussion_board_abuse_reports discussion_board_abuse_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_audit_logs discussion_board_audit_logs[]
+  
+  @@index([author_user_id, created_at])
+}
+
+/// Attachment (image or file) associated with a discussion board article.
+/// Each record is an uploaded file or image with metadata describing its
+/// character. Only articles (not comments) may have attachments. Enforces
+/// many-to-one relationship to {@link discussion_board_articles}.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article this attachment belongs to. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Original uploaded filename, including extension.
+  filename String
+  
+  /// Logical kind of attachment for business-level filtering. Expected values:
+  /// 'image', 'document', 'archive', or similar. Enforced by business logic
+  /// layer.
+  kind String
+  
+  /// MIME type of uploaded file, e.g. 'image/jpeg', 'application/pdf'. Used
+  /// for download response and file type validation.
+  mimetype String
+  
+  /// Size in bytes of the uploaded file. Must not exceed per-article and
+  /// per-file limits (enforced in business logic).
+  filesize Int
+  
+  /// Whether this attachment passed virus/malware scan at upload time. True if
+  /// safe, false or null otherwise.
+  virus_scanned Boolean
+  
+  /// Attachment creation datetime (upload time).
+  created_at DateTime
+  
+  /// Attachment was deleted/removed from article (file is set for deletion).
+  /// Nullable for current/active attachment.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_attachments_discussion_board__dcaeb017")
+  @@index([kind])
+}
+
+/// Discussion board article comment entity. Each record is a single comment
+/// authored by a user on an article. Represents independent user input.
+/// Comments are designed for independent moderation and permission checks.
+/// Deleted_at is soft delete (hidden from standard views, remains for
+/// audit/moderation). Each comment references its article and author.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article this comment belongs to. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Comment author. References {@link discussion_board_users.id}.
+  author_user_id String
+  
+  /// Comment content/body. Required, limited to 1-1000 characters per business
+  /// rule.
+  body String
+  
+  /// Datetime this comment was created.
+  created_at DateTime
+  
+  /// Datetime this comment was most recently updated.
+  updated_at DateTime
+  
+  /// Datetime for soft delete (if present, comment is deleted and hidden from
+  /// common views).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  authorUser discussion_board_users @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_abuse_reports discussion_board_abuse_reports[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_audit_logs discussion_board_audit_logs[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_comments_discussion_board_art_d0b44ca7")
+  @@index([author_user_id, created_at])
+}

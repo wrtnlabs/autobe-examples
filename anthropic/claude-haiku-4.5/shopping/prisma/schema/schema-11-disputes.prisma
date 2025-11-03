@@ -1,0 +1,439 @@
+/// Core dispute entity representing a customer-seller dispute or complaint.
+/// Stores the central dispute record with all metadata but not the detailed
+/// evidence, communications, or resolutions (those are in separate tables).
+/// This is the primary entity that other dispute-related tables reference.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_disputes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order involved in this dispute. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Reference to the customer who initiated the dispute. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Reference to the seller involved in the dispute. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique human-readable dispute identifier in format
+  /// DIS-YYYYMMDDHHMMSS-XXXXXX for easy reference by users.
+  dispute_id String
+  
+  /// Type of dispute: quality_issue, delivery_issue, seller_communication,
+  /// payment_issue, other. Categorizes the nature of the complaint.
+  dispute_type String
+  
+  /// Detailed description of the dispute reason provided by the customer when
+  /// initiating the dispute (up to 2000 characters).
+  reason_description String
+  
+  /// Current dispute status: open, under_review, pending_resolution, resolved,
+  /// closed, appealed. Reflects the current stage of dispute resolution.
+  status String
+  
+  /// Dispute priority level: low, medium, high, critical. Used for triage and
+  /// admin review ordering.
+  priority String
+  
+  /// Who initiated the dispute: customer, seller, admin, system. Tracks the
+  /// originating actor.
+  initiator_type String
+  
+  /// ID of the admin assigned to review/resolve this dispute (optional until
+  /// assignment).
+  assigned_admin_id String?
+  
+  /// Timestamp when dispute was created (ISO 8601 format with timezone).
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to the dispute record.
+  updated_at DateTime
+  
+  /// Timestamp when dispute was marked as resolved (null if not yet resolved).
+  resolved_at DateTime?
+  
+  /// Expected date when dispute should be resolved (based on SLA - typically 5
+  /// business days from creation).
+  estimated_resolution_date DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_dispute_evidence shopping_mall_dispute_evidence[]
+  shopping_mall_dispute_communications shopping_mall_dispute_communications[]
+  shopping_mall_dispute_resolutions shopping_mall_dispute_resolutions?
+  shopping_mall_dispute_appeals shopping_mall_dispute_appeals[]
+  shopping_mall_dispute_audit_trail shopping_mall_dispute_audit_trail[]
+  
+  @@unique([dispute_id])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([shopping_mall_seller_id, created_at])
+  @@index([status, created_at])
+  @@index([assigned_admin_id])
+  @@index([shopping_mall_order_id])
+  @@index([priority, status])
+}
+
+/// Stores evidence and supporting documentation provided by dispute parties
+/// (customer, seller, witnesses). Each evidence record is immutable once
+/// created. Separate from dispute table to prevent nullable fields and
+/// ensure evidence integrity.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_evidence {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent dispute this evidence belongs to. {@link
+  /// shopping_mall_disputes.id}.
+  shopping_mall_dispute_id String
+  
+  /// Type of evidence: photo, message, receipt, tracking, description,
+  /// document, other. Categorizes the evidence kind.
+  evidence_type String
+  
+  /// Who submitted this evidence: customer, seller, admin, system. Identifies
+  /// the evidence source.
+  submitted_by_type String
+  
+  /// ID of the user or system entity that submitted the evidence.
+  submitted_by_id String
+  
+  /// Brief title or description of the evidence (up to 255 characters).
+  title String
+  
+  /// Detailed description of the evidence and its relevance to the dispute (up
+  /// to 2000 characters).
+  description String
+  
+  /// URL to the evidence file if uploaded (photo, document, etc.). Null if
+  /// evidence is text-only.
+  file_url String?
+  
+  /// Original file name if file was uploaded (up to 255 characters).
+  file_name String?
+  
+  /// Size of uploaded file in bytes (null if no file uploaded).
+  file_size_bytes Int?
+  
+  /// MIME type of uploaded file (e.g., image/jpeg, application/pdf). Null if
+  /// text-only.
+  file_mime_type String?
+  
+  /// Whether this evidence is visible to all dispute parties or only to
+  /// admins/submitter. Sensitive evidence may be admin-only.
+  is_public Boolean
+  
+  /// Timestamp when evidence was submitted (ISO 8601 format).
+  created_at DateTime
+  
+  /// Soft delete timestamp if evidence was removed (null if active). Evidence
+  /// is not hard-deleted for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_disputes @relation(fields: [shopping_mall_dispute_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_dispute_id, created_at], map: "shopping_mall_dispute_evidence_shopping_mall_dispute_i_1b97b09b")
+  // spellchecker: ignore-next-line
+  @@index([submitted_by_type, submitted_by_id], map: "shopping_mall_dispute_evidence_submitted_by_type_submi_d61d7949")
+  @@index([evidence_type])
+}
+
+/// Tracks all communications between dispute parties (customer, seller,
+/// admin) related to the dispute. Creates audit trail of all messages,
+/// responses, and interactions throughout dispute lifecycle.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_communications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent dispute this communication relates to. {@link
+  /// shopping_mall_disputes.id}.
+  shopping_mall_dispute_id String
+  
+  /// Type of message: customer_message, seller_response, admin_communication,
+  /// system_notification, status_update. Categorizes message purpose.
+  message_type String
+  
+  /// Type of sender: customer, seller, admin, system. Identifies who sent the
+  /// message.
+  sender_type String
+  
+  /// ID of the user or system that sent the message.
+  sender_id String
+  
+  /// Who receives this message: customer, seller, admin, all_parties, system.
+  /// Determines visibility.
+  recipient_type String
+  
+  /// Subject line of the message (up to 255 characters).
+  subject String
+  
+  /// Full message content (up to 5000 characters). The actual communication
+  /// text.
+  message_body String
+  
+  /// Whether this is an internal admin note (only visible to admins) or
+  /// party-facing communication (visible to relevant parties).
+  is_internal_note Boolean
+  
+  /// Whether this is an automated system message (e.g., status update
+  /// notification) or manually written message.
+  is_automated Boolean
+  
+  /// Timestamp when message was sent/created (ISO 8601 format).
+  created_at DateTime
+  
+  /// Timestamp when recipient first read the message (null if unread).
+  read_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_disputes @relation(fields: [shopping_mall_dispute_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_dispute_id, created_at], map: "shopping_mall_dispute_communications_shopping_mall_dis_630a6e0b")
+  @@index([sender_type, sender_id])
+  @@index([message_type])
+  @@index([is_internal_note])
+}
+
+/// Stores the final resolution/decision for a dispute including the decision
+/// made, reasoning, and outcome. Separate from dispute table (not nullable
+/// in dispute record) to preserve immutability and complete resolution
+/// history.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_resolutions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the dispute this resolution applies to. {@link
+  /// shopping_mall_disputes.id}.
+  shopping_mall_dispute_id String
+  
+  /// Type of resolution: favor_customer, favor_seller, partial_refund,
+  /// replacement, compensation, compromise, other. Indicates the decision
+  /// outcome.
+  resolution_type String
+  
+  /// ID of the admin who made the resolution decision.
+  resolved_by_admin_id String
+  
+  /// Amount to be refunded to customer (if applicable, in platform currency).
+  /// Zero if no refund.
+  refund_amount Float
+  
+  /// Detailed explanation of the resolution decision and reasoning (up to 2000
+  /// characters). Justifies the outcome based on evidence.
+  resolution_reason String
+  
+  /// Specific details about the resolution implementation (e.g., refund
+  /// method, replacement SKU, compensation method). Up to 1000 characters.
+  resolution_details String?
+  
+  /// Whether customer has accepted and acknowledged the resolution decision
+  /// (null if still pending acknowledgment).
+  customer_accepts_resolution Boolean?
+  
+  /// Whether seller has acknowledged the resolution decision (null if still
+  /// pending acknowledgment).
+  seller_acknowledges_resolution Boolean?
+  
+  /// Type of enforcement action needed: none, refund_processing,
+  /// inventory_restore, seller_compensation, suspension, other. Null if no
+  /// action needed.
+  enforcement_action_required String?
+  
+  /// Status of enforcement action: pending, in_progress, completed, failed.
+  /// Tracks implementation of the resolution.
+  enforcement_status String?
+  
+  /// Timestamp when resolution was recorded (ISO 8601 format).
+  created_at DateTime
+  
+  /// Timestamp when enforcement action was completed (null if not yet
+  /// completed).
+  enforcement_completed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_disputes @relation(fields: [shopping_mall_dispute_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_dispute_id])
+  
+  @@index([shopping_mall_dispute_id])
+  @@index([resolution_type])
+  @@index([resolved_by_admin_id])
+  @@index([enforcement_status])
+}
+
+/// Tracks appeals submitted by dispute parties who disagree with the
+/// resolution decision. Creates audit trail of appeals and appeal decisions.
+/// Allows one-time appeal escalation for disputes.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the dispute being appealed. {@link
+  /// shopping_mall_disputes.id}.
+  shopping_mall_dispute_id String
+  
+  /// Sequential appeal number for this dispute (1st appeal, 2nd appeal, etc.).
+  /// System only allows 1 appeal per dispute.
+  appeal_number Int
+  
+  /// Who is appealing: customer or seller. Identifies which party disagrees
+  /// with the resolution.
+  appealing_party_type String
+  
+  /// ID of the customer or seller submitting the appeal.
+  appealing_party_id String
+  
+  /// Detailed explanation of why appealing party disagrees with the resolution
+  /// (up to 2000 characters).
+  appeal_reason String
+  
+  /// Whether appeal includes new evidence not previously considered in
+  /// original dispute resolution.
+  new_evidence_provided Boolean
+  
+  /// Appeal status: pending, under_review, upheld, overturned, rejected.
+  /// Tracks appeal processing state.
+  status String
+  
+  /// ID of the admin reviewing the appeal (different admin than original
+  /// resolution reviewer).
+  reviewed_by_admin_id String?
+  
+  /// Final decision on appeal: uphold_original_resolution,
+  /// overturn_and_reverse, overturn_and_modify, reject_appeal. Null if not yet
+  /// decided.
+  appeal_decision String?
+  
+  /// Detailed reasoning for appeal decision (up to 2000 characters). Explains
+  /// why appeal was upheld or overturned.
+  appeal_decision_reason String?
+  
+  /// Timestamp when appeal was submitted (ISO 8601 format).
+  created_at DateTime
+  
+  /// Timestamp when appeal was reviewed and decision made (null if not yet
+  /// decided).
+  reviewed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_disputes @relation(fields: [shopping_mall_dispute_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_dispute_id, appeal_number], map: "shopping_mall_dispute_appeals_shopping_mall_dispute_id_a9c37e22")
+  // spellchecker: ignore-next-line
+  @@index([appealing_party_type, appealing_party_id], map: "shopping_mall_dispute_appeals_appealing_party_type_app_a1d0546a")
+  @@index([status])
+  @@index([reviewed_by_admin_id])
+}
+
+/// Immutable audit log of all significant actions and state changes on
+/// disputes. Records every operation performed on dispute records by any
+/// actor (customer, seller, admin, system). Essential for compliance and
+/// investigation.
+///
+/// @namespace Disputes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_audit_trail {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the dispute being audited. {@link shopping_mall_disputes.id}.
+  shopping_mall_dispute_id String
+  
+  /// Type of action performed: created, status_changed, evidence_added,
+  /// communication_sent, resolution_recorded, appeal_submitted,
+  /// appeal_decided, assigned_to_admin, reassigned, closed. Categorizes the
+  /// audit entry.
+  action_type String
+  
+  /// Type of actor performing the action: customer, seller, admin, system.
+  /// Identifies who made the change.
+  actor_type String
+  
+  /// ID of the user or system performing the action.
+  actor_id String
+  
+  /// JSON-serialized previous state (for status changes or modifications).
+  /// Null if action created new record or has no prior state.
+  previous_state String?
+  
+  /// JSON-serialized new state after action. Stores the resulting state for
+  /// audit comparison.
+  new_state String?
+  
+  /// Human-readable description of what changed (up to 1000 characters).
+  /// Explains the action in business terms.
+  change_description String
+  
+  /// IP address from which action was initiated (for security auditing).
+  ip_address String?
+  
+  /// User agent string from client device (browser/device information). Helps
+  /// identify device used for action.
+  user_agent String?
+  
+  /// Timestamp when action was performed (ISO 8601 format, UTC). Immutable
+  /// record timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_disputes @relation(fields: [shopping_mall_dispute_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_dispute_id, created_at], map: "shopping_mall_dispute_audit_trail_shopping_mall_disput_24a54d62")
+  @@index([actor_type, actor_id])
+  @@index([action_type])
+  @@index([created_at])
+}

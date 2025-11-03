@@ -14,68 +14,57 @@ import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 export async function patchCommunityPlatformCommunities(props: {
   body: ICommunityPlatformCommunity.IRequest;
 }): Promise<IPageICommunityPlatformCommunity.ISummary> {
-  const { body } = props;
+  const { page, limit, search, creator_user_id, from_date, to_date, status } =
+    props.body;
 
-  // Pagination defaults and validation
-  const DEFAULT_PAGE = 1;
-  const DEFAULT_LIMIT = 20;
-  const MAX_LIMIT = 50;
+  const pageNum = Number(page) < 1 ? 1 : Number(page);
+  const limitNum = Number(limit) < 1 ? 20 : Number(limit);
+  const skip = (pageNum - 1) * limitNum;
 
-  const page = body.page && body.page >= 1 ? body.page : DEFAULT_PAGE;
-  const limit =
-    body.limit && body.limit >= 1
-      ? Math.min(body.limit, MAX_LIMIT)
-      : DEFAULT_LIMIT;
-  if (page < 1) {
-    throw new HttpException("Page number must be at least 1", 400);
-  }
-  if (limit < 1 || limit > MAX_LIMIT) {
-    throw new HttpException("Limit must be between 1 and 50", 400);
+  // Only return active or archived based on status param.
+  // By default, show only active (deleted_at=null), if status==='archived', show only archived (deleted_at!=null)
+  let deletedAtFilter: {};
+  if (status === "archived") {
+    deletedAtFilter = { deleted_at: { not: null } };
+  } else {
+    deletedAtFilter = { deleted_at: null };
   }
 
-  // Soft-deleted exclusion and filters
+  // Build filters
   const where = {
-    deleted_at: null,
-    ...(body.status !== undefined && { status: body.status }),
-    ...(body.search && body.search.length > 0
+    ...deletedAtFilter,
+    ...(search
       ? {
           OR: [
-            { name: { contains: body.search } },
-            { title: { contains: body.search } },
-            { slug: { contains: body.search } },
-            { description: { contains: body.search } },
+            { name: { contains: search } },
+            { description: { contains: search } },
           ],
+        }
+      : {}),
+    ...(creator_user_id !== undefined &&
+      creator_user_id !== null && {
+        creator_user_id,
+      }),
+    ...(from_date || to_date
+      ? {
+          created_at: {
+            ...(from_date ? { gte: from_date } : {}),
+            ...(to_date ? { lte: to_date } : {}),
+          },
         }
       : {}),
   };
 
-  // Inline orderBy using Prisma.SortOrder for type safety
-  const asc: Prisma.SortOrder = "asc";
-  const desc: Prisma.SortOrder = "desc";
-
-  const orderBy =
-    body.sort === "new"
-      ? { created_at: body.order === "asc" ? asc : desc }
-      : body.sort === "top"
-        ? { updated_at: body.order === "asc" ? asc : desc }
-        : body.sort === "controversial"
-          ? { title: body.order === "asc" ? asc : desc }
-          : { created_at: desc };
-
   const [rows, total] = await Promise.all([
     MyGlobal.prisma.community_platform_communities.findMany({
       where,
-      orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
+      orderBy: { created_at: "desc" },
+      skip,
+      take: limitNum,
       select: {
         id: true,
         name: true,
-        title: true,
-        slug: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
+        description: true,
       },
     }),
     MyGlobal.prisma.community_platform_communities.count({ where }),
@@ -83,19 +72,15 @@ export async function patchCommunityPlatformCommunities(props: {
 
   return {
     pagination: {
-      current: Number(page),
-      limit: Number(limit),
+      current: Number(pageNum),
+      limit: Number(limitNum),
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / limitNum),
     },
     data: rows.map((row) => ({
       id: row.id,
       name: row.name,
-      title: row.title,
-      slug: row.slug,
-      status: row.status,
-      created_at: toISOStringSafe(row.created_at),
-      updated_at: toISOStringSafe(row.updated_at),
+      description: row.description,
     })),
   };
 }

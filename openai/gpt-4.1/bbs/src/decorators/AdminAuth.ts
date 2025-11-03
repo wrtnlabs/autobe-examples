@@ -4,6 +4,11 @@ import { Singleton } from "tstl";
 
 import { adminAuthorize } from "../providers/authorize/adminAuthorize";
 
+/**
+ * Parameter decorator for authenticating administrator (admin) actor.
+ * Adds bearer token security for Swagger API docs.
+ * Injects AdminPayload into controller handler.
+ */
 export const AdminAuth =
   (): ParameterDecorator =>
   (

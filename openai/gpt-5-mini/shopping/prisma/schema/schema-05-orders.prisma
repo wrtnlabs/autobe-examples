@@ -1,11 +1,8 @@
-/// Order header capturing a single buyer-facing order. Stores buyer
-/// reference, shipping address snapshot, pricing breakdown, and lifecycle
-/// timestamps. Modified to avoid cascading delete cycles with shipments:
-/// primary shipment is represented via shipment records rather than a direct
-/// foreign key on the order to prevent circular cascade delete issues.
-/// Related entities: {@link shopping_mall_order_items}, {@link
-/// shopping_mall_payments}, {@link shopping_mall_refund_requests}, {@link
-/// shopping_mall_shipments}.
+/// Order header capturing financial totals, lifecycle status and references
+/// to customer. Monetary fields stored in smallest currency unit (integer)
+/// and explicit currency reference for reconciliation. Preserves placed_at
+/// and temporal audit fields. References {@link shopping_mall_customers.id}
+/// and {@link shopping_mall_currencies.id}.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -16,100 +13,76 @@ model shopping_mall_orders {
   /// Primary Key.
   id String @id
   
-  /// Belonged buyer customer. {@link shopping_mall_customer.id}
+  /// Purchasing customer's {@link shopping_mall_customers.id}.
   shopping_mall_customer_id String
   
-  /// Reference to shipping address snapshot source. {@link
-  /// shopping_mall_addresses.id}
-  shipping_address_id String?
+  /// Order currency reference. {@link shopping_mall_currencies.id}.
+  shopping_mall_currency_id String
   
-  /// Business-facing unique order number (human-readable).
+  /// Business-facing order number (unique).
   order_number String
   
-  /// Origin channel of the order (web, mobile, api) for reporting.
-  order_source String?
-  
-  /// JSON-serialized shipping address snapshot captured at order time to
-  /// preserve historical accuracy. Consider migrating to native JSON/JsonB
-  /// where supported.
-  shipping_address_snapshot String
-  
-  /// Sum of line item amounts before taxes and shipping.
-  subtotal_amount Float
-  
-  /// Shipping fee applied to the order.
-  shipping_amount Float
-  
-  /// Total tax amount for the order.
-  tax_amount Float
-  
-  /// Sum of discounts applied to the order (if any).
-  discount_amount Float?
-  
-  /// Final charged amount for the order (subtotal + shipping + tax -
-  /// discounts).
-  total_amount Float
-  
-  /// Currency code (ISO) used for this order.
-  currency String
-  
-  /// Order lifecycle status (Created, Payment Pending, Paid, Processing,
-  /// Shipped, Delivered, Cancelled, Refunded, Closed).
+  /// Order lifecycle status
+  /// (pending/authorized/paid/processing/shipped/delivered/cancelled/refunded/disputed).
   status String
   
-  /// Payment business state (authorized, captured, failed, refunded).
-  payment_state String
+  /// Sum of line prices before shipping, tax, and discounts, stored in
+  /// smallest currency unit (e.g., cents).
+  subtotal Int
   
-  /// Reservation expiry timestamp for inventory holds related to this order.
-  reserved_until DateTime?
+  /// Total shipping charge for the order in smallest currency unit.
+  shipping_total Int
   
-  /// Timestamp when the order was created/placed.
+  /// Total tax amount for the order in smallest currency unit.
+  tax_total Int
+  
+  /// Gross order total charged to the customer in smallest currency unit.
+  total Int
+  
+  /// Timestamp when the order was placed.
   placed_at DateTime
   
-  /// Timestamp when payment was captured for the order.
-  paid_at DateTime?
+  /// Optional order-level notes or instructions.
+  notes String?
   
-  /// Timestamp when the order lifecycle closed (finalized).
-  closed_at DateTime?
-  
-  /// Free-text note provided by the customer; searchable via GIN index.
-  customer_note String?
-  
-  /// Internal note for support/admin use; not shown to customers.
-  internal_note String?
-  
-  /// Record creation timestamp.
+  /// Record creation time.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Record last update time.
   updated_at DateTime
   
-  /// Soft-delete timestamp for the order (if applicable).
+  /// Soft-delete timestamp.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  shippingAddress shopping_mall_addresses? @relation(fields: [shipping_address_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  currency shopping_mall_currencies @relation(fields: [shopping_mall_currency_id], references: [id], onDelete: Cascade)
   
   shopping_mall_order_items shopping_mall_order_items[]
-  shopping_mall_payments shopping_mall_payments[]
-  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_order_addresses shopping_mall_order_addresses[]
+  shopping_mall_payments shopping_mall_payments?
   shopping_mall_shipments shopping_mall_shipments[]
-  
-  @@index([shipping_address_id])
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_disputes shopping_mall_disputes[]
+  shopping_mall_inventory_transactions shopping_mall_inventory_transactions[]
+  shopping_mall_promotion_redemptions shopping_mall_promotion_redemptions[]
+  shopping_mall_settlements shopping_mall_settlements[]
+  shopping_mall_commissions shopping_mall_commissions[]
+  shopping_mall_inquiries shopping_mall_inquiries[]
+  shopping_mall_support_cases shopping_mall_support_cases[]
   
   @@unique([order_number])
   @@index([shopping_mall_customer_id, created_at])
   @@index([status, created_at])
+  @@index([shopping_mall_currency_id, created_at])
 }
 
-/// Order line items that belong to an order. Each record captures a snapshot
-/// of the SKU and pricing at order time for historical accuracy. Links to
-/// {@link shopping_mall_orders.id} and optionally to the live {@link
-/// shopping_mall_skus.id} and {@link shopping_mall_seller.id} for seller
-/// attribution.
+/// Order line items capturing SKU snapshot, quantities and per-line monetary
+/// values in smallest currency unit for accurate refunds and reconciliation.
+/// References variant and seller and belongs to an order. Kept as subsidiary
+/// entity managed through order lifecycle.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -120,76 +93,123 @@ model shopping_mall_order_items {
   /// Primary Key.
   id String @id
   
-  /// Belonged order header {@link shopping_mall_orders.id}.
+  /// Parent order. {@link shopping_mall_orders.id}.
   shopping_mall_order_id String
   
-  /// Referenced SKU for cross-reference {@link shopping_mall_skus.id}.
-  /// Nullable if SKU removed; keep snapshot for history.
-  shopping_mall_sku_id String?
+  /// Referenced SKU variant. {@link shopping_mall_variants.id}.
+  shopping_mall_variant_id String
   
-  /// Seller that owns this line's SKU {@link shopping_mall_seller.id}.
+  /// Owning seller of the SKU. {@link shopping_mall_sellers.id}.
   shopping_mall_seller_id String
   
-  /// Optional shipment reference for this order line {@link
-  /// shopping_mall_shipments.id}.
-  shipment_id String?
+  /// Snapshot of the product title at time of order.
+  product_title String
   
-  /// JSON-serialized snapshot of SKU fields (title, selected attributes,
-  /// images) at time of order for historical display.
-  sku_snapshot String
+  /// SKU code snapshot.
+  sku String
   
-  /// Product/SKU title snapshot for quick display and indexing.
-  name_snapshot String
+  /// Unit price at time of ordering in smallest currency unit.
+  unit_price Int
   
-  /// Quantity ordered for this line item.
+  /// Quantity ordered for this line.
   quantity Int
   
-  /// Unit price charged at order time.
-  unit_price Float
+  /// Computed line total (unit_price * quantity minus discounts) in smallest
+  /// currency unit.
+  line_total Int
   
-  /// Quantity * unit_price before line-level discounts and taxes.
-  line_total Float
+  /// Per-line fulfillment status (pending/processing/shipped/etc.).
+  fulfillment_status String
   
-  /// Tax amount applied to this line.
-  tax_amount Float?
-  
-  /// Currency code used for this line.
-  currency String
-  
-  /// Fulfillment status for the line (Pending, Processing, Shipped, Delivered,
-  /// Returned, Refunded).
-  status String
-  
-  /// Record creation timestamp.
+  /// Creation timestamp.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Last update timestamp.
   updated_at DateTime
   
-  /// Soft-delete timestamp for the order item.
+  /// Soft-delete timestamp.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  sku shopping_mall_skus? @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
-  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
-  shipment shopping_mall_shipments? @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_variants @relation(fields: [shopping_mall_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
+  shopping_mall_shipment_items shopping_mall_shipment_items[]
   shopping_mall_refund_requests shopping_mall_refund_requests[]
   
-  @@index([shopping_mall_sku_id])
-  @@index([shipment_id])
+  @@index([shopping_mall_variant_id])
   
-  @@index([shopping_mall_order_id, created_at])
-  @@index([shopping_mall_seller_id, status])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_order_items_shopping_mall_seller_id_crea_87ee0b33")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, shopping_mall_seller_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_46d17159")
 }
 
-/// Payment records tied to orders. Records authorization, capture, refund
-/// attempts, external provider ids and minimal payment metadata for
-/// reconciliation. Links to {@link shopping_mall_orders.id} and payer {@link
-/// shopping_mall_customer.id}.
+/// Immutable snapshots of shipping or billing addresses for orders. Each
+/// record preserves the address state at the time of order placement. Use
+/// for audit and dispute evidence. Related: {@link shopping_mall_orders}.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated order. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Type of address: 'shipping' or 'billing'.
+  address_type String
+  
+  /// Recipient name snapshot.
+  recipient String?
+  
+  /// Address line 1 snapshot.
+  line1 String
+  
+  /// Address line 2 snapshot (optional).
+  line2 String?
+  
+  /// City snapshot.
+  city String
+  
+  /// State/region snapshot.
+  state String?
+  
+  /// Postal code snapshot.
+  postal_code String
+  
+  /// Country code (ISO 3166-1 alpha-2) snapshot.
+  country String
+  
+  /// Contact phone snapshot.
+  phone String?
+  
+  /// Snapshot creation time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_shipments shopping_mall_shipments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, address_type], map: "shopping_mall_order_addresses_shopping_mall_order_id_a_7d819bbd")
+}
+
+/// Payment records linked to orders. Amount stored in smallest currency unit
+/// (int) and explicit currency reference included. Extended lifecycle
+/// metadata (authorization and capture timestamps), idempotency and provider
+/// response fields are included to support retries, reconciliation and
+/// dispute handling.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -200,65 +220,169 @@ model shopping_mall_payments {
   /// Primary Key.
   id String @id
   
-  /// Related order {@link shopping_mall_orders.id}.
+  /// Linked order. {@link shopping_mall_orders.id}.
   shopping_mall_order_id String
   
-  /// Paying customer reference {@link shopping_mall_customer.id}.
-  shopping_mall_customer_id String
+  /// Currency for this payment. {@link shopping_mall_currencies.id}.
+  shopping_mall_currency_id String
   
-  /// Amount attempted or captured for this payment event.
-  amount Float
+  /// Amount charged in transaction currency stored in smallest currency unit.
+  amount Int
   
-  /// Currency code for the payment.
-  currency String
-  
-  /// Payment method label (card, wallet, bank_transfer).
+  /// Payment method identifier (credit_card, paypal, etc.).
   method String
+  
+  /// Payment status (pending/authorized/captured/failed/refunded).
+  status String
   
   /// External payment provider name.
   provider String?
   
-  /// Provider-side unique payment identifier for reconciliation.
-  provider_payment_id String?
+  /// Provider transaction id for reconciliation.
+  provider_transaction_id String?
   
-  /// Payment status (authorized, captured, failed, refunded).
-  status String
+  /// Provider response or reason code for the last attempt.
+  provider_response_code String?
   
-  /// Timestamp when authorization occurred.
+  /// Idempotency key used for provider requests to prevent duplicates.
+  idempotency_key String?
+  
+  /// When authorization was granted (if applicable).
   authorized_at DateTime?
   
-  /// Timestamp when capture occurred.
+  /// Authorization expiry timestamp (provider/merchant window).
+  authorization_expires_at DateTime?
+  
+  /// When funds were captured.
   captured_at DateTime?
   
-  /// Timestamp when refund was processed for this payment.
+  /// When refund was completed for this payment, if applicable.
   refunded_at DateTime?
   
-  /// JSON-serialized minimal metadata for provider webhooks or reconciliation
-  /// context.
+  /// Opaque provider metadata or JSON string for reconciliation.
   metadata String?
   
-  /// Record creation timestamp.
+  /// Payment creation time.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Payment update time.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  currency shopping_mall_currencies @relation(fields: [shopping_mall_currency_id], references: [id], onDelete: Cascade)
   
-  @@unique([provider_payment_id])
-  @@index([shopping_mall_order_id, status])
-  @@index([shopping_mall_customer_id, created_at])
+  shopping_mall_payouts shopping_mall_payouts[]
+  shopping_mall_settlements shopping_mall_settlements[]
+  
+  @@index([shopping_mall_currency_id])
+  
+  @@unique([shopping_mall_order_id])
+  @@index([status, created_at])
+  @@index([provider_transaction_id])
+  @@index([idempotency_key])
 }
 
-/// Refund and cancellation request records related to orders or individual
-/// order items. Tracks requester (customer or supportAgent), requested
-/// amount, reason, processing status and decision metadata. Added nullable
-/// supportAgent requester FK to preserve referential integrity for
-/// agent-initiated requests.
+/// Shipment records for order fulfillment. Added link to immutable order
+/// address snapshot to preserve audit evidence of shipped-to address. Keeps
+/// carrier, tracking, and per-shipment timestamps.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order associated with this shipment. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Immutable order address snapshot used for this shipment (shipping
+  /// address). {@link shopping_mall_order_addresses.id}.
+  shopping_mall_order_address_id String?
+  
+  /// Carrier name (e.g., UPS, DHL).
+  carrier String?
+  
+  /// Carrier tracking number.
+  tracking_number String?
+  
+  /// Shipment status (pending/shipped/in_transit/delivered/exception).
+  status String
+  
+  /// Timestamp when carrier accepted shipment.
+  shipped_at DateTime?
+  
+  /// Timestamp when carrier reported delivery.
+  delivered_at DateTime?
+  
+  /// Shipment creation time.
+  created_at DateTime
+  
+  /// Shipment last update time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderAddress shopping_mall_order_addresses? @relation(fields: [shopping_mall_order_address_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_shipment_items shopping_mall_shipment_items[]
+  
+  @@index([shopping_mall_order_id, created_at])
+  @@index([status, updated_at])
+  @@index([shopping_mall_order_address_id])
+}
+
+/// Junction table linking shipments to order items. Records which order
+/// items are included in a shipment and the shipped quantity. Related:
+/// {@link shopping_mall_shipments}, {@link shopping_mall_order_items}.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent shipment. {@link shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Linked order item. {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Quantity of the order item included in this shipment.
+  quantity Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_item_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shipment_id, shopping_mall_order_item_id], map: "shopping_mall_shipment_items_shopping_mall_shipment_id_32cb9586")
+}
+
+/// Refund request lifecycle records initiated by customers or support.
+/// Amount in smallest currency unit and currency explicit. Tracks approver
+/// metadata and provider initiation timestamps to support SLA and
+/// reconciliation.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -269,65 +393,133 @@ model shopping_mall_refund_requests {
   /// Primary Key.
   id String @id
   
-  /// Associated order. {@link shopping_mall_orders.id}.
+  /// Order for which refund is requested. {@link shopping_mall_orders.id}.
   shopping_mall_order_id String
   
-  /// Optional line-level association when refund targets specific item. {@link
+  /// Optional specific order item being refunded. {@link
   /// shopping_mall_order_items.id}.
   shopping_mall_order_item_id String?
   
-  /// User who requested refund when requester is a customer. {@link
-  /// shopping_mall_customer.id}. Nullable when requester is a supportAgent or
-  /// system actor.
-  requester_id String?
+  /// Customer who requested the refund. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
   
-  /// Optional supportAgent who requested or created the refund on behalf of a
-  /// customer. {@link shopping_mall_supportagent.id}.
-  shopping_mall_supportagent_requester_id String?
+  /// Currency of the refund amount. {@link shopping_mall_currencies.id}.
+  shopping_mall_currency_id String
   
-  /// Admin who processed the refund decision. {@link shopping_mall_admin.id}.
-  decision_by_admin_id String?
+  /// Admin who approved the refund (nullable until approval). {@link
+  /// shopping_mall_admins.id}.
+  approved_by_admin_id String?
   
-  /// Amount requested for refund in order currency.
-  requested_amount Float
+  /// Requested refund amount in smallest currency unit.
+  amount Int
   
-  /// Currency code for the refund request.
-  currency String
+  /// Customer-provided reason for the refund request.
+  reason String
   
-  /// Free-text reason supplied by requester; searchable with GIN.
-  reason String?
-  
-  /// Refund request status (pending, approved, denied, processed).
+  /// Refund workflow status (pending/approved/rejected/completed/failed).
   status String
   
-  /// Timestamp when refund request was created.
-  initiated_at DateTime
+  /// External provider refund id once initiated.
+  provider_refund_id String?
   
-  /// Timestamp when refund was processed/completed.
-  processed_at DateTime?
+  /// When refund was initiated to the provider.
+  initiated_at DateTime?
   
-  /// Internal processing notes for support/admins.
-  processing_notes String?
-  
-  /// Record creation timestamp.
+  /// Request creation time.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Last update time.
   updated_at DateTime
+  
+  /// Time when refund request was resolved.
+  resolved_at DateTime?
   
   //----
   // RELATIONS
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
-  requester shopping_mall_customer? @relation(fields: [requester_id], references: [id], onDelete: Cascade)
-  supportRequester shopping_mall_supportagent? @relation(fields: [shopping_mall_supportagent_requester_id], references: [id], onDelete: Cascade)
-  decisionBy shopping_mall_admin? @relation(fields: [decision_by_admin_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  currency shopping_mall_currencies @relation(fields: [shopping_mall_currency_id], references: [id], onDelete: Cascade)
+  approvedBy shopping_mall_admins? @relation(fields: [approved_by_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_disputes shopping_mall_disputes[]
+  shopping_mall_settlements shopping_mall_settlements[]
   
   @@index([shopping_mall_order_item_id])
-  @@index([shopping_mall_supportagent_requester_id], map: "shopping_mall_refund_requests_shopping_mall_supportage_d83db4da")
-  @@index([decision_by_admin_id])
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_currency_id])
+  @@index([approved_by_admin_id])
   
+  @@index([status, created_at])
   @@index([shopping_mall_order_id, status])
-  @@index([requester_id, initiated_at])
+}
+
+/// Dispute records from payment providers or customers. Added currency,
+/// provider amount and assigned admin to aid reconciliation and case
+/// ownership. Stores evidence references and resolution lifecycle metadata.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_disputes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order under dispute. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Optional linked refund request. {@link shopping_mall_refund_requests.id}.
+  shopping_mall_refund_request_id String?
+  
+  /// Currency relevant to dispute amounts. {@link shopping_mall_currencies.id}.
+  shopping_mall_currency_id String?
+  
+  /// Admin assigned to manage the dispute. {@link shopping_mall_admins.id}.
+  assigned_admin_id String?
+  
+  /// External provider dispute/case id.
+  provider_case_id String?
+  
+  /// Short description of the dispute reason.
+  dispute_reason String?
+  
+  /// Monetary amount reported by provider in smallest currency unit (nullable).
+  provider_amount Int?
+  
+  /// Dispute status (open/responded/closed/won/lost).
+  status String
+  
+  /// Provider response or resolution code for dispute lifecycle events.
+  provider_response_code String?
+  
+  /// Reference or JSON blob describing evidence links for dispute resolution.
+  evidence String?
+  
+  /// Dispute creation time.
+  created_at DateTime
+  
+  /// Dispute last update time.
+  updated_at DateTime
+  
+  /// Time dispute was resolved.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  refundRequest shopping_mall_refund_requests? @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  currency shopping_mall_currencies? @relation(fields: [shopping_mall_currency_id], references: [id], onDelete: Cascade)
+  assignedAdmin shopping_mall_admins? @relation(fields: [assigned_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_refund_request_id])
+  @@index([shopping_mall_currency_id])
+  @@index([assigned_admin_id])
+  
+  @@index([status, created_at])
+  @@index([provider_case_id])
+  @@index([shopping_mall_order_id])
 }

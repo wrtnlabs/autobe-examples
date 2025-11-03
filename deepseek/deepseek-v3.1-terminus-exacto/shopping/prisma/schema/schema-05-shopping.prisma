@@ -1,0 +1,224 @@
+/// Shopping carts for customers to temporarily store products before
+/// purchase. Each cart is associated with a customer session and can contain
+/// multiple items. Carts persist for 30 days to support returning customers.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer session that owns this shopping cart. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Current status of the shopping cart (active, abandoned, converted).
+  status String
+  
+  /// When the shopping cart was created.
+  created_at DateTime
+  
+  /// When the shopping cart was last updated.
+  updated_at DateTime
+  
+  /// When the shopping cart was soft deleted (abandoned or converted to order).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id, created_at], map: "shopping_mall_shopping_carts_shopping_mall_customer_se_3baba1d3")
+  @@index([status])
+}
+
+/// Individual items within shopping carts. Each item represents a product
+/// variant with specific quantity selected by the customer. Cart items are
+/// managed through parent cart operations.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent shopping cart containing this item. {@link
+  /// shopping_mall_shopping_carts.id}
+  shopping_mall_shopping_cart_id String
+  
+  /// Product variant selected by the customer. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Number of units of this product variant added to cart.
+  quantity Int
+  
+  /// Price per unit at the time of adding to cart.
+  unit_price Float
+  
+  /// When the item was added to the shopping cart.
+  created_at DateTime
+  
+  /// When the cart item was last updated.
+  updated_at DateTime
+  
+  /// When the cart item was removed from the shopping cart.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shoppingCart shopping_mall_shopping_carts @relation(fields: [shopping_mall_shopping_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_shopping_cart_id, shopping_mall_product_variant_id], map: "shopping_mall_cart_items_shopping_mall_shopping_cart_i_2ed36205")
+  @@index([shopping_mall_shopping_cart_id])
+  @@index([shopping_mall_product_variant_id])
+}
+
+/// Customer wishlists for saving products of interest for future purchase.
+/// Wishlists can be shared or kept private, and support organizing products
+/// into multiple lists.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this wishlist. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Name of the wishlist for customer organization.
+  name String
+  
+  /// Optional description of the wishlist purpose.
+  description String?
+  
+  /// Whether the wishlist is publicly visible or private.
+  is_public Boolean
+  
+  /// When the wishlist was created.
+  created_at DateTime
+  
+  /// When the wishlist was last updated.
+  updated_at DateTime
+  
+  /// When the wishlist was deleted by the customer.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_mall_customer_id, name])
+  @@index([shopping_mall_customer_id])
+  @@index([is_public])
+}
+
+/// Individual products saved within customer wishlists. Each item represents
+/// a product variant that the customer wants to track for potential future
+/// purchase.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent wishlist containing this item. {@link shopping_mall_wishlists.id}
+  shopping_mall_wishlist_id String
+  
+  /// Product variant saved to the wishlist. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Optional customer notes about why this product was saved.
+  notes String?
+  
+  /// Customer-assigned priority level for wishlist items (1-10).
+  priority Int?
+  
+  /// When the item was added to the wishlist.
+  created_at DateTime
+  
+  /// When the wishlist item was last updated.
+  updated_at DateTime
+  
+  /// When the item was removed from the wishlist.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_wishlist_id, shopping_mall_product_variant_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_e2467ce3")
+  @@index([shopping_mall_wishlist_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_wishlist_items_shopping_mall_product_var_4a27a4f7")
+  @@index([priority])
+}
+
+/// Tracking system for product view analytics. Records each time a customer
+/// views a product detail page for analytics and recommendation purposes.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_views {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer session that viewed the product. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String?
+  
+  /// Product that was viewed. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Duration of the product view in seconds for engagement analytics.
+  view_duration Int?
+  
+  /// When the product view occurred.
+  created_at DateTime
+  
+  /// When the product view record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customerSession shopping_mall_customer_sessions? @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id, created_at], map: "shopping_mall_product_views_shopping_mall_customer_ses_7d9d0f98")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_views_shopping_mall_product_id_c_395e4250")
+  @@index([created_at])
+}

@@ -1,5 +1,4 @@
 import { ForbiddenException } from "@nestjs/common";
-
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { SellerPayload } from "../../decorators/payload/SellerPayload";
@@ -19,7 +18,6 @@ export async function sellerAuthorize(request: {
     where: {
       id: payload.id,
       deleted_at: null,
-      status: "active",
     },
   });
 

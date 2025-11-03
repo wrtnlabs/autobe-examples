@@ -1,0 +1,364 @@
+/// Core product/SKU review authored by a customer. Captures rating (1–5),
+/// optional title/body, publication state (e.g., pending, published, hidden,
+/// under_appeal), and authorship/eligibility context. Links to the exact
+/// purchased SKU via {@link shopping_mall_product_skus} and (optionally) to
+/// the originating order line via {@link shopping_mall_order_items} to
+/// evidence verified purchase. Related entities include media {@link
+/// shopping_mall_review_media}, helpful votes {@link
+/// shopping_mall_review_helpful_votes}, flags {@link
+/// shopping_mall_review_flags}, responses {@link
+/// shopping_mall_review_responses}, and moderation workflow {@link
+/// shopping_mall_review_moderation_cases}.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Reviewed SKU's {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Order line's {@link shopping_mall_order_items.id} if this review is
+  /// linked to a verified purchase.
+  shopping_mall_order_item_id String?
+  
+  /// Integer rating score 1–5 as submitted by the customer.
+  rating Int
+  
+  /// Optional short headline for the review.
+  title String?
+  
+  /// Optional review text body (policy 10–5,000 characters when present).
+  body String?
+  
+  /// IETF language tag (e.g., en, ko) indicating the authoring language of the
+  /// text, used for moderation and filtering.
+  language String?
+  
+  /// Publication state of the review (e.g., pending, published, hidden,
+  /// under_appeal).
+  state String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the review is removed from availability.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_media shopping_mall_review_media[]
+  shopping_mall_review_responses shopping_mall_review_responses[]
+  shopping_mall_review_helpful_votes shopping_mall_review_helpful_votes[]
+  shopping_mall_review_flags shopping_mall_review_flags[]
+  shopping_mall_review_moderation_cases shopping_mall_review_moderation_cases[]
+  
+  @@unique([shopping_mall_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, created_at], map: "shopping_mall_reviews_shopping_mall_product_sku_id_cre_11a34ea9")
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([state, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, state, created_at], map: "shopping_mall_reviews_shopping_mall_product_sku_id_sta_86251c05")
+}
+
+/// Media assets (images/video) attached to a {@link shopping_mall_reviews}
+/// entry. Managed as supporting records with ordering for presentation and
+/// alternative text for accessibility. Read-only outside of the review’s
+/// lifecycle.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_media {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent review's {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Public or internal URI of the media asset.
+  media_uri String
+  
+  /// Media type identifier (e.g., image/jpeg, image/png, video/mp4).
+  media_type String
+  
+  /// Optional alternative text for accessibility and moderation context.
+  alt_text String?
+  
+  /// Zero-based position to order media assets for the parent review.
+  position Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the media is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_review_id, position])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_media_shopping_mall_review_id_cre_a3264bcc")
+}
+
+/// Single public seller response to a {@link shopping_mall_reviews} record.
+/// Restricted to exactly one per review and authored by a specific {@link
+/// shopping_mall_sellers} account with session traceability via {@link
+/// shopping_mall_seller_sessions}.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target review's {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Responding seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Responding seller session's {@link shopping_mall_seller_sessions.id}.
+  shopping_mall_seller_session_id String
+  
+  /// Seller's response text content. Must follow policy (no PII, no
+  /// promotional codes, no harassment).
+  body String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp; within 24h seller may edit once, otherwise admin
+  /// involvement required.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the response is removed or moderated out.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_review_responses_shopping_mall_seller_se_7cff3a07")
+  
+  @@unique([shopping_mall_review_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_review_responses_shopping_mall_seller_id_e422490f")
+}
+
+/// Helpfulness votes on {@link shopping_mall_reviews} by customers. Each
+/// customer may maintain exactly one current vote state (helpful or not
+/// helpful) per review; duplicates are prevented by a composite unique key.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_helpful_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target review's {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Voting customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Whether the vote indicates helpful (true) or not helpful (false).
+  helpful Boolean
+  
+  /// Creation timestamp of this vote record.
+  created_at DateTime
+  
+  /// Last update timestamp when vote flips between helpful/not helpful.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the vote is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_review_id, shopping_mall_customer_id], map: "shopping_mall_review_helpful_votes_shopping_mall_revie_5e6c9046")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, helpful], map: "shopping_mall_review_helpful_votes_shopping_mall_revie_af64e02b")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_review_helpful_votes_shopping_mall_custo_d002ba7c")
+}
+
+/// Policy or abuse flags raised against a {@link shopping_mall_reviews}
+/// entry. Supports multiple actor types (customer, seller, admin,
+/// automation) using a normalized polymorphic reference (actor_type +
+/// actor_reference_id) without multiple nullable FKs. Flags can optionally
+/// cite a policy reason via {@link shopping_mall_policy_reason_codes}.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Flagged review's {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Optional policy reason's {@link shopping_mall_policy_reason_codes.id}
+  /// clarifying the flag category.
+  shopping_mall_policy_reason_code_id String?
+  
+  /// Actor class that raised the flag (e.g., customer, seller, admin,
+  /// automation).
+  actor_type String
+  
+  /// Actor identifier corresponding to actor_type, referencing the actor table
+  /// in the respective component (not a direct FK to avoid polymorphic
+  /// nullable FK anti-pattern).
+  actor_reference_id String
+  
+  /// Optional free-text note supplied by the actor to provide context for the
+  /// flag.
+  comment String?
+  
+  /// Processing status for this flag (e.g., open, closed, merged).
+  status String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  policyReasonCode shopping_mall_policy_reason_codes? @relation(fields: [shopping_mall_policy_reason_code_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_reason_code_id], map: "shopping_mall_review_flags_shopping_mall_policy_reason_20eb394b")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_review_id, actor_type, actor_reference_id], map: "shopping_mall_review_flags_shopping_mall_review_id_act_e3b512e4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_flags_shopping_mall_review_id_cre_40479424")
+  @@index([actor_type, created_at])
+}
+
+/// Moderation workflow case for a {@link shopping_mall_reviews} entry.
+/// Records status lifecycle, severity, decision, policy reason linkage via
+/// {@link shopping_mall_policy_reason_codes}, involved admins {@link
+/// shopping_mall_admins}, and notes/timestamps for auditability.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_moderation_cases {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subject review's {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Optional linked policy reason's {@link
+  /// shopping_mall_policy_reason_codes.id}.
+  shopping_mall_policy_reason_code_id String?
+  
+  /// Assigned moderator's {@link shopping_mall_admins.id} handling this case.
+  assigned_shopping_mall_admin_id String?
+  
+  /// Decision owner admin's {@link shopping_mall_admins.id} when a final
+  /// outcome is recorded.
+  decided_shopping_mall_admin_id String?
+  
+  /// Case status (e.g., open, under_review, approved, rejected, redacted,
+  /// appealed, closed).
+  status String
+  
+  /// Severity classification for SLA and prioritization (e.g., standard, high).
+  severity String?
+  
+  /// Final decision label when applicable (e.g., keep, hide, redact, remove,
+  /// escalate).
+  decision String?
+  
+  /// Timestamp when the case was opened.
+  opened_at DateTime
+  
+  /// Timestamp when the decision was recorded, if decided.
+  decided_at DateTime?
+  
+  /// Free-text moderator notes and rationale. Avoid PII; use controlled reason
+  /// codes for policy categories.
+  notes String?
+  
+  /// Creation timestamp (record creation).
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for logical removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  policyReasonCode shopping_mall_policy_reason_codes? @relation(fields: [shopping_mall_policy_reason_code_id], references: [id], onDelete: Cascade)
+  assignedAdmin shopping_mall_admins? @relation("shopping_mall_review_moderation_cases_of_assigned_shop_93f5daa0", fields: [assigned_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  decidedAdmin shopping_mall_admins? @relation("shopping_mall_review_moderation_cases_of_decided_shopp_6c48f397", fields: [decided_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_reason_code_id], map: "shopping_mall_review_moderation_cases_shopping_mall_po_c222cdda")
+  // spellchecker: ignore-next-line
+  @@index([decided_shopping_mall_admin_id], map: "shopping_mall_review_moderation_cases_decided_shopping_bd405863")
+  
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_moderation_cases_shopping_mall_re_80e601bb")
+  // spellchecker: ignore-next-line
+  @@index([assigned_shopping_mall_admin_id, created_at], map: "shopping_mall_review_moderation_cases_assigned_shoppin_6ccf23ed")
+}

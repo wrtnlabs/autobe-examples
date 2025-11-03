@@ -1,0 +1,154 @@
+/// Represents a single vote (up/down) cast by a member on a post or comment.
+/// Each vote is an immutable event that affects the karma of the content
+/// author. This table ensures relationship integrity between the voter and
+/// the voted content item.
+///
+/// - Approved by community_platform_posts or community_platform_comments
+/// - Owned by community_platform_member (voter)
+/// - Tracks vote type: upvote or downvote
+/// - Each user can vote only once per item (enforced via unique constraint)
+///
+/// @link community_platform_posts.id for post votes
+/// @link community_platform_comments.id for comment votes
+/// @link community_platform_member.id for voter
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who cast this vote. {@link community_platform_member.id}.
+  voter_id String
+  
+  /// The post being voted on. One of post_id or comment_id must be non-null.
+  /// {@link community_platform_posts.id}.
+  post_id String?
+  
+  /// The comment being voted on. One of post_id or comment_id must be
+  /// non-null. {@link community_platform_comments.id}.
+  comment_id String?
+  
+  /// The type of vote: 'upvote' or 'downvote'. Determines whether karma is
+  /// added or subtracted from the author.
+  vote_type String
+  
+  /// Timestamp when the vote was cast. Immutable; used for ranking algorithms
+  /// and audit.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  voter community_platform_member @relation(fields: [voter_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  community_platform_karma_history community_platform_karma_history[]
+  
+  @@unique([voter_id, post_id])
+  @@unique([voter_id, comment_id])
+  @@index([post_id])
+  @@index([comment_id])
+  @@index([voter_id, created_at])
+}
+
+/// Represents the cumulative karma score of a member based on all their
+/// upvotes and downvotes received on posts and comments. This is a
+/// denormalized aggregate (optimized for read performance) and should only
+/// be updated via the karma_history trigger. Always kept in sync with
+/// karma_history. Do not update directly except via backend job.
+///
+/// - Owned by community_platform_member
+/// - Always reflects sum of all positive and negative votes received
+/// - Used for displaying member reputation, badges, and access restrictions
+///
+/// @link community_platform_member.id
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user whose karma is being tracked. Must be unique. {@link
+  /// community_platform_member.id}.
+  member_id String
+  
+  /// The current karma score. Starts at 0. Positive for upvotes, negative for
+  /// downvotes. Used for badges, influence, and thresholds (e.g., -100
+  /// restricts posting).
+  score Int
+  
+  /// Timestamp of the last karma update. Used for tracking freshness and
+  /// debugging.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id])
+  @@index([score])
+  @@index([updated_at])
+}
+
+/// An immutable audit trail of all changes to a member's karma. Each row
+/// represents a discrete event: a post/comment received an upvote (karma +1)
+/// or downvote (karma -1). This table enables full auditability,
+/// reconciliation, and debugging of reputation changes. Never write directly
+/// to community_platform_karma; always update via this journal.
+///
+/// - Each record is triggered by a community_platform_vote
+/// - Allows replay of karma changes for recovery
+/// - Never soft deleted
+///
+/// @link community_platform_member.id
+/// @link community_platform_votes.id
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member whose karma changed. {@link community_platform_member.id}.
+  member_id String
+  
+  /// The vote that caused this karma change. Optional, helps trace back to
+  /// original action. {@link community_platform_votes.id}.
+  vote_id String?
+  
+  /// The delta applied: +1 for upvote, -1 for downvote. Used to reconstruct
+  /// karma score from scratch.
+  change_amount Int
+  
+  /// Human-readable reason: 'upvote_post', 'downvote_post', 'upvote_comment',
+  /// 'downvote_comment', 'penalty_report', 'bonus_first_post'. For audit
+  /// clarity.
+  reason String
+  
+  /// Timestamp of the event that changed karma (when the vote was cast).
+  /// Immutable and mandatory.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  vote community_platform_votes? @relation(fields: [vote_id], references: [id], onDelete: Cascade)
+  
+  @@index([member_id, created_at])
+  @@index([vote_id])
+  @@index([reason])
+}

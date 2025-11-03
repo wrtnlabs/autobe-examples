@@ -1,0 +1,503 @@
+/// Represents physical shipments/packages. One order can have multiple
+/// shipments if split across sellers or inventory locations. Core
+/// fulfillment entity tracking the journey from seller warehouse to customer
+/// delivery. Links logical orders to physical package fulfillment.
+/// Integrates with carrier systems for tracking.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order being fulfilled. The {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Reference to the seller fulfilling this shipment. The {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Reference to the carrier transporting this shipment. The {@link
+  /// shopping_mall_shipping_carriers.id}.
+  shopping_mall_shipping_carrier_id String?
+  
+  /// Human-readable shipment identifier (e.g., SHP-20250115-001). Unique
+  /// format for easy tracking reference.
+  shipment_number String
+  
+  /// Carrier tracking number for this shipment. Used by customers and carriers
+  /// to track package. May be NULL until carrier assignment.
+  tracking_number String?
+  
+  /// Current shipment status: pending, confirmed, picked, packed, shipped,
+  /// in_transit, out_for_delivery, delivered, failed_delivery, returned.
+  /// Indicates fulfillment stage.
+  status String
+  
+  /// Full shipping address for this shipment (snapshot from order at shipment
+  /// time). Stored as JSON or formatted string with street, city, state,
+  /// postal code, country.
+  shipping_address String
+  
+  /// Total weight of shipment in kilograms. Used for shipping cost calculation
+  /// and carrier requirements.
+  weight_kg Float?
+  
+  /// Estimated delivery date calculated from carrier service level and
+  /// origin-to-destination route. Updated when carrier provides revised
+  /// estimate.
+  estimated_delivery_date DateTime?
+  
+  /// Actual delivery date when carrier confirms successful delivery. NULL
+  /// until delivery is confirmed.
+  actual_delivery_date DateTime?
+  
+  /// Date and time when shipment was picked up by carrier or left seller's
+  /// warehouse. Marks beginning of transit phase.
+  shipped_at DateTime?
+  
+  /// Timestamp when shipment record was created (when order was confirmed and
+  /// shipment reserved).
+  created_at DateTime
+  
+  /// Timestamp of most recent update to shipment record (status change,
+  /// delivery update, etc.).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  carrier shopping_mall_shipping_carriers? @relation(fields: [shopping_mall_shipping_carrier_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_shipment_mappings shopping_mall_order_shipment_mappings[]
+  shopping_mall_shipment_items shopping_mall_shipment_items[]
+  shopping_mall_shipment_tracking shopping_mall_shipment_tracking[]
+  shopping_mall_shipping_labels shopping_mall_shipping_labels?
+  shopping_mall_delivery_notifications shopping_mall_delivery_notifications[]
+  shopping_mall_delivery_exceptions shopping_mall_delivery_exceptions[]
+  shopping_mall_tracking_updates shopping_mall_tracking_updates[]
+  
+  @@unique([shipment_number])
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_seller_id])
+  @@index([shopping_mall_shipping_carrier_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Maps products/variants to shipments. Records which items from an order
+/// are included in each physical package. Enables independent tracking of
+/// items within a shipment and item-level fulfillment status. Subsidiary to
+/// shipment management.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the shipment containing this item. The {@link
+  /// shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Reference to the product variant being shipped. The {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Number of units of this variant in the shipment. Positive integer
+  /// representing items packed.
+  quantity Int
+  
+  /// Status of this specific item in the shipment: pending, picked, packed,
+  /// shipped, in_transit, delivered, damaged. Tracks individual item
+  /// fulfillment.
+  item_status String
+  
+  /// Timestamp when this item was added to the shipment.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_shipment_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_shipment_items_shopping_mall_product_var_8dfd4eb5")
+}
+
+/// Real-time tracking events from carrier APIs and webhooks. Records all
+/// status updates as shipment moves through carrier network. Append-only
+/// audit trail of shipment journey. Enables customer visibility and delivery
+/// management. Updates received from carrier systems at regular intervals.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_tracking {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the shipment being tracked. The {@link
+  /// shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Type of tracking event: picked_up, in_transit, at_facility,
+  /// out_for_delivery, delivered, delivery_failed, returned. Describes what
+  /// happened to the package.
+  tracking_event String
+  
+  /// Raw status string from carrier (e.g., 'EN' for FedEx, 'P' for UPS). May
+  /// differ from standardized tracking_event for integration purposes.
+  carrier_status String?
+  
+  /// Location description from carrier (city, facility name, etc.). May
+  /// include latitude/longitude if carrier provides it.
+  location String?
+  
+  /// When the carrier reported this event (timestamp from carrier, may differ
+  /// from when we received it).
+  event_timestamp DateTime?
+  
+  /// Human-readable description of the tracking event. Example: 'Package
+  /// picked up from sender' or 'Out for delivery'.
+  description String?
+  
+  /// Timestamp when this tracking event was recorded in the system (when we
+  /// received the update).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_shipment_id])
+  @@index([created_at])
+  @@index([event_timestamp])
+}
+
+/// Generated shipping labels for carrier fulfillment. Stores barcode, label
+/// data, and carrier-specific formatting. Created when shipment is ready to
+/// be handed to carrier. May be regenerated if label is lost or damaged.
+/// Subsidiary to shipment fulfillment.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_labels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the shipment this label is for. The {@link
+  /// shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Reference to the carrier this label was generated for. The {@link
+  /// shopping_mall_shipping_carriers.id}.
+  shopping_mall_shipping_carrier_id String
+  
+  /// Raw label data (PDF content, ZPL format, or other carrier format). Stored
+  /// as base64 encoded or reference to file storage location.
+  label_data String
+  
+  /// Barcode/tracking number embedded in label. Should match shipment tracking
+  /// number.
+  barcode String
+  
+  /// Format of label data: pdf, zpl, espl, image. Indicates how label should
+  /// be displayed or printed.
+  label_format String
+  
+  /// Timestamp when label was generated. Used to determine if label needs to
+  /// be regenerated.
+  generated_at DateTime
+  
+  /// Timestamp when label record was created in system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  carrier shopping_mall_shipping_carriers @relation(fields: [shopping_mall_shipping_carrier_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_shipment_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shipping_carrier_id], map: "shopping_mall_shipping_labels_shopping_mall_shipping_c_eda81baa")
+}
+
+/// Tracks all notifications sent to customers about their shipments. Records
+/// what was sent, when, to whom, via which channel (email, SMS, push).
+/// Enables notification history, resend capability, and communication
+/// compliance tracking. Subsidiary to shipment management.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_delivery_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the shipment this notification is about. The {@link
+  /// shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Reference to the customer who received this notification. The {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Type of notification: order_confirmed, order_shipped, out_for_delivery,
+  /// delivery_attempted, delivered, delivery_failed. Indicates what stage of
+  /// delivery the notification is about.
+  notification_type String
+  
+  /// Channel used to send notification: email, sms, push, in_app. Records how
+  /// notification was delivered to customer.
+  notification_channel String
+  
+  /// Notification delivery status: pending, sent, delivered, failed, bounced.
+  /// Tracks if notification reached customer successfully.
+  status String
+  
+  /// Destination address (email, phone, push token). Records where
+  /// notification was sent.
+  recipient_address String
+  
+  /// Timestamp when notification was sent to customer (or queued for sending).
+  sent_at DateTime
+  
+  /// Timestamp when delivery was confirmed (if available from provider). NULL
+  /// if not yet delivered or not trackable.
+  delivered_at DateTime?
+  
+  /// Reason for notification failure if status is 'failed' (invalid address,
+  /// provider error, etc.).
+  failed_reason String?
+  
+  /// Timestamp when this notification record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shipment_id], map: "shopping_mall_delivery_notifications_shopping_mall_shi_de84f873")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_delivery_notifications_shopping_mall_cus_cb0a8369")
+  @@index([sent_at])
+  @@index([notification_type])
+}
+
+/// Exceptional situations and problems during delivery. Records failed
+/// delivery attempts, address issues, delays, customer contact failures, and
+/// other delivery exceptions. Enables exception management and escalation
+/// workflows. Subsidiary to shipment fulfillment.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_delivery_exceptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the shipment with the delivery exception. The {@link
+  /// shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Type of exception: failed_delivery, address_invalid,
+  /// recipient_unavailable, package_damaged, weather_delay, customs_issue,
+  /// returned_to_sender, lost_package. Categorizes the problem.
+  exception_type String
+  
+  /// Severity level: low (minor delays), medium (delivery issue requiring
+  /// customer contact), high (package lost/damaged). Determines escalation
+  /// priority.
+  severity String
+  
+  /// Detailed description of the exception. Provides context for problem
+  /// resolution.
+  description String
+  
+  /// Message or note from carrier about the exception (from tracking update).
+  carrier_message String?
+  
+  /// Action taken to resolve: retry_delivery, return_to_sender,
+  /// refund_initiated, replacement_sent, pending_action. Records what's being
+  /// done.
+  resolution_action String?
+  
+  /// Timestamp when exception was first detected (from carrier update or
+  /// manual report).
+  detected_at DateTime
+  
+  /// Timestamp when exception was resolved or closed. NULL if still open.
+  resolved_at DateTime?
+  
+  /// Timestamp when exception record was created in system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_shipment_id])
+  @@index([severity])
+  @@index([exception_type])
+  @@index([detected_at])
+}
+
+/// Carrier-specific API integration configurations and credentials. Stores
+/// connection details for each carrier (endpoint, authentication method, API
+/// key). Separate from carrier master data. Enables integration with
+/// multiple carriers for real-time tracking and rate queries. Primary entity
+/// for admin carrier configuration management.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carrier_integrations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the carrier this integration is for. The {@link
+  /// shopping_mall_shipping_carriers.id}.
+  shopping_mall_shipping_carrier_id String
+  
+  /// Base URL for carrier's API endpoint. Example:
+  /// https://api.fedex.com/shipping or https://onlinetools.ups.com/track.
+  api_endpoint String
+  
+  /// Type of authentication: api_key, oauth2, basic_auth, certificate.
+  /// Indicates how to authenticate with carrier API.
+  authentication_type String
+  
+  /// Encrypted API key or authentication credential. Stored encrypted per
+  /// security requirements. Never logged or displayed in plain text.
+  api_key_encrypted String?
+  
+  /// Encrypted API secret or password (if needed for authentication). Stored
+  /// encrypted.
+  api_secret_encrypted String?
+  
+  /// URL for carrier to send webhook notifications about tracking updates. Our
+  /// endpoint that receives real-time updates.
+  webhook_url String?
+  
+  /// Carrier account identifier or rate table ID for looking up shipping
+  /// rates. Used for rating shipments.
+  rate_table_id String?
+  
+  /// Carrier account number (may be different from API key). Used in shipment
+  /// labels and requests.
+  account_number String?
+  
+  /// Integration status: active, inactive, testing, deprecated. Controls
+  /// whether integration is used for production shipments.
+  status String
+  
+  /// Timestamp of last successful API sync/connection test with carrier. Used
+  /// to detect connectivity issues.
+  last_sync_at DateTime?
+  
+  /// Timestamp when integration was configured.
+  created_at DateTime
+  
+  /// Timestamp of last configuration update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  carrier shopping_mall_shipping_carriers @relation(fields: [shopping_mall_shipping_carrier_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_shipping_carrier_id], map: "shopping_mall_carrier_integrations_shopping_mall_shipp_59c0a62d")
+  @@index([status])
+}
+
+/// Raw historical record of all tracking data received from carriers. Stores
+/// complete raw API responses and webhook payloads. Enables audit trail,
+/// system debugging, and carrier response analysis. Append-only record for
+/// compliance. Subsidiary to carrier integration management.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_tracking_updates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the shipment this tracking data is for. The {@link
+  /// shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Reference to the carrier that sent this tracking update. The {@link
+  /// shopping_mall_shipping_carriers.id}.
+  shopping_mall_shipping_carrier_id String?
+  
+  /// Raw JSON or XML response from carrier API/webhook. Stored as-is for
+  /// debugging and audit purposes. May contain full tracking event details.
+  carrier_response_raw String
+  
+  /// Type of response: webhook_payload, api_query_response, batch_update.
+  /// Indicates source of the tracking data.
+  response_type String
+  
+  /// Timestamp when tracking data was received from carrier.
+  received_at DateTime
+  
+  /// Timestamp when tracking data was processed and parsed into
+  /// shipment_tracking. NULL if not yet processed.
+  processed_at DateTime?
+  
+  /// Processing status: pending, processed, failed, skipped. Indicates if raw
+  /// data was successfully parsed.
+  processing_status String
+  
+  /// Error message if processing failed. Records why raw data couldn't be
+  /// parsed.
+  processing_error String?
+  
+  /// Timestamp when this record was created (when we received the data).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  carrier shopping_mall_shipping_carriers? @relation(fields: [shopping_mall_shipping_carrier_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shipping_carrier_id], map: "shopping_mall_tracking_updates_shopping_mall_shipping__20094cbd")
+  
+  @@index([shopping_mall_shipment_id])
+  @@index([received_at])
+  @@index([processing_status])
+}

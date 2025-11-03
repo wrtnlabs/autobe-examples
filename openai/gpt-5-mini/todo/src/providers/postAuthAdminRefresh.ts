@@ -9,98 +9,115 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAdmin";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminRefresh(props: {
+  admin: AdminPayload;
   body: ITodoAppAdmin.IRefresh;
 }): Promise<ITodoAppAdmin.IAuthorized> {
-  const { body } = props;
-  const { refresh_token } = body;
+  const { admin, body } = props;
 
-  let decoded: unknown;
+  // Verify and decode refresh token
+  let decoded: { id: string; session_id: string; type: string };
   try {
-    decoded = jwt.verify(refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    });
+    }) as { id: string; session_id: string; type: string };
   } catch (err) {
-    throw new HttpException("Invalid refresh token", 401);
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  const payload =
-    decoded && typeof decoded === "object"
-      ? (decoded as Record<string, unknown>)
-      : undefined;
-  const adminId =
-    payload?.id ?? payload?.adminId ?? payload?.userId ?? payload?.sub;
-  if (!adminId || typeof adminId !== "string") {
-    throw new HttpException("Invalid refresh token", 401);
+  if (decoded.type !== "admin") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  const admin = await MyGlobal.prisma.todo_app_admin.findUnique({
-    where: { id: adminId },
-  });
-  if (!admin) throw new HttpException("Invalid refresh token", 401);
-
-  const now = toISOStringSafe(new Date());
-
-  // Update last_active_at
-  await MyGlobal.prisma.todo_app_admin.update({
-    where: { id: admin.id },
-    data: { last_active_at: now },
-  });
-
-  // Audit the refresh usage
-  await MyGlobal.prisma.todo_app_audit_records.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      admin_id: admin.id,
-      user_id: null,
-      actor_role: "admin",
-      action_type: "refresh_token_used",
-      target_resource: "admin",
-      target_id: admin.id,
-      reason: null,
-      created_at: now,
+  // Validate session and admin state
+  const session = await MyGlobal.prisma.todo_app_admin_sessions.findFirst({
+    where: {
+      id: decoded.session_id,
+      todo_app_admin_id: decoded.id,
     },
+    include: { admin: true },
   });
 
-  // Create tokens
-  const accessPayload = {
-    id: admin.id,
-    type: "admin",
-    email: admin.email,
-    is_super: admin.is_super,
-  };
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
 
-  const access = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
+  const targetAdmin = session.admin;
+  if (!targetAdmin) throw new HttpException("Admin account not found", 401);
+  if (!targetAdmin.is_active)
+    throw new HttpException("Account is not active", 403);
+  if (targetAdmin.deleted_at !== null)
+    throw new HttpException("Account has been deleted", 403);
+
+  // Generate tokens and timestamps
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const nowIso = toISOStringSafe(new Date());
+
+  const access = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
 
   const refresh = jwt.sign(
-    { id: admin.id, type: "admin", tokenType: "refresh" },
-    MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "7d",
-      issuer: "autobe",
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: nowIso,
     },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
   );
 
-  const expired_at = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshable_until = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const accessExpiredAt = toISOStringSafe(accessExpires);
+  const refreshableUntil = toISOStringSafe(refreshExpires);
 
+  // Update session expiration time
+  await MyGlobal.prisma.todo_app_admin_sessions.update({
+    where: { id: decoded.session_id },
+    data: { expired_at: refreshableUntil },
+  });
+
+  // Record audit log for token refresh
+  await MyGlobal.prisma.todo_app_audit_logs.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      todo_app_admin_id: decoded.id,
+      todo_app_admin_session_id: decoded.session_id,
+      event_type: "refresh_token",
+      details: "Admin refresh token exchange",
+      created_at: nowIso,
+      updated_at: nowIso,
+    },
+  });
+
+  // Return authorized admin payload
   return {
-    id: admin.id,
-    email: admin.email,
-    is_super: admin.is_super,
-    created_at: toISOStringSafe(admin.created_at),
-    last_active_at: now,
+    id: targetAdmin.id as string & tags.Format<"uuid">,
+    email: targetAdmin.email as string & tags.Format<"email">,
+    display_name: targetAdmin.display_name ?? null,
+    role: targetAdmin.role,
+    is_active: targetAdmin.is_active,
+    createdAt: toISOStringSafe(targetAdmin.created_at),
+    updatedAt: toISOStringSafe(targetAdmin.updated_at),
+    deletedAt: targetAdmin.deleted_at
+      ? toISOStringSafe(targetAdmin.deleted_at)
+      : null,
     token: {
       access,
       refresh,
-      expired_at,
-      refreshable_until,
+      expired_at: accessExpiredAt,
+      refreshable_until: refreshableUntil,
     },
   };
 }

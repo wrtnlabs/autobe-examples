@@ -19,7 +19,7 @@ export async function memberAuthorize(request: {
     where: {
       id: payload.id,
       deleted_at: null,
-      account_status: "active",
+      status: "active",
       email_verified: true,
     },
   });

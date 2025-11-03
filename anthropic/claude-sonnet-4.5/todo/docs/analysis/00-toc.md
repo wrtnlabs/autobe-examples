@@ -1,270 +1,225 @@
-# Todo List Application - Requirements Analysis Documentation
+# Todo List Application - Requirements Documentation
 
 ## Document Overview
 
-This requirements analysis provides comprehensive documentation for a minimal, focused Todo List application. The documentation follows a structured approach to define business requirements, user needs, and system behavior from a non-technical perspective, enabling backend developers to understand exactly what needs to be built without prescribing technical implementation details.
+This documentation suite provides a comprehensive requirements analysis for a minimal yet fully functional Todo list application. The documentation is structured to transform conversational requirements into production-ready specifications that backend developers can use to build the system immediately.
 
-The documentation set consists of 11 interconnected documents, each focusing on a specific aspect of the Todo List application. These documents are designed to be read sequentially for complete understanding, though individual documents can be referenced independently as needed.
+The requirements focus exclusively on **business functionality and user needs**, written in natural language. All technical implementation decisions—including architecture, API design, database schemas, and technology choices—are left to the discretion of the development team.
 
-## Project Summary
+### Purpose of This Documentation
 
-### Application Vision
+These documents serve to:
 
-The Todo List Application is designed with a core philosophy: **simplicity and essential functionality**. This is not a feature-rich task management platform with complex workflows, team collaboration, or advanced planning tools. Instead, it is a clean, straightforward personal todo list that allows individual users to capture, track, and complete their tasks efficiently.
+- Define clear, unambiguous business requirements for the Todo list application
+- Specify user workflows and expected system behaviors
+- Establish validation rules and business logic
+- Document error handling and security requirements
+- Provide performance expectations from a user perspective
+- Create a shared understanding between stakeholders and developers
 
-### Core Principles
+### Documentation Principles
 
-- **Minimalism**: Only essential features that directly support basic todo management
-- **User Focus**: Single-user experience with personal todo lists
-- **Simplicity**: Intuitive operations without complex configurations or settings
-- **Clarity**: Clear, unambiguous requirements that developers can implement confidently
+- **Business Requirements Only**: No technical specifications, API designs, or database schemas
+- **Natural Language**: Requirements written for clarity and understanding
+- **EARS Format**: Functional requirements use Easy Approach to Requirements Syntax for precision
+- **User-Centric**: Focus on what users can do and how the system should behave
+- **Implementation-Ready**: Specific enough for developers to start building immediately
 
-### Scope Boundaries
+## Project Structure
 
-**What This Application IS:**
-- A personal todo list manager
-- A simple task tracking system
-- A tool for individual productivity
+The Todo list application documentation is organized into 11 comprehensive documents, each covering a specific aspect of the system requirements. The documents follow a logical progression from high-level overview to detailed specifications.
 
-**What This Application IS NOT:**
-- A team collaboration platform
-- A project management system
-- A complex workflow automation tool
-- A feature-rich enterprise task manager
+### Documentation Organization
 
-## Documentation Structure
+The documents are numbered sequentially to suggest a recommended reading order:
 
-This requirements analysis is organized into 11 documents, structured to flow from high-level business context to specific technical requirements:
+1. **Overview Documents** (01): Establish context, vision, and business model
+2. **Core Requirement Documents** (02-05): Define essential functionality and user workflows
+3. **Quality and Constraint Documents** (06-08): Specify error handling, performance, and security
+4. **Data and Success Documents** (09-10): Define data management and success criteria
 
-### Foundation Documents (Business Context)
-1. **Service Overview** - Business justification and value proposition
-2. **User Roles and Authentication** - Security and access control
+### Target Audiences
 
-### Core Functionality Documents (What to Build)
-3. **Core Features** - Essential todo management operations
-4. **User Workflows** - How users interact with the system
-5. **Business Rules** - Validation and constraints
+- **Backend Developers**: Primary audience for detailed requirement documents (02-09)
+- **Business Stakeholders**: Focus on overview and success criteria (01, 10)
+- **Product Managers**: User workflows and business rules (04, 05)
+- **Security Team**: Authentication and security requirements (02, 08)
+- **System Architects**: Performance and scalability considerations (07, 09)
 
-### Quality and Reliability Documents (How It Should Behave)
-6. **Error Handling** - Exception scenarios and recovery
-7. **Performance Requirements** - Speed and responsiveness expectations
-8. **Data Management** - Data lifecycle and privacy
+## Complete Documentation List
 
-### Security and Future Planning
-9. **Security and Compliance** - Protection and privacy measures
-10. **Future Considerations** - Potential enhancements and evolution
+### Overview and Foundation
 
-### Navigation
-11. **Table of Contents** (This Document) - Documentation guide and overview
+#### [Service Overview and Business Model](./01-service-overview.md)
+
+Establishes the foundation by defining what the Todo list application is, why it exists, and what value it provides to users. This document covers the executive summary, service vision, target users, core value proposition, business model, key features overview, and success metrics. Essential reading for understanding the business context and purpose of the application.
+
+**Key Topics**: Business justification, target market, value proposition, revenue model, core features
+
+---
+
+### User Management and Security
+
+#### [User Actors and Authentication](./02-user-actors-and-authentication.md)
+
+Defines all user types (authenticated users and administrators), their permissions, and the complete authentication system. This critical document establishes security boundaries and access control throughout the application, including JWT token management, session handling, password security, and account recovery processes.
+
+**Key Topics**: User roles, permission matrix, authentication flows, JWT implementation, session management, password security
+
+---
+
+### Core Functionality
+
+#### [Core Todo Functionality](./03-core-todo-functionality.md)
+
+Documents the primary features of the Todo list application—creating, reading, updating, and deleting todo items. This is the heart of the application's functionality, defining todo item structure, all CRUD operations, completion status management, and validation rules. Every business rule for todo item management is specified here.
+
+**Key Topics**: Todo item structure, create/read/update/delete operations, completion status, validation rules, access control
+
+---
+
+### User Experience and Workflows
+
+#### [User Workflows and Journeys](./04-user-workflows.md)
+
+Describes step-by-step user journeys for common scenarios in the Todo list application, helping developers understand the complete user experience. Covers new user registration, daily todo management workflows, completing and organizing tasks, account management, and administrative monitoring workflows.
+
+**Key Topics**: User registration flow, daily task management, task completion workflows, account management, admin workflows
+
+---
+
+### Business Logic and Constraints
+
+#### [Business Rules and Validation](./05-business-rules-and-validation.md)
+
+Defines all business rules, constraints, and validation logic that govern how the Todo list application operates. This ensures data integrity and consistent behavior across all operations. Includes todo item validation, user account rules, data constraints, authorization rules, and data lifecycle management.
+
+**Key Topics**: Validation rules, business constraints, authorization logic, data integrity rules, lifecycle management
+
+---
+
+### Error Management
+
+#### [Error Handling and Edge Cases](./06-error-handling-and-edge-cases.md)
+
+Documents how the system handles errors, exceptional situations, and edge cases to ensure robust and user-friendly error management. Covers authentication errors, todo operation failures, validation errors, authorization denials, system errors, and special scenarios. Defines error response formats and user-facing error messages.
+
+**Key Topics**: Error scenarios, exception handling, validation failures, authorization errors, error messaging, edge cases
+
+---
+
+### Performance Requirements
+
+#### [Performance and Scalability](./07-performance-and-scalability.md)
+
+Defines performance expectations and scalability considerations to ensure the Todo list application provides a responsive user experience. Specifies response time requirements, data volume expectations, concurrent user support, and performance optimization guidelines from a user experience perspective.
+
+**Key Topics**: Response time expectations, user capacity, data volume handling, performance critical operations, scalability guidelines
+
+---
+
+### Security and Privacy
+
+#### [Security and Privacy Requirements](./08-security-and-privacy.md)
+
+Documents security requirements and privacy considerations to ensure user data is protected and the system is secure against common threats. Covers authentication security, data privacy, authorization security, data protection, security best practices, and privacy compliance requirements.
+
+**Key Topics**: Authentication security, data privacy, authorization controls, data protection, security best practices, privacy compliance
+
+---
+
+### Data Management
+
+#### [Data Management and Lifecycle](./09-data-management.md)
+
+Defines how data is structured, managed, and maintained throughout its lifecycle in the Todo list application. Covers data entities, relationships between entities, data lifecycle management, data integrity requirements, retention policies, and user data management—all described in business terms without technical implementation details.
+
+**Key Topics**: Data entities, entity relationships, data lifecycle, integrity requirements, retention policies, user data handling
+
+---
+
+### Success Metrics and Future Vision
+
+#### [Success Criteria and Future Considerations](./10-success-criteria-and-future-considerations.md)
+
+Defines how success will be measured and documents potential future enhancements that are out of scope for the minimal version but may be valuable later. Includes success metrics, KPIs, acceptance criteria, launch readiness checklist, future enhancement opportunities, and scalability paths.
+
+**Key Topics**: Success metrics, launch criteria, acceptance testing, future features, enhancement roadmap, scalability planning
+
+---
 
 ## How to Use This Documentation
 
-### For Business Stakeholders
-**Recommended Reading Order:**
-1. Start with this Table of Contents for overview
-2. Read [Service Overview](./01-service-overview.md) to understand business value
-3. Review [Core Features](./03-core-features.md) to see what functionality is included
-4. Check [Future Considerations](./10-future-considerations.md) for evolution possibilities
-
 ### For Backend Developers
-**Recommended Reading Order:**
-1. Begin with [Service Overview](./01-service-overview.md) for business context
-2. Study [User Roles and Authentication](./02-user-roles-and-authentication.md) thoroughly
-3. Understand [Core Features](./03-core-features.md) completely
-4. Review [User Workflows](./04-user-workflows.md) to understand user interactions
-5. Learn all [Business Rules](./05-business-rules.md) for validation logic
-6. Study [Error Handling](./06-error-handling.md) for exception scenarios
-7. Review [Performance Requirements](./07-performance-requirements.md)
-8. Understand [Data Management](./08-data-management.md) expectations
-9. Review [Security and Compliance](./09-security-and-compliance.md)
-10. Reference [Future Considerations](./10-future-considerations.md) for extensibility
+
+**Recommended Reading Sequence**:
+
+1. Start with [Service Overview and Business Model](./01-service-overview.md) to understand business context
+2. Review [User Actors and Authentication](./02-user-actors-and-authentication.md) to understand security requirements
+3. Study [Core Todo Functionality](./03-core-todo-functionality.md) for primary feature requirements
+4. Read [Business Rules and Validation](./05-business-rules-and-validation.md) for validation logic
+5. Review [User Workflows and Journeys](./04-user-workflows.md) to understand complete user journeys
+6. Check [Error Handling and Edge Cases](./06-error-handling-and-edge-cases.md) for error management
+7. Review [Security and Privacy Requirements](./08-security-and-privacy.md) for security implementation
+8. Consult [Performance and Scalability](./07-performance-and-scalability.md) for performance expectations
+9. Reference [Data Management and Lifecycle](./09-data-management.md) for data handling requirements
+
+### For Business Stakeholders
+
+**Recommended Reading Sequence**:
+
+1. [Service Overview and Business Model](./01-service-overview.md) - Understand the business case
+2. [User Workflows and Journeys](./04-user-workflows.md) - See how users will interact with the system
+3. [Success Criteria and Future Considerations](./10-success-criteria-and-future-considerations.md) - Review success metrics and future plans
+4. [Core Todo Functionality](./03-core-todo-functionality.md) - Understand core features
 
 ### For Product Managers
-**Recommended Reading Order:**
-1. Table of Contents (this document) for structure
-2. [Service Overview](./01-service-overview.md) for business alignment
-3. [User Workflows](./04-user-workflows.md) for user experience
-4. [Core Features](./03-core-features.md) for functionality scope
-5. [Future Considerations](./10-future-considerations.md) for roadmap planning
 
-## Document Navigation Guide
+**Recommended Reading Sequence**:
 
-### 01. [Service Overview](./01-service-overview.md)
-**Purpose:** Establishes the business foundation and justification for the Todo List application.
+1. [Service Overview and Business Model](./01-service-overview.md) - Business context and value proposition
+2. [User Actors and Authentication](./02-user-actors-and-authentication.md) - User types and permissions
+3. [User Workflows and Journeys](./04-user-workflows.md) - Complete user experience
+4. [Core Todo Functionality](./03-core-todo-functionality.md) - Feature specifications
+5. [Business Rules and Validation](./05-business-rules-and-validation.md) - Business logic
+6. [Success Criteria and Future Considerations](./10-success-criteria-and-future-considerations.md) - Success metrics
 
-**Key Content:**
-- Why this service should exist in the market
-- Target users and their needs
-- Business model and revenue considerations
-- Core value proposition
-- Service scope and boundaries
-- Success criteria and metrics
+### For Security Team
 
-**Who Should Read:** All stakeholders - essential starting point for understanding the business context
+**Recommended Reading Sequence**:
 
----
+1. [User Actors and Authentication](./02-user-actors-and-authentication.md) - Authentication system
+2. [Security and Privacy Requirements](./08-security-and-privacy.md) - Security specifications
+3. [Business Rules and Validation](./05-business-rules-and-validation.md) - Authorization rules
+4. [Error Handling and Edge Cases](./06-error-handling-and-edge-cases.md) - Security-related error handling
 
-### 02. [User Roles and Authentication](./02-user-roles-and-authentication.md)
-**Purpose:** Defines the complete authentication system, user roles, and permission structure.
+### Quick Reference Guide
 
-**Key Content:**
-- User role definitions (Guest and User)
-- Complete authentication flow requirements
-- Registration and login processes
-- JWT token management specifications
-- Session handling requirements
-- Comprehensive permission matrix
-- Security requirements for authentication
+- **Looking for authentication details?** → [User Actors and Authentication](./02-user-actors-and-authentication.md)
+- **Need to understand core features?** → [Core Todo Functionality](./03-core-todo-functionality.md)
+- **Want to see user journeys?** → [User Workflows and Journeys](./04-user-workflows.md)
+- **Need validation rules?** → [Business Rules and Validation](./05-business-rules-and-validation.md)
+- **Looking for error scenarios?** → [Error Handling and Edge Cases](./06-error-handling-and-edge-cases.md)
+- **Need performance requirements?** → [Performance and Scalability](./07-performance-and-scalability.md)
+- **Want security specifications?** → [Security and Privacy Requirements](./08-security-and-privacy.md)
+- **Need data management details?** → [Data Management and Lifecycle](./09-data-management.md)
+- **Looking for success criteria?** → [Success Criteria and Future Considerations](./10-success-criteria-and-future-considerations.md)
 
-**Who Should Read:** Backend developers (critical), security reviewers, all technical stakeholders
+### Document Conventions
 
----
+Throughout this documentation:
 
-### 03. [Core Features](./03-core-features.md)
-**Purpose:** Documents all essential todo management features and operations.
+- **EARS Format**: Functional requirements use keywords like WHEN, THE, SHALL, IF, THEN, WHERE, WHILE
+- **User Perspective**: Requirements describe what users can do and experience
+- **Natural Language**: Business requirements without technical implementation details
+- **Specific and Measurable**: Every requirement is actionable and testable
+- **Mermaid Diagrams**: Visual representations use left-to-right flow charts for clarity
 
-**Key Content:**
-- Todo creation functionality
-- Viewing and listing todos
-- Completion status management
-- Todo editing capabilities
-- Todo deletion operations
-- Todo data structure specifications
-- Feature priority definitions
+### Living Documentation
 
-**Who Should Read:** All stakeholders - defines what the application actually does
+This documentation represents the requirements for the minimal viable Todo list application. As the application evolves, these documents should be updated to reflect new requirements, but the core principles remain:
 
----
-
-### 04. [User Workflows](./04-user-workflows.md)
-**Purpose:** Illustrates how users interact with the system through their complete journey.
-
-**Key Content:**
-- New user registration journey
-- Login and authentication workflow
-- Creating first todo experience
-- Daily todo management workflows
-- Completing and organizing todos
-- Visual workflow diagrams using Mermaid
-
-**Who Should Read:** Developers, UX designers, product managers, business stakeholders
-
----
-
-### 05. [Business Rules](./05-business-rules.md)
-**Purpose:** Defines all validation rules, constraints, and business logic governing the system.
-
-**Key Content:**
-- Todo validation requirements
-- User data validation rules
-- Authorization and access control rules
-- Data integrity constraints
-- Operational business rules
-- All rules specified in EARS format
-
-**Who Should Read:** Backend developers (critical), QA engineers, business analysts
-
----
-
-### 06. [Error Handling](./06-error-handling.md)
-**Purpose:** Specifies how the system handles errors, edge cases, and exceptional scenarios.
-
-**Key Content:**
-- Authentication error scenarios
-- Todo operation errors
-- Validation error handling
-- System error responses
-- User-friendly error message specifications
-- Recovery processes and options
-
-**Who Should Read:** Backend developers (critical), QA engineers, support teams
-
----
-
-### 07. [Performance Requirements](./07-performance-requirements.md)
-**Purpose:** Defines performance expectations from the user's perspective.
-
-**Key Content:**
-- Response time requirements for all operations
-- Scalability expectations
-- Data load performance criteria
-- Concurrent user support specifications
-- Performance monitoring expectations
-
-**Who Should Read:** Backend developers, infrastructure engineers, QA engineers
-
----
-
-### 08. [Data Management](./08-data-management.md)
-**Purpose:** Describes data lifecycle, storage requirements, and data policies from a business perspective.
-
-**Key Content:**
-- Todo data lifecycle management
-- User data lifecycle requirements
-- Data retention policies
-- Data privacy requirements
-- Backup and recovery expectations
-- Data export capabilities
-
-**Who Should Read:** Backend developers, data engineers, compliance officers, security teams
-
----
-
-### 09. [Security and Compliance](./09-security-and-compliance.md)
-**Purpose:** Defines security requirements and privacy considerations to protect user data.
-
-**Key Content:**
-- Authentication security requirements
-- Data protection specifications
-- Privacy requirements and policies
-- Access control mechanisms
-- Security best practices to follow
-- Compliance considerations
-
-**Who Should Read:** Backend developers (critical), security engineers, compliance officers
-
----
-
-### 10. [Future Considerations](./10-future-considerations.md)
-**Purpose:** Documents potential future enhancements while maintaining current minimal scope.
-
-**Key Content:**
-- Future vision for the application
-- Potential feature enhancements
-- Scalability considerations
-- Integration opportunities
-- User feedback and iteration approach
-- Roadmap principles
-
-**Who Should Read:** Product managers, business stakeholders, technical architects
-
----
-
-## Documentation Conventions
-
-### Requirement Format
-Throughout this documentation, requirements follow the **EARS (Easy Approach to Requirements Syntax)** format for clarity and testability:
-
-- **Ubiquitous**: "THE system SHALL function."
-- **Event-driven**: "WHEN trigger, THE system SHALL function."
-- **State-driven**: "WHILE state, THE system SHALL function."
-- **Unwanted behavior**: "IF condition, THEN THE system SHALL function."
-- **Optional features**: "WHERE feature, THE system SHALL function."
-
-### Visual Diagrams
-Complex workflows and processes are illustrated using Mermaid diagrams for clarity and professional presentation.
-
-### Links and References
-All document cross-references use descriptive link text rather than raw filenames to improve readability and understanding.
-
-## Getting Started
-
-**New to this project?** Start with the [Service Overview](./01-service-overview.md) to understand the business context and vision.
-
-**Ready to build?** Begin with [User Roles and Authentication](./02-user-roles-and-authentication.md), then proceed through [Core Features](./03-core-features.md), [Business Rules](./05-business-rules.md), and [Error Handling](./06-error-handling.md).
-
-**Need specific information?** Use the document descriptions above to navigate directly to the relevant section.
-
----
-
-This document defines business requirements only. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.
+- Focus on business requirements, not technical solutions
+- Maintain clarity and specificity
+- Keep user needs at the center
+- Ensure all requirements are testable and implementable

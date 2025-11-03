@@ -1,155 +1,196 @@
-/// Categories for econPoliticalForum. Represents the canonical
-/// classification of threads and content. Categories drive visibility rules
-/// (public, moderated, restricted), may require verification for posting,
-/// and are referenced by threads and moderation workflows. Contains business
-/// identifiers (code, slug), display metadata, and flags used by content
-/// gating and moderator routing.
+/// Categories for organizing published articles. Each category represents a
+/// primary organizational bucket (e.g., Economics, Policy, Commentary).
+/// Categories are independently managed by administrators and referenced by
+/// articles via a primary_category_id in the Content component. Contains
+/// activation flags and temporal audit fields for lifecycle management.
+/// Recommended: add DB-level defaults for created_at and updated_at and
+/// consider case-insensitive uniqueness for slug if desired.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_political_forum_categories {
+model discussion_board_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Optional short business code for the category (e.g., 'fiscal', 'trade').
-  /// Unique when present.
-  code String?
-  
-  /// Human-visible category name (for display in UI and navigation).
+  /// Human-readable category name used in listings and UI (e.g., 'Economics').
   name String
   
-  /// URL-friendly unique slug for the category (used for routing and lookups).
+  /// URL-friendly unique identifier for category (e.g., 'economics'). Consider
+  /// enforcing lower-case uniqueness (citext or functional index lower(slug)).
   slug String
   
-  /// Longer textual description explaining the purpose and scope of the
-  /// category.
+  /// Optional longer description explaining the category's scope and usage
+  /// guidance.
   description String?
   
-  /// Whether new posts in this category require moderator approval before
-  /// public publishing.
-  is_moderated Boolean
+  /// Whether the category is active and available for assignment to new
+  /// articles.
+  is_active Boolean
   
-  /// If true, posting in this category requires a verified account (email
-  /// verified or other verification).
-  requires_verification Boolean
+  /// Optional integer used to order categories in curated lists; lower values
+  /// appear first.
+  sort_order Int?
   
-  /// Display order hint for UI lists; lower values are shown earlier.
-  order Int
-  
-  /// Record creation timestamp.
+  /// Record creation timestamp. Recommendation: add DB default @default(now())
+  /// to ensure value at insert.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Record last modification timestamp. Recommendation: use Prisma's
+  /// @updatedAt or DB trigger to keep this current; otherwise add
+  /// @default(now()) and application must update on changes.
   updated_at DateTime
   
-  /// Soft delete timestamp; null when active.
+  /// Soft-delete timestamp; null when active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  econ_political_forum_threads econ_political_forum_threads[]
+  discussion_board_articles discussion_board_articles[]
   
   @@unique([slug])
-  @@unique([code])
-  @@index([is_moderated, order])
-  @@index([created_at])
+  @@unique([name])
+  @@index([is_active, created_at])
+  @@index([sort_order, is_active])
 }
 
-/// Site-level configuration settings for econPoliticalForum. Key/value pairs
-/// used by application code and business logic to control runtime behavior,
-/// feature gating defaults, moderation thresholds, and environment-specific
-/// overrides. Intended to be small, read-mostly, and administrable via an
-/// admin UI. Keys must be unique.
+/// Tag catalogue for articles. Tags provide flexible, many-to-many labeling
+/// for articles to aid discovery and search. Tags are managed independently
+/// and may be applied to multiple articles via the junction table {@link
+/// discussion_board_article_tags}. Recommended: add DB-level defaults for
+/// created_at and updated_at; consider case-insensitive slug uniqueness if
+/// product requires it.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_political_forum_site_settings {
+model discussion_board_tags {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key (namespace.form). Example:
-  /// 'moderation.report_threshold'.
+  /// Tag display name (e.g., 'inflation').
+  name String
+  
+  /// URL-friendly unique tag key (e.g., 'inflation'). Consider enforcing
+  /// lower-case uniqueness (citext or functional index lower(slug)).
+  slug String
+  
+  /// Optional description or guidance for tag usage.
+  description String?
+  
+  /// Whether the tag is currently active and assignable.
+  is_active Boolean
+  
+  /// Record creation timestamp. Recommendation: add DB default @default(now()).
+  created_at DateTime
+  
+  /// Record last modification timestamp. Recommendation: add @updatedAt or DB
+  /// trigger to maintain this value.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; null when active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_article_tags discussion_board_article_tags[]
+  
+  @@unique([slug])
+  @@unique([name])
+  @@index([is_active, created_at])
+}
+
+/// Junction table implementing the many-to-many relationship between
+/// articles and tags. Each row links one article (existing {@link
+/// discussion_board_articles.id}) to one tag ({@link
+/// discussion_board_tags.id}). Composite uniqueness prevents duplicate tag
+/// assignments per article. Recommendation: add created_at DB default
+/// @default(now()).
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced article. {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Referenced tag. {@link discussion_board_tags.id}.
+  discussion_board_tag_id String
+  
+  /// Link creation timestamp. Recommendation: add DB default @default(now()).
+  created_at DateTime
+  
+  /// Optional actor (member) who created the tag assignment; references {@link
+  /// discussion_board_member.id} in other components.
+  created_by_member_id String?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id, discussion_board_tag_id], map: "discussion_board_article_tags_discussion_board_article_b5fcd131")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_tag_id, created_at], map: "discussion_board_article_tags_discussion_board_tag_id__16a70a56")
+}
+
+/// Global key/value configuration entries used by the application for
+/// runtime feature flags, thresholds, and SLO parameters. Settings are
+/// managed by administrators and read by other components at runtime. Keys
+/// are unique business identifiers. Recommendation: add
+/// created_at/updated_at DB defaults and consider jsonb for structured
+/// values if necessary.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique settings key (e.g., 'moderation.auto_hide_report_threshold').
   key String
   
-  /// Configuration value stored as string. Typed interpretation handled by
-  /// application logic (boolean/int/json as needed).
+  /// Settings value stored as string; consumer interprets type (boolean,
+  /// number, JSON) as needed. Consider jsonb if structured queries are
+  /// necessary.
   value String
   
-  /// Human-readable description and intent of the setting for administrators.
+  /// Human-friendly description explaining purpose of the setting.
   description String?
   
-  /// Optional environment tag (e.g., 'production', 'staging') to scope
-  /// overrides.
-  environment String?
+  /// Whether the setting entry is active and should be considered by runtime
+  /// code.
+  is_active Boolean
   
-  /// Whether this setting is visible to non-admin clients/UI (for example for
-  /// feature exposure).
-  is_public Boolean
-  
-  /// Record creation timestamp.
+  /// Record creation timestamp. Recommendation: add DB default @default(now()).
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Record last modification timestamp. Recommendation: add @updatedAt or
+  /// equivalent mechanism.
   updated_at DateTime
   
-  /// Soft delete timestamp; null when active.
+  /// Soft-delete timestamp; null when active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([key])
-  @@index([environment, key])
-  @@index([created_at])
-}
-
-/// Runtime feature flags controlling experimental features, gradual
-/// rollouts, and admin toggles. This table is read-mostly and is consulted
-/// at runtime to enable/disable features per key. Includes rollout
-/// percentage for progressive exposure and an administrable description.
-/// Keys are unique.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_political_forum_feature_flags {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique feature flag key (e.g., 'new_search_ui').
-  key String
-  
-  /// Whether the feature is currently enabled globally.
-  enabled Boolean
-  
-  /// Optional rollout percentage (0-100) used for gradual exposure to a subset
-  /// of users; null indicates not used.
-  rollout_percentage Int?
-  
-  /// Human-readable description explaining the feature and purpose.
-  description String?
-  
-  /// Record creation timestamp.
-  created_at DateTime
-  
-  /// Record last update timestamp.
-  updated_at DateTime
-  
-  /// Soft delete timestamp; null when active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([key])
-  @@index([enabled, created_at])
+  @@index([is_active, key])
 }

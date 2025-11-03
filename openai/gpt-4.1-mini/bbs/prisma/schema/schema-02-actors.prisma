@@ -1,39 +1,7 @@
-/// Guest users information who do not authenticate but may have session or
-/// visitor footprints. Used to track guest activity and enable browsing
-/// capabilities without login. This entity has minimal fields and no
-/// authentication credentials.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_guests {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique session token to identify guest user session.
-  session_token String
-  
-  /// Timestamp when the guest session was created.
-  created_at DateTime
-  
-  /// Timestamp of the last guest session update.
-  updated_at DateTime
-  
-  /// Soft delete timestamp if guest session is invalidated.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([session_token])
-  @@index([created_at])
-}
-
-/// Registered members who can create discussion topics and replies. Members
-/// have authenticated sessions using email and password hash and can manage
-/// their profiles.
+/// Members who are authenticated users authorized to create and manage
+/// articles and comments within the discussion board system. Members have
+/// personal credentials and are subject to soft deletion. This table stores
+/// member identity, authentication credentials, and metadata.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -44,78 +12,73 @@ model discussion_board_members {
   /// Primary Key.
   id String @id
   
-  /// Member's unique email address for login and communication.
+  /// Unique email address of the member used for authentication.
   email String
   
-  /// Hashed password for member authentication.
+  /// Password hash for secure authentication of member accounts.
   password_hash String
   
-  /// Display name shown publicly in posts and replies.
-  display_name String
-  
-  /// Timestamp when the member account was created.
+  /// Date and time when the member account was created.
   created_at DateTime
   
-  /// Timestamp of the last update to the member account.
+  /// Date and time when the member account was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp if the member account is deactivated.
+  /// Optional deletion timestamp for soft delete.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_posts discussion_board_posts[]
-  discussion_board_replies discussion_board_replies[]
+  discussion_board_member_sessions discussion_board_member_sessions[]
   
   @@unique([email])
-  @@index([created_at])
 }
 
-/// Moderator users with elevated privileges to manage and moderate posts and
-/// replies. Moderators authenticate with email and password hash, and can
-/// perform editing and deletion actions.
+/// Active sessions for members representing authenticated login instances.
+/// Each session records connection details, access timestamps, and
+/// expiration, supporting secure session management and auditing.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_moderators {
+model discussion_board_member_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Moderator's unique email address for login and communication.
-  email String
+  /// Referenced member id owning this session. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
   
-  /// Hashed password for moderator authentication.
-  password_hash String
+  /// IP address of the client initiating this session.
+  ip String
   
-  /// Display name shown in moderation logs and actions.
-  display_name String
+  /// The connection URL when the session was started.
+  href String
   
-  /// Timestamp when the moderator account was created.
+  /// The referrer URL for this session connection.
+  referrer String
+  
+  /// Timestamp when this session was created.
   created_at DateTime
   
-  /// Timestamp of last update to the moderator account.
-  updated_at DateTime
-  
-  /// Soft delete timestamp if the moderator account is deactivated.
-  deleted_at DateTime?
+  /// Optional expiration timestamp of the session.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
   
-  @@unique([email])
-  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_336fc309")
 }
 
-/// Administrator users with full system privileges including user
-/// management, system configuration, and moderation oversight. Admins
-/// authenticate via email and password hash and have full control over
-/// system settings.
+/// Administrators with elevated privileges managing all content and user
+/// accounts on the discussion board system. Admin accounts are authenticated
+/// with password hashes and support soft deletion.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -126,28 +89,66 @@ model discussion_board_admins {
   /// Primary Key.
   id String @id
   
-  /// Administrator's unique email address for login and management.
+  /// Unique email address of the administrator for authentication purposes.
   email String
   
-  /// Hashed password for administrator authentication.
+  /// Hashed password for administrator account authentication.
   password_hash String
   
-  /// Display name for administrator identification in audit and management
-  /// logs.
-  display_name String
-  
-  /// Timestamp when the administrator account was created.
+  /// Timestamp when the admin account was created.
   created_at DateTime
   
-  /// Timestamp of last update to the administrator account.
+  /// Timestamp when the admin account was last updated.
   updated_at DateTime
   
-  /// Soft delete timestamp if the administrator account is deactivated.
+  /// Optional timestamp marking soft deletion of the admin account.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
+  discussion_board_admin_sessions discussion_board_admin_sessions[]
+  
   @@unique([email])
-  @@index([created_at])
+}
+
+/// Active session records for administrators managing the discussion board
+/// system. Sessions track connection metadata and support secure
+/// authentication and auditing.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced administrator id owning this session. {@link
+  /// discussion_board_admins.id}
+  discussion_board_admin_id String
+  
+  /// IP address of the connection client for this session.
+  ip String
+  
+  /// The URL used to initiate this session connection.
+  href String
+  
+  /// Referrer URL leading to this session start.
+  referrer String
+  
+  /// Timestamp when this admin session was created.
+  created_at DateTime
+  
+  /// Optional expiration timestamp of this session.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_sessions_discussion_board_admin_56d4dfa1")
 }

@@ -1,67 +1,84 @@
-/// Primary user entity that owns all todo list tasks. This is a single-user
-/// system where each user has a unique identifier but no authentication is
-/// required. The system assumes the user is the person accessing the
-/// application from their device.
+/// Main user entity for the todo application. Each record represents a
+/// unique authenticated user who can create, read, update, and delete their
+/// own todo items. This table is the foundation of the authentication system
+/// and is referenced by todo_user_sessions.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_user {
+model todo_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Timestamp when the user account was created.
+  /// Unique email address used for user authentication. Must be unique across
+  /// the system.
+  email String
+  
+  /// Cryptographic hash of the user's password. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Timestamp when the user account was created. Used for audit and sorting
+  /// purposes.
   created_at DateTime
   
-  /// Timestamp when the user account was last updated.
+  /// Timestamp when the user account was last updated. Automatically updated
+  /// on changes to user profile.
   updated_at DateTime
+  
+  /// Soft delete timestamp. When null, user account is active. When set,
+  /// account is marked for deletion.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_list_task todo_list_task[]
+  todo_user_sessions todo_user_sessions[]
+  todo_items todo_items[]
   
+  @@unique([email])
   @@index([created_at])
-  @@index([updated_at])
+  @@index([deleted_at])
 }
 
-/// Task entity representing individual items in the todo list. Each task
-/// belongs to a single user and has a title, completion status, and creation
-/// timestamp.
+/// Session records for authenticated todo users. Each session represents a
+/// single active connection from a user. Sessions are managed automatically
+/// by the authentication system and are not directly manipulated by users.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_list_task {
+model todo_user_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belongs to the user who owns this task. {@link todo_list_user.id}.
-  todo_list_user_id String
+  /// Reference to the user who owns this session. {@link todo_users.id}.
+  todo_user_id String
   
-  /// The text content of the task. Limited to 500 characters.
-  title String
+  /// The IP address from which the session was created.
+  ip String
   
-  /// Whether the task has been marked as completed. Default value is false.
-  completed Boolean
+  /// The URL of the connection that created this session.
+  href String
   
-  /// Timestamp when the task was created.
+  /// The referrer URL that led to this session.
+  referrer String
+  
+  /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when the task was last updated.
-  updated_at DateTime
+  /// Timestamp when the session expires or is terminated. Null means the
+  /// session is still active.
+  expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_list_user @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_user_id, created_at])
-  @@index([todo_list_user_id, completed])
-  @@index([completed])
-  @@index([created_at])
+  @@index([todo_user_id, created_at])
 }

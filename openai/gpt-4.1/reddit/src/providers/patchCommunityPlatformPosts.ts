@@ -10,91 +10,57 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPost";
 import { IPageICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageICommunityPlatformPost";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 
 export async function patchCommunityPlatformPosts(props: {
   body: ICommunityPlatformPost.IRequest;
 }): Promise<IPageICommunityPlatformPost.ISummary> {
   const body = props.body;
-  // Pagination handling
-  const page = (body.page ?? 1) as number;
-  const limit = (body.limit ?? 20) as number;
-  const skip = (page - 1) * limit;
+  // Defaults for page/limit
+  const page = body.page ?? 1;
+  const limit = body.limit ?? 20;
+  const offset = (page - 1) * limit;
 
-  // Only expose certain statuses by default to guests
-  const publish_statuses = ["published"];
-  let statusFilter: string[] | undefined = undefined;
-  if (body.status) {
-    statusFilter = [body.status];
-  } else {
-    statusFilter = publish_statuses;
-  }
-
-  // Build where clause
-  const where = {
+  // Filters for where clause
+  const where: Record<string, any> = {
     deleted_at: null,
-    ...(body.community_platform_community_id !== undefined && {
-      community_platform_community_id: body.community_platform_community_id,
+    ...(body.community_id !== undefined && {
+      community_platform_community_id: body.community_id,
     }),
-    ...(body.content_type !== undefined && {
-      content_type: body.content_type,
+    ...(body.author_id !== undefined && {
+      community_platform_user_id: body.author_id,
     }),
-    ...(body.search !== undefined &&
-      body.search.length > 0 && {
-        OR: [
-          { title: { contains: body.search } },
-          { content_body: { contains: body.search } },
-        ],
+    ...(body.status !== undefined && { status: body.status }),
+    // Exclude posts with deleted/archived status by default if no status filter is given
+    ...(body.status === undefined && {
+      status: { notIn: ["deleted", "archived"] },
+    }),
+    // Text search (title contains); ignore query if empty string or only whitespace
+    ...(body.query &&
+      body.query.trim().length > 0 && {
+        title: { contains: body.query },
       }),
-    ...(statusFilter !== undefined && {
-      status:
-        statusFilter.length === 1 ? statusFilter[0] : { in: statusFilter },
-    }),
   };
 
-  // Query data and count in parallel
+  // Main post records with joined community and user, exclude posts whose community is soft-deleted/archived
   const [rows, total] = await Promise.all([
     MyGlobal.prisma.community_platform_posts.findMany({
       where,
       orderBy:
-        body.sort_by === "new" ||
-        body.sort_by === undefined ||
-        body.sort_by === "created_at"
-          ? { created_at: "desc" as const }
-          : body.sort_by === "top"
-            ? { created_at: "desc" as const }
-            : body.sort_by === "hot"
-              ? { created_at: "desc" as const }
-              : body.sort_by === "controversial"
-                ? { created_at: "desc" as const }
-                : { created_at: "desc" as const },
-      skip,
+        body.sort === "new" ? { created_at: "desc" } : { created_at: "desc" },
+      skip: offset,
       take: limit,
-      select: {
-        id: true,
-        community_platform_member_id: true,
-        community_platform_community_id: true,
-        title: true,
-        content_type: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
+      include: {
+        community: true,
+        user: true,
       },
     }),
     MyGlobal.prisma.community_platform_posts.count({ where }),
   ]);
 
-  const data = rows.map((row) => ({
-    id: row.id,
-    community_platform_member_id: row.community_platform_member_id,
-    community_platform_community_id: row.community_platform_community_id,
-    title: row.title,
-    content_type: row.content_type,
-    status: row.status,
-    created_at: toISOStringSafe(row.created_at),
-    updated_at: toISOStringSafe(row.updated_at),
-    deleted_at: row.deleted_at ? toISOStringSafe(row.deleted_at) : undefined,
-  }));
+  // Filter out posts whose related community is deleted or archived
+  const posts = rows.filter((row) => row.community.deleted_at == null);
 
   return {
     pagination: {
@@ -103,6 +69,21 @@ export async function patchCommunityPlatformPosts(props: {
       records: total,
       pages: Math.ceil(total / limit),
     },
-    data,
+    data: posts.map((row) => ({
+      id: row.id,
+      community: {
+        id: row.community.id,
+        name: row.community.name,
+        description: row.community.description,
+      },
+      user: {
+        id: row.user.id,
+        display_name: row.user.display_name,
+      },
+      title: row.title,
+      status: row.status,
+      created_at: toISOStringSafe(row.created_at),
+      updated_at: row.updated_at ? toISOStringSafe(row.updated_at) : undefined,
+    })),
   };
 }

@@ -1,292 +1,276 @@
-# communityPlatform — Business Requirements Specification (BRS)
+# communityPlatform Requirements Analysis (Business-Level)
 
-## 1. Purpose and Scope
-communityPlatform enables interest-based communities where members post (text, link, image), discuss via nested comments, curate with up/downvotes, and sort feeds by Hot, New, Top, and Controversial. This specification defines business behaviors, rules, workflows, permissions, and success criteria. Technical designs (APIs, databases, infrastructure, UI layouts) are intentionally out of scope.
+## 1. Vision and Objectives
+communityPlatform enables topic-based communities where people create and discover content, discuss via nested comments, and use voting to surface quality. Subscriptions personalize each member’s home feed. A karma system reflects contribution quality, while reporting and moderation maintain safety and trust.
 
-EARS scope anchors:
-- THE platform SHALL allow registration/login, community creation, posting (text/link/image), voting, nested comments, subscriptions, profiles, and reporting of inappropriate content within policy.
-- THE platform SHALL provide ranking modes labeled "Hot", "New", "Top", and "Controversial" with predictable business behavior.
-- WHERE sitewide policy and local community rules conflict, THE platform SHALL prioritize sitewide policy.
+Objectives
+- Foster healthy, interest-based communities with consistent governance and transparent rules.
+- Provide frictionless content creation (text, link, image) with clear validations and flags for NSFW/Spoilers.
+- Surface quality through upvote/downvote mechanics and well-defined sorts: Hot, New, Top, Controversial.
+- Offer personalized feeds via subscriptions, with appropriate safety and preference controls.
+- Enable fair, auditable moderation workflows including reporting, escalation, and appeals.
 
-## 2. Glossary and Roles
-Key terms:
-- Community: Topic-centric space with owner, moderators, rules, and content.
-- Post Types: Text, Link, Image.
-- Content States: Active, Locked, Archived, Removed by Moderation, Removed by Admin, Deleted by Author, Pending Review, Legal Hold.
-- Karma: Reputation points from votes on authored content.
+## 2. In-Scope Capabilities and Assumptions
+In Scope (MVP)
+- User registration, login, logout, email verification, password reset.
+- Community creation and governance (ownership, moderator roles, rules, visibility).
+- Posts: text, link, image; validation limits; NSFW/Spoiler flags; visibility states.
+- Comments with nested replies, editing/deletion rules, sorting.
+- Voting: upvote/downvote for posts and comments, integrity and rate limits.
+- Sorting: Hot/New/Top/Controversial for posts; Top/New/Controversial/Old for comments.
+- Subscriptions and feeds: subscribe/unsubscribe, home/community feeds, pagination.
+- Profiles and karma: public profiles, activity lists, contribution-based karma.
+- Reporting and moderation: user reporting, community moderation, admin escalation, appeals.
 
-Roles (system-wide kinds):
-- guestUser: Unauthenticated, read-only access to public content.
-- memberUser: Authenticated, baseline participation (post, comment, vote, report, subscribe).
-- communityOwner: Highest authority within owned community; appoints moderators; configures rules.
-- communityModerator: Moderates a specific community; processes reports and enforces rules.
-- adminUser: Sitewide trust & safety; platform policy enforcement and escalations.
+Assumptions
+- Email delivery exists for verification and transactional notices.
+- Image storage is available with conservative file size/type limits.
+- Global content and safety policies are published and enforceable.
+- Locale language is en-US; times are represented to users in their preferred timezone; maintenance windows align with Asia/Seoul off-peak where noted.
 
-EARS role summary:
-- THE platform SHALL restrict guestUser to read-only on public content.
-- THE platform SHALL permit memberUser to participate per community and policy constraints.
-- THE platform SHALL scope communityModerator/Owner actions to their communities.
-- THE platform SHALL allow adminUser to enforce platform-wide policy across all communities.
+## 3. Actors and Roles
+- Guest: Unauthenticated visitor who can browse public content and start registration.
+- Member: Authenticated user who can post, vote, comment, subscribe, report, and manage profile preferences.
+- Community Owner: Member who created a community or received ownership via transfer; manages settings and moderators.
+- Community Moderator: Member with scoped permissions to enforce rules in a specific community.
+- Admin: Platform-level operator with global safety and policy enforcement authority.
 
-## 3. Global Principles and Constraints
-- Business-first: Describe WHAT must happen, not HOW to implement it.
-- Safety and integrity: Sitewide policy supersedes community rules; consistent enforcement and appeals.
-- Predictability: Deterministic feeds and clear error semantics.
-- Privacy: Limit data exposure; respect profile visibility and block/mute preferences.
-- Localization/timezone: User-facing times shown in user’s timezone; consistent behavior in Asia/Seoul context by default when unspecified.
+Actor Principles (EARS)
+- THE platform SHALL scope community moderator and owner permissions to their specific community.
+- THE platform SHALL prioritize platform policies over community rules where conflicts arise.
+- THE platform SHALL apply deny-by-default for actions not explicitly allowed by actor role and context.
 
-Out of scope:
-- Database schemas, API routes, infrastructure, and UI visuals.
+## 4. End-to-End Business Workflows
+### 4.1 Account Lifecycle
+- Registration and Verification
+  - WHEN a guest submits valid email and password, THE platform SHALL create a pending account and send verification.
+  - WHEN the user completes verification, THE platform SHALL activate the account and record the activation timestamp.
+  - IF verification is not completed within 14 days, THEN THE platform SHALL restrict posting and voting until verification.
+- Login, Sessions, and Logout
+  - WHEN a user logs in with valid credentials, THE platform SHALL establish a session and acknowledge within 2 seconds under normal load.
+  - WHEN a user logs out, THE platform SHALL revoke the active session promptly and prevent further use.
+- Recovery
+  - WHEN a user requests password reset, THE platform SHALL send a secure reset path and invalidate prior access tokens upon password change.
 
-## 4. Functional Requirements by Domain
-
-### 4.1 Authentication and Account Lifecycle
-Account states: PendingVerification, Active, Locked, PasswordResetRequired, Deactivated, PendingDeletion, Deleted, Banned.
-
-EARS behaviors:
-- THE platform SHALL require unique email, unique username, compliant password, and acceptance of terms to register.
-- WHEN registration is valid, THE platform SHALL create an account in PendingVerification and send a one-time verification within 10 seconds.
-- WHEN email is verified within 24 hours, THE platform SHALL set the account to Active; otherwise, THE platform SHALL allow resending with reasonable limits.
-- WHERE account is Locked due to failed attempts, THE platform SHALL deny login for 15 minutes and notify the account email.
-- WHEN a user requests password reset, THE platform SHALL issue a one-time reset link valid for 60 minutes and revoke all sessions on success.
-- WHEN a user logs out from all devices, THE platform SHALL terminate active sessions within 60 seconds.
-- WHEN a user deactivates the account, THE platform SHALL hide profile and end sessions; reactivation SHALL restore prior capabilities.
-- WHEN a user requests deletion, THE platform SHALL set PendingDeletion with 30-day grace; on completion, THE platform SHALL remove personal identifiers and attribute legacy public content to an anonymized placeholder where policy requires.
-- WHERE email is unverified, THE platform SHALL block posting, commenting, community creation, and voting.
-
-### 4.2 Communities: Creation, Settings, and Governance
-EARS behaviors:
-- THE platform SHALL allow eligible memberUser to create communities with unique handles and compliant names.
-- WHEN a community is created, THE platform SHALL assign ownership to the creator, initialize default rules, and record creation in a modlog.
-- WHERE ownership is transferred, THE platform SHALL require explicit acceptance from the new owner within a defined window before effect.
-- THE platform SHALL allow Owners to appoint/remove Moderators who accept within a defined window.
-- THE platform SHALL support visibility modes: public, restricted, private; label-sensitive communities (e.g., NSFW) per policy.
-- WHERE community rules are saved, THE platform SHALL validate that they do not conflict with sitewide policy.
-- WHEN a community is set to private, THE platform SHALL require approval before content is visible to non-members.
-- IF a community becomes abandoned (no active owner/moderator beyond a defined threshold), THEN THE platform SHALL allow adminUser to appoint successors or close the community.
-
-### 4.3 Posting: Text, Link, Image
-Common:
-- THE platform SHALL require title (1–300 chars), destination community, and post type.
-- WHERE tags/flairs are used, THE platform SHALL limit to 0–5 tags per post and only allow community-defined tags.
-- WHERE labels (NSFW, Spoiler) are set, THE platform SHALL enforce visibility and preview restrictions per policy.
-
-Type-specific:
-- Text: THE platform SHALL require body 1–40,000 chars; reject prohibited patterns per policy.
-- Link: THE platform SHALL require valid http/https URL ≤ 2,048 chars; deny disallowed domains; detect duplicates (same community, 30-day window) and surface the prior post.
-- Image: THE platform SHALL allow JPEG/PNG/GIF ≤ 10 MB; min dimensions 320×320; GIFs ≤ 15 seconds or ≤ 10 MB; optional alt text ≤ 500 chars.
-
-Lifecycle:
-- WHEN a post is created, THE platform SHALL set state Active unless routed to Pending Review by filters.
-- WHEN a post is locked, THE platform SHALL disable new comments and vote changes while keeping visibility.
-- WHEN a post is archived (default 180 days, configurable with floor 30 days), THE platform SHALL prevent edits, new comments, and vote changes.
-- WHEN a post is removed by moderation, THE platform SHALL show a placeholder to general viewers and retain visibility to author, moderators, and admins.
-- WHEN a post is removed by admin for sitewide policy, THE platform SHALL restrict visibility to admins and notify the author with policy reason.
-- WHEN a post is deleted by the author, THE platform SHALL hide the content, retain a deletion marker, and preserve comments unless policy dictates otherwise.
-
-Rate limits and eligibility:
-- THE platform SHALL require verified email and minimum account age (default 24 hours) for posting unless a community explicitly allows exceptions.
-- THE platform SHALL enforce site defaults: ≤ 5 posts/day per user and ≤ 3 posts/day per community, with community ability to set stricter limits.
-
-### 4.4 Commenting: Nested Replies
-EARS behaviors:
-- THE platform SHALL allow comments on unlocked, non-archived posts; replies nest up to depth 8.
-- IF a reply exceeds depth, THEN THE platform SHALL attach it at max depth and flag "depth_max_reached".
-- THE platform SHALL validate bodies 1–10,000 chars and reject whitespace-only content.
-- WHEN a comment is edited, THE platform SHALL show an "edited" indicator if edited after 2 minutes, and retain a non-public edit history for moderators/admins and for the author.
-- WHEN a comment is deleted by the author, THE platform SHALL replace content with a placeholder while preserving replies.
-- WHEN a comment is removed by moderators/admins, THE platform SHALL show a removal placeholder and retain rationale.
-- WHEN a thread is locked, THE platform SHALL prevent new replies beneath the locked node.
-- THE platform SHALL enforce rate limits: default 20 comments/10 minutes and 200/24 hours; stricter for low-trust accounts.
-
-### 4.5 Voting and Karma
-Eligibility and limits:
-- THE platform SHALL restrict voting to authenticated, email-verified accounts meeting minimum age and not banned/restricted in the target community.
-- THE platform SHALL prevent voting on one’s own content.
-- THE platform SHALL enforce default limits: ≤ 60 vote actions/10 minutes and ≤ 600/24 hours; stricter for low-trust.
-
-Vote weight and integrity:
-- THE platform SHALL use default weight +1/−1; reduce weight for low-trust accounts; set weight to 0 under shadowban per trust & safety policy.
-- WHEN abnormal surges or correlated voting patterns are detected, THE platform SHALL apply protective measures (slow/freeze, reduced weights) and flag for review.
-- WHEN fraudulent votes are confirmed, THE platform SHALL retroactively remove their effect on scores and karma.
-
-Karma:
-- THE platform SHALL track post karma, comment karma, and total karma per user; values may be negative.
-- WHEN a visible vote is applied, THE platform SHALL adjust the author’s corresponding karma; removed/illegal content SHALL not contribute to karma.
-- THE platform SHALL maintain a recent-karma rolling 90-day sum for trust signals without decaying public totals.
-
-### 4.6 Feeds and Sorting
-Contexts:
-- Home feed (member): prioritize subscribed communities; fill with safe recommendations when needed; cap per-community dominance at 40% of a page when alternatives exist.
-- Home feed (guest): show platform-wide popular posts from public communities; no personalization beyond generic context.
-- Community feed: only posts from that community per viewer permissions.
-
-Sorting definitions (business):
-- New: order by creation time descending.
-- Top: order by net approval within selected time range (24h, 7d, 30d, year, all time); require minimum 1 net vote.
-- Hot: recency-weighted engagement favoring last 48 hours; items under 24 hours with strong engagement rise; aging reduces priority unless exceptional engagement persists.
-- Controversial: high total votes with near-balanced polarity; min 10 total votes; excludes items removed for policy.
-
-Pagination and stability:
-- THE platform SHALL return 25 items/page by default (5–100 allowed) with deterministic ordering and no duplicates across consecutive pages for identical parameters.
-- WHILE paginating within a request sequence, THE platform SHALL maintain a 5-minute stability window; re-ranking SHALL not reorder delivered pages.
-
-### 4.7 Subscriptions, Mutes, and Blocks
-EARS behaviors:
-- WHEN a member subscribes to a community, THE platform SHALL include its new content in the member’s home feed within 60 seconds.
-- WHEN a member unsubscribes, THE platform SHALL cease including that community’s new content immediately.
-- WHEN a member mutes a community, THE platform SHALL suppress its content in feeds and recommendations without altering subscription state.
-- WHEN a member blocks another user, THE platform SHALL prevent direct interactions and treat the blocker’s profile as Private to the blocked viewer.
-
-### 4.8 Profiles and Privacy
-EARS behaviors:
-- THE platform SHALL support visibility levels: Public, Limited, Private, and owner toggles for visibility of subscriptions, activity, and karma.
-- WHEN a viewer requests a profile, THE platform SHALL enforce the owner’s visibility settings and blocks consistently.
-- WHEN an owner edits profile fields (display name, bio, avatar), THE platform SHALL validate length and policy and limit edits to prevent abuse (default 10 edits/hour).
-- WHEN account deletion completes, THE platform SHALL transform authored content per policy (e.g., author shown as "[deleted]").
-
-### 4.9 Reporting, Safety, and Trust
-Reportables: posts, comments, communities, user accounts.
-Categories (baseline): spam, harassment/hate, sexual content/child safety, violence/threats, self-harm risk, illegal, doxxing, misinformation, off-topic/low-effort, copyright, other (free-text required).
-
-EARS behaviors:
-- WHEN a member reports an item, THE platform SHALL require a category and acknowledge within 2 seconds; deduplicate per item-category-reporter in 24 hours.
-- THE platform SHALL aggregate item-category reports into cases and route community cases to moderators/owner and critical categories additionally to adminUser.
-- WHEN enforcement occurs, THE platform SHALL notify the author (reason code, scope, appeal options) and update reporters with limited outcome status.
-- WHERE conflicts of interest exist (moderator is the author), THE platform SHALL auto-escalate to adminUser or a different moderator.
-- WHEN appeals are submitted within 14 days, THE platform SHALL route to a reviewer who did not execute the original enforcement, and if overturned, SHALL restore content/access and annotate logs.
-
-## 5. Non-Functional Expectations (Business)
-Performance targets (typical p95):
-- Feed page: ≤ 800 ms; Home feed: ≤ 800 ms; Post view with first comments: ≤ 1,400 ms; Vote: ≤ 400 ms; Comment create: ≤ 700 ms; Text post create: ≤ 800 ms; Image post publish (after upload): ≤ 1,000 ms.
-
-Availability:
-- THE platform SHALL meet 99.9% monthly uptime for core actions; RTO ≤ 30 minutes; RPO ≤ 5 minutes for critical content.
-
-Localization/timezone:
-- THE platform SHALL localize user-facing text; render timestamps in the user’s timezone; default to Asia/Seoul where unspecified.
-
-Accessibility:
-- THE platform SHALL present error and state messages in accessible, screen-reader-friendly formats with sufficient contrast and non-color-only cues.
-
-Observability and audit:
-- THE platform SHALL log governance, security, and content lifecycle actions with actor, reason, and timestamp and retain per policy.
-
-## 6. Permission Summary (Business Narrative)
-- guestUser: View public communities, posts, and comments; no write actions.
-- memberUser: Post, comment, vote, report, subscribe; edit/delete own content within policy; limited by verification, age, and community restrictions.
-- communityModerator: All member actions plus approve/remove content, lock threads, pin posts, warn/mute/ban users within scoped community; view mod queues and removed content in-scope.
-- communityOwner: All moderator actions within owned community; edit community settings; appoint/remove moderators; transfer ownership.
-- adminUser: Platform-wide enforcement; override community decisions for policy, legal, or safety; view platform-wide audit.
-
-## 7. Error Model Summary (Business Semantics)
-Standardized keys (examples): AUTH_INVALID_CREDENTIALS, AUTH_EMAIL_NOT_VERIFIED, PERM_INSUFFICIENT_ROLE, COMMUNITY_PRIVATE, POST_VALIDATION_FAILED, POST_DUPLICATE_DETECTED, POST_SPAM_SUSPECTED, COMMENT_DEPTH_LIMIT, VOTE_SELF_NOT_ALLOWED, VOTE_TARGET_LOCKED, SORT_UNSUPPORTED, SUB_LIMIT_REACHED, PROFILE_PRIVATE, REPORT_INVALID_CATEGORY, REPORT_DUPLICATE_OPEN, SYS_TEMPORARY_UNAVAILABLE.
-
-EARS behaviors:
-- WHEN an action is denied, THE platform SHALL return a clear user-facing message, action hint, and non-sensitive context (e.g., retry-after).
-- WHEN rate limits trigger, THE platform SHALL indicate remaining wait time without exposing internal thresholds.
-- WHEN content is locked/archived/removed, THE platform SHALL display consistent placeholders and disable further interactions as defined.
-
-## 8. Diagrams (Mermaid)
-
-### 8.1 Registration and Verification
+Mermaid — Authentication Flow
 ```mermaid
 graph LR
-  A["Start Registration"] --> B["Validate Inputs"]
-  B --> C{"Valid?"}
-  C -->|"No"| D["Reject & Explain"]
-  C -->|"Yes"| E["Create PendingVerification"]
-  E --> F["Send Verification Email"]
-  F --> G{"Link Used In 24h?"}
-  G -->|"No"| H["Allow Resend(Throttled)"]
-  G -->|"Yes"| I["Activate Account"]
+  A["Guest Starts Login"] --> B["Enter Credentials"]
+  B --> C["Validate Credentials"]
+  C --> D{"Valid?"}
+  D -->|"Yes"| E["Issue Session"]
+  E --> F["Member Active"]
+  D -->|"No"| G["Deny and Show Error"]
 ```
 
-### 8.2 Post Submission Flow
+### 4.2 Community Lifecycle
+- Creation and Configuration
+  - WHEN a verified member proposes a unique community name and required metadata, THE platform SHALL validate naming rules and reserve the name on success.
+  - THE platform SHALL set the creator as owner and allow moderator assignment by the owner.
+- Governance and Visibility
+  - WHERE visibility is set to Private or Restricted, THE platform SHALL restrict viewing and/or posting to approved members.
+  - WHEN rules are updated, THE platform SHALL record the change with actor and timestamp and show the updated time on the community page.
+- Transfer, Archive, Closure
+  - WHEN an owner initiates a transfer to an eligible member, THE platform SHALL require recipient acceptance within 72 hours.
+  - WHEN a community is archived, THE platform SHALL disable new posts/comments while preserving readability.
+  - WHEN a community is closed, THE platform SHALL delist it from discovery and retain content per retention policy.
+
+### 4.3 Posting (Text/Link/Image)
+- Validation and Flags
+  - WHEN a member creates a post, THE platform SHALL validate title, body/URL, and image attachments against size/type/length limits.
+  - WHERE NSFW is enabled or required by community policy, THE platform SHALL apply the NSFW flag and restrict visibility accordingly.
+  - WHEN a post is marked Spoiler, THE platform SHALL mask previews until user reveal.
+- Visibility Lifecycle
+  - THE platform SHALL support states: Draft, Published, Deleted by Author, Removed by Moderator, Quarantined, Locked, Archived.
+  - WHEN content is removed by moderation, THE platform SHALL hide it from general viewers and retain audit visibility for moderators and admins.
+
+Mermaid — Post Validation and Publish
 ```mermaid
 graph LR
-  A["Start Submission"] --> B["Check Auth & Eligibility"]
-  B --> C{"Eligible?"}
-  C -->|"No"| Z["Deny & Prompt Login/Verify"]
-  C -->|"Yes"| D["Validate Title & Type"]
-  D --> E{"Type?"}
-  E -->|"Text"| F["Validate Body"]
-  E -->|"Link"| G["Validate URL & Duplicates"]
-  E -->|"Image"| H["Validate Image Constraints"]
-  F --> I{"Valid?"}
-  G --> I
-  H --> I
-  I -->|"No"| J["Reject With Reason"]
-  I -->|"Yes"| K["Apply Rate/Spam Checks"]
-  K --> L{"Pass?"}
-  L -->|"No"| M["Pending Review or Reject"]
-  L -->|"Yes"| N["Publish Active"]
+  A["Author Opens Create Post"] --> B["Enter Title/Content"]
+  B --> C["Set Flags(NSFW/Spoiler)"]
+  C --> D["Validate Fields & Attachments"]
+  D --> E{"All Valid?"}
+  E -->|"Yes"| F["Publish"]
+  E -->|"No"| G["Reject with Field Errors"]
 ```
 
-### 8.3 Voting Flow with Protections
+### 4.4 Comments and Nested Threads
+- Creation and Depth
+  - WHEN a member comments, THE platform SHALL allow nesting up to a maximum depth (e.g., 8) and position replies under the correct parent.
+  - WHEN a post or thread is locked, THE platform SHALL prevent new comments while preserving visibility.
+- Editing and Deletion
+  - WHERE an edit window exists, THE platform SHALL allow edits within the window and mark edited comments accordingly.
+  - WHEN a comment is deleted by its author, THE platform SHALL tombstone the comment and preserve child replies.
+
+### 4.5 Voting and Ranking
+- Voting Rules
+  - WHEN a member upvotes or downvotes, THE platform SHALL record a single active vote per item with the ability to change or remove it.
+  - THE platform SHALL prohibit authors from voting on their own items.
+  - WHERE content is locked or archived, THE platform SHALL prohibit new votes.
+- Rank and Sorts
+  - THE platform SHALL offer Hot, New, Top, and Controversial for posts; Top, New, Controversial, and Old for comments.
+  - WHERE timeframe filters apply (Top/Controversial), THE platform SHALL limit candidates to the selected window.
+
+### 4.6 Subscriptions and Feeds
+- Subscribing
+  - WHEN a member subscribes to a community, THE platform SHALL include eligible posts from that community in the home feed going forward.
+  - WHEN a member unsubscribes, THE platform SHALL exclude that community’s posts from the home feed going forward.
+- Composition
+  - THE platform SHALL assemble the home feed primarily from subscribed communities, with optional recommendations subject to policy.
+  - THE platform SHALL honor NSFW/Spoiler preferences, blocks, and community visibility in feed eligibility.
+
+Mermaid — Home Feed Composition
 ```mermaid
 graph LR
-  A["Vote Action"] --> B["Auth & Eligibility"]
-  B --> C{"Allowed?"}
-  C -->|"No"| Z["Deny & Explain"]
-  C -->|"Yes"| D["Apply Rate Limits"]
-  D --> E{"Within Limits?"}
-  E -->|"No"| Z
-  E -->|"Yes"| F["Determine Vote Weight"]
-  F --> G["Apply Vote State"]
-  G --> H["Update Score & Karma"]
+  A["Subscribed Communities"] --> D["Gather Candidates"]
+  B["Member Preferences"] --> E["Filter Eligibility"]
+  C["Global Policies"] --> E
+  D --> E
+  E --> F["Apply Sort"]
+  F --> G["Diversity & Pinned"]
+  G --> H["Paginate & Deliver"]
 ```
 
-### 8.4 Feed Assembly Overview
+### 4.7 Profiles and Karma
+- Profile Visibility
+  - THE platform SHALL provide public profiles with username, display name, avatar, bio, join date, and contribution summaries respecting privacy settings.
+- Karma Rules
+  - WHEN valid votes accrue on a member’s content, THE platform SHALL update post karma and comment karma accordingly.
+  - WHERE content is removed for policy violations, THE platform SHALL exclude associated votes from karma within a reasonable delay.
+
+### 4.8 Reporting and Moderation
+- Reporting and Queues
+  - WHEN a member reports a post or comment, THE platform SHALL record reason and details and enqueue a case for community moderators.
+  - WHERE severity is critical/emergency, THE platform SHALL prioritize the case and escalate to admins immediately.
+- Actions and Appeals
+  - WHEN moderators act (approve, remove, lock, warn, ban), THE platform SHALL record actor, reason code, and timestamps and notify affected users.
+  - WHEN an appeal is filed, THE platform SHALL route to the appropriate reviewer and return a decision within published windows.
+
+Mermaid — Reporting and Escalation
 ```mermaid
 graph LR
-  A["Viewer Context"] --> D["Eligibility Filter"]
-  B["Feed Context"] --> D
-  C["Content Pool"] --> D
-  D --> E["Sort(Hot/New/Top/Controversial)"]
-  E --> F["Apply Time Window"]
-  F --> G["Tie-break & Determinism"]
-  G --> H["Paginate & Tokenize"]
+  A["Member Submits Report"] --> B["Validate & Create Case"]
+  B --> C["Apply Thresholds"]
+  C --> D{"Emergency?"}
+  D -->|"Yes"| E["Escalate to Admins"]
+  D -->|"No"| F["Notify Moderators"]
+  F --> G["Moderator Review"]
+  G --> H{"Violation?"}
+  H -->|"Yes"| I["Remove/Lock/Label/Sanction"]
+  H -->|"No"| J["Approve & Close"]
 ```
 
-### 8.5 Reporting and Enforcement
-```mermaid
-graph LR
-  A["Submit Report"] --> B["Validate Category"]
-  B --> C{"Valid?"}
-  C -->|"No"| D["Reject & Prompt"]
-  C -->|"Yes"| E["Deduplicate & Aggregate"]
-  E --> F{"Critical?"}
-  F -->|"Yes"| G["Route Mods + Admin"]
-  F -->|"No"| H["Route Mods"]
-  G --> I["Triage & Decide"]
-  H --> I
-  I --> J{"Violation?"}
-  J -->|"No"| K["Resolve-No Action"]
-  J -->|"Yes"| L["Enforce(Remove/Lock/Ban)"]
-  L --> M["Notify Parties"]
-```
+## 5. Permissions and Access Control (Business Rules)
+- THE platform SHALL allow guests to browse public communities and content; guests cannot create content or vote.
+- THE platform SHALL allow members to create posts, comments, votes, and reports within communities where they have access.
+- THE platform SHALL restrict community owners and moderators to actions within their community scope.
+- THE platform SHALL allow admins to enforce platform-wide policies and act across all communities.
+- IF a member is banned in a community, THEN THE platform SHALL block posting, commenting, and voting in that community while allowing general browsing elsewhere.
 
-## 9. Acceptance Criteria and Success Metrics
-Illustrative acceptance:
-- GIVEN an unverified account, WHEN attempting to post or vote, THEN action is denied with verification guidance.
-- GIVEN a new community, WHEN created with a unique handle and valid settings, THEN ownership is assigned and defaults (rules/modlog) are initialized.
-- GIVEN an image exceeding 10 MB, WHEN submitted, THEN submission is rejected with IMAGE constraints reason.
-- GIVEN a link duplicate within 30 days in the same community, WHEN submitted, THEN submission is rejected and the prior post is surfaced.
-- GIVEN a user votes on own content, WHEN attempting to upvote or downvote, THEN the system denies with VOTE_SELF_NOT_ALLOWED.
-- GIVEN a post is archived, WHEN attempting to edit or vote, THEN the system denies and explains archive state.
-- GIVEN a report in a critical category, WHEN submitted, THEN it is visible to adminUser and in-scope moderators immediately.
+## 6. EARS Requirements Catalog (Selected)
+Authentication & Sessions
+- WHEN a user logs in successfully, THE platform SHALL acknowledge within 2 seconds under normal load and create a session.
+- WHEN a user logs out, THE platform SHALL revoke active session tokens immediately.
+- IF invalid credentials are submitted, THEN THE platform SHALL deny login with a generic failure message.
 
-Success targets (business):
-- 99.9% monthly uptime for core actions; p95 latency targets as defined in NFRs.
-- Report acknowledgement within 2 seconds; moderation actions reflected within 5 minutes in user-visible contexts.
-- Home feed reflects subscription changes within 60 seconds.
-- Duplicate link detection blocks ≥ 90% of repeats within 30 days in same community.
+Community Management
+- WHEN a verified member submits a unique community name meeting policy, THE platform SHALL create the community and assign ownership within 2 seconds under normal load.
+- WHERE visibility is Private, THE platform SHALL restrict content viewing and posting to approved members.
+- WHEN an owner transfers ownership and the recipient accepts within 72 hours, THE platform SHALL complete the transfer and log the event.
 
-## 10. Related Concepts and Governance
-- THE platform SHALL maintain immutable audit trails for privileged actions and content lifecycle transitions, retained per policy.
-- THE platform SHALL provide transparent placeholders and reason categories for removed/locked content consistent with safety guidelines.
-- THE platform SHALL publish aggregated transparency metrics (e.g., removals by category) at a regular cadence where legally permissible.
+Posting
+- WHEN a member submits a text/link/image post, THE platform SHALL validate fields and flags; IF violations exist, THEN THE platform SHALL reject with specific field errors.
+- WHILE a post is Locked, THE platform SHALL prevent new comments and votes while preserving readability.
+- WHEN a post is 180 days old without activity, THE platform SHALL archive it and disable new interactions.
 
----
-This BRS uses EARS formatting for testable statements and focuses on business requirements only. Developers retain full autonomy over technical implementation choices while ensuring behaviors conform to this specification.
+Comments
+- WHEN a comment is submitted within allowed depth and content limits, THE platform SHALL publish it within 2 seconds under normal load.
+- IF a comment exceeds maximum depth, THEN THE platform SHALL reject with clear guidance to reply higher in the thread.
+
+Voting & Ranking
+- WHEN a member casts a vote, THE platform SHALL record one active vote per item and update visible score within 1 second under normal load.
+- WHERE content is archived or locked, THE platform SHALL prohibit new votes.
+
+Subscriptions & Feeds
+- WHEN a member subscribes to a community, THE platform SHALL include eligible posts from that community in home feed composition within 5 seconds for subsequent loads.
+- WHEN a member unsubscribes, THE platform SHALL exclude the community’s posts from the home feed going forward.
+
+Profiles & Karma
+- WHEN votes accrue on a member’s content, THE platform SHALL update karma components and display changes within 5 seconds.
+- WHERE content is removed for policy, THE platform SHALL remove associated votes from karma within 24 hours.
+
+Reporting & Moderation
+- WHEN a report meets emergency criteria, THE platform SHALL escalate to admins immediately and restrict visibility per policy.
+- WHEN a moderator takes action, THE platform SHALL notify the affected user with reason category and appeal window.
+
+## 7. Sorting Definitions (Business Semantics)
+Posts
+- Hot: recency-aware ordering prioritizing newer high-score posts; items older than 7 days are de-emphasized versus newer items with similar scores.
+- New: strict reverse chronological by creation time; ties break by stable identifier.
+- Top: highest net score within a selected timeframe; ties break by total votes, then recency, then stable identifier.
+- Controversial: includes only items meeting a minimum total vote threshold; prioritizes balanced up/down distributions; ties break by total votes then recency.
+
+Comments
+- Top: highest net score among siblings, tie-breakers as for posts.
+- New: newest first among siblings.
+- Controversial: thresholded by minimum total votes and balance among siblings.
+- Old: oldest first among siblings.
+
+## 8. Error Scenarios and Edge Cases
+Validation
+- IF a title is empty or exceeds maximum length, THEN THE platform SHALL reject with explicit limits.
+- IF a URL is non-HTTP(S) or exceeds maximum length, THEN THE platform SHALL reject with a specific error.
+- IF an image exceeds file size/type/dimension limits, THEN THE platform SHALL reject and enumerate failing files.
+
+Permissions
+- IF a guest attempts to post, THEN THE platform SHALL deny and prompt login/registration.
+- IF a banned member attempts to interact in the banning community, THEN THE platform SHALL deny with scope and duration of ban.
+
+Rate Limits
+- IF posting or voting exceeds thresholds, THEN THE platform SHALL rate-limit and provide retry-after guidance.
+- IF report submissions exceed daily caps, THEN THE platform SHALL deny further reports until the window resets.
+
+State & Visibility
+- IF content is removed, THEN THE platform SHALL show a tombstone placeholder to preserve thread continuity where appropriate.
+- IF a community changes visibility to Private, THEN THE platform SHALL restrict non-approved access immediately and notify existing subscribers per policy.
+
+## 9. Non-Functional Requirements (Business-Level)
+Performance
+- THE platform SHALL deliver home/community feeds within 3.5 seconds at the 95th percentile under normal load.
+- THE platform SHALL process vote and comment submissions within 1–2 seconds under normal load.
+
+Availability & Reliability
+- THE platform SHALL provide 99.9% monthly availability for core functions.
+- THE platform SHALL maintain an RPO of 15 minutes for user-generated content and an RTO of 4 hours for regional failures.
+
+Security & Privacy
+- THE platform SHALL require email verification before enabling content creation features.
+- THE platform SHALL enforce least-privilege access and log sensitive actions (role changes, removals, bans, ownership transfers).
+- THE platform SHALL protect user data and avoid exposing PII in user-facing messages and public content.
+
+Observability & Auditability
+- THE platform SHALL log moderation/admin actions with actor, reason, and timestamp.
+- THE platform SHALL retain audit logs for at least 1 year and notification histories for at least 90 days.
+
+Compliance
+- THE platform SHALL provide data export within 30 days of verified request and complete account deletion/anonymization within 30 days after the grace period, except where legal holds apply.
+
+## 10. Visual Diagrams (Mermaid)
+Authentication, Posting, Reporting, and Feed flows are embedded in their respective sections and adhere to syntax rules (double-quoted labels, correct arrows, no spaces between brackets and quotes).
+
+## 11. Glossary
+- Community: Topic-based space with its own rules and moderators.
+- Post: Top-level content item; types include text, link, and image.
+- Comment: User reply to a post or comment; can be nested.
+- Vote: Upvote or downvote that affects an item’s score.
+- Score: Net result of votes at a point in time.
+- Sort: Ordering logic (Hot/New/Top/Controversial for posts; Top/New/Controversial/Old for comments).
+- Subscription: Member’s opt-in to include a community’s posts in their home feed.
+- Feed: List of posts compiled for a viewer (home or community specific).
+- NSFW/Spoiler: Content flags affecting display/visibility.
+- Quarantined: Restricted visibility state due to policy concerns.
+- Archived: Read-only state reached by age or policy; new interactions disabled.
+- Owner/Moderator: Community-scoped roles held by members with elevated permissions.
+- Admin: Platform-level operator with global authority.
+- Karma: Aggregate reputation signal based on votes on posts and comments.

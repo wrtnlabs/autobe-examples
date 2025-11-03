@@ -1,0 +1,470 @@
+/// Core order records representing customer purchases. Contains order-level
+/// data including customer reference, total amount, payment and fulfillment
+/// status, shipping address, and order timestamps. This is the primary
+/// entity for order management on the platform. Each order may contain items
+/// from multiple sellers (multi-seller orders handled through
+/// order_line_items). Links to customer, payment system, and fulfillment
+/// infrastructure. Historical record retention is indefinite for compliance
+/// and financial auditing purposes.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Customer who placed this order. Reference to {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Unique human-readable order number in format ORD-YYYYMMDDHHMMSS-XXXXXX.
+  /// Used for customer and seller references.
+  order_number String
+  
+  /// Current order status: pending_payment, payment_confirmed,
+  /// order_confirmed, preparing_shipment, shipped, in_transit,
+  /// out_for_delivery, delivered, cancelled, payment_failed. Status
+  /// transitions tracked in order_status_history table.
+  order_status String
+  
+  /// Payment processing state: pending, processing, authorized, captured,
+  /// failed, refunded, partially_refunded. Independent of order_status for
+  /// detailed payment tracking.
+  payment_status String
+  
+  /// Overall fulfillment progress: not_started, in_progress,
+  /// partially_shipped, fully_shipped, delivered, cancelled. Aggregated from
+  /// individual line items.
+  fulfillment_status String
+  
+  /// Order subtotal before discounts, in base currency. Sum of all line item
+  /// prices. Stored in cents precision.
+  subtotal Float
+  
+  /// Total discount amount applied to order from all sources (promotional
+  /// codes, platform promotions, seller discounts). Stored in cents precision.
+  discount_amount Float
+  
+  /// Total tax amount calculated based on destination address and applicable
+  /// tax rates. Stored in cents precision. Tax rate is locked at order time
+  /// and not recalculated.
+  tax_amount Float
+  
+  /// Shipping cost for this order based on selected shipping method and
+  /// destination. Stored in cents precision.
+  shipping_cost Float
+  
+  /// Final order total = subtotal - discount_amount + tax_amount +
+  /// shipping_cost. This is the amount charged to customer. Stored in cents
+  /// precision.
+  total_amount Float
+  
+  /// ISO 4217 currency code for order (e.g., USD, EUR, INR). All monetary
+  /// amounts in this order use this currency.
+  currency_code String
+  
+  /// Shipping address as structured JSON containing: street_line_1,
+  /// street_line_2, city, state, postal_code, country, recipient_name, phone.
+  /// Snapshot of customer's selected address at order time.
+  shipping_address String
+  
+  /// Billing address as structured JSON. May differ from shipping address.
+  /// Snapshot at order time.
+  billing_address String?
+  
+  /// Selected shipping method (e.g., standard, express, overnight). Determines
+  /// shipping cost and estimated delivery time.
+  shipping_method String
+  
+  /// Estimated delivery date calculated at order creation based on shipping
+  /// method and destination. May be updated as carrier provides new estimates.
+  estimated_delivery_date DateTime?
+  
+  /// Special instructions or notes provided by customer during checkout (max
+  /// 500 characters). Examples: 'leave at door', 'ring doorbell twice',
+  /// 'fragile items'.
+  customer_special_instructions String?
+  
+  /// Internal notes visible only to admin and seller. Used for flagging
+  /// special circumstances, investigation notes, or order-specific context
+  /// (max 1000 characters).
+  internal_notes String?
+  
+  /// Timestamp when order was placed (ISO 8601 format with timezone).
+  /// Immutable after creation.
+  created_at DateTime
+  
+  /// Timestamp of last order update (status change, notes added, etc.).
+  /// Updated on any order modification.
+  updated_at DateTime
+  
+  /// Timestamp when order was cancelled (if applicable). Null for
+  /// non-cancelled orders. Enables tracking cancellation timing.
+  cancelled_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_movements shopping_mall_inventory_movements[]
+  shopping_mall_order_line_items shopping_mall_order_line_items[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_order_shipment_mappings shopping_mall_order_shipment_mappings[]
+  shopping_mall_order_tracking shopping_mall_order_tracking?
+  shopping_mall_payments shopping_mall_payments?
+  shopping_mall_refunds shopping_mall_refunds[]
+  shopping_mall_financial_ledger shopping_mall_financial_ledger[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  shopping_mall_return_requests shopping_mall_return_requests[]
+  shopping_mall_return_decisions shopping_mall_return_decisions[]
+  shopping_mall_refund_processing shopping_mall_refund_processing[]
+  shopping_mall_disputes shopping_mall_disputes[]
+  
+  @@unique([order_number])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([order_status])
+  @@index([payment_status])
+  @@index([created_at])
+}
+
+/// Individual items within an order. Each line item represents one product
+/// variant (SKU) from one seller. Orders can contain multiple line items
+/// from different sellers (multi-seller orders). Maintains 1:many
+/// relationship with orders table. Stores line-item-specific pricing,
+/// quantity, fulfillment status, and seller reference. Enables proper
+/// normalization by separating item-level data from order-level data.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_line_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Parent order containing this line item. Reference to {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Product being purchased. Reference to {@link shopping_mall_products.id}.
+  /// Stored for historical reference (product may be updated or deleted
+  /// later).
+  shopping_mall_product_id String
+  
+  /// Specific product variant (SKU) purchased. Reference to {@link
+  /// shopping_mall_product_variants.id}. Captures exact variant at time of
+  /// order.
+  shopping_mall_product_variant_id String
+  
+  /// Seller fulfilling this line item. Reference to {@link
+  /// shopping_mall_sellers.id}. Multi-seller orders have multiple line items
+  /// with different sellers.
+  shopping_mall_seller_id String
+  
+  /// Stock Keeping Unit identifier for this specific product variant. Snapshot
+  /// of SKU at order time.
+  sku String
+  
+  /// Product name snapshot at time of order (product may be renamed or deleted
+  /// later). Used for customer-facing receipts and order history.
+  product_name String
+  
+  /// JSON snapshot of variant attributes (color, size, options, etc.) at time
+  /// of order. Enables customers to remember exact variant purchased.
+  variant_details String?
+  
+  /// Price per unit at time of order in order's currency. Locked in at order
+  /// creation, not affected by later price changes. Stored in cents precision.
+  unit_price Float
+  
+  /// Number of units ordered for this line item. Must be positive integer.
+  quantity Int
+  
+  /// Line item subtotal = unit_price × quantity before line-item-specific
+  /// discounts. Stored in cents precision.
+  line_subtotal Float
+  
+  /// Discount applied to this specific line item (if any). Stored in cents
+  /// precision. Used for items with quantity-based discounts.
+  line_discount Float
+  
+  /// Line item total = line_subtotal - line_discount. This is the amount for
+  /// this item in the order. Stored in cents precision.
+  line_total Float
+  
+  /// Fulfillment status of this specific line item: pending, confirmed,
+  /// picked, packed, shipped, in_transit, out_for_delivery, delivered,
+  /// cancelled, returned. Enables tracking individual items in multi-seller
+  /// orders.
+  item_status String
+  
+  /// Timestamp when line item was added to order. Normally same as
+  /// order.created_at but may differ if order items are added asynchronously.
+  created_at DateTime
+  
+  /// Timestamp of last line item update (status change, etc.). Enables
+  /// tracking item-level changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_return_requests shopping_mall_return_requests[]
+  
+  @@index([shopping_mall_product_id])
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_seller_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_order_line_items_shopping_mall_product_v_ae2928bf")
+  @@index([item_status])
+}
+
+/// Immutable append-only audit trail of all order status transitions.
+/// Captures point-in-time snapshots of status changes with exact timestamp
+/// and triggering actor. Enables complete visibility into order lifecycle
+/// for customers, sellers, and admins. Each status change creates a new
+/// record (never updated or deleted). Used for compliance auditing, dispute
+/// resolution, and performance analytics.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_status_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Order for which status changed. Reference to {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Order status before this transition. Null if this is the initial status
+  /// at order creation.
+  previous_status String?
+  
+  /// Order status after this transition. The current status of the order at
+  /// this point in time.
+  new_status String
+  
+  /// Reason or context for status change (e.g., 'payment authorized', 'seller
+  /// confirmed', 'carrier pickup', 'delivered by carrier'). Helps understand
+  /// why transition occurred.
+  status_transition_reason String?
+  
+  /// Actor who triggered the status change: 'customer', 'seller', 'admin',
+  /// 'system', 'payment_processor', 'carrier'. Identifies source of the
+  /// transition.
+  triggered_by String
+  
+  /// ID of actor who triggered change (customer_id, seller_id, admin_id, or
+  /// 'system'). Enables audit trail of specific users.
+  triggered_by_id String?
+  
+  /// Number of seconds order spent in previous status before transitioning.
+  /// Null if first status. Used for SLA tracking and performance analytics.
+  duration_in_previous_status Int?
+  
+  /// Timestamp when status transition occurred. ISO 8601 format with timezone.
+  /// Immutable after creation - defines exact moment of transition.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_status_history_shopping_mall_order_e30a1d11")
+  @@index([new_status, created_at])
+}
+
+/// Junction table linking orders to shipments. Enables mapping between
+/// orders and their corresponding shipment records. Supports multi-shipment
+/// orders (order split across multiple packages) and multi-order shipments
+/// (consolidation). Maintains relationship between order fulfillment and
+/// shipping infrastructure.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_shipment_mappings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Order being shipped. Reference to {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Shipment record for this order. Reference to {@link
+  /// shopping_mall_shipments.id}. One order may have multiple shipments.
+  shopping_mall_shipment_id String
+  
+  /// Sequence number if order has multiple shipments. First shipment = 1,
+  /// second = 2, etc. Enables ordering of multiple packages.
+  mapping_sequence Int
+  
+  /// Timestamp when mapping was created (when shipment was assigned to order).
+  /// Records when relationship was established.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_id, shopping_mall_shipment_id], map: "shopping_mall_order_shipment_mappings_shopping_mall_or_562a788f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id], map: "shopping_mall_order_shipment_mappings_shopping_mall_or_8478f135")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shipment_id], map: "shopping_mall_order_shipment_mappings_shopping_mall_sh_aeca0a2e")
+}
+
+/// Order-specific tracking information and details. Maintains current
+/// tracking state for orders including tracking number, carrier, estimated
+/// delivery, and tracking status. Enables customers to monitor order
+/// progress through fulfillment and delivery. Links orders to carrier
+/// tracking systems.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_tracking {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Order being tracked. Reference to {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Carrier-provided tracking number for this shipment. May be multiple
+  /// numbers if order split across packages (stored as comma-separated list).
+  tracking_number String?
+  
+  /// Shipping carrier name (e.g., 'FedEx', 'UPS', 'DHL', 'USPS'). Enables
+  /// linking to carrier tracking systems.
+  carrier_name String?
+  
+  /// Carrier service type (e.g., 'Ground', 'Express', 'Priority'). Indicates
+  /// service level selected.
+  carrier_service String?
+  
+  /// Latest tracking status from carrier: 'pending_pickup', 'picked_up',
+  /// 'in_transit', 'out_for_delivery', 'delivered', 'failed_delivery',
+  /// 'returned'. Current state of shipment.
+  current_tracking_status String?
+  
+  /// Timestamp of most recent carrier tracking update. Enables detection of
+  /// stale tracking data.
+  last_tracking_update DateTime?
+  
+  /// Current location of shipment if provided by carrier (city, country, or
+  /// facility name). JSON format if detailed coordinates available.
+  current_location String?
+  
+  /// Current carrier estimate for delivery (may differ from order's original
+  /// estimate). Updated as carrier provides new information.
+  estimated_delivery DateTime?
+  
+  /// Timestamp when delivery was confirmed by carrier or customer signature.
+  /// Marks completion of shipping phase.
+  delivery_confirmed_at DateTime?
+  
+  /// If delivery failed, reason provided by carrier (address invalid,
+  /// recipient unavailable, refused, weather delay, etc.).
+  delivery_exception_reason String?
+  
+  /// Timestamp when tracking record was created (when shipment was assigned).
+  /// Marks start of tracking.
+  created_at DateTime
+  
+  /// Timestamp of last tracking update. Updated whenever carrier provides new
+  /// tracking information.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_order_id])
+  
+  @@index([current_tracking_status])
+  @@index([estimated_delivery])
+}
+
+/// Customer-specific preferences and settings for their orders. Captures
+/// customer's default choices and order-related preferences (shipping method
+/// preference, notification settings, etc.). Enables personalization of
+/// order experience. Subsidiary table managed through customer account
+/// settings.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_order_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key
+  id String @id
+  
+  /// Customer whose preferences are stored. Reference to {@link
+  /// shopping_mall_customers.id}. One-to-one relationship per customer.
+  shopping_mall_customer_id String
+  
+  /// Customer's preferred shipping method (standard, express, overnight,
+  /// etc.). Pre-selected in checkout for convenience.
+  preferred_shipping_method String?
+  
+  /// Customer's preferred payment method ID (reference to payment method in
+  /// payment system). Pre-selected in checkout.
+  preferred_payment_method_id String?
+  
+  /// Whether customer prefers to use billing address same as shipping address.
+  /// Simplifies checkout.
+  use_billing_address Boolean
+  
+  /// Whether customer wants order status notifications (email, SMS, push).
+  /// Controls notification delivery.
+  order_notifications_enabled Boolean
+  
+  /// Whether customer opted into promotional newsletter. Used for marketing
+  /// communications.
+  newsletter_opted_in Boolean
+  
+  /// Gift preferences JSON (gift wrap preference, gift message, delivery
+  /// timing, etc.). Enables gift order personalization.
+  gift_preferences String?
+  
+  /// Timestamp when preferences were first created. Marks when customer set up
+  /// preferences.
+  created_at DateTime
+  
+  /// Timestamp of last preference update. Tracks when customer last modified
+  /// settings.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id], map: "shopping_mall_customer_order_preferences_shopping_mall_bfb2bd75")
+}

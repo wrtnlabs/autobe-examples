@@ -1,8 +1,8 @@
 import { Controller } from "@nestjs/common";
 import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
-import typia, { tags } from "typia";
+import typia from "typia";
 import { patchDiscussionBoardCategories } from "../../../providers/patchDiscussionBoardCategories";
-import { getDiscussionBoardCategoriesCategoryId } from "../../../providers/getDiscussionBoardCategoriesCategoryId";
+import { getDiscussionBoardCategoriesCategorySlug } from "../../../providers/getDiscussionBoardCategoriesCategorySlug";
 
 import { IPageIDiscussionBoardCategory } from "../../../api/structures/IPageIDiscussionBoardCategory";
 import { IDiscussionBoardCategory } from "../../../api/structures/IDiscussionBoardCategory";
@@ -13,52 +13,38 @@ export class DiscussionboardCategoriesController {
    * Search and retrieve a filtered, paginated list of discussion board
    * categories.
    *
-   * Retrieve a comprehensive, filtered list of discussion board categories from
-   * the discussion_board_categories table. This operation provides advanced
-   * search and filtering capabilities for discovering and organizing categories
-   * used to classify economic and political discussion topics.
+   * Retrieve a comprehensive, filterable list of article categories from the
+   * discussion board system. This operation provides advanced search and
+   * filtering capabilities for discovering categories that organize economic
+   * and political discussion topics such as Economic Policy, Political
+   * Analysis, International Trade, and other predefined subject areas.
    *
-   * The endpoint supports full-text search across category names and
-   * descriptions, enabling users to find relevant categories quickly. Users can
-   * filter categories by hierarchical level (top-level categories like
-   * Economics and Politics versus subcategories like Macroeconomics), active
-   * status (to show only currently available categories), and parent-child
-   * relationships to navigate the category taxonomy.
+   * The operation supports keyword search across category names and
+   * descriptions, enabling users to find relevant categories quickly.
+   * Pagination is implemented to handle the category list efficiently, with
+   * configurable page sizes and sorting options. Users can sort categories
+   * alphabetically by name, by creation date to see newest categories first, or
+   * by other relevant criteria.
    *
-   * Sorting options include display_order (the default administrative
-   * ordering), topic_count (to identify most active categories), creation date,
-   * and alphabetical ordering. Pagination allows efficient browsing of the
-   * complete category catalog with configurable page sizes.
+   * This endpoint serves multiple purposes within the discussion board
+   * ecosystem. It enables users to explore the category taxonomy before
+   * creating articles, allows frontend applications to populate category
+   * selection interfaces, and provides the foundation for category-based
+   * content browsing. The operation respects the category structure defined in
+   * the Prisma schema, including the unique name and slug constraints that
+   * ensure category consistency.
    *
-   * This operation serves multiple use cases across the platform. During topic
-   * creation, members use this endpoint to browse available categories and
-   * select the appropriate classification for their discussion. In category
-   * browsing interfaces, users explore the organizational structure to find
-   * discussions of interest. Administrators use filtered views to manage the
-   * category hierarchy, identify underutilized categories, and organize the
-   * platform's content taxonomy.
-   *
-   * The response includes essential category metadata: unique identifier, name,
-   * slug (for URL-friendly routing), description, hierarchical position
-   * (parent_category_id), display ordering, active status, and topic count. The
-   * topic_count field provides immediate visibility into category usage and
-   * helps users identify where active discussions are occurring.
-   *
-   * Security considerations include public accessibility (guests and all
-   * authenticated roles can browse categories) since category information is
-   * non-sensitive organizational metadata. Rate limiting applies to prevent
-   * abuse, and response caching improves performance for this frequently
-   * accessed data.
-   *
-   * This operation integrates closely with the Discussion Management
-   * requirements defined in 03-discussion-management.md, specifically the
-   * Category System Overview and Category Browsing sections. It enables the
-   * category-based content organization that is fundamental to the platform's
-   * structure for economic and political discourse.
+   * Security considerations include rate limiting to prevent abuse of the
+   * search functionality and appropriate response caching to optimize
+   * performance. The operation is available to all user types including guests,
+   * members, and moderators, as category information is public and essential
+   * for content discovery and organization. The response includes category
+   * metadata such as display names, descriptions, slugs for URL generation, and
+   * timestamps for tracking category creation and updates.
    *
    * @param connection
-   * @param body Search criteria, filters, and pagination parameters for
-   *   category retrieval
+   * @param body Search criteria, filtering options, pagination parameters, and
+   *   sorting preferences for category retrieval
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -77,74 +63,53 @@ export class DiscussionboardCategoriesController {
   }
 
   /**
-   * Retrieve detailed information for a specific discussion board category by
-   * ID.
+   * Retrieve detailed information about a specific discussion board category by
+   * its slug.
    *
-   * Retrieve complete details for a single discussion board category identified
-   * by the categoryId path parameter. This operation accesses the
-   * discussion_board_categories table to return comprehensive information about
-   * a specific category used to organize economic and political discussion
-   * topics.
+   * Retrieve comprehensive information about a single article category
+   * identified by its unique URL-friendly slug. This operation returns complete
+   * category details including the display name, detailed description
+   * explaining the category's purpose and scope, the slug itself used in
+   * routing, and timestamps tracking when the category was created and last
+   * modified.
    *
-   * The operation returns the full category record including all metadata
-   * fields: unique identifier, category name, URL-friendly slug, complete
-   * description text, hierarchical position (parent_category_id for
-   * subcategories), display ordering value, active status flag, and current
-   * topic count showing how many discussions are classified under this
-   * category.
+   * The category slug serves as the primary identifier in this endpoint,
+   * providing SEO-friendly and human-readable URLs for category browsing. For
+   * example, accessing /categories/economic-policy would return full details
+   * about the Economic Policy category. The slug parameter is validated against
+   * the discussion_board_categories table's unique slug constraint to ensure
+   * accurate category retrieval.
    *
-   * For hierarchical categories (subcategories like Macroeconomics under
-   * Economics), the response includes the parent_category_id which clients can
-   * use to display breadcrumb navigation or hierarchical category paths. The
-   * description field contains the full category explanation (potentially
-   * several hundred characters) that helps users understand the category's
-   * scope and what types of discussions belong there.
+   * This operation is essential for category-based navigation and content
+   * discovery workflows. When users browse articles by category or when
+   * frontend applications need to display category-specific pages, this
+   * endpoint provides the necessary category metadata. The operation supports
+   * the discussion board's content organization strategy by delivering detailed
+   * category information that helps users understand the scope and purpose of
+   * each subject area.
    *
-   * The topic_count field provides real-time visibility into category usage,
-   * helping users identify active discussion areas and enabling administrators
-   * to monitor category health. The display_order field indicates the
-   * category's position in organized listings, supporting custom category
-   * ordering beyond alphabetical sorting.
-   *
-   * This operation serves several critical use cases. During topic creation,
-   * users may click on a category to view its detailed description before
-   * confirming their selection, ensuring they choose the most appropriate
-   * category. Category detail pages display this information to users browsing
-   * the organizational structure. Administrative interfaces use this endpoint
-   * to load category data for editing and management workflows.
-   *
-   * Security and access control allow public visibility since category
-   * information is non-sensitive organizational metadata. Guests and all
-   * authenticated users can view category details. The operation validates that
-   * the requested category exists in the database, returning appropriate error
-   * responses for invalid UUIDs, non-existent categories, or soft-deleted
-   * categories (deleted_at is not null).
-   *
-   * Performance expectations require sub-second response times for individual
-   * category retrieval, typically under 500 milliseconds. Caching strategies
-   * can optimize repeated requests for popular categories. The operation
-   * integrates with the category system requirements defined in
-   * 03-discussion-management.md, specifically supporting the Category
-   * Navigation and Category Structure sections.
-   *
-   * Error handling includes specific responses for common failure scenarios:
-   * invalid UUID format in the categoryId parameter (400 Bad Request), category
-   * not found (404 Not Found), and soft-deleted categories that should not be
-   * displayed (404 Not Found or 410 Gone depending on implementation
-   * approach).
+   * The endpoint is publicly accessible to all user types including guests,
+   * members, and moderators, as category information is non-sensitive and
+   * required for effective content browsing. Response data includes all
+   * category fields from the Prisma schema: unique identifier, display name,
+   * descriptive text, slug for URL generation, creation timestamp, and last
+   * update timestamp. The operation ensures data consistency by querying the
+   * authoritative category records and respecting the unique constraints
+   * defined in the database schema.
    *
    * @param connection
-   * @param categoryId Unique identifier of the target discussion board category
+   * @param categorySlug Unique URL-friendly identifier of the target category
+   *   (global scope)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":categoryId")
+  @TypedRoute.Get(":categorySlug")
   public async at(
-    @TypedParam("categoryId")
-    categoryId: string & tags.Format<"uuid">,
+    @TypedParam("categorySlug")
+    categorySlug: string,
   ): Promise<IDiscussionBoardCategory> {
     try {
-      return await getDiscussionBoardCategoriesCategoryId({
-        categoryId,
+      return await getDiscussionBoardCategoriesCategorySlug({
+        categorySlug,
       });
     } catch (error) {
       console.log(error);

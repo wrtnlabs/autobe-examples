@@ -1,5 +1,3 @@
-export * as admin from "./admin/index";
+export * as discussionBoardArticles from "./discussionBoardArticles/index";
 export * as member from "./member/index";
-export * as discussionBoardPosts from "./discussionBoardPosts/index";
-export * as moderator from "./moderator/index";
-export * as discussionBoardCategories from "./discussionBoardCategories/index";
+export * as admin from "./admin/index";

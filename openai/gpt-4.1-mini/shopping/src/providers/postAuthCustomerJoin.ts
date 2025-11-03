@@ -9,44 +9,64 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 
 export async function postAuthCustomerJoin(props: {
-  body: IShoppingMallCustomer.IJoin;
+  customer: CustomerPayload;
+  body: IShoppingMallCustomer.ICreate;
 }): Promise<IShoppingMallCustomer.IAuthorized> {
-  const { body } = props;
-
   const existingCustomer =
-    await MyGlobal.prisma.shopping_mall_customers.findUnique({
-      where: { email: body.email },
+    await MyGlobal.prisma.shopping_mall_customers.findFirst({
+      where: { email: props.body.email },
     });
-  if (existingCustomer) {
-    throw new HttpException("Conflict: Email already registered.", 409);
+  if (existingCustomer !== null) {
+    throw new HttpException("Email already registered", 409);
   }
 
-  const hashedPassword = await PasswordUtil.hash(body.password);
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  const id = v4();
   const now = toISOStringSafe(new Date());
 
-  const created = await MyGlobal.prisma.shopping_mall_customers.create({
+  const newCustomer = await MyGlobal.prisma.shopping_mall_customers.create({
     data: {
-      id,
-      email: body.email,
+      id: v4(),
+      email: props.body.email,
       password_hash: hashedPassword,
-      status: "active",
+      nickname: props.body.nickname,
       created_at: now,
       updated_at: now,
-      nickname: null,
-      phone_number: null,
       deleted_at: null,
     },
   });
 
+  const accessExpiration = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiration = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  const newSession =
+    await MyGlobal.prisma.shopping_mall_customer_sessions.create({
+      data: {
+        id: v4(),
+        shopping_mall_customer_id: newCustomer.id,
+        created_at: now,
+        expired_at: accessExpiration,
+        ip: "",
+        href: "",
+        referrer: "",
+      },
+    });
+
+  const createdISO = now;
+
   const accessToken = jwt.sign(
     {
-      id: created.id,
-      email: created.email,
       type: "customer",
+      id: newCustomer.id,
+      session_id: newSession.id,
+      created_at: createdISO,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -57,8 +77,11 @@ export async function postAuthCustomerJoin(props: {
 
   const refreshToken = jwt.sign(
     {
-      id: created.id,
+      type: "customer",
+      id: newCustomer.id,
+      session_id: newSession.id,
       tokenType: "refresh",
+      created_at: createdISO,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -67,29 +90,21 @@ export async function postAuthCustomerJoin(props: {
     },
   );
 
-  const expiredAt = toISOStringSafe(new Date(Date.now() + 3600 * 1000));
-  const refreshableUntil = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 3600 * 1000),
-  );
-
   return {
-    id: created.id,
-    email: created.email,
-    password_hash: created.password_hash,
-    nickname: created.nickname ?? undefined,
-    phone_number: created.phone_number ?? undefined,
-    status: created.status,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
+    id: newCustomer.id,
+    email: newCustomer.email,
+    nickname: newCustomer.nickname,
+    created_at: toISOStringSafe(newCustomer.created_at),
+    updated_at: toISOStringSafe(newCustomer.updated_at),
     deleted_at:
-      created.deleted_at !== null && created.deleted_at !== undefined
-        ? toISOStringSafe(created.deleted_at)
+      newCustomer.deleted_at !== null && newCustomer.deleted_at !== undefined
+        ? toISOStringSafe(newCustomer.deleted_at)
         : null,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: expiredAt,
-      refreshable_until: refreshableUntil,
+      expired_at: accessExpiration,
+      refreshable_until: refreshExpiration,
     },
   };
 }

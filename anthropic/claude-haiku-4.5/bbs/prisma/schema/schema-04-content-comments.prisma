@@ -1,0 +1,77 @@
+/// User comments posted on articles enabling threaded discussions. Comments
+/// support nested replies through optional parent_comment_id field, allowing
+/// members to create discussion threads under articles. Each comment has
+/// independent lifecycle, ownership by its author, and can be edited within
+/// 24 hours or deleted at any time by the author or moderators.
+///
+/// @namespace Content - Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent article being discussed. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Reference to the member who authored this comment. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Reference to the parent comment if this is a reply. NULL for top-level
+  /// comments, enabling nested threading up to 3 levels deep.
+  parent_comment_id String?
+  
+  /// The comment text body containing user's discussion contribution. Between
+  /// 1 and 5,000 characters. Supports basic markdown formatting (bold, italic,
+  /// links).
+  content String
+  
+  /// Current status of the comment. One of: 'published', 'deleted',
+  /// 'moderated'. Used to track visibility and moderation state of the
+  /// comment.
+  status String
+  
+  /// Nesting level in the discussion thread. 0 for top-level comments, 1+ for
+  /// replies. Maximum depth is 3 levels (replies to depth 3 attach to depth 3
+  /// parent).
+  thread_depth Int
+  
+  /// Timestamp when the comment was created. ISO 8601 format in UTC timezone.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last modified. Updated when comment text
+  /// is edited by author or moderators.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted or removed by moderator. NULL
+  /// if comment is still active. Used to preserve audit trail while hiding
+  /// content.
+  deleted_at DateTime?
+  
+  /// Number of times this comment has been edited by its author. Starts at 0.
+  /// Incremented each time author modifies the comment. Displayed to users as
+  /// 'edited' indicator.
+  edit_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  parentComment discussion_board_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_comments[] @relation("recursive")
+  discussion_board_attachments discussion_board_attachments[]
+  discussion_board_notifications discussion_board_notifications[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_comments_discussion_board_member_id_c_c3eff834")
+  @@index([parent_comment_id])
+  @@index([status])
+}

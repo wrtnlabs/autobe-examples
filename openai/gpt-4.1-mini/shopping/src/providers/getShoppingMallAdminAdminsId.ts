@@ -14,26 +14,27 @@ export async function getShoppingMallAdminAdminsId(props: {
   admin: AdminPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallAdmin> {
-  const { admin, id } = props;
-
-  const record = await MyGlobal.prisma.shopping_mall_admins.findUniqueOrThrow({
-    where: { id },
-  });
-
-  const status = typia.assert<"active" | "suspended" | "disabled">(
-    record.status,
-  );
+  const adminRecord =
+    await MyGlobal.prisma.shopping_mall_admins.findUniqueOrThrow({
+      where: { id: props.id },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    });
 
   return {
-    id: record.id,
-    email: record.email,
-    password_hash: record.password_hash,
-    full_name: record.full_name ?? null,
-    phone_number: record.phone_number ?? null,
-    status: status,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
-    shopping_mall_report_count: null,
+    id: adminRecord.id,
+    email: adminRecord.email,
+    full_name: adminRecord.full_name,
+    created_at: toISOStringSafe(adminRecord.created_at),
+    updated_at: toISOStringSafe(adminRecord.updated_at),
+    deleted_at: adminRecord.deleted_at
+      ? toISOStringSafe(adminRecord.deleted_at)
+      : null,
   };
 }

@@ -13,34 +13,20 @@ export async function deleteCommunityPlatformAdminSubscriptionsSubscriptionId(pr
   admin: AdminPayload;
   subscriptionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Fetch the subscription and ensure it exists and is not already deleted.
+  const { subscriptionId } = props;
+  // Find subscription by id and ensure not already deleted
   const subscription =
-    await MyGlobal.prisma.community_platform_subscriptions.findUnique({
-      where: { id: props.subscriptionId },
-    });
-  if (!subscription || subscription.deleted_at !== null) {
-    throw new HttpException(
-      "Subscription not found or already unsubscribed",
-      404,
+    await MyGlobal.prisma.community_platform_community_subscriptions.findUnique(
+      {
+        where: { id: subscriptionId },
+      },
     );
+  if (subscription === null || subscription.deleted_at !== null) {
+    throw new HttpException("Subscription not found or already deleted", 404);
   }
-
-  // Soft delete: set deleted_at
-  const deletedAt = toISOStringSafe(new Date());
-  await MyGlobal.prisma.community_platform_subscriptions.update({
-    where: { id: props.subscriptionId },
-    data: { deleted_at: deletedAt },
-  });
-
-  // Log the unsubscribe event
-  await MyGlobal.prisma.community_platform_subscription_logs.create({
-    data: {
-      id: v4(),
-      member_id: subscription.member_id,
-      community_id: subscription.community_id,
-      event_type: "unsubscribe",
-      event_at: deletedAt,
-      metadata: null,
-    },
+  // Soft-delete by marking deleted_at
+  await MyGlobal.prisma.community_platform_community_subscriptions.update({
+    where: { id: subscriptionId },
+    data: { deleted_at: toISOStringSafe(new Date()) },
   });
 }

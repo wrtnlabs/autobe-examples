@@ -1,313 +1,165 @@
-/// Core entity representing each community on the platform. Contains
-/// essential metadata for community identification and discovery. This is a
-/// primary entity as users directly interact with communities by
-/// subscribing, viewing content, and participating.
+/// Global system settings controlling platform-wide behavior and feature
+/// toggles. This table stores key-value pairs for immutable configuration
+/// defaults that govern system-wide operations such as rate limits, default
+/// community rules, and platform-wide policies. All settings are read by the
+/// system at startup and cached in memory to avoid repeated database
+/// queries.
+///
+/// This table is referenced indirectly by all components when determining
+/// default behaviors. It is not modified by users and is only updated by
+/// system administrators.
+///
+/// @link community_platform_admin
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_communities {
+model community_platform_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The unique, case-insensitive name identifier for the community (e.g.,
-  /// 'technology', 'gaming'). Must be unique across the platform and follow
-  /// naming conventions (alphanumeric and hyphens only).
-  name String
+  /// Unique identifier for the setting (e.g., 'max_posts_per_minute',
+  /// 'default_community_rules'). Must be unique.
+  setting_key String
   
-  /// A brief description of the community's purpose and rules, displayed to
-  /// users.
+  /// The configured value as a serialized string (JSON, plain text, or
+  /// number). Can be any type but stored as string for flexibility.
+  setting_value String
+  
+  /// Human-readable description explaining what this setting controls and its
+  /// business purpose.
   description String?
   
-  /// Timestamp indicating when the community was created.
-  created_at DateTime
-  
-  /// Flag indicating whether the community is publicly visible and joinable.
-  /// True for public communities, false for restricted communities.
-  is_public Boolean
-  
-  /// Flag indicating whether the community contains Not Safe For Work content.
-  /// Requires explicit user settings to view.
-  nsfw Boolean
-  
-  /// Flag indicating whether all new posts in this community require moderator
-  /// approval before being published.
-  post_review_mode Boolean
-  
-  /// Flag indicating whether all new comments in this community require
-  /// moderator approval before being published.
-  comment_review_mode Boolean
-  
-  /// The current number of users subscribed to this community. Updated on
-  /// subscription/unsubscription.
-  member_count Int
-  
-  /// The total number of posts created in this community. Updated on post
-  /// creation.
-  post_count Int
-  
-  //----
-  // RELATIONS
-  //----
-  community_platform_community_settings community_platform_community_settings?
-  community_platform_moderator community_platform_moderator[]
-  community_platform_posts community_platform_posts[]
-  community_platform_subscriptions community_platform_subscriptions[]
-  community_platform_audit_logs community_platform_audit_logs[]
-  community_platform_notifications community_platform_notifications[]
-  
-  @@unique([name])
-  @@index([created_at])
-  @@index([is_public])
-  @@index([nsfw])
-  @@index([post_review_mode])
-  @@index([comment_review_mode])
-  @@index([member_count])
-  @@index([post_count])
-}
-
-/// Configuration settings that customize the behavior and appearance of each
-/// community. These settings are specific to each community and govern
-/// moderation, visibility, and user experience. This is a subsidiary entity
-/// as it is always governed by and accessed through its parent community
-/// entity.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_settings {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The community this setting belongs to. {@link
-  /// community_platform_communities.id}.
-  community_platform_community_id String
-  
-  /// Custom display title for the community, which may differ from the public
-  /// 'name'. Used for branding.
-  title String?
-  
-  /// URL to the community's banner image, displayed prominently on the
-  /// community page.
-  banner_url String?
-  
-  /// URL to the community's icon/logo, used as visual identifier in lists.
-  icon_url String?
-  
-  /// Detailed rules and guidelines for the community, more comprehensive than
-  /// the basic description.
-  rules String?
-  
-  /// Flag indicating whether only admins can invite new moderators. If false,
-  /// existing moderators can invite others.
-  moderator_invite_only Boolean
-  
-  /// Flag indicating whether new members can immediately create posts upon
-  /// joining, or if a waiting period is required.
-  allow_self_post Boolean
-  
-  /// Timestamp indicating when these settings were initially configured.
-  created_at DateTime
-  
-  /// Timestamp indicating when these settings were last updated.
+  /// Timestamp of the last update to this setting. Tracks administrative
+  /// changes.
   updated_at DateTime
   
+  /// Reference to the admin who last modified this setting. External reference
+  /// to {@link community_platform_admin.id}.
+  updated_by_admin_id String
+  
   //----
   // RELATIONS
   //----
-  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
-  
-  @@unique([community_platform_community_id], map: "community_platform_community_settings_community_platfo_63b30153")
-  @@index([created_at])
+  @@unique([setting_key])
   @@index([updated_at])
 }
 
-/// Global platform-wide configuration settings that govern behavior across
-/// all communities. These are system-level parameters set by administrators
-/// to ensure consistency and compliance with platform policies. This is a
-/// subsidiary entity as it is not directly interacted with by users but
-/// governs system-wide functions.
+/// Standard ISO 3166-1 country code lookup table. Contains all globally
+/// recognized country codes and their display names. Used to validate user
+/// country selection during registration and to localize content.
+///
+/// This table is referenced by user profile fields to ensure country data
+/// consistency. No direct user management — these are system-maintained
+/// static lookup values.
+///
+/// @link community_platform_profiles
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_platform_settings {
+model community_platform_country_codes {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Maximum number of users allowed to subscribe to any single community.
-  /// Helps manage server load and community focus.
-  max_community_members Int
+  /// ISO 3166-1 alpha-2 two-letter country code (e.g., 'US', 'JP', 'DE').
+  country_code String
   
-  /// Maximum number of votes (upvotes and downvotes combined) that will be
-  /// counted for any single post. Higher thresholds are capped to prevent
-  /// karma inflation.
-  max_post_votes Int
+  /// Full English name of the country (e.g., 'United States', 'Japan',
+  /// 'Germany').
+  country_name String
   
-  /// Maximum depth (nested levels) allowed for comment threads. Reduces
-  /// performance overhead for deeply nested conversations.
-  max_comment_depth Int
+  /// ISO 3166-1 numeric country code (three-digit).
+  iso_numeric String
   
-  /// Number of minutes after posting that the original author can edit their
-  /// post. Set to 15 minutes as per business rules.
-  post_edit_window_minutes Int
+  /// Geographic region (e.g., 'Americas', 'Asia', 'Europe').
+  region String
   
-  /// Number of minutes after commenting that the original author can edit
-  /// their comment. Set to 10 minutes as per business rules.
-  comment_edit_window_minutes Int
+  //----
+  // RELATIONS
+  //----
+  @@unique([country_code])
+  @@unique([iso_numeric])
+  @@index([region])
+}
+
+/// List of IP addresses and CIDR blocks that are permanently banned from
+/// accessing any part of the platform. Used to block known spammers,
+/// malicious actors, or regions with systemic abuse.
+///
+/// This table is checked on every incoming HTTP request before processing
+/// any action. Entries are managed exclusively by system administrators.
+///
+/// @link community_platform_admin
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_ip_blocklist {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
   
-  /// Maximum number of posts a user can create in any given hour. Prevents
-  /// spam and bot behavior.
-  max_posts_per_hour Int
+  /// IP address or CIDR block (e.g., '192.168.1.1', '10.0.0.0/8') that is
+  /// blocked.
+  ip_range String
   
-  /// Maximum number of comments a user can create in any given hour. Prevents
-  /// spam and bot behavior.
-  max_comments_per_hour Int
+  /// Reason for blocklisting (e.g., 'Spam bot network', 'Phishing domain',
+  /// 'Abuse from region').
+  reason String
   
-  /// Maximum number of reports a user can submit in a 24-hour period. Prevents
-  /// report abuse.
-  max_reports_per_day Int
-  
-  /// Maximum number of communities a single user can create in a 24-hour
-  /// period. Prevents community spam.
-  max_community_creation_daily Int
-  
-  /// Maximum file size (in MB) allowed for image uploads. Aligns with external
-  /// image hosting integration constraints.
-  image_upload_max_size_mb Int
-  
-  /// Default post sorting algorithm to use for community feeds. Value must be
-  /// one of: 'new', 'hot', 'top', 'controversial'.
-  default_sort_algorithm String
-  
-  /// Daily rate at which karma points decay for inactive users (e.g., 0.01
-  /// means 1% per day). Used to encourage ongoing participation. Currently set
-  /// to 0.0.
-  karma_decay_rate Float
-  
-  /// Timestamp indicating when this platform-wide setting was created.
+  /// Timestamp when this IP range was added to the blocklist.
   created_at DateTime
   
-  /// Timestamp indicating when this platform-wide setting was last updated.
-  updated_at DateTime
+  /// Reference to the admin who added this blocklist entry. External reference
+  /// to {@link community_platform_admin.id}.
+  created_by_admin_id String
   
   //----
   // RELATIONS
   //----
+  @@unique([ip_range])
   @@index([created_at])
-  @@index([updated_at])
 }
 
-/// Enumeration of predefined categories for user-initiated content reports.
-/// This table defines the options users can select when reporting a post or
-/// comment. This is a subsidiary entity as it provides reference data for
-/// the reporting mechanism but is not a primary business entity that users
-/// manage directly.
+/// System-reserved keywords that cannot be used as community names or
+/// usernames. Prevents impersonation of system roles (e.g., 'admin', 'mod',
+/// 'support') and avoids naming conflicts.
+///
+/// Used during community creation and username registration to block
+/// forbidden terms.
+///
+/// @link community_platform_communities
+/// @link community_platform_profiles
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_report_categories {
+model community_platform_reserved_keywords {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The internal, unique identifier for the report category (e.g., 'spam',
-  /// 'harassment').
-  name String
+  /// The reserved keyword (e.g., 'admin', 'mod', 'help', 'system'). Must be
+  /// unique and case-insensitive.
+  keyword String
   
-  /// The human-readable name displayed to users when selecting a report reason
-  /// (e.g., 'Spam or advertisements').
-  display_name String
-  
-  /// An optional detailed description explaining the types of content this
-  /// category applies to.
-  description String?
-  
-  /// Flag indicating whether this report category is currently active and
-  /// available for users to select. Used to disable categories without
-  /// deleting them.
-  is_active Boolean
-  
-  /// A ranking value to determine the order in which report categories are
-  /// displayed to users in the UI (0=lowest, 999=highest).
-  priority Int
-  
-  //----
-  // RELATIONS
-  //----
-  community_platform_reports community_platform_reports[]
-  community_platform_vote_logs community_platform_vote_logs[]
-  community_platform_audit_logs community_platform_audit_logs[]
-  
-  @@unique([name])
-  @@index([is_active])
-  @@index([priority])
-}
-
-/// List of prohibited words, phrases, and patterns that are filtered from
-/// user submissions (posts, comments) by automated moderation systems. This
-/// table defines terms that trigger automatic flagging or rejection based on
-/// AI moderation analysis. This is a subsidiary entity as it provides a
-/// lookup list for the moderation system and is not a primary business
-/// entity.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_banned_words {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The exact word, phrase, or regex pattern to be flagged or blocked. Must
-  /// be in lowercase for case-insensitive matching.
-  word String
-  
-  /// The category of prohibited content this word belongs to. Values: 'spam',
-  /// 'harassment', 'nsfw', 'illegal', 'impersonation', 'other'.
+  /// Category of reserved term: 'community_name', 'username', or 'system'.
   type String
   
-  /// Flag indicating if the 'word' field contains a regular expression
-  /// pattern, rather than a literal string to match.
-  is_regex Boolean
-  
-  /// Flag indicating if the match should be for an exact word boundary (e.g.,
-  /// 'win' should not match 'winner').
-  is_exact_match Boolean
-  
-  /// The automated action to take when this word is detected. Values: 'flag',
-  /// 'block', 'warn'.
-  action String
-  
-  /// Explanation noting why this term was added and its intended target.
-  description String?
-  
-  /// Timestamp indicating when this banned word was added to the system.
-  created_at DateTime
-  
-  /// Timestamp indicating when this banned word was last modified.
-  updated_at DateTime
-  
-  /// Flag indicating whether this entry is currently enforced. Used to disable
-  /// words without deleting them.
-  is_active Boolean
+  /// Reason this keyword is reserved (e.g., 'prevents impersonation of admin',
+  /// 'conflicts with internal API route').
+  reason String
   
   //----
   // RELATIONS
   //----
-  @@unique([word, type])
+  @@unique([keyword, type])
   @@index([type])
-  @@index([action])
-  @@index([is_active])
-  @@index([created_at])
-  @@index([updated_at])
 }

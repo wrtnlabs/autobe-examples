@@ -1,10 +1,13 @@
-// File path: src/decorators/ModeratorAuth.ts
 import { SwaggerCustomizer } from "@nestia/core";
 import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { Singleton } from "tstl";
 
 import { moderatorAuthorize } from "../providers/authorize/moderatorAuthorize";
 
+/**
+ * Parameter decorator to inject authenticated ModeratorPayload into controller handlers.
+ * Adds bearer security to Swagger via SwaggerCustomizer and uses a Singleton createParamDecorator instance.
+ */
 export const ModeratorAuth =
   (): ParameterDecorator =>
   (

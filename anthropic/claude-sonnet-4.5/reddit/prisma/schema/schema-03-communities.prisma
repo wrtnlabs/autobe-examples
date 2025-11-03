@@ -1,250 +1,231 @@
-/// Core community entity representing a subreddit-like community where users
-/// gather around shared interests. Communities serve as the organizational
-/// structure for all content, with each community having its own rules,
-/// moderators, and subscriber base. Communities can be public (visible to
-/// all) or private (invitation/approval required).
+/// Core community entity representing topic-based communities (similar to
+/// subreddits). Communities are the fundamental organizational structure
+/// where users create posts, engage in discussions, and build focused
+/// interest groups. Each community has its own rules, moderators, and
+/// subscriber base. Communities can be public (visible to all) or private
+/// (requiring membership approval).
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_communities {
+model community_platform_communities {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User who created this community and serves as the primary moderator.
-  /// References {@link reddit_like_members.id}.
-  creator_id String
-  
-  /// Unique community identifier used in URLs (3-25 characters, alphanumeric
-  /// and underscores only, case-insensitive). Examples: technology, gaming,
-  /// science.
-  code String
-  
-  /// Display name of the community (3-25 characters). This is shown in the UI
-  /// and can differ from the code.
+  /// Unique community name displayed to users. Must be between 3 and 50
+  /// characters, using letters, numbers, spaces, hyphens, and underscores
+  /// only. This is the human-readable identifier for the community.
   name String
   
-  /// Community description explaining its purpose and topic (10-500
-  /// characters). Helps users understand what the community is about.
+  /// Community description explaining the purpose and topic of the community.
+  /// Must be between 20 and 500 characters. This helps users understand what
+  /// the community is about and whether they want to join.
   description String
   
-  /// URL to the community icon image (256x256 pixels). Uploaded by moderators
-  /// for community branding.
-  icon_url String?
+  /// Community visibility status. Values: 'public' (visible to all users,
+  /// anyone can subscribe) or 'private' (requires membership approval, only
+  /// members can view content). Determines access control for the community.
+  visibility String
   
-  /// URL to the community banner image (max width 1920px). Uploaded by
-  /// moderators for community header.
-  banner_url String?
-  
-  /// Privacy setting for the community. Values: public (anyone can view),
-  /// private (approval required to view). Default is public.
-  privacy_type String
-  
-  /// Who can create posts in this community. Values: anyone_subscribed,
-  /// approved_only, moderators_only. Default is anyone_subscribed.
-  posting_permission String
-  
-  /// Whether text posts are allowed in this community. Moderators can disable
-  /// specific post types.
-  allow_text_posts Boolean
-  
-  /// Whether link posts are allowed in this community. Moderators can disable
-  /// specific post types.
-  allow_link_posts Boolean
-  
-  /// Whether image posts are allowed in this community. Moderators can disable
-  /// specific post types.
-  allow_image_posts Boolean
-  
-  /// Main category for community classification (Technology, Gaming, Sports,
-  /// Entertainment, Education, Science, Arts, News, Lifestyle, Business,
-  /// Other). Used for discovery and browsing.
-  primary_category String
-  
-  /// Additional tags for better discoverability (up to 3 tags,
-  /// comma-separated). Helps users find communities through search and
-  /// recommendations.
-  secondary_tags String?
-  
-  /// Total number of subscribers to this community. Denormalized for
-  /// performance, updated when subscriptions change.
+  /// Total number of members subscribed to this community. This count is
+  /// incremented when users subscribe and decremented when they unsubscribe.
+  /// Used for displaying community popularity and for trending calculations.
   subscriber_count Int
   
-  /// Whether this community is archived due to inactivity. Archived
-  /// communities prevent new posts but remain viewable.
-  is_archived Boolean
-  
-  /// Timestamp when the community was created.
+  /// Timestamp when the community was created. Used for displaying community
+  /// age and for sorting communities by creation date.
   created_at DateTime
   
-  /// Timestamp when the community settings were last updated.
+  /// Timestamp when the community was last updated. Updated whenever community
+  /// settings, description, or other metadata changes.
   updated_at DateTime
   
-  /// Timestamp when the community was soft-deleted. Null if active. Deleted
-  /// communities enter 30-day cooldown before permanent deletion.
+  /// Timestamp when the community was soft-deleted by site administrators.
+  /// Null if the community is active. Soft deletion preserves community data
+  /// for audit purposes while hiding it from public view.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  creator reddit_like_members @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  community_platform_community_rules community_platform_community_rules[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_community_categories community_platform_community_categories[]
+  community_platform_community_moderator_assignments community_platform_community_moderator_assignments[]
+  community_platform_posts community_platform_posts[]
+  community_platform_reports community_platform_reports[]
+  community_platform_community_bans community_platform_community_bans[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_pinned_posts community_platform_pinned_posts[]
+  community_platform_rule_violations community_platform_rule_violations[]
+  community_platform_trending_communities community_platform_trending_communities[]
   
-  reddit_like_community_rules reddit_like_community_rules[]
-  reddit_like_community_subscriptions reddit_like_community_subscriptions[]
-  reddit_like_community_moderators reddit_like_community_moderators[]
-  reddit_like_posts reddit_like_posts[]
-  reddit_like_content_reports reddit_like_content_reports[]
-  reddit_like_moderation_actions reddit_like_moderation_actions[]
-  reddit_like_community_bans reddit_like_community_bans[]
-  reddit_like_moderation_logs reddit_like_moderation_logs[]
-  
-  @@index([creator_id])
-  
-  @@unique([code])
+  @@unique([name])
   @@index([created_at])
   @@index([subscriber_count])
-  @@index([primary_category])
-  @@index([privacy_type, is_archived])
 }
 
-/// Community-specific rules defined by moderators (maximum 15 rules per
-/// community). Rules help maintain community standards and guide user
-/// behavior. Each rule has a title and optional detailed description.
+/// Community-specific rules that members must follow when participating in a
+/// community. Each community can define up to 10 rules with titles and
+/// descriptions. Rules are numbered and displayed to users when creating
+/// posts or reporting content. Moderators use these rules to enforce
+/// community standards and explain content removal decisions.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_rules {
+model community_platform_community_rules {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Community that this rule belongs to. References {@link
-  /// reddit_like_communities.id}.
-  community_id String
+  /// Community that owns this rule. {@link community_platform_communities.id}.
+  community_platform_community_id String
   
-  /// Rule title (3-100 characters). Short, clear statement of the rule.
-  /// Examples: No self-promotion, Be respectful, Posts must be related to
-  /// topic.
+  /// Sequential rule number determining display order (1, 2, 3, etc.). Rules
+  /// are shown to users in ascending order. Moderators can reorder rules by
+  /// changing these numbers.
+  rule_number Int
+  
+  /// Rule title summarizing the rule in 3-50 characters. Examples: 'Be
+  /// respectful', 'No spam', 'Stay on topic'. Displayed prominently in rule
+  /// lists.
   title String
   
-  /// Optional detailed explanation of the rule (0-500 characters). Provides
-  /// additional context and examples for the rule.
-  description String?
+  /// Detailed rule description explaining what the rule means and how it is
+  /// enforced. Must be between 10 and 200 characters. Provides context and
+  /// examples for users to understand community expectations.
+  description String
   
-  /// Type of rule for categorization. Values: required (must do), prohibited
-  /// (must not do), etiquette (recommended behavior).
-  rule_type String
-  
-  /// Order in which this rule should be displayed (1-15). Lower numbers appear
-  /// first. Used for sorting rules in the UI.
-  display_order Int
-  
-  /// Timestamp when the rule was created by moderators.
+  /// Timestamp when this rule was created by moderators.
   created_at DateTime
   
-  /// Timestamp when the rule was last modified by moderators.
+  /// Timestamp when this rule was last modified by moderators.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
   
-  @@index([community_id, display_order])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, rule_number], map: "community_platform_community_rules_community_platform__ecdc10cf")
 }
 
-/// Many-to-many junction table tracking which users are subscribed to which
-/// communities. Subscriptions determine what content appears in a user's
-/// personalized feed. Users can subscribe to unlimited communities.
+/// Junction table tracking member subscriptions to communities. When a
+/// member subscribes to a community, a record is created linking the member
+/// to the community. Subscriptions determine which community posts appear in
+/// a member's personalized home feed. Members can subscribe to unlimited
+/// communities.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_subscriptions {
+model community_platform_community_subscriptions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Community that the user subscribed to. References {@link
-  /// reddit_like_communities.id}.
-  community_id String
+  /// Community being subscribed to. {@link community_platform_communities.id}.
+  community_platform_community_id String
   
-  /// User who subscribed to the community. References {@link
-  /// reddit_like_members.id}.
-  member_id String
+  /// Member who subscribed to the community. {@link
+  /// community_platform_members.id}.
+  community_platform_member_id String
   
-  /// Timestamp when the user subscribed to the community. Used for tracking
-  /// subscription history and feed ordering.
-  subscribed_at DateTime
+  /// Timestamp when the member subscribed to this community. Used for
+  /// displaying subscription history and for sorting user's subscribed
+  /// communities by recency.
+  created_at DateTime
   
   //----
   // RELATIONS
   //----
-  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  member reddit_like_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
-  @@unique([community_id, member_id])
-  @@index([member_id])
-  @@index([subscribed_at])
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, community_platform_member_id], map: "community_platform_community_subscriptions_community_p_10f976be")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_community_subscriptions_community_p_5036042f")
 }
 
-/// Many-to-many junction table tracking moderator assignments to
-/// communities. Moderators manage content, enforce rules, and configure
-/// community settings. Each moderator can have different permission levels,
-/// and the primary moderator (creator) has irrevocable permissions.
+/// Junction table linking communities to platform-wide categories.
+/// Communities can be assigned up to 5 categories to help with discovery and
+/// search. Categories like 'Technology', 'Gaming', 'Sports' help users find
+/// communities matching their interests. This many-to-many relationship
+/// allows flexible categorization.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_moderators {
+model community_platform_community_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Community that this moderator manages. References {@link
-  /// reddit_like_communities.id}.
-  community_id String
+  /// Community being categorized. {@link community_platform_communities.id}.
+  community_platform_community_id String
   
-  /// Moderator user assigned to this community. References {@link
-  /// reddit_like_moderators.id}.
-  moderator_id String
+  /// Category assigned to the community. {@link
+  /// community_platform_categories.id}.
+  community_platform_category_id String
   
-  /// Moderator who assigned this moderator to the community. Null for the
-  /// primary moderator (community creator). References {@link
-  /// reddit_like_moderators.id}.
-  assigned_by_moderator_id String?
+  /// Timestamp when this category was assigned to the community by moderators.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  category community_platform_categories @relation(fields: [community_platform_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, community_platform_category_id], map: "community_platform_community_categories_community_plat_5179af15")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_category_id], map: "community_platform_community_categories_community_plat_657c222f")
+}
+
+/// Junction table tracking moderator assignments to communities. When a
+/// moderator is assigned to manage a community, a record is created granting
+/// them moderation permissions for that specific community. Moderators can
+/// manage multiple communities, and communities can have multiple
+/// moderators. The community creator is automatically assigned as the first
+/// moderator.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderator_assignments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community being moderated. {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Moderator assigned to manage this community. {@link
+  /// community_platform_moderators.id}.
+  community_platform_moderator_id String
   
   /// Timestamp when this moderator was assigned to the community. Used for
-  /// seniority-based permissions.
-  assigned_at DateTime
-  
-  /// Whether this is the primary moderator (community creator). Primary
-  /// moderators have irrevocable permissions and can remove any other
-  /// moderator.
-  is_primary Boolean
-  
-  /// JSON or comma-separated list of granted permissions. Possible values:
-  /// manage_posts, manage_comments, manage_users, manage_settings,
-  /// manage_moderators, access_reports. Primary moderators have all
-  /// permissions.
-  permissions String
+  /// tracking moderator seniority and assignment history.
+  created_at DateTime
   
   //----
   // RELATIONS
   //----
-  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  moderator reddit_like_moderators @relation("reddit_like_community_moderators_of_moderator_id", fields: [moderator_id], references: [id], onDelete: Cascade)
-  assignedBy reddit_like_moderators? @relation("reddit_like_community_moderators_of_assigned_by_moderator_id", fields: [assigned_by_moderator_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
   
-  @@index([assigned_by_moderator_id])
-  
-  @@unique([community_id, moderator_id])
-  @@index([moderator_id])
-  @@index([assigned_at])
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, community_platform_moderator_id], map: "community_platform_community_moderator_assignments_com_cac2801d")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id], map: "community_platform_community_moderator_assignments_com_ae642ef2")
 }

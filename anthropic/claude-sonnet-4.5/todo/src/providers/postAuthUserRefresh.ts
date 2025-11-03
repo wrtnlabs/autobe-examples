@@ -13,140 +13,113 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthUserRefresh(props: {
   body: ITodoListUser.IRefresh;
 }): Promise<ITodoListUser.IAuthorized> {
-  const { body } = props;
+  // Step 1: Verify and decode the refresh token
+  let decoded: {
+    id: string;
+    session_id: string;
+    type: string;
+  };
 
-  // Verify and decode the refresh token
-  let decoded: { userId: string; tokenType?: string };
   try {
-    const verifiedToken = jwt.verify(
-      body.refresh_token,
+    decoded = jwt.verify(
+      props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        issuer: "autobe",
-      },
-    );
-    decoded = verifiedToken as { userId: string; tokenType?: string };
+      { issuer: "autobe" },
+    ) as {
+      id: string;
+      session_id: string;
+      type: string;
+    };
   } catch (error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  if (!decoded.userId) {
-    throw new HttpException("Invalid token payload", 401);
+  // Step 2: Validate type matches expected actor type
+  if (decoded.type !== "user") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  // Verify user exists and is active
-  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+  // Step 3: Validate session exists and user is active
+  const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
-      id: decoded.userId,
-      deleted_at: null,
+      id: decoded.session_id,
+      todo_list_user_id: decoded.id,
+    },
+    include: {
+      user: true,
     },
   });
 
-  if (!user) {
-    throw new HttpException("User account not found or inactive", 403);
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  // Find all non-revoked refresh tokens for this user
-  const storedTokens = await MyGlobal.prisma.todo_list_refresh_tokens.findMany({
-    where: {
-      todo_list_user_id: user.id,
-      revoked_at: null,
-    },
-  });
-
-  // Verify the provided token against stored hashes
-  let validStoredToken = null;
-  for (const token of storedTokens) {
-    const isValid = await PasswordUtil.verify(
-      body.refresh_token,
-      token.token_hash,
-    );
-    if (isValid) {
-      validStoredToken = token;
-      break;
-    }
+  if (session.user.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
   }
 
-  if (!validStoredToken) {
-    throw new HttpException("Refresh token not found or has been revoked", 404);
-  }
+  // Step 4: Generate new tokens with SAME session_id
+  const nowTimestamp = Date.now();
+  const accessExpiresMs = nowTimestamp + 60 * 60 * 1000;
+  const refreshExpiresMs = nowTimestamp + 7 * 24 * 60 * 60 * 1000;
 
-  // Prepare current timestamp
-  const currentTime = new Date();
-  const nowISO = toISOStringSafe(currentTime);
+  const nowIso = toISOStringSafe(new Date(nowTimestamp));
+  const accessExpiresIso = toISOStringSafe(new Date(accessExpiresMs));
+  const refreshExpiresIso = toISOStringSafe(new Date(refreshExpiresMs));
 
-  // Check if token has expired
-  const tokenExpiryISO = toISOStringSafe(validStoredToken.expires_at);
-  if (tokenExpiryISO <= nowISO) {
-    throw new HttpException("Refresh token has expired", 401);
-  }
-
-  // Calculate expiry times
-  const accessTokenExpiry = new Date(currentTime.getTime() + 30 * 60 * 1000);
-  const refreshTokenExpiry = new Date(
-    currentTime.getTime() + 30 * 24 * 60 * 60 * 1000,
-  );
-
-  const accessExpiryISO = toISOStringSafe(accessTokenExpiry);
-  const refreshExpiryISO = toISOStringSafe(refreshTokenExpiry);
-
-  // Generate new access token (30 minutes)
   const accessToken = jwt.sign(
     {
-      userId: user.id,
       type: "user",
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "30m",
+      expiresIn: "1h",
       issuer: "autobe",
     },
   );
 
-  // Generate new refresh token (30 days)
-  const newRefreshToken = jwt.sign(
+  const refreshToken = jwt.sign(
     {
-      userId: user.id,
+      type: "user",
+      id: decoded.id,
+      session_id: decoded.session_id,
       tokenType: "refresh",
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "30d",
+      expiresIn: "7d",
       issuer: "autobe",
     },
   );
 
-  // Hash the new refresh token for storage
-  const newTokenHash = await PasswordUtil.hash(newRefreshToken);
-
-  // Revoke the old refresh token
-  await MyGlobal.prisma.todo_list_refresh_tokens.update({
-    where: { id: validStoredToken.id },
+  // Step 5: Update session expiration time
+  await MyGlobal.prisma.todo_list_user_sessions.update({
+    where: {
+      id: decoded.session_id,
+    },
     data: {
-      revoked_at: nowISO,
+      expired_at: toISOStringSafe(new Date(refreshExpiresMs)),
     },
   });
 
-  // Create new refresh token record (id field required - no @default)
-  await MyGlobal.prisma.todo_list_refresh_tokens.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      todo_list_user_id: user.id,
-      token_hash: newTokenHash,
-      expires_at: refreshExpiryISO,
-      created_at: nowISO,
-      revoked_at: null,
-    },
-  });
-
-  // Return authorized response
+  // Step 6: Return user profile with new tokens
   return {
-    id: user.id as string & tags.Format<"uuid">,
+    id: session.user.id,
+    email: session.user.email,
+    created_at: toISOStringSafe(session.user.created_at),
+    updated_at: toISOStringSafe(session.user.updated_at),
+    deleted_at: session.user.deleted_at
+      ? toISOStringSafe(session.user.deleted_at)
+      : undefined,
     token: {
       access: accessToken,
-      refresh: newRefreshToken,
-      expired_at: accessExpiryISO,
-      refreshable_until: refreshExpiryISO,
+      refresh: refreshToken,
+      expired_at: accessExpiresIso,
+      refreshable_until: refreshExpiresIso,
     },
   };
 }

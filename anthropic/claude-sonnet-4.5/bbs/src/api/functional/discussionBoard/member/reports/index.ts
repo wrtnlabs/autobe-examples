@@ -1,68 +1,42 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IDiscussionBoardReport } from "../../../../structures/IDiscussionBoardReport";
 
 /**
- * Submit a new content report for moderation review.
+ * Create a new content report for moderator review.
  *
- * Create a new content report flagging discussion topics or replies that
- * violate community guidelines. This operation enables authenticated members to
- * report inappropriate content, triggering the moderation workflow for platform
- * content governance.
+ * Submit a report flagging an article or comment for potential community
+ * guideline violations. This operation enables members to participate in
+ * maintaining discussion quality by reporting inappropriate content such as
+ * spam, harassment, misinformation, hate speech, or off-topic material.
  *
- * This endpoint is fundamental to the community-driven moderation system,
- * allowing members to identify violations such as personal attacks, hate
- * speech, misinformation, spam, offensive language, off-topic content, threats,
- * doxxing, trolling, and other guideline violations. By reporting content,
- * members actively participate in maintaining civil discourse standards on
- * economic and political topics.
+ * When a member submits a report, the system validates that the reporter is
+ * authenticated, the target content exists and is accessible, and the member
+ * has not already reported this specific content. The report is immediately
+ * added to the moderation queue with pending status, and all active moderators
+ * are notified of the new report for review.
  *
- * The operation creates a new record in the discussion_board_reports table with
- * all necessary information for moderator review including the reporting
- * member, reported content (either topic or reply), violation category,
- * severity level, and optional explanatory context. The system automatically
- * sets the report status to 'pending' and calculates severity level based on
- * the violation category to prioritize the moderation queue appropriately.
+ * Reports must specify whether they target an article or a comment, include a
+ * reason category from the predefined list (spam, harassment, hate speech,
+ * misinformation, off-topic content, inappropriate language, personal
+ * information disclosure, or other), and can optionally include detailed
+ * explanation. If the reason is other, additional details are required to
+ * provide context for moderators.
  *
- * Security and validation considerations include verifying the reporting user
- * is an authenticated member with sufficient reputation (minimum 25 reputation
- * points required per business rules), ensuring the reported content exists and
- * is accessible, preventing duplicate reports where the same user reports the
- * same content multiple times within 24 hours, and enforcing rate limits of
- * maximum 10 reports per hour and 50 reports per day per user to prevent report
- * abuse.
- *
- * The system validates that either reported_topic_id or reported_reply_id is
- * provided (but not both), as reports target specific content items. The
- * violation category must be one of the predefined categories: personal_attack,
- * hate_speech, misinformation, spam, offensive_language, off_topic, threats,
- * doxxing, trolling, or other. When 'other' is selected, the
- * reporter_explanation field becomes required with minimum 20 characters.
- *
- * Upon successful report creation, the content is added to the moderation queue
- * where moderators can review, assign themselves, and take appropriate action.
- * Reports with critical severity (hate_speech, threats, doxxing) may trigger
- * automatic content hiding pending moderator review to protect the community
- * from severe violations.
- *
- * This operation integrates closely with the moderation system defined in the
- * requirements, supporting the graduated enforcement approach and transparent
- * moderation processes. Notifications are sent to moderators when new reports
- * are submitted, particularly for high-severity violations requiring immediate
- * attention.
- *
- * The endpoint supports the platform's commitment to community-driven quality
- * control while providing professional moderation infrastructure to address
- * violations consistently and fairly. Member participation in reporting helps
- * moderators identify violations efficiently and demonstrates community
- * investment in maintaining discourse standards.
+ * The reporting system supports the progressive moderation workflow where
+ * members identify potential violations, moderators review the reports in their
+ * queue, and appropriate enforcement actions are taken. Multiple members can
+ * report the same content, with the system consolidating reports and increasing
+ * priority for content with five or more reports. This operation integrates
+ * with the moderation dashboard where moderators review pending reports and
+ * take action to maintain community standards.
  *
  * @param props.connection
- * @param props.body Content report submission information including violation
- *   category, reported content reference, and optional explanation
+ * @param props.body Report submission information including target content,
+ *   violation reason, and optional details
  * @path /discussionBoard/member/reports
  * @accessor api.functional.discussionBoard.member.reports.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -92,8 +66,8 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Content report submission information including violation category,
-     * reported content reference, and optional explanation
+     * Report submission information including target content, violation
+     * reason, and optional details
      */
     body: IDiscussionBoardReport.ICreate;
   };
@@ -128,6 +102,111 @@ export namespace create {
     });
     try {
       assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve detailed information about a specific content report.
+ *
+ * Access comprehensive information about a content report identified by its
+ * unique report ID. This operation serves both members checking the status of
+ * their submitted reports and moderators reviewing reports for moderation
+ * action.
+ *
+ * For members, this operation allows them to view reports they have personally
+ * submitted, including the current status (pending, under review, resolved, or
+ * dismissed), any resolution notes provided by moderators, and the timestamp of
+ * status changes. Members can only access reports they created themselves,
+ * ensuring privacy of the reporting process.
+ *
+ * For moderators, this operation provides complete report details necessary for
+ * thorough review and decision-making. Moderators can view the reporter's
+ * identity, the full context of the reported content (article or comment), all
+ * details provided by the reporter, any previous reports on the same content,
+ * the target author's account history, and previous moderation actions taken on
+ * the reported user. This comprehensive view enables informed moderation
+ * decisions aligned with progressive discipline policies.
+ *
+ * The response includes the report reason category (spam, harassment, hate
+ * speech, misinformation, off-topic content, inappropriate language, personal
+ * information disclosure, or other), detailed explanation provided by the
+ * reporter, current report status, reviewing moderator information if assigned,
+ * resolution notes from moderator review, timestamps for creation and status
+ * updates, and references to the reported content (article or comment ID) and
+ * the reporter. This operation integrates with the moderation dashboard
+ * workflow where moderators claim reports for review, examine complete context,
+ * and make enforcement decisions.
+ *
+ * @param props.connection
+ * @param props.reportId Unique identifier of the target report
+ * @path /discussionBoard/member/reports/:reportId
+ * @accessor api.functional.discussionBoard.member.reports.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /** Unique identifier of the target report */
+    reportId: string & tags.Format<"uuid">;
+  };
+  export type Response = IDiscussionBoardReport;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/discussionBoard/member/reports/:reportId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/discussionBoard/member/reports/${encodeURIComponent(props.reportId ?? "null")}`;
+  export const random = (): IDiscussionBoardReport =>
+    typia.random<IDiscussionBoardReport>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("reportId")(() => typia.assert(props.reportId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

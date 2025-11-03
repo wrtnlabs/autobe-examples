@@ -1,0 +1,378 @@
+/// Registered platform members (end users). Stores login credentials,
+/// verification state, and globally unique immutable username handle for
+/// public identity. Sessions are maintained in {@link
+/// community_platform_member_sessions}. Used by content, subscriptions,
+/// profiles, mentions, and moderation via foreign references created
+/// elsewhere.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member’s unique email address used for login and account communications.
+  email String
+  
+  /// Public unique immutable handle used for mentions, attribution, and
+  /// profile URLs. Case-insensitive uniqueness enforced at business level.
+  username String
+  
+  /// Password hash (never store plaintext passwords). Used by authentication.
+  password_hash String
+  
+  /// Whether the member’s email has been verified.
+  email_verified Boolean
+  
+  /// Creation timestamp of the member account.
+  created_at DateTime
+  
+  /// Last update timestamp of the member account.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_member_sessions community_platform_member_sessions[]
+  community_platform_communities_of_creator_member_id community_platform_communities[] @relation("community_platform_communities_of_creator_member_id")
+  community_platform_communities_of_current_owner_member_id community_platform_communities[] @relation("community_platform_communities_of_current_owner_member_id")
+  community_platform_community_moderators_of_community_p_361452aa community_platform_community_moderators[] @relation("community_platform_community_moderators_of_community_p_361452aa")
+  community_platform_community_moderators_of_assigned_by_0eb2a7c4 community_platform_community_moderators[] @relation("community_platform_community_moderators_of_assigned_by_0eb2a7c4")
+  community_platform_community_moderator_invitations_of__ea93246d community_platform_community_moderator_invitations[] @relation("community_platform_community_moderator_invitations_of__ea93246d")
+  community_platform_community_moderator_invitations_of__fe37b3b6 community_platform_community_moderator_invitations[] @relation("community_platform_community_moderator_invitations_of__fe37b3b6")
+  community_platform_community_owner_transfers_of_from_member_id community_platform_community_owner_transfers[] @relation("community_platform_community_owner_transfers_of_from_member_id")
+  community_platform_community_owner_transfers_of_to_member_id community_platform_community_owner_transfers[] @relation("community_platform_community_owner_transfers_of_to_member_id")
+  community_platform_community_bans_of_community_platfor_4fcb4215 community_platform_community_bans[] @relation("community_platform_community_bans_of_community_platfor_4fcb4215")
+  community_platform_community_bans_of_actor_member_id community_platform_community_bans[] @relation("community_platform_community_bans_of_actor_member_id")
+  community_platform_community_mutes_of_community_platfo_b4077c98 community_platform_community_mutes[] @relation("community_platform_community_mutes_of_community_platfo_b4077c98")
+  community_platform_community_mutes_of_actor_member_id community_platform_community_mutes[] @relation("community_platform_community_mutes_of_actor_member_id")
+  community_platform_community_join_requests community_platform_community_join_requests[]
+  community_platform_posts community_platform_posts[]
+  community_platform_post_edits community_platform_post_edits[]
+  community_platform_comments community_platform_comments[]
+  community_platform_comment_edits community_platform_comment_edits[]
+  community_platform_comment_mentions community_platform_comment_mentions[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_member_feed_preferences community_platform_member_feed_preferences?
+  community_platform_member_hidden_posts community_platform_member_hidden_posts[]
+  community_platform_member_muted_threads community_platform_member_muted_threads[]
+  community_platform_member_source_filters community_platform_member_source_filters[]
+  community_platform_post_reports community_platform_post_reports[]
+  community_platform_comment_reports community_platform_comment_reports[]
+  community_platform_moderation_cases community_platform_moderation_cases[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_moderator_notes community_platform_moderator_notes[]
+  community_platform_sanctions community_platform_sanctions[]
+  community_platform_appeals community_platform_appeals[]
+  community_platform_notification_of_members community_platform_notification_of_members[]
+  community_platform_notification_preferences community_platform_notification_preferences[]
+  community_platform_notification_channels community_platform_notification_channels[]
+  community_platform_email_consents community_platform_email_consents[]
+  community_platform_quiet_hours community_platform_quiet_hours[]
+  community_platform_digest_schedules community_platform_digest_schedules[]
+  community_platform_notification_preferences_of_communities community_platform_notification_preferences_of_communities[]
+  community_platform_member_profiles community_platform_member_profiles?
+  community_platform_member_privacy_settings community_platform_member_privacy_settings?
+  community_platform_member_karma_totals community_platform_member_karma_totals?
+  community_platform_member_karma_events community_platform_member_karma_events[]
+  community_platform_member_blocks_of_blocker_member_id community_platform_member_blocks[] @relation("community_platform_member_blocks_of_blocker_member_id")
+  community_platform_member_blocks_of_blocked_member_id community_platform_member_blocks[] @relation("community_platform_member_blocks_of_blocked_member_id")
+  community_platform_member_mutes_of_muter_member_id community_platform_member_mutes[] @relation("community_platform_member_mutes_of_muter_member_id")
+  community_platform_member_mutes_of_muted_member_id community_platform_member_mutes[] @relation("community_platform_member_mutes_of_muted_member_id")
+  community_platform_member_saved_posts community_platform_member_saved_posts[]
+  community_platform_member_saved_comments community_platform_member_saved_comments[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+}
+
+/// Platform administrators with elevated privileges. Credentials are
+/// separate from members for security isolation. Sessions are maintained in
+/// {@link community_platform_admin_sessions}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator’s unique email address for login and administrative
+  /// notifications.
+  email String
+  
+  /// Password hash for the administrator account.
+  password_hash String
+  
+  /// Whether the admin’s email has been verified.
+  email_verified Boolean
+  
+  /// Creation timestamp of the admin account.
+  created_at DateTime
+  
+  /// Last update timestamp of the admin account.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_reserved_terms community_platform_reserved_terms[]
+  community_platform_blocked_domains community_platform_blocked_domains[]
+  community_platform_legal_holds community_platform_legal_holds[]
+  community_platform_admin_sessions community_platform_admin_sessions[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_moderator_notes community_platform_moderator_notes[]
+  community_platform_sanctions community_platform_sanctions[]
+  community_platform_escalations community_platform_escalations[]
+  community_platform_notification_of_admins community_platform_notification_of_admins[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Anonymous/guest identities for analytics and limited interactions where
+/// allowed by policy. Guests do not have sessions and cannot authenticate.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creation timestamp for the guest placeholder identity.
+  created_at DateTime
+  
+  /// Last update timestamp for the guest placeholder identity.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+}
+
+/// Authenticated session records for {@link community_platform_members}.
+/// Strictly limited fields per session specification for audit tracing and
+/// revocation. No extra fields beyond the required set and only the mandated
+/// composite index.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member’s {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// IP address at session establishment time.
+  ip String
+  
+  /// Request URL at login (for context/audit).
+  href String
+  
+  /// Referrer URL at login time, if any.
+  referrer String?
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session expiration or revocation time; null if active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_edits community_platform_post_edits[]
+  community_platform_post_reports community_platform_post_reports[]
+  community_platform_comment_reports community_platform_comment_reports[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_sessions_community_platform__9260a62c")
+}
+
+/// Authenticated session records for {@link community_platform_admins}.
+/// Strictly limited fields per session specification for audit tracing and
+/// revocation. No extra fields beyond the required set and only the mandated
+/// composite index.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged admin’s {@link community_platform_admins.id}
+  community_platform_admin_id String
+  
+  /// IP address at session establishment time.
+  ip String
+  
+  /// Request URL at login (for context/audit).
+  href String
+  
+  /// Referrer URL at login time, if any.
+  referrer String?
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session expiration or revocation time; null if active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_admin_sessions_community_platform_a_481f9112")
+}
+
+/// Email verification artifacts for both members and admins. Actor-agnostic
+/// design keyed by email and token avoids polymorphic foreign keys while
+/// supporting all identity classes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target email address to be verified.
+  email String
+  
+  /// Verification token issued to the email address.
+  token String
+  
+  /// Token expiry timestamp after which verification is invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the token was consumed; null if not used.
+  used_at DateTime?
+  
+  /// Artifact creation time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([token])
+  @@index([email, created_at])
+}
+
+/// Password reset artifacts for both members and admins. Actor-agnostic
+/// design keyed by email and token avoids polymorphic foreign keys while
+/// supporting all identity classes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_password_reset_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address that requested password reset.
+  email String
+  
+  /// Password reset token.
+  token String
+  
+  /// Token expiry timestamp after which reset is invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the token was consumed; null if not used.
+  used_at DateTime?
+  
+  /// Artifact creation time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([token])
+  @@index([email, created_at])
+}
+
+/// Authentication lifecycle audit events across all identity classes
+/// (members/admins, and guest-related attempts). Actor-agnostic with type
+/// marker, optional actor_id pointer, and request context. Useful for
+/// security analytics and abuse detection. Indexed for common queries by
+/// event type and time.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_authentication_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor type for the event (e.g., "member", "admin", "guest").
+  actor_type String
+  
+  /// Actor identifier when known; null for unauthenticated attempts or guest
+  /// events.
+  actor_id String?
+  
+  /// Event category (e.g., login_success, login_failure, logout,
+  /// password_reset_request, email_verified).
+  event String
+  
+  /// IP address associated with the event.
+  ip String
+  
+  /// Request URL at the time of the event.
+  href String
+  
+  /// Referrer URL at the time of the event, if any.
+  referrer String?
+  
+  /// Reported user agent string; optional for analytics and triage.
+  user_agent String?
+  
+  /// Event creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@index([actor_type, created_at], map: "community_platform_authentication_events_actor_type_cr_a9c3a473")
+  @@index([created_at])
+  @@index([event, created_at])
+}

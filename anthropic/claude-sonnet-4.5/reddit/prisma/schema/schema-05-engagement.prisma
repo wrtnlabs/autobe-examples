@@ -1,0 +1,83 @@
+/// Vote records for posts, tracking member upvotes and downvotes. Each
+/// member can cast one vote (upvote or downvote) per post. Votes contribute
+/// to post scoring and member karma calculations. Vote changes are handled
+/// by deleting the old vote and creating a new one.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who cast this vote. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Post that received this vote. {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Type of vote cast: 'upvote' for positive vote or 'downvote' for negative
+  /// vote. Used to calculate post score and member karma.
+  vote_type String
+  
+  /// Timestamp when the vote was cast. Used for vote velocity calculations in
+  /// trending algorithms and karma tracking.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_post_id], map: "community_platform_post_votes_community_platform_membe_38b1ddb3")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_votes_community_platform_post__80871491")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_post_votes_community_platform_membe_59eaad49")
+}
+
+/// Vote records for comments, tracking member upvotes and downvotes. Each
+/// member can cast one vote (upvote or downvote) per comment. Votes
+/// contribute to comment scoring and member karma calculations. Vote changes
+/// are handled by deleting the old vote and creating a new one.
+///
+/// @namespace Engagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who cast this vote. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Comment that received this vote. {@link community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Type of vote cast: 'upvote' for positive vote or 'downvote' for negative
+  /// vote. Used to calculate comment score and member karma.
+  vote_type String
+  
+  /// Timestamp when the vote was cast. Used for vote velocity calculations in
+  /// trending algorithms and karma tracking.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_comment_id], map: "community_platform_comment_votes_community_platform_me_8e8bf05c")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_votes_community_platform_co_68a9b5f7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_votes_community_platform_me_2c59b90a")
+}

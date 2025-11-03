@@ -1,0 +1,198 @@
+/// Image attachments for articles using polymorphic ownership pattern. Image
+/// attachments support metadata extraction and image processing for display
+/// optimization.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_image_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main attachment entity's {@link politics_bbs_file_attachments.id}
+  politics_bbs_attachment_id String
+  
+  /// Original filename of the uploaded image
+  filename String
+  
+  /// Size of the image file in bytes. Maximum 5MB allowed
+  file_size Int
+  
+  /// MIME type of the image
+  mime_type String
+  
+  /// Storage path or URL reference to the image file
+  file_path String
+  
+  /// Image width in pixels for display optimization
+  width Int?
+  
+  /// Image height in pixels for display optimization
+  height Int?
+  
+  /// Timestamp when the image was uploaded
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attachment politics_bbs_file_attachments @relation(fields: [politics_bbs_attachment_id], references: [id], onDelete: Cascade)
+  
+  @@index([politics_bbs_attachment_id])
+}
+
+/// Document file attachments for articles supporting up to 10MB per file and
+/// 5 files per article. Manages document uploads with format validation for
+/// PDF, DOC, DOCX, and TXT formats.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_file_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Attached article's {@link politics_bbs_articles.id}.
+  politics_bbs_article_id String
+  
+  /// Uploading member's {@link politics_bbs_members.id}.
+  politics_bbs_member_id String
+  
+  /// Original filename of the uploaded document.
+  filename String
+  
+  /// Size of the document file in bytes. Maximum 10MB allowed.
+  file_size Int
+  
+  /// MIME type of the document (application/pdf, application/msword,
+  /// application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+  /// text/plain).
+  mime_type String
+  
+  /// Storage path or URL reference to the document file.
+  file_path String
+  
+  /// Timestamp when the file was uploaded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article politics_bbs_articles @relation(fields: [politics_bbs_article_id], references: [id], onDelete: Cascade)
+  member politics_bbs_members @relation(fields: [politics_bbs_member_id], references: [id], onDelete: Cascade)
+  
+  politics_bbs_image_attachments politics_bbs_image_attachments[]
+  politics_bbs_attachment_of_visitors politics_bbs_attachment_of_visitors?
+  politics_bbs_attachment_of_members politics_bbs_attachment_of_members?
+  politics_bbs_attachment_of_moderators politics_bbs_attachment_of_moderators?
+  
+  @@index([politics_bbs_article_id])
+  @@index([politics_bbs_member_id])
+  @@index([created_at])
+}
+
+/// Association table for visitor-created image attachments implementing
+/// polymorphic ownership pattern. Visitors can upload images for validation
+/// through proper subtype relationship.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_attachment_of_visitors {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Attachment's {@link politics_bbs_file_attachments.id}
+  politics_bbs_attachment_id String
+  
+  /// Visitor uploader's {@link politics_bbs_visitors.id}
+  politics_bbs_visitor_id String
+  
+  /// Timestamp when visitor uploaded this attachment
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attachment politics_bbs_file_attachments @relation(fields: [politics_bbs_attachment_id], references: [id], onDelete: Cascade)
+  visitor politics_bbs_visitors @relation(fields: [politics_bbs_visitor_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([politics_bbs_attachment_id], map: "politics_bbs_attachment_of_visitors_politics_bbs_attac_9ed3ac19")
+  // spellchecker: ignore-next-line
+  @@index([politics_bbs_visitor_id, created_at], map: "politics_bbs_attachment_of_visitors_politics_bbs_visit_22b33e67")
+}
+
+/// Association table for member-created image attachments implementing
+/// polymorphic ownership pattern. Members can upload images and files for
+/// their articles through proper subtype relationship.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_attachment_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Attachment's {@link politics_bbs_file_attachments.id}
+  politics_bbs_attachment_id String
+  
+  /// Member uploader's {@link politics_bbs_members.id}
+  politics_bbs_member_id String
+  
+  /// Timestamp when member uploaded this attachment
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attachment politics_bbs_file_attachments @relation(fields: [politics_bbs_attachment_id], references: [id], onDelete: Cascade)
+  member politics_bbs_members @relation(fields: [politics_bbs_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([politics_bbs_attachment_id], map: "politics_bbs_attachment_of_members_politics_bbs_attach_60cb3e24")
+  // spellchecker: ignore-next-line
+  @@index([politics_bbs_member_id, created_at], map: "politics_bbs_attachment_of_members_politics_bbs_member_dfe8da91")
+}
+
+/// Association table for moderator-created image attachments implementing
+/// polymorphic ownership pattern. Moderators can upload images for
+/// moderation and administrative content.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model politics_bbs_attachment_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Attachment's {@link politics_bbs_file_attachments.id}
+  politics_bbs_attachment_id String
+  
+  /// Moderator uploader's {@link politics_bbs_moderators.id}
+  politics_bbs_moderator_id String
+  
+  /// Timestamp when moderator uploaded this attachment
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attachment politics_bbs_file_attachments @relation(fields: [politics_bbs_attachment_id], references: [id], onDelete: Cascade)
+  moderator politics_bbs_moderators @relation(fields: [politics_bbs_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([politics_bbs_attachment_id], map: "politics_bbs_attachment_of_moderators_politics_bbs_att_cdaa66e6")
+  // spellchecker: ignore-next-line
+  @@index([politics_bbs_moderator_id, created_at], map: "politics_bbs_attachment_of_moderators_politics_bbs_mod_bf4f02cd")
+}

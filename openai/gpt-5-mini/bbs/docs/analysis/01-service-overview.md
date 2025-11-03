@@ -1,310 +1,142 @@
-# econPoliticalForum — Service Overview and Requirements Analysis
+# Functional Requirements — discussionBoard
 
-## Executive summary
+## Purpose
+Provide a concise, actionable set of business requirements for discussionBoard, a minimal economic and political discussion board that supports article-style posts with image/file attachments, commenting, reporting, and lightweight moderation. Requirements are expressed in natural language and EARS format where applicable so backend engineers and QA can implement and validate behaviors without prescribing technical implementation details.
 
-econPoliticalForum is a focused, lightweight online discussion board for economics and political topics. Its purpose is to enable constructive, evidence-based public discourse while minimizing harm, disinformation, and polarized abuse. The platform targets users who want topic-focused conversations (news analysis, policy discussion, research sharing) and organizations seeking a moderated community around economic and political themes.
+## Actors and Permission Summary
+- Guest: read-only access to public posts and attachments; cannot create, comment, attach files, or report.
+- Member: create, edit (within windows), soft-delete own posts and comments, attach files to own content, report content, subscribe to posts/authors.
+- Moderator: review reports, hide/unhide or remove content, warn or suspend members, view moderation logs and appeal records.
 
-Primary goals:
-- Provide a safe, credible space for public discussion on economics and politics.
-- Enable persistent, searchable threads organized by category, tag, and topic.
-- Surface high-quality contributions through transparent voting and moderation.
-- Offer a minimal, secure, and maintainable system suitable for iterative MVP launches.
+Permission matrix (business view):
+- View public content: Guest, Member, Moderator
+- Create post/comment: Member, Moderator
+- Edit own post (24h): Member, Moderator
+- Moderate content: Moderator
 
-This content describes the business-level requirements and acceptance criteria for econPoliticalForum. It specifies WHAT the service must do; technical architecture, APIs, database design, and deployment topology are intentionally left to the development team.
+## Authentication and Account Lifecycle (Business Rules)
+- THE discussionBoard SHALL require a verified unique email for members before allowing public publishing.
+- WHEN a user registers, THE discussionBoard SHALL create an account in "unverified" state and SHALL send a single-use verification link that expires after 48 hours.
+- WHEN a user verifies their email, THE discussionBoard SHALL mark the account as "verified" and allow publishing and commenting.
+- THE discussionBoard SHALL require passwords of at least 12 characters and at least three of the following categories: uppercase, lowercase, number, symbol.
+- THE discussionBoard SHALL allow optional MFA; WHERE enabled, THE discussionBoard SHALL require second factor during login before granting publishing privileges.
+- THE discussionBoard SHALL implement account lockout: IF an account has 10 failed authentication attempts within 1 hour, THEN THE discussionBoard SHALL lock interactive authentication for 15 minutes and notify the account email of suspicious activity.
+- THE discussionBoard SHALL support session lifetimes: access credential validity of ~15 minutes and refresh credential inactivity expiry after 14 days; THE system SHALL require re-authentication after 30 days of inactivity.
+- WHEN a password is changed or "revoke all sessions" is requested, THEN THE discussionBoard SHALL invalidate active refresh credentials.
 
-## Target market and users
+## Functional Requirements (EARS)
+All requirements below use EARS phrasing (THE, WHEN, IF, THEN, SHALL, WHERE) to be unambiguous and testable.
 
-Primary user segments:
-- Policy professionals and academics: Seek rigorous discussion, citations, and moderation that enforces civility.
-- Interested citizens and hobbyists: Want accessible conversations and the ability to follow topics and react.
-- Journalists and commentators: Monitor trends, source viewpoints, and share analysis.
-- Students and grassroots organizers: Engage in debates and discover resources.
+### Post lifecycle
+- THE discussionBoard SHALL allow members to create an article with a title (max 250 characters) and a body (max 200,000 characters).
+- WHEN a member publishes a post, THE discussionBoard SHALL record creation metadata: author id, creation time, published time, and attachment manifest.
+- WHEN a member publishes a post, THE discussionBoard SHALL make the post visible to public listings within 3 seconds in normal conditions.
+- THE discussionBoard SHALL allow members to save drafts; WHILE a post is a draft, THE discussionBoard SHALL prevent it from appearing in public listings or search.
+- THE discussionBoard SHALL allow members to edit their own posts within a 24-hour edit window after publication; IF an edit is attempted after 24 hours, THEN THE discussionBoard SHALL deny the edit and offer an "edit request" path to moderators.
+- WHEN a member deletes their own post, THEN THE discussionBoard SHALL soft-delete the post (non-public) and retain it for 30 days for possible restoration unless legal hold applies.
 
-Audience needs and expectations:
-- Trustworthy moderation and transparent rules.
-- Ability to find, follow, and archive topic threads.
-- Lightweight onboarding with optional verification for higher privileges.
-- Low-friction reading experience and reliable notification for followed topics.
+### Attachment support
+- THE discussionBoard SHALL support attachments for posts and comments.
+- THE discussionBoard SHALL permit image attachments: JPEG, PNG, GIF, WEBP and document attachments: PDF, TXT, DOCX, XLSX.
+- THE discussionBoard SHALL allow up to 5 attachments per post and up to 3 attachments per comment.
+- THE discussionBoard SHALL limit per-file size to 10 MB for images and 25 MB for non-image files.
+- IF an attachment exceeds allowed size or is disallowed type, THEN THE discussionBoard SHALL reject the upload and present a clear user-facing message describing allowed types and size limits.
+- WHEN attachments are uploaded, THE discussionBoard SHALL run a malware/virus scan (integration) and IF the file fails the scan, THEN THE discussionBoard SHALL quarantine the file and notify the uploader.
+- WHEN attachments are associated with drafts, THE discussionBoard SHALL preserve those attachments with the draft for at least 48 hours; orphaned temporary uploads SHALL be purged after 48 hours.
+- WHEN a post with attachments is soft-deleted, THEN THE discussionBoard SHALL retain associated attachments for the same retention window as the post.
 
-Market risks and sensitivities:
-- Political and economic topics are high-risk for misinformation, legal exposure, and harassment. The product must prioritize moderation, audit trails, and user protection at launch.
+### Commenting and replies
+- THE discussionBoard SHALL allow members to post comments on published posts.
+- WHEN a member posts a comment, THE discussionBoard SHALL accept up to 5,000 characters per comment.
+- THE discussionBoard SHALL allow reply threading up to two levels deep for MVP to preserve readability.
+- WHEN a member edits a comment, THE discussionBoard SHALL permit edits only within 60 minutes of creation.
+- THE discussionBoard SHALL rate-limit comment creation to 10 comments per minute per member; IF exceeded, THEN THE discussionBoard SHALL warn the member and apply exponential backoff.
 
-## Core value proposition
+### Moderation and reporting
+- THE discussionBoard SHALL allow members to report posts or comments and SHALL capture: reporter id, target content id, reason (from a predefined list), and optional explanation up to 1000 characters.
+- IF a single content item receives 3 unique valid reports within a 24-hour window, THEN THE discussionBoard SHALL mark the item as "pending moderator review" and remove it from public listings until reviewed.
+- THE discussionBoard SHALL provide moderators the ability to: dismiss report, hide content (soft hide), remove content (flag for deletion), warn user, suspend user (time-bound), and ban user (permanent) with audit recording for each action.
+- WHEN a moderator acts, THE discussionBoard SHALL record moderator id, action, reason, and timestamp in an auditable log and SHALL retain moderation logs for at least 1 year (audit requirement).
+- THE discussionBoard SHALL enforce moderator SLA: standard reports SHALL be reviewed within 48 hours and priority items (automatically hidden or safety risk) SHALL be reviewed within 12 hours.
+- THE discussionBoard SHALL provide an appeals path: WHEN a member appeals a removal within 14 days, THEN THE discussionBoard SHALL queue the appeal for secondary review by a different moderator or administrator.
 
-Value offered to users:
-- Curated discussions: Clear categorization and moderation to keep conversations on-topic.
-- Signal over noise: Voting and reputation primitives that elevate informed contributions.
-- Discoverability: Tags, categories, and basic search for historical discussions.
-- Safety-first design: Reporting flows and moderator tools to address abusive or illegal content.
+### Search, categories and discovery
+- THE discussionBoard SHALL support a single primary category per post and up to 10 tags per post.
+- THE discussionBoard SHALL present public listings in reverse-chronological order within each category by default and support pagination with 20 items per page default.
+- WHEN a user applies keyword search, THEN THE discussionBoard SHALL return results ordered by relevance then recency and SHALL return the first page within 2 seconds in normal conditions.
 
-Unique differentiators (initial):
-- Focus on economic and political content with tailored moderation guidance.
-- Lightweight feature set enabling rapid, safe MVP launch.
-- Transparent moderation records available to administrators and (where appropriate) to community members.
+### Notifications and subscriptions
+- THE discussionBoard SHALL allow members to subscribe to posts and authors.
+- WHERE a member subscribes, THE discussionBoard SHALL support delivery modes: "immediate" or "daily digest".
+- WHEN a subscribed event occurs and delivery mode is "immediate", THEN THE discussionBoard SHALL deliver the notification within 30 seconds under normal conditions.
+- WHEN a subscription encounters 3 consecutive delivery failures, THEN THE discussionBoard SHALL mark the subscription as "delivery failed" and surface an account notification recommending the user update delivery preferences.
 
-## Competitive landscape and differentiation
+## Data Lifecycle and Retention (Business Rules)
+- THE discussionBoard SHALL soft-delete user-initiated deletions and retain soft-deleted content for 30 days before permanent purge unless a legal hold applies.
+- THE discussionBoard SHALL retain moderator-removed content for 180 days for audit and appeals before permanent purge unless legal hold applies.
+- WHEN a legal hold is applied, THEN THE discussionBoard SHALL suspend automated purges for that content until the hold is released.
+- WHEN a user requests account deletion, THEN THE discussionBoard SHALL place the account in a 30-day pending-deletion state; after 30 days the account's personal identifiers SHALL be anonymized or removed per Data Lifecycle rules unless legal requirements prevent deletion.
+- THE discussionBoard SHALL support user data export: WHERE an account has <10,000 items, THEN THE discussionBoard SHALL provide export within 72 hours; for larger accounts, THEN THE discussionBoard SHALL provide export within 7 business days.
 
-Primary competitor types:
-- Large public forums and social networks (Reddit, Twitter/X, Facebook): Broad audiences, less specialized moderation.
-- Niche forums and mailing lists: Deeper domain expertise but often poor UX and discoverability.
-- Professional communities (Slack/Discord/Research forums): Private, invitation-only and less public.
+## Non-Functional Requirements (Business-level SLOs)
+- THE discussionBoard SHALL return post listing pages of 20 items within 1 second 95% of the time under normal load.
+- THE discussionBoard SHALL acknowledge successful post submission to the user within 3 seconds 95% of the time under normal load.
+- THE discussionBoard SHALL accept image uploads and provide initial acceptance acknowledgement within 10 seconds for files <=5 MB under normal network conditions.
+- THE discussionBoard SHALL target availability of 99.9% monthly for public read APIs (business SLO).
+- WHEN SLO violations persist, THEN THE monitoring system SHALL alert on-call operations per severity thresholds defined in operations runbooks.
 
-Differentiation strategy:
-- Emphasize public, topic-centric discussion with clear content policies and lightweight moderation.
-- Offer reliable, searchable threads with simple mechanisms for reporting and appeals.
-- Target early adopters in academic and policy circles to build credibility.
+## Error Handling and User-Facing Recovery
+- IF an attachment upload fails due to size/type, THEN THE discussionBoard SHALL reject the file and show a clear message explaining allowed types and maximum sizes.
+- WHEN an upload fails due to transient network issues, THEN THE discussionBoard SHALL automatically retry up to 3 times with exponential backoff (1s, 2s, 4s) and THEN present options to "Retry" or "Save Draft" if retries fail.
+- IF publishing is blocked by pending moderator review, THEN THE discussionBoard SHALL notify the author with the status "pending moderator review" and an estimated review timeframe.
+- WHEN authentication fails due to session expiry during content creation, THEN THE discussionBoard SHALL preserve the draft for at least 48 hours and prompt the user to re-authenticate to resume.
 
-## Business model (WHY / HOW / WHAT)
+## Acceptance Criteria (Selected, Testable)
+- Post creation: GIVEN a verified member, WHEN creating a post with allowed attachments, THEN the post appears in public listing within 3 seconds and attachments are downloadable/previewable.
+- Attachment validation: GIVEN an oversized or disallowed file, WHEN the user attempts upload, THEN the upload is rejected and user is shown the allowed types and sizes.
+- Moderation threshold: GIVEN 3 unique reports within 24 hours, WHEN threshold is met, THEN the content is hidden from public listings and queued for moderator review.
+- Edit window: GIVEN a published post, WHEN the author edits within 24 hours, THEN edits are accepted; WHEN edit is attempted after 24 hours, THEN edit is rejected with an option to request moderator edit.
 
-### Why this service exists
-- Market need: There is demand for spaces dedicated to serious discussion on public policy and economic topics where noise and harassment are reduced.
-- Problem solved: General-purpose social platforms deprioritize quality discussion, and specialized platforms are often closed or hard to discover.
-
-### How the service will generate value (revenue strategy)
-- Short to medium term (MVP): Build a community and reputation; keep the platform free for users to grow reach.
-- Medium term (12–24 months): Offer optional paid features for organizations and power users (e.g., private moderated channels, enhanced analytics, priority moderation services). Consider ad-free subscription tiers for institutions.
-- Long term: Partnerships with universities, think tanks, and media organizations for sponsored spaces or premium moderation services.
-
-### Core operations to support the model
-- Content moderation and trust-building are primary operational focuses.
-- Community management (moderator recruitment, training materials, appeals process) must be funded initially through operational budgets or early sponsorship.
-
-### Success metrics (KPIs)
-- Monthly Active Users (MAU): target 10k in 12 months for an initial niche launch.
-- Weekly retention rate (percentage of new users returning within 7 days): target >= 40%.
-- Quality signal: Percentage of posts with at least one upvote within 7 days: target >= 30%.
-- Moderation SLA: 95% of high-severity reports reviewed by moderators within 24 hours at launch.
-- Time-to-first-response for verified support requests: within 48 hours.
-
-## Prioritized feature list and MVP scope
-
-MVP (Minimum Viable Product) — mandatory features for launch:
-1. Registration and login (email/password with email verification).
-2. Public categories and threaded posts (create/read/update/delete for own posts within business rules).
-3. Comments/replies with nested threading to one level (comment on posts and reply to comments).
-4. Simple upvote/downvote or like system with daily vote limits per content item.
-5. Search and tag-based discovery (basic search across titles and tags).
-6. Reporting UI and moderator queue (report creation, status tracking for moderators).
-7. Moderator tools: hide/unpublish content, issue warnings, temporary suspensions.
-8. User profiles with basic metadata and ability to follow threads/categories.
-9. Notifications for replies, mentions, and moderation actions.
-10. Bookmark/favorite for saved threads.
-
-Secondary features (post-MVP):
-- Advanced reputation and badges.
-- Private messages and group creation.
-- Rich media embedding with upload limits and moderation pipelines.
-- Advanced search with filters (date range, author, score).
-- Organization accounts and paid moderation tiers.
-
-Rationale for prioritization: MVP focuses on enabling public, moderated discussion with safety controls and discovery. Advanced features increase complexity and risk and are deferred until the moderation model and community norms stabilize.
-
-## User roles and permissions (business view)
-
-Defined roles:
-- guest: Unauthenticated visitors. Capabilities: browse public categories, read public posts and comments, view public user profiles. Restrictions: cannot create content, vote, report, or use member-only features.
-- registeredUser: Authenticated users with verified email (posting in restricted categories may require verification). Capabilities: create and edit own posts/comments (within edit window), delete own content (subject to constraints), vote, bookmark, follow threads, report content, receive notifications, update own profile. Restrictions: cannot moderate or perform administrative functions.
-- moderator: Trusted community members. Capabilities: review reports, hide/unpublish posts or comments, approve content in moderated categories, issue warnings, place temporary suspensions (duration-limited), view moderation logs, escalate to administrators. Restrictions: cannot change site-wide settings or permanently ban users unless authorized by administrators.
-- administrator: Full system administrators. Capabilities: manage user roles and lifecycle (suspend, reinstate, change roles), configure categories and global policies, access system-wide analytics and logs for operational needs, conduct legal/compliance responses, and manage escalation outcomes. Restrictions: expected to follow governance and audit rules.
-
-Permission highlights (business-level):
-- WHEN a registeredUser attempts to create a post, THE system SHALL allow only registeredUser, moderator, or administrator roles to create posts; guests SHALL be redirected to registration flow when attempting to create content.
-- THE system SHALL require email verification for creation of posts in categories marked as "verified-only".
-
-## Authentication and account lifecycle (business view)
-
-High-level expectations:
-- Account creation: users register with email and password. Email verification is required before posting in restricted categories.
-- Password recovery: users can request password reset via verified email, with a secure one-time token process (business requirement only).
-- Session management: user sessions expire after a defined inactivity period; users can revoke all active sessions from their profile.
-- Account suspension and appeals: moderators can apply temporary suspensions; administrators can apply permanent suspensions. Suspended accounts receive a business-facing notice and a clear appeals path.
-
-EARS-formatted authentication/business requirements (examples):
-- WHEN a new user registers, THE system SHALL send a verification email and SHALL mark the account as "unverified" until verification completes.
-- WHEN a verified user requests password reset, THE system SHALL enable a secure reset process and SHALL expire the reset token within a limited time window.
-- IF a user is temporarily suspended, THEN THE system SHALL prevent creation of new posts and SHALL send a notification to the suspended user with suspension reason and appeal instructions.
-
-## Key business rules and validation (EARS format)
-
-The following business rules are written in EARS format to be testable and unambiguous.
-
-Posting and editing
-- WHEN a registeredUser attempts to create a post, THE system SHALL allow post creation if the user is not suspended and has a verified email when posting in "verified-only" categories.
-- WHEN a registeredUser submits a post, THE system SHALL accept title length up to 200 characters and body length up to 50,000 characters and SHALL reject submissions that exceed these limits with a user-facing error explaining the limit.
-- WHEN a registeredUser edits their own post, THE system SHALL permit edits within 24 hours of the original post creation time. (Edit window can be extended by moderators under exceptional circumstances.)
-- IF a post has been reported for serious policy violations and the case is under moderator review, THEN THE system SHALL place an administrative edit-lock preventing further edits by the author until resolution.
-
-Comments and replies
-- WHEN a registeredUser submits a comment, THE system SHALL limit comment length to 5,000 characters and SHALL permit one level of nested replies (comment -> reply).
-- WHEN a registeredUser attempts to delete a comment, THE system SHALL allow deletion if the comment has not been archived by moderators; deleted comments SHALL be replaced by a standardized placeholder indicating the comment was removed by the user.
-
-Voting and reputation
-- WHEN a registeredUser casts a vote on a post or comment, THE system SHALL accept a single vote per user per content item and SHALL prevent duplicate votes for the same item.
-- WHEN a registeredUser attempts to change their vote, THE system SHALL allow vote change within 24 hours of casting and SHALL record the change for transparency and potential abuse analysis.
-- IF a user is found to be using coordinated accounts to manipulate votes, THEN THE system SHALL invalidate affected votes and THEN THE system SHALL flag the accounts for moderator review.
-
-Rate limiting and abuse prevention
-- WHEN a newly registeredUser (account age < 7 days) attempts to create posts, THE system SHALL limit the user to at most 3 posts per 24-hour period.
-- WHEN a registeredUser attempts to create more than 10 comments within one minute, THE system SHALL temporarily throttle the account with a short cooldown message to the user and SHALL require the user to wait before posting more comments.
-
-Publishing and visibility
-- WHEN a post is created in an unmoderated category, THE system SHALL publish it immediately and SHALL display it to readers subject to search/indexing timelines.
-- WHEN a post is created in a moderated category, THE system SHALL place the post into a moderator queue and SHALL ONLY publish it after moderator approval.
-
-Deletion and data retention
-- WHEN a registeredUser deletes their own post, THE system SHALL mark the content as deleted in public views but SHALL retain an immutable archived copy for moderation and legal compliance for a retention period defined by policy.
-- IF an account is permanently banned for policy violations, THEN THE system SHALL orphan the user's past public posts (remove personal identifiers) while preserving post content for public continuity unless content is illegal and must be removed.
-
-Reporting and moderation
-- WHEN a user files a report, THE system SHALL capture the report category, target content ID, reporter ID (if authenticated), timestamp, and any additional reporter notes.
-- WHEN a report is marked as high severity (e.g., illegal content, imminent threat), THE system SHALL escalate the report to administrators and SHALL notify moderation staff with 'high' priority.
-- IF a moderator removes content, THEN THE system SHALL notify the content author with the reason and provide appeal instructions.
-
-Transparency and audit
-- WHEN moderation action is taken (hide, remove, suspend), THE system SHALL record an immutable moderation log entry including the moderator ID, action type, reason, and timestamp.
-- WHEN a moderator or administrator reviews moderation history, THE system SHALL present filters by date, action type, and user for operational review.
-
-Privacy and anonymization
-- WHEN a user requests account deletion, THE system SHALL anonymize personal identifiers in public content while preserving content per retention policy; THE system SHALL provide a clear, human-readable confirmation to the user about what was removed and what remains.
-
-Error handling and user messages
-- IF user input validation fails (length, missing required fields), THEN THE system SHALL return a clear, localized user-facing message describing the exact validation error and the acceptable ranges.
-
-## Moderation, content policy summary, and escalation workflow
-
-Content policy principles (business-level):
-- Prohibit content that is illegal, incitement to violence, direct harassment and doxxing, organized disinformation campaigns, and content that violates local laws. Nuanced political opinion and criticism are permitted provided they do not cross into prohibited categories.
-- Protect reporter anonymity when requested.
-- Encourage citations and source links for factual claims in economic or policy analysis; reward constructive contributions through moderator highlighting and community signals.
-
-Moderation workflow (business steps):
-1. User submits report with category; system triages potential high-severity reports automatically to moderator queue.
-2. Moderator reviews report, applies action (dismiss, warn, hide, remove, temporary suspend, escalate to admin).
-3. For escalated cases, administrators review and apply final action; action and reasoning recorded.
-4. Author receives notification with action and appeals instructions when content is removed or account suspended.
-5. Appeals undergo administrative review; reinstatement decisions recorded and communicated.
-
-Mermaid diagram — Moderation escalation (left-to-right):
+## Diagrams
+Post creation and attachment flow:
 
 ```mermaid
 graph LR
-  A["Report Submitted"] --> B{"Severity?"}
-  B -->|"High"| C["Moderator Notify (High Priority)"]
-  B -->|"Low/Medium"| D["Moderator Queue"]
-  D --> E["Moderator Review"]
-  E -->|"Dismiss"| F["Close Report"]
-  E -->|"ActionNeeded"| G["Apply Moderator Action"]
-  G --> H["Notify Author & Log Action"]
-  G -->|"Escalate"| I["Administrator Review"]
-  I --> J["Admin Final Action"]
-  J --> H
-  C --> E
+  A["Member Opens Compose"] --> B["Enter Title & Body"]
+  B --> C["Attach Files (0..5)"]
+  C --> D{""Attachments Valid?""}
+  D -->|"Yes"| E["Save Draft or Publish"]
+  D -->|"No"| F["Reject Attachment & Show Message"]
+  E --> G{""Publish?""}
+  G -->|"Yes"| H["If Auto-flag -> Pending Review; Else Publish" ]
+  H --> I["Notify Subscribers"]
 ```
 
-Notes: the diagram emphasizes decision points and handoffs. Moderators must have clear SLA expectations for each severity level.
-
-## Non-functional requirements (business-level)
-
-Performance and responsiveness
-- WHEN a user requests a list of posts in a category, THE system SHALL return a usable paginated result so the user can begin reading within 2 seconds under normal load for pages of 20 items.
-- WHEN a user clicks to view a single post with comments, THE system SHALL render the post and top-level comments within 2 seconds under normal load.
-
-Scalability and growth
-- WHERE growth increases 10x from initial launch, THE system SHALL preserve core functionality (posting, commenting, reporting) without changes to business workflows; capacity planning is a development task but business expectations for performance must remain.
-
-Security and privacy
-- THE system SHALL protect user personal data and SHALL provide a privacy notice describing data retention and deletion practices.
-- WHEN legal or safety requests arrive (law enforcement, DMCA), THE system SHALL provide administrators with a documented, auditable process to handle requests.
-
-Accessibility and inclusivity
-- THE system SHALL conform to common accessibility expectations (keyboard navigation, readable content structure) and SHALL provide clear alternatives for content removed for policy reasons.
-
-Operational SLAs and moderation latency
-- WHEN a report is filed and classified as high severity, THE system SHALL surface it to moderators and administrators within 30 minutes and SHALL ensure a human review within 24 hours.
-- WHEN a user-initiated private support request is made, THE system SHALL respond to the request within 48 hours.
-
-Data retention and backup
-- THE system SHALL retain moderation logs and content archives for a configurable retention period (recommendation: 2 years for moderator logs, subject to legal requirements) and SHALL provide secure backups for disaster recovery.
-
-## Analytics and admin monitoring (business needs)
-
-Required dashboards and metrics:
-- Community activity: MAU, DAU, posts per day, comments per day, new registrations per day.
-- Quality signals: percentage of posts with citations, reports per 1,000 posts, resolved reports vs open.
-- Moderation performance: average time to first review, time to resolution, number of escalations, moderator actions per moderator.
-- Abuse signals: vote irregularities, mass reporting incidents, accounts flagged for coordinated activity.
-
-Business requirements for analytics:
-- WHEN abnormal activity is detected (spike in reports or votes), THE system SHALL generate a high-priority alert to administrators and SHALL provide a filterable report to investigate.
-
-## Operational considerations and legal/compliance expectations
-
-Operational checklist for launch:
-- Moderation team and onboarding materials prepared (guidelines, escalation rules).
-- Backup strategy and retention policies defined and approved.
-- Terms of Service, Privacy Policy, and content policy published and discoverable.
-- Incident response playbook created for legal takedown and safety incidents.
-- Clear record-keeping for moderation actions (immutable logs) to support appeals and audits.
-
-Content backup and export
-- WHEN an account is deleted or requested for export, THE system SHALL provide an export of the user's content per policy and SHALL anonymize public content upon deletion per the privacy rules.
-
-## Acceptance criteria and go/no-go criteria for launch
-
-Go/no-go criteria (business-oriented):
-- Moderation staffing: at least one moderator per 5,000 anticipated monthly active users at launch and documented on-call coverage for high-severity reports.
-- Safety: Moderation queue SLA for high severity must be demonstrably achievable in a staging environment.
-- Legal: Published Terms of Service and Privacy Policy approved by legal counsel.
-- Technical readiness (business validation): basic load tests show core workflows (post list and post view) meet the 2-second target under expected load.
-
-## MVP roadmap and phased timeline (suggested)
-
-Phase 0 (Preparation, 0–2 months): policy drafting, moderator recruitment, minimal UI prototypes, deployment baseline.
-Phase 1 (MVP launch, 2–5 months): implement core features listed in MVP, internal moderation testing, invite-only beta for trusted communities.
-Phase 2 (Public launch, 5–9 months): open registration, analytics rollout, first wave of post-MVP features (bookmarks, notifications, basic search improvements).
-Phase 3 (Stability and growth, 9–18 months): reputation features, organization accounts, paid tiers and partnerships, advanced moderation tooling.
-
-## Assumptions and open questions for stakeholders (business only)
-
-Assumptions made in this content:
-- The initial audience is English-speaking and the platform will launch in a limited set of jurisdictions to reduce legal complexity.
-- Moderation will be primarily human-led with basic automation to surface high-severity items.
-- The product will be free to users at launch.
-
-Open questions requiring stakeholder confirmation (do not change behavior until answered):
-- Desired initial jurisdictions and legal constraints for the launch.
-- Target MAU and budget for moderation staffing for first 12 months.
-- Whether anonymous or pseudonymous accounts are permitted beyond simple display name conventions.
-- Specific retention policy durations required by legal counsel.
-
-## Conclusion
-
-This content defines the business purpose, user base, prioritized features, user roles and permissions, EARS-formatted business rules, moderation workflow, non-functional expectations, and MVP roadmap for econPoliticalForum. It is designed to enable backend and operations teams to understand the WHAT of the system: the features to implement, the business rules to enforce, and the operational SLAs to meet.
-
-## Diagrams and quick references
-
-- Moderation escalation diagram is included above.
-- Suggested user journey diagram (publish flow) below:
+Moderation and reporting flow:
 
 ```mermaid
 graph LR
-  A["Guest Browses"] --> B["Register/Login"]
-  B --> C{"Email Verified?"}
-  C -->|"Yes"| D["Create Post"]
-  C -->|"No"| E["Notify: Verify Email to Post"]
-  D --> F["Post Submitted"]
-  F --> G{"Category Moderation?"}
-  G -->|"No"| H["Post Published"]
-  G -->|"Yes"| I["Moderator Queue"]
-  I --> J["Moderator Approves"]
-  J --> H
-  I --> K["Moderator Rejects"]
-  K --> L["Notify Author & Log"]
+  R["Report Filed"] --> S["Create Report Record"]
+  S --> T["Aggregate Reports"]
+  T --> U{""Reports >= 3 within 24h?""}
+  U -->|"Yes"| V["Mark Pending Review & Hide" ]
+  U -->|"No"| W["Queue for Normal Review"]
+  V --> X["Moderator Reviews"]
+  X --> Y{""Moderator Action""}
+  Y -->|"Remove"| Z["Archive for 180 days & Notify Author"]
+  Y -->|"Unhide"| AA["Restore to Public Listing"]
 ```
 
-## Statement on scope and developer autonomy
+## Glossary
+- Draft: private post state editable by author
+- Soft-delete: non-public state retained for possible recovery
+- Pending review: state where content is not public and awaits moderator action
 
-This content provides business requirements only. All technical implementation decisions (architecture, APIs, database design, technology stack, and deployment topology) belong to the development team and are outside the scope of these business requirements.
+## Related Documents
+- 01-service-overview.md (vision and KPIs)
+- 02-user-actors.md (detailed authentication and actor definitions)
+- 06-business-rules.md (detailed rules and sanction matrix)
+- 08-external-integrations.md (attachment storage, scanning, email)
 
----
+
 

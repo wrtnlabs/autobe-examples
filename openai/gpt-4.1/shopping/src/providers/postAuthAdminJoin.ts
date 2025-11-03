@@ -7,77 +7,87 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IShoppingAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAdmin";
+import { IShoppingAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAuthorizationToken";
 
 export async function postAuthAdminJoin(props: {
-  body: IShoppingMallAdmin.ICreate;
-}): Promise<IShoppingMallAdmin.IAuthorized> {
-  const { email, password, full_name } = props.body;
-  const status = props.body.status ?? "pending";
-
+  body: IShoppingAdmin.IJoin;
+}): Promise<IShoppingAdmin.IAuthorized> {
   // Check for duplicate admin email
-  const exists = await MyGlobal.prisma.shopping_mall_admins.findFirst({
-    where: { email },
+  const existingAdmin = await MyGlobal.prisma.shopping_admins.findFirst({
+    where: { email: props.body.email },
   });
-  if (exists) {
-    throw new HttpException("이미 등록된 관리자 이메일입니다.", 409);
+  if (existingAdmin) {
+    throw new HttpException("Email already registered", 409);
   }
 
-  // Hash the password securely
-  const password_hash = await PasswordUtil.hash(password);
+  // Hash password (never store plain)
+  const password_hash = await PasswordUtil.hash(props.body.password);
+  // Generate UUID and timestamps
+  const id = v4();
   const now = toISOStringSafe(new Date());
 
-  // Insert the new admin record
-  const created = await MyGlobal.prisma.shopping_mall_admins.create({
+  // Create admin account
+  const createdAdmin = await MyGlobal.prisma.shopping_admins.create({
     data: {
-      id: v4(),
-      email,
+      id,
+      email: props.body.email,
       password_hash,
-      full_name,
-      status,
-      two_factor_secret: null,
+      name: props.body.name,
+      role: props.body.role,
+      status: props.body.status,
       created_at: now,
       updated_at: now,
       deleted_at: null,
-      last_login_at: null,
     },
   });
 
-  // Token expiration calculation
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-  // JWT token generation (strict payload: id, type)
-  const payload = { id: created.id, type: "admin" };
-  const access = jwt.sign(payload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refresh = jwt.sign(
-    { ...payload, tokenType: "refresh" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-  const token = {
-    access,
-    refresh,
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+  // ---
+  // Generate stub JWT tokens (in real usage would perform login/auth, but
+  // for join we can issue a valid format with dummy tokens for now)
+  // ---
+  const accessExpiresDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const refreshExpiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const accessExpires = toISOStringSafe(accessExpiresDate);
+  const refreshExpires = toISOStringSafe(refreshExpiresDate);
+  const token: IShoppingAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: "admin",
+        id,
+        session_id: v4(),
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "admin",
+        id,
+        session_id: v4(),
+        created_at: now,
+        tokenType: "refresh",
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
 
   return {
-    id: created.id,
-    email: created.email,
-    full_name: created.full_name,
-    status: created.status,
-    last_login_at: null,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at: null,
+    id: createdAdmin.id,
+    email: createdAdmin.email,
+    name: createdAdmin.name,
+    role: createdAdmin.role,
+    status: createdAdmin.status,
+    created_at: toISOStringSafe(createdAdmin.created_at),
+    updated_at: toISOStringSafe(createdAdmin.updated_at),
+    deleted_at:
+      createdAdmin.deleted_at === null
+        ? null
+        : toISOStringSafe(createdAdmin.deleted_at),
     token,
   };
 }

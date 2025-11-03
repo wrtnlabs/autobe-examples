@@ -7,183 +7,160 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPoliticalForumModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPoliticalForumModerator";
+import { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
 
 export async function postAuthModeratorRefresh(props: {
-  body: IEconPoliticalForumModerator.IRefresh;
-}): Promise<IEconPoliticalForumModerator.IAuthorized> {
-  const { body } = props;
-  const { refresh_token, session_id } = body;
+  moderator: ModeratorPayload;
+  body: IDiscussionBoardModerator.IRefresh;
+}): Promise<IDiscussionBoardModerator.IAuthorized> {
+  const { moderator, body } = props;
 
-  // Step 1: Verify JWT signature
-  let decoded: unknown;
-  try {
-    decoded = jwt.verify(refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    });
-  } catch (err) {
-    // Log suspicious attempt
-    await MyGlobal.prisma.econ_political_forum_audit_logs.create({
-      data: {
-        id: v4() satisfies string as string & tags.Format<"uuid">,
-        registereduser_id: null,
-        moderator_id: null,
-        post_id: null,
-        thread_id: null,
-        report_id: null,
-        moderation_case_id: null,
-        action_type: "refresh_invalid_jwt",
-        target_type: "session",
-        target_identifier: null,
-        details: "Invalid JWT presented for refresh",
-        created_at: toISOStringSafe(new Date()),
-        created_by_system: true,
+  // Determine target ids based on variant
+  let targetModeratorId: string & tags.Format<"uuid">;
+  let targetSessionId: string & tags.Format<"uuid">;
+
+  if (body.type === "refresh_token") {
+    let decoded: { id: string; session_id: string; type: string };
+    try {
+      decoded = jwt.verify(body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+        issuer: "autobe",
+      }) as { id: string; session_id: string; type: string };
+    } catch (err) {
+      throw new HttpException("Invalid or expired refresh token", 401);
+    }
+
+    if (decoded.type !== "moderator") {
+      throw new HttpException("Invalid token type", 403);
+    }
+
+    targetModeratorId = decoded.id as unknown as string & tags.Format<"uuid">;
+    targetSessionId = decoded.session_id as unknown as string &
+      tags.Format<"uuid">;
+  } else {
+    // session_id variant
+    targetSessionId = body.session_id;
+    targetModeratorId = moderator.id;
+  }
+
+  // Fetch session
+  const session =
+    await MyGlobal.prisma.discussion_board_moderator_sessions.findFirst({
+      where: {
+        id: targetSessionId,
+        discussion_board_moderator_id: targetModeratorId,
       },
     });
-
-    throw new HttpException("Invalid refresh token", 401);
-  }
-
-  // Step 2: Find matching session
-  let session: Awaited<
-    ReturnType<typeof MyGlobal.prisma.econ_political_forum_sessions.findUnique>
-  > | null = null;
-
-  if (session_id !== undefined && session_id !== null) {
-    session = await MyGlobal.prisma.econ_political_forum_sessions.findUnique({
-      where: { id: session_id },
-      // Do NOT rely on included relations for typing here; fetch user separately
-    });
-  } else {
-    const candidates =
-      await MyGlobal.prisma.econ_political_forum_sessions.findMany({
-        where: { deleted_at: null },
-        // avoid include to prevent relation typing issues
-      });
-
-    for (const s of candidates) {
-      if (!s.refresh_token_hash) continue;
-      try {
-        const ok = await PasswordUtil.verify(
-          refresh_token,
-          s.refresh_token_hash,
-        );
-        if (ok) {
-          session = s;
-          break;
-        }
-      } catch {
-        // ignore verify errors
-      }
-    }
-  }
 
   if (!session) {
-    await MyGlobal.prisma.econ_political_forum_audit_logs.create({
-      data: {
-        id: v4() satisfies string as string & tags.Format<"uuid">,
-        registereduser_id: null,
-        moderator_id: null,
-        post_id: null,
-        thread_id: null,
-        report_id: null,
-        moderation_case_id: null,
-        action_type: "refresh_no_session",
-        target_type: "session",
-        target_identifier: null,
-        details: "Refresh token did not match any active session",
-        created_at: toISOStringSafe(new Date()),
-        created_by_system: true,
-      },
-    });
-
-    throw new HttpException("Invalid refresh token", 401);
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  // Step 3: Validate session state and associated user
-  // session.expires_at may be stored as an ISO string in Prisma types; handle both string and Date
-  const expiresAtMillis =
-    typeof session.expires_at === "string"
-      ? Date.parse(session.expires_at)
-      : session.expires_at instanceof Date
-        ? session.expires_at.getTime()
-        : NaN;
-
-  if (!session.expires_at || expiresAtMillis <= Date.now()) {
-    throw new HttpException("Refresh token expired", 401);
+  // Validate session expiry
+  if (session.expired_at && session.expired_at.getTime() <= Date.now()) {
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  const user =
-    await MyGlobal.prisma.econ_political_forum_registereduser.findUnique({
-      where: { id: session.registereduser_id },
+  // Fetch moderator and validate
+  const mod =
+    await MyGlobal.prisma.discussion_board_moderator.findUniqueOrThrow({
+      where: { id: targetModeratorId },
     });
 
-  if (!user) throw new HttpException("User not found", 404);
-  if (user.is_banned) throw new HttpException("User is banned", 403);
+  if (mod.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
 
-  // Step 4: Generate new tokens and compute expirations
-  const accessToken = jwt.sign(
-    { id: user.id, type: "moderator" },
-    MyGlobal.env.JWT_SECRET_KEY,
+  // If authenticated moderator provided, ensure ownership
+  if (moderator && moderator.id !== targetModeratorId) {
+    throw new HttpException(
+      "Unauthorized: session does not belong to actor",
+      403,
+    );
+  }
+
+  // Prepare timestamps
+  const now = new Date();
+  const nowIso = toISOStringSafe(now);
+  const accessExpireDate = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpireDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpiredAt = toISOStringSafe(accessExpireDate);
+  const refreshableUntil = toISOStringSafe(refreshExpireDate);
+
+  // Sign tokens
+  const access = jwt.sign(
     {
-      expiresIn: "1h",
-      issuer: "autobe",
+      type: "moderator",
+      id: targetModeratorId,
+      session_id: targetSessionId,
+      created_at: nowIso,
     },
-  );
-
-  const accessExpiredAt = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshableUntilDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const refreshToken = jwt.sign(
-    { session_id: session.id, type: "refresh" },
     MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
+    { expiresIn: "1h", issuer: "autobe" },
   );
 
-  // Step 5: Rotate refresh token in DB
-  const newRefreshHash = await PasswordUtil.hash(refreshToken);
-  await MyGlobal.prisma.econ_political_forum_sessions.update({
-    where: { id: session.id },
+  const refresh = jwt.sign(
+    {
+      type: "moderator",
+      id: targetModeratorId,
+      session_id: targetSessionId,
+      tokenType: "refresh",
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+
+  // Update session expiry (sliding window)
+  await MyGlobal.prisma.discussion_board_moderator_sessions.update({
+    where: { id: targetSessionId },
     data: {
-      refresh_token_hash: newRefreshHash,
-      expires_at: toISOStringSafe(refreshableUntilDate),
-      last_active_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      expired_at: refreshExpireDate,
     },
   });
 
-  // Step 6: Audit log
-  await MyGlobal.prisma.econ_political_forum_audit_logs.create({
+  // Create audit entry
+  await MyGlobal.prisma.discussion_board_audit_logs.create({
     data: {
-      id: v4() satisfies string as string & tags.Format<"uuid">,
-      registereduser_id: user.id,
-      moderator_id: null,
-      post_id: null,
-      thread_id: null,
-      report_id: null,
-      moderation_case_id: null,
-      action_type: "refresh_rotated",
-      target_type: "session",
-      target_identifier: session.id,
-      details: "Refresh token successfully rotated",
-      created_at: toISOStringSafe(new Date()),
-      created_by_system: true,
+      id: v4() as string & tags.Format<"uuid">,
+      event_type: "auth.moderator.refresh",
+      event_timestamp: nowIso,
+      resource_type: null,
+      resource_id: null,
+      actor_type: "moderator",
+      actor_id: targetModeratorId,
+      ip: session.ip ?? null,
+      user_agent: session.href ?? null,
+      metadata: JSON.stringify({ session_id: targetSessionId }),
+      created_at: nowIso,
+      updated_at: nowIso,
     },
   });
 
-  // Step 7: Return authorized response
-  return {
-    id: user.id satisfies string as string & tags.Format<"uuid">,
+  // Build response object
+  const response: IDiscussionBoardModerator.IAuthorized = {
+    id: mod.id,
+    username: mod.username,
+    email: mod.email ?? undefined,
+    display_name: mod.display_name ?? null,
+    created_at: toISOStringSafe(mod.created_at),
+    updated_at: toISOStringSafe(mod.updated_at),
     token: {
-      access: accessToken,
-      refresh: refreshToken,
+      access,
+      refresh,
       expired_at: accessExpiredAt,
-      refreshable_until: toISOStringSafe(refreshableUntilDate),
+      refreshable_until: refreshableUntil,
+    },
+    moderator: {
+      id: mod.id,
+      username: mod.username,
+      display_name: mod.display_name ?? null,
+      created_at: toISOStringSafe(mod.created_at),
+      updated_at: toISOStringSafe(mod.updated_at),
+      deleted_at: mod.deleted_at ? toISOStringSafe(mod.deleted_at) : null,
     },
   };
+
+  return response;
 }

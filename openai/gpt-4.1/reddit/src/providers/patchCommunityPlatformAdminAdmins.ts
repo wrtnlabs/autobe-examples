@@ -16,76 +16,78 @@ export async function patchCommunityPlatformAdminAdmins(props: {
   admin: AdminPayload;
   body: ICommunityPlatformAdmin.IRequest;
 }): Promise<IPageICommunityPlatformAdmin.ISummary> {
-  const body = props.body ?? {};
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 100;
-  const skip = (page - 1) * limit;
+  const {
+    page = 1,
+    limit = 20,
+    search,
+    created_from,
+    created_to,
+    updated_from,
+    updated_to,
+    order_by = "created_at",
+    order_direction = "desc",
+  } = props.body ?? {};
 
-  // Only allow certain fields for sort_by
-  const allowedSortBy = ["created_at", "updated_at", "email"];
-  const sortField =
-    body.sort_by && allowedSortBy.includes(body.sort_by)
-      ? body.sort_by
-      : "created_at";
-  const sortDir: "asc" | "desc" = body.sort_dir === "asc" ? "asc" : "desc";
+  // Enforce numeric pagination, capping max page size at 100
+  const safePage = Math.max(Number(page), 1);
+  const safeLimit = Math.min(Math.max(Number(limit), 1), 100);
+  const skip = (safePage - 1) * safeLimit;
+  const take = safeLimit;
 
-  // Build WHERE
-  const where = {
-    ...(body.email ? { email: { contains: body.email } } : {}),
-    ...(body.status ? { status: body.status } : {}),
-    ...(typeof body.superuser === "boolean"
-      ? { superuser: body.superuser }
-      : {}),
-    ...(body.created_at_from || body.created_at_to
-      ? {
-          created_at: {
-            ...(body.created_at_from ? { gte: body.created_at_from } : {}),
-            ...(body.created_at_to ? { lte: body.created_at_to } : {}),
-          },
-        }
-      : {}),
-    ...(body.updated_at_from || body.updated_at_to
-      ? {
-          updated_at: {
-            ...(body.updated_at_from ? { gte: body.updated_at_from } : {}),
-            ...(body.updated_at_to ? { lte: body.updated_at_to } : {}),
-          },
-        }
-      : {}),
-  };
+  const where: Record<string, any> = { deleted_at: null };
 
-  const [admins, total] = await Promise.all([
+  if (search) {
+    // Use trigram index: search against display_name or email (OR)
+    where.OR = [
+      { display_name: { contains: search } },
+      { email: { contains: search } },
+    ];
+  }
+  if (created_from) {
+    where.created_at = { ...(where.created_at ?? {}), gte: created_from };
+  }
+  if (created_to) {
+    where.created_at = { ...(where.created_at ?? {}), lte: created_to };
+  }
+  if (updated_from) {
+    where.updated_at = { ...(where.updated_at ?? {}), gte: updated_from };
+  }
+  if (updated_to) {
+    where.updated_at = { ...(where.updated_at ?? {}), lte: updated_to };
+  }
+
+  const allowedOrderFields = [
+    "display_name",
+    "email",
+    "created_at",
+    "updated_at",
+  ] as const;
+  const sortField = allowedOrderFields.includes(order_by)
+    ? order_by
+    : "created_at";
+  const sortDirection = order_direction === "asc" ? "asc" : "desc";
+
+  const [rows, total] = await Promise.all([
     MyGlobal.prisma.community_platform_admins.findMany({
       where,
-      orderBy: { [sortField]: sortDir },
+      orderBy: { [sortField]: sortDirection },
       skip,
-      take: limit,
+      take,
+      select: { id: true, display_name: true },
     }),
     MyGlobal.prisma.community_platform_admins.count({ where }),
   ]);
 
-  const data = admins.map((admin) => {
-    const summary: ICommunityPlatformAdmin.ISummary = {
-      id: admin.id,
-      email: admin.email,
-      superuser: admin.superuser,
-      status: admin.status,
-      created_at: toISOStringSafe(admin.created_at),
-      updated_at: toISOStringSafe(admin.updated_at),
-      ...(admin.deleted_at !== null && typeof admin.deleted_at !== "undefined"
-        ? { deleted_at: toISOStringSafe(admin.deleted_at) }
-        : { deleted_at: null }),
-    };
-    return summary;
-  });
-
   return {
     pagination: {
-      current: Number(page),
-      limit: Number(limit),
+      current: Number(safePage),
+      limit: Number(safeLimit),
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / safeLimit),
     },
-    data,
+    data: rows.map((row) => ({
+      id: row.id,
+      display_name: row.display_name,
+    })),
   };
 }

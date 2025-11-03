@@ -7,118 +7,102 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPoliticalForumGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPoliticalForumGuest";
+import { IDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardGuest";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { GuestPayload } from "../decorators/payload/GuestPayload";
 
 export async function postAuthGuestRefresh(props: {
   guest: GuestPayload;
-  body: IEconPoliticalForumGuest.IRefresh;
-}): Promise<IEconPoliticalForumGuest.IAuthorized> {
+  body: IDiscussionBoardGuest.IRefresh;
+}): Promise<IDiscussionBoardGuest.IAuthorized> {
   const { body } = props;
 
-  // Step 1: Verify and decode the refresh token
-  let decodedToken: unknown;
+  // Verify and decode the refresh token
+  let decodedPayload: unknown;
   try {
-    decodedToken = jwt.verify(body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    });
-  } catch (_err) {
-    throw new HttpException("Invalid refresh token", 401);
-  }
-
-  if (typeof decodedToken !== "object" || decodedToken === null) {
-    throw new HttpException("Invalid refresh token payload", 401);
-  }
-
-  // Extract expected fields from token payload
-  // Accept common shapes: { id, type, tokenType }
-  const payloadAny = decodedToken as { [key: string]: unknown };
-  const tokenType = (payloadAny["tokenType"] ?? payloadAny["token_type"]) as
-    | string
-    | undefined;
-  const subjectId = (payloadAny["id"] ??
-    payloadAny["userId"] ??
-    payloadAny["guestId"]) as string | undefined;
-  const subjectType = (payloadAny["type"] ?? payloadAny["sub_type"]) as
-    | string
-    | undefined;
-
-  if (!subjectId || typeof subjectId !== "string") {
-    throw new HttpException(
-      "Invalid refresh token payload: missing subject id",
-      401,
+    decodedPayload = jwt.verify(
+      body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
     );
+  } catch (err) {
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  if (subjectType !== "guest") {
-    throw new HttpException("Invalid token role", 401);
+  if (typeof decodedPayload !== "object" || decodedPayload === null) {
+    throw new HttpException("Invalid token payload", 401);
   }
 
-  if (tokenType !== "refresh") {
-    throw new HttpException("Token is not a refresh token", 401);
+  const tokenData = decodedPayload as {
+    id: string;
+    session_id: string;
+    type: string;
+  };
+
+  if (tokenData.type !== "guest") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  // Step 2: Confirm guest record exists and is active (deleted_at == null)
-  const guestRecord =
-    await MyGlobal.prisma.econ_political_forum_guest.findUnique({
-      where: { id: subjectId },
-      select: { id: true, nickname: true, deleted_at: true },
-    });
+  // Validate guest existence and lifecycle state
+  const guestRecord = await MyGlobal.prisma.discussion_board_guest.findFirst({
+    where: { id: tokenData.id },
+  });
 
-  if (!guestRecord || guestRecord.deleted_at !== null) {
-    throw new HttpException("Guest not found or revoked", 403);
+  if (!guestRecord) {
+    throw new HttpException("Guest not found", 404);
   }
 
-  // Optional: update last-seen/updated_at timestamp
-  const now = toISOStringSafe(new Date());
-  try {
-    await MyGlobal.prisma.econ_political_forum_guest.update({
-      where: { id: guestRecord.id },
-      data: { updated_at: now },
-    });
-  } catch (_e) {
-    // Non-fatal: if update fails, continue to issue tokens; do not expose DB error
+  if (guestRecord.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
   }
 
-  // Step 3: Issue new tokens (rotate refresh token)
-  const accessLifetimeSeconds = 15 * 60; // 15 minutes
-  const refreshLifetimeSeconds = 7 * 24 * 60 * 60; // 7 days
+  // Generate new tokens reusing the same session_id from token
+  const createdAtIso = toISOStringSafe(new Date());
+  const accessExpiryIso = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiryIso = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
   const accessToken = jwt.sign(
     {
-      id: guestRecord.id,
-      type: "guest",
+      type: tokenData.type,
+      id: tokenData.id,
+      session_id: tokenData.session_id,
+      created_at: createdAtIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { issuer: "autobe", expiresIn: `${accessLifetimeSeconds}s` },
+    { expiresIn: "1h", issuer: "autobe" },
   );
 
-  const rotatedRefreshToken = jwt.sign(
+  const refreshToken = jwt.sign(
     {
-      id: guestRecord.id,
-      type: "guest",
+      type: tokenData.type,
+      id: tokenData.id,
+      session_id: tokenData.session_id,
       tokenType: "refresh",
+      created_at: createdAtIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { issuer: "autobe", expiresIn: `${refreshLifetimeSeconds}s` },
+    { expiresIn: "7d", issuer: "autobe" },
   );
 
-  const expiredAt = toISOStringSafe(
-    new Date(Date.now() + accessLifetimeSeconds * 1000),
-  );
-  const refreshableUntil = toISOStringSafe(
-    new Date(Date.now() + refreshLifetimeSeconds * 1000),
-  );
-
+  // Build response per IDiscussionBoardGuest.IAuthorized
   return {
     id: guestRecord.id,
-    nickname: guestRecord.nickname ?? undefined,
+    displayName: guestRecord.display_name ?? undefined,
+    ip: null,
+    createdAt: toISOStringSafe(guestRecord.created_at),
+    updatedAt: toISOStringSafe(guestRecord.updated_at),
+    deletedAt: guestRecord.deleted_at
+      ? toISOStringSafe(guestRecord.deleted_at)
+      : null,
     token: {
       access: accessToken,
-      refresh: rotatedRefreshToken,
-      expired_at: expiredAt,
-      refreshable_until: refreshableUntil,
+      refresh: refreshToken,
+      expired_at: accessExpiryIso,
+      refreshable_until: refreshExpiryIso,
     },
   };
 }

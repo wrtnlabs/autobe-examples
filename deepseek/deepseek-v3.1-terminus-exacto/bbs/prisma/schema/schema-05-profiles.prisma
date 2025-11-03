@@ -1,0 +1,240 @@
+/// Extended user profile information beyond basic authentication data.
+/// Contains personal details, biography, and customization preferences that
+/// enhance user identity for economic/political discussion participation.
+/// {@link discussion_board_members.id}
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who owns this profile. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// User's personal introduction and background relevant to
+  /// economic/political discussions. Maximum 500 characters.
+  biography String?
+  
+  /// Geographic location at country/region level for discussion context.
+  location String?
+  
+  /// User's professional experience or expertise relevant to discussion topics.
+  professional_background String?
+  
+  /// Specific economic/political topics the user is most interested in.
+  areas_of_interest String?
+  
+  /// URL to user's profile avatar image.
+  avatar_url String?
+  
+  /// Privacy setting controlling who can view the profile (public,
+  /// registered_users, private).
+  profile_visibility String
+  
+  /// Timestamp when the profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft-deleted for privacy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_user_preferences discussion_board_user_preferences?
+  discussion_board_activity_history discussion_board_activity_history[]
+  discussion_board_saved_content discussion_board_saved_content[]
+  
+  @@unique([discussion_board_member_id])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_user_profiles_discussion_board_member_934050b6")
+  @@index([profile_visibility])
+  @@index([created_at])
+}
+
+/// User-specific settings and preferences for platform customization.
+/// Controls notification behavior, display options, and discussion
+/// participation preferences. {@link discussion_board_user_profiles.id}
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user profile these preferences belong to. {@link
+  /// discussion_board_user_profiles.id}
+  discussion_board_user_profile_id String
+  
+  /// Whether the user wants to receive email notifications for replies and
+  /// updates.
+  email_notifications Boolean
+  
+  /// Default comment sorting preference (newest_first, oldest_first,
+  /// most_popular).
+  comment_sorting String
+  
+  /// Display theme preference (light, dark, system).
+  theme_preference String
+  
+  /// Preferred font size for content display (small, medium, large).
+  font_size String
+  
+  /// Content display density preference (compact, standard, expanded).
+  content_density String
+  
+  /// Image display preference (always_show, hide, thumbnail_only).
+  image_display String
+  
+  /// Whether to filter out controversial content by default.
+  controversial_content_filter Boolean
+  
+  /// Whether to automatically save post and comment drafts.
+  auto_save_drafts Boolean
+  
+  /// Frequency for receiving discussion digests (daily, weekly, never).
+  digest_frequency String
+  
+  /// Preferred language for content display.
+  language_preference String
+  
+  /// Timestamp when the preferences were created.
+  created_at DateTime
+  
+  /// Timestamp when the preferences were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile discussion_board_user_profiles @relation(fields: [discussion_board_user_profile_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_user_profile_id], map: "discussion_board_user_preferences_discussion_board_use_97fb89dc")
+  @@index([updated_at])
+}
+
+/// Comprehensive record of user activity including posts created, comments
+/// made, content viewed, and engagement patterns. Used for personalization
+/// and analytics. {@link discussion_board_user_profiles.id}
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_activity_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user profile this activity belongs to. {@link
+  /// discussion_board_user_profiles.id}
+  discussion_board_user_profile_id String
+  
+  /// Type of activity recorded (post_created, comment_made, content_viewed,
+  /// search_performed, preference_changed).
+  activity_type String
+  
+  /// JSON string containing detailed information about the activity.
+  activity_details String?
+  
+  /// JSON string containing engagement metrics like view count, reply count,
+  /// etc.
+  engagement_metrics String?
+  
+  /// Search query performed by the user, if activity type is search.
+  search_query String?
+  
+  /// Economic/political topic categories involved in this activity.
+  topic_categories String?
+  
+  /// Time spent on the activity in seconds, for content viewing.
+  duration_seconds Int?
+  
+  /// Type of device used for the activity (desktop, mobile, tablet).
+  device_type String?
+  
+  /// Timestamp when the activity occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile discussion_board_user_profiles @relation(fields: [discussion_board_user_profile_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_profile_id, created_at], map: "discussion_board_activity_history_discussion_board_use_316e4247")
+  @@index([activity_type, created_at])
+  @@index([created_at])
+}
+
+/// User's personal collection of saved posts and comments for later
+/// reference. Supports bookmarking and content organization features. {@link
+/// discussion_board_user_profiles.id}
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_saved_content {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user profile that saved this content. {@link
+  /// discussion_board_user_profiles.id}
+  discussion_board_user_profile_id String
+  
+  /// User-defined tags for organizing saved content.
+  custom_tags String?
+  
+  /// Personal notes added by the user about the saved content.
+  notes String?
+  
+  /// Privacy level for the saved content (private, shared).
+  privacy_setting String
+  
+  /// Timestamp when the content was saved.
+  saved_at DateTime
+  
+  /// Timestamp when the saved content was last viewed.
+  last_accessed DateTime
+  
+  /// Number of times the user has accessed this saved content.
+  access_count Int
+  
+  /// Whether the saved content has been archived by the user.
+  is_archived Boolean
+  
+  /// Timestamp when the save record was created.
+  created_at DateTime
+  
+  /// Timestamp when the save record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the save record was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile discussion_board_user_profiles @relation(fields: [discussion_board_user_profile_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_profile_id, saved_at], map: "discussion_board_saved_content_discussion_board_user_p_be8cc8d7")
+  @@index([privacy_setting])
+  @@index([is_archived])
+  @@index([saved_at])
+}

@@ -16,20 +16,32 @@ export async function getTodoListUserTodosTodoId(props: {
 }): Promise<ITodoListTodo> {
   const { user, todoId } = props;
 
-  const todo = await MyGlobal.prisma.todo_list_todos.findFirstOrThrow({
+  const todo = await MyGlobal.prisma.todo_list_todos.findFirst({
     where: {
       id: todoId,
-      todo_list_user_id: user.id,
       deleted_at: null,
     },
   });
 
+  if (!todo) {
+    throw new HttpException("Todo not found", 404);
+  }
+
+  if (todo.todo_list_user_id !== user.id) {
+    throw new HttpException(
+      "Unauthorized: You can only access your own todos",
+      403,
+    );
+  }
+
   return {
     id: todo.id as string & tags.Format<"uuid">,
+    todo_list_user_id: todo.todo_list_user_id as string & tags.Format<"uuid">,
     title: todo.title,
-    description: todo.description === null ? undefined : todo.description,
-    completed: todo.completed,
+    description: todo.description ?? undefined,
+    status: todo.status as "complete" | "incomplete",
     created_at: toISOStringSafe(todo.created_at),
     updated_at: toISOStringSafe(todo.updated_at),
+    deleted_at: todo.deleted_at ? toISOStringSafe(todo.deleted_at) : undefined,
   };
 }

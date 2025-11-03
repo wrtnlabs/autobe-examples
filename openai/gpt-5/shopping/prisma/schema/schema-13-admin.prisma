@@ -1,0 +1,661 @@
+/// Immutable record of sensitive governance operations requiring
+/// auditability and potential dual-control (proposer/approver). Captures who
+/// initiated and who approved, the business action, target entity context,
+/// and policy reason mapping. Supports oversight and compliance for
+/// platform-level changes by {@link shopping_mall_admins}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_governance_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who initiated the governance action. {@link shopping_mall_admins.id}
+  initiator_shopping_mall_admin_id String
+  
+  /// Admin who approved the action when dual control applies. {@link
+  /// shopping_mall_admins.id}
+  approver_shopping_mall_admin_id String?
+  
+  /// Optional mapped policy reason code associated with the action. {@link
+  /// shopping_mall_policy_reason_codes.id}
+  shopping_mall_policy_reason_code_id String?
+  
+  /// Canonical action identifier (e.g., suspend_seller, change_fee,
+  /// mass_category_move).
+  action String
+  
+  /// Logical model/table name of the target entity (e.g.,
+  /// shopping_mall_sellers, shopping_mall_categories).
+  target_model String
+  
+  /// Target entity identifier when applicable.
+  target_id String?
+  
+  /// Whether the action required dual-control approval.
+  dual_control_required Boolean
+  
+  /// Execution status of the action (e.g., executed, rejected, reverted).
+  status String
+  
+  /// Human-readable summary for quick audit review.
+  summary String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if ever logically removed from views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  initiatorAdmin shopping_mall_admins @relation("shopping_mall_governance_actions_of_initiator_shopping_5f43dc1d", fields: [initiator_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  approverAdmin shopping_mall_admins? @relation("shopping_mall_governance_actions_of_approver_shopping__0dba1f2f", fields: [approver_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  reasonCode shopping_mall_policy_reason_codes? @relation(fields: [shopping_mall_policy_reason_code_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_reason_code_id], map: "shopping_mall_governance_actions_shopping_mall_policy__a745fea6")
+  
+  // spellchecker: ignore-next-line
+  @@index([initiator_shopping_mall_admin_id, created_at], map: "shopping_mall_governance_actions_initiator_shopping_ma_8399e798")
+  // spellchecker: ignore-next-line
+  @@index([approver_shopping_mall_admin_id, created_at], map: "shopping_mall_governance_actions_approver_shopping_mal_6d0c2815")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([target_model, target_id, created_at], map: "shopping_mall_governance_actions_target_model_target_i_b8b45164")
+}
+
+/// System-wide administrative audit trail for actions performed by platform
+/// admins. Focused on administrative scope (not customer/seller content),
+/// capturing actor, context, and narrative suitable for compliance.
+/// Complements {@link shopping_mall_governance_actions}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who performed the action. {@link shopping_mall_admins.id}
+  shopping_mall_admin_id String
+  
+  /// Canonical event key (e.g., role_assigned, payout_hold_applied,
+  /// category_change_approved).
+  event String
+  
+  /// Logical model/table name of the affected entity.
+  target_model String
+  
+  /// Affected entity identifier when applicable.
+  target_id String?
+  
+  /// Origin IP address captured at the time of the action.
+  ip String?
+  
+  /// Request URL at the time of action.
+  href String?
+  
+  /// Referrer URL when available.
+  referrer String?
+  
+  /// Free-form message or structured JSON string summarizing the audit context.
+  message String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp (rarely used for immutable logs; preserved for
+  /// consistency).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (not expected to be used in practice).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_admin_id, created_at])
+  @@index([target_model, created_at])
+  @@index([target_model, target_id, created_at])
+}
+
+/// Administrative dispute/chargeback cases linked to orders with
+/// participation by customer and seller. Managed by admins with lifecycle
+/// states and policy reasons. Interfaces with payment resolution and refunds
+/// externally. Related to {@link shopping_mall_orders}, {@link
+/// shopping_mall_customers}, {@link shopping_mall_sellers}, and admins in
+/// {@link shopping_mall_admins}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_disputes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related order under dispute. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Customer party to the dispute. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Seller party to the dispute. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Admin currently assigned to handle the case. {@link
+  /// shopping_mall_admins.id}
+  assigned_shopping_mall_admin_id String?
+  
+  /// Standardized dispute reason code. {@link
+  /// shopping_mall_policy_reason_codes.id}
+  shopping_mall_policy_reason_code_id String?
+  
+  /// Short human-readable title summarizing the dispute.
+  title String
+  
+  /// Current status (e.g., open, awaiting_seller, awaiting_customer,
+  /// resolved_customer, resolved_seller, refunded, rejected).
+  status String
+  
+  /// Business severity classification (e.g., low, medium, high).
+  severity String
+  
+  /// Original order amount involved (snapshot at case creation).
+  original_amount Float?
+  
+  /// Amount being disputed (snapshot).
+  disputed_amount Float?
+  
+  /// Optional link to external evidence bundle.
+  evidence_uri String?
+  
+  /// Internal notes or structured JSON string with details and timeline.
+  notes String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  assignedAdmin shopping_mall_admins? @relation(fields: [assigned_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  reasonCode shopping_mall_policy_reason_codes? @relation(fields: [shopping_mall_policy_reason_code_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_policy_reason_code_id])
+  
+  @@index([shopping_mall_order_id, created_at])
+  @@index([shopping_mall_seller_id, created_at])
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([assigned_shopping_mall_admin_id, status], map: "shopping_mall_disputes_assigned_shopping_mall_admin_id_51e67c42")
+}
+
+/// Fraud and risk investigation cases generated from risk signals, payment
+/// anomalies, or policy violations. Cases can be tied to orders, customers,
+/// and/or sellers, with an assigned admin owner. Coordinates holds and
+/// verification requests. Interfaces with {@link shopping_mall_orders},
+/// {@link shopping_mall_customers}, {@link shopping_mall_sellers}, and
+/// {@link shopping_mall_admins}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_fraud_risk_cases {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated order that triggered risk signals. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String?
+  
+  /// Customer involved in the case when applicable. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Seller involved in the case when applicable. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// Admin assigned to the risk case. {@link shopping_mall_admins.id}
+  assigned_shopping_mall_admin_id String?
+  
+  /// Case status (e.g., open, info_requested, on_hold, cleared,
+  /// confirmed_fraud, closed).
+  status String
+  
+  /// Risk severity classification (e.g., low, medium, high, critical).
+  severity String
+  
+  /// Numeric score representing risk signal strength at intake.
+  signal_score Float?
+  
+  /// Structured JSON string summarizing signals and heuristics used for the
+  /// decision.
+  signals String?
+  
+  /// Investigation notes and decision rationale.
+  notes String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  assignedAdmin shopping_mall_admins? @relation(fields: [assigned_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_seller_id])
+  
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([assigned_shopping_mall_admin_id, status], map: "shopping_mall_fraud_risk_cases_assigned_shopping_mall__3bbb2766")
+}
+
+/// Periodic seller statements summarizing sales, fees, refunds, reserves,
+/// and net payable for a cycle. Acts as the authoritative financial snapshot
+/// for payouts and reserves management. Tied to {@link
+/// shopping_mall_sellers} and referenced by {@link shopping_mall_payouts}
+/// and {@link shopping_mall_reserve_holds}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payout_statements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller for whom the statement is generated. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Admin who approved the statement if applicable. {@link
+  /// shopping_mall_admins.id}
+  approved_by_shopping_mall_admin_id String?
+  
+  /// Human-readable reference code of the statement period (e.g.,
+  /// 2025-W44-KST).
+  reference_code String
+  
+  /// Inclusive period start timestamp.
+  period_start DateTime
+  
+  /// Inclusive period end timestamp.
+  period_end DateTime
+  
+  /// Currency code used for the statement (e.g., KRW, USD).
+  currency String
+  
+  /// Gross sales total recorded in the statement period.
+  gross_sales Float
+  
+  /// Total refunds recorded in the period.
+  refunds_total Float
+  
+  /// Total platform and processing fees charged in the period.
+  fees_total Float
+  
+  /// Total amount placed into reserves/holds in the period.
+  reserves_total Float
+  
+  /// Net amount payable to seller for the period (gross − refunds − fees −
+  /// reserves).
+  net_payable Float
+  
+  /// Statement status (e.g., draft, approved, closed, paid, on_hold).
+  status String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  approvedByAdmin shopping_mall_admins? @relation(fields: [approved_by_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_payouts shopping_mall_payouts[]
+  shopping_mall_reserve_holds shopping_mall_reserve_holds[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id, period_start, period_end], map: "shopping_mall_payout_statements_shopping_mall_seller_i_7884aa83")
+  // spellchecker: ignore-next-line
+  @@index([approved_by_shopping_mall_admin_id], map: "shopping_mall_payout_statements_approved_by_shopping_m_6ac26101")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_payout_statements_shopping_mall_seller_i_8713265a")
+  @@index([status, created_at])
+}
+
+/// Individual payout transactions to sellers. May reference a {@link
+/// shopping_mall_payout_statements} for context. Tracks lifecycle
+/// (scheduled, in_process, completed, on_hold) and external reconciliation
+/// references. Supports governance via admin approvals.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payouts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller receiving the payout. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Statement from which this payout originates, when applicable. {@link
+  /// shopping_mall_payout_statements.id}
+  shopping_mall_payout_statement_id String?
+  
+  /// Admin who approved this payout if applicable. {@link
+  /// shopping_mall_admins.id}
+  approved_by_shopping_mall_admin_id String?
+  
+  /// Payout amount in statement currency.
+  amount Float
+  
+  /// Currency code of the payout.
+  currency String
+  
+  /// Payout method descriptor (e.g., bank_transfer, wallet, manual_adjustment).
+  method String
+  
+  /// External payment provider reference for reconciliation.
+  external_reference String?
+  
+  /// Payout status (e.g., scheduled, in_process, completed, on_hold, failed).
+  status String
+  
+  /// Optional payout notes or reconciliation memos.
+  notes String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  statement shopping_mall_payout_statements? @relation(fields: [shopping_mall_payout_statement_id], references: [id], onDelete: Cascade)
+  approvedByAdmin shopping_mall_admins? @relation(fields: [approved_by_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_reserve_holds shopping_mall_reserve_holds[]
+  
+  @@unique([external_reference])
+  @@index([approved_by_shopping_mall_admin_id])
+  @@index([shopping_mall_seller_id, created_at])
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payout_statement_id, created_at], map: "shopping_mall_payouts_shopping_mall_payout_statement_i_5d59835c")
+}
+
+/// Reserve holds applied to seller funds to mitigate risk or pending
+/// disputes. May be linked to a {@link shopping_mall_payouts} or {@link
+/// shopping_mall_payout_statements}. Includes policy reasons, amounts, and
+/// release schedule/status for governance and compliance.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reserve_holds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller whose funds are held. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Related payout record if the hold applies to a specific payout. {@link
+  /// shopping_mall_payouts.id}
+  shopping_mall_payout_id String?
+  
+  /// Related payout statement record if the hold is statement-scoped. {@link
+  /// shopping_mall_payout_statements.id}
+  shopping_mall_payout_statement_id String?
+  
+  /// Reason code backing the hold. {@link shopping_mall_policy_reason_codes.id}
+  shopping_mall_policy_reason_code_id String?
+  
+  /// Amount held in the statement/payout currency.
+  amount Float
+  
+  /// Hold status (e.g., active, partially_released, released, canceled).
+  status String
+  
+  /// Scheduled release time when applicable.
+  release_scheduled_at DateTime?
+  
+  /// Administrative notes or structured JSON details.
+  notes String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  payout shopping_mall_payouts? @relation(fields: [shopping_mall_payout_id], references: [id], onDelete: Cascade)
+  statement shopping_mall_payout_statements? @relation(fields: [shopping_mall_payout_statement_id], references: [id], onDelete: Cascade)
+  reasonCode shopping_mall_policy_reason_codes? @relation(fields: [shopping_mall_policy_reason_code_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_reason_code_id], map: "shopping_mall_reserve_holds_shopping_mall_policy_reaso_0af0c599")
+  
+  @@index([shopping_mall_payout_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_reserve_holds_shopping_mall_seller_id_cr_a8575d88")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_payout_statement_id, created_at], map: "shopping_mall_reserve_holds_shopping_mall_payout_state_d1ca0981")
+}
+
+/// Platform fee configuration catalog with effective-dated records. Supports
+/// multiple fee types (rate-based or fixed), applicable scopes, and
+/// governance approvals. Admin-created and approved via {@link
+/// shopping_mall_admins}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_fee_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who created the fee configuration. {@link shopping_mall_admins.id}
+  created_by_shopping_mall_admin_id String
+  
+  /// Admin who approved the fee configuration if approval workflow applies.
+  /// {@link shopping_mall_admins.id}
+  approved_by_shopping_mall_admin_id String?
+  
+  /// Stable fee code identifier (e.g., platform_commission,
+  /// payment_processing, dispute_fee).
+  fee_code String
+  
+  /// Human-readable fee name.
+  name String
+  
+  /// Detailed description and business rules for the fee.
+  description String?
+  
+  /// Application scope (e.g., order, refund, payout, dispute).
+  applies_to String
+  
+  /// Percentage rate (0–1) when rate-based; nullable when not used.
+  rate Float?
+  
+  /// Fixed amount when applicable; nullable when not used.
+  fixed_amount Float?
+  
+  /// Currency for fixed_amount where applicable.
+  currency String?
+  
+  /// Effective start timestamp (inclusive).
+  effective_from DateTime
+  
+  /// Effective end timestamp (exclusive) when scheduled to end.
+  effective_to DateTime?
+  
+  /// Whether this configuration is currently active within its effective
+  /// window.
+  active Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  createdByAdmin shopping_mall_admins @relation("shopping_mall_fee_configurations_of_created_by_shoppin_0d8531bc", fields: [created_by_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  approvedByAdmin shopping_mall_admins? @relation("shopping_mall_fee_configurations_of_approved_by_shoppi_68a34306", fields: [approved_by_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([created_by_shopping_mall_admin_id], map: "shopping_mall_fee_configurations_created_by_shopping_m_10811066")
+  // spellchecker: ignore-next-line
+  @@index([approved_by_shopping_mall_admin_id], map: "shopping_mall_fee_configurations_approved_by_shopping__95d58bb3")
+  
+  @@unique([fee_code, effective_from])
+  @@index([active, effective_from])
+  @@index([applies_to, created_at])
+}
+
+/// Admin-governed requests for category taxonomy changes (move, rename,
+/// merge). Includes proposer/approver, target category, impact analysis, and
+/// status. Aligns with governance and audit rules and references {@link
+/// shopping_mall_categories} and {@link shopping_mall_admins}.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_category_change_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who proposed the change. {@link shopping_mall_admins.id}
+  requested_by_shopping_mall_admin_id String
+  
+  /// Admin who approved the change when applicable. {@link
+  /// shopping_mall_admins.id}
+  approved_by_shopping_mall_admin_id String?
+  
+  /// Target category affected by this request. {@link
+  /// shopping_mall_categories.id}
+  shopping_mall_category_id String
+  
+  /// Optional policy reason used to justify the change. {@link
+  /// shopping_mall_policy_reason_codes.id}
+  shopping_mall_policy_reason_code_id String?
+  
+  /// Requested action type (e.g., move, rename, merge, split).
+  action String
+  
+  /// Structured JSON string with parameters (e.g., new parent category, new
+  /// name, merge target list).
+  payload String?
+  
+  /// Estimated number of SKUs impacted per assessment.
+  impact_sku_count Int?
+  
+  /// Request status (e.g., draft, pending_approval, approved, rejected,
+  /// applied, rolled_back).
+  status String
+  
+  /// Additional notes or justification context.
+  notes String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  requestedByAdmin shopping_mall_admins @relation("shopping_mall_category_change_requests_of_requested_by_bb1ef5be", fields: [requested_by_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  approvedByAdmin shopping_mall_admins? @relation("shopping_mall_category_change_requests_of_approved_by__f1c5130a", fields: [approved_by_shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  reasonCode shopping_mall_policy_reason_codes? @relation(fields: [shopping_mall_policy_reason_code_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_reason_code_id], map: "shopping_mall_category_change_requests_shopping_mall_p_4d3023ce")
+  
+  // spellchecker: ignore-next-line
+  @@index([approved_by_shopping_mall_admin_id], map: "shopping_mall_category_change_requests_approved_by_sho_1bbd5a89")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_category_id, created_at], map: "shopping_mall_category_change_requests_shopping_mall_c_1cee697b")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([requested_by_shopping_mall_admin_id, created_at], map: "shopping_mall_category_change_requests_requested_by_sh_7a8525b3")
+}

@@ -16,10 +16,11 @@ export async function userAuthorize(request: {
   }
 
   // payload.id contains top-level user table ID
-  // Query using primary key since todo_list_user is the top-level entity
-  const user = await MyGlobal.prisma.todo_list_user.findFirst({
+  // For todo_users table (standalone user model), query directly by id
+  const user = await MyGlobal.prisma.todo_users.findFirst({
     where: {
       id: payload.id,
+      deleted_at: null,
     },
   });
 

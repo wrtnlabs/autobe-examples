@@ -8,76 +8,109 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IRedditCommunityGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityGuest";
+import { IRedditCommunityGuestSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityGuestSession";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { GuestPayload } from "../decorators/payload/GuestPayload";
 
 export async function postAuthGuestRefresh(props: {
   guest: GuestPayload;
-  body: IRedditCommunityGuest.IRefresh;
+  body: IRedditCommunityGuest.IRefresh & { refreshToken: string };
 }): Promise<IRedditCommunityGuest.IAuthorized> {
-  const { body } = props;
+  let decoded: { id: string; session_id: string; type: "guest" };
 
-  let decoded: unknown;
   try {
-    decoded = jwt.verify(body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    });
+    }) as { id: string; session_id: string; type: "guest" };
   } catch {
-    throw new HttpException("Invalid or expired refresh token", 403);
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  if (typeof decoded !== "object" || decoded === null || !("id" in decoded)) {
-    throw new HttpException("Invalid token payload", 403);
+  if (decoded.type !== "guest") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  const guestIdCandidate = decoded["id"];
-  if (typeof guestIdCandidate !== "string") {
-    throw new HttpException("Invalid token payload id", 403);
+  const session =
+    await MyGlobal.prisma.reddit_community_guest_sessions.findFirst({
+      where: {
+        id: decoded.session_id,
+        reddit_community_guest_id: decoded.id,
+      },
+      include: {
+        redditCommunityGuest: true,
+      },
+    });
+
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  const guest = await MyGlobal.prisma.reddit_community_guests.findUnique({
-    where: { id: guestIdCandidate },
+  const deletedAtRaw = (session.redditCommunityGuest as any).deleted_at;
+  if (deletedAtRaw !== null && deletedAtRaw !== undefined) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+
+  const nowIso = toISOStringSafe(new Date());
+  const accessExpiresIso = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiresIso = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  const access = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refresh = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  await MyGlobal.prisma.reddit_community_guest_sessions.update({
+    where: { id: decoded.session_id },
+    data: { expired_at: refreshExpiresIso },
   });
 
-  if (!guest) {
-    throw new HttpException("Guest session not found", 403);
-  }
+  const guestId = decoded.id;
+  const createdAt = toISOStringSafe(
+    session.redditCommunityGuest.created_at as Date,
+  );
 
-  const accessTokenPayload = {
-    id: guest.id,
-    type: "guest",
-  };
-
-  const access = jwt.sign(accessTokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-
-  const refreshTokenPayload = {
-    id: guest.id,
-    type: "guest",
-  };
-
-  const refresh = jwt.sign(refreshTokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "7d",
-    issuer: "autobe",
-  });
-
-  const expired_at = toISOStringSafe(new Date(Date.now() + 3600_000));
-  const refreshable_until = toISOStringSafe(new Date(Date.now() + 604_800_000));
+  // Defensive extraction where reddit_community_guest_sessions might be missing
+  const guestSessions =
+    (session.redditCommunityGuest as any).reddit_community_guest_sessions ??
+    undefined;
 
   return {
-    id: guest.id,
-    session_id: guest.session_id,
-    ip_address: guest.ip_address,
-    user_agent: guest.user_agent ?? null,
-    created_at: toISOStringSafe(guest.created_at),
-    updated_at: toISOStringSafe(guest.updated_at),
+    id: guestId,
+    created_at: createdAt,
+    reddit_community_guest_sessions: guestSessions,
     token: {
       access,
       refresh,
-      expired_at,
-      refreshable_until,
+      expired_at: accessExpiresIso,
+      refreshable_until: refreshExpiresIso,
     },
-  };
+  } satisfies IRedditCommunityGuest.IAuthorized;
 }

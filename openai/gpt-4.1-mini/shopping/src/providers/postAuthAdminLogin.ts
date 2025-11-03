@@ -9,8 +9,10 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminLogin(props: {
+  admin: AdminPayload;
   body: IShoppingMallAdmin.ILogin;
 }): Promise<IShoppingMallAdmin.IAuthorized> {
   const { body } = props;
@@ -21,80 +23,71 @@ export async function postAuthAdminLogin(props: {
       deleted_at: null,
     },
   });
-
   if (!admin) {
-    throw new HttpException("Unauthorized: Invalid email or password", 401);
+    throw new HttpException("Invalid credentials", 401);
   }
 
-  const passwordMatch = await PasswordUtil.verify(
-    body.password,
-    admin.password_hash,
-  );
-  if (!passwordMatch) {
-    throw new HttpException("Unauthorized: Invalid email or password", 401);
+  const isValid = await PasswordUtil.verify(body.password, admin.password_hash);
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
   }
 
-  const nowMillis = Date.now();
+  const now = toISOStringSafe(new Date());
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  const accessToken = jwt.sign(
-    {
-      id: admin.id,
-      email: admin.email,
-      type: "admin",
+  const session = await MyGlobal.prisma.shopping_mall_admin_sessions.create({
+    data: {
+      id: v4(),
+      shopping_mall_admin_id: admin.id,
+      ip: body.ip ?? "",
+      href: body.href,
+      referrer: body.referrer,
+      created_at: now,
+      expired_at: toISOStringSafe(accessExpires),
     },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
+  });
 
-  const refreshToken = jwt.sign(
-    {
-      id: admin.id,
-      type: "admin",
-      tokenType: "refresh",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-
-  function expToISOString(token: string): string & tags.Format<"date-time"> {
-    const decoded = jwt.decode(token);
-    if (
-      decoded &&
-      typeof decoded === "object" &&
-      decoded !== null &&
-      "exp" in decoded &&
-      typeof decoded.exp === "number"
-    ) {
-      const millis = decoded.exp * 1000;
-      const isoString = toISOStringSafe(new Date(millis));
-      return isoString as string & tags.Format<"date-time">;
-    }
-    const fallback = toISOStringSafe(new Date(nowMillis));
-    return fallback as string & tags.Format<"date-time">;
-  }
+  const token = {
+    access: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
 
   return {
     id: admin.id,
     email: admin.email,
-    password_hash: admin.password_hash,
-    full_name: admin.full_name ?? null,
-    phone_number: admin.phone_number ?? null,
-    status: typia.assert<"active" | "suspended" | "disabled">(admin.status),
+    full_name: admin.full_name,
     created_at: toISOStringSafe(admin.created_at),
     updated_at: toISOStringSafe(admin.updated_at),
     deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
-    shopping_mall_report_count: undefined,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: expToISOString(accessToken),
-      refreshable_until: expToISOString(refreshToken),
-    },
+    token,
+    roles: undefined,
   };
 }

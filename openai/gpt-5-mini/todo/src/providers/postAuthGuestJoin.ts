@@ -10,75 +10,91 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ITodoAppGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppGuest";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
-export async function postAuthGuestJoin(props: {
-  body: ITodoAppGuest.IJoin;
-}): Promise<ITodoAppGuest.IAuthorized> {
-  const { body } = props;
-
-  // Prepare values
-  const id = v4() as string & tags.Format<"uuid">;
-  const created_at = toISOStringSafe(new Date());
-
-  // Token lifetime values
-  const accessExp = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000)); // 1 hour
-  const refreshExp = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  ); // 7 days
-
+export async function postAuthGuestJoin(): Promise<ITodoAppGuest.IAuthorized> {
   try {
-    const created = await MyGlobal.prisma.todo_app_guest.create({
-      data: {
-        id,
-        email: body.email ?? null,
-        created_at: created_at,
-        status: "active",
-      },
-    });
+    const now = toISOStringSafe(new Date());
 
-    // JWT payloads
-    const accessToken = jwt.sign(
-      {
-        id: created.id,
-        type: "guest",
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    );
+    const guestId = v4() as string & tags.Format<"uuid">;
+    const activityId = v4() as string & tags.Format<"uuid">;
 
-    const refreshToken = jwt.sign(
-      {
-        id: created.id,
-        tokenType: "refresh",
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    );
+    const [createdGuest, createdActivity] = await MyGlobal.prisma.$transaction([
+      MyGlobal.prisma.todo_app_guest.create({
+        data: {
+          id: guestId,
+          created_at: now,
+          updated_at: now,
+        },
+      }),
+      MyGlobal.prisma.todo_app_user_activity_logs.create({
+        data: {
+          id: activityId,
+          todo_app_todouser_id: null,
+          todo_app_todouser_session_id: null,
+          todo_app_list_id: null,
+          todo_app_task_id: null,
+          activity_type: "guest_join",
+          details: `Guest created: ${guestId}`,
+          ip: null,
+          href: null,
+          created_at: now,
+          updated_at: now,
+        },
+      }),
+    ]);
 
-    const token: IAuthorizationToken = {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExp,
-      refreshable_until: refreshExp,
+    // Ephemeral session id for inclusion in tokens (not persisted)
+    const sessionId = v4() as string & tags.Format<"uuid">;
+
+    const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+    const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const token = {
+      access: jwt.sign(
+        {
+          type: "guest",
+          id: createdGuest.id,
+          session_id: sessionId,
+          created_at: toISOStringSafe(new Date()),
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "1h", issuer: "autobe" },
+      ),
+      refresh: jwt.sign(
+        {
+          type: "guest",
+          id: createdGuest.id,
+          session_id: sessionId,
+          tokenType: "refresh",
+          created_at: toISOStringSafe(new Date()),
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "7d", issuer: "autobe" },
+      ),
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
     };
 
-    const response: ITodoAppGuest.IAuthorized = {
-      id: created.id as string & tags.Format<"uuid">,
-      email: created.email ?? null,
-      created_at: created_at as string & tags.Format<"date-time">,
-      last_active_at: null,
-      status: created.status ?? null,
+    return {
+      id: createdGuest.id,
+      anonymousLabel: createdGuest.anonymous_label ?? undefined,
+      createdAt: toISOStringSafe(createdGuest.created_at),
+      updatedAt: toISOStringSafe(createdGuest.updated_at),
+      deletedAt: createdGuest.deleted_at
+        ? toISOStringSafe(createdGuest.deleted_at)
+        : null,
       token,
+      guest: {
+        id: createdGuest.id,
+        anonymousLabel: createdGuest.anonymous_label ?? undefined,
+        createdAt: toISOStringSafe(createdGuest.created_at),
+        updatedAt: toISOStringSafe(createdGuest.updated_at),
+        deletedAt: createdGuest.deleted_at
+          ? toISOStringSafe(createdGuest.deleted_at)
+          : null,
+      },
     };
-
-    return response;
   } catch (err) {
-    // Prisma known errors could be handled here, fallback to 500
+    // Unexpected errors should be translated to HttpException for controller
     throw new HttpException("Internal Server Error", 500);
   }
 }

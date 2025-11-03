@@ -5,33 +5,38 @@ import { patchDiscussionBoardAdminDiscussionBoardMembers } from "../../../../pro
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { getDiscussionBoardAdminDiscussionBoardMembersDiscussionBoardMemberId } from "../../../../providers/getDiscussionBoardAdminDiscussionBoardMembersDiscussionBoardMemberId";
+import { deleteDiscussionBoardAdminDiscussionBoardMembersDiscussionBoardMemberId } from "../../../../providers/deleteDiscussionBoardAdminDiscussionBoardMembersDiscussionBoardMemberId";
 
-import { IPageIDiscussionBoardDiscussionBoardMember } from "../../../../api/structures/IPageIDiscussionBoardDiscussionBoardMember";
-import { IDiscussionBoardDiscussionBoardMember } from "../../../../api/structures/IDiscussionBoardDiscussionBoardMember";
+import { IPageIDiscussionBoardMember } from "../../../../api/structures/IPageIDiscussionBoardMember";
+import { IDiscussionBoardMember } from "../../../../api/structures/IDiscussionBoardMember";
 
 @Controller("/discussionBoard/admin/discussionBoardMembers")
 export class DiscussionboardAdminDiscussionboardmembersController {
   /**
-   * Search and retrieve discussion board members with pagination and filters.
+   * Search and retrieve a filtered, paginated list of discussion board members.
    *
-   * This operation allows clients to search and retrieve a filtered, paginated
-   * list of discussion board registered members. It supports query parameters
-   * such as partial matching on email and display name, as well as sorting and
-   * pagination controls.
+   * Retrieve a filtered and paginated list of members registered on the
+   * discussion board system. This operation supports complex querying options
+   * such as search by email, filtering by account creation date range, and
+   * sorting. It enables administrators to manage and overview community members
+   * efficiently.
    *
-   * Authorization is required as member information is sensitive and should
-   * only be accessed by administrators or system staff.
+   * Security considerations restrict access to administrators only, ensuring
+   * member data confidentiality. The operation returns summarized member data
+   * optimized for list display, excluding sensitive fields such as password
+   * hashes.
    *
-   * The operation corresponds directly to the discussion_board_members table,
-   * reflecting properties such as email, display name, and timestamps. Results
-   * are returned in a paginated format optimized for UI listing.
+   * This operation directly interacts with the 'discussion_board_members' table
+   * as defined in the Prisma schema. It excludes members marked as deleted
+   * unless explicitly included in the query filters. Pagination metadata is
+   * included in the response for UI integration.
    *
-   * This search operation is foundational for user management features and may
-   * be used in conjunction with other member detail and update APIs.
+   * Related operations include retrieving member detail (`GET
+   * /discussionBoardMembers/{discussionBoardMemberId}`) and session management
+   * APIs.
    *
-   * Error handling includes validation of input search criteria and pagination
-   * parameters. Results include only existing members who are not soft-deleted
-   * (deleted_at is null).
+   * Errors such as unauthorized access or invalid query parameters will result
+   * in appropriate HTTP error codes and messages.
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering
@@ -43,8 +48,8 @@ export class DiscussionboardAdminDiscussionboardmembersController {
     @AdminAuth()
     admin: AdminPayload,
     @TypedBody()
-    body: IDiscussionBoardDiscussionBoardMember.IRequest,
-  ): Promise<IPageIDiscussionBoardDiscussionBoardMember> {
+    body: IDiscussionBoardMember.IRequest,
+  ): Promise<IPageIDiscussionBoardMember.ISummary> {
     try {
       return await patchDiscussionBoardAdminDiscussionBoardMembers({
         admin,
@@ -57,27 +62,25 @@ export class DiscussionboardAdminDiscussionboardmembersController {
   }
 
   /**
-   * Retrieve a specific discussion board member by ID.
+   * Retrieve details of a discussion board member.
    *
-   * Retrieve detailed profile information of a single discussion board member
-   * by their unique ID. This includes public member attributes such as email
-   * and display name but excludes sensitive password hashes.
+   * Retrieve detailed information of a specified discussion board member by
+   * their unique UUID identifier. This operation is restricted to
+   * administrative users who require member data for management purposes.
    *
-   * Access to this operation is restricted to administrators to ensure member
-   * confidentiality.
+   * The member's password hash is excluded from the response for security
+   * reasons. The operation returns comprehensive member fields including
+   * timestamps and email.
    *
-   * This operation corresponds to the discussion_board_members table in the
-   * Prisma schema and returns the member's full details except password
-   * hashes.
+   * Security enforcement ensures only admins have access. If the requested
+   * member ID does not exist, the operation responds with a 404 error.
    *
-   * If the member does not exist or is soft-deleted (deleted_at is not null),
-   * the operation returns a not found error.
-   *
-   * This function supports administrative user management workflows.
+   * This operation interfaces directly with the 'discussion_board_members'
+   * database table as reflected in the system schema.
    *
    * @param connection
-   * @param discussionBoardMemberId Unique identifier of the discussion board
-   *   member
+   * @param discussionBoardMemberId Unique UUID identifier of the target
+   *   discussion board member
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":discussionBoardMemberId")
@@ -86,9 +89,57 @@ export class DiscussionboardAdminDiscussionboardmembersController {
     admin: AdminPayload,
     @TypedParam("discussionBoardMemberId")
     discussionBoardMemberId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardDiscussionBoardMember> {
+  ): Promise<IDiscussionBoardMember> {
     try {
       return await getDiscussionBoardAdminDiscussionBoardMembersDiscussionBoardMemberId(
+        {
+          admin,
+          discussionBoardMemberId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a discussion board member account by ID.
+   *
+   * This API endpoint facilitates the permanent removal of a member account
+   * identified by its unique ID from the discussion_board_members table.
+   *
+   * Given the sensitive nature of member accounts, this operation is restricted
+   * to administrators or authorized personnel only to prevent unauthorized
+   * deletions.
+   *
+   * The deletion is a hard delete, fully purging the record from the database
+   * without any soft deletion or archival. All sessions and related
+   * member-associated data are expected to be cleaned via cascading or
+   * application logic.
+   *
+   * Unauthorized or unauthenticated attempts to execute this action will be
+   * rejected to safeguard user data integrity.
+   *
+   * No request body is required since deletion is based solely on provided
+   * member identifier.
+   *
+   * Successful execution confirms complete member removal from the system.
+   *
+   * @param connection
+   * @param discussionBoardMemberId Unique identifier of the target discussion
+   *   board member to delete
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":discussionBoardMemberId")
+  public async erase(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("discussionBoardMemberId")
+    discussionBoardMemberId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteDiscussionBoardAdminDiscussionBoardMembersDiscussionBoardMemberId(
         {
           admin,
           discussionBoardMemberId,

@@ -1,48 +1,98 @@
-# Service Overview for Economic/Political Discussion Board
+# Requirements Analysis Report for Discussion Board Service
 
-## Service Vision
-The goal of this service is to provide an open and accessible digital platform where users can discuss, debate, and share ideas related to economic and political topics. The service aims to facilitate thoughtful, high-quality discussions for individuals ranging from casual observers to engaged citizens and active debaters. It seeks to lower the barriers to participating in online conversations about complex societal issues by prioritizing simple workflows and intuitive design, making it especially welcoming to those unfamiliar with traditional forum structures.
+## Functional Requirements
 
-## Business Model
+### Article Management
+- WHEN a registered user submits a new article, THE system SHALL allow the user to write text content, attach zero or more images, and attach zero or more files (subject to file restrictions listed under Non-Functional Requirements).
+- WHEN an article is created, THE system SHALL record the author, date/time of creation, and all attachments to the article.
+- WHEN a user edits their own article, THE system SHALL permit editing of title, body, and attachments, provided the article is not deleted.
+- IF a user attempts to edit or delete another user's article, THEN THE system SHALL deny access and return an appropriate error message.
+- WHEN a user deletes their own article, THE system SHALL mark the article as deleted and hide it from standard user views while preserving it for administrative review and audit.
+- WHEN an admin deletes any article, THE system SHALL permanently remove the article and all associated comments and attachments, ensuring this action is audited for traceability.
 
-### Why This Service Exists
-Online spaces for economic and political discussion are often fragmented, intimidating, or overly technical, discouraging broad participation. Many available platforms are driven by advertising, have strict moderation, or focus on entertainment rather than thoughtful civil discourse. Our discussion board exists to fill a gap: to provide a focused, user-friendly, and minimally moderated environment where newcomers, students, enthusiasts, and experienced participants can engage on equal footing about current events and foundational economic or political concepts.
+### Commenting and Discussions
+- WHEN a registered user views an article, THE system SHALL allow them to post comments beneath the article, including plain text (no images or files required in comments).
+- WHEN a user comments, THE system SHALL record the commenter, date/time, and comment content.
+- WHEN a user deletes their own comment, THE system SHALL mark the comment as deleted and hide it from normal user views.
+- IF a user attempts to edit or delete another user's comments, THEN THE system SHALL deny access and notify the user accordingly.
+- WHEN an admin deletes a comment, THE system SHALL permanently remove the comment, logging the action for records.
 
-### Revenue Strategy
-Initially, the platform will launch with a community-driven and ad-free model to prioritize growth and openness. Over time, potential revenue streams may include non-intrusive advertising, optional supporter subscriptions (for badge or cosmetic account upgrades), or institutional sponsorships. The platform does not rely on charging typical members for core functionality.
+### Attachment Support (Articles)
+- WHEN a user creates or edits an article, THE system SHALL permit attaching image files (such as JPEG, PNG) and non-image files (such as PDF, DOCX, XLSX) per rules below.
+- WHEN an article attachment is uploaded, THE system SHALL associate it only with that specific article and display download/view options with the article.
+- WHEN an admin or author removes an attachment while editing or moderating an article, THE system SHALL remove the file from the article and mark it for backend processing for deletion.
+- IF an attachment upload fails (e.g., unsupported file type, over size limit), THEN THE system SHALL provide a clear error message specifying the failure reason.
 
-### Growth Plan
-The service aims to achieve organic user growth through search and content shareability. Special effort will be made to ensure that all public topics are indexable by search engines, driving inbound traffic from people seeking answers or ongoing discussions about economic and political issues. Outreach to schools, universities, and civic groups will help seed new discussions and attract early adopters. Accessibility and ease-of-use will be regularly evaluated to ensure the community remains welcoming.
+### Profile and Settings
+- WHEN a user registers or updates their profile, THE system SHALL allow the member to specify a display name, email, password, and optionally an avatar image.
+- WHEN a user changes their email or password, THE system SHALL require secure validation (such as input of current password for change confirmation).
+- WHEN an admin accesses user management functions, THE system SHALL permit viewing, locking, or deleting any user profile except their own account.
 
-### Success Metrics
-- Monthly Active Users (MAU)
-- Number of topics and replies created per month
-- User retention rate after first registration
-- Average time to first reply per new topic
-- Percentage of posts receiving at least one response
-- Search query volume and traffic from external sources
-- Growth in unique registered members
+### Moderation and Administration
+- WHEN an admin views any article or comment, THE system SHALL permit editing or deleting the content, with all changes thoroughly logged for audit.
+- WHEN an admin finds abusive or illegal content, THE system SHALL provide a simple workflow to hide, edit, or remove the article/comment and optionally suspend or remove the offending user.
+- WHEN a critical moderation event occurs (such as mass deletion or emergency ban), THE system SHALL provide confirmation and a summary activity log for traceability.
 
-## Target Audience
-- Visitors (guests) with an interest in economic and political topics who want to browse and search discussions without needing an account
-- Members (registered users) who wish to post, reply, and participate more actively
-- Students, civic enthusiasts, or first-time forum participants seeking a low-barrier way to join in debates and conversations
-- Potential future group: Moderators or administrators (to be scaled up only if necessary, for basic management and health of the community)
 
-## Value Proposition
-- Simple, intuitive discussion experience intentionally designed for people new to forums and digital communities
-- Completely open access to all public discussions for guests, removing friction for reading and searching
-- Easy registration and login for users who want to post or reply, with privacy-respecting data practices
-- Focus exclusively on core civic and economic topics, filtering out off-topic and unrelated content
-- Lightweight role structure: guests (read/search only), members (full post/reply privileges), and optional admin oversight
-- Absence of complex voting, ranking, or reputation systems to keep discussions focused on dialogue, not competition
+## Non-Functional Requirements
 
-## Success Metrics
-To determine whether the service is meeting its business objectives, the following measurable criteria SHALL be tracked:
-- WHEN a new user registers, THE system SHALL monitor whether the user posts a topic or reply within their first week
-- THE system SHALL report monthly growth in both guest and member usage
-- THE system SHALL track the average number of replies received per topic and the time to first reply
-- WHEN a topic receives no replies for more than seven days, THE system SHALL prompt the community with a gentle nudge or suggestion
-- THE system SHALL provide metrics on retention rates for new members after one month
+### Simplicity and Minimalism
+- THE system SHALL prioritize easy, fast article posting and discussion with minimal user friction (no unnecessary required fields, no complex navigation, minimal steps per action).
+- WHILE operating, THE system SHALL maintain a clean, streamlined user experience and avoid excessive features that distract from the core posting/commenting flows.
 
-This service overview document sets the context for further details provided in supporting documents. For information regarding user journeys, specific use cases, and detailed requirements, refer to the [Service Operation Overview](./04-service-operation-overview.md), [Problem Definition](./02-problem-definition.md), and [Core Value Proposition](./03-core-value-proposition.md).
+### Performance and Reliability
+- WHEN a user loads pages with fewer than 50 articles or comments, THE system SHALL return content within 2 seconds in 95% or more of cases.
+- WHEN uploading images or files up to 10MB each, THE system SHALL complete uploads or return an error within 10 seconds in 98% or more of cases.
+- WHEN deleting or hiding content, THE system SHALL reflect the change in user-visible lists immediately upon action completion.
+
+### Availability and Access
+- THE system SHALL provide 99.5% or higher service uptime, excluding scheduled maintenance, measured over the previous 30 days.
+- WHERE system maintenance is scheduled, THE system SHALL notify users in advance and provide estimated downtime.
+
+### File Attachment Restrictions
+- THE system SHALL limit each attachment to a maximum size of 10MB.
+- THE system SHALL permit up to 10 attachments per article (combined images and files).
+- THE system SHALL only accept image files in JPEG or PNG format and document/file attachments in PDF, DOCX, or XLSX format.
+- IF a user attempts to upload unsupported file types or files over the allowed size/quantity, THEN THE system SHALL provide a clear error message and block the upload.
+
+### Usability
+- THE system SHALL ensure all error and confirmation messages are clear and helpful to guide end-users.
+- THE system SHALL support user operations (posting, commenting, uploading, editing, deleting) in a maximum of three steps for any action, ensuring no excessive navigation or workflow overhead.
+
+### Privacy & Compliance
+- THE system SHALL store user information and attachments securely and only for registered/logged-in users.
+- WHEN a user deletes their account, THE system SHALL remove personally identifiable information but retain article and comment records with anonymized author attributions for audit/history.
+- THE system SHALL comply with applicable privacy regulations (such as GDPR/KR-PIPA) for data storage, retention, and user consent.
+
+
+## Acceptance Criteria
+
+| Requirement                         | Acceptance Criteria                                                    |
+|-------------------------------------|-----------------------------------------------------------------------|
+| Article Creation, Editing, Deletion | Users can reliably create, edit, delete their own articles; no cross-user edits permitted; admins have full control, all actions are logged. |
+| Commenting                          | Users can add/delete their own comments; no cross-user modifications; edits/deletes are handled immediately, actions visible to actors.      |
+| Attachments                         | Only allowed file types/sizes accepted; errors shown for invalid attempts; each article supports up to 10 attachments, each up to 10MB.      |
+| Profile & Settings                  | Users manage their own profiles and avatar images, secure updates; admins cannot modify their own admin accounts via user management.         |
+| Moderation/Admin Actions            | Admins can review, edit, or remove any post/comment/user; actions are logged for traceability; workflow includes clear confirmations.         |
+| Performance                         | All content, uploads, and actions process within specified time limits according to rules above, in 95-98% of realistic cases.                |
+| Simplicity/Workflow                 | All actions (post, comment, upload, moderate) possible in 3 steps or fewer, without confusion or unnecessary steps.                           |
+| Privacy/Compliance                  | PII is only visible to the owner/admin, anonymized after user deletion; data handling complies with legal requirements.                        |
+
+
+## Process Flow: Article Creation and Attachment (Mermaid)
+
+```mermaid
+graph LR
+  A["User Logs In"] --> B["Navigate to Article Creation"]
+  B --> C["Enter Article Title/Body"]
+  C --> D["Add Attachments (Optional)"]
+  D --> E["Submit Article"]
+  E --> F["System Validates Input"]
+  F --> G{"Validation Passes?"}
+  G -->|"Yes"| H["Article Created, User Notified"]
+  G -->|"No"| I["Show Error (File Type/Size/Content)"]
+```
+
+---
+
+All requirements above SHALL be interpreted in natural language and business terms only. API, database, or UX implementation specifics are strictly excluded from this document.

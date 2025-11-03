@@ -1,32 +1,44 @@
 import { Module } from "@nestjs/common";
 
-import { AuthGuestController } from "./controllers/auth/guest/AuthGuestController";
-import { AuthMemberController } from "./controllers/auth/member/AuthMemberController";
+import { AuthUserController } from "./controllers/auth/user/AuthUserController";
 import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
-import { DiscussionboardAdminMembersController } from "./controllers/discussionBoard/admin/members/DiscussionboardAdminMembersController";
-import { DiscussionboardMemberMembersController } from "./controllers/discussionBoard/member/members/DiscussionboardMemberMembersController";
+import { DiscussionboardAdminUsersController } from "./controllers/discussionBoard/admin/users/DiscussionboardAdminUsersController";
+import { DiscussionboardUserUsersController } from "./controllers/discussionBoard/user/users/DiscussionboardUserUsersController";
+import { DiscussionboardUserUsersSessionsController } from "./controllers/discussionBoard/user/users/sessions/DiscussionboardUserUsersSessionsController";
+import { DiscussionboardAdminUsersSessionsController } from "./controllers/discussionBoard/admin/users/sessions/DiscussionboardAdminUsersSessionsController";
 import { DiscussionboardAdminAdminsController } from "./controllers/discussionBoard/admin/admins/DiscussionboardAdminAdminsController";
-import { DiscussionboardTopicsController } from "./controllers/discussionBoard/topics/DiscussionboardTopicsController";
-import { DiscussionboardMemberTopicsController } from "./controllers/discussionBoard/member/topics/DiscussionboardMemberTopicsController";
-import { DiscussionboardAdminTopicsController } from "./controllers/discussionBoard/admin/topics/DiscussionboardAdminTopicsController";
-import { DiscussionboardTopicsRepliesController } from "./controllers/discussionBoard/topics/replies/DiscussionboardTopicsRepliesController";
-import { DiscussionboardMemberTopicsRepliesController } from "./controllers/discussionBoard/member/topics/replies/DiscussionboardMemberTopicsRepliesController";
-import { DiscussionboardAdminTopicsRepliesController } from "./controllers/discussionBoard/admin/topics/replies/DiscussionboardAdminTopicsRepliesController";
+import { DiscussionboardAdminAdminsSessionsController } from "./controllers/discussionBoard/admin/admins/sessions/DiscussionboardAdminAdminsSessionsController";
+import { DiscussionboardUserArticlesController } from "./controllers/discussionBoard/user/articles/DiscussionboardUserArticlesController";
+import { DiscussionboardAdminArticlesController } from "./controllers/discussionBoard/admin/articles/DiscussionboardAdminArticlesController";
+import { DiscussionboardUserArticlesAttachmentsController } from "./controllers/discussionBoard/user/articles/attachments/DiscussionboardUserArticlesAttachmentsController";
+import { DiscussionboardAdminArticlesAttachmentsController } from "./controllers/discussionBoard/admin/articles/attachments/DiscussionboardAdminArticlesAttachmentsController";
+import { DiscussionboardUserArticlesCommentsController } from "./controllers/discussionBoard/user/articles/comments/DiscussionboardUserArticlesCommentsController";
+import { DiscussionboardAdminArticlesCommentsController } from "./controllers/discussionBoard/admin/articles/comments/DiscussionboardAdminArticlesCommentsController";
+import { DiscussionboardAdminAbusereportsController } from "./controllers/discussionBoard/admin/abuseReports/DiscussionboardAdminAbusereportsController";
+import { DiscussionboardUserAbusereportsController } from "./controllers/discussionBoard/user/abuseReports/DiscussionboardUserAbusereportsController";
+import { DiscussionboardAdminModerationactionsController } from "./controllers/discussionBoard/admin/moderationActions/DiscussionboardAdminModerationactionsController";
+import { DiscussionboardAdminAuditlogsController } from "./controllers/discussionBoard/admin/auditLogs/DiscussionboardAdminAuditlogsController";
 
 @Module({
   controllers: [
-    AuthGuestController,
-    AuthMemberController,
+    AuthUserController,
     AuthAdminController,
-    DiscussionboardAdminMembersController,
-    DiscussionboardMemberMembersController,
+    DiscussionboardAdminUsersController,
+    DiscussionboardUserUsersController,
+    DiscussionboardUserUsersSessionsController,
+    DiscussionboardAdminUsersSessionsController,
     DiscussionboardAdminAdminsController,
-    DiscussionboardTopicsController,
-    DiscussionboardMemberTopicsController,
-    DiscussionboardAdminTopicsController,
-    DiscussionboardTopicsRepliesController,
-    DiscussionboardMemberTopicsRepliesController,
-    DiscussionboardAdminTopicsRepliesController,
+    DiscussionboardAdminAdminsSessionsController,
+    DiscussionboardUserArticlesController,
+    DiscussionboardAdminArticlesController,
+    DiscussionboardUserArticlesAttachmentsController,
+    DiscussionboardAdminArticlesAttachmentsController,
+    DiscussionboardUserArticlesCommentsController,
+    DiscussionboardAdminArticlesCommentsController,
+    DiscussionboardAdminAbusereportsController,
+    DiscussionboardUserAbusereportsController,
+    DiscussionboardAdminModerationactionsController,
+    DiscussionboardAdminAuditlogsController,
   ],
 })
 export class MyModule {}

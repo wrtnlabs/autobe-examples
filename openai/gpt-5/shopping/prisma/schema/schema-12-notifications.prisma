@@ -1,0 +1,453 @@
+/// Source business events that trigger notifications. Each record represents
+/// a deduplicated, idempotent event captured from domain systems (orders,
+/// shipments, payments, security). Notifications in {@link
+/// shopping_mall_notifications} may be produced from a single event. Events
+/// use actor_type/actor_ref_id and entity_type/entity_ref_id to reference
+/// the originating actor and the business subject without polymorphic
+/// nullable FKs.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_notification_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Canonical event type key (e.g., order_confirmed, shipment_shipped,
+  /// password_reset). Used for routing and templates.
+  event_type String
+  
+  /// High-level category for analytics and routing (transactional, security,
+  /// operational).
+  category String
+  
+  /// Actor type that produced the event (customer, seller, admin, system).
+  actor_type String
+  
+  /// Identifier of the event actor within its actor_type. Stored as a UUID
+  /// reference without polymorphic FK.
+  actor_ref_id String
+  
+  /// Business subject entity type for the event (order, shipment, payout,
+  /// dispute, etc.).
+  entity_type String
+  
+  /// UUID of the subject entity instance referenced by entity_type.
+  entity_ref_id String
+  
+  /// Idempotency key to prevent duplicate event ingestion across retries and
+  /// duplicate callbacks.
+  dedup_key String
+  
+  /// Optional URI to a persisted payload snapshot (e.g., JSON blob) for audit
+  /// and replay.
+  payload_uri String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_notifications shopping_mall_notifications[]
+  
+  @@unique([dedup_key])
+  @@index([created_at])
+  @@index([event_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([entity_type, entity_ref_id, created_at], map: "shopping_mall_notification_events_entity_type_entity_r_3a2983a9")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, actor_ref_id, created_at], map: "shopping_mall_notification_events_actor_type_actor_ref_f84f09b9")
+}
+
+/// Deliverable notification instances generated from events in {@link
+/// shopping_mall_notification_events} or created ad-hoc (e.g., compliance
+/// alerts). Tracks recipient addressing, channel, lifecycle status, and
+/// subject/body pointers. Failures are recorded in {@link
+/// shopping_mall_notification_failures}.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Origin event’s {@link shopping_mall_notification_events.id}. Optional for
+  /// ad-hoc notifications.
+  shopping_mall_notification_event_id String?
+  
+  /// Recipient actor type (customer, seller, admin, system).
+  recipient_type String
+  
+  /// UUID of the recipient within the specified recipient_type.
+  recipient_ref_id String
+  
+  /// Delivery channel (email, sms, push, in_app).
+  channel String
+  
+  /// Notification lifecycle status (queued, sent, failed, suppressed).
+  status String
+  
+  /// Human‑readable subject or title for the notification, if applicable to
+  /// the channel.
+  subject String?
+  
+  /// Optional URI pointer to the rendered body or template snapshot for audit.
+  body_uri String?
+  
+  /// Optional idempotency key at notification level, used for provider retries.
+  dedup_key String?
+  
+  /// Timestamp when the notification was confirmed sent by the provider.
+  sent_at DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  event shopping_mall_notification_events? @relation(fields: [shopping_mall_notification_event_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_notification_failures shopping_mall_notification_failures[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_notification_event_id, channel, recipient_type, recipient_ref_id], map: "shopping_mall_notifications_shopping_mall_notification_4825778e")
+  // spellchecker: ignore-next-line
+  @@index([recipient_type, recipient_ref_id, created_at], map: "shopping_mall_notifications_recipient_type_recipient_r_e5f445bc")
+  @@index([status, created_at])
+  @@index([channel, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_notification_event_id, created_at], map: "shopping_mall_notifications_shopping_mall_notification_858a85e1")
+  @@index([dedup_key])
+}
+
+/// Per-customer notification preferences that control categories/channels of
+/// notifications. Scopes to a single customer in {@link
+/// shopping_mall_customers}.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner customer’s {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Channel for the preference (email, sms, push, in_app).
+  channel String
+  
+  /// Notification category (transactional, security, operational, or a
+  /// specific business category).
+  category String
+  
+  /// Whether delivery is allowed for this (channel, category) pair for the
+  /// owner customer.
+  enabled Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, channel, category], map: "shopping_mall_user_notification_preferences_shopping_m_a1f41bd7")
+  // spellchecker: ignore-next-line
+  @@index([enabled, created_at], map: "shopping_mall_user_notification_preferences_enabled_cr_6811ac87")
+  // spellchecker: ignore-next-line
+  @@index([channel, category], map: "shopping_mall_user_notification_preferences_channel_ca_58b42478")
+}
+
+/// Per-seller notification preferences controlling categories/channels for
+/// the seller’s operational communications. Scopes to a single seller in
+/// {@link shopping_mall_sellers}.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner seller’s {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Channel for the preference (email, sms, push, in_app).
+  channel String
+  
+  /// Operational category (orders, shipments, returns, payouts, risk, etc.).
+  category String
+  
+  /// Whether delivery is allowed for this (channel, category) pair for the
+  /// owner seller.
+  enabled Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id, channel, category], map: "shopping_mall_seller_notification_preferences_shopping_b93e5af2")
+  // spellchecker: ignore-next-line
+  @@index([enabled, created_at], map: "shopping_mall_seller_notification_preferences_enabled__dc2ada6f")
+  // spellchecker: ignore-next-line
+  @@index([channel, category], map: "shopping_mall_seller_notification_preferences_channel__fa93fb50")
+}
+
+/// Delivery failure attempts linked to {@link shopping_mall_notifications}.
+/// Stores provider error codes and reasons for retries, suppression, and
+/// diagnostics.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_notification_failures {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Failed notification’s {@link shopping_mall_notifications.id}.
+  shopping_mall_notification_id String
+  
+  /// Channel used for the failed attempt.
+  channel String
+  
+  /// Attempt sequence number for the notification delivery.
+  attempt_no Int
+  
+  /// Provider or internal error code returned for the failure.
+  error_code String
+  
+  /// Human‑readable failure reason (e.g., bounce, blocked, invalid
+  /// destination, throttled).
+  reason String
+  
+  /// Optional URI to a provider response snapshot useful for diagnostics.
+  response_uri String?
+  
+  /// Failure recording timestamp (attempt time).
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  notification shopping_mall_notifications @relation(fields: [shopping_mall_notification_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_notification_id, attempt_no], map: "shopping_mall_notification_failures_shopping_mall_noti_742380b5")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_notification_id, created_at], map: "shopping_mall_notification_failures_shopping_mall_noti_d6207ce3")
+  @@index([channel, created_at])
+}
+
+/// Opt-in marketing subscriptions for actors across channels and topics
+/// (e.g., general_offers, seller_promotions, back_in_stock, price_drop).
+/// Uses actor_type + actor_ref_id for cross-actor ownership. Optionally
+/// references a target seller in {@link shopping_mall_sellers} for
+/// store‑specific promotions.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_marketing_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional target seller’s {@link shopping_mall_sellers.id} when a
+  /// subscription is scoped to a store (e.g., following a seller’s
+  /// promotions).
+  shopping_mall_seller_id String?
+  
+  /// Owner actor type (customer, seller, admin).
+  actor_type String
+  
+  /// UUID of the owner within the specified actor_type.
+  actor_ref_id String
+  
+  /// Marketing channel (email, sms, push, in_app).
+  channel String
+  
+  /// Marketing topic (general_offers, seller_promotions, back_in_stock,
+  /// price_drop, etc.).
+  topic String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  targetSeller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_marketing_subscriptions_shopping_mall_se_8c016eb0")
+  
+  // spellchecker: ignore-next-line
+  @@unique([actor_type, actor_ref_id, channel, topic, shopping_mall_seller_id], map: "shopping_mall_marketing_subscriptions_actor_type_actor_7c017f01")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, actor_ref_id, created_at], map: "shopping_mall_marketing_subscriptions_actor_type_actor_bd330527")
+  @@index([channel, created_at])
+  @@index([topic, created_at])
+}
+
+/// Suppression entries representing destinations or actors that must not
+/// receive marketing (e.g., legal opt-out, bounces, complaints). May capture
+/// hashed destinations to minimize PII exposure. Applies across channels and
+/// may be scoped to an actor via actor_type/actor_ref_id.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_marketing_suppressions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional actor type if suppression is scoped to a known actor.
+  actor_type String?
+  
+  /// Optional actor UUID when actor_type is specified.
+  actor_ref_id String?
+  
+  /// Channel the suppression applies to (email, sms, push, in_app).
+  channel String
+  
+  /// Hash or canonical token of the destination (e.g., email/phone hash) used
+  /// for deduplication without storing raw PII.
+  destination_hash String
+  
+  /// Business reason for suppression (unsubscribe, bounce, complaint,
+  /// legal_hold, etc.).
+  reason String
+  
+  /// Origin of the suppression (user_unsubscribe, provider_bounce,
+  /// admin_action, policy).
+  source String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([channel, destination_hash], map: "shopping_mall_marketing_suppressions_channel_destinati_dddc4e08")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, actor_ref_id, channel], map: "shopping_mall_marketing_suppressions_actor_type_actor__47982db6")
+  @@index([created_at])
+}
+
+/// Quiet hours policy per actor and channel to defer non-urgent messaging
+/// during a local time window. Uses actor_type + actor_ref_id for
+/// polymorphic ownership without nullable multi-FKs.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_quiet_hour_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor type to which the quiet hour applies (customer, seller, admin).
+  actor_type String
+  
+  /// Actor UUID the policy belongs to.
+  actor_ref_id String
+  
+  /// Channel constrained by the policy (email, sms, push, in_app).
+  channel String
+  
+  /// IANA timezone identifier for evaluating quiet hours (e.g., Asia/Seoul).
+  timezone String
+  
+  /// Quiet period start minute of day in [0, 1439].
+  start_minutes Int
+  
+  /// Quiet period end minute of day in [0, 1439].
+  end_minutes Int
+  
+  /// Whether the policy is currently active.
+  enabled Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([actor_type, actor_ref_id, channel], map: "shopping_mall_quiet_hour_policies_actor_type_actor_ref_14a12e96")
+  @@index([enabled, created_at])
+}

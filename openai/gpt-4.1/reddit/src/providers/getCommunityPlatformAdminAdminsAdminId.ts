@@ -14,19 +14,18 @@ export async function getCommunityPlatformAdminAdminsAdminId(props: {
   admin: AdminPayload;
   adminId: string & tags.Format<"uuid">;
 }): Promise<ICommunityPlatformAdmin> {
-  const record =
-    await MyGlobal.prisma.community_platform_admins.findUniqueOrThrow({
-      where: { id: props.adminId },
-    });
+  const admin = await MyGlobal.prisma.community_platform_admins.findUnique({
+    where: { id: props.adminId },
+  });
+  if (!admin || admin.deleted_at !== null) {
+    throw new HttpException("Admin not found", 404);
+  }
   return {
-    id: record.id,
-    email: record.email,
-    superuser: record.superuser,
-    status: record.status,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at: record.deleted_at
-      ? toISOStringSafe(record.deleted_at)
-      : undefined,
+    id: admin.id,
+    email: admin.email,
+    display_name: admin.display_name,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
+    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
   };
 }

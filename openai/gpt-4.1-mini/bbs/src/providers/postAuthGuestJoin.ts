@@ -7,37 +7,37 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+import { IGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IGuest";
 import { IDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardGuest";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthGuestJoin(props: {
-  body: IDiscussionBoardGuest.ICreate;
+  body: IGuest.IJoin;
 }): Promise<IDiscussionBoardGuest.IAuthorized> {
-  const { body } = props;
+  // Generate UUIDs for guest id and session id
+  const guestId: string & tags.Format<"uuid"> = v4();
+  const sessionId: string & tags.Format<"uuid"> = v4();
 
-  const now = toISOStringSafe(new Date());
+  // Current timestamp in ISO 8601 format
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
 
-  const newId = v4() as string & tags.Format<"uuid">;
-
-  const created = await MyGlobal.prisma.discussion_board_guests.create({
-    data: {
-      id: newId,
-      session_token: body.session_token,
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
-    },
-  });
-
-  const accessExpiry = toISOStringSafe(new Date(Date.now() + 3600 * 1000));
-  const refreshExpiry = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 3600 * 1000),
+  // Access token expiry timestamp (1 hour from now)
+  const expiredAt: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
   );
 
-  const accessToken = jwt.sign(
+  // Refresh token expiry timestamp (7 days from now)
+  const refreshableUntil: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  // Create JWT access token
+  const access = jwt.sign(
     {
-      sub: created.id,
-      session_token: created.session_token,
+      type: "guest",
+      id: guestId,
+      session_id: sessionId,
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -46,10 +46,14 @@ export async function postAuthGuestJoin(props: {
     },
   );
 
-  const refreshToken = jwt.sign(
+  // Create JWT refresh token
+  const refresh = jwt.sign(
     {
-      sub: created.id,
-      token_type: "refresh",
+      type: "guest",
+      id: guestId,
+      session_id: sessionId,
+      tokenType: "refresh",
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -59,12 +63,12 @@ export async function postAuthGuestJoin(props: {
   );
 
   return {
-    id: created.id,
+    id: guestId,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiry,
-      refreshable_until: refreshExpiry,
+      access,
+      refresh,
+      expired_at: expiredAt,
+      refreshable_until: refreshableUntil,
     },
   };
 }

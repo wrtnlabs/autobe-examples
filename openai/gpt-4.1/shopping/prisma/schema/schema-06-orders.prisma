@@ -1,0 +1,375 @@
+/// Core order entity representing a customer purchase transaction.
+/// References one customer and includes summary pricing and relationship to
+/// lines, splits, addresses, and payment attempts. Audit timestamps support
+/// full lifecycle traceability. Central to all business fulfillment and
+/// payment processes.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Purchasing customer's {@link shopping_customers.id}.
+  shopping_customer_id String
+  
+  /// Globally unique, human-readable order reference code (e.g.,
+  /// ORD-20240001). Used in customer and business workflows.
+  order_code String
+  
+  /// Total price for the entire order (aggregated from lines).
+  total_price Float
+  
+  /// Current order status (see status history for changes). E.g. 'pending',
+  /// 'paid', 'processing', 'fulfilled', etc.
+  status String
+  
+  /// Order creation timestamp.
+  created_at DateTime
+  
+  /// Order last updated timestamp.
+  updated_at DateTime
+  
+  /// Order soft delete timestamp; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_order_lines shopping_order_lines[]
+  shopping_order_splits shopping_order_splits[]
+  shopping_order_status_histories shopping_order_status_histories[]
+  shopping_payment_attempts shopping_payment_attempts[]
+  shopping_order_addresses shopping_order_addresses[]
+  shopping_refund_requests shopping_refund_requests[]
+  shopping_refund_request_items shopping_refund_request_items[]
+  shopping_shipments shopping_shipments[]
+  shopping_policy_violations shopping_policy_violations[]
+  
+  @@unique([order_code])
+  @@index([shopping_customer_id, created_at])
+}
+
+/// Individual order line item, representing a single SKU and its
+/// quantity/fulfillment. Linked to both shopping_orders and shopping_skus.
+/// Basis for refunds, fulfillment, status, and review eligibility.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_lines {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order's {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Purchased SKU's {@link shopping_skus.id}.
+  shopping_sku_id String
+  
+  /// Owning seller's {@link shopping_sellers.id}.
+  shopping_seller_id String
+  
+  /// Ordered quantity of the SKU.
+  quantity Int
+  
+  /// Final per-unit price for this SKU in the order (post-discount/tax).
+  unit_price Float
+  
+  /// Current fulfillment status of this item (e.g., pending, shipped,
+  /// delivered).
+  status String
+  
+  /// Order line creation time.
+  created_at DateTime
+  
+  /// Order line update time.
+  updated_at DateTime
+  
+  /// Soft delete for this line; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  sku shopping_skus @relation(fields: [shopping_sku_id], references: [id], onDelete: Cascade)
+  seller shopping_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_order_fulfillments shopping_order_fulfillments[]
+  shopping_refund_request_items shopping_refund_request_items[]
+  shopping_reviews shopping_reviews?
+  
+  @@index([shopping_sku_id])
+  
+  @@unique([shopping_order_id, shopping_sku_id])
+  @@index([shopping_seller_id])
+  @@index([status, created_at])
+}
+
+/// Represents split of an order, per seller, when a customer order contains
+/// items from multiple sellers. Each split is processed, fulfilled, and
+/// tracked independently.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_splits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order's {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Seller for this split's {@link shopping_sellers.id}.
+  shopping_seller_id String
+  
+  /// Unique code for this split (order + seller). Used for tracking/reporting.
+  split_code String
+  
+  /// Subtotal price for this seller in this order, sum of related order lines.
+  subtotal_price Float
+  
+  /// Current status for the seller's portion (e.g., 'pending', 'fulfilled').
+  status String
+  
+  /// Split creation timestamp.
+  created_at DateTime
+  
+  /// Split last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete for this split; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  seller shopping_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_order_status_histories shopping_order_status_histories[]
+  
+  @@index([shopping_seller_id])
+  
+  @@unique([split_code])
+  @@unique([shopping_order_id, shopping_seller_id])
+  @@index([status, created_at])
+}
+
+/// Audit log of order and split status changes over time. Captures
+/// transition events, who/what triggered them, previous/new status,
+/// timestamp, and optional notes. Used for business auditing and
+/// troubleshooting.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_status_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order's {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Order split's {@link shopping_order_splits.id}, if status applies to a
+  /// split. Nullable.
+  shopping_order_split_id String?
+  
+  /// Previous status value.
+  from_status String
+  
+  /// New status value for the transition.
+  to_status String
+  
+  /// Actor/role/automated source that initiated the transition.
+  triggered_by String
+  
+  /// Optional freeform note about the event/context.
+  event_note String?
+  
+  /// Timestamp of status transition.
+  occurred_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  split shopping_order_splits? @relation(fields: [shopping_order_split_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_split_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_order_id, occurred_at], map: "shopping_order_status_histories_shopping_order_id_occu_e6759938")
+}
+
+/// Tracks all attempts to pay for an order (including failures, retries, or
+/// alternate payment methods). Links to core order; each record includes
+/// results and unique payment gateway identifiers as appropriate.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_payment_attempts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order this payment attempt is for: {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// External provider or gateway reference for this payment attempt. May be
+  /// empty until submitted to processor.
+  payment_reference String?
+  
+  /// Status for this attempt (e.g., pending, completed, failed, cancelled).
+  attempt_status String
+  
+  /// Total amount attempted to charge.
+  amount Float
+  
+  /// Timestamp of payment attempt creation.
+  attempted_at DateTime
+  
+  /// When payment attempt finished (succeed/failed); null if still pending.
+  completed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  @@unique([payment_reference])
+  @@index([shopping_order_id, attempted_at])
+}
+
+/// Actual fulfillment action for a given order line. Links to an order line
+/// with details such as fulfillment/shipping date, label, fulfillment
+/// address, and status. Multiple fulfillment records possible per line to
+/// support split-shipments or partial fill scenarios.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_fulfillments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order line being fulfilled: {@link shopping_order_lines.id}.
+  shopping_order_line_id String
+  
+  /// Seller fulfilling this order line: {@link shopping_sellers.id}.
+  shopping_seller_id String
+  
+  /// Fulfillment source address: {@link shopping_seller_addresses.id}
+  /// (warehouse, etc.).
+  shopping_seller_address_id String
+  
+  /// Tracking code/label for fulfillment event. Human-readable, unique for
+  /// this record.
+  fulfillment_code String
+  
+  /// Quantity filled in this fulfillment event.
+  quantity_fulfilled Int
+  
+  /// When fulfillment (handoff to carrier) completed.
+  fulfilled_at DateTime
+  
+  /// Current status (e.g. 'pending', 'shipped', 'delivered', 'cancelled').
+  status String
+  
+  /// Optional note for fulfillment details (instructions, etc).
+  note String?
+  
+  /// Fulfillment record creation time.
+  created_at DateTime
+  
+  /// Record update time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderLine shopping_order_lines @relation(fields: [shopping_order_line_id], references: [id], onDelete: Cascade)
+  seller shopping_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  sellerAddress shopping_seller_addresses @relation(fields: [shopping_seller_address_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_seller_id])
+  @@index([shopping_seller_address_id])
+  
+  @@unique([fulfillment_code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_order_line_id, fulfilled_at], map: "shopping_order_fulfillments_shopping_order_line_id_ful_5b61cc2f")
+}
+
+/// Stores delivery/billing address records associated to orders. Subsidiary
+/// record — not independently managed, but supports audit and business
+/// reporting in event of address changes. Kept for audit trail after order
+/// is completed.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_order_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order associated with this address: {@link shopping_orders.id}.
+  shopping_order_id String
+  
+  /// Address type, e.g. 'shipping', 'billing' (noted for each record).
+  type String
+  
+  /// Name of the delivery/billing recipient.
+  recipient_name String
+  
+  /// Contact phone for recipient (formatted as per local standards).
+  recipient_phone String
+  
+  /// Postal or ZIP code, as required by destination.
+  zip_code String
+  
+  /// Main street address (no apartment/extra details).
+  base_address String
+  
+  /// Apartment, suite, or additional info (optional).
+  detail_address String?
+  
+  /// City name/district for route assignments.
+  city String
+  
+  /// State, province, or region.
+  state_province String
+  
+  /// Country code (ISO 3166-1 or platform standard).
+  country String
+  
+  /// Address record creation time.
+  created_at DateTime
+  
+  /// Address record last update time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_id, type])
+}

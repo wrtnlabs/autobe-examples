@@ -1,500 +1,462 @@
-# Shopping Mall E-Commerce Platform - Complete Requirements Documentation
+# E-Commerce Shopping Mall Platform - Documentation Suite
 
-## Document Set Overview
+## Executive Summary
 
-This comprehensive requirements package contains 14 detailed documents defining all business requirements, user workflows, technical specifications, and operational policies for the Shopping Mall e-commerce platform. The platform enables customers to discover and purchase products from multiple sellers in a secure, trusted marketplace environment.
+The E-Commerce Shopping Mall Platform is a comprehensive, multi-stakeholder marketplace designed to connect customers with diverse sellers while providing seamless product discovery, purchasing, fulfillment, and post-purchase experiences. This platform serves as a unified marketplace where customers can browse products from multiple sellers, make purchases with confidence through secure payment processing, and sellers can reach a broad audience while managing their inventory and fulfillment operations independently.
 
-## Document List with Descriptions
+### Platform Vision
 
-### Core Platform Documentation
+**THE platform SHALL provide a trusted, scalable marketplace that enables customers to discover and purchase products from multiple sellers while offering sellers the tools and audience to grow their businesses—all while maintaining quality, security, and excellent customer experiences.**
 
-#### [00-toc.md - Table of Contents](./00-toc.md)
-**Purpose**: Navigation hub and project overview
-- Complete index of all 14 documentation files
-- Quick-reference guide for stakeholders and developers
-- Implementation phases and recommended reading order
-- Feature modules overview and dependencies
+### Core Value Proposition
 
-#### [01-service-overview.md - Service Overview](./01-service-overview.md)
-**Purpose**: Business foundation and strategic direction
-- Executive summary of the shopping mall platform
-- Market opportunity and competitive analysis
-- Business model and revenue strategy
-- Core value proposition for customers and sellers
-- Platform vision and long-term goals
-- Success metrics and KPIs
-- Target user personas and their pain points
-
-#### [02-user-roles-authentication.md - User Roles & Authentication](./02-user-roles-authentication.md)
-**Purpose**: Complete authentication and authorization framework
-- Four user roles: Guest, Customer, Seller, Admin
-- Detailed capabilities and limitations for each role
-- JWT token management and session handling
-- Password security policies
-- Two-factor authentication support
-- Complete permission matrix for all features
-- Role-based access control implementation
-
-#### [03-user-management-workflows.md - User Management Workflows](./03-user-management-workflows.md)
-**Purpose**: User lifecycle and account management
-- Customer registration and email verification
-- Login and session management
-- Customer profile and account settings
-- Multiple address management for delivery
-- Seller onboarding process and verification
-- Account deactivation and data handling
-- Password reset and security procedures
-- Account recovery options
-
-### Product & Inventory Management
-
-#### [04-product-catalog-management.md - Product Catalog Management](./04-product-catalog-management.md)
-**Purpose**: Product data structure and catalog organization
-- Product information schema and complete attributes
-- Category hierarchy and organization
-- Product variants and SKU system
-- Pricing and discount management
-- Product visibility and approval workflow
-- Seller product management capabilities
-- Product search and filtering features
-- Data validation and integrity requirements
-
-#### [05-inventory-management.md - Inventory Management](./05-inventory-management.md)
-**Purpose**: Real-time inventory tracking at SKU level
-- SKU-level inventory architecture
-- Stock quantity management and updates
-- Inventory transactions during orders, returns, cancellations
-- Low stock warnings and alerts
-- Inventory validation rules and overselling prevention
-- Inventory visibility for sellers and admins
-- Reporting and analytics capabilities
-- Performance and reliability requirements
-
-### Shopping & Order Processing
-
-#### [06-shopping-cart-wishlist.md - Shopping Cart & Wishlist](./06-shopping-cart-wishlist.md)
-**Purpose**: Customer shopping preparation features
-- Shopping cart management and persistence
-- Item addition, removal, and quantity adjustment
-- Cart validation and availability checking
-- Wishlist functionality and management
-- Cart-to-order conversion process
-- Business rules and constraints
-- Error handling and edge cases
-
-#### [07-payment-processing.md - Payment Processing](./07-payment-processing.md)
-**Purpose**: Payment workflows and transaction management
-- Supported payment methods (credit card, wallet, bank transfer)
-- Complete payment processing flow
-- Transaction lifecycle and status management
-- Payment security and PCI-DSS compliance
-- Fraud detection measures
-- Refund processing and payment reversals
-- Error handling and recovery procedures
-
-#### [08-order-processing.md - Order Processing](./08-order-processing.md)
-**Purpose**: Complete order lifecycle management
-- Order placement workflow and validation
-- Order creation and confirmation process
-- Order status lifecycle and transitions
-- Order details and record structure
-- Multiple items and multi-seller orders
-- Order fulfillment by sellers
-- Seller order view and management
-
-#### [09-shipping-tracking.md - Shipping & Tracking](./09-shipping-tracking.md)
-**Purpose**: Shipping management and customer visibility
-- Shipping methods and cost calculation
-- Delivery address validation
-- Shipping status tracking and updates
-- Customer tracking information
-- Status notifications and communications
-- Delivery confirmation
-- Return shipping workflows
-
-### Customer Experience & Reviews
-
-#### [10-reviews-ratings.md - Product Reviews & Ratings](./10-reviews-ratings.md)
-**Purpose**: Review system and social proof features
-- Review submission requirements and validation
-- 5-star rating system and calculations
-- Review content moderation and approval
-- Review visibility and display options
-- Seller response to reviews
-- Review analytics and insights
-- Business rules and constraints
-
-### Returns & Disputes
-
-#### [11-order-management-cancellation.md - Order Cancellation & Refunds](./11-order-management-cancellation.md)
-**Purpose**: Order cancellation, refund, and return processes
-- Order cancellation policy and windows
-- Cancellation eligibility rules by order status
-- Refund request process and workflow
-- Return procedures and tracking
-- Refund processing and payment handling
-- Partial and full refund calculation
-- Dispute resolution and escalation
-- Customer communication workflows
-
-### Dashboard & Administration
-
-#### [12-seller-dashboard.md - Seller Dashboard](./12-seller-dashboard.md)
-**Purpose**: Seller management and analytics interface
-- Sales analytics and performance metrics
-- Product management interface
-- Order management and fulfillment view
-- Inventory monitoring and adjustment
-- Revenue and commission tracking
-- Customer communication interface
-- Performance insights and recommendations
-- Account settings and preferences
-
-#### [13-admin-dashboard.md - Admin Dashboard](./13-admin-dashboard.md)
-**Purpose**: Administrative platform management
-- User management (customer, seller, admin)
-- Product approval and moderation
-- Order management and monitoring
-- Payment and commission processing
-- Dispute resolution interface
-- Platform analytics and reporting
-- System configuration and settings
-- Audit logging and compliance
-
-### Business Rules & Policies
-
-#### [14-business-rules-constraints.md - Business Rules & Constraints](./14-business-rules-constraints.md)
-**Purpose**: Operational policies and validation rules
-- Data validation requirements
-- Inventory management rules
-- Pricing and discount policies
-- Order processing rules
-- Payment validation rules
-- Refund and cancellation policies
-- Review moderation standards
-- Seller commission structures
-- Compliance and security rules
-
-## Architecture and Integration
-
-### System Components and Their Relationships
-
-The platform consists of interconnected functional modules:
-
-```mermaid
-graph TB
-    A["User Authentication<br/>(02-user-roles-authentication)"] --> B["User Management<br/>(03-user-management-workflows)"]
-    A --> C["Product Catalog<br/>(04-product-catalog-management)"]
-    C --> D["Inventory System<br/>(05-inventory-management)"]
-    
-    B --> E["Shopping Experience<br/>(06-shopping-cart-wishlist)"]
-    E --> F["Order Processing<br/>(08-order-processing)"]
-    
-    F --> G["Payment Processing<br/>(07-payment-processing)"]
-    G --> H["Shipping & Tracking<br/>(09-shipping-tracking)"]
-    
-    H --> I["Reviews & Ratings<br/>(10-reviews-ratings)"]
-    F --> J["Order Management<br/>(11-order-management-cancellation)"]
-    
-    C --> K["Seller Dashboard<br/>(12-seller-dashboard)"]
-    D --> K
-    F --> K
-    
-    A --> L["Admin Dashboard<br/>(13-admin-dashboard)"]
-    C --> L
-    F --> L
-    G --> L
-    J --> L
-    
-    M["Business Rules<br/>(14-business-rules-constraints)"] -.->|"Applied to all modules"| A
-    M -.-> C
-    M -.-> D
-    M -.-> F
-    M -.-> G
-    M -.-> J
-```
-
-## Key Platform Features
-
-### Customer Journey
-
-WHEN a customer accesses the platform, THE customer experiences the following journey:
-
-1. **Discovery Phase**
-   - Browse product catalog with search and filtering
-   - View product details, images, and variants
-   - Read customer reviews and ratings
-   - Save items to wishlist
-
-2. **Shopping Phase**
-   - Add selected items to shopping cart
-   - Review cart contents and adjust quantities
-   - Move items between cart and wishlist
-
-3. **Checkout Phase**
-   - Select or add delivery address
-   - Choose shipping method
-   - Select payment method
-   - Review order and apply discounts
-
-4. **Payment Phase**
-   - Process payment securely
-   - Receive order confirmation
-   - Order enters fulfillment workflow
-
-5. **Fulfillment Phase**
-   - Seller prepares and ships items
-   - Customer receives tracking information
-   - Track shipment in real-time
-
-6. **Delivery Phase**
-   - Product delivered to customer
-   - Delivery confirmation recorded
-   - Customer can submit review
-
-7. **Post-Purchase Phase**
-   - Write product reviews and ratings
-   - Request returns or refunds if needed
-   - Manage order history
-
-### Seller Operations
-
-WHEN a seller manages their business on the platform, THE seller performs:
-
-1. **Onboarding**
-   - Register seller account
-   - Submit business verification documents
-   - Complete account setup
-   - Receive verification approval
-
-2. **Product Management**
-   - Create product listings with variants
-   - Manage pricing and inventory
-   - Update product information
-   - Monitor product performance
-
-3. **Order Fulfillment**
-   - Receive new order notifications
-   - View order details and customer info
-   - Pack and prepare shipments
-   - Update order status and tracking
-
-4. **Business Management**
-   - Monitor sales and revenue
-   - View analytics and performance metrics
-   - Manage customer messages
-   - Track inventory levels
-   - Monitor ratings and reviews
-
-### Admin Operations
-
-WHEN an admin manages the platform, THE admin performs:
-
-1. **User Management**
-   - Verify new seller accounts
-   - Manage customer and seller accounts
-   - Handle account suspensions
-   - Create admin accounts
-
-2. **Content Moderation**
-   - Approve product submissions
-   - Remove non-compliant products
-   - Moderate reviews for policy violations
-   - Manage promotional content
-
-3. **Order and Payment Management**
-   - Monitor all platform orders
-   - Process refunds and handle disputes
-   - Manage payment transactions
-   - Calculate and process commissions
-
-4. **Dispute Resolution**
-   - Investigate customer complaints
-   - Evaluate seller misconduct claims
-   - Make resolution decisions
-   - Appeal high-value disputes
-
-5. **Platform Management**
-   - Configure business policies
-   - Manage promotional campaigns
-   - Monitor system health
-   - Generate business reports
-   - Access audit logs
-
-## User Roles and Permissions
-
-### Guest User
-- Browse product catalog
-- Search and filter products
-- View product details and reviews
-- Cannot purchase or create accounts
-
-### Customer
-- Complete profile with addresses
-- Search and browse products
-- Create wishlist
-- Manage shopping cart
-- Place and track orders
-- Submit reviews and ratings
-- Request refunds and returns
-
-### Seller
-- Create and manage products with variants
-- Manage inventory per SKU
-- View and fulfill orders
-- Access seller dashboard with analytics
-- Respond to customer reviews
-- Request support
-
-### Admin
-- Manage all user accounts
-- Approve and remove products
-- View all orders and transactions
-- Process refunds and handle disputes
-- Configure system settings
-- Access audit logs and reports
-
-## Implementation Recommendations
-
-### Phase 1: Foundation (Months 1-3)
-Implement user authentication, registration, and core account management:
-- User registration and email verification
-- Login and session management system
-- Customer and seller onboarding
-- Basic account settings
-
-### Phase 2: Product Catalog (Months 2-4)
-Implement product management and inventory system:
-- Product catalog with categories
-- SKU and variant management
-- Inventory tracking per SKU
-- Product search and filtering
-
-### Phase 3: Shopping and Orders (Months 3-6)
-Implement shopping cart, checkout, and order processing:
-- Shopping cart and wishlist
-- Payment processing integration
-- Order creation and management
-- Basic order fulfillment
-
-### Phase 4: Fulfillment (Months 5-7)
-Implement shipping and tracking:
-- Shipping method selection
-- Tracking integration
-- Delivery confirmation
-- Customer notifications
-
-### Phase 5: Reviews and Support (Months 6-8)
-Implement reviews, ratings, and customer support:
-- Review system with moderation
-- Rating calculations
-- Seller response system
-- Customer messaging
-
-### Phase 6: Returns and Disputes (Months 7-9)
-Implement cancellation, refund, and dispute resolution:
-- Cancellation workflow
-- Refund processing
-- Return management
-- Dispute resolution system
-
-### Phase 7: Analytics (Months 8-10)
-Implement seller and admin dashboards:
-- Seller analytics and metrics
-- Admin platform management
-- Financial reporting
-- Business intelligence
-
-### Phase 8: Optimization (Months 9-12)
-Performance tuning and feature refinement:
-- System optimization
-- Security hardening
-- Scaling preparation
-- Documentation finalization
-
-## Business Model and Revenue
-
-THE shopping mall platform generates revenue through multiple streams:
-
-**Commission on Sales (40-50% of revenue)**
-- Transaction commission: 8-15% depending on product category
-- Premium seller services: $9.99-$99.99 per month
-- Reduced commission for higher tiers
-
-**Seller Services (20-30% of revenue)**
-- Featured product listings and promotion
-- Advanced analytics tools
-- Inventory management services
-- Marketing and optimization tools
-
-**Advertising and Promotions (15-25% of revenue)**
-- Sponsored product placements
-- Category page advertising
-- Search keyword bidding
-- Email marketing campaigns
-
-**Payment Processing (10-20% of revenue)**
-- Processing fees from payment gateway
-- Installment payment options
-- Digital wallet integration
-
-## Success Metrics
-
-THE platform defines success through measurable KPIs:
-
-**User Metrics**
-- 100,000+ customers by end of Year 1
-- 1,000+ sellers by end of Year 1
-- 50%+ customer retention rate
-- 80%+ seller retention rate
-
-**Transaction Metrics**
-- $5-10M GMV (Gross Merchandise Value) Year 1
-- $50-100M GMV Year 2
-- 95%+ order fulfillment rate
-- 90%+ on-time delivery rate
-
-**Business Metrics**
-- Break-even by Month 18
-- 15%+ net margins by Year 3
-- NPS score of 45+ from customers
-- NPS score of 40+ from sellers
-
-## Data Security and Compliance
-
-THE platform implements comprehensive security measures:
-
-**Data Protection**
-- End-to-end encryption for payments
-- PCI-DSS compliance for payment processing
-- GDPR compliance for customer data
-- Regular security audits
-
-**Fraud Prevention**
-- Real-time fraud detection
-- Chargeback management
-- Seller verification processes
-- Customer dispute handling
-
-**Audit and Logging**
-- Complete action audit trails
-- Admin activity logging
-- Payment transaction records
-- Dispute resolution documentation
-
-## Next Steps for Development
-
-1. **Review All Documentation**: Development leads should review all 14 documents thoroughly
-2. **Technical Design**: Create technical architecture documents based on these requirements
-3. **Database Schema**: Design database schema implementing all business rules
-4. **API Specifications**: Create detailed API specifications for frontend integration
-5. **Testing Strategy**: Develop comprehensive test cases based on all requirements
-6. **Development Sprint Planning**: Plan development sprints aligned with implementation phases
+- **For Customers**: Access to diverse product selection from multiple sellers, competitive pricing, secure payment, reliable delivery, quality assurance through reviews and ratings, and comprehensive order tracking.
+- **For Sellers**: Direct access to a customer base, inventory management tools, order fulfillment capabilities, performance analytics, and a trusted brand association.
+- **For the Platform**: Commission-based revenue model, network effects, customer data insights, and recurring transaction volume.
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2024  
-**Status**: Production-Ready
+## Complete Documentation Suite
 
-All business requirements have been comprehensively documented. The development team has complete specifications to begin technical design and implementation. These requirements define the complete business functionality; developers have full autonomy over technical architecture, technology choices, and implementation approaches.
+This documentation provides comprehensive specifications for building the complete e-commerce platform. Below is the complete structure of all specification documents:
+
+### [01. Service Overview](./01-service-overview.md)
+**Purpose**: Establish the complete business foundation, market opportunity, value proposition, target markets, core objectives, and success metrics for the platform.
+
+**Key Coverage**:
+- Business model and market gap analysis
+- Value proposition for each stakeholder type
+- Target customer and seller segments
+- Revenue strategy and monetization model
+- Key success metrics and KPIs
+- Competitive positioning
+- Implementation approach and timeline
+
+**Audience**: Business stakeholders, leadership, product team
+
+---
+
+### [02. User Actors and Authentication](./02-user-actors-and-authentication.md)
+**Purpose**: Define all user types, their distinct roles, permissions, authentication mechanisms, and access control framework for the entire platform.
+
+**Key Coverage**:
+- Customer, seller, and admin actor definitions with complete permission matrices
+- Email-based registration and verification requirements
+- JWT-based authentication and session management
+- Password management (change, reset) workflows
+- Permission hierarchy and access control
+- Device and session management
+- Security standards and compliance requirements
+
+**Audience**: Development team, security team
+
+---
+
+### [03. Customer User Experience](./03-customer-user-experience.md)
+**Purpose**: Define customer-specific features and complete user journeys for registration, profile management, product discovery, shopping, and order placement.
+
+**Key Coverage**:
+- Customer registration and email verification workflow
+- Profile management and account settings
+- Multiple address management (default, billing, shipping)
+- Product browsing, filtering, and search capabilities
+- Shopping cart creation, modification, and persistence
+- Wishlist creation and management
+- Complete checkout and order placement workflow
+- Order confirmation and receipt generation
+
+**Audience**: Development team, product team, UX team
+
+---
+
+### [04. Product Catalog and Inventory](./04-product-catalog-and-inventory.md)
+**Purpose**: Specify product management features including catalog structure, product variants (SKU), inventory tracking, pricing, and availability management across multiple sellers.
+
+**Key Coverage**:
+- Product categorization and navigation hierarchy
+- Product variant management (colors, sizes, options, combinations)
+- SKU-level inventory tracking and availability
+- Pricing management including variant-specific pricing
+- Promotional pricing and discount mechanics
+- Stock visibility and overselling prevention
+- Product search and filtering capabilities
+- Product visibility and activation workflows
+
+**Audience**: Development team, seller operations team, inventory management
+
+---
+
+### [05. Seller Management and Operations](./05-seller-management-and-operations.md)
+**Purpose**: Define seller-specific features including registration, verification, product management, order fulfillment, and seller dashboard functionality.
+
+**Key Coverage**:
+- Seller registration and verification requirements
+- Seller profile and account management
+- Seller dashboard with KPI and performance metrics
+- Product upload, editing, and deactivation workflows
+- Seller inventory management interface
+- Order fulfillment and shipment tracking from seller perspective
+- Order status management and customer communication
+- Seller performance ratings and visibility metrics
+- Payment settlement and payout workflows
+
+**Audience**: Development team, seller operations team
+
+---
+
+### [06. Payment and Order Processing](./06-payment-and-order-processing.md)
+**Purpose**: Define payment workflows, order creation, payment processing integration, transaction tracking, and order status management throughout the fulfillment lifecycle.
+
+**Key Coverage**:
+- Supported payment methods (credit cards, digital wallets, etc.)
+- Payment gateway integration and processing
+- Order creation and validation workflows
+- Payment initiation, processing, and confirmation
+- Failed payment handling and retry mechanisms
+- Order status lifecycle (pending, confirmed, processing, shipped, delivered)
+- Receipt generation and transaction history
+- Payment reconciliation and settlement
+
+**Audience**: Development team, finance team, payment operations
+
+---
+
+### [07. Order Tracking and Shipping](./07-order-tracking-and-shipping.md)
+**Purpose**: Specify order tracking capabilities, shipping status updates, delivery notifications, and customer visibility into order fulfillment and delivery status.
+
+**Key Coverage**:
+- Order status tracking from fulfillment to delivery
+- Shipping carrier integration and tracking
+- Real-time status updates and notifications
+- Estimated delivery date calculations
+- Delivery confirmation workflows
+- Customer notification mechanisms (email, SMS, in-app)
+- Order tracking interface and information display
+- Exception handling for delayed or failed deliveries
+
+**Audience**: Development team, logistics team, customer service
+
+---
+
+### [08. Reviews, Ratings, and Feedback](./08-reviews-ratings-and-feedback.md)
+**Purpose**: Define product review and rating system allowing customers to provide feedback, including review moderation, rating aggregation, and influence on product visibility.
+
+**Key Coverage**:
+- Review and rating submission by verified purchasers
+- 1-5 star rating system with text feedback
+- Review moderation and filtering workflows
+- Rating aggregation and average calculation
+- Review display and sorting (helpful, recent, rating)
+- Impact of ratings on product search visibility
+- Review authenticity verification
+- Seller response to reviews
+
+**Audience**: Development team, quality assurance team, content moderation
+
+---
+
+### [09. Order Cancellation and Returns](./09-order-cancellation-and-returns.md)
+**Purpose**: Define cancellation, refund, and return workflows including customer eligibility, refund processing, return authorization, and dispute resolution mechanisms.
+
+**Key Coverage**:
+- Cancellation eligibility windows and policies
+- Cancellation request and approval workflows
+- Return eligibility criteria and time windows
+- Return authorization and request process
+- Return shipping and logistics management
+- Refund calculation and processing
+- Refund status tracking and notifications
+- Dispute resolution between customers and sellers
+- Prevention of abusive returns
+
+**Audience**: Development team, customer service team, operations
+
+---
+
+### [10. Admin Dashboard and Management](./10-admin-dashboard-and-management.md)
+**Purpose**: Specify administrative features including order management, product moderation, seller management, system analytics, and platform-wide control capabilities.
+
+**Key Coverage**:
+- Admin dashboard overview and key metrics
+- Order management and monitoring across all sellers
+- Product content moderation and visibility control
+- Seller account management and suspension capabilities
+- Dispute and complaint resolution workflows
+- Payment and financial management overview
+- Platform analytics and reporting
+- User management and account controls
+- System configuration and policy management
+
+**Audience**: Development team, admin operations team, business intelligence
+
+---
+
+### [11. Business Rules and Constraints](./11-business-rules-and-constraints.md)
+**Purpose**: Define core business rules, validation constraints, policies, and operational guidelines that govern platform behavior and user interactions.
+
+**Key Coverage**:
+- Data validation rules (formats, lengths, allowed values)
+- Business logic constraints (pricing, inventory, ordering)
+- Pricing and discount policy constraints
+- Seller and product policy enforcement
+- Customer service standards and SLAs
+- Concurrent operation handling
+- Edge case handling and error scenarios
+- System-wide performance and reliability constraints
+
+**Audience**: Development team, business operations team, QA team
+
+---
+
+## Platform Architecture Overview
+
+### User Actors and Roles
+
+The platform serves three primary user types, each with distinct capabilities and responsibilities:
+
+#### Customer Actor
+End-user consumers who discover and purchase products, manage their shopping experience, track orders, provide product feedback, and maintain their customer profiles.
+
+**Key Capabilities**:
+- Browse and search products across catalog
+- Manage shopping cart and wishlist
+- Place orders and make payments
+- Track order status and delivery
+- Access order history and receipts
+- Provide product reviews and ratings
+- Manage personal addresses and preferences
+- Request order cancellations and returns
+
+#### Seller Actor
+Business operators who list and manage products, fulfill orders, maintain inventory, monitor performance, and operate their online store within the platform.
+
+**Key Capabilities**:
+- Register and verify seller account
+- Upload and manage product catalog
+- Create product variants with pricing
+- Manage inventory and stock levels
+- View and fulfill customer orders
+- Track shipments and delivery
+- Monitor store performance metrics
+- Communicate with customers
+- Manage seller account settings
+
+#### Admin Actor
+Platform administrators with system-wide access to ensure quality, manage disputes, control seller access, monitor financial transactions, and maintain platform integrity.
+
+**Key Capabilities**:
+- Manage all customer accounts
+- Verify and manage seller accounts
+- Moderate product listings and content
+- Monitor and manage all orders
+- Handle disputes and complaints
+- Process refunds and adjustments
+- View comprehensive analytics and reports
+- Configure platform policies and settings
+- Suspend or remove bad actors
+
+---
+
+## Core Platform Capabilities
+
+### Product Discovery and Catalog
+
+**THE platform SHALL provide customers with comprehensive product discovery through:**
+- Hierarchical product categorization for intuitive browsing
+- Advanced search with keyword matching and filtering
+- Product filtering by attributes (price, rating, seller, etc.)
+- Product variants (colors, sizes, options) with clear differentiation
+- Detailed product information and high-quality images
+- Seller information and ratings associated with products
+- Customer reviews and ratings prominently displayed
+
+### Shopping and Cart Management
+
+**THE platform SHALL enable seamless shopping experiences through:**
+- Shopping cart creation and management with add/remove/quantity update capabilities
+- Cart persistence across sessions for logged-in customers
+- Wishlist functionality for future purchase tracking
+- Real-time inventory availability checking during cart operations
+- Clear pricing display with any applicable discounts or taxes
+- Saved shopping preferences for faster future purchases
+
+### Secure Order Processing
+
+**THE platform SHALL manage order creation and payment through:**
+- Multi-step checkout with address validation and confirmation
+- Multiple payment method support (credit cards, digital wallets)
+- Secure payment processing and PCI compliance
+- Real-time payment validation and confirmation
+- Automatic payment retry for transient failures
+- Clear order confirmation with receipt generation
+- Order data validation before placement to prevent errors
+
+### Order Fulfillment and Tracking
+
+**THE platform SHALL provide transparency through:**
+- Real-time order status updates from placement through delivery
+- Seller fulfillment and shipment management capabilities
+- Shipping carrier integration for tracking information
+- Estimated delivery date calculations and communications
+- Customer notifications for all order status changes
+- Comprehensive order history with access to past receipts and details
+- Order tracking interface with tracking number and carrier information
+
+### Trust and Quality Assurance
+
+**THE platform SHALL maintain quality through:**
+- Verified purchase reviews and ratings from customers
+- Rating aggregation and display on product listings
+- Review authenticity verification and moderation
+- Seller ratings based on order fulfillment and customer feedback
+- Customer communication through the platform for transparent resolution
+- Comprehensive dispute resolution mechanisms
+
+### Seller Tools and Control
+
+**THE platform SHALL empower sellers through:**
+- Comprehensive seller dashboard with store performance metrics
+- Inventory management at the SKU level with low-stock alerts
+- Order management and fulfillment workflows
+- Product upload and management tools
+- Performance analytics and visibility metrics
+- Store customization and branding options
+- Direct customer communication capabilities
+
+### Admin Controls and Oversight
+
+**THE platform SHALL provide administrators with:**
+- Complete visibility into all orders, products, and users
+- Product content moderation and visibility controls
+- Seller account management and suspension capabilities
+- Dispute resolution and refund processing
+- Financial transaction monitoring and reconciliation
+- Comprehensive analytics and reporting dashboards
+- System-wide policy configuration and enforcement
+
+---
+
+## Key Success Metrics
+
+**THE platform SHALL track and measure success through:**
+
+**Customer Metrics**:
+- Monthly Active Users (MAU) and Daily Active Users (DAU)
+- Customer acquisition cost (CAC)
+- Customer lifetime value (LTV)
+- Repeat purchase rate
+- Customer satisfaction rating
+- Average order value (AOV)
+
+**Transaction Metrics**:
+- Gross merchandise value (GMV)
+- Transaction volume (orders per period)
+- Payment success rate
+- Average order delivery time
+- Return/cancellation rate
+
+**Seller Metrics**:
+- Number of active sellers
+- Products per seller
+- Seller retention rate
+- Seller satisfaction scores
+- Order fulfillment time
+
+**Platform Metrics**:
+- Platform-wide uptime and reliability (99.5% target)
+- Average page load time and search response time
+- Customer review submission rate
+- Dispute resolution rate and customer satisfaction
+
+---
+
+## How to Use This Documentation
+
+### For Business Stakeholders
+Start with [01. Service Overview](./01-service-overview.md) to understand the business model, market opportunity, and platform vision. This provides the strategic context for all platform features.
+
+### For Development Team
+Follow this reading path:
+1. [01. Service Overview](./01-service-overview.md) - Understand the business context
+2. [02. User Actors and Authentication](./02-user-actors-and-authentication.md) - Understand user types and access control
+3. [04. Product Catalog and Inventory](./04-product-catalog-and-inventory.md) - Core data model
+4. [03. Customer User Experience](./03-customer-user-experience.md) - Customer workflows
+5. [05. Seller Management and Operations](./05-seller-management-and-operations.md) - Seller workflows
+6. [06. Payment and Order Processing](./06-payment-and-order-processing.md) - Order lifecycle
+7. [07. Order Tracking and Shipping](./07-order-tracking-and-shipping.md) - Fulfillment workflows
+8. [08. Reviews, Ratings, and Feedback](./08-reviews-ratings-and-feedback.md) - Quality mechanisms
+9. [09. Order Cancellation and Returns](./09-order-cancellation-and-returns.md) - Return workflows
+10. [10. Admin Dashboard and Management](./10-admin-dashboard-and-management.md) - Admin features
+11. [11. Business Rules and Constraints](./11-business-rules-and-constraints.md) - Validation and constraints
+
+### For Seller Operations Team
+Focus on:
+- [01. Service Overview](./01-service-overview.md) - Platform vision
+- [05. Seller Management and Operations](./05-seller-management-and-operations.md) - Seller capabilities
+- [04. Product Catalog and Inventory](./04-product-catalog-and-inventory.md) - Product and inventory management
+- [06. Payment and Order Processing](./06-payment-and-order-processing.md) - Order workflows
+- [10. Admin Dashboard and Management](./10-admin-dashboard-and-management.md) - Seller management from admin perspective
+
+### For Customer Experience Team
+Focus on:
+- [01. Service Overview](./01-service-overview.md) - Platform vision
+- [03. Customer User Experience](./03-customer-user-experience.md) - Customer workflows
+- [04. Product Catalog and Inventory](./04-product-catalog-and-inventory.md) - Product discovery
+- [08. Reviews, Ratings, and Feedback](./08-reviews-ratings-and-feedback.md) - Feedback mechanisms
+- [09. Order Cancellation and Returns](./09-order-cancellation-and-returns.md) - Customer service processes
+
+### For Quality Assurance Team
+Focus on:
+- [06. Payment and Order Processing](./06-payment-and-order-processing.md) - Transaction validation
+- [11. Business Rules and Constraints](./11-business-rules-and-constraints.md) - Validation rules
+- [04. Product Catalog and Inventory](./04-product-catalog-and-inventory.md) - Inventory constraints
+- [09. Order Cancellation and Returns](./09-order-cancellation-and-returns.md) - Edge cases and error handling
+
+---
+
+## Documentation Standards
+
+All documentation in this suite follows these standards:
+
+- **Business-Focused**: Documentation defines business requirements and user needs in natural language, not technical implementation
+- **EARS Format**: All applicable requirements use EARS (Easy Approach to Requirements Syntax) for clarity and testability
+- **Complete Specifications**: Each document provides comprehensive coverage of its domain with no ambiguity for development
+- **User-Centric**: Features are described from the perspective of how users interact with and benefit from the system
+- **Production-Ready**: Specifications are complete and actionable for immediate development
+
+---
+
+## Platform Scope and Scale
+
+### Functional Scope
+The platform encompasses the complete e-commerce lifecycle: product discovery, shopping, payment processing, order fulfillment, post-purchase support, and feedback mechanisms.
+
+### User Scale
+The platform is designed to scale from initial launch to support hundreds of thousands of customers and thousands of sellers, processing hundreds of thousands of transactions monthly.
+
+### Geographical Scope
+Initial launch focuses on Asia-Pacific region with established logistics and payment infrastructure, with capacity to expand to additional markets.
+
+### Performance Requirements
+
+**WHEN a customer searches for products, THE system SHALL return results within 2 seconds**
+
+**WHEN a customer loads a product detail page, THE page SHALL display within 1.5 seconds**
+
+**WHEN a customer places an order, THE system SHALL confirm the order within 3 seconds**
+
+**THE system SHALL remain available 99.5% of the time (allowing 3.6 hours of downtime monthly)**
+
+---
+
+## Related Documentation Structure
+
+This table of contents document provides navigation for the complete e-commerce platform specification suite. The 11 specification documents work together to provide comprehensive requirements for all platform features, user workflows, and business operations.
+
+Each specification document is self-contained but references other documents where integration points exist. Developers should use the suggested reading paths above to understand dependencies and data flow between modules.
+
+All documents maintain consistent formatting, EARS requirement syntax, and business-focused language suitable for both technical and business stakeholders.
+
+---
+
+> Developer Note: This documentation suite defines **business requirements and platform specification only**. All technical implementations (architecture, technology stack, APIs, database design, infrastructure) are at the discretion of the development team. The development team has full autonomy to choose optimal technical solutions that satisfy these business requirements.

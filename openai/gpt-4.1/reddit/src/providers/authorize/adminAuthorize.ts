@@ -1,21 +1,11 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
 
-/**
- * Provider function for authenticating platform administrators (admins).
- * Verifies JWT, role, and ensures the admin account is valid and active.
- *
- * @param request HTTP request object with headers
- * @returns AdminPayload
- * @throws ForbiddenException if authentication fails or account inactive
- */
 export async function adminAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
+  headers: { authorization?: string };
 }): Promise<AdminPayload> {
   const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
 
@@ -23,17 +13,15 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Admin is top-level: use id directly
+  // Ensure admin exists and is not soft-deleted
   const admin = await MyGlobal.prisma.community_platform_admins.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
-      status: "active"
+      deleted_at: null
     },
   });
-
   if (admin === null) {
-    throw new ForbiddenException("You're not enrolled or not active admin");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

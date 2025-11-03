@@ -1,0 +1,284 @@
+/// User accounts representing individuals who authenticate and manage their
+/// own todo lists. Each user has unique identity (email), secure password
+/// hash, account status tracking, and temporal audit fields. Users form the
+/// primary identity entity for the application.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for authentication and communication. Must follow
+  /// valid email format (RFC 5322). Used as the unique login identifier for
+  /// the user account.
+  email String
+  
+  /// Securely hashed password using bcrypt or Argon2. Never stored in
+  /// plaintext. Used to verify user identity during authentication. Hash is
+  /// generated server-side from user's plaintext password input.
+  password_hash String
+  
+  /// Current account status indicating whether user can access the system.
+  /// Valid values: 'active' (user can log in and access todos), 'inactive'
+  /// (user cannot log in, data preserved). Defaults to 'active' on account
+  /// creation.
+  status String
+  
+  /// Timestamp when the user registered and created their account.
+  /// Automatically set by system at account creation time. Never changes after
+  /// creation. Stored in UTC timezone.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to any user profile field (excluding
+  /// session/activity fields). Automatically updated whenever user information
+  /// changes. Stored in UTC timezone.
+  updated_at DateTime
+  
+  /// Timestamp indicating when the user account was deleted (soft delete).
+  /// NULL means account is active. When set, user cannot log in but data is
+  /// preserved for audit trail and recovery. Stored in UTC timezone.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_user_sessions todo_app_user_sessions[]
+  todo_app_audit_logs todo_app_audit_logs[]
+  todo_app_todos todo_app_todos[]
+  
+  @@unique([email])
+  @@index([status, created_at])
+}
+
+/// Session records tracking authenticated user connections. Each session
+/// represents one login session with JWT token references, connection
+/// metadata (IP, device info), and expiration tracking. Enables
+/// session-per-device support and audit trail of user activity. Sessions are
+/// created on successful authentication and invalidated on logout or
+/// expiration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key reference to the authenticated user's {@link
+  /// todo_app_users.id}. Each session belongs to exactly one user. Multiple
+  /// concurrent sessions allowed per user.
+  todo_app_user_id String
+  
+  /// IP address from which the user established this session. Used for
+  /// security monitoring, tracking login locations, and audit purposes.
+  /// Example: '192.168.1.100' or '2001:db8::1'.
+  ip String
+  
+  /// Connection URL / request URL when the session was established. Captures
+  /// the entry point for the session and referrer context.
+  href String
+  
+  /// Referrer URL indicating the previous page or application that led to this
+  /// session creation. Used for tracking traffic sources and user journey
+  /// analysis.
+  referrer String
+  
+  /// Timestamp when the session was established after successful user
+  /// authentication. Automatically set when user logs in. Stored in UTC
+  /// timezone.
+  created_at DateTime
+  
+  /// Timestamp when the session expires or was explicitly terminated by user
+  /// logout. NULL indicates session is still active. When set, user must
+  /// re-authenticate to continue using the application. Stored in UTC
+  /// timezone.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_user_id, created_at])
+}
+
+/// Administrator accounts representing system operators with elevated
+/// permissions. Admins manage user accounts, monitor system health, access
+/// audit logs, and perform administrative maintenance. Separate from regular
+/// users table to enforce distinct admin role and permission structure. Each
+/// admin authenticates with email and password, tracked independently from
+/// regular users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin's email address for authentication and administrative
+  /// communication. Must follow valid email format. Unique across admin
+  /// accounts. Used as the login identifier for admin authentication.
+  email String
+  
+  /// Securely hashed admin password using bcrypt or Argon2. Never stored in
+  /// plaintext. Used to verify admin identity during authentication. Generated
+  /// server-side from admin's plaintext password input.
+  password_hash String
+  
+  /// Current admin account status. Valid values: 'active' (admin can log in
+  /// and perform operations), 'inactive' (admin cannot log in). Controls
+  /// whether admin can access the system.
+  status String
+  
+  /// Timestamp when the admin account was created. Automatically set by
+  /// system. Never changes after account creation. Stored in UTC timezone.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to admin profile information.
+  /// Automatically updated when admin data changes. Stored in UTC timezone.
+  updated_at DateTime
+  
+  /// Timestamp when the admin account was deleted (soft delete). NULL
+  /// indicates active account. When set, admin cannot log in but account data
+  /// preserved for audit trail. Stored in UTC timezone.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_admin_sessions todo_app_admin_sessions[]
+  todo_app_audit_logs todo_app_audit_logs[]
+  
+  @@unique([email])
+  @@index([status, created_at])
+}
+
+/// Session records tracking authenticated admin connections and JWT token
+/// sessions. Each session represents one admin login with shorter timeout
+/// (15 minutes inactivity) than regular user sessions for enhanced security.
+/// Tracks connection metadata (IP, referrer) for admin action audit trail.
+/// Sessions created on successful admin authentication and invalidated on
+/// logout or expiration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key reference to the authenticated admin's {@link
+  /// todo_app_admins.id}. Each session belongs to exactly one admin. Multiple
+  /// concurrent sessions allowed per admin.
+  todo_app_admin_id String
+  
+  /// IP address from which the admin established this session. Used for
+  /// security monitoring, tracking admin login locations, and audit trail of
+  /// admin access points.
+  ip String
+  
+  /// Connection URL when the admin session was established. Captures the entry
+  /// point for the admin session.
+  href String
+  
+  /// Referrer URL indicating the source that led to this admin session
+  /// creation. Used for tracking admin access sources.
+  referrer String
+  
+  /// Timestamp when the admin session was established after successful
+  /// authentication. Automatically set when admin logs in. Stored in UTC
+  /// timezone.
+  created_at DateTime
+  
+  /// Timestamp when the session expires or was explicitly terminated by admin
+  /// logout. NULL indicates session is still active. Admin sessions expire
+  /// after 15 minutes of inactivity for security. Stored in UTC timezone.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_app_admins @relation(fields: [todo_app_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_admin_id, created_at])
+}
+
+/// Immutable audit trail recording all administrative actions for security,
+/// compliance, and accountability. Each log entry captures what admin
+/// performed what action, on what resource, when, and from where.
+/// Append-only table - entries never modified or deleted. Used for security
+/// monitoring, compliance reporting, investigating security incidents, and
+/// tracking admin accountability per requirements in 07-admin-features.md.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key reference to the admin who performed the action. {@link
+  /// todo_app_admins.id}. Links audit entry to the specific admin responsible
+  /// for the action.
+  todo_app_admin_id String
+  
+  /// Foreign key reference to the user affected by the admin action (if
+  /// applicable). {@link todo_app_users.id}. NULL if action doesn't target a
+  /// specific user (e.g., system configuration changes). Example: User ID of
+  /// deleted user account.
+  target_user_id String?
+  
+  /// Type of administrative action performed. Examples: 'user_created',
+  /// 'user_deleted', 'user_status_changed', 'password_reset',
+  /// 'config_updated', 'backup_initiated'. Enables filtering audit logs by
+  /// action category.
+  action_type String
+  
+  /// Detailed description of the action performed. Captures contextual
+  /// information about what the admin did and why. Example: 'User account
+  /// suspended due to security violation' or 'System configuration updated:
+  /// session timeout changed from 30 to 15 minutes'.
+  description String
+  
+  /// Previous value of the modified field (for update actions). Captured
+  /// before the change was applied. NULL for create or delete actions. Enables
+  /// tracking exactly what changed.
+  before_value String?
+  
+  /// New value of the modified field (for update actions). Captured after the
+  /// change was applied. NULL for delete actions. Enables tracking the new
+  /// state after admin action.
+  after_value String?
+  
+  /// IP address from which the admin performed the action. Used for tracking
+  /// admin activity location and detecting suspicious access patterns.
+  ip_address String
+  
+  /// Timestamp when the action was performed. Automatically set by system when
+  /// audit log entry is created. Stored in UTC timezone for accurate timeline
+  /// of admin actions.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_app_admins @relation(fields: [todo_app_admin_id], references: [id], onDelete: Cascade)
+  targetUser todo_app_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_admin_id, created_at])
+  @@index([action_type, created_at])
+  @@index([target_user_id, created_at])
+}

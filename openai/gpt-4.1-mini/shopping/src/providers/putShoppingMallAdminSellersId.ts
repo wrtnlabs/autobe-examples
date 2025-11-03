@@ -8,6 +8,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSession";
+import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function putShoppingMallAdminSellersId(props: {
@@ -15,7 +17,7 @@ export async function putShoppingMallAdminSellersId(props: {
   id: string & tags.Format<"uuid">;
   body: IShoppingMallSeller.IUpdate;
 }): Promise<IShoppingMallSeller> {
-  const { admin, id, body } = props;
+  const { id, body } = props;
 
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
     where: { id },
@@ -26,20 +28,29 @@ export async function putShoppingMallAdminSellersId(props: {
   }
 
   if (body.email !== undefined) {
-    throw new HttpException("Email cannot be changed", 400);
+    const existing = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
+      where: {
+        email: body.email,
+        id: { not: id },
+        deleted_at: null,
+      },
+    });
+    if (existing) {
+      throw new HttpException("Email already in use", 409);
+    }
   }
 
-  const updated_at = toISOStringSafe(new Date());
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
 
   const updated = await MyGlobal.prisma.shopping_mall_sellers.update({
     where: { id },
     data: {
+      email: body.email ?? undefined,
       password_hash: body.password_hash ?? undefined,
-      company_name: body.company_name ?? undefined,
-      contact_name: body.contact_name ?? undefined,
-      phone_number: body.phone_number ?? undefined,
-      status: body.status ?? undefined,
-      updated_at,
+      store_name: body.store_name ?? undefined,
+      deleted_at:
+        body.deleted_at === null ? null : (body.deleted_at ?? undefined),
+      updated_at: now,
     },
   });
 
@@ -47,12 +58,10 @@ export async function putShoppingMallAdminSellersId(props: {
     id: updated.id,
     email: updated.email,
     password_hash: updated.password_hash,
-    company_name: updated.company_name ?? null,
-    contact_name: updated.contact_name ?? null,
-    phone_number: updated.phone_number ?? null,
-    status: updated.status,
+    store_name: updated.store_name,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
+    deleted_at:
+      updated.deleted_at !== null ? toISOStringSafe(updated.deleted_at) : null,
   };
 }

@@ -1,3 +1,10 @@
+export * as sellerProfiles from "./sellerProfiles/index";
+export * as sellers from "./sellers/index";
+export * as productCategories from "./productCategories/index";
 export * as products from "./products/index";
-export * as inventory from "./inventory/index";
 export * as orders from "./orders/index";
+export * as shipmentTrackings from "./shipmentTrackings/index";
+export * as productReviews from "./productReviews/index";
+export * as skuInventories from "./skuInventories/index";
+export * as stockAdjustments from "./stockAdjustments/index";
+export * as lowStockAlerts from "./lowStockAlerts/index";

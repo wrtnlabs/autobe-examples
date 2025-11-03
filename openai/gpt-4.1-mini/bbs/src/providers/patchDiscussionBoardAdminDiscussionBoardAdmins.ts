@@ -7,80 +7,65 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IDiscussionBoardDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardDiscussionBoardAdmin";
-import { IPageIDiscussionBoardDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardDiscussionBoardAdmin";
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IPageIDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdmin";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function patchDiscussionBoardAdminDiscussionBoardAdmins(props: {
   admin: AdminPayload;
-  body: IDiscussionBoardDiscussionBoardAdmin.IRequest;
-}): Promise<IPageIDiscussionBoardDiscussionBoardAdmin.ISummary> {
-  const { body } = props;
-
-  const pageRaw = body.page ?? 1;
-  const limitRaw = body.limit ?? 10;
-  // Strip brands for prisma usage
-  const page = Number(pageRaw);
-  const limit = Number(limitRaw);
+  body: IDiscussionBoardAdmin.IRequest;
+}): Promise<IPageIDiscussionBoardAdmin.ISummary> {
+  const { admin, body } = props;
+  const page = body.page;
+  const limit = body.limit;
   const skip = (page - 1) * limit;
-
-  const searchTerm = body.search ?? null;
 
   const where = {
     deleted_at: null,
-    ...(searchTerm !== null
-      ? {
-          OR: [
-            { email: { contains: searchTerm } },
-            { display_name: { contains: searchTerm } },
-          ],
-        }
-      : {}),
+    ...(body.search !== undefined &&
+      body.search !== null && {
+        email: { contains: body.search },
+      }),
   };
 
-  const orderByOptions = ["email", "display_name", "created_at"] as const;
-  const orderDirOptions = ["asc", "desc"] as const;
+  const orderBy =
+    body.sortBy !== undefined && body.sortBy !== null
+      ? {
+          [body.sortBy]: (body.sortOrder === "asc" ? "asc" : "desc") satisfies
+            | "asc"
+            | "desc" as "asc" | "desc",
+        }
+      : { created_at: "desc" satisfies "asc" | "desc" as "asc" | "desc" };
 
-  const orderByField = orderByOptions.includes(body.order_by ?? "created_at")
-    ? body.order_by!
-    : "created_at";
-  const orderDirection = orderDirOptions.includes(
-    body.order_direction ?? "desc",
-  )
-    ? body.order_direction!
-    : "desc";
-
-  const [rows, total] = await Promise.all([
+  const [results, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_admins.findMany({
       where,
-      select: {
-        id: true,
-        email: true,
-        display_name: true,
-        created_at: true,
-        updated_at: true,
-      },
-      orderBy: { [orderByField]: orderDirection },
+      orderBy,
       skip,
       take: limit,
     }),
     MyGlobal.prisma.discussion_board_admins.count({ where }),
   ]);
 
+  const data = results.map((admin) => ({
+    id: admin.id,
+    email: admin.email,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
+    deleted_at:
+      admin.deleted_at !== null && admin.deleted_at !== undefined
+        ? toISOStringSafe(admin.deleted_at)
+        : null,
+  }));
+
   return {
     pagination: {
-      current: page,
-      limit: limit,
+      current: Number(page),
+      limit: Number(limit),
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: Math.max(1, Math.ceil(total / limit)),
     },
-    data: rows.map((row) => ({
-      id: row.id,
-      email: row.email,
-      display_name: row.display_name,
-      created_at: toISOStringSafe(row.created_at),
-      updated_at: toISOStringSafe(row.updated_at),
-    })),
+    data,
   };
 }

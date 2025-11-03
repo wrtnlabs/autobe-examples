@@ -1,13 +1,11 @@
 import { tags } from "typia";
 
-/**
- * Payload type for authenticated admin users. Represents the structure injected
- * into controller handlers.
- */
+/** Authenticated payload for Admin actor */
 export interface AdminPayload {
-  /** Unique admin ID (top-level user identifier). */
+  /** Top-level admin ID (UUID of shopping_admins row) */
   id: string & tags.Format<"uuid">;
-
-  /** Discriminator for role type. */
+  /** Session ID associated with the admin session (UUID) */
+  session_id: string & tags.Format<"uuid">;
+  /** Discriminator for admin role */
   type: "admin";
 }

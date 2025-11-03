@@ -2,74 +2,70 @@ import { Controller } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 import { postAuthModeratorJoin } from "../../../providers/postAuthModeratorJoin";
+import { ModeratorAuth } from "../../../decorators/ModeratorAuth";
+import { ModeratorPayload } from "../../../decorators/payload/ModeratorPayload";
 import { postAuthModeratorLogin } from "../../../providers/postAuthModeratorLogin";
 import { postAuthModeratorRefresh } from "../../../providers/postAuthModeratorRefresh";
 
-import { IEconPoliticalForumModerator } from "../../../api/structures/IEconPoliticalForumModerator";
+import { IDiscussionBoardModerator } from "../../../api/structures/IDiscussionBoardModerator";
 
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Register (join) a new moderator-account-capable registered user record in
-   * econ_political_forum_registereduser.
+   * Create a new moderator account (writes to discussion_board_moderator) and
+   * return initial authorization tokens.
    *
-   * Purpose and functionality: This endpoint allows a candidate moderator to
-   * register a new platform account. It operates against the registered account
-   * table econ_political_forum_registereduser and, where applicable, will
-   * enable subsequent linking to the moderator table
-   * econ_political_forum_moderator. The operation creates a new registered user
-   * record (fields referenced: username, email, password_hash, display_name,
-   * created_at) and returns initial authorization tokens.
+   * Purpose and overview: This operation registers a new moderator account and
+   * issues initial authorization credentials. It is implemented against the
+   * Prisma table discussion_board_moderator and uses the table fields (id,
+   * username, email, password_hash, created_at, deleted_at) to create and
+   * persist the moderator record.
    *
-   * Implementation details and required fields: The request body requires
-   * username and email and a password value that will be stored as
-   * password_hash by the service. The implementation must validate uniqueness
-   * against econ_political_forum_registereduser.username and
-   * econ_political_forum_registereduser.email and must set email_verified to
-   * false until verification completes. The response includes an authorization
-   * payload following the IEconPoliticalForumModerator.IAuthorized pattern.
+   * Implementation details and field usage: The implementation will write a new
+   * row into discussion_board_moderator with the provided username, email and a
+   * derived password_hash. The operation records created_at and leaves
+   * deleted_at null for active accounts. The returned authorization payload
+   * ties the created moderator.id to issued tokens and may create an initial
+   * session record in discussion_board_moderator_sessions.
    *
-   * Role-specific integration and business context: Although this operation
-   * creates a registered user, moderator privileges are represented in
-   * econ_political_forum_moderator (registereduser_id, is_active). The system
-   * may either auto-create a moderator record (subject to business rules) or
-   * require administrator linking. The description here references
-   * econ_political_forum_moderator.registereduser_id and
-   * econ_political_forum_moderator.is_active to clarify post-registration
-   * flows.
+   * Actor-specific integration and business context: This endpoint is public
+   * for onboarding privileged moderator accounts in environments where
+   * operator-managed moderator registration is required. Because the Prisma
+   * model includes deleted_at, the implementation must treat deleted_at as the
+   * moderator soft-delete marker when deciding whether an account is active and
+   * allowed to receive credentials.
    *
    * Security considerations within schema constraints: Passwords must never be
-   * returned; only password_hash is stored (in the database) and must be
-   * generated server-side. Email verification should be enforced
-   * (email_verified and verified_at fields on
-   * econ_political_forum_registereduser). The service must observe
-   * failed_login_attempts and locked_until business rules in later auth flows
-   * but those fields are not directly written by this endpoint except for
-   * initialization.
+   * returned; only password_hash is stored
+   * (discussion_board_moderator.password_hash). The operation should validate
+   * uniqueness of discussion_board_moderator.email and
+   * discussion_board_moderator.username (both unique in schema) and fail with
+   * 409 if duplicates exist. Any session creation should reference
+   * discussion_board_moderator_sessions to record ip, href, referrer and
+   * created_at.
    *
-   * Related operations and workflow integration: This operation is typically
-   * followed by email verification (which flips
-   * econ_political_forum_registereduser.email_verified and sets verified_at)
-   * and by administrator or moderator assignment workflows that create or
-   * activate an econ_political_forum_moderator record. See also login and
-   * refresh operations for session issuance and session management with
-   * econ_political_forum_sessions.
+   * Related operations and workflow integration: After successful join the
+   * consumer will typically call POST /auth/moderator/login to obtain ephemeral
+   * access tokens or use the issued initial tokens. Management operations (list
+   * or erase moderator sessions) interact with
+   * discussion_board_moderator_sessions for session lifecycle management.
    *
    * @param connection
-   * @param body Registration request for a moderator-capable account. The
-   *   request must include username and email; password is required and will be
-   *   stored as a hashed value (password_hash) server-side.
+   * @param body Moderator registration payload.
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
   public async join(
+    @ModeratorAuth()
+    moderator: ModeratorPayload,
     @TypedBody()
-    body: IEconPoliticalForumModerator.ICreate,
-  ): Promise<IEconPoliticalForumModerator.IAuthorized> {
+    body: IDiscussionBoardModerator.ICreate,
+  ): Promise<IDiscussionBoardModerator.IAuthorized> {
     try {
       return await postAuthModeratorJoin({
+        moderator,
         body,
       });
     } catch (error) {
@@ -79,56 +75,56 @@ export class AuthModeratorController {
   }
 
   /**
-   * Authenticate moderator (login) and create a session
-   * (econ_political_forum_sessions).
+   * Authenticate moderator and issue access credentials (reads/writes
+   * discussion_board_moderator and discussion_board_moderator_sessions).
    *
-   * Purpose and functionality: This endpoint authenticates a moderator-capable
-   * registered user by validating credentials against
-   * econ_political_forum_registereduser (username or email, and password). On
-   * successful authentication the service issues an access token and a refresh
-   * token and records a new session in econ_political_forum_sessions
-   * (session_token, refresh_token_hash, created_at, expires_at).
+   * Purpose and overview: Authenticate a moderator using supplied credentials
+   * and issue access and refresh credentials. This operation checks the
+   * discussion_board_moderator record (username or email) and validates the
+   * provided password against discussion_board_moderator.password_hash.
    *
-   * Implementation details and required fields: The request body typically
-   * includes usernameOrEmail and password. The implementation must consult
-   * econ_political_forum_registereduser.password_hash for verification, update
-   * last_login_at on success, and reset failed_login_attempts. The session
-   * record fields referenced include session_token, refresh_token_hash,
-   * ip_address, user_agent, last_active_at, and expires_at.
+   * Implementation details and field usage: On successful authentication the
+   * implementation may create a discussion_board_moderator_sessions row
+   * capturing ip, href, referrer, created_at and optional expired_at for
+   * session lifecycle tracking. The login flow must consult
+   * discussion_board_moderator.deleted_at to ensure suspended/soft-deleted
+   * accounts cannot log in.
    *
-   * Role-specific integration and business context: Login for a moderator must
-   * also check whether a moderator record exists and whether the moderator is
-   * active (econ_political_forum_moderator.is_active). The system should deny
-   * elevated moderation workflows if the linked econ_political_forum_moderator
-   * record is missing or marked inactive; however, login may still succeed for
-   * general registeredUser purposes.
+   * Actor-specific integration and business context: Moderators are privileged
+   * actors; the login flow should record an audit entry
+   * (discussion_board_audit_logs) and a moderation audit entry when applicable.
+   * The Prisma schema enforces unique email and username constraints which the
+   * login flow can use for lookup.
    *
-   * Security considerations within schema constraints: On failed authentication
-   * the implementation must increment
-   * econ_political_forum_registereduser.failed_login_attempts and set
-   * locked_until if thresholds are reached. Refresh tokens must be stored
-   * hashed in econ_political_forum_sessions.refresh_token_hash and rotated on
-   * use. Tokens must not expose password_hash or other secrets.
+   * Security considerations within schema constraints: Do not expose
+   * password_hash in responses. Implement standard protections (rate limiting
+   * and account lockout policies) using failed login counters stored outside
+   * the moderator row or via audit logs. Because moderator accounts are
+   * critical, any session creation must produce a
+   * discussion_board_moderator_sessions entry for traceability.
    *
-   * Related operations and workflow integration: This operation is commonly
-   * followed by refresh (to renew access tokens) and session revocation
-   * endpoints that update econ_political_forum_sessions.deleted_at for revoked
-   * sessions. See password reset operations if account recovery is needed.
+   * Related operations and workflow integration: Successful login returns an
+   * IDiscussionBoardModerator.IAuthorized response and enables subsequent calls
+   * to protected moderator endpoints (e.g., /auth/moderator/refresh, session
+   * management endpoints). Login failures should return 401 and must never
+   * reveal whether the username/email exists beyond a generic message.
    *
    * @param connection
-   * @param body Login credentials for a moderator-capable registered user
-   *   (username/email + password).
+   * @param body Moderator credential payload (username or email + password).
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
   public async login(
+    @ModeratorAuth()
+    moderator: ModeratorPayload,
     @TypedBody()
-    body: IEconPoliticalForumModerator.ILogin,
-  ): Promise<IEconPoliticalForumModerator.IAuthorized> {
+    body: IDiscussionBoardModerator.ILogin,
+  ): Promise<IDiscussionBoardModerator.IAuthorized> {
     try {
       return await postAuthModeratorLogin({
+        moderator,
         body,
       });
     } catch (error) {
@@ -138,53 +134,56 @@ export class AuthModeratorController {
   }
 
   /**
-   * Refresh access token using refresh token and rotate session
-   * (econ_political_forum_sessions).
+   * Refresh moderator access tokens using session records
+   * (discussion_board_moderator_sessions) and return renewed IAuthorized
+   * payload.
    *
-   * Purpose and functionality: This endpoint renews authentication for an
-   * existing session by accepting a refresh token and returning a new access
-   * token and rotated refresh token. It is tied to
-   * econ_political_forum_sessions (refresh_token_hash, expires_at) and
-   * econ_political_forum_registereduser for audit linking.
+   * Purpose and overview: Renew moderator access credentials using a valid
+   * refresh credential or active session record. The implementation reconciles
+   * the presented refresh token with session state tracked in
+   * discussion_board_moderator_sessions (id and expired_at) and the owning
+   * discussion_board_moderator.id.
    *
-   * Implementation details and required fields: The request must include the
-   * refresh token issued earlier. The service validates the refresh token
-   * against the stored refresh_token_hash in econ_political_forum_sessions and
-   * ensures the session has not expired or been revoked (deleted_at null). On
-   * success the service rotates the refresh token, updates refresh_token_hash
-   * and expires_at, and returns a new access token.
+   * Implementation details and field usage: The refresh operation verifies the
+   * session referenced in discussion_board_moderator_sessions is present and
+   * not expired (expired_at) and that the owning moderator record's deleted_at
+   * is null. On success it issues a new access token (and optionally a rotated
+   * refresh token) and may update the session record's expired_at to extend the
+   * sliding window.
    *
-   * Role-specific integration and business context: Refresh tokens renew access
-   * for moderator workflows; when used the operation should verify the
-   * underlying registered user account is not banned
-   * (econ_political_forum_registereduser.is_banned) and that any moderator
-   * linkage remains valid for elevated moderator actions.
+   * Actor-specific integration and business context: Refresh flows use
+   * discussion_board_moderator_sessions to audit activity (created_at, ip,
+   * href). Because the schema does not define a separate refresh token table
+   * for moderators, implementations may map refresh credentials to a session id
+   * stored in discussion_board_moderator_sessions.
    *
-   * Security considerations within schema constraints: Refresh token reuse or
-   * use after revocation must be treated as suspicious: the implementation
-   * should record such anomalies in econ_political_forum_audit_logs and may
-   * revoke sessions (set deleted_at on econ_political_forum_sessions) after
-   * evidence of compromise. Token rotation events should be auditable and
-   * recorded.
+   * Security considerations within schema constraints: Ensure that refresh
+   * requests validate session ownership (session.discussion_board_moderator_id)
+   * and reject refresh if session is missing or expired. Treat deleted_at on
+   * discussion_board_moderator as preventing refresh. Log refresh events in
+   * discussion_board_audit_logs for traceability.
    *
-   * Related operations and workflow integration: This operation integrates with
-   * logout/session-revoke endpoints that mark session records deleted_at and
-   * with password reset flows that should invalidate active refresh tokens upon
-   * successful password change.
+   * Related operations and workflow integration: This operation complements
+   * login and session-management endpoints. Clients should call this endpoint
+   * to maintain interactive moderator sessions; successful responses use the
+   * IDiscussionBoardModerator.IAuthorized response schema.
    *
    * @param connection
-   * @param body Refresh request containing the refresh token previously issued.
+   * @param body Refresh request payload (refresh token or session reference).
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")
   public async refresh(
+    @ModeratorAuth()
+    moderator: ModeratorPayload,
     @TypedBody()
-    body: IEconPoliticalForumModerator.IRefresh,
-  ): Promise<IEconPoliticalForumModerator.IAuthorized> {
+    body: IDiscussionBoardModerator.IRefresh,
+  ): Promise<IDiscussionBoardModerator.IAuthorized> {
     try {
       return await postAuthModeratorRefresh({
+        moderator,
         body,
       });
     } catch (error) {

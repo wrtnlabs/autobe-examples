@@ -1,18 +1,18 @@
 import { Module } from "@nestjs/common";
 
-import { AuthGuestJoinController } from "./controllers/auth/guest/join/AuthGuestJoinController";
-import { AuthGuestRefreshController } from "./controllers/auth/guest/refresh/AuthGuestRefreshController";
 import { AuthUserController } from "./controllers/auth/user/AuthUserController";
-import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
-import { TodolistUserTodolisttasksController } from "./controllers/todoList/user/todoListTasks/TodolistUserTodolisttasksController";
+import { TodoUserTodousersController } from "./controllers/todo/user/todoUsers/TodoUserTodousersController";
+import { TodoTodousersController } from "./controllers/todo/todoUsers/TodoTodousersController";
+import { TodoUserTodousersSessionsController } from "./controllers/todo/user/todoUsers/sessions/TodoUserTodousersSessionsController";
+import { TodoUserTodoitemsController } from "./controllers/todo/user/todoItems/TodoUserTodoitemsController";
 
 @Module({
   controllers: [
-    AuthGuestJoinController,
-    AuthGuestRefreshController,
     AuthUserController,
-    AuthAdminController,
-    TodolistUserTodolisttasksController,
+    TodoUserTodousersController,
+    TodoTodousersController,
+    TodoUserTodousersSessionsController,
+    TodoUserTodoitemsController,
   ],
 })
 export class MyModule {}

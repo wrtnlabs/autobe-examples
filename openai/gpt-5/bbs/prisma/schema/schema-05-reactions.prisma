@@ -1,0 +1,150 @@
+/// User single-like reactions on posts. Each row represents at most one
+/// reaction per (user, post) pair. The reaction is considered active when
+/// not soft-deleted (deleted_at is NULL). Designed to support toggle
+/// semantics by updating timestamps while preserving auditability.
+/// References {@link civic_board_users} as the reacting actor and {@link
+/// civic_board_posts} as the target content. Hidden or Deleted targets must
+/// block new reactions at the application layer; self-like is prevented by
+/// business rules.
+///
+/// @namespace Reactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_post_reactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reacting user's {@link civic_board_users.id}.
+  civic_board_user_id String
+  
+  /// Target post's {@link civic_board_posts.id}.
+  civic_board_post_id String
+  
+  /// Creation timestamp when the reaction was first added (Like on).
+  created_at DateTime
+  
+  /// Last update timestamp, including toggling operations.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp representing Like off toggle. NULL means the
+  /// reaction is currently active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user civic_board_users @relation(fields: [civic_board_user_id], references: [id], onDelete: Cascade)
+  post civic_board_posts @relation(fields: [civic_board_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([civic_board_user_id, civic_board_post_id], map: "civic_board_post_reactions_civic_board_user_id_civic_b_29e43a18")
+  @@index([civic_board_post_id, created_at])
+  @@index([civic_board_user_id, created_at])
+  @@index([civic_board_post_id, deleted_at])
+}
+
+/// User single-like reactions on comments. Each row represents at most one
+/// reaction per (user, comment) pair. The reaction is active when deleted_at
+/// is NULL, enabling toggle behavior without losing history. References
+/// {@link civic_board_users} as the reacting actor and {@link
+/// civic_board_comments} as the target comment. Hidden or Deleted targets
+/// must block new reactions at the application layer; self-like is prevented
+/// by business rules.
+///
+/// @namespace Reactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_comment_reactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reacting user's {@link civic_board_users.id}.
+  civic_board_user_id String
+  
+  /// Target comment's {@link civic_board_comments.id}.
+  civic_board_comment_id String
+  
+  /// Creation timestamp when the reaction was first added (Like on).
+  created_at DateTime
+  
+  /// Last update timestamp, including toggling operations.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp representing Like off toggle. NULL means the
+  /// reaction is currently active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user civic_board_users @relation(fields: [civic_board_user_id], references: [id], onDelete: Cascade)
+  comment civic_board_comments @relation(fields: [civic_board_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([civic_board_user_id, civic_board_comment_id], map: "civic_board_comment_reactions_civic_board_user_id_civi_dc820f7b")
+  // spellchecker: ignore-next-line
+  @@index([civic_board_comment_id, created_at], map: "civic_board_comment_reactions_civic_board_comment_id_c_ecc7af57")
+  // spellchecker: ignore-next-line
+  @@index([civic_board_user_id, created_at], map: "civic_board_comment_reactions_civic_board_user_id_crea_277aee69")
+  // spellchecker: ignore-next-line
+  @@index([civic_board_comment_id, deleted_at], map: "civic_board_comment_reactions_civic_board_comment_id_d_37b50b96")
+}
+
+/// Administrative policy controlling whether reactions are enabled and under
+/// what constraints. This table allows feature toggling and guardrails such
+/// as self-like prohibition and per-user rate limits. It is managed
+/// independently by admins and referenced by application logic at runtime.
+/// Does not denormalize any computed counters. Related entities: users
+/// {@link civic_board_users} for ownership context if needed; targets are
+/// {@link civic_board_posts} and {@link civic_board_comments}.
+///
+/// @namespace Reactions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model civic_board_reaction_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable policy code identifier (e.g., "default"). Used to select
+  /// the active configuration.
+  code String
+  
+  /// Whether reactions feature is globally enabled.
+  enabled Boolean
+  
+  /// Whether reactions are permitted on posts.
+  allow_on_posts Boolean
+  
+  /// Whether reactions are permitted on comments.
+  allow_on_comments Boolean
+  
+  /// Whether self-like is permitted. Should remain false to satisfy product
+  /// rules.
+  allow_self_like Boolean
+  
+  /// Optional cap on the number of reactions a single user may add per
+  /// calendar day. NULL means unlimited per this policy.
+  max_reactions_per_user_per_day Int?
+  
+  /// Creation timestamp of this policy row.
+  created_at DateTime
+  
+  /// Last update timestamp of this policy row.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for deprecated or replaced policies. NULL means
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@index([created_at])
+}

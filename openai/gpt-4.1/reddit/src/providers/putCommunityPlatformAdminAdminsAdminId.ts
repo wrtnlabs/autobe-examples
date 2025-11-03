@@ -15,90 +15,85 @@ export async function putCommunityPlatformAdminAdminsAdminId(props: {
   adminId: string & tags.Format<"uuid">;
   body: ICommunityPlatformAdmin.IUpdate;
 }): Promise<ICommunityPlatformAdmin> {
-  // 1. Fetch the target admin
-  const target = await MyGlobal.prisma.community_platform_admins.findFirst({
-    where: { id: props.adminId, deleted_at: null },
-  });
-  if (!target) {
-    throw new HttpException("Admin account not found or deleted", 404);
-  }
-
-  // 2. Authorization: only superuser admins can update other admins
-  // (non-superusers can only update themselves, and not superuser status!)
-  if (
-    props.admin.id !== target.id &&
-    !(
-      await MyGlobal.prisma.community_platform_admins.findFirst({
-        where: {
-          id: props.admin.id,
-          superuser: true,
-          deleted_at: null,
-          status: "active",
-        },
-      })
-    )?.superuser
-  ) {
+  const { admin, adminId, body } = props;
+  if (admin.type !== "admin") {
     throw new HttpException(
-      "Forbidden: Only superusers can update other admin accounts",
+      "Unauthorized: Only admin accounts may update administrator profiles.",
       403,
     );
   }
 
-  // 3. Validate attempted status update
-  if (
-    props.body.status &&
-    !["active", "suspended", "deleted"].includes(props.body.status)
-  ) {
-    throw new HttpException("Invalid admin status update value", 400);
+  // Find target admin account
+  const existing = await MyGlobal.prisma.community_platform_admins.findUnique({
+    where: { id: adminId },
+  });
+  if (!existing || existing.deleted_at !== null) {
+    throw new HttpException(
+      "Administrator not found or has been deleted.",
+      404,
+    );
   }
 
-  // 4. Prepare updates
-  // Prevent demotion if this is the last superuser
-  let willBeSuperuser = target.superuser;
-  if (props.body.superuser !== undefined) {
-    willBeSuperuser = props.body.superuser;
-  }
-  if (!willBeSuperuser) {
-    const superuserCount =
-      await MyGlobal.prisma.community_platform_admins.count({
+  // If email is being changed, check uniqueness
+  const isEmailChanged =
+    typeof body.email === "string" && body.email !== existing.email;
+  if (isEmailChanged) {
+    const conflicting =
+      await MyGlobal.prisma.community_platform_admins.findFirst({
         where: {
-          superuser: true,
+          email: body.email,
           deleted_at: null,
-          status: "active",
-          id: { not: target.id },
+          NOT: { id: adminId },
         },
       });
-    if (superuserCount === 0) {
+    if (conflicting) {
       throw new HttpException(
-        "Cannot demote last remaining superuser; at least one superuser must remain.",
-        400,
+        "Email is already in use by another administrator.",
+        409,
       );
     }
   }
 
-  // 5. Carry out update
-  const now = toISOStringSafe(new Date());
+  // Prepare data for update: only update fields present in body
+  const updateData: Record<string, unknown> = {
+    updated_at: toISOStringSafe(new Date()),
+  };
+  if (typeof body.display_name === "string") {
+    updateData.display_name = body.display_name;
+  }
+  if (typeof body.email === "string") {
+    updateData.email = body.email;
+  }
+
   const updated = await MyGlobal.prisma.community_platform_admins.update({
-    where: { id: target.id },
+    where: { id: adminId },
+    data: updateData,
+  });
+
+  // Audit log: record admin update (exclude password hash, only log visible fields)
+  await MyGlobal.prisma.community_platform_audit_logs.create({
     data: {
-      email: props.body.email ?? undefined,
-      superuser: props.body.superuser ?? undefined,
-      status: props.body.status ?? undefined,
-      updated_at: now,
+      id: v4(),
+      actor_type: "admin",
+      actor_id: admin.id,
+      action: "admin_profile_update",
+      target_type: "admin",
+      target_id: adminId,
+      metadata: JSON.stringify({
+        updated_fields: Object.keys(updateData).filter(
+          (k) => k !== "updated_at",
+        ),
+      }),
+      created_at: toISOStringSafe(new Date()),
     },
   });
 
-  // 6. Return mapped result
   return {
     id: updated.id,
     email: updated.email,
-    superuser: updated.superuser,
-    status: updated.status,
+    display_name: updated.display_name,
     created_at: toISOStringSafe(updated.created_at),
-    updated_at: now,
-    deleted_at:
-      updated.deleted_at !== null && updated.deleted_at !== undefined
-        ? toISOStringSafe(updated.deleted_at)
-        : undefined,
+    updated_at: toISOStringSafe(updated.updated_at),
+    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
   };
 }

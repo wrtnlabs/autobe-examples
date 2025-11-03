@@ -1,0 +1,192 @@
+/// Historical records capturing the full lifecycle and state changes of
+/// orders placed by customers on the shopping mall platform. Tracks all
+/// modifications over time, including status updates, payments, and shipment
+/// events for auditing and analysis purposes. References the primary {@link
+/// shopping_mall_orders.id} entity. Used for immutable audit trails and
+/// comprehensive order history queries.
+///
+/// @namespace OrderHistory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Current status of the order at this historical snapshot (e.g., 'pending',
+  /// 'shipped', 'cancelled').
+  order_status String
+  
+  /// Status of payment at this snapshot (e.g., 'paid', 'pending', 'failed').
+  payment_status String
+  
+  /// Shipment state of the order at this point in time.
+  shipment_status String
+  
+  /// Total monetary amount for the order at this snapshot.
+  total_amount Float
+  
+  /// Snapshot creation timestamp capturing when this history record was
+  /// recorded.
+  created_at DateTime
+  
+  /// Timestamp for last update of this snapshot record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_id, created_at], map: "shopping_mall_order_histories_shopping_mall_order_id_c_5967e64d")
+  @@index([created_at])
+}
+
+/// Records of customer-initiated order cancellations. Tracks cancellation
+/// requests, reasons, statuses, and timestamps related to orders. Each
+/// cancellation references the original order and the customer who requested
+/// it. Enables audit trail and processing workflows for order cancellations.
+///
+/// @namespace OrderHistory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_cancellations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Customer who requested cancellation {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Text describing the customer's reason for cancellation.
+  cancellation_reason String?
+  
+  /// Current status of the cancellation process (e.g., 'pending', 'approved',
+  /// 'rejected').
+  cancellation_status String
+  
+  /// Timestamp when the cancellation request was created.
+  created_at DateTime
+  
+  /// Last update timestamp of the cancellation record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_order_cancellations_shopping_mall_custom_98bcf42f")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, cancellation_status], map: "shopping_mall_order_cancellations_shopping_mall_order__6aa98287")
+}
+
+/// Tracks customer refund requests for orders. Contains refund amounts,
+/// reasons, statuses, and linked order and customer information. Used for
+/// managing refund workflows and auditing financial adjustments related to
+/// sales.
+///
+/// @namespace OrderHistory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated order for refund {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Customer who requested refund {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Monetary amount requested for refund.
+  refund_amount Float
+  
+  /// Text description of the refund reason provided by customer.
+  refund_reason String?
+  
+  /// Current processing status of the refund (e.g., 'pending', 'approved',
+  /// 'declined').
+  refund_status String
+  
+  /// Timestamp when refund request was created.
+  created_at DateTime
+  
+  /// Last update time for refund request record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_return_shipments shopping_mall_return_shipments[]
+  
+  @@index([shopping_mall_customer_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, refund_status], map: "shopping_mall_refund_requests_shopping_mall_order_id_r_012499ba")
+}
+
+/// Records of physical return shipments linked to refund requests. Tracks
+/// shipment tracking information, carrier details, return status, and
+/// timestamps. Associated with the refund request and customer. Supports
+/// return process monitoring and customer notifications.
+///
+/// @namespace OrderHistory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_return_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated refund request {@link shopping_mall_refund_requests.id}.
+  shopping_mall_refund_request_id String
+  
+  /// Customer returning the product {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Name of the shipping carrier handling the return.
+  carrier_name String
+  
+  /// Carrier-provided tracking number for the return shipment.
+  tracking_number String
+  
+  /// Current status of the return shipment (e.g., 'requested', 'in_transit',
+  /// 'received', 'inspected', 'completed').
+  return_status String
+  
+  /// Timestamp when return shipment was created.
+  created_at DateTime
+  
+  /// Last update timestamp for return shipment record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_id, return_status], map: "shopping_mall_return_shipments_shopping_mall_refund_re_316def72")
+}

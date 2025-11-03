@@ -1,0 +1,357 @@
+/// Hierarchical product category structure for organizing products.
+/// Categories support up to 3 levels of nesting for detailed product
+/// classification. Each category can have multiple products assigned to it,
+/// and products can belong to multiple categories.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category reference for hierarchical structure. {@link
+  /// shopping_mall_categories.id}
+  parent_id String?
+  
+  /// Category name for display and navigation.
+  name String
+  
+  /// URL-friendly category identifier for SEO optimization.
+  slug String
+  
+  /// Detailed category description for customer information.
+  description String?
+  
+  /// Hierarchy level (1 for root, 2 for subcategory, 3 for sub-subcategory).
+  level Int
+  
+  /// Category status: active, inactive, or archived.
+  status String
+  
+  /// Timestamp when category was created.
+  created_at DateTime
+  
+  /// Timestamp when category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when category was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_promotions shopping_mall_promotions[]
+  shopping_mall_discounts shopping_mall_discounts[]
+  
+  @@unique([slug])
+  @@unique([parent_id, name])
+  @@index([parent_id])
+  @@index([level])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Core product information including titles, descriptions, and base
+/// pricing. Products are created by sellers and organized into categories.
+/// Each product can have multiple variants, images, and inventory records.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller who owns and manages this product. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller session when product was created or modified. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Product title for display and search optimization.
+  title String
+  
+  /// URL-friendly product identifier for SEO.
+  slug String
+  
+  /// Detailed product description with features and specifications.
+  description String
+  
+  /// Base product price before discounts and variant pricing.
+  base_price Float
+  
+  /// Product status: draft, published, unpublished, or discontinued.
+  status String
+  
+  /// Whether this product requires physical shipping.
+  requires_shipping Boolean
+  
+  /// Whether this is a digital product (downloadable).
+  is_digital Boolean
+  
+  /// Product weight in kilograms for shipping calculations.
+  weight Float?
+  
+  /// Product dimensions (LxWxH) for shipping calculations.
+  dimensions String?
+  
+  /// Timestamp when product was created.
+  created_at DateTime
+  
+  /// Timestamp when product was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when product was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variants shopping_mall_product_variants[]
+  shopping_mall_product_variant_options shopping_mall_product_variant_options[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_sales shopping_mall_sales[]
+  shopping_mall_product_views shopping_mall_product_views[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_promotions shopping_mall_promotions[]
+  shopping_mall_discounts shopping_mall_discounts[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_ratings shopping_mall_ratings[]
+  shopping_mall_support_tickets shopping_mall_support_tickets[]
+  shopping_mall_analytics shopping_mall_analytics[]
+  
+  @@index([shopping_mall_seller_session_id])
+  
+  @@unique([slug])
+  @@unique([shopping_mall_seller_id, title])
+  @@index([shopping_mall_seller_id])
+  @@index([status])
+  @@index([base_price])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Product variant definitions for different options like color, size,
+/// material, etc. Each variant represents a distinct version of a product
+/// with its own SKU and pricing.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product that this variant belongs to. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Variant name for display (e.g., 'Red', 'Large', 'Premium').
+  name String
+  
+  /// Stock Keeping Unit identifier for inventory tracking.
+  sku String
+  
+  /// Price difference from base product price.
+  price_adjustment Float
+  
+  /// Whether this is the default variant for the product.
+  is_default Boolean
+  
+  /// Timestamp when variant was created.
+  created_at DateTime
+  
+  /// Timestamp when variant was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when variant was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_variant_options shopping_mall_product_variant_options[]
+  shopping_mall_inventory shopping_mall_inventory?
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_sale_prices shopping_mall_sale_prices[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@unique([sku])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, name], map: "shopping_mall_product_variants_shopping_mall_product_i_994d6c8c")
+  @@index([shopping_mall_product_id])
+  @@index([is_default])
+  @@index([created_at])
+}
+
+/// Junction table for managing variant combinations and their relationships.
+/// Links products to their available variant options and defines valid
+/// combinations.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variant_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that this variant option belongs to. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Variant option definition. {@link shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Specific value for this variant option (e.g., '#FF0000' for color).
+  option_value String
+  
+  /// Order in which options should be displayed to customers.
+  display_order Int
+  
+  /// Timestamp when option was created.
+  created_at DateTime
+  
+  /// Timestamp when option was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, shopping_mall_product_variant_id, option_value], map: "shopping_mall_product_variant_options_shopping_mall_pr_af9d8ee8")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id], map: "shopping_mall_product_variant_options_shopping_mall_pr_eef677b7")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_product_variant_options_shopping_mall_pr_f96e70b7")
+  @@index([display_order])
+}
+
+/// Real-time inventory tracking for product variants. Maintains stock
+/// levels, tracks inventory movements, and provides low stock alerts for
+/// sellers.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Variant being tracked for inventory. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
+  
+  /// Current available stock quantity.
+  quantity Int
+  
+  /// Quantity reserved for pending orders.
+  reserved_quantity Int
+  
+  /// Calculated available quantity (quantity - reserved).
+  available_quantity Int
+  
+  /// Threshold for low stock alerts.
+  low_stock_threshold Int
+  
+  /// Target quantity for restocking operations.
+  restock_quantity Int?
+  
+  /// Timestamp when inventory was last restocked.
+  last_restocked_at DateTime?
+  
+  /// Timestamp when inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when inventory was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_variant_id])
+  
+  @@index([shopping_mall_product_variant_id])
+  @@index([available_quantity])
+  @@index([low_stock_threshold])
+  @@index([created_at])
+}
+
+/// Product image management for visual product representation. Supports
+/// multiple images per product with ordering and variant-specific image
+/// associations.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product that this image belongs to. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Variant-specific image association. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String?
+  
+  /// URL to the product image stored in cloud storage.
+  image_url String
+  
+  /// Alternative text for accessibility and SEO.
+  alt_text String?
+  
+  /// Order in which images should be displayed.
+  display_order Int
+  
+  /// Whether this is the primary image for the product.
+  is_primary Boolean
+  
+  /// Timestamp when image was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when image was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_product_variants? @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, display_order], map: "shopping_mall_product_images_shopping_mall_product_id__5e0eacb7")
+  @@index([shopping_mall_product_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_product_images_shopping_mall_product_var_b99b425a")
+  @@index([is_primary])
+  @@index([display_order])
+}

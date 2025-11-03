@@ -3,62 +3,56 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IEconDiscussAdmin } from "../../../structures/IEconDiscussAdmin";
+import { ICivicBoardAdminJoin } from "../../../structures/ICivicBoardAdminJoin";
+import { ICivicBoardAdmin } from "../../../structures/ICivicBoardAdmin";
+import { ICivicBoardAdminLogin } from "../../../structures/ICivicBoardAdminLogin";
+import { ICivicBoardAdminRefresh } from "../../../structures/ICivicBoardAdminRefresh";
+import { ICivicBoardAdminLogout } from "../../../structures/ICivicBoardAdminLogout";
 export * as email from "./email/index";
 export * as password from "./password/index";
-export * as mfa from "./mfa/index";
+export * as sessions from "./sessions/index";
 
 /**
- * Register a new admin by creating econ_discuss_users and econ_discuss_admins
- * and return tokens.
+ * Register a new administrator in civic_board_admins and return admin
+ * authorization.
  *
- * This endpoint registers a new administrator account and immediately issues
- * JWT tokens upon successful creation. It persists the base identity into the
- * Actors.econ_discuss_users table, specifically setting fields such as email
- * (unique identifier), password_hash (application-generated from the submitted
- * password), display_name, optional avatar_uri, timezone, and locale. As per
- * schema comments, email_verified should start as false until verification
- * completes, mfa_enabled should be false, with mfa_secret and
- * mfa_recovery_codes null.
+ * This endpoint registers a new administrator using the civic_board_admins
+ * table. The table stores the credential hash in password_hash, the unique
+ * email in email, the public-facing display_name, and two control flags
+ * email_verified and suspended that govern posting/moderation eligibility.
+ * Creation and update moments are tracked in created_at and updated_at, while
+ * deleted_at exists for retention governance but is not used during
+ * registration.
  *
- * After creating the user, the operation inserts a corresponding role
- * assignment row into Actors.econ_discuss_admins using the new
- * econ_discuss_users.id as the user_id. This role record persists
- * administrative capabilities and policy flags including superuser (full
- * platform administration) and enforced_2fa (policy-relevant enforcement for
- * administrators), both documented in the Prisma schema.
+ * On successful creation, an authenticated context is established by inserting
+ * into civic_board_admin_sessions. This relation requires civic_board_admin_id
+ * and captures ip, href, and referrer together with created_at. Session records
+ * can later be marked ended via expired_at by security flows such as logout or
+ * password changes.
  *
- * The endpoint is designed with security considerations in mind. Passwords are
- * never stored in plaintext and map to econ_discuss_users.password_hash. MFA is
- * not enabled at join time; admins can subsequently enable TOTP using dedicated
- * MFA endpoints tied to econ_discuss_users.mfa_enabled, mfa_secret, and
- * mfa_recovery_codes. Token issuance occurs only after both econ_discuss_users
- * and econ_discuss_admins are persisted.
+ * For verification, the system may issue a token in
+ * civic_board_email_verifications with actor_type="admin", email, token,
+ * expires_at, and used=false. The token is linked specifically to the new admin
+ * through civic_board_email_verification_of_admins, which enforces a 1:1
+ * mapping to the main token and requires civic_board_admin_id. These
+ * verification structures enable later confirmation that flips email_verified
+ * to true on the admin record.
  *
- * From a relational perspective, econ_discuss_admins has a unique constraint on
- * user_id, and a strict one-to-one relationship with econ_discuss_users,
- * ensuring a single administrator assignment per user. The login and refresh
- * flows later rely on econ_discuss_users.email and password_hash for credential
- * validation and on the presence of an econ_discuss_admins record to assert
- * admin scope.
+ * Security considerations include enforcing @@unique([email]) on
+ * civic_board_admins to prevent duplicate accounts and checking the suspended
+ * flag to avoid creating active sessions for prohibited identities. Audit
+ * trails for the registration event can be recorded in civic_board_audit_logs
+ * using actor_type and action fields without introducing FKs.
  *
- * Validation rules align with the schema characteristics: email must be unique;
- * display_name is required for the identity surface; timezone is an IANA
- * identifier (e.g., Asia/Seoul) as stored in econ_discuss_users.timezone; and
- * locale aligns with econ_discuss_users.locale. The provider should also
- * initialize email_verified=false with a follow-up verification flow using the
- * dedicated email endpoints.
- *
- * Related operations include POST /auth/admin/login for credential
- * authentication, POST /auth/admin/refresh for token rotation, and POST
- * /auth/admin/mfa/* endpoints for enabling TOTP-based MFA informed by
- * econ_discuss_users.mfa_secret and mfa_recovery_codes. Email verification
- * flows are available via /auth/admin/email/* and toggle
- * econ_discuss_users.email_verified once completed.
+ * Related operations are /auth/admin/login for credential authentication,
+ * /auth/admin/email/verification to request verification tokens, and
+ * /auth/admin/email/verify to consume a token. Password recovery is available
+ * through /auth/admin/password/reset/request and /auth/admin/password/reset
+ * using the password reset token tables designed for admin actors.
  *
  * @param props.connection
- * @param props.body Admin registration payload including email, password,
- *   display name, and optional preferences.
+ * @param props.body Admin registration payload including email, password, and
+ *   display name.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -94,13 +88,13 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Admin registration payload including email, password, display name,
-     * and optional preferences.
+     * Admin registration payload including email, password, and display
+     * name.
      */
-    body: IEconDiscussAdmin.ICreate;
+    body: ICivicBoardAdminJoin.ICreate;
   };
-  export type Body = IEconDiscussAdmin.ICreate;
-  export type Response = IEconDiscussAdmin.IAuthorized;
+  export type Body = ICivicBoardAdminJoin.ICreate;
+  export type Response = ICivicBoardAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -116,8 +110,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/admin/join";
-  export const random = (): IEconDiscussAdmin.IAuthorized =>
-    typia.random<IEconDiscussAdmin.IAuthorized>();
+  export const random = (): ICivicBoardAdmin.IAuthorized =>
+    typia.random<ICivicBoardAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -144,42 +138,40 @@ export namespace join {
 }
 
 /**
- * Authenticate an admin using econ_discuss_users and econ_discuss_admins and
- * issue tokens.
+ * Authenticate an administrator from civic_board_admins and return
+ * authorization.
  *
- * This operation authenticates an administrator using the econ_discuss_users
- * table fields email and password_hash, ensuring that plaintext credentials are
- * hashed and compared securely. It also verifies that a role assignment exists
- * in econ_discuss_admins (unique per user_id) to confirm the admin scope
- * documented by the schema.
+ * The login flow validates the administrator’s email against
+ * civic_board_admins.email (unique) and verifies the provided password against
+ * password_hash. The account’s flags email_verified and suspended are consulted
+ * to determine whether authentication can proceed and whether privileged
+ * actions are allowed after login. Timestamps created_at and updated_at on the
+ * admin record provide audit-friendly context; deleted_at exists for retention
+ * policies and does not affect login directly.
  *
- * If the user’s econ_discuss_users.email_verified is false, business policy may
- * restrict certain actions until verification completes; the table column is
- * designed to signal verification state. If econ_discuss_admins.enforced_2fa is
- * true, the service SHOULD require a successful second factor, leveraging
- * econ_discuss_users.mfa_enabled, mfa_secret, and potential TOTP codes before
- * issuing final tokens.
+ * Upon successful authentication, an entry is created in
+ * civic_board_admin_sessions linked by civic_board_admin_id. The session
+ * captures ip, href, referrer, and created_at for auditing and security
+ * analytics. Future security flows may set expired_at to end the session.
  *
- * On success, the endpoint issues JWT tokens and returns an authorized payload
- * typed as IEconDiscussAdmin.IAuthorized. The payload may include role and
- * permission claims derived from the existence of econ_discuss_admins, and
- * optional context like timezone (econ_discuss_users.timezone) and locale
- * (econ_discuss_users.locale) for client experience.
+ * This operation issues JWT tokens for the administrator. The access token
+ * identifies the actor for protected routes, while the refresh token supports
+ * token renewal in a subsequent refresh operation. Neither token storage is
+ * modeled in the schema; instead, sessions in civic_board_admin_sessions
+ * provide the server-side audit trail.
  *
- * This endpoint aligns with schema relationships: econ_discuss_admins
- * references econ_discuss_users via user_id under a one-to-one unique
- * constraint. It does not create or modify role records; it only validates
- * their presence. Passwords are never stored or returned, and password_hash
- * remains confidential within econ_discuss_users.
+ * Rate limiting and abuse prevention can leverage civic_board_rate_limits by
+ * tracking a scope such as "login.failed" per actor_type="admin"; while not
+ * mandatory for the operation, the table offers a structured store for counters
+ * and window timings (window_started_at, window_ends_at, count, limit).
  *
- * Use this in conjunction with the registration endpoint (/auth/admin/join),
- * token refresh (/auth/admin/refresh), and the MFA management endpoints that
- * directly reflect econ_discuss_users.mfa_* fields. Error handling should not
- * disclose whether the email exists, to avoid user enumeration.
+ * Related operations include /auth/admin/refresh for token renewal,
+ * /auth/admin/logout to end the current session, and
+ * /auth/admin/password/reset/request for recovery when the password is
+ * forgotten.
  *
  * @param props.connection
- * @param props.body Admin login credentials and optional MFA code when required
- *   by policy.
+ * @param props.body Admin login credentials (email and password).
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -214,14 +206,11 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /**
-     * Admin login credentials and optional MFA code when required by
-     * policy.
-     */
-    body: IEconDiscussAdmin.ILogin;
+    /** Admin login credentials (email and password). */
+    body: ICivicBoardAdminLogin.ICreate;
   };
-  export type Body = IEconDiscussAdmin.ILogin;
-  export type Response = IEconDiscussAdmin.IAuthorized;
+  export type Body = ICivicBoardAdminLogin.ICreate;
+  export type Response = ICivicBoardAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -237,8 +226,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/admin/login";
-  export const random = (): IEconDiscussAdmin.IAuthorized =>
-    typia.random<IEconDiscussAdmin.IAuthorized>();
+  export const random = (): ICivicBoardAdmin.IAuthorized =>
+    typia.random<ICivicBoardAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -265,33 +254,38 @@ export namespace login {
 }
 
 /**
- * Refresh administrator JWT tokens after validating econ_discuss_users and
- * econ_discuss_admins state.
+ * Refresh administrator authorization using a valid refresh token; ties to
+ * civic_board_admin_sessions for context.
  *
- * This endpoint accepts a valid refresh token and returns a new access/refresh
- * token pair. Before issuing new tokens, the service validates that the subject
- * corresponds to an existing econ_discuss_users row and that a linked
- * econ_discuss_admins record still exists, preserving admin scope. If the admin
- * role record has been removed, the operation must decline refresh.
+ * Token refresh exchanges a valid refresh token for new authorization material
+ * for the admin actor. While refresh tokens are not persisted in the schema,
+ * civic_board_admin_sessions provides the session ledger (id,
+ * civic_board_admin_id, ip, href, referrer, created_at, expired_at) used in
+ * security analytics and audit.
  *
- * The Actors.econ_discuss_users table provides core identity fields that can be
- * embedded as claims (e.g., userId from id, email, timezone, and locale), while
- * econ_discuss_admins confirms role-based privileges and can drive claims such
- * as superuser and enforced_2fa from its columns. The refresh flow does not
- * modify any of these tables directly.
+ * During refresh, business logic may verify that the associated admin record in
+ * civic_board_admins remains eligible for authenticated activity, checking
+ * suspended status and, where relevant, email_verified. The admin record
+ * includes created_at, updated_at, and a retention-oriented deleted_at field
+ * that is not part of the refresh decision path.
  *
- * Security-wise, the endpoint supports rotation-on-use semantics. If policy
- * requires MFA enforcement (econ_discuss_admins.enforced_2fa) and the account
- * has econ_discuss_users.mfa_enabled=true, ensure that the session has
- * satisfied recent 2FA checks before token renewal.
+ * The operation ensures continuity of access without re-sending credentials. If
+ * signals indicate that the session should be terminated (e.g., password
+ * changed), the implementation should refuse refresh and require
+ * re-authentication, optionally consulting civic_board_audit_logs for
+ * additional context.
  *
- * This endpoint should be paired with /auth/admin/login and /auth/admin/join
- * for initial issuance, and with MFA and email verification endpoints for
- * account hardening. Failures should be generic to avoid leaking token validity
- * details.
+ * No path parameters are required. The request contains the refresh token in a
+ * structured body; the response returns new access/refresh tokens alongside the
+ * authorized admin summary.
+ *
+ * Related operations include /auth/admin/login to establish a new session and
+ * /auth/admin/logout to end an existing session. Password changes via
+ * /auth/admin/password can also revoke refresh eligibility by ending historical
+ * sessions using expired_at on civic_board_admin_sessions.
  *
  * @param props.connection
- * @param props.body Refresh token request payload (rotation-on-use).
+ * @param props.body Refresh token exchange payload.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -326,11 +320,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token request payload (rotation-on-use). */
-    body: IEconDiscussAdmin.IRefresh;
+    /** Refresh token exchange payload. */
+    body: ICivicBoardAdminRefresh.ICreate;
   };
-  export type Body = IEconDiscussAdmin.IRefresh;
-  export type Response = IEconDiscussAdmin.IAuthorized;
+  export type Body = ICivicBoardAdminRefresh.ICreate;
+  export type Response = ICivicBoardAdmin.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -346,8 +340,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/admin/refresh";
-  export const random = (): IEconDiscussAdmin.IAuthorized =>
-    typia.random<IEconDiscussAdmin.IAuthorized>();
+  export const random = (): ICivicBoardAdmin.IAuthorized =>
+    typia.random<ICivicBoardAdmin.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,
@@ -356,6 +350,111 @@ export namespace refresh {
       method: METADATA.method,
       host: connection.host,
       path: refresh.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * End the current admin session by updating expired_at in
+ * civic_board_admin_sessions.
+ *
+ * Logout ends the administrator’s active session by updating
+ * civic_board_admin_sessions for the session associated with the request
+ * context and setting expired_at. Session records also store ip, href,
+ * referrer, and created_at, providing a durable trail for investigations and
+ * analytics.
+ *
+ * The admin’s identity and state are stored in civic_board_admins, which is not
+ * modified by logout. Fields like email, display_name, email_verified, and
+ * suspended remain unchanged; updated_at on the admin record is not necessarily
+ * touched for a logout-only operation.
+ *
+ * Security posture benefits from explicit session termination, especially after
+ * sensitive changes such as password updates. Implementations may also record
+ * audit entries in civic_board_audit_logs with a descriptive action (e.g.,
+ * "admin.logout").
+ *
+ * This endpoint is restricted to the admin actor based on the authenticated
+ * request context. No path parameters are required; the operation acts on the
+ * caller’s current session.
+ *
+ * Related operations: /auth/admin/login to establish a session and
+ * /auth/admin/sessions/revoke to end additional sessions.
+ *
+ * @param props.connection
+ * @param props.body Logout request body for explicit intent and optional
+ *   metadata.
+ * @path /auth/admin/logout
+ * @accessor api.functional.auth.admin.logout
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function logout(
+  connection: IConnection,
+  props: logout.Props,
+): Promise<logout.Response> {
+  return true === connection.simulate
+    ? logout.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...logout.METADATA,
+          path: logout.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace logout {
+  export type Props = {
+    /** Logout request body for explicit intent and optional metadata. */
+    body: ICivicBoardAdminLogout.ICreate;
+  };
+  export type Body = ICivicBoardAdminLogout.ICreate;
+  export type Response = ICivicBoardAdmin.ISecurityOutcome;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/auth/admin/logout",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/auth/admin/logout";
+  export const random = (): ICivicBoardAdmin.ISecurityOutcome =>
+    typia.random<ICivicBoardAdmin.ISecurityOutcome>();
+  export const simulate = (
+    connection: IConnection,
+    props: logout.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: logout.path(),
       contentType: "application/json",
     });
     try {

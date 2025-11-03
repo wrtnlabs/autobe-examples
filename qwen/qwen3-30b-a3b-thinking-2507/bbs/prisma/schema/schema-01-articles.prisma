@@ -1,0 +1,73 @@
+/// Core discussion board articles with title, content, and timestamp
+/// information for economic/political discussions
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Title of the discussion board article (2-100 characters)
+  title String
+  
+  /// Body content of the discussion board article (10-5000 characters)
+  content String
+  
+  /// Timestamp when article was created
+  created_at DateTime
+  
+  /// Timestamp when article was last updated
+  updated_at DateTime
+  
+  /// Timestamp when article was soft-deleted (nullable)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_attachments discussion_board_attachments[]
+  
+  @@unique([title])
+  @@index([created_at])
+}
+
+/// Attachment files (images/PDFs) related to discussion board articles
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ID of the discussion board article this attachment belongs to. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Path to the attachment file within the file storage system
+  attachment_path String
+  
+  /// MIME type of the attachment (e.g., 'image/jpeg', 'application/pdf')
+  attachment_type String
+  
+  /// Timestamp when attachment was created
+  created_at DateTime
+  
+  /// Timestamp when attachment was last updated
+  updated_at DateTime
+  
+  /// Timestamp when attachment was soft-deleted (nullable)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_article_id])
+}

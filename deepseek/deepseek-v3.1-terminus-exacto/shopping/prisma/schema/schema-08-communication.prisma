@@ -1,0 +1,350 @@
+/// Customer product reviews submitted after purchase. Each review represents
+/// a customer's detailed feedback about a purchased product, including
+/// written commentary and overall satisfaction assessment. Reviews require
+/// purchase verification to ensure authenticity.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who submitted the review. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Product being reviewed. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Order that contained the reviewed product for purchase verification.
+  /// {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Review title summarizing the customer's experience.
+  title String
+  
+  /// Detailed review content providing comprehensive feedback.
+  body String
+  
+  /// Number of customers who found this review helpful.
+  helpful_count Int
+  
+  /// Indicates whether the review comes from a verified purchase.
+  verified_purchase Boolean
+  
+  /// Review status: pending, approved, rejected, or flagged.
+  status String
+  
+  /// Timestamp when the review was created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_reviews_shopping_mall_customer_id_shoppi_1d91afcf")
+  @@index([shopping_mall_product_id, created_at])
+  @@index([status, created_at])
+  @@index([verified_purchase, created_at])
+}
+
+/// Product ratings submitted by customers. Ratings provide quantitative
+/// feedback (1-5 stars) about product satisfaction and are used for product
+/// ranking and customer decision-making.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who submitted the rating. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Product being rated. {@link shopping_mall_products.id}
+  shopping_mall_product_id String
+  
+  /// Order that contained the rated product for verification. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Numeric rating value from 1 to 5 stars.
+  rating_value Int
+  
+  /// Indicates whether the rating comes from a verified purchase.
+  verified_purchase Boolean
+  
+  /// Timestamp when the rating was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the rating was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the rating was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_ratings_shopping_mall_customer_id_shoppi_ac510e6f")
+  @@index([shopping_mall_product_id, rating_value])
+  @@index([rating_value, created_at])
+}
+
+/// Main support ticket entity for customer service interactions. Tickets can
+/// be created by customers or sellers and track support requests, inquiries,
+/// and issue resolutions.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_tickets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related order for order-specific support tickets. {@link
+  /// shopping_mall_orders.id}
+  shopping_mall_order_id String?
+  
+  /// Related product for product-specific support tickets. {@link
+  /// shopping_mall_products.id}
+  shopping_mall_product_id String?
+  
+  /// Support ticket title summarizing the issue.
+  title String
+  
+  /// Detailed description of the support request.
+  description String
+  
+  /// Type of support ticket: order_issue, product_question, shipping_problem,
+  /// payment_issue, general_inquiry.
+  ticket_type String
+  
+  /// Ticket priority: low, normal, high, critical.
+  priority String
+  
+  /// Ticket status: open, in_progress, awaiting_customer, awaiting_seller,
+  /// resolved, closed.
+  status String
+  
+  /// Type of actor who created the ticket: customer or seller.
+  actor_type String
+  
+  /// Timestamp when the ticket was created.
+  created_at DateTime
+  
+  /// Timestamp when the ticket was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the ticket was resolved.
+  resolved_at DateTime?
+  
+  /// Timestamp when the ticket was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_support_ticket_of_customers shopping_mall_support_ticket_of_customers?
+  shopping_mall_support_ticket_of_sellers shopping_mall_support_ticket_of_sellers?
+  shopping_mall_customer_messages shopping_mall_customer_messages[]
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_product_id])
+  
+  @@index([status, priority])
+  @@index([ticket_type, created_at])
+  @@index([actor_type, created_at])
+}
+
+/// Subtype entity for support tickets created by customers. Links
+/// customer-specific information to the main support ticket entity.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_ticket_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main support ticket entity. {@link shopping_mall_support_tickets.id}
+  shopping_mall_support_ticket_id String
+  
+  /// Customer who created the support ticket. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer session when the ticket was created. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Timestamp when the customer ticket association was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  supportTicket shopping_mall_support_tickets @relation(fields: [shopping_mall_support_ticket_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_support_ticket_of_customers_shopping_mal_b7277777")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_support_ticket_id], map: "shopping_mall_support_ticket_of_customers_shopping_mal_88e9eeaf")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_support_ticket_of_customers_shopping_mal_a39c5d8c")
+}
+
+/// Subtype entity for support tickets created by sellers. Links
+/// seller-specific information to the main support ticket entity.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_support_ticket_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main support ticket entity. {@link shopping_mall_support_tickets.id}
+  shopping_mall_support_ticket_id String
+  
+  /// Seller who created the support ticket. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller session when the ticket was created. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Timestamp when the seller ticket association was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  supportTicket shopping_mall_support_tickets @relation(fields: [shopping_mall_support_ticket_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_support_ticket_of_sellers_shopping_mall__0a69eb03")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_support_ticket_id], map: "shopping_mall_support_ticket_of_sellers_shopping_mall__637c08ba")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_support_ticket_of_sellers_shopping_mall__b4a67e13")
+}
+
+/// Message threads between customers and support agents/sellers. Supports
+/// multi-message conversations for support ticket resolution and customer
+/// communication.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_messages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Support ticket this message belongs to. {@link
+  /// shopping_mall_support_tickets.id}
+  shopping_mall_support_ticket_id String?
+  
+  /// Customer who sent the message. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Seller who sent the message. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// Administrator who sent the message. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String?
+  
+  /// Parent message for threaded conversations. {@link
+  /// shopping_mall_customer_messages.id}
+  parent_id String?
+  
+  /// Type of message: customer_query, seller_response, admin_notification,
+  /// system_alert.
+  message_type String
+  
+  /// Message subject line for organization.
+  subject String?
+  
+  /// Message content body.
+  content String
+  
+  /// Indicates whether the message has been read by the recipient.
+  is_read Boolean
+  
+  /// Indicates whether this is an internal note not visible to customers.
+  is_internal Boolean
+  
+  /// Timestamp when the message was sent.
+  created_at DateTime
+  
+  /// Timestamp when the message was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the message was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  supportTicket shopping_mall_support_tickets? @relation(fields: [shopping_mall_support_ticket_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators? @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_customer_messages? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_customer_messages[] @relation("recursive")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id], map: "shopping_mall_customer_messages_shopping_mall_administ_63c95db8")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_support_ticket_id, created_at], map: "shopping_mall_customer_messages_shopping_mall_support__7da275fb")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_messages_shopping_mall_customer_91c4142f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_customer_messages_shopping_mall_seller_i_882a79b6")
+  @@index([parent_id, created_at])
+  @@index([is_read, created_at])
+}

@@ -1,0 +1,9 @@
+export * as categories from "./categories/index";
+export * as moderator from "./moderator/index";
+export * as tags from "./tags/index";
+export * as articles from "./articles/index";
+export * as member from "./member/index";
+export * as search from "./search/index";
+export * as statistics from "./statistics/index";
+export * as members from "./members/index";
+export * as guests from "./guests/index";

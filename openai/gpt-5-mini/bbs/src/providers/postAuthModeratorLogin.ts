@@ -7,120 +7,146 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEconPoliticalForumModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPoliticalForumModerator";
+import { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
 
 export async function postAuthModeratorLogin(props: {
-  body: IEconPoliticalForumModerator.ILogin;
-}): Promise<IEconPoliticalForumModerator.IAuthorized> {
-  const { body } = props;
+  moderator: ModeratorPayload;
+  body: IDiscussionBoardModerator.ILogin;
+}): Promise<IDiscussionBoardModerator.IAuthorized> {
+  const { body, moderator: invokingModerator } = props;
 
-  const now = toISOStringSafe(new Date());
-  const accessExpiredAt = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshableUntil = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  // 1. Find moderator by username OR email
+  const found = await MyGlobal.prisma.discussion_board_moderator.findFirst({
+    where: {
+      OR: [{ username: body.usernameOrEmail }, { email: body.usernameOrEmail }],
+    },
+  });
 
-  const user =
-    await MyGlobal.prisma.econ_political_forum_registereduser.findFirst({
-      where: {
-        OR: [
-          { username: body.usernameOrEmail },
-          { email: body.usernameOrEmail },
-        ],
-        deleted_at: null,
-      },
-    });
-
-  if (!user) throw new HttpException("Invalid credentials", 401);
-
-  if (
-    user.locked_until &&
-    user.locked_until instanceof Date &&
-    user.locked_until > new Date()
-  ) {
-    throw new HttpException("Account locked", 403);
+  if (!found) {
+    // Generic message to avoid user enumeration
+    throw new HttpException("Invalid credentials", 401);
   }
 
-  const passwordMatches = user.password_hash
-    ? await PasswordUtil.verify(body.password, user.password_hash)
-    : false;
+  // 2. Check soft-deleted / suspended
+  if (found.deleted_at) {
+    throw new HttpException("Account suspended or deleted", 403);
+  }
 
-  if (!passwordMatches) {
-    const THRESHOLD = 5;
-    const LOCK_DURATION_MS = 15 * 60 * 1000;
-
-    const failedCount = (user.failed_login_attempts ?? 0) + 1;
-    const lockedUntilValue =
-      failedCount >= THRESHOLD
-        ? toISOStringSafe(new Date(Date.now() + LOCK_DURATION_MS))
-        : null;
-
-    await MyGlobal.prisma.econ_political_forum_registereduser.update({
-      where: { id: user.id },
-      data: {
-        failed_login_attempts: failedCount,
-        locked_until: lockedUntilValue,
-        updated_at: now,
-      },
-    });
+  // 3. Verify password
+  const isValid = await PasswordUtil.verify(body.password, found.password_hash);
+  if (!isValid) {
+    // Record failed login attempt for audit
+    try {
+      await MyGlobal.prisma.discussion_board_audit_logs.create({
+        data: {
+          id: v4() as string & tags.Format<"uuid">,
+          event_type: "auth.moderator.login_failed",
+          event_timestamp: toISOStringSafe(new Date()),
+          actor_type: "moderator",
+          actor_id: found.id,
+          ip: body.ip ?? null,
+          user_agent: null,
+          metadata: JSON.stringify({ usernameOrEmail: body.usernameOrEmail }),
+          created_at: toISOStringSafe(new Date()),
+          updated_at: toISOStringSafe(new Date()),
+          deleted_at: null,
+        },
+      });
+    } catch (_e) {
+      // swallow audit errors
+    }
 
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const access = jwt.sign(
-    { id: user.id, email: user.email },
+  // 4. Create session
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const nowIso = toISOStringSafe(new Date());
+
+  const session =
+    await MyGlobal.prisma.discussion_board_moderator_sessions.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        discussion_board_moderator_id: found.id,
+        ip: body.ip ?? "",
+        href: body.href,
+        referrer: body.referrer,
+        created_at: nowIso,
+        expired_at: toISOStringSafe(accessExpires),
+      },
+    });
+
+  // 5. Create audit log for successful login (best-effort)
+  try {
+    await MyGlobal.prisma.discussion_board_audit_logs.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        event_type: "auth.moderator.login",
+        event_timestamp: nowIso,
+        actor_type: "moderator",
+        actor_id: found.id,
+        ip: body.ip ?? null,
+        user_agent: null,
+        metadata: JSON.stringify({ session_id: session.id }),
+        created_at: nowIso,
+        updated_at: nowIso,
+        deleted_at: null,
+      },
+    });
+  } catch (_e) {
+    // ignore audit errors
+  }
+
+  // 6. Generate tokens
+  const accessToken = jwt.sign(
+    {
+      type: "moderator",
+      id: found.id,
+      session_id: session.id,
+      created_at: toISOStringSafe(new Date()),
+    },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const refresh = jwt.sign(
-    { id: user.id, tokenType: "refresh" },
+
+  const refreshToken = jwt.sign(
+    {
+      type: "moderator",
+      id: found.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(new Date()),
+    },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  const refreshHash = await PasswordUtil.hash(refresh);
 
-  const sessionId = v4() as string & tags.Format<"uuid">;
-  const sessionToken = v4() as string & tags.Format<"uuid">;
-
-  await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.econ_political_forum_sessions.create({
-      data: {
-        id: sessionId,
-        registereduser_id: user.id,
-        session_token: sessionToken,
-        refresh_token_hash: refreshHash,
-        ip_address: null,
-        user_agent: null,
-        last_active_at: now,
-        expires_at: refreshableUntil,
-        created_at: now,
-        updated_at: now,
-      },
-    }),
-    MyGlobal.prisma.econ_political_forum_registereduser.update({
-      where: { id: user.id },
-      data: {
-        last_login_at: now,
-        failed_login_attempts: 0,
-        updated_at: now,
-      },
-    }),
-  ]);
-
-  await MyGlobal.prisma.econ_political_forum_moderator.findUnique({
-    where: { registereduser_id: user.id },
-  });
-
-  return {
-    id: user.id as string & tags.Format<"uuid">,
+  // 7. Build return object
+  const result = {
+    id: found.id,
+    username: found.username,
+    email: found.email ?? undefined,
+    display_name: found.display_name ?? null,
+    created_at: toISOStringSafe(found.created_at),
+    updated_at: toISOStringSafe(found.updated_at),
     token: {
-      access,
-      refresh,
-      expired_at: accessExpiredAt as string & tags.Format<"date-time">,
-      refreshable_until: refreshableUntil as string & tags.Format<"date-time">,
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
     },
-  };
+    moderator: {
+      id: found.id,
+      username: found.username,
+      display_name: found.display_name ?? null,
+      created_at: toISOStringSafe(found.created_at),
+      updated_at: toISOStringSafe(found.updated_at),
+      deleted_at: found.deleted_at ? toISOStringSafe(found.deleted_at) : null,
+    },
+  } satisfies IDiscussionBoardModerator.IAuthorized;
+
+  return result;
 }

@@ -13,16 +13,18 @@ export async function deleteCommunityPlatformAdminPostsPostId(props: {
   admin: AdminPayload;
   postId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // Find post by id
   const post = await MyGlobal.prisma.community_platform_posts.findUnique({
     where: { id: props.postId },
+    select: {
+      id: true,
+      deleted_at: true,
+    },
   });
-  if (!post || post.deleted_at !== null) {
-    throw new HttpException("Post not found or already deleted", 404);
-  }
-
-  const now = toISOStringSafe(new Date());
-  await MyGlobal.prisma.community_platform_posts.update({
+  if (!post) throw new HttpException("Post not found", 404);
+  if (post.deleted_at !== null)
+    throw new HttpException("Post already deleted", 400);
+  await MyGlobal.prisma.community_platform_posts.delete({
     where: { id: props.postId },
-    data: { deleted_at: now },
   });
 }

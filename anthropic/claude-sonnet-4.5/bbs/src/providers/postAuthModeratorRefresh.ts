@@ -15,102 +15,91 @@ export async function postAuthModeratorRefresh(props: {
 }): Promise<IDiscussionBoardModerator.IAuthorized> {
   const { body } = props;
 
-  let decodedToken: { userId: string; sessionId: string; tokenType: string };
+  // Step 1: Verify and decode refresh token
+  let decoded: {
+    id: string;
+    session_id: string;
+    type: string;
+    created_at: string;
+  };
+
   try {
-    const decoded = jwt.verify(
-      body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        issuer: "autobe",
-      },
-    );
-
-    if (typeof decoded === "string") {
-      throw new HttpException("Invalid token format", 401);
-    }
-
-    decodedToken = decoded as {
-      userId: string;
-      sessionId: string;
-      tokenType: string;
+    decoded = jwt.verify(body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+      issuer: "autobe",
+    }) as {
+      id: string;
+      session_id: string;
+      type: string;
+      created_at: string;
     };
-
-    if (decodedToken.tokenType !== "refresh") {
-      throw new HttpException("Invalid token type", 401);
-    }
   } catch (error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  const session = await MyGlobal.prisma.discussion_board_sessions.findUnique({
-    where: { id: decodedToken.sessionId },
-    include: {
-      moderator: true,
-      discussion_board_refresh_tokens: true,
-    },
-  });
+  // Step 2: Validate token type
+  if (decoded.type !== "moderator") {
+    throw new HttpException("Invalid token type for moderator endpoint", 403);
+  }
+
+  // Step 3: Validate session exists and is active
+  const session =
+    await MyGlobal.prisma.discussion_board_moderator_sessions.findFirst({
+      where: {
+        id: decoded.session_id,
+        discussion_board_moderator_id: decoded.id,
+      },
+      include: {
+        moderator: true,
+      },
+    });
 
   if (!session) {
-    throw new HttpException("Session not found", 401);
+    throw new HttpException("Session expired or revoked", 401);
   }
 
-  if (!session.is_active || session.revoked_at !== null) {
-    throw new HttpException("Session is no longer active", 401);
-  }
-
-  if (!session.moderator) {
-    throw new HttpException("Moderator account not found", 401);
-  }
-
+  // Step 4: Validate moderator account
   const moderator = session.moderator;
 
-  if (moderator.account_status !== "active" || !moderator.is_active) {
-    throw new HttpException("Moderator account is not active", 403);
+  if (moderator.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+
+  if (moderator.status !== "active") {
+    throw new HttpException("Account is not active", 403);
   }
 
   if (!moderator.email_verified) {
-    throw new HttpException("Email verification required", 403);
+    throw new HttpException("Email not verified", 403);
   }
 
-  const refreshTokenRecord = session.discussion_board_refresh_tokens;
+  // Step 5: Generate new tokens with SAME session_id
+  const nowIso = toISOStringSafe(new Date());
+  const accessExpiresDate = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpiresIso = toISOStringSafe(accessExpiresDate);
+  const refreshExpiresIso = toISOStringSafe(refreshExpiresDate);
 
-  if (!refreshTokenRecord) {
-    throw new HttpException("Refresh token not found", 401);
-  }
-
-  if (refreshTokenRecord.is_revoked) {
-    throw new HttpException("Refresh token has been revoked", 401);
-  }
-
-  const now = new Date();
-  if (refreshTokenRecord.expires_at < now) {
-    throw new HttpException("Refresh token has expired", 401);
-  }
-
-  const accessTokenExpiration = new Date(now.getTime() + 30 * 60 * 1000);
-  const newAccessToken = jwt.sign(
+  const accessToken = jwt.sign(
     {
-      userId: moderator.id,
-      username: moderator.username,
-      email: moderator.email,
-      role: "moderator",
-      sessionId: session.id,
+      type: "moderator",
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "30m",
+      expiresIn: "1h",
       issuer: "autobe",
     },
   );
 
-  const refreshTokenExpiration = new Date(
-    now.getTime() + 7 * 24 * 60 * 60 * 1000,
-  );
   const newRefreshToken = jwt.sign(
     {
-      userId: moderator.id,
+      type: "moderator",
+      id: decoded.id,
+      session_id: decoded.session_id,
       tokenType: "refresh",
-      sessionId: session.id,
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -119,52 +108,44 @@ export async function postAuthModeratorRefresh(props: {
     },
   );
 
-  const newAccessTokenHash = await PasswordUtil.hash(newAccessToken);
-
-  await MyGlobal.prisma.discussion_board_sessions.update({
-    where: { id: session.id },
+  // Step 6: Update session expiration time
+  await MyGlobal.prisma.discussion_board_moderator_sessions.update({
+    where: {
+      id: decoded.session_id,
+    },
     data: {
-      access_token_hash: newAccessTokenHash,
-      last_activity_at: toISOStringSafe(now),
-      expires_at: toISOStringSafe(accessTokenExpiration),
+      expired_at: refreshExpiresDate,
     },
   });
 
-  await MyGlobal.prisma.discussion_board_refresh_tokens.update({
-    where: { id: refreshTokenRecord.id },
-    data: {
-      is_revoked: true,
-      revoked_at: toISOStringSafe(now),
-    },
-  });
-
-  const newRefreshTokenHash = await PasswordUtil.hash(newRefreshToken);
-
-  await MyGlobal.prisma.discussion_board_refresh_tokens.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      discussion_board_session_id: session.id,
-      refresh_token_hash: newRefreshTokenHash,
-      expires_at: toISOStringSafe(refreshTokenExpiration),
-      is_revoked: false,
-      created_at: toISOStringSafe(now),
-    },
-  });
-
-  await MyGlobal.prisma.discussion_board_moderators.update({
-    where: { id: moderator.id },
-    data: {
-      last_activity_at: toISOStringSafe(now),
-    },
-  });
-
+  // Step 7: Return authorized moderator with new tokens
   return {
-    id: moderator.id as string & tags.Format<"uuid">,
+    id: moderator.id,
+    username: moderator.username,
+    email: moderator.email,
+    display_name: moderator.display_name ?? undefined,
+    bio: moderator.bio ?? undefined,
+    location: moderator.location ?? undefined,
+    website_url: moderator.website_url ?? undefined,
+    profile_picture_url: moderator.profile_picture_url ?? undefined,
+    email_verified: moderator.email_verified,
+    status: moderator.status,
+    moderation_permissions: moderator.moderation_permissions,
+    profile_visibility: moderator.profile_visibility,
+    activity_visibility: moderator.activity_visibility,
+    last_login_at: moderator.last_login_at
+      ? toISOStringSafe(moderator.last_login_at)
+      : undefined,
+    created_at: toISOStringSafe(moderator.created_at),
+    updated_at: toISOStringSafe(moderator.updated_at),
+    deleted_at: moderator.deleted_at
+      ? toISOStringSafe(moderator.deleted_at)
+      : undefined,
     token: {
-      access: newAccessToken,
+      access: accessToken,
       refresh: newRefreshToken,
-      expired_at: toISOStringSafe(accessTokenExpiration),
-      refreshable_until: toISOStringSafe(refreshTokenExpiration),
+      expired_at: accessExpiresIso,
+      refreshable_until: refreshExpiresIso,
     },
   };
 }

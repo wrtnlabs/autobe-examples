@@ -8,6 +8,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSession";
+import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
 
@@ -15,86 +17,94 @@ export async function postAuthSellerJoin(props: {
   seller: SellerPayload;
   body: IShoppingMallSeller.ICreate;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  const { body } = props;
-
-  // Check for duplicate email
+  // Check existing seller by email
   const existingSeller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
-    where: { email: body.email, deleted_at: null },
-    select: { id: true },
-  });
-
-  if (existingSeller !== null) {
-    throw new HttpException("Conflict: Email already in use", 409);
-  }
-
-  // Hash the password
-  const hashedPassword = await PasswordUtil.hash(body.password_hash);
-
-  // Prepare timestamps and IDs without casting
-  const now = toISOStringSafe(new Date());
-  const newId = v4();
-
-  // Create new seller record
-  const created = await MyGlobal.prisma.shopping_mall_sellers.create({
-    data: {
-      id: newId,
-      email: body.email,
-      password_hash: hashedPassword,
-      company_name: body.company_name ?? null,
-      contact_name: body.contact_name ?? null,
-      phone_number: body.phone_number ?? null,
-      status: body.status,
-      created_at: now,
-      updated_at: now,
+    where: {
+      email: props.body.email,
       deleted_at: null,
     },
   });
 
-  // Prepare JWT expiration times
-  const accessTokenExpiry = toISOStringSafe(new Date(Date.now() + 3600 * 1000)); // 1 hour
-  const refreshTokenExpiry = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 3600 * 1000),
-  ); // 7 days
+  if (existingSeller !== null) {
+    throw new HttpException("Email already registered", 409);
+  }
+
+  // Hash password
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
+
+  // Current timestamp string
+  const currentTimestamp = toISOStringSafe(new Date());
+
+  // Create seller
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.create({
+    data: {
+      id: v4(),
+      email: props.body.email,
+      password_hash: hashedPassword,
+      store_name: props.body.store_name,
+      created_at: currentTimestamp,
+      updated_at: currentTimestamp,
+    },
+  });
+
+  // Compute expiration timestamps as ISO strings
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  // Create session for seller
+  const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
+    data: {
+      id: v4(),
+      shopping_mall_seller_id: seller.id,
+      created_at: currentTimestamp,
+      expired_at: accessExpires,
+      ip: "",
+      href: "",
+      referrer: "",
+    },
+  });
+
+  // Generate now ISO string
+  const nowISO = toISOStringSafe(new Date());
 
   // Generate JWT tokens
-  const accessToken = jwt.sign(
-    {
-      id: created.id,
-      email: created.email,
-      status: created.status,
-      type: "seller",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        created_at: nowISO,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: nowISO,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
-  const refreshToken = jwt.sign(
-    {
-      id: created.id,
-      tokenType: "refresh",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-
-  // Return structured authorized seller info
+  // Return authorized seller with token
   return {
-    id: created.id,
-    email: created.email,
-    password_hash: created.password_hash,
-    company_name: created.company_name ?? undefined,
-    contact_name: created.contact_name ?? undefined,
-    phone_number: created.phone_number ?? undefined,
-    status: created.status,
-    created_at: now,
-    updated_at: now,
+    id: seller.id,
+    email: seller.email,
+    password_hash: seller.password_hash,
+    store_name: seller.store_name,
+    created_at: toISOStringSafe(seller.created_at),
+    updated_at: toISOStringSafe(seller.updated_at),
     deleted_at: null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessTokenExpiry,
-      refreshable_until: refreshTokenExpiry,
-    },
-    refresh_token: refreshToken,
+    token,
   };
 }

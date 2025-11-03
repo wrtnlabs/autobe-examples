@@ -1,73 +1,47 @@
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedBody } from "@nestia/core";
-import typia from "typia";
+import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
+import typia, { tags } from "typia";
 import { postDiscussionBoardMemberReports } from "../../../../providers/postDiscussionBoardMemberReports";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
+import { getDiscussionBoardMemberReportsReportId } from "../../../../providers/getDiscussionBoardMemberReportsReportId";
 
 import { IDiscussionBoardReport } from "../../../../api/structures/IDiscussionBoardReport";
 
 @Controller("/discussionBoard/member/reports")
 export class DiscussionboardMemberReportsController {
   /**
-   * Submit a new content report for moderation review.
+   * Create a new content report for moderator review.
    *
-   * Create a new content report flagging discussion topics or replies that
-   * violate community guidelines. This operation enables authenticated members
-   * to report inappropriate content, triggering the moderation workflow for
-   * platform content governance.
+   * Submit a report flagging an article or comment for potential community
+   * guideline violations. This operation enables members to participate in
+   * maintaining discussion quality by reporting inappropriate content such as
+   * spam, harassment, misinformation, hate speech, or off-topic material.
    *
-   * This endpoint is fundamental to the community-driven moderation system,
-   * allowing members to identify violations such as personal attacks, hate
-   * speech, misinformation, spam, offensive language, off-topic content,
-   * threats, doxxing, trolling, and other guideline violations. By reporting
-   * content, members actively participate in maintaining civil discourse
-   * standards on economic and political topics.
+   * When a member submits a report, the system validates that the reporter is
+   * authenticated, the target content exists and is accessible, and the member
+   * has not already reported this specific content. The report is immediately
+   * added to the moderation queue with pending status, and all active
+   * moderators are notified of the new report for review.
    *
-   * The operation creates a new record in the discussion_board_reports table
-   * with all necessary information for moderator review including the reporting
-   * member, reported content (either topic or reply), violation category,
-   * severity level, and optional explanatory context. The system automatically
-   * sets the report status to 'pending' and calculates severity level based on
-   * the violation category to prioritize the moderation queue appropriately.
+   * Reports must specify whether they target an article or a comment, include a
+   * reason category from the predefined list (spam, harassment, hate speech,
+   * misinformation, off-topic content, inappropriate language, personal
+   * information disclosure, or other), and can optionally include detailed
+   * explanation. If the reason is other, additional details are required to
+   * provide context for moderators.
    *
-   * Security and validation considerations include verifying the reporting user
-   * is an authenticated member with sufficient reputation (minimum 25
-   * reputation points required per business rules), ensuring the reported
-   * content exists and is accessible, preventing duplicate reports where the
-   * same user reports the same content multiple times within 24 hours, and
-   * enforcing rate limits of maximum 10 reports per hour and 50 reports per day
-   * per user to prevent report abuse.
-   *
-   * The system validates that either reported_topic_id or reported_reply_id is
-   * provided (but not both), as reports target specific content items. The
-   * violation category must be one of the predefined categories:
-   * personal_attack, hate_speech, misinformation, spam, offensive_language,
-   * off_topic, threats, doxxing, trolling, or other. When 'other' is selected,
-   * the reporter_explanation field becomes required with minimum 20
-   * characters.
-   *
-   * Upon successful report creation, the content is added to the moderation
-   * queue where moderators can review, assign themselves, and take appropriate
-   * action. Reports with critical severity (hate_speech, threats, doxxing) may
-   * trigger automatic content hiding pending moderator review to protect the
-   * community from severe violations.
-   *
-   * This operation integrates closely with the moderation system defined in the
-   * requirements, supporting the graduated enforcement approach and transparent
-   * moderation processes. Notifications are sent to moderators when new reports
-   * are submitted, particularly for high-severity violations requiring
-   * immediate attention.
-   *
-   * The endpoint supports the platform's commitment to community-driven quality
-   * control while providing professional moderation infrastructure to address
-   * violations consistently and fairly. Member participation in reporting helps
-   * moderators identify violations efficiently and demonstrates community
-   * investment in maintaining discourse standards.
+   * The reporting system supports the progressive moderation workflow where
+   * members identify potential violations, moderators review the reports in
+   * their queue, and appropriate enforcement actions are taken. Multiple
+   * members can report the same content, with the system consolidating reports
+   * and increasing priority for content with five or more reports. This
+   * operation integrates with the moderation dashboard where moderators review
+   * pending reports and take action to maintain community standards.
    *
    * @param connection
-   * @param body Content report submission information including violation
-   *   category, reported content reference, and optional explanation
+   * @param body Report submission information including target content,
+   *   violation reason, and optional details
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -81,6 +55,61 @@ export class DiscussionboardMemberReportsController {
       return await postDiscussionBoardMemberReports({
         member,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific content report.
+   *
+   * Access comprehensive information about a content report identified by its
+   * unique report ID. This operation serves both members checking the status of
+   * their submitted reports and moderators reviewing reports for moderation
+   * action.
+   *
+   * For members, this operation allows them to view reports they have
+   * personally submitted, including the current status (pending, under review,
+   * resolved, or dismissed), any resolution notes provided by moderators, and
+   * the timestamp of status changes. Members can only access reports they
+   * created themselves, ensuring privacy of the reporting process.
+   *
+   * For moderators, this operation provides complete report details necessary
+   * for thorough review and decision-making. Moderators can view the reporter's
+   * identity, the full context of the reported content (article or comment),
+   * all details provided by the reporter, any previous reports on the same
+   * content, the target author's account history, and previous moderation
+   * actions taken on the reported user. This comprehensive view enables
+   * informed moderation decisions aligned with progressive discipline
+   * policies.
+   *
+   * The response includes the report reason category (spam, harassment, hate
+   * speech, misinformation, off-topic content, inappropriate language, personal
+   * information disclosure, or other), detailed explanation provided by the
+   * reporter, current report status, reviewing moderator information if
+   * assigned, resolution notes from moderator review, timestamps for creation
+   * and status updates, and references to the reported content (article or
+   * comment ID) and the reporter. This operation integrates with the moderation
+   * dashboard workflow where moderators claim reports for review, examine
+   * complete context, and make enforcement decisions.
+   *
+   * @param connection
+   * @param reportId Unique identifier of the target report
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":reportId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("reportId")
+    reportId: string & tags.Format<"uuid">,
+  ): Promise<IDiscussionBoardReport> {
+    try {
+      return await getDiscussionBoardMemberReportsReportId({
+        member,
+        reportId,
       });
     } catch (error) {
       console.log(error);

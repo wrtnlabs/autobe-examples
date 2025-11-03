@@ -9,88 +9,90 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 
 export async function postAuthCustomerLogin(props: {
+  customer: CustomerPayload;
   body: IShoppingMallCustomer.ILogin;
 }): Promise<IShoppingMallCustomer.IAuthorized> {
-  const { body } = props;
-
-  const user = await MyGlobal.prisma.shopping_mall_customers.findFirst({
+  const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: {
-      email: body.email,
+      email: props.body.email,
       deleted_at: null,
     },
-    select: {
-      id: true,
-      email: true,
-      password_hash: true,
-      nickname: true,
-      phone_number: true,
-      status: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
   });
-
-  if (!user) {
+  if (!customer) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const isValid = await PasswordUtil.verify(body.password, user.password_hash);
+  const isValid = await PasswordUtil.verify(
+    props.body.password,
+    customer.password_hash,
+  );
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const nowDate = new Date();
-
-  const accessToken = jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      type: "customer",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
 
-  const refreshToken = jwt.sign(
-    {
-      id: user.id,
-      tokenType: "refresh",
+  const session = await MyGlobal.prisma.shopping_mall_customer_sessions.create({
+    data: {
+      id: v4(),
+      shopping_mall_customer_id: customer.id,
+      ip: props.body.ip ?? "",
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: toISOStringSafe(new Date()),
+      expired_at: accessExpires,
     },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  });
 
-  const expiredAt = toISOStringSafe(
-    new Date(nowDate.getTime() + 60 * 60 * 1000), // 1 hour later
-  );
-  const refreshableUntil = toISOStringSafe(
-    new Date(nowDate.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days later
-  );
+  const nowISOString = toISOStringSafe(new Date());
+
+  const token = {
+    access: jwt.sign(
+      {
+        type: "customer",
+        id: customer.id,
+        session_id: session.id,
+        created_at: nowISOString,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "customer",
+        id: customer.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: nowISOString,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
   return {
-    id: user.id,
-    email: user.email,
-    password_hash: user.password_hash,
-    nickname: user.nickname ?? null,
-    phone_number: user.phone_number ?? null,
-    status: user.status,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: expiredAt,
-      refreshable_until: refreshableUntil,
-    },
+    id: customer.id,
+    email: customer.email,
+    nickname: customer.nickname,
+    created_at: toISOStringSafe(customer.created_at),
+    updated_at: toISOStringSafe(customer.updated_at),
+    deleted_at: customer.deleted_at
+      ? toISOStringSafe(customer.deleted_at)
+      : null,
+    token,
   };
 }

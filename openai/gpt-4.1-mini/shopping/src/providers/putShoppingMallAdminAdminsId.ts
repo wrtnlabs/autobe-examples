@@ -15,49 +15,33 @@ export async function putShoppingMallAdminAdminsId(props: {
   id: string & tags.Format<"uuid">;
   body: IShoppingMallAdmin.IUpdate;
 }): Promise<IShoppingMallAdmin> {
-  const { admin, id, body } = props;
+  const { id, body } = props;
 
-  // Step 1: Verify the target admin exists and is active and not deleted
+  // Fetch the admin to confirm existence & non-deleted state
   const existingAdmin =
     await MyGlobal.prisma.shopping_mall_admins.findUniqueOrThrow({
-      where: { id },
+      where: {
+        id,
+        deleted_at: null,
+      },
     });
 
-  if (
-    existingAdmin.deleted_at !== null &&
-    existingAdmin.deleted_at !== undefined
-  ) {
-    throw new HttpException("Admin not found", 404);
-  }
-
-  // Step 2: Prepare update data
-  // Since email is immutable, do not update it
-  // full_name and phone_number may be nullable optional, update accordingly
-
-  const now = toISOStringSafe(new Date());
-
+  // Perform the update
   const updated = await MyGlobal.prisma.shopping_mall_admins.update({
     where: { id },
     data: {
-      password_hash: body.password_hash,
-      full_name: body.full_name ?? undefined,
-      phone_number: body.phone_number ?? undefined,
-      status: body.status,
-      updated_at: now,
+      email: body.email,
+      full_name: body.full_name,
+      updated_at: toISOStringSafe(new Date()),
     },
   });
 
-  // Step 3: Return updated record with correct date conversions
   return {
     id: updated.id,
     email: updated.email,
-    password_hash: updated.password_hash,
-    full_name: updated.full_name ?? null,
-    phone_number: updated.phone_number ?? null,
-    status: updated.status as "active" | "suspended" | "disabled",
+    full_name: updated.full_name,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
     deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
-    shopping_mall_report_count: null, // not selected, default to null
   };
 }

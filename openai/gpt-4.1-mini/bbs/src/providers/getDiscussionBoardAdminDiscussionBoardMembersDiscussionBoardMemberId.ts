@@ -7,40 +7,34 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IDiscussionBoardDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardDiscussionBoardMember";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function getDiscussionBoardAdminDiscussionBoardMembersDiscussionBoardMemberId(props: {
   admin: AdminPayload;
   discussionBoardMemberId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardDiscussionBoardMember> {
-  const { discussionBoardMemberId } = props;
-
-  const member =
-    await MyGlobal.prisma.discussion_board_members.findUniqueOrThrow({
-      where: { id: discussionBoardMemberId },
-      select: {
-        id: true,
-        email: true,
-        display_name: true,
-        password_hash: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
+}): Promise<IDiscussionBoardMember> {
+  const memberRecord = await MyGlobal.prisma.discussion_board_members.findFirst(
+    {
+      where: {
+        id: props.discussionBoardMemberId,
+        deleted_at: null,
       },
-    });
+    },
+  );
 
-  if (member.deleted_at !== null) {
+  if (memberRecord === null) {
     throw new HttpException("Discussion board member not found", 404);
   }
 
   return {
-    id: member.id,
-    email: member.email,
-    display_name: member.display_name,
-    password_hash: member.password_hash,
-    created_at: toISOStringSafe(member.created_at),
-    updated_at: toISOStringSafe(member.updated_at),
-    deleted_at: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
+    id: memberRecord.id,
+    email: memberRecord.email,
+    password: "",
+    created_at: toISOStringSafe(memberRecord.created_at),
+    updated_at: toISOStringSafe(memberRecord.updated_at),
+    deleted_at: memberRecord.deleted_at
+      ? toISOStringSafe(memberRecord.deleted_at)
+      : null,
   };
 }

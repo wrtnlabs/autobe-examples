@@ -1,9 +1,7 @@
-/// Main return request entity representing customer requests to return
-/// purchased items. Captures the complete return workflow from initial
-/// request through completion. Links to orders and customers, and tracks
-/// return lifecycle including approval status, reason for return, and
-/// resolution. Central entity for managing post-fulfillment reverse
-/// transactions.
+/// Customer-initiated return requests for delivered orders. Stores the
+/// initial return request with customer reason, optional evidence (photos),
+/// and desired resolution. This is the first stage of the return lifecycle
+/// where customers express intent to return a product.
 ///
 /// @namespace Returns
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -14,139 +12,229 @@ model shopping_mall_return_requests {
   /// Primary Key.
   id String @id
   
-  /// Reference to the original order being returned. Links to {@link
-  /// shopping_mall_orders.id}.
+  /// Reference to the order being returned. {@link shopping_mall_orders.id}
   shopping_mall_order_id String
   
-  /// Customer who initiated the return request. Links to {@link
-  /// shopping_mall_customer.id}.
+  /// Customer who initiated the return request. {@link
+  /// shopping_mall_customers.id}
   shopping_mall_customer_id String
   
-  /// Predefined return reason selected by customer. Links to {@link
-  /// shopping_mall_return_reasons.id}.
-  shopping_mall_return_reason_id String
+  /// Specific line item being returned (if partial return). {@link
+  /// shopping_mall_order_line_items.id}
+  shopping_mall_order_line_item_id String?
   
-  /// Unique human-readable return request number in format RET-YYYYMMDD-XXXXXX
-  /// for customer reference and tracking.
-  return_number String
+  /// Human-readable return request number in format RR-YYYYMMDD-XXXXXX for
+  /// customer reference
+  return_request_number String
   
-  /// Current status of return request: PENDING (awaiting approval), APPROVED
-  /// (approved by seller/admin), RECEIVED (items received), INSPECTED
-  /// (inspection completed), COMPLETED (return processed), CANCELLED, REJECTED
-  /// (by seller).
-  return_status String
+  /// Customer-selected reason for return: Item not as described, Item arrived
+  /// defective, Wrong item received, Item arrived damaged, Changed mind, Not
+  /// needed, Other reason
+  return_reason String
   
-  /// Detailed description provided by customer explaining reason for return,
-  /// up to 2000 characters.
-  customer_description String?
+  /// Customer's detailed explanation of return reason (up to 500 characters)
+  additional_details String?
   
-  /// Number of days allowed for customer to initiate return from delivery
-  /// date, typically 30 days.
-  return_window_days Int
+  /// Customer's desired outcome: Full refund, Replacement, Store credit,
+  /// Partial refund
+  requested_resolution String?
   
-  /// Unique Return Merchandise Authorization (RMA) number generated when
-  /// return is approved, used for shipment tracking.
-  return_authorization_number String?
+  /// Number of units customer wants to return (for multi-unit orders)
+  quantity_to_return Int
   
-  /// Timestamp when return request was approved by seller or admin.
-  approved_at DateTime?
+  /// JSON array of uploaded evidence image URLs (max 3 images) for
+  /// damaged/defective items
+  evidence_urls String?
   
-  /// Timestamp when returned items were received at return destination.
-  received_at DateTime?
+  /// Return request status: pending, authorized, rejected, dispute_opened,
+  /// withdrawn. Controls workflow progression.
+  status String
   
-  /// Timestamp when inspection of returned items was completed.
-  inspection_completed_at DateTime?
-  
-  /// Timestamp when return request was initially created by customer.
+  /// Timestamp when return request was initiated by customer
   created_at DateTime
   
-  /// Timestamp of most recent modification to return request.
+  /// Last update timestamp for return request
   updated_at DateTime
   
-  /// Soft delete timestamp for logical deletion while preserving data
-  /// integrity.
+  /// Soft delete timestamp if return request is withdrawn
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  returnReason shopping_mall_return_reasons @relation(fields: [shopping_mall_return_reason_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  lineItem shopping_mall_order_line_items? @relation(fields: [shopping_mall_order_line_item_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_return_items shopping_mall_return_items[]
-  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_return_authorizations shopping_mall_return_authorizations?
+  shopping_mall_return_shipments shopping_mall_return_shipments[]
+  shopping_mall_return_decisions shopping_mall_return_decisions[]
+  shopping_mall_restocking_inventory shopping_mall_restocking_inventory[]
   
-  @@index([shopping_mall_return_reason_id], map: "shopping_mall_return_requests_shopping_mall_return_rea_93c5e844")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_line_item_id], map: "shopping_mall_return_requests_shopping_mall_order_line_d0549e8c")
   
-  @@unique([return_number])
-  @@unique([return_authorization_number])
+  @@unique([return_request_number])
+  // spellchecker: ignore-next-line
   @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_return_requests_shopping_mall_customer_i_fd9e06d1")
+  @@index([status, created_at])
   @@index([shopping_mall_order_id])
-  @@index([return_status])
-  @@index([created_at])
 }
 
-/// Individual items included in a return request. Represents specific
-/// products being returned from an order. Each return item links to the
-/// original order item and captures item-level return information including
-/// condition and quantity being returned. Always managed through parent
-/// return request.
+/// Seller's authorization decision on customer return requests. Records
+/// whether seller approves or rejects the return, with reason and timestamp.
+/// This is the authorization stage where seller determines if return is
+/// eligible.
 ///
 /// @namespace Returns
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_return_items {
+model shopping_mall_return_authorizations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent return request containing this item. Links to {@link
-  /// shopping_mall_return_requests.id}.
+  /// Associated return request being authorized. {@link
+  /// shopping_mall_return_requests.id}
   shopping_mall_return_request_id String
   
-  /// Original order item being returned. Links to {@link
-  /// shopping_mall_order_items.id}.
-  shopping_mall_order_item_id String
+  /// Seller making the authorization decision. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
   
-  /// Product being returned. Links to {@link shopping_mall_products.id}.
-  shopping_mall_product_id String
+  /// Seller's decision: approved, rejected, more_information_requested.
+  /// Controls next workflow step.
+  authorization_decision String
   
-  /// Number of units being returned from original order quantity.
-  quantity_returned Int
+  /// Seller's explanation for approval or rejection of return
+  decision_reason String?
   
-  /// Condition of returned item: UNOPENED (original packaging intact), USED
-  /// (shows wear but functional), DAMAGED (defective or damaged), OTHER.
-  item_condition String
+  /// If decision is 'more_information_requested', details about what
+  /// information customer should provide
+  requested_information String?
   
-  /// Whether this item is eligible for refund based on condition and return
-  /// policy.
-  refund_eligible Boolean
+  /// Deadline for customer to provide additional information (typically 7 days
+  /// from authorization)
+  information_deadline DateTime?
   
-  /// Timestamp when return item was added to return request.
+  /// Full return shipping address seller will accept returns to
+  return_shipping_address String?
+  
+  /// Tracking number if prepaid return shipping label was provided by seller
+  prepaid_label_tracking_number String?
+  
+  /// Timestamp when seller made the authorization decision
+  authorized_at DateTime
+  
+  /// Timestamp when authorization record was created
   created_at DateTime
+  
+  /// Last update timestamp for authorization
+  updated_at DateTime
   
   //----
   // RELATIONS
   //----
   returnRequest shopping_mall_return_requests @relation(fields: [shopping_mall_return_request_id], references: [id], onDelete: Cascade)
-  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_return_inspections shopping_mall_return_inspections[]
+  shopping_mall_return_shipments shopping_mall_return_shipments?
   
-  @@index([shopping_mall_product_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_return_request_id], map: "shopping_mall_return_authorizations_shopping_mall_retu_eee289ac")
   
-  @@index([shopping_mall_return_request_id])
-  @@index([shopping_mall_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, authorized_at], map: "shopping_mall_return_authorizations_shopping_mall_sell_9985ca92")
+  @@index([authorization_decision])
 }
 
-/// Inspection records for quality assurance of returned items. Captures
-/// detailed inspection findings when returned items are received and
-/// examined. Determines whether items meet return conditions and refund
-/// eligibility. Can be searched and managed independently by inspection
-/// staff.
+/// Tracks the physical return shipment journey from customer back to seller.
+/// Records carrier, tracking number, and shipping status as return moves
+/// through logistics. This is the shipment stage of the return lifecycle.
+///
+/// @namespace Returns
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_return_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated return request being shipped. {@link
+  /// shopping_mall_return_requests.id}
+  shopping_mall_return_request_id String
+  
+  /// Associated return authorization approval. {@link
+  /// shopping_mall_return_authorizations.id}
+  shopping_mall_return_authorization_id String?
+  
+  /// Customer initiating the return shipment. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Carrier handling the return shipment (optional). {@link
+  /// shopping_mall_shipping_carriers.id}
+  shopping_mall_shipping_carrier_id String?
+  
+  /// Carrier tracking number for outbound return shipment provided by customer
+  return_tracking_number String?
+  
+  /// Shipping carrier name (FedEx, UPS, DHL, etc.) for the return
+  carrier_name String?
+  
+  /// Customer's address from which return is being shipped
+  origin_address String
+  
+  /// Seller's return receiving address (typically seller's warehouse)
+  destination_address String
+  
+  /// Return shipment status: not_shipped, in_transit, received_by_seller,
+  /// returned_to_customer. Tracks physical journey.
+  shipment_status String
+  
+  /// Timestamp when customer shipped the return (based on carrier pickup)
+  shipped_at DateTime?
+  
+  /// Timestamp when seller confirmed receipt of return shipment
+  received_at DateTime?
+  
+  /// Estimated date seller expects to receive return based on carrier estimate
+  expected_receipt_date DateTime?
+  
+  /// Timestamp when return shipment record was created
+  created_at DateTime
+  
+  /// Last update timestamp for return shipment
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  returnRequest shopping_mall_return_requests @relation(fields: [shopping_mall_return_request_id], references: [id], onDelete: Cascade)
+  authorization shopping_mall_return_authorizations? @relation(fields: [shopping_mall_return_authorization_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  carrier shopping_mall_shipping_carriers? @relation(fields: [shopping_mall_shipping_carrier_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_return_inspections shopping_mall_return_inspections?
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_return_authorization_id], map: "shopping_mall_return_shipments_shopping_mall_return_au_08c66dda")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shipping_carrier_id], map: "shopping_mall_return_shipments_shopping_mall_shipping__294f9a38")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_return_request_id], map: "shopping_mall_return_shipments_shopping_mall_return_re_04d6dd0b")
+  @@index([return_tracking_number])
+  @@index([shipment_status, updated_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_return_shipments_shopping_mall_customer__6becde30")
+}
+
+/// Records seller's inspection of received return item. Documents item
+/// condition, whether condition is acceptable for refund, and any deductions
+/// (restocking fees, condition issues). This is the inspection stage after
+/// return is received.
 ///
 /// @namespace Returns
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -157,142 +245,160 @@ model shopping_mall_return_inspections {
   /// Primary Key.
   id String @id
   
-  /// The return item being inspected. Links to {@link
-  /// shopping_mall_return_items.id}.
-  shopping_mall_return_item_id String
+  /// Return shipment being inspected. {@link shopping_mall_return_shipments.id}
+  shopping_mall_return_shipment_id String
   
-  /// Current inspection status: PENDING (awaiting inspection), IN_PROGRESS
-  /// (inspection underway), APPROVED (item meets conditions), REJECTED (item
-  /// does not meet conditions).
+  /// Seller performing the inspection. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Inspection outcome: pending, approved, rejected, partial_approval.
+  /// Determines if refund proceeds.
   inspection_status String
   
-  /// Detailed inspection notes documenting condition of item, damage
-  /// assessment, and findings, up to 2000 characters.
+  /// Seller's assessment of returned item condition: new, like_new, good,
+  /// fair, poor, damaged_unsaleable
+  item_condition_assessment String
+  
+  /// Detailed description of item condition, visible wear, damage, missing
+  /// components, etc.
+  condition_details String?
+  
+  /// Verification that returned item matches ordered SKU: verified_match,
+  /// mismatch, unable_to_verify
+  sku_verification String
+  
+  /// Whether all original accessories, documentation, and components are
+  /// included
+  all_accessories_present Boolean
+  
+  /// List of missing accessories or components if not all present
+  missing_items String?
+  
+  /// Percentage deduction from refund for condition issues (0, 10, 25, 50, 100
+  /// for no refund)
+  refund_deduction_percentage Int
+  
+  /// Reason for any refund deduction applied
+  deduction_reason String?
+  
+  /// Seller's detailed inspection notes and findings
   inspection_notes String?
   
-  /// Whether inspection identified defect or damage caused by
-  /// manufacturer/shipping rather than customer use.
-  defect_found Boolean
+  /// JSON array of photos taken during inspection showing item condition
+  inspection_evidence_urls String?
   
-  /// Whether inspection identified damage caused by customer misuse or
-  /// improper handling.
-  customer_damage Boolean
+  /// Timestamp when inspection was completed
+  inspected_at DateTime
   
-  /// Percentage restocking fee to be deducted from refund (0-25% depending on
-  /// condition), if applicable.
-  restocking_fee_applicable Float
-  
-  /// Timestamp when inspection was completed and approved.
-  approved_at DateTime?
-  
-  /// Timestamp when inspection record was created.
+  /// Timestamp when inspection record was created
   created_at DateTime
   
-  /// Timestamp of most recent inspection update.
+  /// Last update timestamp for inspection
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  returnItem shopping_mall_return_items @relation(fields: [shopping_mall_return_item_id], references: [id], onDelete: Cascade)
+  returnShipment shopping_mall_return_shipments @relation(fields: [shopping_mall_return_shipment_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_return_item_id], map: "shopping_mall_return_inspections_shopping_mall_return__206c8e5d")
+  shopping_mall_return_decisions shopping_mall_return_decisions[]
+  shopping_mall_restocking_inventory shopping_mall_restocking_inventory[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_return_shipment_id], map: "shopping_mall_return_inspections_shopping_mall_return__d4f3a3f5")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, inspected_at], map: "shopping_mall_return_inspections_shopping_mall_seller__68388258")
   @@index([inspection_status])
-  @@index([created_at])
 }
 
-/// Refund request management entity tracking customer requests for financial
-/// reimbursement. Represents monetary refund workflows separate from
-/// physical return tracking. Links to return requests and orders, tracks
-/// refund amounts, methods, and processing status. Requires independent
-/// management and API operations.
+/// Final decision on return and refund eligibility after inspection.
+/// Documents whether return is approved for full/partial/no refund, with
+/// calculated refund amount and reasoning. This synthesizes return request
+/// through inspection into final decision.
 ///
 /// @namespace Returns
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_refund_requests {
+model shopping_mall_return_decisions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Associated return request if this refund is for returned items. Links to
-  /// {@link shopping_mall_return_requests.id}.
-  shopping_mall_return_request_id String?
+  /// Original return request being decided upon. {@link
+  /// shopping_mall_return_requests.id}
+  shopping_mall_return_request_id String
   
-  /// Original order being refunded. Links to {@link shopping_mall_orders.id}.
+  /// Associated inspection findings (if applicable). {@link
+  /// shopping_mall_return_inspections.id}
+  shopping_mall_return_inspection_id String?
+  
+  /// Original order being returned. {@link shopping_mall_orders.id}
   shopping_mall_order_id String
   
-  /// Customer requesting the refund. Links to {@link
-  /// shopping_mall_customer.id}.
-  shopping_mall_customer_id String
+  /// Seller providing final decision (or admin if escalated). {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
   
-  /// Unique human-readable refund request number in format REF-YYYYMMDD-XXXXXX
-  /// for tracking.
-  refund_number String
+  /// Final decision: approved_full_refund, approved_partial_refund, rejected,
+  /// disputed, admin_override
+  decision_status String
   
-  /// Current refund status: PENDING (awaiting approval), APPROVED (approved
-  /// for processing), PROCESSING (refund being processed), COMPLETED (refund
-  /// issued), FAILED (processing failed), CANCELLED.
-  refund_status String
+  /// Original order total amount in base currency
+  original_order_amount Float
   
-  /// Customer-provided reason for refund request, up to 1000 characters.
-  refund_reason String
-  
-  /// Total refund amount in customer's currency after deductions (restocking
-  /// fees, return shipping, etc.).
+  /// Amount to be refunded to customer (may be less than original due to
+  /// deductions)
   refund_amount Float
   
-  /// Original order amount before any refund deductions.
-  original_amount Float
+  /// JSON object documenting all deductions: restocking_fee,
+  /// condition_deduction, shipping_cost_retained, etc.
+  deductions String?
   
-  /// Total amount deducted from refund (restocking fees, return shipping fees,
-  /// etc.).
-  deductions_amount Float
+  /// Explanation for the decision (why full/partial/no refund)
+  decision_reason String
   
-  /// Method of refund: ORIGINAL_PAYMENT (back to original payment method),
-  /// STORE_CREDIT (credit in customer account), OTHER.
-  refund_method String
+  /// Whether customer can appeal this decision (typically true unless fraud
+  /// detected)
+  appeal_eligible Boolean
   
-  /// Timestamp when refund request was approved by seller or admin.
-  approved_at DateTime?
+  /// Timestamp when decision was finalized
+  decided_at DateTime
   
-  /// Timestamp when refund processing began.
-  processing_started_at DateTime?
+  /// Who made the decision: seller, admin, system_auto, dispute_resolution
+  decision_made_by String
   
-  /// Timestamp when refund was successfully processed and issued to customer.
-  completed_at DateTime?
-  
-  /// Timestamp when refund request was initially created.
+  /// Timestamp when decision record was created
   created_at DateTime
   
-  /// Timestamp of most recent modification to refund request.
+  /// Last update timestamp for decision
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  returnRequest shopping_mall_return_requests? @relation(fields: [shopping_mall_return_request_id], references: [id], onDelete: Cascade)
+  returnRequest shopping_mall_return_requests @relation(fields: [shopping_mall_return_request_id], references: [id], onDelete: Cascade)
+  inspection shopping_mall_return_inspections? @relation(fields: [shopping_mall_return_inspection_id], references: [id], onDelete: Cascade)
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_refund_processing shopping_mall_refund_processing[]
-  shopping_mall_refund_history shopping_mall_refund_history[]
+  shopping_mall_refund_processing shopping_mall_refund_processing?
   
-  @@index([shopping_mall_return_request_id], map: "shopping_mall_refund_requests_shopping_mall_return_req_661a3d18")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_return_inspection_id], map: "shopping_mall_return_decisions_shopping_mall_return_in_0416a575")
+  @@index([shopping_mall_seller_id])
   
-  @@unique([refund_number])
-  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_customer_i_57dc99d2")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_return_request_id], map: "shopping_mall_return_decisions_shopping_mall_return_re_5e1074e2")
+  @@index([decision_status, decided_at])
   @@index([shopping_mall_order_id])
-  @@index([refund_status])
-  @@index([created_at])
 }
 
-/// Refund processing workflow entity tracking stages in the refund
-/// processing pipeline. Represents individual processing steps and actions
-/// taken during refund execution. Links to refund requests and tracks
-/// payment processing details, approval chain, and processing status at each
-/// step.
+/// Tracks refund processing workflow from approval through completion.
+/// Records refund payment method, status, and timeline. This is the
+/// financial execution stage where refund is actually paid to customer.
 ///
 /// @namespace Returns
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -303,160 +409,162 @@ model shopping_mall_refund_processing {
   /// Primary Key.
   id String @id
   
-  /// The refund request being processed. Links to {@link
-  /// shopping_mall_refund_requests.id}.
-  shopping_mall_refund_request_id String
+  /// Associated return decision authorizing the refund. {@link
+  /// shopping_mall_return_decisions.id}
+  shopping_mall_return_decision_id String
   
-  /// Current processing step: VALIDATION (validating refund eligibility),
-  /// APPROVAL (awaiting approval), PAYMENT_PROCESSING (submitting to payment
-  /// gateway), PAYMENT_CONFIRMED (payment processed), COMPLETED (refund
-  /// issued).
-  processing_step String
+  /// Original order being refunded. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
   
-  /// Status of current step: PENDING, IN_PROGRESS, SUCCESSFUL, FAILED.
-  processing_status String
+  /// Customer receiving the refund. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
   
-  /// Transaction ID from payment gateway when refund is submitted for
-  /// processing.
-  payment_transaction_id String?
+  /// Seller responsible for refund (usually product seller). {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
   
-  /// Confirmation code from payment gateway when refund is successfully
-  /// processed.
-  payment_confirmation_code String?
+  /// Unique refund identifier in format REF-YYYYMMDD-XXXXXX
+  refund_number String
   
-  /// Notes about processing step, issues encountered, or actions taken, up to
-  /// 1000 characters.
-  processing_notes String?
-  
-  /// Number of times this processing step has been retried if failures
-  /// occurred.
-  retry_count Int
-  
-  /// Scheduled time for next retry attempt if processing step failed.
-  next_retry_at DateTime?
-  
-  /// Timestamp when processing step was initiated.
-  created_at DateTime
-  
-  /// Timestamp of most recent processing update.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
-  
-  @@index([shopping_mall_refund_request_id, processing_step], map: "shopping_mall_refund_processing_shopping_mall_refund_r_60ad5605")
-  @@index([processing_status])
-  @@index([created_at])
-}
-
-/// Historical audit trail of all refund transactions and state changes.
-/// Append-only snapshot records capturing complete refund processing history
-/// for compliance and audit purposes. Read-only from user perspective with
-/// immutable records for financial compliance and dispute resolution.
-///
-/// @namespace Returns
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_refund_history {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The refund request this history entry is for. Links to {@link
-  /// shopping_mall_refund_requests.id}.
-  shopping_mall_refund_request_id String
-  
-  /// Type of history event: CREATED (refund request created), APPROVED (refund
-  /// approved), PROCESSING_STARTED (processing began), PAYMENT_SUBMITTED
-  /// (payment sent to gateway), PAYMENT_COMPLETED (payment successful), FAILED
-  /// (processing failed), CANCELLED, COMPLETED.
-  event_type String
-  
-  /// Previous refund status before this event occurred.
-  previous_status String?
-  
-  /// New refund status after this event.
-  new_status String
-  
-  /// Refund amount at time of this historical event.
+  /// Amount being refunded to customer in base currency
   refund_amount Float
   
-  /// Detailed information about event (approver, system action, error message,
-  /// etc.), up to 2000 characters.
-  event_details String?
+  /// Refund destination: original_card, original_account, store_credit,
+  /// bank_transfer, check
+  refund_method String
   
-  /// Who or what caused this event (admin username, system process, customer,
-  /// automated job, etc.).
-  created_by String?
+  /// Refund processing status: pending, initiated, processing, completed,
+  /// failed, reversed. Controls payment state.
+  refund_status String
   
-  /// Timestamp when this history event was recorded (immutable).
+  /// Transaction ID from payment processor for the refund (if applicable)
+  payment_processor_transaction_id String?
+  
+  /// Timestamp when refund processing was initiated
+  refund_initiated_at DateTime?
+  
+  /// Timestamp when refund was successfully completed (appeared in customer
+  /// account)
+  refund_completed_at DateTime?
+  
+  /// Estimated date refund will appear in customer's account (typically 3-5
+  /// business days)
+  expected_arrival_date DateTime?
+  
+  /// If refund failed, reason for failure (invalid payment method, account
+  /// closed, etc.)
+  failure_reason String?
+  
+  /// Number of times refund has been attempted (max 3 retries before
+  /// escalation)
+  retry_count Int
+  
+  /// Timestamp when refund record was created
   created_at DateTime
+  
+  /// Last update timestamp for refund
+  updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  returnDecision shopping_mall_return_decisions @relation(fields: [shopping_mall_return_decision_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_refund_request_id, created_at], map: "shopping_mall_refund_history_shopping_mall_refund_requ_bd6c78e9")
-  @@index([event_type])
-  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_return_decision_id], map: "shopping_mall_refund_processing_shopping_mall_return_d_a79ec4ae")
+  @@index([shopping_mall_seller_id])
+  
+  @@unique([refund_number])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, refund_initiated_at], map: "shopping_mall_refund_processing_shopping_mall_customer_f458cbd1")
+  @@index([shopping_mall_order_id])
+  @@index([refund_status, updated_at])
 }
 
-/// Reference table containing predefined return reasons that customers can
-/// select when initiating return requests. Static lookup table managed by
-/// system administration for standardized return reason categorization. Used
-/// for analytics and process improvement.
+/// Records when returned items are restocked into seller's inventory. Tracks
+/// whether returned item is marked as new, open-box, or used, and the
+/// inventory restoration process. This links returns back to inventory
+/// system for stock replenishment.
 ///
 /// @namespace Returns
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_return_reasons {
+model shopping_mall_restocking_inventory {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique code for this return reason (e.g., DEFECTIVE, WRONG_ITEM,
-  /// NOT_DESCRIBED, DAMAGED_SHIPPING, CHANGED_MIND).
-  reason_code String
+  /// Associated inspection confirming item acceptable for restocking. {@link
+  /// shopping_mall_return_inspections.id}
+  shopping_mall_return_inspection_id String?
   
-  /// Customer-facing display label for this return reason, up to 100
-  /// characters.
-  reason_label String
+  /// Product variant (SKU) being restocked. {@link
+  /// shopping_mall_product_variants.id}
+  shopping_mall_product_variant_id String
   
-  /// Detailed description explaining this return reason to customers, up to
-  /// 500 characters.
-  reason_description String?
+  /// Seller whose inventory is being replenished. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
   
-  /// Whether items returned for this reason require formal inspection before
-  /// refund approval.
-  requires_inspection Boolean
+  /// Associated return request that triggered restocking. {@link
+  /// shopping_mall_return_requests.id}
+  shopping_mall_return_request_id String
   
-  /// Refund eligibility for this reason: FULL (full refund), PARTIAL (may
-  /// incur fees), STORE_CREDIT_ONLY, CASE_BY_CASE.
-  refund_eligibility String
+  /// Number of units being added back to inventory
+  quantity_restocked Int
   
-  /// Display order in customer-facing return reason dropdown (0 = first).
-  sort_order Int
+  /// Condition of restocked item: new, open_box, used, refurbished. Determines
+  /// how it can be sold.
+  restock_condition String
   
-  /// Whether this reason is currently available for customer selection.
-  is_active Boolean
+  /// Restock processing status: pending, approved, failed_no_inventory_slot,
+  /// completed
+  restock_status String
   
-  /// Timestamp when this return reason was created.
+  /// Why item is being restocked: return_approved, quality_check_passed,
+  /// inventory_correction
+  restock_reason String
+  
+  /// Reference to corresponding inventory movement record in inventory system
+  /// (if synchronized)
+  inventory_movement_id String?
+  
+  /// Whether this item can be resold to other customers (false if item is
+  /// defective/unsaleable)
+  resale_permission Boolean
+  
+  /// Additional notes about restock condition or handling requirements
+  notes String?
+  
+  /// Timestamp when item was added back to inventory
+  restocked_at DateTime?
+  
+  /// Timestamp when restocking record was created
   created_at DateTime
   
-  /// Timestamp of most recent update to this return reason.
+  /// Last update timestamp for restocking
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  shopping_mall_return_requests shopping_mall_return_requests[]
+  inspection shopping_mall_return_inspections? @relation(fields: [shopping_mall_return_inspection_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  returnRequest shopping_mall_return_requests @relation(fields: [shopping_mall_return_request_id], references: [id], onDelete: Cascade)
   
-  @@unique([reason_code])
-  @@index([is_active])
-  @@index([sort_order])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_return_inspection_id], map: "shopping_mall_restocking_inventory_shopping_mall_retur_06f45034")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_restocking_inventory_shopping_mall_selle_a648f0d1")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_restocking_inventory_shopping_mall_produ_f231aa42")
+  @@index([restock_status])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_return_request_id], map: "shopping_mall_restocking_inventory_shopping_mall_retur_9d084620")
 }

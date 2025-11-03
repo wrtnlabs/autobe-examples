@@ -1,66 +1,8 @@
-/// Global platform configuration settings and operational parameters. Stores
-/// key-value pairs for system-wide settings including feature toggles,
-/// business thresholds, default values, and platform behavior controls. This
-/// table provides centralized configuration management for the entire
-/// e-commerce platform.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_configs {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique configuration key identifier using dot notation (e.g.,
-  /// 'platform.commission.default_rate', 'order.cancellation.window_hours').
-  /// Used to retrieve specific configuration values.
-  config_key String
-  
-  /// Configuration value stored as string. Can represent various data types
-  /// (numbers, booleans, JSON) that are parsed by the application layer based
-  /// on the config_key.
-  config_value String
-  
-  /// Data type indicator for the config_value (e.g., 'string', 'integer',
-  /// 'decimal', 'boolean', 'json'). Helps application layer parse the value
-  /// correctly.
-  data_type String
-  
-  /// Human-readable description explaining the purpose and usage of this
-  /// configuration setting. Helps administrators understand what the setting
-  /// controls.
-  description String
-  
-  /// Configuration category for grouping related settings (e.g., 'platform',
-  /// 'payment', 'shipping', 'notification', 'security'). Enables organized
-  /// configuration management.
-  category String
-  
-  /// Whether this configuration can be modified through admin interface.
-  /// System-critical configurations are marked as non-editable to prevent
-  /// accidental changes.
-  is_editable Boolean
-  
-  /// Timestamp when this configuration entry was created.
-  created_at DateTime
-  
-  /// Timestamp when this configuration entry was last modified.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([config_key])
-  @@index([category, created_at])
-}
-
-/// Sales channels and marketplace segmentation configuration. Represents
-/// different distribution channels through which products are sold (e.g.,
-/// web platform, mobile app, regional marketplaces, partner channels).
-/// Channels allow segmentation of products, customers, and orders for
-/// business analytics and operational management.
+/// Sales channels through which customers access the platform. Represents
+/// different access points such as web storefront, mobile application, API
+/// marketplace, or partner integrations. Each channel may have distinct
+/// configurations, sections, and operational parameters. Referenced by
+/// {@link shopping_mall_sections} for channel-specific content organization.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -71,169 +13,287 @@ model shopping_mall_channels {
   /// Primary Key.
   id String @id
   
-  /// Unique channel identifier code (e.g., 'WEB', 'MOBILE_APP', 'US_MARKET',
-  /// 'EU_MARKET'). Used as short reference in application logic and analytics.
-  channel_code String
+  /// Unique business identifier for the channel. Examples: WEB, MOBILE_APP,
+  /// API, PARTNER_PORTAL. Used for programmatic channel reference.
+  code String
   
-  /// Human-readable channel name displayed in admin dashboard and reports
-  /// (e.g., 'Web Platform', 'Mobile Application', 'United States Market').
-  channel_name String
+  /// Human-readable display name of the channel. Examples: Web Storefront,
+  /// Mobile Application, API Marketplace.
+  name String
   
-  /// Detailed description of the channel's purpose, target audience, and
-  /// operational scope. Helps administrators understand channel segmentation
-  /// strategy.
+  /// Detailed description of the channel purpose and characteristics. Explains
+  /// how customers access the platform through this channel.
   description String
   
-  /// Channel classification type (e.g., 'platform', 'regional', 'partner',
-  /// 'mobile'). Used for grouping and filtering channels by operational
-  /// category.
-  channel_type String
+  /// Whether this channel is currently operational and accepting traffic.
+  /// Inactive channels are hidden from customer access but configuration is
+  /// preserved.
+  active Boolean
   
-  /// Whether this channel is currently active and accepting orders. Inactive
-  /// channels are hidden from customer-facing interfaces but data is retained.
-  is_active Boolean
-  
-  /// Default currency code for this channel following ISO 4217 standard (e.g.,
-  /// 'USD', 'EUR', 'GBP'). Used for pricing display and transaction
-  /// processing.
-  default_currency String
-  
-  /// Default language code for this channel following ISO 639-1 standard
-  /// (e.g., 'en', 'es', 'fr'). Used for content localization and communication
-  /// templates.
-  default_language String
-  
-  /// Channel timezone identifier in IANA format (e.g., 'America/New_York',
-  /// 'Europe/London'). Used for displaying dates/times and scheduling
-  /// operations.
-  timezone String
-  
-  /// Platform commission rate for this channel as decimal percentage (e.g.,
-  /// 0.10 for 10%). Channel-specific commission overrides global platform
-  /// defaults.
-  commission_rate Float
-  
-  /// Channel-specific configuration settings stored as JSON. Contains
-  /// customizable parameters like shipping methods, payment gateways, feature
-  /// flags specific to this channel.
-  settings_json String?
-  
-  /// Timestamp when this channel was created.
+  /// Timestamp when this channel was created in the system.
   created_at DateTime
   
   /// Timestamp when this channel configuration was last modified.
   updated_at DateTime
   
-  /// Soft delete timestamp. When set, the channel is marked as deleted but
-  /// data is retained for historical orders and analytics.
-  deleted_at DateTime?
-  
   //----
   // RELATIONS
   //----
-  shopping_mall_email_templates shopping_mall_email_templates[]
+  shopping_mall_sections shopping_mall_sections[]
+  shopping_mall_announcements shopping_mall_announcements[]
+  shopping_mall_product_categories shopping_mall_product_categories[]
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_product_options shopping_mall_product_options[]
+  shopping_mall_product_tags shopping_mall_product_tags[]
   
-  @@unique([channel_code])
-  @@index([is_active, created_at])
-  @@index([channel_type, is_active])
+  @@unique([code])
+  @@index([active, created_at])
 }
 
-/// Email template management for transactional and marketing communications.
-/// Stores reusable email templates with dynamic content placeholders for
-/// order confirmations, shipping notifications, account verification,
-/// password reset, and promotional campaigns. Supports multi-language and
-/// channel-specific customization.
+/// Organizational sections within platform channels for grouping products,
+/// content, or features. Examples include category sections like
+/// Electronics, Fashion, Home & Garden, or functional sections like Featured
+/// Products, New Arrivals, Best Sellers. Each section belongs to a specific
+/// channel. Referenced by product categorization and content organization
+/// systems.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_email_templates {
+model shopping_mall_sections {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Optional channel association. {@link shopping_mall_channels.id}. When
-  /// set, this template is specific to a channel; null indicates platform-wide
-  /// template.
-  shopping_mall_channel_id String?
+  /// Channel to which this section belongs. {@link shopping_mall_channels.id}.
+  shopping_mall_channel_id String
   
-  /// Unique template identifier code (e.g., 'ORDER_CONFIRMATION',
-  /// 'SHIPMENT_NOTIFICATION', 'PASSWORD_RESET', 'WELCOME_EMAIL'). Used by
-  /// application to select appropriate template.
-  template_code String
+  /// Unique business identifier for the section within its channel. Examples:
+  /// ELECTRONICS, FASHION, HOME_GARDEN. Used for programmatic section
+  /// reference.
+  code String
   
-  /// Human-readable template name displayed in admin interface (e.g., 'Order
-  /// Confirmation Email', 'Shipping Notification').
-  template_name String
+  /// Human-readable display name of the section. Examples: Electronics,
+  /// Fashion & Apparel, Home & Garden.
+  name String
   
-  /// Description of template purpose, usage context, and available variables.
-  /// Helps administrators understand when this template is sent.
+  /// Detailed description of the section purpose and what content or products
+  /// it contains. Helps admins understand section organization.
   description String
   
-  /// Template category for organization (e.g., 'transactional', 'marketing',
-  /// 'authentication', 'notification'). Enables filtering and management by
-  /// business function.
-  category String
+  /// Numeric value controlling the display sequence of sections within a
+  /// channel. Lower numbers appear first. Allows admins to control section
+  /// ordering in navigation menus.
+  display_order Int
   
-  /// Language code for template content following ISO 639-1 standard (e.g.,
-  /// 'en', 'es', 'fr'). Supports multi-language email communications.
-  language_code String
+  /// Whether this section is currently visible to users. Inactive sections are
+  /// hidden but configuration is preserved for future reactivation.
+  active Boolean
   
-  /// Email subject line with support for variable placeholders (e.g., 'Your
-  /// Order {{order_number}} has been confirmed'). Placeholders are replaced
-  /// with actual values when email is sent.
-  subject String
-  
-  /// HTML email body content with variable placeholders and styling. Used for
-  /// rich-formatted email display in modern email clients supporting HTML.
-  body_html String
-  
-  /// Plain text email body content with variable placeholders. Used as
-  /// fallback for email clients that don't support HTML or for accessibility.
-  body_text String
-  
-  /// JSON array of available template variables with descriptions (e.g.,
-  /// [{"key": "order_number", "description": "Order ID"}, {"key":
-  /// "customer_name", "description": "Customer full name"}]). Documents
-  /// available placeholders for template customization.
-  variables_json String?
-  
-  /// Sender email address for this template (e.g., 'noreply@shoppingmall.com',
-  /// 'support@shoppingmall.com'). Overrides default platform sender if
-  /// specified.
-  from_email String?
-  
-  /// Sender name displayed to recipients (e.g., 'Shopping Mall Support',
-  /// 'Order Team'). Provides friendly sender identification.
-  from_name String?
-  
-  /// Reply-to email address if different from sender. Allows customers to
-  /// respond to specific departments or support channels.
-  reply_to_email String?
-  
-  /// Whether this template is active and can be used for sending emails.
-  /// Inactive templates are retained but not available for selection.
-  is_active Boolean
-  
-  /// Template version number incremented on each update. Enables version
-  /// tracking and rollback capability for template changes.
-  version Int
-  
-  /// Timestamp when this template was created.
+  /// Timestamp when this section was created.
   created_at DateTime
   
-  /// Timestamp when this template was last modified.
+  /// Timestamp when this section configuration was last modified.
   updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_channel_id, code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_channel_id, display_order], map: "shopping_mall_sections_shopping_mall_channel_id_displa_d6778c49")
+  @@index([active, created_at])
+}
+
+/// Platform-wide system settings and configuration parameters stored as
+/// key-value pairs. Examples include platform commission rates, feature
+/// toggles, checkout settings, tax calculation rules, email service
+/// settings, payment gateway configurations. Allows admins to control
+/// platform behavior without code deployment. Each configuration has a
+/// unique key for programmatic access.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier. Examples: platform.commission_rate,
+  /// checkout.guest_enabled, email.smtp_host, payment.gateway_mode. Uses dot
+  /// notation for hierarchical organization.
+  config_key String
+  
+  /// Configuration value stored as string. Can contain simple values, numbers
+  /// as strings, or JSON-encoded complex values. Application layer parses
+  /// based on data_type field.
+  config_value String
+  
+  /// Data type indicator for parsing config_value. Valid values: string,
+  /// number, boolean, json. Helps application layer correctly interpret and
+  /// validate configuration values.
+  data_type String
+  
+  /// Human-readable description of what this configuration parameter controls.
+  /// Provides guidance to admins when modifying settings.
+  description String
+  
+  /// Timestamp when this configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration value was last modified. Important for
+  /// tracking configuration changes and troubleshooting.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_key])
+  @@index([created_at])
+}
+
+/// Platform-wide announcements and notices displayed to users. Examples
+/// include maintenance notifications, promotional campaign announcements,
+/// policy updates, special events. Announcements can target specific
+/// audiences (all users, customers only, sellers only, admins only), belong
+/// to specific channels, and have scheduled publication periods. Supports
+/// content lifecycle with draft, published, and archived statuses.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_announcements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel where this announcement is displayed. {@link
+  /// shopping_mall_channels.id}. Null indicates announcement is shown across
+  /// all channels.
+  shopping_mall_channel_id String?
+  
+  /// Announcement headline or title. Displayed prominently to attract user
+  /// attention. Should be concise and descriptive.
+  title String
+  
+  /// Complete announcement content. Supports rich text or HTML formatting for
+  /// detailed information, links, and formatting. Contains the full message to
+  /// be communicated to users.
+  body String
+  
+  /// Intended audience for this announcement. Valid values: all, customers,
+  /// sellers, admins. Determines who can see this announcement in the
+  /// platform.
+  target_audience String
+  
+  /// Announcement importance level affecting display prominence. Valid values:
+  /// normal, important, urgent. Higher priority announcements are displayed
+  /// more prominently.
+  priority String
+  
+  /// Publication workflow status. Valid values: draft, published, archived.
+  /// Draft announcements are not visible to users, published are active,
+  /// archived are historical.
+  status String
+  
+  /// Scheduled start date and time for displaying this announcement.
+  /// Announcement becomes visible to users at or after this timestamp if
+  /// status is published.
+  publish_start_at DateTime
+  
+  /// Scheduled end date and time for displaying this announcement.
+  /// Announcement is automatically hidden after this timestamp. Null means no
+  /// end date and announcement remains visible until manually archived.
+  publish_end_at DateTime?
+  
+  /// Timestamp when this announcement was created.
+  created_at DateTime
+  
+  /// Timestamp when this announcement was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, announcement is marked as deleted but
+  /// data is preserved for audit trail. Supports announcement lifecycle
+  /// management.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   channel shopping_mall_channels? @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_channel_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_channel_id, status, publish_start_at], map: "shopping_mall_announcements_shopping_mall_channel_id_s_a9c8c2b5")
+  @@index([target_audience, status])
+  @@index([publish_start_at, publish_end_at])
+}
+
+/// CMS-managed static content pages for platform information and policies.
+/// Examples include About Us, Terms of Service, Privacy Policy, FAQ, Help
+/// Center, Contact Us, Shipping Policy, Return Policy. Each page has a
+/// unique URL slug and supports draft/published workflow for content
+/// management. Supports SEO optimization with meta descriptions.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_static_pages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
   
-  @@unique([template_code, language_code, shopping_mall_channel_id], map: "shopping_mall_email_templates_template_code_language_c_6cf47296")
-  @@index([category, is_active])
-  @@index([language_code, is_active])
+  /// URL-friendly unique identifier for the page. Examples: about-us,
+  /// privacy-policy, terms-of-service, faq, contact-us. Used in page URLs like
+  /// /pages/about-us.
+  slug String
+  
+  /// Page title displayed as heading and in browser title bar. Examples: About
+  /// Us, Privacy Policy, Terms of Service, Frequently Asked Questions.
+  title String
+  
+  /// Complete page content. Supports rich text or HTML formatting for complex
+  /// layouts, headings, lists, links, and embedded media. Contains the full
+  /// page content displayed to users.
+  body String
+  
+  /// SEO meta description for search engine results. Brief summary of page
+  /// content (150-160 characters recommended) displayed in search engine
+  /// snippets.
+  meta_description String?
+  
+  /// Publication workflow status. Valid values: draft, published. Draft pages
+  /// are not publicly accessible, published pages are visible to all users.
+  /// Supports content review workflow.
+  status String
+  
+  /// Numeric value controlling the display order in footer menus or
+  /// navigation. Lower numbers appear first. Allows admins to control page
+  /// ordering in site navigation.
+  display_order Int
+  
+  /// Timestamp when this page was created.
+  created_at DateTime
+  
+  /// Timestamp when this page content was last modified. Important for
+  /// tracking content freshness and editorial changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, page is marked as deleted but content is
+  /// preserved for audit trail. Supports page lifecycle management and content
+  /// archival.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([slug])
+  @@index([status, display_order])
+  @@index([created_at])
 }

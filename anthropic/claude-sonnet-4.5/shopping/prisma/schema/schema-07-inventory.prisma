@@ -1,0 +1,378 @@
+/// Current inventory state for each product SKU tracking stock quantities,
+/// reservations, and availability status. Maintains real-time stock levels
+/// with atomic updates to prevent overselling. Each SKU has exactly one
+/// inventory record. Links to {@link shopping_mall_product_skus} for SKU
+/// definitions.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_inventories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product SKU being tracked. {@link shopping_mall_product_skus.id}
+  shopping_mall_product_sku_id String
+  
+  /// Total physical stock quantity available in warehouse or store. Updated by
+  /// seller manual adjustments and system order processing.
+  stock_quantity Int
+  
+  /// Quantity currently reserved by customers in active checkout sessions.
+  /// Prevents overselling during concurrent purchases. Auto-released when
+  /// reservations expire.
+  reserved_quantity Int
+  
+  /// Quantity available for immediate purchase, calculated as stock_quantity
+  /// minus reserved_quantity. Denormalized for performance - must be updated
+  /// atomically with stock_quantity and reserved_quantity changes.
+  available_quantity Int
+  
+  /// Seller-configured threshold for low stock alerts. When available_quantity
+  /// falls below this value, system triggers low stock notifications to
+  /// seller. Default value is 10 units if not specified by seller.
+  low_stock_threshold Int
+  
+  /// Inventory lifecycle status for business workflow management. Valid
+  /// values: active (normal operations), discontinued (no longer selling),
+  /// backordered (accepting orders but out of stock). Controls purchase
+  /// availability and restock workflows.
+  status String
+  
+  /// Whether inventory tracking is enabled for this SKU. If false, allows
+  /// unlimited purchases without stock validation (useful for digital products
+  /// or made-to-order items).
+  is_tracking_enabled Boolean
+  
+  /// Timestamp when inventory record was created for this SKU.
+  created_at DateTime
+  
+  /// Timestamp when inventory quantities were last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_product_sku_id])
+  @@index([available_quantity])
+  @@index([status, available_quantity])
+  // spellchecker: ignore-next-line
+  @@index([is_tracking_enabled, available_quantity], map: "shopping_mall_sku_inventories_is_tracking_enabled_avai_74598aee")
+  @@index([stock_quantity])
+}
+
+/// Temporary inventory reservations during customer checkout process to
+/// prevent overselling. Reserves specific quantities for limited time (15-30
+/// minutes) while customer completes payment. Automatically expires and
+/// releases inventory if checkout not completed. Supports both soft
+/// reservations (cart) and hard reservations (checkout). Links to {@link
+/// shopping_mall_product_skus} for SKU and {@link shopping_mall_customers}
+/// for customer identification.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_reservations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product SKU being reserved during checkout. {@link
+  /// shopping_mall_product_skus.id}
+  shopping_mall_product_sku_id String
+  
+  /// Customer who created the reservation. Nullable for guest checkout
+  /// sessions. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String?
+  
+  /// Checkout session identifier for tracking guest user reservations. Used
+  /// when shopping_mall_customer_id is null to track guest checkout sessions
+  /// and release reservations on session expiration.
+  session_id String
+  
+  /// Quantity reserved for this checkout session. Must not exceed available
+  /// inventory at reservation time.
+  quantity Int
+  
+  /// Type of reservation: soft (added to cart, low priority) or hard (in
+  /// checkout, guaranteed hold). Hard reservations prevent other purchases.
+  /// Valid values: soft, hard.
+  reservation_type String
+  
+  /// Expiration timestamp for this reservation. Typically 30 minutes for soft
+  /// reservations, 15 minutes for hard checkout reservations. System
+  /// auto-releases inventory when this time passes.
+  expires_at DateTime
+  
+  /// Timestamp when reservation was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, expires_at], map: "shopping_mall_inventory_reservations_shopping_mall_pro_7f604e73")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_inventory_reservations_shopping_mall_cus_554f08dd")
+  @@index([expires_at])
+  @@index([session_id, created_at])
+}
+
+/// Complete audit trail of all inventory quantity changes with reason
+/// tracking and actor identification. Records every stock adjustment
+/// including seller manual updates, order fulfillments, reservation
+/// conversions, returns, and admin corrections. Immutable append-only log
+/// for compliance and analytics. Links to {@link shopping_mall_product_skus}
+/// for SKU tracking.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_movements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product SKU affected by this inventory movement. {@link
+  /// shopping_mall_product_skus.id}
+  shopping_mall_product_sku_id String
+  
+  /// Type of actor who triggered this movement: customer (purchase), seller
+  /// (manual update), admin (correction), system (automated). Indicates which
+  /// subtype table contains the specific actor reference. Valid values:
+  /// customer, seller, admin, system.
+  actor_type String
+  
+  /// Type of inventory movement: manual_increase (seller restock),
+  /// manual_decrease (seller adjustment), order_deduction (order placed),
+  /// reservation_created (checkout hold), reservation_released (abandoned
+  /// cart), reservation_converted (order confirmed), return_credit (item
+  /// returned), bulk_update (CSV import), admin_adjustment (admin correction).
+  movement_type String
+  
+  /// Quantity change amount. Positive for stock increases (restocks, returns),
+  /// negative for decreases (sales, damages). Zero for status-only changes.
+  quantity_change Int
+  
+  /// Stock quantity before this movement for audit trail verification.
+  previous_quantity Int
+  
+  /// Stock quantity after this movement for audit trail verification.
+  new_quantity Int
+  
+  /// Reason for inventory change. Required for manual adjustments (received
+  /// shipment, damaged goods, inventory correction). Optional for
+  /// system-generated movements.
+  reason String?
+  
+  /// External reference identifier for related entities. Contains order_id for
+  /// order deductions, reservation_id for reservation movements, or other
+  /// tracking identifiers.
+  reference_id String?
+  
+  /// Timestamp when this inventory movement occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_movement_of_customers shopping_mall_inventory_movement_of_customers?
+  shopping_mall_inventory_movement_of_sellers shopping_mall_inventory_movement_of_sellers?
+  shopping_mall_inventory_movement_of_admins shopping_mall_inventory_movement_of_admins?
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, created_at], map: "shopping_mall_inventory_movements_shopping_mall_produc_b03bcf18")
+  @@index([movement_type, created_at])
+  @@index([actor_type, created_at])
+  @@index([created_at])
+}
+
+/// Point-in-time snapshots of SKU inventory state for historical reporting,
+/// compliance auditing, and analytics. Captures daily inventory levels to
+/// support trend analysis and discrepancy investigation. Immutable
+/// historical records. Links to {@link shopping_mall_product_skus} for SKU
+/// identification.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product SKU captured in this snapshot. {@link
+  /// shopping_mall_product_skus.id}
+  shopping_mall_product_sku_id String
+  
+  /// Total physical stock quantity at snapshot time.
+  stock_quantity Int
+  
+  /// Quantity reserved in checkout sessions at snapshot time.
+  reserved_quantity Int
+  
+  /// Quantity available for purchase at snapshot time (stock minus reserved).
+  available_quantity Int
+  
+  /// Low stock alert threshold at snapshot time.
+  low_stock_threshold Int
+  
+  /// Date and time this snapshot represents. Typically end-of-day snapshots
+  /// for daily inventory reporting.
+  snapshot_date DateTime
+  
+  /// Timestamp when this snapshot record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_sku_id, snapshot_date], map: "shopping_mall_inventory_snapshots_shopping_mall_produc_12d109a4")
+  @@index([snapshot_date])
+}
+
+/// Customer-specific inventory movements linking to customer actors. Tracks
+/// inventory changes triggered by customer purchases and order placements.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_movement_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Inventory movement record for this customer action. {@link
+  /// shopping_mall_inventory_movements.id}
+  shopping_mall_inventory_movement_id String
+  
+  /// Customer who triggered this inventory movement through purchase or order
+  /// action. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer session when the inventory movement occurred. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String?
+  
+  /// Timestamp when this customer movement record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  movement shopping_mall_inventory_movements @relation(fields: [shopping_mall_inventory_movement_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  session shopping_mall_customer_sessions? @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_inventory_movement_of_customers_shopping_03e808a2")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inventory_movement_id], map: "shopping_mall_inventory_movement_of_customers_shopping_ba4228e6")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_inventory_movement_of_customers_shopping_0e44338b")
+}
+
+/// Seller-specific inventory movements linking to seller actors. Tracks
+/// manual inventory updates, bulk imports, and restocking activities
+/// performed by sellers.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_movement_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Inventory movement record for this seller action. {@link
+  /// shopping_mall_inventory_movements.id}
+  shopping_mall_inventory_movement_id String
+  
+  /// Seller who performed this inventory update or adjustment. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller session when the inventory movement occurred. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String?
+  
+  /// Timestamp when this seller movement record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  movement shopping_mall_inventory_movements @relation(fields: [shopping_mall_inventory_movement_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  session shopping_mall_seller_sessions? @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_inventory_movement_of_sellers_shopping_m_0902f0f0")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inventory_movement_id], map: "shopping_mall_inventory_movement_of_sellers_shopping_m_65d69725")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_inventory_movement_of_sellers_shopping_m_f7aa4062")
+}
+
+/// Admin-specific inventory movements linking to administrator actors.
+/// Tracks administrative inventory corrections, adjustments, and dispute
+/// resolution actions.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_movement_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Inventory movement record for this admin action. {@link
+  /// shopping_mall_inventory_movements.id}
+  shopping_mall_inventory_movement_id String
+  
+  /// Administrator who performed this inventory correction or adjustment.
+  /// {@link shopping_mall_admins.id}
+  shopping_mall_admin_id String
+  
+  /// Admin session when the inventory movement occurred. {@link
+  /// shopping_mall_admin_sessions.id}
+  shopping_mall_admin_session_id String?
+  
+  /// Timestamp when this admin movement record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  movement shopping_mall_inventory_movements @relation(fields: [shopping_mall_inventory_movement_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  session shopping_mall_admin_sessions? @relation(fields: [shopping_mall_admin_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_session_id], map: "shopping_mall_inventory_movement_of_admins_shopping_ma_150c3b1a")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_inventory_movement_id], map: "shopping_mall_inventory_movement_of_admins_shopping_ma_34bcce01")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id, created_at], map: "shopping_mall_inventory_movement_of_admins_shopping_ma_0afc88fa")
+}

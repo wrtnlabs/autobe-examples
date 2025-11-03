@@ -15,68 +15,82 @@ export async function deleteTodoAppAdminAdminsAdminId(props: {
 }): Promise<void> {
   const { admin, adminId } = props;
 
-  // Confirm caller exists and is authorized
+  // Verify caller exists and is active
   const caller = await MyGlobal.prisma.todo_app_admin.findUnique({
     where: { id: admin.id },
   });
-  if (!caller) {
-    throw new HttpException("Unauthorized: caller not found", 401);
-  }
-  if (!caller.is_super) {
-    throw new HttpException("Forbidden: super-admin required", 403);
-  }
 
-  // Disallow self-deletion to prevent accidental lockout
-  if (admin.id === adminId) {
-    throw new HttpException("Conflict: self-deletion is forbidden", 409);
-  }
+  if (!caller) throw new HttpException("Unauthorized: admin not found", 403);
+  if (caller.deleted_at !== null || caller.is_active !== true)
+    throw new HttpException("Unauthorized: inactive admin", 403);
 
-  // Verify target exists
+  // Authorization: require superadmin role
+  if (caller.role !== "superadmin")
+    throw new HttpException("Forbidden: insufficient privileges", 403);
+
+  // Load target admin
   const target = await MyGlobal.prisma.todo_app_admin.findUnique({
     where: { id: adminId },
   });
-  if (!target) {
-    throw new HttpException("Not Found", 404);
-  }
 
-  // If target is a super-admin, ensure at least one other super-admin remains
-  if (target.is_super) {
-    const otherSuperCount = await MyGlobal.prisma.todo_app_admin.count({
-      where: { is_super: true, id: { not: adminId } },
-    });
-    if (otherSuperCount === 0) {
-      throw new HttpException(
-        "Conflict: cannot delete the last remaining super-admin",
-        409,
-      );
-    }
-  }
+  if (!target) throw new HttpException("Not Found", 404);
+  if (target.deleted_at !== null) throw new HttpException("Gone", 410);
+  if (target.id === caller.id)
+    throw new HttpException(
+      "Forbidden: cannot delete your own admin account",
+      403,
+    );
 
-  // Timestamp for audit record
-  const created_at = toISOStringSafe(new Date());
+  // Prepare timestamp once and reuse
+  const now = toISOStringSafe(new Date());
 
-  try {
-    await MyGlobal.prisma.$transaction([
-      // Create an append-only audit record documenting the erase action
-      MyGlobal.prisma.todo_app_audit_records.create({
-        data: {
-          id: v4() as string & tags.Format<"uuid">,
-          admin_id: admin.id,
-          user_id: null,
-          actor_role: "admin",
-          action_type: "erase_admin",
-          target_resource: "admin",
-          target_id: adminId,
-          reason: null,
-          created_at,
-        },
-      }),
+  // Atomic operations: revoke sessions, soft-delete admin, record admin action and audit log
+  await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.todo_app_admin_sessions.updateMany({
+      where: {
+        todo_app_admin_id: adminId,
+        expired_at: null,
+      },
+      data: { expired_at: now },
+    }),
 
-      // Hard-delete the admin record (no soft-delete field exists)
-      MyGlobal.prisma.todo_app_admin.delete({ where: { id: adminId } }),
-    ]);
-  } catch (error) {
-    // For security, avoid leaking internal DB errors. Return generic 500.
-    throw new HttpException("Internal Server Error", 500);
-  }
+    MyGlobal.prisma.todo_app_admin.update({
+      where: { id: adminId },
+      data: {
+        deleted_at: now,
+        is_active: false,
+        updated_at: now,
+      },
+    }),
+
+    MyGlobal.prisma.todo_app_admin_actions.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        todo_app_admin_id: caller.id,
+        todo_app_admin_session_id: admin.session_id,
+        action: "soft_delete",
+        target_type: "admin",
+        target_id: adminId,
+        details: `Admin ${caller.id} performed soft delete on admin ${adminId}`,
+        created_at: now,
+        updated_at: now,
+      },
+    }),
+
+    MyGlobal.prisma.todo_app_audit_logs.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        todo_app_admin_id: caller.id,
+        todo_app_admin_session_id: admin.session_id,
+        event_type: "delete",
+        target_type: "admin",
+        target_id: adminId,
+        details: `Admin ${caller.id} soft-deleted admin ${adminId}`,
+        created_at: now,
+        updated_at: now,
+      },
+    }),
+  ]);
+
+  return;
 }

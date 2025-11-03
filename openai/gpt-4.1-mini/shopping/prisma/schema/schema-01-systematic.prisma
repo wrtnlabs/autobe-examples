@@ -1,88 +1,29 @@
-/// Product categories in the shopping mall's hierarchical catalog. Enables
-/// product classification and navigation via parent-child relationships
-/// forming a tree structure. Supports category codes and display order for
-/// UI sorting. Includes soft delete support and audit timestamps.
-/// Self-referencing foreign key for parent-child linkage.
+/// Stores global system settings and configuration values for the shopping
+/// mall platform infrastructure. Holds configurable parameters impacting
+/// system behavior and administration.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_categories {
+model shopping_mall_system_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent category's {@link shopping_mall_categories.id}. Nullable for root
-  /// categories.
-  parent_id String?
-  
-  /// Unique code identifying the category.
-  code String
-  
-  /// Category display name.
-  name String
-  
-  /// Optional detailed description of the category.
-  description String?
-  
-  /// Display order for sorting categories.
-  display_order Int
-  
-  /// Timestamp when the category was created.
-  created_at DateTime
-  
-  /// Timestamp when the category was last updated.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. Null when active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
-  
-  recursive shopping_mall_categories[] @relation("recursive")
-  shopping_mall_products shopping_mall_products[]
-  
-  @@unique([code])
-  @@index([parent_id, display_order])
-}
-
-/// System-wide configuration parameters and settings for the shopping mall
-/// platform. Stores key-value pairs defining various operational parameters.
-/// Supports categorization, description, and status flags. Enables soft
-/// deletion and tracks creation and update timestamps.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique configuration key.
+  /// Unique key identifier for the system setting.
   key String
   
-  /// Configuration value as a string.
+  /// Value corresponding to the configuration key.
   value String
   
-  /// Optional category grouping for configurations.
-  category String?
-  
-  /// Description of the configuration parameter.
+  /// Detailed explanation of the setting's purpose and usage.
   description String?
   
-  /// Flag indicating if the configuration is active.
-  enabled Boolean
-  
-  /// Creation timestamp.
+  /// Record creation timestamp.
   created_at DateTime
   
-  /// Last updated timestamp.
+  /// Record last update timestamp.
   updated_at DateTime
   
   /// Soft delete timestamp; null if active.
@@ -92,5 +33,89 @@ model shopping_mall_configurations {
   // RELATIONS
   //----
   @@unique([key])
-  @@index([category])
+  @@index([created_at])
+}
+
+/// Configuration parameters specific to the shopping mall platform instance,
+/// including feature flags, versioning, and environment settings.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_platform_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the configuration parameter.
+  config_name String
+  
+  /// Value of the configuration parameter.
+  config_value String
+  
+  /// Detailed explanation of the configuration usage.
+  description String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([config_name])
+  @@index([created_at])
+}
+
+/// Defines communication or operational channels within the shopping mall
+/// platform. Supports hierarchical channel groups via parent-child
+/// relationships.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channel_definitions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent channel for hierarchical grouping. {@link
+  /// shopping_mall_channel_definitions.id}.
+  parent_channel_id String?
+  
+  /// Unique code identifying the channel.
+  channel_code String
+  
+  /// Human-readable name of the channel.
+  channel_name String
+  
+  /// Descriptive text explaining the channel's purpose.
+  description String?
+  
+  /// When the channel was created.
+  created_at DateTime
+  
+  /// Last time the channel was updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp to mark channel as removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parentChannel shopping_mall_channel_definitions? @relation("recursive", fields: [parent_channel_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_channel_definitions[] @relation("recursive")
+  
+  @@unique([channel_code])
+  // spellchecker: ignore-next-line
+  @@index([parent_channel_id, created_at], map: "shopping_mall_channel_definitions_parent_channel_id_cr_5c543bcd")
 }

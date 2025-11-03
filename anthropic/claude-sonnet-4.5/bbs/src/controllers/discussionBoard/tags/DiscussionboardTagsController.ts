@@ -1,8 +1,8 @@
 import { Controller } from "@nestjs/common";
 import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
-import typia, { tags } from "typia";
+import typia from "typia";
 import { patchDiscussionBoardTags } from "../../../providers/patchDiscussionBoardTags";
-import { getDiscussionBoardTagsTagId } from "../../../providers/getDiscussionBoardTagsTagId";
+import { getDiscussionBoardTagsTagSlug } from "../../../providers/getDiscussionBoardTagsTagSlug";
 
 import { IPageIDiscussionBoardTag } from "../../../api/structures/IPageIDiscussionBoardTag";
 import { IDiscussionBoardTag } from "../../../api/structures/IDiscussionBoardTag";
@@ -12,50 +12,34 @@ export class DiscussionboardTagsController {
   /**
    * Search and retrieve a filtered, paginated list of discussion board tags.
    *
-   * Retrieve a filtered and paginated list of tags from the discussion board
-   * system. This operation provides advanced search capabilities for finding
-   * tags based on multiple criteria including partial name matching, tag status
-   * filtering, usage statistics, and creation date ranges.
-   *
-   * Tags serve as a critical content organization mechanism in the discussion
-   * board, complementing the primary category structure. Each tag can be
-   * applied to multiple discussion topics (up to 5 tags per topic per business
-   * rules), and users can follow tags to receive notifications about new
-   * discussions with those tags. This operation supports tag browsing, popular
-   * tag discovery, and tag management workflows.
+   * Retrieve a filtered and paginated list of tags used throughout the
+   * discussion board system. This operation provides advanced search
+   * capabilities for discovering tags based on partial name matching, creation
+   * date ranges, and popularity metrics.
    *
    * The operation supports comprehensive pagination with configurable page
-   * sizes and sorting options. Users can sort tags by name (alphabetically),
-   * creation date, usage count (number of topics tagged), or recent usage count
-   * (trending tags). The search functionality includes partial text matching on
-   * tag names and descriptions using PostgreSQL full-text search with trigram
-   * indexing for performance.
+   * sizes and multiple sorting options. Users can sort tags alphabetically by
+   * name, by creation date to find newest or oldest tags, or by usage frequency
+   * to identify the most popular discussion topics. This flexibility enables
+   * both casual browsing and targeted tag discovery.
    *
-   * Security considerations include rate limiting for search operations (30
-   * searches per minute per user for guests, higher limits for authenticated
-   * users). Tag visibility respects the tag status field - only active tags are
-   * visible to regular users, while moderators and administrators can view
-   * pending_review, disabled, and merged tags for management purposes.
+   * Tags serve as granular topic keywords that complement the formal category
+   * structure defined in discussion_board_categories. While categories provide
+   * broad subject organization (Economic Policy, Political Analysis), tags
+   * offer specific topic identification (monetary-policy, climate-change,
+   * taxation). This operation is essential for content discovery, allowing
+   * users to explore discussion topics at a detailed level and find articles
+   * related to specific economic and political subjects.
    *
-   * This operation integrates with the discussion_board_tags table as defined
-   * in the Prisma schema (schema-05-engagement.prisma), incorporating tag
-   * properties including name, description, status, and timestamps. The
-   * response includes tag statistics aggregated from the
-   * mv_discussion_board_tag_statistics materialized view when available,
-   * providing usage_count, recent_usage_count, follower_count, and total_votes
-   * for each tag without expensive real-time aggregation.
-   *
-   * Related operations that work together with this endpoint include GET
-   * /tags/{tagId} for retrieving detailed information about a specific tag, GET
-   * /topics for finding topics associated with selected tags, and PATCH /topics
-   * for advanced topic search that includes tag filtering. Users typically use
-   * this operation to discover popular tags, explore tag categories, and select
-   * tags for following or filtering discussion content.
+   * Security considerations include rate limiting for search operations to
+   * prevent abuse. The operation is available to all user types including
+   * guests, as tag browsing is a public discovery feature. Response includes
+   * tag metadata such as creation dates and article counts to help users assess
+   * tag relevance and popularity.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for tag filtering
-   *   including text search, status filtering, usage thresholds, and sorting
-   *   preferences
+   * @param body Search criteria, filtering options, sorting preferences, and
+   *   pagination parameters for tag retrieval
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -74,66 +58,48 @@ export class DiscussionboardTagsController {
   }
 
   /**
-   * Retrieve detailed information about a specific discussion board tag by ID.
+   * Retrieve detailed information for a specific tag by its unique slug
+   * identifier.
    *
-   * Retrieve comprehensive information about a single tag from the discussion
-   * board system by specifying the tag's unique identifier in the path
-   * parameter. This operation returns complete tag details including metadata,
-   * statistics, and usage information.
+   * Retrieve comprehensive information for a single discussion board tag
+   * identified by its unique slug parameter. This operation returns the
+   * complete tag record including the tag name, URL-friendly slug, creation and
+   * modification timestamps, and relevant statistics about tag usage across
+   * articles.
    *
-   * Tags are user-generated labels that provide additional categorization
-   * beyond primary discussion categories. Each tag has properties including a
-   * unique name (2-30 characters, normalized to lowercase), an optional
-   * description explaining usage guidelines, and a status indicating its
-   * lifecycle state (active, pending_review, disabled, merged). Tags support
-   * cross-category content discovery, allowing users to find related
-   * discussions across Economics and Politics categories through shared tags.
+   * Tags are normalized lowercase identifiers that provide granular topic
+   * classification for articles in the discussion board. Each tag has a
+   * globally unique slug derived from its name, used for SEO-friendly URLs and
+   * reliable tag identification. This operation enables users to view detailed
+   * information about a specific topic tag and serves as the foundation for
+   * tag-based content discovery.
    *
-   * The operation returns detailed tag information incorporating data from both
-   * the discussion_board_tags base table and the
-   * mv_discussion_board_tag_statistics materialized view. The statistics
-   * provide aggregated metrics including total usage count (number of topics
-   * tagged), recent usage count (topics tagged in last 7 days for trending
-   * analysis), follower count (users following the tag), and total votes (sum
-   * of all votes on tagged topics). These denormalized statistics enable
-   * efficient tag cloud generation and popular tag displays without expensive
-   * real-time aggregation queries.
+   * The tag detail view provides context for users exploring specific
+   * discussion topics. It shows when the tag was created, helping users
+   * understand whether it represents emerging or established topics. The
+   * operation also supports displaying related statistics such as the number of
+   * articles using this tag and recent activity trends, though these metrics
+   * may be computed dynamically rather than stored in the tag record itself.
    *
-   * Security and visibility considerations ensure that tag access respects the
-   * tag status field. Active tags are visible to all users including guests.
-   * Tags with pending_review or disabled status are only visible to moderators
-   * and administrators. Merged tags may redirect to the canonical tag they were
-   * consolidated into. The operation validates that the specified tagId exists
-   * and returns appropriate error messages for non-existent or inaccessible
-   * tags.
-   *
-   * This operation integrates with related tag functionality including
-   * following tags (users can subscribe to receive notifications about new
-   * topics with this tag), filtering discussions by tags (finding all topics
-   * associated with this tag), and tag management workflows (moderators
-   * reviewing and approving user-created tags). The tag detail view helps users
-   * understand tag meaning and appropriateness before applying it to their own
-   * discussion topics.
-   *
-   * Related operations include PATCH /tags for searching and browsing all
-   * available tags, GET /topics for retrieving discussions associated with this
-   * tag through topic_tags junction table, and POST /tags/{tagId}/follow for
-   * users to subscribe to tag updates. This operation is commonly used when
-   * users click on a tag from a discussion topic to learn more about that tag
-   * before deciding to follow it or explore related discussions.
+   * This operation is publicly accessible to all user types including guests,
+   * members, and moderators, as tag information is non-sensitive and serves as
+   * a public content organization mechanism. No authentication is required,
+   * supporting the platform's goal of open content discovery and transparent
+   * topic organization.
    *
    * @param connection
-   * @param tagId Unique identifier of the target discussion board tag
+   * @param tagSlug Unique URL-friendly slug identifier of the target tag
+   *   (global scope)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":tagId")
+  @TypedRoute.Get(":tagSlug")
   public async at(
-    @TypedParam("tagId")
-    tagId: string & tags.Format<"uuid">,
+    @TypedParam("tagSlug")
+    tagSlug: string,
   ): Promise<IDiscussionBoardTag> {
     try {
-      return await getDiscussionBoardTagsTagId({
-        tagId,
+      return await getDiscussionBoardTagsTagSlug({
+        tagSlug,
       });
     } catch (error) {
       console.log(error);

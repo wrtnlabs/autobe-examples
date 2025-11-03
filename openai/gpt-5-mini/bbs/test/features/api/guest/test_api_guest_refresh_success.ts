@@ -4,107 +4,101 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEconPoliticalForumGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPoliticalForumGuest";
+import type { IDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardGuest";
 
 export async function test_api_guest_refresh_success(
   connection: api.IConnection,
 ) {
-  /**
-   * Purpose:
-   *
-   * - Validate guest refresh token rotation flow (POST /auth/guest/refresh).
-   * - Ensure the refresh response returns IEconPoliticalForumGuest.IAuthorized
-   *   with new access and refresh tokens and that the guest id matches the
-   *   originally created guest.
-   *
-   * Steps:
-   *
-   * 1. Create a guest via POST /auth/guest/join and obtain initial tokens.
-   * 2. Call POST /auth/guest/refresh with the returned refresh token.
-   * 3. Assert that the response is typia-validated and contains token fields.
-   * 4. Assert that the returned guest id equals the one from join.
-   * 5. If rotation semantics apply, assert the refresh token changed.
-   */
-
-  // 1) Create a temporary guest and retrieve initial tokens
+  // 1) Create a temporary guest via POST /auth/guest/join
   const joinBody = {
-    nickname: RandomGenerator.name(),
-    user_agent: `test-agent/${RandomGenerator.alphaNumeric(6)}`,
-  } satisfies IEconPoliticalForumGuest.ICreate;
+    displayName: RandomGenerator.name(),
+    ip: null,
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IDiscussionBoardGuest.ICreate;
 
-  const initialAuthorized: IEconPoliticalForumGuest.IAuthorized =
+  const original: IDiscussionBoardGuest.IAuthorized =
     await api.functional.auth.guest.join(connection, {
       body: joinBody,
     });
-  // Runtime type validation of the join response
-  typia.assert(initialAuthorized);
+  // Validate response shape
+  typia.assert(original);
 
-  // Basic assertions about tokens presence
+  // Extract original tokens and guest id
+  const originalToken: IAuthorizationToken = original.token;
+  const guestId: string & tags.Format<"uuid"> = original.id;
+
+  // Basic sanity checks on returned token
   TestValidator.predicate(
-    "initial access token present",
-    typeof initialAuthorized.token?.access === "string" &&
-      initialAuthorized.token.access.length > 0,
+    "original access token not empty",
+    originalToken.access.length > 0,
   );
   TestValidator.predicate(
-    "initial refresh token present",
-    typeof initialAuthorized.token?.refresh === "string" &&
-      initialAuthorized.token.refresh.length > 0,
+    "original refresh token not empty",
+    originalToken.refresh.length > 0,
   );
 
-  // Store initial refresh token for rotation comparison
-  const initialRefreshToken: string = initialAuthorized.token.refresh;
-
-  // 2) Call refresh endpoint with the valid refresh token
+  // 2) Call POST /auth/guest/refresh with the valid refresh token
   const refreshBody = {
-    refresh_token: initialRefreshToken,
-  } satisfies IEconPoliticalForumGuest.IRefresh;
+    refresh_token: originalToken.refresh,
+  } satisfies IDiscussionBoardGuest.IRefresh;
 
-  const rotatedAuthorized: IEconPoliticalForumGuest.IAuthorized =
+  const refreshed: IDiscussionBoardGuest.IAuthorized =
     await api.functional.auth.guest.refresh(connection, {
       body: refreshBody,
     });
+  typia.assert(refreshed);
 
-  // Runtime type validation of the refresh response
-  typia.assert(rotatedAuthorized);
-
-  // 3) Validate returned fields
+  // 3) Verify the response returns a renewed access token and references same guest id
   TestValidator.equals(
     "guest id preserved after refresh",
-    rotatedAuthorized.id,
-    initialAuthorized.id,
+    refreshed.id,
+    guestId,
   );
 
+  // Access token should be rotated (new value)
+  TestValidator.notEquals(
+    "access token rotated",
+    originalToken.access,
+    refreshed.token.access,
+  );
+
+  // Refresh token may or may not be rotated. Ensure refreshed refresh token exists and is a string.
   TestValidator.predicate(
-    "rotated access token present",
-    typeof rotatedAuthorized.token?.access === "string" &&
-      rotatedAuthorized.token.access.length > 0,
+    "refreshed refresh token exists",
+    typeof refreshed.token.refresh === "string" &&
+      refreshed.token.refresh.length > 0,
   );
 
+  // 4) Confirm the guest row exists (deleted_at is null)
+  // The DTO allows deletedAt to be null|undefined; per scenario require explicit null
+  TestValidator.equals(
+    "guest not deleted (deletedAt is null)",
+    refreshed.deletedAt,
+    null,
+  );
+
+  // 5) Token lifetime checks: access expiry should be a valid date and short-lived
+  const accessExpiry = Date.parse(refreshed.token.expired_at);
+  const refreshExpiry = Date.parse(refreshed.token.refreshable_until);
   TestValidator.predicate(
-    "rotated refresh token present",
-    typeof rotatedAuthorized.token?.refresh === "string" &&
-      rotatedAuthorized.token.refresh.length > 0,
+    "access expiry is a valid timestamp",
+    !Number.isNaN(accessExpiry),
+  );
+  TestValidator.predicate(
+    "refreshable_until is a valid timestamp",
+    !Number.isNaN(refreshExpiry),
   );
 
-  // 4) When rotation semantics are supported, ensure refresh token changed
-  // Note: Some implementations may return the same refresh token (stateless
-  // refresh) — this is an optional assertion guarded by a predicate so tests
-  // remain compatible with both behaviors. We assert inequality when possible.
-  if (initialRefreshToken !== rotatedAuthorized.token.refresh) {
-    TestValidator.notEquals(
-      "refresh token rotated",
-      initialRefreshToken,
-      rotatedAuthorized.token.refresh,
-    );
-  } else {
-    // If tokens are identical, still assert that token strings are non-empty
-    TestValidator.equals(
-      "refresh token unchanged string equality check",
-      rotatedAuthorized.token.refresh,
-      initialRefreshToken,
-    );
-  }
+  // Access token lifetime should be reasonably short from now (e.g., within 6 hours)
+  TestValidator.predicate(
+    "access token lifetime is short (<=6 hours)",
+    accessExpiry - Date.now() <= 1000 * 60 * 60 * 6,
+  );
 
-  // Optional: Validate returned id and token shapes more deeply via typia.assert
-  typia.assert<IAuthorizationToken>(rotatedAuthorized.token);
+  // Refresh token lifetime should be within a reasonable sliding window (e.g., <= 7 days)
+  TestValidator.predicate(
+    "refresh token lifetime is limited (<=7 days)",
+    refreshExpiry - Date.now() <= 1000 * 60 * 60 * 24 * 7,
+  );
 }

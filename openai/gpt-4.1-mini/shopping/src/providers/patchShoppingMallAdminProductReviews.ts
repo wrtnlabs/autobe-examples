@@ -10,78 +10,91 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { IShoppingMallProductReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductReview";
 import { IPageIShoppingMallProductReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallProductReview";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallProductSku } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSku";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function patchShoppingMallAdminProductReviews(props: {
   admin: AdminPayload;
   body: IShoppingMallProductReview.IRequest;
 }): Promise<IPageIShoppingMallProductReview.ISummary> {
-  const { admin, body } = props;
-
-  const page = (body.page ?? 1) as number &
-    tags.Type<"int32"> &
-    tags.Minimum<1> as number;
-  const limit = (body.limit ?? 20) as number &
-    tags.Type<"int32"> &
-    tags.Minimum<1> as number;
+  const { body } = props;
+  const page = body.page ?? 1;
+  const limit = body.limit ?? 20;
   const skip = (page - 1) * limit;
 
-  const where = {
-    deleted_at: null,
-    ...(body.filterRating !== undefined &&
-      body.filterRating !== null && {
-        rating: body.filterRating,
-      }),
-    ...(body.filterStatus !== undefined &&
-      body.filterStatus !== null && {
-        status: body.filterStatus,
-      }),
-    ...(body.filterProductId !== undefined &&
-      body.filterProductId !== null && {
-        shopping_mall_product_id: body.filterProductId,
-      }),
-    ...(body.filterCustomerId !== undefined &&
-      body.filterCustomerId !== null && {
-        shopping_mall_customer_id: body.filterCustomerId,
-      }),
-    ...(body.search !== undefined &&
-      body.search !== null && {
-        review_text: {
-          contains: body.search,
-        },
-      }),
-  };
+  const whereConditions: any = { deleted_at: null };
 
-  const [reviews, total] = await Promise.all([
+  if (
+    body.shopping_mall_product_sku_id !== undefined &&
+    body.shopping_mall_product_sku_id !== null
+  ) {
+    whereConditions.shopping_mall_product_sku_id =
+      body.shopping_mall_product_sku_id;
+  }
+  if (
+    body.shopping_mall_customer_id !== undefined &&
+    body.shopping_mall_customer_id !== null
+  ) {
+    whereConditions.shopping_mall_customer_id = body.shopping_mall_customer_id;
+  }
+  if (
+    body.shopping_mall_order_id !== undefined &&
+    body.shopping_mall_order_id !== null
+  ) {
+    whereConditions.shopping_mall_order_id = body.shopping_mall_order_id;
+  }
+  if (body.rating !== undefined && body.rating !== null) {
+    whereConditions.rating = body.rating;
+  }
+  if (body.moderation_status !== undefined && body.moderation_status !== null) {
+    whereConditions.moderation_status = body.moderation_status;
+  }
+
+  const [results, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_product_reviews.findMany({
-      where,
+      where: whereConditions,
+      include: {
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            nickname: true,
+            created_at: true,
+          },
+        },
+        productSku: {
+          select: {
+            id: true,
+            sku_code: true,
+            price: true,
+            attributes_json: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+        order: {
+          select: {
+            id: true,
+            order_code: true,
+            status: true,
+            payment_status: true,
+            total_amount: true,
+            shipping_address: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+      },
       orderBy: { created_at: "desc" },
       skip,
       take: limit,
-      select: {
-        id: true,
-        shopping_mall_customer_id: true,
-        shopping_mall_product_id: true,
-        shopping_mall_order_id: true,
-        rating: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
-      },
     }),
-    MyGlobal.prisma.shopping_mall_product_reviews.count({ where }),
+    MyGlobal.prisma.shopping_mall_product_reviews.count({
+      where: whereConditions,
+    }),
   ]);
-
-  const data = reviews.map((item) => ({
-    id: item.id,
-    shopping_mall_customer_id: item.shopping_mall_customer_id,
-    shopping_mall_product_id: item.shopping_mall_product_id,
-    shopping_mall_order_id: item.shopping_mall_order_id,
-    rating: item.rating,
-    status: item.status,
-    created_at: toISOStringSafe(item.created_at),
-    updated_at: toISOStringSafe(item.updated_at),
-  }));
 
   return {
     pagination: {
@@ -90,6 +103,39 @@ export async function patchShoppingMallAdminProductReviews(props: {
       records: total,
       pages: Math.ceil(total / limit),
     },
-    data,
+    data: results.map((item) => ({
+      id: item.id,
+      shopping_mall_product_sku_id: item.shopping_mall_product_sku_id,
+      shopping_mall_customer_id: item.shopping_mall_customer_id,
+      shopping_mall_order_id: item.shopping_mall_order_id,
+      rating: item.rating,
+      review_body: item.review_body ?? null,
+      moderation_status: item.moderation_status,
+      created_at: toISOStringSafe(item.created_at),
+      updated_at: toISOStringSafe(item.updated_at),
+      deleted_at:
+        item.deleted_at !== null && item.deleted_at !== undefined
+          ? toISOStringSafe(item.deleted_at)
+          : null,
+      customer: item.customer
+        ? {
+            id: item.customer.id,
+            email: item.customer.email,
+            nickname: item.customer.nickname,
+            created_at: toISOStringSafe(item.customer.created_at),
+          }
+        : undefined,
+      productSku: item.productSku
+        ? {
+            id: item.productSku.id,
+            sku_code: item.productSku.sku_code,
+            price: item.productSku.price,
+            attributes_json: item.productSku.attributes_json ?? null,
+            created_at: toISOStringSafe(item.productSku.created_at),
+            updated_at: toISOStringSafe(item.productSku.updated_at),
+          }
+        : undefined,
+      order: undefined,
+    })),
   };
 }

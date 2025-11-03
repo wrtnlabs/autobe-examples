@@ -8,90 +8,125 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IRedditCommunityAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityAdmin";
-import { IRedditCommunityReportAction } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityReportAction";
-import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IRedditCommunityUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUser";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminRefresh(props: {
   admin: AdminPayload;
   body: IRedditCommunityAdmin.IRefresh;
 }): Promise<IRedditCommunityAdmin.IAuthorized> {
-  try {
-    const decoded = jwt.verify(
-      props.body.refreshToken,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    ) as {
-      id: string & tags.Format<"uuid">;
-      type: "admin";
-    };
+  const decodedUncast = jwt.verify(
+    props.body.refresh_token,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { issuer: "autobe" },
+  );
 
-    if (decoded.type !== "admin") {
-      throw new HttpException("Invalid token type", 401);
-    }
+  if (typeof decodedUncast === "string") {
+    throw new HttpException("Invalid token payload", 403);
+  }
 
-    const admin = await MyGlobal.prisma.reddit_community_admins.findFirst({
-      where: { id: decoded.id, deleted_at: null },
+  // Type guard to ensure decodedUncast has required properties
+  function isValidPayload(
+    payload: unknown,
+  ): payload is { type: string; id: string; session_id: string } {
+    return (
+      typeof payload === "object" &&
+      payload != null &&
+      "type" in payload &&
+      typeof (payload as any).type === "string" &&
+      "id" in payload &&
+      typeof (payload as any).id === "string" &&
+      "session_id" in payload &&
+      typeof (payload as any).session_id === "string"
+    );
+  }
+
+  if (!isValidPayload(decodedUncast)) {
+    throw new HttpException("Invalid token payload structure", 403);
+  }
+
+  const decoded = decodedUncast;
+
+  if (decoded.type !== "admin") {
+    throw new HttpException("Invalid token type", 403);
+  }
+
+  const session =
+    await MyGlobal.prisma.reddit_community_admin_sessions.findFirst({
+      where: {
+        id: decoded.session_id,
+        reddit_community_admin_id: decoded.id,
+      },
+      include: {
+        redditCommunityAdmin: true,
+      },
     });
 
-    if (!admin) {
-      throw new HttpException("Admin not found or deleted", 401);
-    }
-
-    const nowMillis = Date.now();
-    const accessExpiredAt = toISOStringSafe(new Date(nowMillis + 3600 * 1000));
-    const refreshableUntil = toISOStringSafe(
-      new Date(nowMillis + 7 * 24 * 3600 * 1000),
-    );
-
-    const accessTokenPayload = {
-      id: admin.id,
-      email: admin.email,
-      password_hash: admin.password_hash,
-      admin_level: admin.admin_level,
-      type: "admin",
-    };
-
-    const newAccessToken = jwt.sign(
-      accessTokenPayload,
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    );
-
-    const refreshTokenPayload = {
-      id: admin.id,
-      tokenType: "refresh",
-    };
-
-    const newRefreshToken = jwt.sign(
-      refreshTokenPayload,
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    );
-
-    return {
-      id: admin.id,
-      email: admin.email as string & tags.Format<"email">,
-      password_hash: admin.password_hash,
-      admin_level: admin.admin_level as number & tags.Type<"int32">,
-      created_at: toISOStringSafe(admin.created_at),
-      updated_at: toISOStringSafe(admin.updated_at),
-      deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
-      token: {
-        access: newAccessToken,
-        refresh: newRefreshToken,
-        expired_at: accessExpiredAt,
-        refreshable_until: refreshableUntil,
-      },
-    };
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
   }
+
+  const nowISO = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  const access = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: nowISO,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refresh = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: nowISO,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  await MyGlobal.prisma.reddit_community_admin_sessions.update({
+    where: { id: decoded.session_id },
+    data: { expired_at: refreshExpires },
+  });
+
+  const admin = session.redditCommunityAdmin;
+
+  let userSummary;
+  if (admin) {
+    userSummary = await MyGlobal.prisma.reddit_community_user.findUnique({
+      where: { id: admin.user_id },
+      select: { id: true, email: true },
+    });
+  }
+
+  return {
+    id: admin.id,
+    user_id: admin.user_id,
+    created_at: toISOStringSafe(admin.created_at),
+    token: {
+      access,
+      refresh,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
+    user: userSummary ?? undefined,
+  };
 }

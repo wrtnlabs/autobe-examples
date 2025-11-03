@@ -1,0 +1,255 @@
+/// Primary business entity representing communities. Contains canonical
+/// identity, visibility and cached counters. members_count and posts_count
+/// are cached aggregates and should default to 0 (application or DB default)
+/// to avoid nulls.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Creator community member's {@link community_bbs_communitymember.id}.
+  creator_id String
+  
+  /// Canonical community name (unique, case-insensitive).
+  name String
+  
+  /// URL-friendly unique identifier for the community (unique).
+  slug String
+  
+  /// Short community description shown in listings and community header.
+  description String?
+  
+  /// Visibility policy: 'public', 'restricted', or 'private' (business enum
+  /// enforced in application).
+  visibility String
+  
+  /// Whether new posts require moderator approval before publishing.
+  post_approval_required Boolean
+  
+  /// Cached number of community members for fast listing and metrics. DB
+  /// default should be 0.
+  members_count Int
+  
+  /// Cached number of posts in the community for metrics and quotas. DB
+  /// default should be 0.
+  posts_count Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  creator community_bbs_communitymember @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  
+  community_bbs_community_moderators community_bbs_community_moderators[]
+  community_bbs_community_memberships community_bbs_community_memberships[]
+  community_bbs_community_settings community_bbs_community_settings?
+  community_bbs_posts community_bbs_posts[]
+  community_bbs_comments community_bbs_comments[]
+  community_bbs_community_subscriptions community_bbs_community_subscriptions[]
+  community_bbs_user_subscriptions community_bbs_user_subscriptions[]
+  community_bbs_audit_logs community_bbs_audit_logs[]
+  community_bbs_moderation_actions community_bbs_moderation_actions[]
+  mv_community_bbs_daily_stats mv_community_bbs_daily_stats[]
+  
+  @@unique([name])
+  @@unique([slug])
+  @@index([creator_id, created_at])
+  @@index([members_count, posts_count])
+}
+
+/// Moderator assignments for communities. Links a community to a member with
+/// moderator privileges. Assignment provenance can originate from either a
+/// member (owner) or a system administrator; to preserve referential
+/// integrity both assigner FKs are represented. Moderator actions themselves
+/// are recorded in moderation_action/audit tables for immutability.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged community's {@link community_bbs_communities.id}.
+  community_id String
+  
+  /// Assigned moderator's {@link community_bbs_communitymember.id}.
+  community_member_id String
+  
+  /// Actor (community member) who assigned the moderator. {@link
+  /// community_bbs_communitymember.id}. Nullable when assignment is performed
+  /// by system admin.
+  assigned_by_id String?
+  
+  /// Optional system administrator who assigned the moderator. {@link
+  /// community_bbs_systemadmin.id}. Nullable when assigned by community
+  /// member.
+  assigned_by_system_admin_id String?
+  
+  /// Moderator role or scope (e.g., 'moderator', 'senior_moderator').
+  role String
+  
+  /// Timestamp when the moderator was assigned.
+  assigned_at DateTime
+  
+  /// Timestamp when moderator privileges were revoked (if any).
+  revoked_at DateTime?
+  
+  /// Whether the moderator assignment is currently active.
+  active Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_bbs_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  moderator community_bbs_communitymember @relation("community_bbs_community_moderators_of_community_member_id", fields: [community_member_id], references: [id], onDelete: Cascade)
+  assignedByMember community_bbs_communitymember? @relation("community_bbs_community_moderators_of_assigned_by_id", fields: [assigned_by_id], references: [id], onDelete: Cascade)
+  assignedByAdmin community_bbs_systemadmin? @relation(fields: [assigned_by_system_admin_id], references: [id], onDelete: Cascade)
+  
+  community_bbs_moderation_actions community_bbs_moderation_actions[]
+  
+  @@index([assigned_by_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_id, community_member_id], map: "community_bbs_community_moderators_community_id_commun_19f7dd6d")
+  @@index([community_id, assigned_at])
+  // spellchecker: ignore-next-line
+  @@index([community_member_id, active], map: "community_bbs_community_moderators_community_member_id_9b74f23e")
+  // spellchecker: ignore-next-line
+  @@index([assigned_by_system_admin_id], map: "community_bbs_community_moderators_assigned_by_system__693252c6")
+}
+
+/// Membership records representing a community member's relationship to a
+/// community (join requests, approved members, banned members). Supports
+/// membership lifecycle: requested, pending, approved, left, banned.
+/// References community_bbs_communitymember for actor identity and
+/// community_bbs_communities for the community. Used for membership lists,
+/// join approvals, and membership counts.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_community_memberships {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target community's {@link community_bbs_communities.id}.
+  community_id String
+  
+  /// Member's {@link community_bbs_communitymember.id}.
+  community_member_id String
+  
+  /// Optional inviter's {@link community_bbs_communitymember.id} for invite
+  /// flows.
+  invited_by_id String?
+  
+  /// Membership status: 'requested','pending','member','left','banned'
+  /// (business values enforced at application level).
+  status String
+  
+  /// Member-specific role inside community (e.g., 'member','contributor').
+  role String?
+  
+  /// Timestamp when membership became active (approved).
+  joined_at DateTime?
+  
+  /// Timestamp when member left or was removed.
+  left_at DateTime?
+  
+  /// Record creation timestamp (request created).
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_bbs_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member community_bbs_communitymember @relation("community_bbs_community_memberships_of_community_member_id", fields: [community_member_id], references: [id], onDelete: Cascade)
+  invitedBy community_bbs_communitymember? @relation("community_bbs_community_memberships_of_invited_by_id", fields: [invited_by_id], references: [id], onDelete: Cascade)
+  
+  @@index([invited_by_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_id, community_member_id], map: "community_bbs_community_memberships_community_id_commu_27ae2be5")
+  // spellchecker: ignore-next-line
+  @@index([community_member_id, joined_at], map: "community_bbs_community_memberships_community_member_i_ffa810f9")
+  @@index([community_id, status])
+}
+
+/// Per-community configuration allowing optional overrides of global
+/// defaults. Null values indicate "use system default" semantics (e.g.,
+/// max_images_per_post = null means use the global platform default). Stores
+/// visibility override, moderation defaults, and media constraints. {@link
+/// community_bbs_communities.id}.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bbs_community_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced community's {@link community_bbs_communities.id}. 1:1
+  /// constraint enforced by unique index.
+  community_id String
+  
+  /// Community visibility override: 'public','restricted','private'
+  /// (application-level enum).
+  visibility String
+  
+  /// Whether posts from new members require moderator approval by default.
+  require_post_approval Boolean
+  
+  /// Per-community limit for images per post. NULL means use global default.
+  max_images_per_post Int?
+  
+  /// Comma-separated list of allowed image MIME types for this community
+  /// (e.g., 'image/jpeg,image/png'). Consider migrating to JSON/text[] for
+  /// structured storage.
+  allowed_image_mime_types String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for settings row, if the community is removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_bbs_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id])
+  // spellchecker: ignore-next-line
+  @@index([visibility, require_post_approval], map: "community_bbs_community_settings_visibility_require_po_5a9c4dd4")
+}

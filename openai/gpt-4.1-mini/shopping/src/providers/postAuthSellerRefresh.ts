@@ -8,6 +8,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSession";
+import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
 
@@ -15,88 +17,108 @@ export async function postAuthSellerRefresh(props: {
   seller: SellerPayload;
   body: IShoppingMallSeller.IRefresh;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  const { body } = props;
-
-  let decoded: unknown;
-  try {
-    decoded = jwt.verify(body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+  // Step 1: Verify and decode the refresh token
+  let decodedRaw = jwt.verify(
+    props.body.refreshToken,
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
       issuer: "autobe",
-    });
-  } catch {
+    },
+  );
+
+  // Narrow decodedRaw to JwtPayload
+  if (typeof decodedRaw !== "object" || decodedRaw === null) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  if (
-    typeof decoded !== "object" ||
-    decoded === null ||
-    typeof (decoded as Record<string, unknown>).id !== "string" ||
-    (decoded as Record<string, unknown>).type !== "seller"
-  ) {
-    throw new HttpException("Invalid token payload", 401);
+  const decoded = decodedRaw as {
+    type: string;
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+  };
+
+  // Step 2: Validate token type
+  if (decoded.type !== "seller") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  const sellerId = (decoded as Record<string, unknown>).id as string;
-
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
-    where: {
-      id: sellerId,
-      deleted_at: null,
-      status: "active",
+  // Step 3: Validate session and seller
+  const session = await MyGlobal.prisma.shopping_mall_seller_sessions.findFirst(
+    {
+      where: {
+        id: decoded.session_id,
+        shopping_mall_seller_id: decoded.id,
+      },
+      include: {
+        shoppingMallSeller: true,
+      },
     },
+  );
+
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
+  if (session.shoppingMallSeller.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+
+  // Step 4: Generate new access and refresh tokens
+  const now = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  const access = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+
+  const refresh = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+
+  // Step 5: Update session expiration
+  await MyGlobal.prisma.shopping_mall_seller_sessions.update({
+    where: { id: decoded.session_id },
+    data: { expired_at: refreshExpires },
   });
 
-  if (!seller) {
-    throw new HttpException("Seller not found or inactive", 401);
-  }
-
-  const now = toISOStringSafe(new Date());
-
-  const accessToken = jwt.sign(
-    {
-      id: seller.id,
-      type: "seller",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
-
-  const refreshToken = jwt.sign(
-    {
-      id: seller.id,
-      tokenType: "refresh",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-
-  const expiredAt = toISOStringSafe(new Date(Date.now() + 3600 * 1000));
-  const refreshableUntil = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 3600 * 1000),
-  );
+  // Step 6: Compose returned authorized seller object
+  const seller = session.shoppingMallSeller;
 
   return {
     id: seller.id,
     email: seller.email,
     password_hash: seller.password_hash,
-    company_name: seller.company_name ?? null,
-    contact_name: seller.contact_name ?? null,
-    phone_number: seller.phone_number ?? null,
-    status: seller.status,
+    store_name: seller.store_name,
     created_at: toISOStringSafe(seller.created_at),
     updated_at: toISOStringSafe(seller.updated_at),
-    deleted_at: seller.deleted_at ? toISOStringSafe(seller.deleted_at) : null,
+    deleted_at:
+      seller.deleted_at === null
+        ? undefined
+        : toISOStringSafe(seller.deleted_at),
+    shopping_mall_seller_sessions: undefined,
+    shopping_mall_seller_profiles: undefined,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: expiredAt,
-      refreshable_until: refreshableUntil,
+      access,
+      refresh,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
-    refresh_token: refreshToken,
   };
 }

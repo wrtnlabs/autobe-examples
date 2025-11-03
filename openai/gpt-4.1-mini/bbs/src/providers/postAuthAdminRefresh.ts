@@ -8,6 +8,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminSession";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
@@ -15,80 +16,100 @@ export async function postAuthAdminRefresh(props: {
   admin: AdminPayload;
   body: IDiscussionBoardAdmin.IRefresh;
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
-  const { body } = props;
-
-  let payload: { id: string & tags.Format<"uuid">; type: string };
-  try {
-    payload = jwt.verify(body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+  // Step 1: Verify and decode the refresh token
+  let decoded = typia.assert<{
+    id: string;
+    session_id: string;
+    type: "admin";
+  }>(
+    jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as { id: string & tags.Format<"uuid">; type: string };
-  } catch {
-    throw new HttpException(
-      "Unauthorized: Invalid or expired refresh token",
-      401,
-    );
-  }
-
-  if (payload.type !== "admin") {
-    throw new HttpException("Forbidden: Token type mismatch", 403);
-  }
-
-  const adminUser = await MyGlobal.prisma.discussion_board_admins.findUnique({
-    where: { id: payload.id },
-  });
-
-  if (!adminUser || adminUser.deleted_at !== null) {
-    throw new HttpException(
-      "Forbidden: Admin user not found or deactivated",
-      403,
-    );
-  }
-
-  const now = new Date();
-  const accessExpiredAt = toISOStringSafe(
-    new Date(now.getTime() + 3600 * 1000),
-  );
-  const refreshableUntil = toISOStringSafe(
-    new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+    }),
   );
 
-  const accessPayload = {
-    id: adminUser.id,
-    email: adminUser.email,
-    displayName: adminUser.display_name,
-    type: "admin",
-  };
+  if (decoded.type !== "admin") {
+    throw new HttpException("Invalid token type", 403);
+  }
 
-  const accessToken = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
+  // Step 2: Validate session and get admin data
+  const session =
+    await MyGlobal.prisma.discussion_board_admin_sessions.findFirst({
+      where: {
+        id: decoded.session_id,
+        discussion_board_admin_id: decoded.id,
+        expired_at: null,
+      },
+      include: {
+        admin: true,
+      },
+    });
+
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
+
+  if (session.admin.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+
+  // Step 3: Generate new tokens
+  const now = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+
+  const access = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refresh = jwt.sign(
+    {
+      type: decoded.type,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  // Step 4: Update session expiration
+  await MyGlobal.prisma.discussion_board_admin_sessions.update({
+    where: { id: decoded.session_id },
+    data: { expired_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
   });
 
-  const refreshPayload = {
-    id: adminUser.id,
-    tokenType: "refresh",
-  };
-
-  const refreshToken = jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "7d",
-    issuer: "autobe",
-  });
-
+  // Step 5: Return new admin authorized info
   return {
-    id: adminUser.id,
-    email: adminUser.email,
-    password_hash: adminUser.password_hash,
-    display_name: adminUser.display_name,
-    created_at: toISOStringSafe(adminUser.created_at),
-    updated_at: toISOStringSafe(adminUser.updated_at),
-    deleted_at: adminUser.deleted_at
-      ? toISOStringSafe(adminUser.deleted_at)
+    id: session.admin.id,
+    email: session.admin.email,
+    password_hash: session.admin.password_hash,
+    created_at: toISOStringSafe(session.admin.created_at),
+    updated_at: toISOStringSafe(session.admin.updated_at),
+    deleted_at: session.admin.deleted_at
+      ? toISOStringSafe(session.admin.deleted_at)
       : null,
+    discussion_board_admin_sessions: undefined,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiredAt,
-      refreshable_until: refreshableUntil,
+      access,
+      refresh,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
   };
 }

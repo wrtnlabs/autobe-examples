@@ -1,4 +1,4 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Ip } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 import { postAuthModeratorJoin } from "../../../providers/postAuthModeratorJoin";
@@ -10,58 +10,48 @@ import { IDiscussionBoardModerator } from "../../../api/structures/IDiscussionBo
 @Controller("/auth/moderator")
 export class AuthModeratorController {
   /**
-   * Register new moderator account and receive JWT tokens.
+   * Register a new moderator account with email verification.
    *
-   * Creates a new moderator account in the discussion_board_moderators table
-   * after validating registration inputs against business rules. The
-   * registration requires unique username (3-30 characters, alphanumeric with
-   * hyphens/underscores), unique email address (valid format), and secure
-   * password meeting complexity requirements (minimum 8 characters with
-   * uppercase, lowercase, number, special character). The system hashes the
-   * password using bcrypt with cost factor 12 before storage, ensuring
-   * passwords are never stored in plain text.
+   * This operation creates a new moderator account in the discussion board
+   * system.
    *
-   * Upon successful registration, the operation generates JWT authentication
-   * tokens following the platform's token strategy. An access token with
-   * 30-minute expiration is created for immediate API authentication, along
-   * with a refresh token (7-30 day expiration) for obtaining new access tokens
-   * without re-authentication. Both tokens include the moderator's user ID,
-   * username, email, role designation, and granted permissions in the JWT
-   * payload.
+   * The registration process begins when a user submits their desired username,
+   * email address, and password. The system validates that the username is
+   * unique, between 3-30 characters, and contains only alphanumeric characters,
+   * underscores, and hyphens. The email address must be valid format and unique
+   * across all moderator accounts. The password must meet security
+   * requirements: minimum 8 characters with at least one uppercase letter, one
+   * lowercase letter, one number, and one special character.
    *
-   * The operation sets initial account status to 'pending_verification' until
-   * email verification completes, and email_verified to false. The
-   * appointed_by_admin_id references the administrator who initiated the
-   * moderator appointment. The system records the appointment timestamp, device
-   * information, and sets is_active to true for immediate moderation queue
-   * access.
+   * Upon successful validation, the system creates a new moderator record in
+   * the discussion_board_moderators table with status set to
+   * pending_email_verification and email_verified set to false. The password is
+   * securely hashed using bcrypt or equivalent before storage. The system
+   * generates a unique email verification token valid for 24 hours and sends a
+   * verification email to the provided address.
    *
-   * This operation integrates with the authentication system defined in the
-   * User Roles and Authentication document, implementing role-based access
-   * control for moderators who inherit all member permissions plus moderation
-   * capabilities including content review, warning issuance, and temporary
-   * suspensions. Registration data is validated according to Business Rules and
-   * Validation requirements, and all security measures from Performance and
-   * Security requirements are enforced.
+   * The response includes JWT tokens (access token with 30-minute expiration
+   * and refresh token with 30-day expiration) allowing immediate authenticated
+   * access, though full moderator privileges require email verification. The
+   * system records the account creation timestamp and initializes default
+   * values for profile_visibility (public) and activity_visibility (public).
    *
-   * The response includes the complete moderator profile with role information,
-   * permission grants, and token credentials required for subsequent
-   * authenticated API operations. This operation is essential for moderator
-   * onboarding and represents the entry point for trusted community members to
-   * access moderation tools and maintain discourse standards across economic
-   * and political discussions.
+   * This endpoint is publicly accessible and does not require authentication,
+   * as it enables new moderators to create accounts. Rate limiting is applied
+   * to prevent abuse, restricting registration attempts from the same IP
+   * address.
    *
    * @param connection
-   * @param body Registration information including appointed administrator
-   *   reference, unique username, verified email address, secure password
-   *   meeting complexity requirements, optional display name and bio, and
-   *   account configuration
+   * @param body Moderator registration information including username, email,
+   *   and password
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
   public async join(
+    @Ip()
+    ip: string,
     @TypedBody()
     body: IDiscussionBoardModerator.ICreate,
   ): Promise<IDiscussionBoardModerator.IAuthorized> {
@@ -76,63 +66,51 @@ export class AuthModeratorController {
   }
 
   /**
-   * Authenticate moderator credentials and issue JWT tokens.
+   * Authenticate moderator and obtain access tokens.
    *
-   * Validates moderator login credentials against the
-   * discussion_board_moderators table and issues JWT authentication tokens upon
-   * successful verification. The operation accepts either email address or
-   * username along with the password, retrieves the moderator account, and
-   * performs comprehensive validation checks before granting access.
+   * This operation authenticates a moderator and establishes an authenticated
+   * session.
    *
-   * The authentication process verifies multiple account state conditions from
-   * the Prisma schema: confirms the account exists in the moderators table,
-   * validates email_verified is true (required for moderation duties per
-   * schema), compares the submitted password against the stored password_hash
-   * using bcrypt constant-time comparison, checks account_status is 'active'
-   * (not suspended or deactivated), and ensures is_active is true (moderator
-   * privileges are enabled). Any failed validation results in authentication
-   * denial with appropriate error messaging.
+   * The login process accepts either username or email address along with the
+   * password. The system performs case-insensitive lookup for the username or
+   * email in the discussion_board_moderators table. If no matching account is
+   * found, the system returns a generic error message "Invalid username/email
+   * or password" without revealing which credential was incorrect, preventing
+   * username enumeration attacks.
    *
-   * Upon successful credential validation, the system generates JWT tokens
-   * following the platform's authentication strategy defined in the User Roles
-   * and Authentication document. An access token with 30-minute expiration is
-   * created containing the moderator's user ID, username, email, role
-   * designation ('moderator'), and specific permissions array in the JWT
-   * payload. A refresh token with 7-30 day expiration (extended for 'Remember
-   * Me' functionality) is generated for obtaining new access tokens without
-   * re-authentication.
+   * When an account is found, the system verifies the provided password against
+   * the stored password_hash using secure comparison. If the password is
+   * incorrect, the same generic error message is returned. The system tracks
+   * failed login attempts and implements rate limiting: after 5 failed attempts
+   * within 15 minutes from the same IP address, login is temporarily blocked
+   * for 30 minutes.
    *
-   * The operation creates a new session record in discussion_board_sessions
-   * table with the access_token_hash, device_type, browser_info, ip_address,
-   * approximate location, and activity timestamps. A corresponding refresh
-   * token record is created in discussion_board_refresh_tokens linked to the
-   * session. The login attempt is logged in discussion_board_login_history with
-   * success status, device information, and timestamp for security audit
-   * trail.
+   * Before issuing tokens, the system checks the email_verified field. If
+   * false, the login is rejected with message "Please verify your email address
+   * before logging in" and offers to resend the verification email. The system
+   * also validates that the account status is "active" - suspended or deleted
+   * accounts are denied access with appropriate error messages.
    *
-   * Security measures are enforced per Performance and Security requirements:
-   * failed login attempts are tracked and trigger progressive protections
-   * including CAPTCHA after 3 failures and 15-minute account lockout after 5
-   * failures within 15 minutes. The system logs all authentication events in
-   * discussion_board_security_logs for monitoring suspicious patterns like
-   * brute force attacks or credential stuffing attempts.
+   * Upon successful authentication, the system generates a new access token
+   * (30-minute expiration) and refresh token (30-day expiration). The
+   * last_login_at timestamp is updated to the current time. A new session
+   * record is created in discussion_board_moderator_sessions capturing the IP
+   * address, user agent, and connection details for security auditing.
    *
-   * This operation is essential for moderator access to the moderation queue,
-   * content review tools, warning issuance capabilities, and user suspension
-   * features. Successful login enables moderators to perform their duties
-   * maintaining civil discourse standards across economic and political
-   * discussions as specified in the Moderation System requirements.
+   * This is a public endpoint that does not require prior authentication. The
+   * response includes the complete moderator profile along with authentication
+   * tokens.
    *
    * @param connection
-   * @param body Login credentials containing email address or username and
-   *   password for authentication, with optional 'remember me' flag for
-   *   extended refresh token expiration
+   * @param body Moderator login credentials with username or email and password
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
   public async login(
+    @Ip()
+    ip: string,
     @TypedBody()
     body: IDiscussionBoardModerator.ILogin,
   ): Promise<IDiscussionBoardModerator.IAuthorized> {
@@ -147,63 +125,43 @@ export class AuthModeratorController {
   }
 
   /**
-   * Refresh access token using valid refresh token.
+   * Refresh access token using a valid refresh token.
    *
-   * Validates the provided refresh token and issues a new access token to
-   * maintain moderator session continuity without requiring credential
-   * re-entry. This operation is essential for user experience during extended
-   * moderation sessions, allowing seamless access token renewal when the
-   * 30-minute access token expires while the moderator is actively reviewing
-   * content in the moderation queue.
+   * This operation enables token refresh for maintaining authenticated
+   * moderator sessions.
    *
-   * The refresh process performs comprehensive validation against the
-   * discussion_board_refresh_tokens table in the Prisma schema. The system
-   * verifies the submitted refresh_token_hash matches a stored token, confirms
-   * the token expires_at timestamp has not passed, validates is_revoked is
-   * false (token has not been invalidated), and retrieves the associated
-   * session from discussion_board_sessions via the discussion_board_session_id
-   * foreign key relationship. The session's is_active status must be true, and
-   * the session must not have been revoked (revoked_at is null).
+   * The refresh process is initiated when a client's access token expires but
+   * they have a valid refresh token. The system validates the provided refresh
+   * token by verifying its signature, checking expiration (30 days from
+   * issuance), and confirming it hasn't been invalidated or revoked. The
+   * refresh token contains the moderator's user ID which is used to retrieve
+   * the current account state.
    *
-   * Through the session relationship, the system accesses the moderator account
-   * from discussion_board_moderators table and validates account state:
-   * account_status must be 'active' (not suspended or deactivated), is_active
-   * must be true (moderator privileges enabled), and email_verified must be
-   * true. If the moderator account has been suspended, banned, or had
-   * privileges revoked since the refresh token was issued, the refresh
-   * operation fails and requires fresh authentication.
+   * The system performs several security checks before issuing new tokens.
+   * First, it verifies the moderator account still exists in the
+   * discussion_board_moderators table. Second, it checks the account status is
+   * "active" - suspended or deleted accounts cannot refresh tokens. Third, it
+   * validates the email_verified field is true, as unverified accounts should
+   * re-authenticate.
    *
-   * Upon successful validation, the system generates a new JWT access token
-   * with 30-minute expiration containing the moderator's current user ID,
-   * username, email, role designation ('moderator'), and up-to-date permissions
-   * array reflecting any permission changes since original login. The new
-   * access token enables continued API authentication for moderation
+   * If any validation fails, the refresh is denied and the client must perform
+   * a full login. When validation succeeds, the system generates a new access
+   * token with 30-minute expiration and optionally rotates the refresh token
+   * for enhanced security (implementing refresh token rotation prevents token
+   * reuse if compromised).
+   *
+   * The response includes the new access token and refresh token along with the
+   * moderator's current profile information, ensuring the client has up-to-date
+   * account data. The last_login_at timestamp is NOT updated during refresh
+   * operations as this is not a full login event.
+   *
+   * This endpoint requires a valid refresh token but does not require an active
+   * access token (as the access token has expired). Session records in
+   * discussion_board_moderator_sessions are maintained across refresh
    * operations.
    *
-   * The operation may implement refresh token rotation as a security best
-   * practice: generating a new refresh token with extended expiration, marking
-   * the old refresh token as revoked by setting is_revoked to true and
-   * recording revoked_at timestamp, and returning both new access and refresh
-   * tokens. This rotation strategy limits the window of vulnerability if a
-   * refresh token is compromised.
-   *
-   * The refresh operation updates the session's last_activity_at timestamp in
-   * discussion_board_sessions to track active moderation sessions. If the
-   * moderator account has last_activity_at tracking, this is also updated to
-   * reflect continued platform engagement. All token refresh events are logged
-   * in discussion_board_security_logs with event_type 'token_refreshed' for
-   * security monitoring and audit compliance.
-   *
-   * This operation integrates with the JWT token management strategy defined in
-   * the User Roles and Authentication document, supporting the stateless
-   * authentication architecture while enabling long-lived sessions through
-   * refresh token mechanics. It prevents the poor user experience of frequent
-   * login prompts during active moderation work while maintaining security
-   * through short-lived access tokens and revocable refresh tokens.
-   *
    * @param connection
-   * @param body Refresh token request containing the current valid refresh
-   *   token to be exchanged for a new access token
+   * @param body Refresh token from previous login or refresh operation
    * @setHeader token.access Authorization
    *
    * @nestia Generated by Nestia - https://github.com/samchon/nestia

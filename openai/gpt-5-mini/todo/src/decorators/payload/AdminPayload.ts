@@ -1,9 +1,12 @@
 import { tags } from "typia";
 
 export interface AdminPayload {
-  /** Top-level admin table ID (the fundamental admin identifier in the system). */
+  /** Top-level admin ID (uuid) */
   id: string & tags.Format<"uuid">;
 
-  /** Discriminator for the discriminated union type. */
+  /** Session ID associated with the authenticated admin (uuid) */
+  session_id: string & tags.Format<"uuid">;
+
+  /** Role discriminator */
   type: "admin";
 }

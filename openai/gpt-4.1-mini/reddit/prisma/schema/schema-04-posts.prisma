@@ -1,0 +1,110 @@
+/// Main business entity representing user posts within communities. Each
+/// post is authored by a user and is associated with a specific community.
+/// Posts include textual content, optional image URIs, metadata details such
+/// as content type, title, and post status. The entity supports soft
+/// deletion and tracks creation and modification timestamps. This table
+/// serves as the core content management for posts independent of comments
+/// or votes. It references users, communities, and content types for data
+/// integrity.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Authoring user's {@link reddit_community_user.id}.
+  reddit_community_user_id String
+  
+  /// Associated community's {@link reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// Content type's {@link reddit_community_content_types.id} to specify post
+  /// format (text, link, image).
+  reddit_community_content_type_id String
+  
+  /// Title of the post summarizing the content.
+  title String
+  
+  /// Main textual content of the post.
+  body String
+  
+  /// Optional URI for an image associated with the post.
+  image_uri String?
+  
+  /// Current status of the post (e.g., 'active', 'removed', 'hidden').
+  status String
+  
+  /// Timestamp when the post was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author reddit_community_user @relation(fields: [reddit_community_user_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  contentType reddit_community_content_types @relation(fields: [reddit_community_content_type_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_post_snapshots reddit_community_post_snapshots[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_post_votes reddit_community_post_votes[]
+  reddit_community_content_reports reddit_community_content_reports[]
+  
+  @@index([reddit_community_content_type_id])
+  
+  @@unique([reddit_community_community_id, title])
+  @@index([reddit_community_user_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id, created_at], map: "reddit_community_posts_reddit_community_community_id_c_ede20472")
+}
+
+/// Snapshot entity capturing point-in-time states of user posts for audit
+/// trails and historical tracking. Each snapshot references the main post
+/// and preserves all post fields such as title, body, image URI, status, and
+/// timestamps reflecting the snapshot creation time. This table supports
+/// append-only pattern ensuring immutability and historical accountability.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced post's {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// Title of the post snapshot.
+  title String
+  
+  /// Textual content of the post snapshot.
+  body String
+  
+  /// Optional image URI captured at snapshot time.
+  image_uri String?
+  
+  /// Post status at snapshot time.
+  status String
+  
+  /// Timestamp when the snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_post_snapshots_reddit_community_post__d8065680")
+}

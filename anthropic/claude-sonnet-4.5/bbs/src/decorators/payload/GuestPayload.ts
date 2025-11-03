@@ -1,8 +1,11 @@
 import { tags } from "typia";
 
 export interface GuestPayload {
-  /** Top-level user table ID (the fundamental user identifier in the system). */
+  /** Top-level guest user ID (the fundamental guest identifier in the system). */
   id: string & tags.Format<"uuid">;
+
+  /** Session ID associated with the guest user. */
+  session_id: string & tags.Format<"uuid">;
 
   /** Discriminator for the discriminated union type. */
   type: "guest";

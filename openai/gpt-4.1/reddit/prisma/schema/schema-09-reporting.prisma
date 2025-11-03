@@ -1,0 +1,187 @@
+/// Primary entity for all user or admin-initiated reports on content.
+/// Represents a single report instance with information on reporter, type,
+/// descriptive reason, textual description, reporting time, and status. Each
+/// report has at most one association to a post or comment report subtable;
+/// additional associations can be introduced for other content types. Key
+/// audit trail for moderation workflows, with status progression managed via
+/// related action logs. Links to reporter via foreign key to either users or
+/// admins, depending on actor type.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporter user's {@link community_platform_users.id}. Nullable if reporter
+  /// is an admin.
+  reporter_user_id String?
+  
+  /// Reporter admin's {@link community_platform_admins.id}. Nullable if
+  /// reporter is a standard user.
+  reporter_admin_id String?
+  
+  /// Category of report (e.g., spam, abuse, off_topic, harassment,
+  /// explicit_content, other).
+  report_type String
+  
+  /// Workflow status of report (e.g., open, under_review, auto_hidden,
+  /// resolved, dismissed).
+  status String
+  
+  /// Reporter-supplied freeform description (optional).
+  description String?
+  
+  /// Whether the content was auto-hidden due to report thresholds or
+  /// moderation rules.
+  auto_hidden Boolean
+  
+  /// Timestamp of report creation.
+  created_at DateTime
+  
+  /// Timestamp of last report update.
+  updated_at DateTime
+  
+  /// Soft delete marker for archival and retention policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporterUser community_platform_users? @relation(fields: [reporter_user_id], references: [id], onDelete: Cascade)
+  reporterAdmin community_platform_admins? @relation(fields: [reporter_admin_id], references: [id], onDelete: Cascade)
+  
+  community_platform_report_of_posts community_platform_report_of_posts?
+  community_platform_report_of_comments community_platform_report_of_comments?
+  community_platform_report_actions community_platform_report_actions[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([reporter_user_id, report_type, status, created_at], map: "community_platform_reports_reporter_user_id_report_typ_b575fde3")
+  // spellchecker: ignore-next-line
+  @@unique([reporter_admin_id, report_type, status, created_at], map: "community_platform_reports_reporter_admin_id_report_ty_933be9f5")
+  @@index([report_type, status])
+  @@index([auto_hidden])
+}
+
+/// Associates a report record to a specific post. Used for normalization and
+/// to avoid polymorphic nullable targets. 1:1 relationship with
+/// community_platform_reports; each association references a reported post
+/// and guarantees referential integrity. Used to audit all post-level
+/// content reporting and batch moderation.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent report's {@link community_platform_reports.id}.
+  report_id String
+  
+  /// Target post's {@link community_platform_posts.id}.
+  target_post_id String
+  
+  /// Timestamp of post report association creation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  targetPost community_platform_posts @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([report_id])
+  // spellchecker: ignore-next-line
+  @@index([target_post_id, created_at], map: "community_platform_report_of_posts_target_post_id_crea_329574ea")
+}
+
+/// Associates a report record to a specific comment. Used for normalization
+/// to avoid polymorphic nullable targets. 1:1 relationship with
+/// community_platform_reports; each association references a reported
+/// comment and guarantees referential integrity. Used for all comment-level
+/// content reporting and moderation audit.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent report's {@link community_platform_reports.id}.
+  report_id String
+  
+  /// Target comment's {@link community_platform_comments.id}.
+  target_comment_id String
+  
+  /// Timestamp of comment report association creation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  targetComment community_platform_comments @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([report_id])
+  // spellchecker: ignore-next-line
+  @@index([target_comment_id, created_at], map: "community_platform_report_of_comments_target_comment_i_c0392d6e")
+}
+
+/// Audit/action trail for each report, tracking moderation and admin
+/// workflow events (e.g., status changes, comments, auto-hide actions,
+/// resolution/dismissal). Each record is linked to a report and the actor
+/// (admin or moderator) taking the action, supporting chronological review
+/// and compliance monitoring. Non-destructive, append-only. Used for both
+/// business compliance and internal quality processes.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related report's {@link community_platform_reports.id}.
+  report_id String
+  
+  /// Acting admin's {@link community_platform_admins.id}. Nullable if action
+  /// was taken by a different role (future extensibility).
+  actor_admin_id String?
+  
+  /// Type of action (e.g., status_update, auto_hide, assign, comment, resolve,
+  /// dismiss).
+  action_type String
+  
+  /// Previous status value before action (for status updates).
+  old_status String?
+  
+  /// New status value after action (for status updates).
+  new_status String?
+  
+  /// Optional moderator/admin comment or action rationale.
+  comment String?
+  
+  /// Timestamp of action record creation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  actorAdmin community_platform_admins? @relation(fields: [actor_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_admin_id])
+  
+  @@index([report_id, created_at])
+}

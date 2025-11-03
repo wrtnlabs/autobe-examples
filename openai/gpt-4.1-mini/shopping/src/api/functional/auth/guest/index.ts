@@ -6,29 +6,31 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IShoppingMallGuest } from "../../../structures/IShoppingMallGuest";
 
 /**
- * Create a new guest session and issue JWT tokens based on the
+ * Register a new guest account and issue temporary JWT tokens, based on the
  * shopping_mall_guests table.
  *
- * Guest user registration endpoint to create a temporary guest session and
- * issue guest JWT tokens for secure browsing and shopping interactions without
- * full account credentials. Uses fields `session_token`, `ip_address`, and
- * `user_agent` from `shopping_mall_guests` table to identify guest session
- * footprints and manage lifecycle.
+ * This endpoint allows unauthenticated guest users to create a temporary guest
+ * account. It inserts a new record into the shopping_mall_guests table. Guests
+ * are identified primarily by their IP address and assigned a unique ID. The
+ * operation issues temporary JWT tokens to enable limited access to public
+ * resources.
  *
- * This operation supports the e-commerce shopping mall guests role as
- * unauthenticated visitors. It issues JWT tokens for guest session management
- * and access control.
+ * No persistent password or email is required for guests as their access is
+ * transient. The tokens have restricted scope and limited lifetime.
  *
- * Security is enforced by generating unique session tokens and limiting session
- * privileges appropriately.
+ * This is the foundational registration operation for guest users in the
+ * shopping mall platform, allowing secure, anonymous browsing and eventual
+ * upgrade to member accounts.
  *
- * For broader user management, member and admin join/login operations
- * complement this feature.
+ * The business flow is simple: create guest record, issue tokens, and return
+ * authorization data. The system restricts guests from accessing user-specific
+ * or sensitive endpoints.
  *
- * Token refresh is supported separately for guest session continuation.
+ * This API is critical to enable unauthenticated user tracking and is the
+ * prerequisite for the token refresh operation at /auth/guest/refresh.
  *
  * @param props.connection
- * @param props.body Information required to register a new guest session
+ * @param props.body Initial data for creating a guest account.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/join
@@ -63,7 +65,7 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Information required to register a new guest session */
+    /** Initial data for creating a guest account. */
     body: IShoppingMallGuest.ICreate;
   };
   export type Body = IShoppingMallGuest.ICreate;
@@ -111,23 +113,28 @@ export namespace join {
 }
 
 /**
- * Refresh JWT tokens for guest sessions based on shopping_mall_guests data.
+ * Renew temporary JWT tokens for the guest user with a valid refresh token.
  *
- * Guest token refresh endpoint to renew JWT tokens for guest session
- * continuity. Requires a valid refresh token issued during guest session
- * creation.
+ * Refresh temporary JWT tokens for a guest user using a valid refresh token.
+ * This operation validates the existing refresh token issued to the guest and
+ * issues new temporary JWT tokens.
  *
- * Leverages `shopping_mall_guests` table fields such as `session_token` to
- * validate and issue new tokens.
+ * Guests have limited privileges and short token lifetimes for security. This
+ * endpoint allows guests to maintain session continuity without full
+ * authentication.
  *
- * Ensures secure token lifecycle management for unauthenticated guest users.
+ * It requires a valid refresh token in the request and returns updated
+ * authorization information reflecting the renewed access rights.
  *
- * Related to guest join operation which creates initial session.
+ * This is essential for guest user experience, enabling token renewal for
+ * unauthenticated browsing sessions.
  *
- * Refresh token validation prevents unauthorized session hijacking.
+ * No user credentials or passwords are required as guests do not authenticate
+ * via login.
  *
  * @param props.connection
- * @param props.body Refresh token information for guest sessions
+ * @param props.body Refresh token request body for guest temporary token
+ *   renewal.
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/refresh
@@ -162,14 +169,14 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token information for guest sessions */
+    /** Refresh token request body for guest temporary token renewal. */
     body: IShoppingMallGuest.IRefresh;
   };
   export type Body = IShoppingMallGuest.IRefresh;
   export type Response = IShoppingMallGuest.IAuthorized;
 
   export const METADATA = {
-    method: "POST",
+    method: "PATCH",
     path: "/auth/guest/refresh",
     request: {
       type: "application/json",

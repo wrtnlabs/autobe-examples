@@ -1,0 +1,50 @@
+/// System-wide configuration settings that store application-wide settings
+/// and preferences. This table provides a flexible key-value store for
+/// various configuration parameters that can be adjusted without requiring
+/// code changes or deployments.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier used to reference the setting in
+  /// application code.
+  key String
+  
+  /// Configuration value stored as string. Can contain JSON data for complex
+  /// configuration objects.
+  value String
+  
+  /// Human-readable description of what this configuration setting controls.
+  description String?
+  
+  /// Configuration type indicating if this is a string, number, boolean, or
+  /// JSON configuration value.
+  type String
+  
+  /// Whether this is a system-level configuration that cannot be modified by
+  /// users. Defaults to true for critical settings.
+  is_system Boolean
+  
+  /// Timestamp when the configuration was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the configuration was soft deleted. Null if the
+  /// configuration is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([type])
+  @@index([created_at])
+}

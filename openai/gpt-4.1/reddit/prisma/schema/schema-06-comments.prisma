@@ -1,0 +1,222 @@
+/// Top-level and child comments posted by users under posts, supporting
+/// nested replies (via parent_comment_id if not null). Core entity for all
+/// commenting, with max-nesting enforced in application logic. Supports
+/// per-comment soft deletion. Related to users, posts, and (optionally)
+/// parent comments. Children are retained and point to placeholders if
+/// parent deleted. Never stores calculated fields such as score or karma;
+/// all denormalization avoided.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target post's id. {@link community_platform_posts.id}
+  post_id String
+  
+  /// Authoring user's id. {@link community_platform_users.id}
+  user_id String
+  
+  /// Authenticated session of the commenting user. {@link
+  /// community_platform_user_sessions.id}
+  user_session_id String
+  
+  /// Parent comment id for nested/child comment, null for top-level comments.
+  /// {@link community_platform_comments.id}
+  parent_comment_id String?
+  
+  /// Comment text content, up to 2,000 characters. Required; does not allow
+  /// empty comments. Format and max-length validated in application layer.
+  body String
+  
+  /// Nest depth from post root (0 for direct post replies). Enforced to max 5
+  /// at application level. Used for limiting nesting and sorting display.
+  nest_depth Int
+  
+  /// Indicates if the comment has been soft deleted/removed from display, but
+  /// stays for thread integrity. If true, reference the placeholder table for
+  /// display.
+  is_removed Boolean
+  
+  /// Timestamp of comment creation.
+  created_at DateTime
+  
+  /// Last updated/edit time for the comment (changes on each body update or
+  /// removal).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  userSession community_platform_user_sessions @relation(fields: [user_session_id], references: [id], onDelete: Cascade)
+  parentComment community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_comment_edit_histories community_platform_comment_edit_histories[]
+  community_platform_comment_archives community_platform_comment_archives[]
+  community_platform_deleted_comment_placeholders community_platform_deleted_comment_placeholders?
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_report_of_comments community_platform_report_of_comments[]
+  
+  @@index([user_session_id])
+  
+  @@unique([post_id, id])
+  @@index([post_id, created_at])
+  @@index([parent_comment_id, created_at])
+  @@index([user_id, created_at])
+  @@index([nest_depth])
+}
+
+/// Records each edit made to a comment for audit and moderator review. Each
+/// record tracks the prior state of comment's body, who made the edit
+/// (user/session), precise timestamp, and references the original comment.
+/// Supports full per-comment version review. Used for accountability and
+/// rollback by moderators or when showing comment edit history.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target comment whose history is being recorded. {@link
+  /// community_platform_comments.id}
+  comment_id String
+  
+  /// User performing the edit. {@link community_platform_users.id}
+  editor_user_id String
+  
+  /// Session of editing user. {@link community_platform_user_sessions.id}
+  editor_user_session_id String
+  
+  /// The previous body/text of the comment before this edit. Saved for
+  /// auditing, up to 2,000 characters.
+  prior_body String
+  
+  /// Optional moderator/user-supplied reason for the edit, e.g. correction,
+  /// rule compliance. Null if none supplied.
+  edit_reason String?
+  
+  /// Timestamp when the edit was made.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  editorUser community_platform_users @relation(fields: [editor_user_id], references: [id], onDelete: Cascade)
+  editorUserSession community_platform_user_sessions @relation(fields: [editor_user_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([editor_user_session_id], map: "community_platform_comment_edit_histories_editor_user__1e9aa4d7")
+  
+  // spellchecker: ignore-next-line
+  @@index([comment_id, created_at], map: "community_platform_comment_edit_histories_comment_id_c_5dd8e361")
+  // spellchecker: ignore-next-line
+  @@index([editor_user_id, created_at], map: "community_platform_comment_edit_histories_editor_user__194925da")
+}
+
+/// Archive of removed or historical versions of comments for compliance,
+/// auditing, and potential restoration. Each entry is a snapshot at the time
+/// of removal/archive. Tracks comment body, user, session, and archival
+/// detail, preserving full lineage. Used for GDPR compliance, moderation
+/// review, or restoring deleted comments.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_archives {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment whose prior/deleted state is being archived. {@link
+  /// community_platform_comments.id}
+  original_comment_id String
+  
+  /// Comment's author at time of archiving. {@link community_platform_users.id}
+  user_id String
+  
+  /// Session context of author when originally created. {@link
+  /// community_platform_user_sessions.id}
+  user_session_id String
+  
+  /// The comment body preserved at the time of removal/archive. Up to 2,000
+  /// characters. Full content required for compliance.
+  archived_body String
+  
+  /// Timestamp when this archive record was created (i.e., when the comment
+  /// was removed/archived).
+  archived_at DateTime
+  
+  /// Explanation or moderator log for why this comment was archived, e.g. user
+  /// request, moderation, GDPR removal. Null if not provided.
+  removal_reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  originalComment community_platform_comments @relation(fields: [original_comment_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  userSession community_platform_user_sessions @relation(fields: [user_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([user_session_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([original_comment_id, archived_at], map: "community_platform_comment_archives_original_comment_i_b446b984")
+}
+
+/// Placeholder references used to indicate a deleted comment, especially
+/// when it has children that still need to be displayed in the thread. Only
+/// applies to comments fully deleted by user or moderator. Stores time,
+/// original comment reference, and removal/masking details.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_deleted_comment_placeholders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment which is now represented as placeholder. {@link
+  /// community_platform_comments.id}
+  original_comment_id String
+  
+  /// Type of placeholder logic (e.g. 'deleted_by_user',
+  /// 'deleted_by_moderator', 'removed_spam', etc.). Used for thread display
+  /// customization.
+  placeholder_type String
+  
+  /// User who actioned the masking/removal. Null if system-driven.
+  masked_by_user_id String?
+  
+  /// Human-readable reason or system code for why comment became placeholder.
+  /// E.g. GDPR removal, moderator flag.
+  masked_reason String?
+  
+  /// Timestamp of placeholder record creation (i.e., when original comment was
+  /// masked).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  originalComment community_platform_comments @relation(fields: [original_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([original_comment_id], map: "community_platform_deleted_comment_placeholders_origin_a208afd5")
+  @@index([created_at])
+}

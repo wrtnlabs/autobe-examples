@@ -15,55 +15,78 @@ export async function postAuthMemberLogin(props: {
   member: MemberPayload;
   body: IDiscussionBoardMember.ILogin;
 }): Promise<IDiscussionBoardMember.IAuthorized> {
-  const { body } = props;
-
-  const member = await MyGlobal.prisma.discussion_board_members.findUnique({
-    where: { email: body.email },
+  const member = await MyGlobal.prisma.discussion_board_members.findFirst({
+    where: {
+      email: props.body.email,
+      deleted_at: null,
+    },
   });
-
-  if (!member || member.deleted_at !== null) {
-    throw new HttpException("Invalid email or password", 401);
+  if (!member) {
+    throw new HttpException("Invalid credentials", 401);
   }
 
-  const isValidPassword = await PasswordUtil.verify(
-    body.password,
+  const isValid = await PasswordUtil.verify(
+    props.body.password,
     member.password_hash,
   );
-  if (!isValidPassword) {
-    throw new HttpException("Invalid email or password", 401);
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
   }
 
-  const now = Date.now();
-  const accessTokenExpiresAtStr = toISOStringSafe(
-    new Date(now + 60 * 60 * 1000),
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
   );
-  const refreshTokenExpiresAtStr = toISOStringSafe(
-    new Date(now + 7 * 24 * 60 * 60 * 1000),
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
 
-  const access = jwt.sign(
-    { id: member.id, type: "member" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refresh = jwt.sign(
-    { id: member.id, type: "member", tokenType: "refresh" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
+  const session = await MyGlobal.prisma.discussion_board_member_sessions.create(
+    {
+      data: {
+        id: v4(),
+        discussion_board_member_id: member.id,
+        ip: props.body.ip ?? "",
+        href: props.body.href,
+        referrer: props.body.referrer,
+        created_at: now,
+        expired_at: accessExpires,
+      },
+    },
   );
 
   return {
     id: member.id,
-    email: member.email,
-    display_name: member.display_name,
-    created_at: toISOStringSafe(member.created_at),
-    updated_at: toISOStringSafe(member.updated_at),
-    deleted_at: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
     token: {
-      access,
-      refresh,
-      expired_at: accessTokenExpiresAtStr,
-      refreshable_until: refreshTokenExpiresAtStr,
+      access: jwt.sign(
+        {
+          type: "member",
+          id: member.id,
+          session_id: session.id,
+          created_at: now,
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        {
+          expiresIn: "1h",
+          issuer: "autobe",
+        },
+      ),
+      refresh: jwt.sign(
+        {
+          type: "member",
+          id: member.id,
+          session_id: session.id,
+          tokenType: "refresh",
+          created_at: now,
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        {
+          expiresIn: "7d",
+          issuer: "autobe",
+        },
+      ),
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
   };
 }

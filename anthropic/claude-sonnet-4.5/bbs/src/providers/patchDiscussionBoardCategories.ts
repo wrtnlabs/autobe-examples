@@ -16,71 +16,85 @@ export async function patchDiscussionBoardCategories(props: {
 }): Promise<IPageIDiscussionBoardCategory.ISummary> {
   const { body } = props;
 
-  // Extract pagination parameters with defaults
-  const page = (body.page ?? 1) as number;
-  const limit = (body.limit ?? 25) as number;
+  // Pagination parameters with defaults and validation
+  const page = Math.max((body.page ?? 1) as number, 1);
+  const limit = Math.min(Math.max((body.limit ?? 20) as number, 1), 100);
   const skip = (page - 1) * limit;
 
-  // Build where clause based on filters
-  const where = {
-    deleted_at: null,
-    // Handle parent_category_id: undefined = no filter, null = filter for null, value = filter for value
-    ...(body.parent_category_id !== undefined && {
-      parent_category_id: body.parent_category_id,
-    }),
-    ...(body.is_active !== undefined &&
-      body.is_active !== null && {
-        is_active: body.is_active,
-      }),
-    ...(body.search !== undefined &&
-      body.search !== null &&
-      body.search.length > 0 && {
-        OR: [
-          { name: { contains: body.search } },
-          { description: { contains: body.search } },
-        ],
-      }),
-  };
+  // Build where clause conditionally
+  const where: Record<string, any> = {};
 
-  // Determine sort field and direction with proper typing
-  const sortBy = body.sort_by ?? "display_order";
-  const sortDirection =
-    body.sort_direction ?? (sortBy === "topic_count" ? "desc" : "asc");
+  // Keyword search across name and description
+  if (body.search !== undefined && body.search !== null) {
+    where.OR = [
+      { name: { contains: body.search } },
+      { description: { contains: body.search } },
+    ];
+  }
 
-  // Execute queries concurrently
-  const [categories, total] = await Promise.all([
+  // Name partial match filter (only if search not provided to avoid conflict)
+  if (body.name !== undefined && body.name !== null && !body.search) {
+    where.name = { contains: body.name };
+  }
+
+  // Slug exact match filter
+  if (body.slug !== undefined && body.slug !== null) {
+    where.slug = body.slug;
+  }
+
+  // Date range filtering
+  if (
+    (body.created_after !== undefined && body.created_after !== null) ||
+    (body.created_before !== undefined && body.created_before !== null)
+  ) {
+    where.created_at = {};
+    if (body.created_after !== undefined && body.created_after !== null) {
+      where.created_at.gte = body.created_after;
+    }
+    if (body.created_before !== undefined && body.created_before !== null) {
+      where.created_at.lte = body.created_before;
+    }
+  }
+
+  // Determine orderBy field and direction
+  const sortBy = body.sort_by ?? "created_at";
+  const sortOrder = body.sort_order === "asc" ? "asc" : "desc";
+
+  const allowedSortFields = ["name", "created_at", "updated_at", "slug"];
+  const orderByField = allowedSortFields.includes(sortBy)
+    ? sortBy
+    : "created_at";
+
+  // Execute queries in parallel
+  const [categories, totalCount] = await Promise.all([
     MyGlobal.prisma.discussion_board_categories.findMany({
       where,
-      orderBy: { [sortBy]: sortDirection },
+      orderBy: { [orderByField]: sortOrder },
       skip,
       take: limit,
     }),
     MyGlobal.prisma.discussion_board_categories.count({ where }),
   ]);
 
-  // Transform to API response format
-  const data: IDiscussionBoardCategory.ISummary[] = categories.map(
-    (category) => ({
-      id: category.id as string & tags.Format<"uuid">,
-      name: category.name,
-      slug: category.slug,
-      parent_category_id:
-        category.parent_category_id === null
-          ? null
-          : (category.parent_category_id as string & tags.Format<"uuid">),
-      display_order: category.display_order,
-      is_active: category.is_active,
-      topic_count: category.topic_count,
-    }),
-  );
+  // Transform to ISummary format
+  const data = categories.map((category) => ({
+    id: category.id as string & tags.Format<"uuid">,
+    name: category.name,
+    slug: category.slug,
+    description: category.description ?? undefined,
+    created_at: toISOStringSafe(category.created_at),
+    updated_at: toISOStringSafe(category.updated_at),
+  }));
 
-  // Build pagination response with Number() to strip brand types
+  // Calculate pagination metadata
+  const totalPages = Math.ceil(totalCount / limit);
+
   return {
     pagination: {
       current: Number(page),
       limit: Number(limit),
-      records: total,
-      pages: Math.ceil(total / limit),
+      records: totalCount,
+      pages: totalPages,
     },
     data,
   };

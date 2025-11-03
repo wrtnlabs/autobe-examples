@@ -5,22 +5,24 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
 
 /**
- * Verify JWT, ensure role is 'guest', and validate the guest record exists and is active.
+ * Verifies JWT token and ensures the guest actor exists and is active.
  */
 export async function guestAuthorize(request: {
-  headers: { authorization?: string };
+  headers: {
+    authorization?: string;
+  };
 }): Promise<GuestPayload> {
-  const payload = jwtAuthorize({ request }) as GuestPayload;
+  const payload: GuestPayload = jwtAuthorize({ request }) as GuestPayload;
 
   if (payload.type !== "guest") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // JWT payload.id contains the top-level user table ID (guest is top-level here)
+  // payload.id contains top-level guest table ID
   const guest = await MyGlobal.prisma.todo_app_guest.findFirst({
     where: {
       id: payload.id,
-      OR: [{ status: "active" }, { status: null }],
+      deleted_at: null,
     },
   });
 

@@ -1,3 +1,4 @@
 export * as auth from "./auth/index";
-export * as authenticatedUser from "./authenticatedUser/index";
-export * as todos from "./todos/index";
+export * as user from "./user/index";
+export * as admin from "./admin/index";
+export * as users from "./users/index";

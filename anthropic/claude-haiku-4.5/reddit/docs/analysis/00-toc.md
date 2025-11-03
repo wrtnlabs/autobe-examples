@@ -1,821 +1,763 @@
-# Community Platform - Requirements Analysis Report
+# Community Platform - Project Documentation
 
-## Document Overview
+## Welcome to the Complete Requirements Suite
 
-Welcome to the comprehensive requirements specification for the **Community Platform**, a modern Reddit-like social community application. This documentation suite defines the complete business requirements, user workflows, technical specifications, and operational guidelines for building a scalable community engagement platform.
+This is the master navigation document for the Community Platform project documentation suite. The Community Platform is a Reddit-like social community network that enables users to create communities, share diverse content formats, engage through voting and commenting, and build reputation through a transparent karma system.
 
-### Purpose of This Documentation
-
-This table of contents document serves as the primary navigation hub for the entire requirements specification. It provides:
-- An overview of the complete project scope and vision
-- Navigation to all detailed requirement documents
-- Summary of key features and their relationships
-- Quick reference to user roles and permissions
-- Understanding of how different system components interact
-
-### How to Use This Documentation
-
-**For Backend Developers:** Start with the [Service Overview Document](./01-service-overview.md) to understand the business context, then proceed through [User Roles and Authentication](./02-user-roles-authentication.md) before diving into feature-specific documents.
-
-**For Project Managers:** Review this overview, then the [Service Overview](./01-service-overview.md) for business justification, and [Communities Management](./04-communities-management.md) for feature scope.
-
-**For Product and QA Teams:** Review the [Key Features Summary](#key-features-summary) section below, then reference specific feature documents as needed.
+This documentation contains 11 comprehensive requirement documents specifying all business logic, user workflows, system features, and non-functional requirements needed to implement the complete platform.
 
 ---
 
-## Documentation Structure
+## 📋 Complete Document List Overview
 
-### Document Map and Relationships
+### Document 1: Service Overview & Business Model
+**File**: `01-service-overview.md`
 
-The following diagram illustrates how all requirements documents connect and build upon each other:
+**Purpose**: Establish business context, market positioning, and strategic vision for the platform.
+
+**Key Content**:
+- Service vision and long-term purpose of the platform
+- Business model explaining why the platform exists and how it will sustain
+- Target market demographics and user personas
+- Core value proposition for members, moderators, and the business
+- Success metrics and key performance indicators
+- Competitive landscape analysis
+- Revenue strategy and monetization approach
+- Project scope defining what is and is not included in MVP
+
+**Audience**: Development team (for business context), Product managers, Stakeholders, Executive leadership
+
+**Read This**: First - provides essential business justification and context for all technical decisions
+
+**Key Questions**: Why does this platform exist? What market problem does it solve? How will success be measured?
+
+---
+
+### Document 2: User Actors & Authentication System
+**File**: `02-user-actors-authentication.md`
+
+**Purpose**: Define all user types, their permissions, authentication flows, and authorization rules.
+
+**Key Content**:
+- Four user actor types: Guest, Member, Community Moderator, Platform Admin
+- Complete permission matrix showing what each actor can do
+- JWT-based authentication system with token management
+- User registration workflow with email verification
+- Login and session management process
+- Password security requirements and recovery procedures
+- Permission hierarchy and inheritance model
+- Role-based access control (RBAC) for all operations
+- Security requirements including HTTPS/TLS, password hashing, brute force prevention
+
+**Audience**: Backend developers (security-critical), System architects, Security team
+
+**Read This**: Second - authentication is foundational to all other features
+
+**Key Questions**: What user types exist? What can each type do? How do users authenticate? What permissions exist for each operation?
+
+**Critical Dependencies**: Everything depends on this authentication foundation
+
+---
+
+### Document 3: Core User Workflows
+**File**: `03-core-user-workflows.md`
+
+**Purpose**: Illustrate step-by-step user interactions and complete system workflows for major user actions.
+
+**Key Content**:
+- User registration and onboarding workflow
+- User login and session management
+- Member content discovery and feed browsing
+- Member post creation with validation
+- Commenting and engagement workflow
+- Community subscription management
+- User profile access and viewing
+- Moderator content review workflow
+- Complete flowcharts showing user journey decision points
+
+**Audience**: Backend developers (API design), Frontend developers (UI design), QA testers (test scenarios)
+
+**Read This**: Third - understand user interactions before detailed feature design
+
+**Key Questions**: How do users complete major tasks? What steps are involved? Where do errors occur? What are decision points?
+
+**Related Documents**: Builds on authentication system; feeds into all feature documents
+
+---
+
+### Document 4: Community Management
+**File**: `04-community-management.md`
+
+**Purpose**: Define community creation, management, moderation, and user management features.
+
+**Key Content**:
+- Community creation requirements with restrictions
+- Community-level roles and permission hierarchy
+- Moderator permission levels and capabilities
+- Community settings and customization options
+- Community rules creation and enforcement
+- User subscription and membership management
+- Community privacy levels (public, private, restricted)
+- Moderator tools for content removal, user warnings, banning
+- Community discovery and visibility
+- Community statistics and analytics
+
+**Audience**: Backend developers, Community managers (usage guide), Product managers
+
+**Read This**: Fourth - establish community infrastructure before content features
+
+**Key Questions**: How are communities created? Who manages them? What can moderators do? How are users managed?
+
+**Dependencies**: Requires understanding of user actors and authentication
+
+**Feeds Into**: All content features, moderation system
+
+---
+
+### Document 5: Content Creation & Posting
+**File**: `05-content-creation-posting.md`
+
+**Purpose**: Specify all requirements for creating and managing posts (text, links, images).
+
+**Key Content**:
+- Three post types: Text, Link, and Image posts
+- Content validation and length limits for each type
+- Image upload requirements, processing, and storage
+- Post editing within 24-hour window
+- Post deletion with soft-delete preservation
+- Draft management and auto-save
+- Post visibility and publishing states
+- Content moderation flags and detection
+- Post lifecycle from creation through deletion
+
+**Audience**: Backend developers (core feature), Product managers
+
+**Read This**: Fifth - foundation for all content-driven features
+
+**Key Questions**: What post types exist? What are content limits? How are images handled? How is editing managed?
+
+**Dependencies**: User workflows, authentication
+
+**Used By**: Discovery, engagement, moderation, karma system
+
+---
+
+### Document 6: Commenting & Engagement
+**File**: `06-commenting-engagement.md`
+
+**Purpose**: Define nested comment threads, voting mechanics, and engagement features.
+
+**Key Content**:
+- Comment creation and validation
+- Nested reply system with unlimited depth
+- Comment threading and display logic
+- Comment editing and deletion within 24 hours
+- Upvote and downvote mechanics
+- Vote count calculation and display
+- Vote state management (changing votes, reversing votes)
+- Comment sorting options (Best, Top, Newest, Oldest, Most Replies)
+- Engagement metrics and analytics
+- Error handling and edge cases
+
+**Audience**: Backend developers (core feature), Product managers
+
+**Read This**: Sixth - enables engagement and discussion features
+
+**Key Questions**: How are comments organized? How does voting work? How are comments sorted?
+
+**Dependencies**: Post creation, user authentication
+
+**Used By**: Engagement metrics, karma system, content discovery
+
+---
+
+### Document 7: Karma & Reputation System
+**File**: `07-karma-reputation-system.md`
+
+**Purpose**: Define reputation mechanics, karma calculation, and user standing.
+
+**Key Content**:
+- Karma calculation from upvotes and downvotes
+- Karma sources and distribution rules
+- Karma decay mechanism for older contributions
+- Reputation tiers (Bronze through Diamond)
+- Badge system and achievement recognition
+- Karma-based privileges and restrictions
+- Community-specific karma tracking
+- Karma visibility and transparency rules
+- Moderator karma adjustment and appeals
+
+**Audience**: Backend developers (calculation engine), Product managers, Community managers
+
+**Read This**: Seventh - understand reputation before discovery features
+
+**Key Questions**: How is karma calculated? What privileges does karma unlock? How does decay work?
+
+**Dependencies**: Post/comment systems, voting mechanics
+
+**Affects**: User profiles, content discovery, moderation
+
+---
+
+### Document 8: Content Discovery & Sorting
+**File**: `08-content-discovery-sorting.md`
+
+**Purpose**: Define feed algorithms, sorting mechanisms, and content discovery features.
+
+**Key Content**:
+- Five feed types for different user needs
+- Hot sorting algorithm for trending content
+- New sorting algorithm for chronological viewing
+- Top sorting by highest-voted content
+- Controversial sorting for debate-generating content
+- Time-based filtering (24 hours, week, month, year, all-time)
+- Full-text search functionality with advanced operators
+- Community discovery and recommendations
+- User discovery features
+- Personalization options for feed customization
+- Pagination strategy and performance optimization
+
+**Audience**: Backend developers (algorithm implementation), Product managers
+
+**Read This**: Eighth - understand content surfacing strategy
+
+**Key Questions**: How do users find content? What sorting options exist? How are recommendations made?
+
+**Dependencies**: All content systems, karma system, authentication
+
+**Inputs**: Vote counts, post age, comment activity, karma scores
+
+---
+
+### Document 9: Moderation & Reporting
+**File**: `09-moderation-reporting.md`
+
+**Purpose**: Define content reporting, moderation workflows, and enforcement mechanisms.
+
+**Key Content**:
+- Content reporting system by members
+- Report submission with violation categories
+- Report documentation and preservation
+- Community moderator review workflow
+- Platform admin review process
+- Content removal actions with reasons
+- User warnings and restrictions
+- Temporary and permanent user banning
+- Ban appeals process
+- Content removal appeals with 90-day retention
+- Moderation action tracking and audit trails
+- Escalation procedures for critical violations
+- Reporter confidentiality and protection
+
+**Audience**: Backend developers, Community moderators (usage guide), Platform admins
+
+**Read This**: Ninth - critical for content quality and safety
+
+**Key Questions**: How do users report violations? How are violations reviewed? What enforcement actions exist?
+
+**Dependencies**: All content systems, user authentication, community management
+
+**Integration**: Affects all user actions and content visibility
+
+---
+
+### Document 10: User Profiles & Preferences
+**File**: `10-user-profiles-preferences.md`
+
+**Purpose**: Define user profile structures, customization, and preference settings.
+
+**Key Content**:
+- Core profile information and display data
+- Profile customization options (avatar, banner, bio)
+- Notification preferences with granular control
+- Content display preferences (theme, density, post per page)
+- Interface customization (dark mode, font size, language)
+- Privacy and visibility controls
+- Activity history management
+- Saved content and collections
+- Profile statistics and karma breakdown
+- Badge and achievement display
+- Account security settings
+- Data management and export options
+
+**Audience**: Backend developers (data structure design), Product managers
+
+**Read This**: Tenth - user experience and personalization
+
+**Key Questions**: What information appears on profiles? What can users customize? What privacy controls exist?
+
+**Dependencies**: Authentication, karma system, content creation
+
+**Displays**: Karma, badges, posts, comments, activity, subscriptions
+
+---
+
+### Document 11: Non-Functional Requirements
+**File**: `11-non-functional-requirements.md`
+
+**Purpose**: Define performance, security, scalability, and operational requirements.
+
+**Key Content**:
+- Performance targets for response times (feeds under 2 seconds)
+- Throughput and concurrent user support (1,000+ concurrent)
+- Database query performance requirements
+- Caching strategy and CDN integration
+- Scalability to 10,000+ concurrent users
+- Data growth projections and capacity planning
+- Security requirements (HTTPS/TLS, password hashing)
+- API security (rate limiting, input validation, CORS)
+- Data privacy standards (GDPR, CCPA compliance)
+- Audit trails and compliance logging
+- Availability and reliability targets (99.5% uptime)
+- Fault tolerance and automatic failover
+- Disaster recovery procedures and backup strategy
+- Monitoring, alerting, and logging standards
+- Error handling and graceful degradation
+
+**Audience**: Backend developers (architecture), DevOps/Infrastructure team, Security team
+
+**Read This**: Last - operational foundation for deployment
+
+**Key Questions**: What performance targets must be met? What security standards apply? How scalable is the system?
+
+**Applies To**: All other documents - these are system-wide constraints
+
+---
+
+## 📚 Recommended Reading Sequence
+
+### For Backend API Developers
+**Reading Order & Timing**:
+1. **Service Overview** (30 min) - Understand business context and vision
+2. **User Actors & Authentication** (60 min) - Security foundation
+3. **Core User Workflows** (45 min) - Understand user interactions
+4. **Community Management** (45 min) - Community infrastructure
+5. **Content Creation & Posting** (45 min) - Post management
+6. **Commenting & Engagement** (45 min) - Discussion system
+7. **Karma & Reputation** (45 min) - Reputation mechanics
+8. **Content Discovery & Sorting** (60 min) - Feed algorithms
+9. **Moderation & Reporting** (60 min) - Quality assurance
+10. **User Profiles & Preferences** (30 min) - User customization
+11. **Non-Functional Requirements** (60 min) - Performance/security
+
+**Total Time**: Approximately 7-8 hours for complete review
+
+**Why This Order**: Authentication first (security foundation), then workflows (understand interactions), then features (build incrementally), then quality (moderation), then operational concerns (performance/security).
+
+---
+
+### For Database/Data Modeling Specialist
+**Reading Order & Timing**:
+1. **Service Overview** (20 min) - Context
+2. **User Actors & Authentication** (40 min) - User data structure
+3. **Community Management** (40 min) - Community data structure
+4. **Content Creation & Posting** (40 min) - Post/content structure
+5. **Commenting & Engagement** (40 min) - Comment/vote structure
+6. **Karma & Reputation** (30 min) - Reputation data tracking
+7. **User Profiles & Preferences** (30 min) - Profile data
+8. **Core User Workflows** (30 min) - Transaction patterns
+9. **Non-Functional Requirements** (40 min) - Scalability/indexing
+
+**Total Time**: Approximately 4-5 hours for database design
+
+**Focus Areas**: Data structures, relationships, indexes, query patterns, scalability considerations
+
+---
+
+### For DevOps/Infrastructure Engineer
+**Reading Order & Timing**:
+1. **Non-Functional Requirements** (90 min) - All operational requirements
+2. **Service Overview** (20 min) - Business context
+3. **User Actors & Authentication** (30 min) - Security requirements
+4. **Community Management** (20 min) - Feature scope
+5. **Content Creation & Posting** (20 min) - Feature scope
+6. **Core User Workflows** (30 min) - Traffic patterns
+
+**Total Time**: Approximately 3-4 hours
+
+**Focus Areas**: Performance targets, scalability, security, monitoring, backup/recovery, disaster recovery
+
+---
+
+### For QA/Testing Professional
+**Reading Order & Timing**:
+1. **Core User Workflows** (60 min) - Test scenarios
+2. **User Actors & Authentication** (40 min) - Permission testing
+3. **Community Management** (45 min) - Moderation testing
+4. **Content Creation & Posting** (45 min) - Content validation
+5. **Commenting & Engagement** (45 min) - Engagement features
+6. **Karma & Reputation** (30 min) - Reputation calculations
+7. **Moderation & Reporting** (45 min) - Enforcement testing
+8. **Non-Functional Requirements** (45 min) - Performance testing
+
+**Total Time**: Approximately 5-6 hours
+
+**Focus Areas**: User scenarios, edge cases, error handling, performance, security, compatibility
+
+---
+
+### For Product Manager/Stakeholder
+**Reading Order & Timing**:
+1. **Service Overview** (45 min) - Complete business model
+2. **Core User Workflows** (45 min) - User experience overview
+3. **Community Management** (30 min) - Community strategy
+4. **Content Creation & Posting** (20 min) - Content features
+5. **Commenting & Engagement** (20 min) - Engagement features
+6. **Karma & Reputation** (20 min) - Reputation system
+7. **Moderation & Reporting** (25 min) - Safety strategy
+8. **Content Discovery & Sorting** (25 min) - Discovery features
+
+**Total Time**: Approximately 3-4 hours
+
+**Focus Areas**: Features, user experience, business model, market positioning, competitive advantages
+
+---
+
+## 🔗 Document Dependencies & Integration
+
+### Complete Dependency Graph
+
+```mermaid
+graph TD
+    A["01: Service Overview<br/>(Business Context)"]
+    B["02: User Actors &<br/>Authentication<br/>(Foundation)"]
+    C["03: Core User<br/>Workflows<br/>(Interactions)"]
+    D["04: Community<br/>Management<br/>(Infrastructure)"]
+    E["05: Content Creation<br/>& Posting"]
+    F["06: Commenting &<br/>Engagement"]
+    G["07: Karma &<br/>Reputation<br/>(Scoring)"]
+    H["08: Content Discovery<br/>& Sorting<br/>(Surfacing)"]
+    I["09: Moderation &<br/>Reporting<br/>(Quality)"]
+    J["10: User Profiles<br/>& Preferences<br/>(Presentation)"]
+    K["11: Non-Functional<br/>Requirements<br/>(Operations)"]
+
+    A -->|"Context for"| B
+    B -->|"Foundation for"| C
+    C -->|"Describes"| D
+    C -->|"Describes"| E
+    C -->|"Describes"| F
+    
+    D -->|"Enables"| E
+    D -->|"Enables"| F
+    D -->|"Enables"| I
+    
+    E -->|"Drives"| G
+    F -->|"Drives"| G
+    
+    E -->|"Feeds into"| H
+    F -->|"Feeds into"| H
+    G -->|"Used by"| H
+    
+    G -->|"Displayed in"| J
+    E -->|"Displayed in"| J
+    F -->|"Displayed in"| J
+    
+    E -->|"Subject of"| I
+    F -->|"Subject of"| I
+    D -->|"Uses"| I
+    
+    K -.->|"Constraints all"| B
+    K -.->|"Constraints all"| H
+```
+
+### Document Integration Matrix
+
+| Primary Document | Consumes From | Provides To | Key Integration |
+|---|---|---|---|
+| **Service Overview** | None (foundation) | All others | Business context/vision |
+| **Authentication** | Service Overview | All others | User identity & permissions |
+| **User Workflows** | Authentication | All features | User interaction patterns |
+| **Community Mgmt** | Authentication, Workflows | Content, Moderation | Community structure & rules |
+| **Content Creation** | Community, Workflows, Auth | Discovery, Engagement, Moderation, Profiles | Posts/links/images |
+| **Commenting** | Content Creation, Auth | Karma, Discovery, Engagement | Comments & voting |
+| **Karma** | Content, Commenting | Discovery, Profiles, Moderation | Reputation scores |
+| **Discovery** | All content systems, Karma | Moderation | Feed algorithms |
+| **Moderation** | Community, Content, Commenting, Auth | All content systems | Policy enforcement |
+| **Profiles** | All content systems, Karma, Auth | User experience | User presentation |
+| **Non-Functional** | All others | Operations | Performance/security constraints |
+
+---
+
+## 🎯 Quick Reference: Finding Documentation by Feature
+
+| Feature | Primary Document | Secondary Documents |
+|---|---|---|
+| **User Registration/Login** | 02-Authentication | 03-Workflows, 10-Profiles |
+| **Community Creation** | 04-Community Management | 02-Authentication, 03-Workflows |
+| **Posting Content** | 05-Content Creation | 04-Community, 07-Karma, 08-Discovery |
+| **Commenting** | 06-Commenting & Engagement | 05-Content, 07-Karma, 08-Discovery |
+| **Upvoting/Downvoting** | 06-Commenting & Engagement | 07-Karma, 08-Discovery |
+| **Karma Calculation** | 07-Karma & Reputation | 05-Posting, 06-Commenting, 10-Profiles |
+| **Content Discovery** | 08-Content Discovery & Sorting | All content documents, 07-Karma |
+| **Post/Comment Sorting** | 08-Content Discovery & Sorting | 05-Posting, 06-Commenting |
+| **Content Reporting** | 09-Moderation & Reporting | 04-Community, 05-Posting, 06-Commenting |
+| **Content Removal** | 09-Moderation & Reporting | 04-Community, 05-Posting, 06-Commenting |
+| **User Banning** | 09-Moderation & Reporting | 04-Community, 02-Authentication |
+| **User Profiles** | 10-User Profiles & Preferences | 07-Karma, 05-Posting, 06-Commenting |
+| **Performance/Scaling** | 11-Non-Functional Requirements | All documents |
+| **Security/Encryption** | 11-Non-Functional Requirements | 02-Authentication, 10-Profiles |
+| **Backup/Recovery** | 11-Non-Functional Requirements | All documents |
+
+---
+
+## 🏗️ Core System Concepts & Workflows
+
+### The Four User Actors
+
+```mermaid
+graph TD
+    A["Platform Users"]
+    B["Guest<br/>Unauthenticated"]
+    C["Member<br/>Authenticated"]
+    D["Community Moderator<br/>Community Admin"]
+    E["Platform Admin<br/>System Control"]
+    
+    A --> B
+    B -->|"Register & Login"| C
+    C -->|"Appointment"| D
+    D -->|"Promotion"| E
+    
+    B -->|"Capabilities"| B1["Browse Public<br/>View Posts"]
+    C -->|"Capabilities"| C1["Create Posts<br/>Comment<br/>Vote<br/>Earn Karma"]
+    D -->|"Capabilities"| D1["Moderate Community<br/>Remove Content<br/>Ban Users"]
+    E -->|"Capabilities"| E1["Platform Moderation<br/>User Management<br/>System Config"]
+```
+
+### Content Lifecycle: From Creation to Discovery
 
 ```mermaid
 graph LR
-    subgraph "Foundation Documents"
-        A["01 Service Overview<br/>Business Model & Vision"]
-        B["02 User Roles &<br/>Authentication"]
-    end
-    
-    subgraph "User Management"
-        C["03 User Management<br/>& Profiles"]
-    end
-    
-    subgraph "Core Features"
-        D["04 Communities<br/>Management"]
-        E["05 Posts Creation<br/>& Management"]
-        F["07 Comments &<br/>Discussions"]
-    end
-    
-    subgraph "Engagement Systems"
-        G["06 Voting & Karma<br/>System"]
-        H["10 User Interactions<br/>& Features"]
-    end
-    
-    subgraph "Platform Operations"
-        I["08 Content Sorting<br/>& Discovery"]
-        J["09 Content Moderation<br/>& Reporting"]
-    end
-    
-    subgraph "Quality & Error Handling"
-        K["11 Error Handling<br/>& Edge Cases"]
-    end
+    A["Member Creates<br/>Post"]
+    B["Post Published<br/>& Visible"]
+    C["Other Members Vote<br/>& Comment"]
+    D["Karma Updated"]
+    E["Sorting Algorithm<br/>Ranks Post"]
+    F["Post Appears in<br/>Discovery Feeds"]
+    G["Members Discover<br/>& Engage"]
     
     A --> B
     B --> C
-    B --> D
-    B --> E
-    B --> F
-    C --> G
-    D --> E
-    E --> G
-    E --> F
-    F --> G
-    D --> I
-    E --> I
-    G --> H
-    E --> J
-    F --> J
-    D --> J
-    B --> K
-    C --> K
-    E --> K
-    F --> K
-    G --> K
-    I --> K
-    J --> K
-```
-
-### Reading Order Recommendation
-
-**Phase 1 - Foundation (Required First)**
-1. [Service Overview Document](./01-service-overview.md) - Understand why this platform exists
-2. [User Roles and Authentication](./02-user-roles-authentication.md) - Foundation for all access control
-
-**Phase 2 - Core User Features**
-3. [User Management and Profiles](./03-user-management-profiles.md) - User account and profile system
-4. [Communities Management](./04-communities-management.md) - Community creation and organization
-
-**Phase 3 - Content Management**
-5. [Posts Creation and Management](./05-posts-creation-management.md) - Post types and lifecycle
-6. [Comments and Discussions](./07-comments-discussions.md) - Discussion threading
-7. [Voting and Karma System](./06-voting-karma-system.md) - Engagement mechanics
-
-**Phase 4 - Discovery and Operations**
-8. [Content Sorting and Discovery](./08-content-sorting-discovery.md) - Feed generation and search
-9. [Content Moderation and Reporting](./09-content-moderation-reporting.md) - Safety and enforcement
-
-**Phase 5 - Advanced Features**
-10. [User Interactions and Features](./10-user-interactions-features.md) - Notifications and social features
-
-**Phase 6 - Quality and Resilience**
-11. [Error Handling and Edge Cases](./11-error-handling-edge-cases.md) - Validation and error management
-
-### Document Descriptions and Access
-
-| Document | Type | Purpose | Audience |
-|----------|------|---------|----------|
-| [01 Service Overview](./01-service-overview.md) | Service Overview | Business justification, market analysis, and success metrics | Business stakeholders, Product managers |
-| [02 User Roles & Authentication](./02-user-roles-authentication.md) | Requirements | Authentication flows, role definitions, and permission matrices | Backend developers, Security team |
-| [03 User Management & Profiles](./03-user-management-profiles.md) | User Stories | User profile system, karma calculation, and account settings | Backend developers, Product managers |
-| [04 Communities Management](./04-communities-management.md) | Requirements | Community creation, moderation, and subscription management | Backend developers, Community managers |
-| [05 Posts Creation & Management](./05-posts-creation-management.md) | Requirements | Post types, content validation, and lifecycle management | Backend developers |
-| [06 Voting & Karma System](./06-voting-karma-system.md) | Requirements | Voting mechanics, karma calculation, and reputation system | Backend developers, Analytics team |
-| [07 Comments & Discussions](./07-comments-discussions.md) | Requirements | Comment threading, sorting, and discussion management | Backend developers |
-| [08 Content Sorting & Discovery](./08-content-sorting-discovery.md) | Requirements | Feed algorithms, search, and content discovery | Backend developers, Analytics team |
-| [09 Content Moderation & Reporting](./09-content-moderation-reporting.md) | Requirements | Reporting workflows, moderation actions, and rule enforcement | Backend developers, Moderators, Safety team |
-| [10 User Interactions & Features](./10-user-interactions-features.md) | User Stories | Notifications, follows, mentions, and user analytics | Backend developers, Product managers |
-| [11 Error Handling & Edge Cases](./11-error-handling-edge-cases.md) | Requirements | Input validation, error scenarios, and data consistency | Backend developers, QA team |
-
----
-
-## Project Scope
-
-### What Is Included (MVP Features)
-
-The Community Platform delivers a complete social engagement system with these core capabilities:
-
-**User Management (Complete)**
-- User registration and login with email verification
-- User profile creation and management
-- Karma system tracking user reputation
-- Account security features (password reset, email verification)
-
-**Communities (Complete)**
-- Public community creation by any registered member
-- Community administration and moderation
-- Community settings and customization
-- Subscription and membership management
-
-**Content Creation (Complete)**
-- Text posts with title and content
-- Link posts with URL sharing
-- Image posts with single or multiple image uploads
-- Post editing and deletion by authors
-- View tracking and metadata
-
-**Community Discussions (Complete)**
-- Comments on posts
-- Nested replies to comments with threading
-- Comment editing and deletion by authors
-- Comment sorting and display options
-
-**Engagement System (Complete)**
-- Upvote and downvote mechanics for posts and comments
-- Karma earning based on vote counts
-- Vote changing and revocation
-- Karma display and user reputation levels
-
-**Feed and Discovery (Complete)**
-- Personalized homepage feed from subscribed communities
-- Community browsing and search
-- Post sorting (hot, new, top, controversial algorithms)
-- Trending identification
-
-**Safety and Moderation (Complete)**
-- Content reporting system
-- Moderator review workflows
-- Content removal and restoration
-- Community rules enforcement
-
-**User Features (Complete)**
-- User follow/follower system
-- Notification system for engagement
-- User mention system (@mentions)
-- User activity history
-- Badges and reputation levels
-
-### System Boundaries
-
-**What Is Out of Scope (Future Phases)**
-- Direct messaging between users (scheduled for Phase 2)
-- Live chat or real-time messaging (future enhancement)
-- Video or audio content hosting (future enhancement)
-- Third-party integrations or APIs (future phase)
-- Mobile-specific applications (web-first approach)
-- Advanced analytics dashboard (future enhancement)
-
-### Feature Prioritization
-
-**Tier 1 - Critical MVP (Launch Required)**
-- User authentication and profiles
-- Community creation and management
-- Post and comment creation
-- Voting and karma system
-- Basic feed and sorting
-
-**Tier 2 - Important (Launch + 1 Month)**
-- Content moderation and reporting
-- User notifications
-- Search functionality
-- Community discovery
-
-**Tier 3 - Enhancement (Launch + 2-3 Months)**
-- Advanced user interactions (follows, mentions)
-- Badges and reputation levels
-- Trending algorithms
-- User activity analytics
-
----
-
-## Key Features Summary
-
-### Feature Categories and Overview
-
-The Community Platform organizes around five major feature categories:
-
-```mermaid
-graph TB
-    A["Community Platform<br/>Core Features"]
-    
-    subgraph "User & Auth"
-        B["Registration & Login"]
-        C["Email Verification"]
-        D["Password Management"]
-        E["User Profiles"]
-    end
-    
-    subgraph "Communities"
-        F["Create Communities"]
-        G["Community Settings"]
-        H["Moderator Tools"]
-        I["Subscribe/Unsubscribe"]
-    end
-    
-    subgraph "Content"
-        J["Text Posts"]
-        K["Link Posts"]
-        L["Image Posts"]
-        M["Comments & Replies"]
-    end
-    
-    subgraph "Engagement"
-        N["Voting System"]
-        O["Karma Tracking"]
-        P["Reputation Levels"]
-        Q["Badges"]
-    end
-    
-    subgraph "Discovery & Safety"
-        R["Feed Generation"]
-        S["Post Sorting"]
-        T["Search"]
-        U["Content Reporting"]
-        V["Moderation"]
-    end
-    
-    A --> B
-    A --> F
-    A --> J
-    A --> N
-    A --> R
-    
-    B --> C
-    B --> D
-    B --> E
-    
-    F --> G
-    F --> H
-    F --> I
-    
-    J --> K
-    J --> L
-    J --> M
-    
-    N --> O
-    N --> P
-    N --> Q
-    
-    R --> S
-    R --> T
-    R --> U
-    R --> V
-```
-
-### User and Authentication System
-
-**Core Capabilities:**
-- Secure user registration with email verification
-- Login and logout functionality
-- Session and token management (JWT-based)
-- Password reset and account recovery
-- User profile creation with customizable information
-
-**Key Features:**
-- Four user roles with distinct permissions: Guest, Member, Moderator, Admin
-- Role-based access control throughout the platform
-- Secure authentication tokens with automatic expiration
-- Email-based account verification and communication
-
-**Related Documents:** [User Roles & Authentication](./02-user-roles-authentication.md) | [User Management & Profiles](./03-user-management-profiles.md)
-
-### Communities System
-
-**Core Capabilities:**
-- Any registered member can create new communities
-- Communities have descriptions, rules, and categorization
-- Public and private community visibility settings
-- Community moderation teams with delegated authority
-- Membership subscription and management
-
-**Key Features:**
-- Community moderators enforce rules and content policies
-- Community-specific settings and customization
-- Subscriber management and notifications
-- Community statistics and activity tracking
-- Community discovery and browsing
-
-**Related Documents:** [Communities Management](./04-communities-management.md)
-
-### Content Creation System
-
-**Core Capabilities:**
-- Three post types: text posts, link posts, and image posts
-- Rich content creation with title and body
-- Single or multiple image uploads
-- Post editing and deletion by authors
-- Post pinning for community visibility
-
-**Key Features:**
-- Title character limits and validation
-- Image storage and optimization
-- View count tracking
-- Post timestamp and metadata
-- Nested comments with threaded discussions
-- Comment editing and deletion capabilities
-
-**Related Documents:** [Posts Creation & Management](./05-posts-creation-management.md) | [Comments & Discussions](./07-comments-discussions.md)
-
-### Engagement and Reputation System
-
-**Core Capabilities:**
-- Upvote and downvote posts and comments
-- Karma points awarded based on community engagement
-- User reputation levels based on cumulative karma
-- Badge achievements for platform milestones
-- Vote history and modification
-
-**Key Features:**
-- Users earn karma from upvotes on their posts and comments
-- Users lose karma from downvotes on their posts and comments
-- Votes can be changed or revoked by users
-- Karma calculation includes weighted scoring
-- Reputation levels unlock features and recognition
-- Achievement badges for community contributions
-
-**Related Documents:** [Voting & Karma System](./06-voting-karma-system.md)
-
-### Feed Generation and Discovery
-
-**Core Capabilities:**
-- Personalized homepage feed from subscribed communities
-- Multiple sorting algorithms: hot, new, top, controversial
-- Community and post search functionality
-- Trending identification
-- User-specific activity feeds
-
-**Key Features:**
-- "Hot" algorithm considers recency, vote velocity, and engagement
-- "New" algorithm shows recent posts in chronological order
-- "Top" algorithm shows highest-voted content over time periods
-- "Controversial" algorithm highlights polarizing content
-- Full-text search across posts and communities
-- Trending communities based on activity and growth
-
-**Related Documents:** [Content Sorting & Discovery](./08-content-sorting-discovery.md)
-
-### Safety and Moderation System
-
-**Core Capabilities:**
-- User-initiated content reporting for rule violations
-- Moderator review and action workflows
-- Content removal and restoration capabilities
-- Community rules enforcement
-- Platform-wide abuse prevention
-
-**Key Features:**
-- Multiple report reasons (spam, harassment, misinformation, etc.)
-- Report status tracking and moderator assignment
-- Moderator approval or rejection of flagged content
-- Audit trail of all moderation actions
-- User warnings and consequence escalation
-- Rate limiting and abuse detection
-
-**Related Documents:** [Content Moderation & Reporting](./09-content-moderation-reporting.md) | [Error Handling & Edge Cases](./11-error-handling-edge-cases.md)
-
-### User Interactions and Social Features
-
-**Core Capabilities:**
-- Follow and unfollow other users
-- Notification system for engagement events
-- User mention system (@username tags)
-- User activity history and statistics
-- Personalized recommendations
-
-**Key Features:**
-- Notifications for post replies, comment replies, and mentions
-- Activity feed showing user interactions
-- User statistics (post count, comment count, karma earned)
-- User recommendations based on subscribed communities
-- Follower/following relationships
-
-**Related Documents:** [User Interactions & Features](./10-user-interactions-features.md)
-
----
-
-## User Roles Overview
-
-### Complete Role Hierarchy
-
-The Community Platform implements a four-tier role hierarchy with increasing permissions and responsibilities:
-
-```mermaid
-graph TB
-    A["User Role Hierarchy"]
-    
-    subgraph "Tier 1: Guest"
-        B["Guest<br/>Unauthenticated"]
-        B1["Browse public communities"]
-        B2["View posts & comments"]
-        B3["No voting power"]
-        B4["No content creation"]
-        B --> B1
-        B --> B2
-        B --> B3
-        B --> B4
-    end
-    
-    subgraph "Tier 2: Member"
-        C["Member<br/>Authenticated User"]
-        C1["Create posts & comments"]
-        C2["Vote on content"]
-        C3["Create communities"]
-        C4["Subscribe to communities"]
-        C5["Earn karma"]
-        C --> C1
-        C --> C2
-        C --> C3
-        C --> C4
-        C --> C5
-    end
-    
-    subgraph "Tier 3: Moderator"
-        D["Moderator<br/>Community Leader"]
-        D1["All Member permissions"]
-        D2["Review reported content"]
-        D3["Remove posts & comments"]
-        D4["Manage community settings"]
-        D5["Enforce community rules"]
-        D --> D1
-        D --> D2
-        D --> D3
-        D --> D4
-        D --> D5
-    end
-    
-    subgraph "Tier 4: Admin"
-        E["Admin<br/>Platform Administrator"]
-        E1["All Moderator permissions"]
-        E2["Platform-wide moderation"]
-        E3["Manage user accounts"]
-        E4["System administration"]
-        E5["Analytics & reporting"]
-        E --> E1
-        E --> E2
-        E --> E3
-        E --> E4
-        E --> E5
-    end
-    
-    A --> B
-    A --> C
-    A --> D
-    A --> E
-```
-
-### Role Capabilities Matrix
-
-| Capability | Guest | Member | Moderator | Admin |
-|-----------|-------|--------|-----------|-------|
-| Browse public content | ✅ | ✅ | ✅ | ✅ |
-| Register account | ✅ | — | — | — |
-| Create posts | ❌ | ✅ | ✅ | ✅ |
-| Create comments | ❌ | ✅ | ✅ | ✅ |
-| Vote on content | ❌ | ✅ | ✅ | ✅ |
-| Create communities | ❌ | ✅ | ✅ | ✅ |
-| Subscribe to communities | ❌ | ✅ | ✅ | ✅ |
-| Edit own content | ❌ | ✅ | ✅ | ✅ |
-| Delete own content | ❌ | ✅ | ✅ | ✅ |
-| Report inappropriate content | ❌ | ✅ | ✅ | ✅ |
-| Review content reports | ❌ | ❌ | ✅ | ✅ |
-| Remove any post/comment | ❌ | ❌ | ✅ (in community) | ✅ |
-| Manage community settings | ❌ | ❌ | ✅ (own community) | ✅ |
-| Assign moderators | ❌ | ❌ | ✅ (own community) | ✅ |
-| Platform-wide moderation | ❌ | ❌ | ❌ | ✅ |
-| Manage user accounts | ❌ | ❌ | ❌ | ✅ |
-| Access system analytics | ❌ | ❌ | ❌ | ✅ |
-
-### Role Descriptions
-
-**Guest (Unauthenticated User)**
-- Access to public communities and content without login
-- Can view posts, comments, and community information
-- Cannot create content, vote, or participate in communities
-- Can access registration and login pages
-- Intended for new users evaluating the platform
-
-**Member (Authenticated User)**
-- Full platform participation after email verification
-- Can create posts (text, links, images) in any community
-- Can comment and reply to discussions
-- Can vote on posts and comments
-- Can create and manage their own communities
-- Can subscribe to and participate in any community
-- Earn and lose karma through community engagement
-- Core user role for the platform
-
-**Moderator (Community Manager)**
-- Moderators manage one or more specific communities
-- All Member capabilities plus moderation authority
-- Review and action user-submitted content reports
-- Remove posts and comments that violate community rules
-- Manage community settings and rules
-- Assign and manage other moderators in their community
-- Enforce community policies and maintain order
-- Operate within their assigned communities
-
-**Admin (Platform Administrator)**
-- System administrators with platform-wide authority
-- All Moderator capabilities plus administrative functions
-- Platform-wide content moderation and rule enforcement
-- User account management and administration
-- System configuration and settings
-- Access to platform analytics and reporting
-- Handle escalated moderation issues
-- Manage platform policies and enforcement
-
-### Role Assignment and Management
-
-- **Guest:** Automatically assigned to all unauthenticated users
-- **Member:** Assigned upon successful user registration and email verification
-- **Moderator:** Assigned by community creators or existing moderators within specific communities
-- **Admin:** Assigned by system through administrative tools to trusted platform operators
-
-### Detailed Role Documentation
-
-For complete information about each role's permissions, authentication flows, and authorization rules, please refer to the [User Roles and Authentication Document](./02-user-roles-authentication.md).
-
----
-
-## System Architecture Overview
-
-### Core System Components
-
-The Community Platform comprises six major functional components that work together to deliver the complete user experience:
-
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        A["User Interface<br/>Web Frontend"]
-    end
-    
-    subgraph "Authentication Layer"
-        B["User Registration"]
-        C["Login & Session"]
-        D["Token Management<br/>JWT"]
-        E["Permission Checking"]
-    end
-    
-    subgraph "Content Layer"
-        F["User Profiles"]
-        G["Communities"]
-        H["Posts & Comments"]
-        I["Voting System"]
-    end
-    
-    subgraph "Discovery Layer"
-        J["Feed Generation"]
-        K["Sorting Algorithms"]
-        L["Search System"]
-        M["Recommendations"]
-    end
-    
-    subgraph "Safety Layer"
-        N["Content Reporting"]
-        O["Moderation Tools"]
-        P["Rule Enforcement"]
-        Q["Abuse Prevention"]
-    end
-    
-    subgraph "Support Layer"
-        R["Notifications"]
-        S["User Analytics"]
-        T["Platform Logging"]
-        U["Error Handling"]
-    end
-    
-    A --> B
-    A --> C
-    A --> F
-    A --> G
-    A --> H
-    A --> J
-    A --> L
-    
-    B --> D
     C --> D
     D --> E
-    
     E --> F
-    E --> G
-    E --> H
-    E --> I
-    
-    H --> I
-    I --> K
-    
-    F --> S
-    G --> S
-    H --> S
-    I --> S
-    
-    H --> N
-    N --> O
-    O --> P
-    P --> Q
-    
-    K --> J
-    L --> M
-    
-    J --> R
-    H --> R
-    I --> R
-    
-    F --> T
-    G --> T
-    H --> T
-    N --> T
-    O --> T
+    F --> G
+    G -.->|"Additional votes"| C
 ```
 
-### Component Interactions
+### Moderation & Safety Flow
 
-**Authentication Layer → All Other Layers**
-- Every user action is authenticated and authorized
-- Tokens validate user identity and permissions
-- Role-based access control enforced at component boundaries
+```mermaid
+graph LR
+    A["Inappropriate<br/>Content Posted"]
+    B["Member Reports<br/>Violation"]
+    C["Report in<br/>Mod Queue"]
+    D["Moderator Reviews"]
+    E{{"Action"}}
+    F["Approve: Remove<br/>Content"]
+    G["Reject: No Action"]
+    H["Escalate: Admin<br/>Review"]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E -->|"Violation Found"| F
+    E -->|"No Violation"| G
+    E -->|"Uncertain"| H
+```
 
-**Content Layer ↔ Voting System**
-- Votes directly impact content visibility and ranking
-- Karma calculations depend on voting patterns
-- Content quality determined by community engagement
+### Reputation & Privilege System
 
-**Content Layer → Discovery Layer**
-- Posts and comments populate feeds and search results
-- Sorting algorithms organize content for users
-- User subscriptions determine feed content
-
-**Content Layer ↔ Safety Layer**
-- User reports flag problematic content
-- Moderators review and action reported content
-- Enforcement maintains community standards
-
-**All Layers → Support Layer**
-- Notifications alert users to engagement
-- Logging tracks all platform activity
-- Error handling ensures reliability
-- Analytics measure platform health and growth
+```mermaid
+graph LR
+    A["Member Creates<br/>Quality Content"]
+    B["Community Votes<br/>Upvotes"]
+    C["Karma Points<br/>Accumulated"]
+    D["Reputation Tier<br/>Increases"]
+    E["Unlocks Privileges"]
+    F["Create Communities<br/>Become Moderator<br/>Custom Features"]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+```
 
 ---
 
-## Implementation Phases and Timeline
+## 🔍 System Features by Category
+
+### Authentication & Authorization
+- User registration with email verification
+- Secure login with JWT tokens
+- Role-based access control (RBAC)
+- Permission matrix for all operations
+- Session management and logout
+- Password reset and recovery
+- Brute force protection
+- 2FA support (optional enhancement)
+
+### Community Features
+- Community creation and management
+- Community rules and enforcement
+- Public/private/restricted visibility
+- Moderator roles and permissions
+- User subscription/unsubscription
+- Community statistics and analytics
+
+### Content Management
+- Text, link, and image posts
+- Comment system with unlimited nesting
+- 24-hour edit window for posts/comments
+- Soft deletion with 30-day recovery window
+- Image upload and optimization
+- Markdown formatting support
+- Draft management and auto-save
+
+### Engagement Features
+- Upvote/downvote on posts and comments
+- Vote reversal and change capability
+- Comment sorting (Best, New, Top, Controversial)
+- Real-time vote count updates
+- Karma point awards/deductions
+- Voting restrictions for low-karma users
+
+### Discovery & Recommendation
+- Hot sorting algorithm (trending content)
+- New sorting (chronological)
+- Top sorting (highest voted)
+- Controversial sorting (debate-generating)
+- Time-based filtering (24h, week, month, year, all-time)
+- Full-text search with advanced operators
+- Community recommendations
+- User discovery
+- Personalized feed customization
+
+### Reputation System
+- Global karma tracking
+- Community-specific karma
+- Reputation tiers (Bronze-Diamond)
+- Badge achievements
+- Karma decay over time
+- Karma-based privileges and restrictions
+
+### Moderation & Safety
+- Content reporting by members
+- Moderator review workflows
+- Community moderation actions
+- Platform admin enforcement
+- User warnings and restrictions
+- Temporary and permanent banning
+- Appeal mechanisms with 90-day content retention
+- Moderation audit trails
+
+### User Experience
+- Customizable profiles with avatar/banner
+- Bio and about information
+- Notification preferences (email, in-app)
+- Display customization (theme, density, language)
+- Privacy controls and visibility settings
+- Saved content collections
+- Activity history and statistics
+- Account security settings
+
+### Performance & Operations
+- Feed response under 2 seconds
+- Support for 1,000+ concurrent users
+- Automatic scaling to 10,000+ users
+- Database query optimization
+- CDN integration for images
+- Cache strategy for hot content
+- Real-time sorting updates every 5 minutes
+
+### Security & Compliance
+- HTTPS/TLS encryption in transit
+- Password hashing with bcrypt
+- GDPR and CCPA compliance
+- Data export and deletion rights
+- Audit trails of moderation actions
+- Rate limiting and DDoS protection
+- SQL injection prevention
+- XSS prevention through content sanitization
+
+---
+
+## ✅ Document Completeness Checklist
+
+### Coverage Verification
+- ✓ User registration and login flows defined
+- ✓ All four user actor types specified with permissions
+- ✓ Community creation and management requirements
+- ✓ Post creation with three content types (text, link, image)
+- ✓ Comment system with unlimited nesting depth
+- ✓ Voting mechanics and score calculations
+- ✓ Karma system with decay and tiers
+- ✓ Hot, New, Top, and Controversial sorting algorithms
+- ✓ Content discovery and search functionality
+- ✓ Complete moderation and reporting workflows
+- ✓ User profiles with customization options
+- ✓ Performance targets and scalability requirements
+- ✓ Security and compliance standards
+- ✓ Backup and disaster recovery procedures
+- ✓ Monitoring and logging requirements
+
+### Quality Standards
+- ✓ All requirements in EARS format (Event, Action, Result)
+- ✓ Business rules documented for each feature
+- ✓ Error handling scenarios specified
+- ✓ Success criteria defined for workflows
+- ✓ Integration points identified
+- ✓ Visual diagrams provided with correct syntax
+- ✓ Examples and scenarios included
+- ✓ Dependencies clearly mapped
+
+---
+
+## 🚀 Getting Started with Implementation
 
 ### Phase 1: Foundation (Weeks 1-2)
-**Deliverables:**
-- User authentication system (registration, login, JWT tokens)
-- User profile creation and management
-- Basic role-based access control
+**Read Documents**: 02-Authentication, 11-Non-Functional Requirements
 
-**Documentation Reference:** [User Roles & Authentication](./02-user-roles-authentication.md) | [User Management & Profiles](./03-user-management-profiles.md)
+**Focus**: Build authentication system, security foundation, and infrastructure
 
-### Phase 2: Core Communities (Weeks 3-4)
-**Deliverables:**
-- Community creation and management
-- Community member subscription
-- Community moderator assignment
+**Deliverables**: User registration, login, JWT tokens, database schema
 
-**Documentation Reference:** [Communities Management](./04-communities-management.md)
+### Phase 2: Core Features (Weeks 3-5)
+**Read Documents**: 04-Community Management, 05-Content Creation, 06-Commenting
 
-### Phase 3: Content Creation (Weeks 5-6)
-**Deliverables:**
-- Text, link, and image post creation
-- Comment and reply system
-- Post and comment editing/deletion
+**Focus**: Implement community infrastructure and core content creation
 
-**Documentation Reference:** [Posts Creation & Management](./05-posts-creation-management.md) | [Comments & Discussions](./07-comments-discussions.md)
+**Deliverables**: Community CRUD, post creation, commenting system
 
-### Phase 4: Engagement Systems (Weeks 7-8)
-**Deliverables:**
-- Voting system (upvote/downvote)
-- Karma calculation and tracking
-- Reputation levels and badges
+### Phase 3: Engagement & Discovery (Weeks 6-8)
+**Read Documents**: 07-Karma System, 08-Content Discovery
 
-**Documentation Reference:** [Voting & Karma System](./06-voting-karma-system.md)
+**Focus**: Implement voting, karma calculation, feed algorithms
 
-### Phase 5: Discovery and Feed (Weeks 9-10)
-**Deliverables:**
-- Feed generation algorithms
-- Post sorting (hot, new, top, controversial)
-- Search functionality
-- Trending identification
+**Deliverables**: Upvote/downvote, karma tracking, hot/new/top/controversial sorting
 
-**Documentation Reference:** [Content Sorting & Discovery](./08-content-sorting-discovery.md)
+### Phase 4: Moderation & Quality (Weeks 9-10)
+**Read Documents**: 09-Moderation & Reporting
 
-### Phase 6: Safety and Moderation (Weeks 11-12)
-**Deliverables:**
-- Content reporting system
-- Moderator review workflows
-- Content removal and restoration
+**Focus**: Implement reporting, moderation workflows, enforcement
 
-**Documentation Reference:** [Content Moderation & Reporting](./09-content-moderation-reporting.md)
+**Deliverables**: Report submission, moderator review, content removal
 
-### Phase 7: Advanced Features (Weeks 13-14)
-**Deliverables:**
-- User follow system
-- Notification system
-- User mentions and tagging
-- User activity analytics
+### Phase 5: User Experience (Weeks 11-12)
+**Read Documents**: 10-User Profiles, 03-User Workflows
 
-**Documentation Reference:** [User Interactions & Features](./10-user-interactions-features.md)
+**Focus**: Implement profiles, preferences, complete workflows
 
-### Phase 8: Quality and Stability (Weeks 15-16)
-**Deliverables:**
-- Comprehensive error handling
-- Input validation and edge cases
-- Rate limiting and abuse prevention
-- Performance optimization
+**Deliverables**: User profiles, saved content, notifications, search
 
-**Documentation Reference:** [Error Handling & Edge Cases](./11-error-handling-edge-cases.md)
+### Phase 6: Optimization & Hardening (Weeks 13-14)
+**Read Documents**: 11-Non-Functional Requirements
+
+**Focus**: Performance optimization, security hardening, monitoring
+
+**Deliverables**: Caching, indexing, security audit, monitoring dashboards
 
 ---
 
-## Success Metrics and KPIs
-
-### User Growth Metrics
-- **Monthly Active Users (MAU):** Target 10,000+ by month 3
-- **Daily Active Users (DAU):** Target 2,000+ by month 3
-- **User Retention Rate:** Target 40%+ DAU/MAU ratio by month 3
-- **Registration Completion Rate:** Target 70%+ registration → email verification
-
-### Engagement Metrics
-- **Posts Per Member:** Target 2+ posts/user/month
-- **Comments Per Post:** Target 1.5+ comments/post
-- **Vote Participation:** Target 30%+ of viewing users cast votes
-- **Community Subscription Rate:** Target 3+ communities/user average
-
-### Content Quality Metrics
-- **Report Rate:** Target <1% of content reported
-- **Moderation Resolution Time:** Target <4 hours average
-- **Content Removal Rate:** Target 80%+ of substantiated reports result in removal
-
-### Performance Metrics
-- **Page Load Time:** Target <2 seconds for homepage
-- **Feed Generation Time:** Target <500ms for feed queries
-- **Search Response Time:** Target <1 second for typical searches
-- **System Uptime:** Target 99.5%+ availability
-
----
-
-## Quick Reference: Document Locations
-
-**Foundational Understanding:**
-- [Service Overview](./01-service-overview.md) - Business model and justification
-- [User Roles & Authentication](./02-user-roles-authentication.md) - Security and access control
-
-**Feature Implementation:**
-- [User Management & Profiles](./03-user-management-profiles.md) - User accounts and karma
-- [Communities Management](./04-communities-management.md) - Community system
-- [Posts Creation & Management](./05-posts-creation-management.md) - Post types and lifecycle
-- [Comments & Discussions](./07-comments-discussions.md) - Discussion threading
-- [Voting & Karma System](./06-voting-karma-system.md) - Engagement mechanics
-
-**Platform Operations:**
-- [Content Sorting & Discovery](./08-content-sorting-discovery.md) - Feeds and search
-- [Content Moderation & Reporting](./09-content-moderation-reporting.md) - Safety systems
-- [User Interactions & Features](./10-user-interactions-features.md) - Social features
-
-**Quality Assurance:**
-- [Error Handling & Edge Cases](./11-error-handling-edge-cases.md) - Reliability and validation
-
----
-
-## Conclusion
-
-The Community Platform represents a comprehensive social engagement system designed to connect users through shared interests and community participation. This requirements specification provides the complete blueprint for developing a scalable, secure, and engaging platform.
-
-The 11 detailed requirement documents that follow provide comprehensive coverage of every system component, feature, and requirement needed to implement the platform successfully. Each document addresses specific aspects of the system with sufficient detail for development teams to understand requirements, validate designs, and implement features with confidence.
-
-By following this documentation structure and referencing the appropriate detailed documents, development teams can build a cohesive, well-integrated platform that delivers an excellent user experience while maintaining safety, performance, and reliability standards.
-
----
-
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+> **Developer Note**: These requirements documents define **WHAT the system should do** from a business perspective. All technical implementations (architecture, frameworks, databases, APIs, etc.) are at the discretion of the development team. These documents describe business requirements, not technical specifications."

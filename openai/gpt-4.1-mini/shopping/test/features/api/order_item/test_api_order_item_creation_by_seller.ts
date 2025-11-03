@@ -4,184 +4,151 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import type { IShoppingMallOrderCancellation } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderCancellation";
+import type { IShoppingMallOrderHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderHistory";
 import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import type { IShoppingMallPayment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallPayment";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import type { IShoppingMallProductApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductApproval";
+import type { IShoppingMallProductCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductCategory";
+import type { IShoppingMallProductReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductReview";
+import type { IShoppingMallProductSku } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSku";
+import type { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
+import type { IShoppingMallReturnShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReturnShipment";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
-import type { IShoppingMallSku } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSku";
+import type { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
+import type { IShoppingMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSession";
+import type { IShoppingMallShipmentTracking } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentTracking";
 
-/**
- * Test the workflow of adding an order item to an existing order by a seller.
- *
- * This test covers the following steps:
- *
- * 1. Seller Authentication: Register a new seller account and obtain JWT tokens.
- * 2. Admin Authentication: Register a new admin account and obtain tokens to
- *    enable admin operations.
- * 3. Customer Registration to prepare order's customer.
- * 4. Create a product category needed for the product.
- * 5. Create a seller account referenced by the product.
- * 6. Create a product linked to the category and seller.
- * 7. Create a SKU variant for the product.
- * 8. Create a shopping mall customer for the order.
- * 9. Create an order associated with the customer and seller.
- * 10. Create an order item with valid SKU, quantity, unit price, and total price.
- * 11. Validate the creation of the order item with the correct details and linkage
- *     to order and SKU.
- */
 export async function test_api_order_item_creation_by_seller(
   connection: api.IConnection,
 ) {
-  // 1. Seller Authentication: Register a new seller account and obtain JWT tokens.
-  const sellerCreateBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password_hash: RandomGenerator.alphaNumeric(16),
-    status: "active" as const,
-  } satisfies IShoppingMallSeller.ICreate;
+  // 1. Seller registers via join
+  const sellerEmail: string = typia.random<string & tags.Format<"email">>();
   const seller: IShoppingMallSeller.IAuthorized =
     await api.functional.auth.seller.join(connection, {
-      body: sellerCreateBody,
+      body: {
+        email: sellerEmail,
+        password: "securePassword123!",
+        store_name: RandomGenerator.name(2),
+      } satisfies IShoppingMallSeller.ICreate,
     });
   typia.assert(seller);
 
-  // 2. Admin Authentication: Register a new admin account
-  const adminCreateBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password_hash: RandomGenerator.alphaNumeric(16),
-    status: "active" as const,
-  } satisfies IShoppingMallAdmin.ICreate;
-  const admin: IShoppingMallAdmin.IAuthorized =
-    await api.functional.auth.admin.join(connection, { body: adminCreateBody });
-  typia.assert(admin);
+  // 2. Seller creates a product
+  const productCode: string = RandomGenerator.alphaNumeric(10);
+  const product: IShoppingMallProduct =
+    await api.functional.shoppingMall.seller.products.create(connection, {
+      body: {
+        code: productCode,
+        name: RandomGenerator.name(3),
+        description: RandomGenerator.paragraph({ sentences: 5 }),
+        brand: RandomGenerator.name(1),
+      } satisfies IShoppingMallProduct.ICreate,
+    });
+  typia.assert(product);
+  TestValidator.equals("product code matches", product.code, productCode);
 
-  // 3. Customer Registration for the order
-  const customerCreateBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password_hash: RandomGenerator.alphaNumeric(16),
-    status: "active" as const,
-  } satisfies IShoppingMallCustomer.ICreate;
-  const customer: IShoppingMallCustomer =
-    await api.functional.shoppingMall.customers.create(connection, {
-      body: customerCreateBody,
+  // 3. Seller creates a SKU variant for product
+  const skuCode: string = RandomGenerator.alphaNumeric(8);
+  const sku: IShoppingMallProductSku =
+    await api.functional.shoppingMall.seller.products.skus.createSku(
+      connection,
+      {
+        productCode: productCode,
+        body: {
+          sku_code: skuCode,
+          price: typia.random<
+            number &
+              tags.Type<"uint32"> &
+              tags.Minimum<1> &
+              tags.Maximum<100000>
+          >(),
+          attributes_json: JSON.stringify({ color: "red", size: "M" }),
+        } satisfies IShoppingMallProductSku.ICreate,
+      },
+    );
+  typia.assert(sku);
+  TestValidator.equals("sku code matches", sku.sku_code, skuCode);
+
+  // 4. Customer joins
+  const customerEmail: string = typia.random<string & tags.Format<"email">>();
+  const customer: IShoppingMallCustomer.IAuthorized =
+    await api.functional.auth.customer.join(connection, {
+      body: {
+        email: customerEmail,
+        password: "anotherSecurePass456$",
+        nickname: RandomGenerator.name(2),
+      } satisfies IShoppingMallCustomer.ICreate,
     });
   typia.assert(customer);
 
-  // 4. Create a product category
-  const categoryCreateBody = {
-    code: RandomGenerator.name(2).replace(/\s/g, "_").toLowerCase(),
-    name: RandomGenerator.name(2),
-    display_order: RandomGenerator.alphaNumeric(2).length, // arbitrary small number
-  } satisfies IShoppingMallCategory.ICreate;
-  const category: IShoppingMallCategory =
-    await api.functional.shoppingMall.admin.shoppingMall.categories.create(
-      connection,
-      { body: categoryCreateBody },
-    );
-  typia.assert(category);
-
-  // 5. Create a seller account for the product
-  const sellerCreateAdminBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password_hash: RandomGenerator.alphaNumeric(16),
-    status: "active" as const,
-  } satisfies IShoppingMallSeller.ICreate;
-  const sellerAdmin: IShoppingMallSeller =
-    await api.functional.shoppingMall.admin.sellers.create(connection, {
-      body: sellerCreateAdminBody,
-    });
-  typia.assert(sellerAdmin);
-
-  // 6. Create a product linked to category and seller
-  const productCreateBody = {
-    shopping_mall_category_id: category.id,
-    shopping_mall_seller_id: sellerAdmin.id,
-    code: RandomGenerator.alphaNumeric(8),
-    name: RandomGenerator.name(3),
-    status: "active" as const,
-  } satisfies IShoppingMallProduct.ICreate;
-  const product: IShoppingMallProduct =
-    await api.functional.shoppingMall.admin.products.create(connection, {
-      body: productCreateBody,
-    });
-  typia.assert(product);
-
-  // 7. Create SKU variant for the product
-  const skuCreateBody = {
-    shopping_mall_product_id: product.id,
-    sku_code: RandomGenerator.alphaNumeric(10).toUpperCase(),
-    price: Math.round(Math.random() * 10000) / 100 || 10.0,
-    status: "active" as const,
-  } satisfies IShoppingMallSku.ICreate;
-  const sku: IShoppingMallSku =
-    await api.functional.shoppingMall.seller.products.skus.create(connection, {
-      productId: product.id,
-      body: skuCreateBody,
-    });
-  typia.assert(sku);
-
-  // 8. Create an order associated with the customer and seller
-  const orderNumber = `ORDER-${RandomGenerator.alphaNumeric(6).toUpperCase()}`;
-  const orderCreateBody = {
-    shopping_mall_customer_id: customer.id,
-    shopping_mall_seller_id: sellerAdmin.id,
-    order_number: orderNumber,
-    total_price: 0.0,
-    status: "pending",
-    business_status: "pending",
-    payment_method: "credit_card",
-    shipping_address: "123 Demo Road, Seoul, South Korea",
-  } satisfies IShoppingMallOrder.ICreate;
+  // 5. Customer creates an order with the SKU
   const order: IShoppingMallOrder =
     await api.functional.shoppingMall.customer.orders.create(connection, {
-      body: orderCreateBody,
+      body: {
+        order_code: RandomGenerator.alphaNumeric(12),
+        shipping_address: `${RandomGenerator.name(1)} Street, Apt 101, City, Country`,
+        shopping_mall_order_items: [
+          {
+            shopping_mall_product_sku_id: sku.id,
+            quantity: 2,
+            unit_price: sku.price,
+            total_price: sku.price * 2,
+          },
+        ],
+      } satisfies IShoppingMallOrder.ICreate,
     });
   typia.assert(order);
+  TestValidator.equals(
+    "order address matches",
+    typeof order.shipping_address,
+    "string",
+  );
 
-  // 9. Create order item with valid SKU and pricing
-  const quantity = 2;
-  const unitPrice = sku.price;
-  const totalPrice = quantity * unitPrice;
-  const orderItemCreateBody = {
-    shopping_mall_order_id: order.id,
-    shopping_mall_sku_id: sku.id,
-    quantity: quantity,
-    unit_price: unitPrice,
-    total_price: totalPrice,
+  // 6. Seller logs in to ensure session switch
+  await api.functional.auth.seller.login(connection, {
+    body: {
+      email: sellerEmail,
+      password: "securePassword123!",
+      ip: null,
+      href: "http://localhost/login",
+      referrer: "http://localhost",
+    } satisfies IShoppingMallSeller.ILogin,
+  });
+
+  // 7. Seller adds an order item to existing order
+  const orderItemRequestBody = {
+    shopping_mall_product_sku_id: sku.id,
+    quantity: 1,
+    unit_price: sku.price,
+    total_price: sku.price,
   } satisfies IShoppingMallOrderItem.ICreate;
+
   const orderItem: IShoppingMallOrderItem =
     await api.functional.shoppingMall.seller.orders.items.create(connection, {
-      orderId: order.id,
-      body: orderItemCreateBody,
+      orderCode: order.order_code,
+      body: orderItemRequestBody,
     });
   typia.assert(orderItem);
 
-  // Validation checks
+  // 8. Verify the created order item
   TestValidator.equals(
-    "orderItem's order ID equals order.id",
-    orderItem.shopping_mall_order_id,
-    order.id,
-  );
-  TestValidator.equals(
-    "orderItem's SKU ID equals sku.id",
-    orderItem.shopping_mall_sku_id,
+    "order item sku id matches",
+    orderItem.shopping_mall_product_sku_id,
     sku.id,
   );
+  TestValidator.equals("order item quantity matches", orderItem.quantity, 1);
   TestValidator.equals(
-    "orderItem quantity matches input",
-    orderItem.quantity,
-    quantity,
-  );
-  TestValidator.equals(
-    "orderItem unit price matches SKU price",
+    "order item unit price matches",
     orderItem.unit_price,
-    unitPrice,
+    sku.price,
   );
   TestValidator.equals(
-    "orderItem total price equals quantity * unit_price",
+    "order item total price matches",
     orderItem.total_price,
-    totalPrice,
+    sku.price,
   );
 }

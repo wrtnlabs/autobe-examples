@@ -8,6 +8,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSession";
+import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
 
@@ -15,87 +17,83 @@ export async function postAuthSellerLogin(props: {
   seller: SellerPayload;
   body: IShoppingMallSeller.ILogin;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  const { body } = props;
-
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
     where: {
-      email: body.email,
-      status: "active",
+      email: props.body.email,
       deleted_at: null,
-    },
-    select: {
-      id: true,
-      email: true,
-      password_hash: true,
-      company_name: true,
-      contact_name: true,
-      phone_number: true,
-      status: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
     },
   });
 
-  if (seller === null) {
-    throw new HttpException("Seller not found", 404);
+  if (!seller) {
+    throw new HttpException("Invalid credentials", 401);
   }
 
   const isValid = await PasswordUtil.verify(
-    body.password,
+    props.body.password,
     seller.password_hash,
   );
   if (!isValid) {
-    throw new HttpException("Invalid email or password", 401);
+    throw new HttpException("Invalid credentials", 401);
   }
 
-  const accessToken = jwt.sign(
-    {
-      id: seller.id,
-      email: seller.email,
-      type: "seller",
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
+  const now = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
 
-  const refreshToken = jwt.sign(
-    {
-      id: seller.id,
-      tokenType: "refresh",
+  const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
+    data: {
+      id: v4(),
+      shopping_mall_seller_id: seller.id,
+      ip: props.body.ip ?? "",
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: now,
+      expired_at: accessExpires,
     },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  });
 
-  const expiredAt = toISOStringSafe(new Date(Date.now() + 3600 * 1000));
-  const refreshableUntil = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 3600 * 1000),
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
   return {
     id: seller.id,
     email: seller.email,
     password_hash: seller.password_hash,
-    company_name: seller.company_name ?? undefined,
-    contact_name: seller.contact_name ?? undefined,
-    phone_number: seller.phone_number ?? undefined,
-    status: seller.status,
+    store_name: seller.store_name,
     created_at: toISOStringSafe(seller.created_at),
     updated_at: toISOStringSafe(seller.updated_at),
     deleted_at: seller.deleted_at ? toISOStringSafe(seller.deleted_at) : null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: expiredAt,
-      refreshable_until: refreshableUntil,
-    },
-    refresh_token: refreshToken,
+    token,
   };
 }

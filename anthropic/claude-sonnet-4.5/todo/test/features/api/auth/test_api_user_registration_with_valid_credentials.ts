@@ -3,57 +3,52 @@ import { IConnection } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 
 /**
- * Test user registration with valid email and password credentials.
+ * Tests complete user registration workflow with valid credentials.
  *
- * This test validates the complete user registration workflow including:
+ * Validates that a new user can successfully sign up with a valid email and
+ * password, and immediately receive authentication tokens without requiring a
+ * separate login step.
  *
- * - Email format validation and uniqueness
- * - Password security requirements (minimum 8 characters)
- * - Proper UUID generation for user ID
- * - Email normalization to lowercase
- * - Password hashing with bcrypt (cost factor 10)
- * - Timestamp generation (created_at and updated_at)
- * - Response data structure validation
- * - Password exclusion from response for security
+ * Process:
  *
- * Steps:
- *
- * 1. Generate random valid email and password
- * 2. Call registration API with credentials
- * 3. Validate response structure and data types
- * 4. Verify email matches input (normalized to lowercase)
+ * 1. Generate valid registration credentials (email, password, session context)
+ * 2. Call the user registration API endpoint
+ * 3. Validate the response contains complete user profile and authentication
+ *    tokens
+ * 4. Verify the returned email matches the input email
+ * 5. Confirm the registration completed successfully with proper token generation
  */
 export async function test_api_user_registration_with_valid_credentials(
   connection: api.IConnection,
 ) {
-  // Generate valid registration credentials
-  const email = typia.random<
-    string & tags.Format<"email"> & tags.MaxLength<255>
-  >();
-  const password = typia.random<
-    string & tags.MinLength<8> & tags.MaxLength<128>
-  >();
+  // Generate valid registration data
+  const email = typia.random<string & tags.Format<"email">>();
+  const password = RandomGenerator.alphaNumeric(10);
+  const href = typia.random<string & tags.Format<"uri">>();
+  const referrer = typia.random<string & tags.Format<"uri">>();
 
-  // Call registration API
-  const registeredUser: ITodoListUser =
-    await api.functional.todoList.auth.register(connection, {
+  // Call the registration API
+  const registeredUser: ITodoListUser.IAuthorized =
+    await api.functional.auth.user.join(connection, {
       body: {
         email: email,
         password: password,
-      } satisfies ITodoListUser.ICreate,
+        href: href,
+        referrer: referrer,
+      } satisfies ITodoListUser.IRegister,
     });
 
-  // Validate response structure with typia - this performs COMPLETE validation
-  // including UUID format, date-time format, and all type constraints
+  // Validate the complete response structure (this validates ALL type requirements)
   typia.assert(registeredUser);
 
-  // Verify email is normalized to lowercase (business logic validation)
+  // Validate business logic: returned email matches input email
   TestValidator.equals(
-    "registered email should match input email (normalized to lowercase)",
+    "returned email matches input email",
     registeredUser.email,
-    email.toLowerCase(),
+    email,
   );
 }

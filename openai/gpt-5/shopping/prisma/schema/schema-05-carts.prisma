@@ -1,0 +1,482 @@
+/// Main cart entity representing a pre-checkout shopping container.
+/// Ownership is polymorphic and realized via subtype tables {@link
+/// shopping_mall_cart_of_customers} and {@link
+/// shopping_mall_cart_of_guests}. Child tables such as {@link
+/// shopping_mall_cart_items}, {@link shopping_mall_cart_coupons}, and {@link
+/// shopping_mall_cart_price_locks} reference this cart. Lifecycle states
+/// include Active, Locked for Checkout, Converted, and Expired.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor classifier for polymorphic ownership (e.g., "customer", "guest").
+  /// Used for quick filtering; detailed ownership lives in subtype tables.
+  actor_type String
+  
+  /// Business lifecycle status of the cart (e.g., "active", "locked",
+  /// "converted", "expired").
+  status String
+  
+  /// ISO-like currency code representing the pricing context of the cart at
+  /// the current time.
+  currency_code String?
+  
+  /// Whether the cart is structurally locked due to an ongoing checkout
+  /// session.
+  locked Boolean
+  
+  /// Creation timestamp of the cart.
+  created_at DateTime
+  
+  /// Last update timestamp of the cart.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the cart was deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_cart_of_customers shopping_mall_cart_of_customers?
+  shopping_mall_cart_of_guests shopping_mall_cart_of_guests?
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_cart_coupons shopping_mall_cart_coupons[]
+  shopping_mall_cart_price_locks shopping_mall_cart_price_locks[]
+  shopping_mall_cart_merge_events_of_source_cart_id shopping_mall_cart_merge_events[] @relation("shopping_mall_cart_merge_events_of_source_cart_id")
+  shopping_mall_cart_merge_events_of_target_cart_id shopping_mall_cart_merge_events[] @relation("shopping_mall_cart_merge_events_of_target_cart_id")
+  shopping_mall_cart_expirations shopping_mall_cart_expirations[]
+  shopping_mall_orders shopping_mall_orders?
+  shopping_mall_promotion_applications shopping_mall_promotion_applications[]
+  
+  @@index([actor_type, created_at])
+}
+
+/// Subtype table linking a cart to a concrete authenticated customer and
+/// their session context. Ensures a strict 1:1 mapping between {@link
+/// shopping_mall_carts} and the customer-specific ownership information.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Linked cart. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Owning authenticated customer. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer session at the time of association. {@link
+  /// shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String
+  
+  /// Creation timestamp of the subtype record.
+  created_at DateTime
+  
+  /// Last update timestamp of the subtype record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp of the subtype record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_cart_of_customers_shopping_mall_customer_8b650dcf")
+  
+  @@unique([shopping_mall_cart_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_cart_of_customers_shopping_mall_customer_127fd2d8")
+}
+
+/// Subtype table linking a cart to a guest context without a registered
+/// account. Captures a durable guest key and optional connection context for
+/// audit. Enforces a strict 1:1 mapping to {@link shopping_mall_carts}.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_of_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Linked cart. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Durable, random guest identifier that persists cart ownership across
+  /// visits without authentication.
+  guest_key String
+  
+  /// IP address captured when the association was created.
+  ip String?
+  
+  /// Connection URL where the cart was created or last associated.
+  href String?
+  
+  /// Referrer URL at time of association, if available.
+  referrer String?
+  
+  /// Creation timestamp of the subtype record.
+  created_at DateTime
+  
+  /// Last update timestamp of the subtype record.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_cart_id])
+  @@unique([guest_key])
+  @@index([guest_key, created_at])
+}
+
+/// Line items within a cart referencing purchasable SKUs. Enforces
+/// de-duplication by (cart, SKU) and records quantity. Designed for
+/// high-frequency mutations with immediate recomputation of cart estimates.
+/// References {@link shopping_mall_carts} and {@link
+/// shopping_mall_product_skus}.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent cart. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Selected SKU. {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Requested quantity for the SKU; validated against min/max/increment
+  /// policies.
+  quantity Int
+  
+  /// Unit price snapshot when the SKU was added (if captured at add time).
+  unit_price_at_add Float?
+  
+  /// Currency code for the captured snapshot price, when available.
+  currency_code String?
+  
+  /// Creation timestamp of the item record.
+  created_at DateTime
+  
+  /// Last update timestamp of the item record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the line item was removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_cart_id, shopping_mall_product_sku_id], map: "shopping_mall_cart_items_shopping_mall_cart_id_shoppin_a08301be")
+  @@index([shopping_mall_cart_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, created_at], map: "shopping_mall_cart_items_shopping_mall_product_sku_id__10ba1828")
+}
+
+/// Coupons attached to a cart during pre-checkout. Stores a reference to the
+/// canonical coupon code and a code snapshot for auditability. Prevents
+/// duplicate coupon application per cart. References {@link
+/// shopping_mall_carts} and {@link shopping_mall_coupon_codes}.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent cart. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Canonical coupon code reference. {@link shopping_mall_coupon_codes.id}.
+  shopping_mall_coupon_code_id String
+  
+  /// Snapshot of the coupon code as entered/normalized at apply time.
+  code String
+  
+  /// Timestamp when the coupon was applied to the cart.
+  applied_at DateTime
+  
+  /// Creation timestamp of the coupon attachment record.
+  created_at DateTime
+  
+  /// Last update timestamp of the coupon attachment record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the coupon was removed or invalidated.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  couponCode shopping_mall_coupon_codes @relation(fields: [shopping_mall_coupon_code_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_coupon_code_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_cart_id, shopping_mall_coupon_code_id], map: "shopping_mall_cart_coupons_shopping_mall_cart_id_shopp_502f4083")
+  @@index([shopping_mall_cart_id, applied_at])
+}
+
+/// Point-in-time price lock snapshots per cart created at checkout start.
+/// Captures windowed validity and locked monetary components for audit and
+/// deterministic payment authorization. References {@link
+/// shopping_mall_carts}.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_price_locks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Cart whose prices were locked. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Timestamp when the price lock was established.
+  locked_at DateTime
+  
+  /// Expiration time of the price lock window, if applicable.
+  expires_at DateTime?
+  
+  /// Status of the lock (e.g., "active", "expired").
+  status String
+  
+  /// Currency code used for locked amounts.
+  currency_code String
+  
+  /// Locked items total at the time of checkout initiation (snapshot).
+  items_total Float?
+  
+  /// Locked shipping total at the time of checkout initiation (snapshot).
+  shipping_total Float?
+  
+  /// Locked discount total at the time of checkout initiation (snapshot).
+  discount_total Float?
+  
+  /// Locked tax total at the time of checkout initiation (snapshot).
+  tax_total Float?
+  
+  /// Locked grand total at the time of checkout initiation (snapshot).
+  grand_total Float?
+  
+  /// Creation timestamp of this lock record.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cart_id, locked_at], map: "shopping_mall_cart_price_locks_shopping_mall_cart_id_l_db3468ad")
+}
+
+/// Persistent wishlist entity per authenticated customer. Supports a single
+/// default list in MVP scope. Child records {@link
+/// shopping_mall_wishlist_items} reference this wishlist. One wishlist per
+/// customer enforced.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner customer. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Optional wishlist display name (e.g., "My Wishlist").
+  name String?
+  
+  /// Creation timestamp of the wishlist.
+  created_at DateTime
+  
+  /// Last update timestamp of the wishlist.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp of the wishlist.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_mall_customer_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_wishlists_shopping_mall_customer_id_crea_13b2d35f")
+}
+
+/// Wishlist item entries mapping a wishlist to specific SKUs. Designed to
+/// prevent duplicates per wishlist and support cross-list analytics/search
+/// by SKU. References {@link shopping_mall_wishlists} and {@link
+/// shopping_mall_product_skus}.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent wishlist. {@link shopping_mall_wishlists.id}.
+  shopping_mall_wishlist_id String
+  
+  /// Referenced SKU added to wishlist. {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Creation timestamp of the wishlist item.
+  created_at DateTime
+  
+  /// Last update timestamp of the wishlist item.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the wishlist item was removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  productSku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_wishlist_id, shopping_mall_product_sku_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_22da2d8e")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id, created_at], map: "shopping_mall_wishlist_items_shopping_mall_product_sku_d602a46e")
+}
+
+/// Event log capturing guest→customer cart merges or multi-device
+/// consolidations. References both source and target carts and optionally
+/// the customer who performed the merge. Used for audit trails and debugging
+/// cart consolidation logic.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_merge_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Source cart being merged from. {@link shopping_mall_carts.id}.
+  source_cart_id String
+  
+  /// Target cart receiving merged contents. {@link shopping_mall_carts.id}.
+  target_cart_id String
+  
+  /// Customer associated to the merge action when authentication occurred.
+  /// {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String?
+  
+  /// Human-readable reason/category for the merge (e.g., "auth_merge",
+  /// "concurrent_device").
+  reason String
+  
+  /// IP address seen at time of merge.
+  ip String?
+  
+  /// URL context of the merge event.
+  href String?
+  
+  /// Referrer URL of the event.
+  referrer String?
+  
+  /// Creation timestamp of the merge event record.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sourceCart shopping_mall_carts @relation("shopping_mall_cart_merge_events_of_source_cart_id", fields: [source_cart_id], references: [id], onDelete: Cascade)
+  targetCart shopping_mall_carts @relation("shopping_mall_cart_merge_events_of_target_cart_id", fields: [target_cart_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([target_cart_id, created_at])
+  @@index([source_cart_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_cart_merge_events_shopping_mall_customer_ea9cce31")
+}
+
+/// Event records of cart expirations due to inactivity windows (e.g., 30
+/// days for authenticated, 7 days for guests). Enables auditability of
+/// expiration decisions and policy review. References {@link
+/// shopping_mall_carts}.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_expirations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Expired cart reference. {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Timestamp when the cart transitioned to expired state.
+  expired_at DateTime
+  
+  /// Expiration reason/category (e.g., "inactivity_authenticated",
+  /// "inactivity_guest").
+  reason String
+  
+  /// Human-readable policy window applied (e.g., "30d", "7d").
+  policy_window String?
+  
+  /// Creation timestamp of this expiration record.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_cart_id, expired_at], map: "shopping_mall_cart_expirations_shopping_mall_cart_id_e_949b9775")
+}

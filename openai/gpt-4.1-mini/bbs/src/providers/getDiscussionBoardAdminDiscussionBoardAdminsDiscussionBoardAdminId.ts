@@ -7,37 +7,46 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IDiscussionBoardDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardDiscussionBoardAdmin";
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminSession";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function getDiscussionBoardAdminDiscussionBoardAdminsDiscussionBoardAdminId(props: {
   admin: AdminPayload;
   discussionBoardAdminId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardDiscussionBoardAdmin> {
+}): Promise<IDiscussionBoardAdmin> {
   const { discussionBoardAdminId } = props;
 
-  const admin = await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow(
-    {
-      where: { id: discussionBoardAdminId },
-      select: {
-        id: true,
-        email: true,
-        display_name: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        password_hash: true,
+  const adminRecord =
+    await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow({
+      where: {
+        id: discussionBoardAdminId,
       },
-    },
-  );
+      include: {
+        discussion_board_admin_sessions: true,
+      },
+    });
 
   return {
-    id: admin.id,
-    email: admin.email,
-    display_name: admin.display_name,
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
-    password_hash: admin.password_hash,
+    id: adminRecord.id,
+    email: adminRecord.email,
+    password_hash: adminRecord.password_hash,
+    created_at: toISOStringSafe(adminRecord.created_at),
+    updated_at: toISOStringSafe(adminRecord.updated_at),
+    deleted_at: adminRecord.deleted_at
+      ? toISOStringSafe(adminRecord.deleted_at)
+      : null,
+    discussion_board_admin_sessions:
+      adminRecord.discussion_board_admin_sessions.map((session) => ({
+        id: session.id,
+        discussion_board_admin_id: session.discussion_board_admin_id,
+        ip: session.ip,
+        href: session.href,
+        referrer: session.referrer,
+        created_at: toISOStringSafe(session.created_at),
+        expired_at: session.expired_at
+          ? toISOStringSafe(session.expired_at)
+          : null,
+      })),
   };
 }

@@ -5,7 +5,13 @@ import { Singleton } from "tstl";
 import { customerAuthorize } from "../providers/authorize/customerAuthorize";
 
 /**
- * Controller 메소드 파라미터에 Customer 인증정보를 주입합니다
+ * Parameter decorator to authenticate Customer users via JWT.
+ *
+ * Adds bearer authentication to Swagger docs and injects the authenticated CustomerPayload.
+ * Example usage:
+ * ```ts
+ * getProfile(@CustomerAuth() customer: CustomerPayload) {...}
+ * ```
  */
 export const CustomerAuth =
   (): ParameterDecorator =>
@@ -16,9 +22,7 @@ export const CustomerAuth =
   ): void => {
     SwaggerCustomizer((props) => {
       props.route.security ??= [];
-      props.route.security.push({
-        bearer: [],
-      });
+      props.route.security.push({ bearer: [] });
     })(target, propertyKey as string, undefined!);
     singleton.get()(target, propertyKey, parameterIndex);
   };

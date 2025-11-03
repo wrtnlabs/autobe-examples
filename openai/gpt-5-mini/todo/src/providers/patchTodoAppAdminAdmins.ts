@@ -18,113 +18,102 @@ export async function patchTodoAppAdminAdmins(props: {
 }): Promise<IPageITodoAppAdmin.ISummary> {
   const { admin, body } = props;
 
-  // Confirm caller exists in DB (authorization check)
+  // Authorization: ensure the caller exists, is active, and not soft-deleted
   const caller = await MyGlobal.prisma.todo_app_admin.findUnique({
     where: { id: admin.id },
+    select: { id: true, is_active: true, deleted_at: true },
   });
-  if (!caller) throw new HttpException("Unauthorized", 403);
+
+  if (!caller || caller.deleted_at !== null || caller.is_active !== true) {
+    throw new HttpException("Unauthorized", 403);
+  }
 
   // Pagination defaults and validation
   const page = Number(body.page ?? 1);
-  if (!Number.isFinite(page) || page < 1)
-    throw new HttpException("Bad Request: page must be >= 1", 400);
-
   const pageSize = Number(body.pageSize ?? 20);
-  if (!Number.isFinite(pageSize) || pageSize < 1 || pageSize > 100)
-    throw new HttpException(
-      "Bad Request: pageSize must be between 1 and 100",
-      400,
-    );
+
+  if (!Number.isInteger(page) || page < 1) {
+    throw new HttpException("Bad Request: invalid page", 400);
+  }
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+    throw new HttpException("Bad Request: invalid pageSize", 400);
+  }
 
   // Sorting validation
-  const allowedSortBy = ["created_at", "last_active_at"] as const;
-  const sort_by = body.sort_by ?? "created_at";
-  if (!allowedSortBy.includes(sort_by as any))
-    throw new HttpException("Bad Request: invalid sort_by", 400);
-  const sort_order = body.sort_order === "asc" ? "asc" : "desc";
+  const sortBy = body.sortBy ?? "createdAt";
+  if (sortBy !== "createdAt" && sortBy !== "displayName") {
+    throw new HttpException("Bad Request: invalid sortBy", 400);
+  }
+  const order = body.order === "desc" ? "desc" : "asc";
 
-  // Build where clause
+  // Build where conditions inline (schema-checked fields only)
   const where: Record<string, unknown> = {};
-  if (body.email !== undefined && body.email !== null) {
-    where.email = body.email;
+  if (!body.auditMode) {
+    where.deleted_at = null;
   }
-  if (body.emailLike !== undefined && body.emailLike !== null) {
-    where.email = { contains: body.emailLike };
-  }
-  if (body.is_super !== undefined && body.is_super !== null) {
-    where.is_super = body.is_super;
-  }
-  if (
-    (body.created_from !== undefined && body.created_from !== null) ||
-    (body.created_to !== undefined && body.created_to !== null)
-  ) {
-    const createdAt: Record<string, unknown> = {};
-    if (body.created_from !== undefined && body.created_from !== null)
-      createdAt.gte = toISOStringSafe(body.created_from);
-    if (body.created_to !== undefined && body.created_to !== null)
-      createdAt.lte = toISOStringSafe(body.created_to);
-    where.created_at = createdAt;
+  if (body.role !== undefined) where.role = body.role;
+  if (body.isActive !== undefined) where.is_active = body.isActive;
+  if (body.q !== undefined && body.q !== null) {
+    where.OR = [
+      { email: { contains: body.q } },
+      { display_name: { contains: body.q } },
+    ];
   }
 
-  try {
-    const [rows, total] = await Promise.all([
-      MyGlobal.prisma.todo_app_admin.findMany({
-        where,
-        orderBy: { [sort_by]: sort_order },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        select: {
-          id: true,
-          email: true,
-          is_super: true,
-          created_at: true,
-          last_active_at: true,
-        },
-      }),
-      MyGlobal.prisma.todo_app_admin.count({ where }),
-    ]);
+  const [rows, total] = await Promise.all([
+    MyGlobal.prisma.todo_app_admin.findMany({
+      where,
+      orderBy:
+        sortBy === "displayName"
+          ? { display_name: order }
+          : { created_at: order },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        email: true,
+        display_name: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    }),
+    MyGlobal.prisma.todo_app_admin.count({ where }),
+  ]);
 
-    const data = rows.map((r) => {
-      const item = {
-        id: r.id,
-        email: r.email,
-        is_super: r.is_super,
-        created_at: toISOStringSafe(r.created_at),
-        last_active_at: r.last_active_at
-          ? toISOStringSafe(r.last_active_at)
-          : null,
-      } satisfies ITodoAppAdmin.ISummary;
-      return item;
-    });
+  const data = rows.map((r) => {
+    const summary: any = {
+      id: r.id,
+      email: r.email,
+      // displayName is optional+nullable in DTO; use undefined when DB null
+      displayName: r.display_name === null ? undefined : r.display_name,
+      role: r.role,
+      isActive: r.is_active,
+      createdAt: toISOStringSafe(r.created_at),
+    };
 
-    const pagination = {
+    // updated_at exists; include if present
+    summary.updatedAt = r.updated_at
+      ? toISOStringSafe(r.updated_at)
+      : undefined;
+
+    // Only include deletedAt when auditMode is requested
+    if (body.auditMode) {
+      summary.deletedAt = r.deleted_at ? toISOStringSafe(r.deleted_at) : null;
+    }
+
+    return summary;
+  });
+
+  return {
+    pagination: {
       current: Number(page),
       limit: Number(pageSize),
       records: Number(total),
-      pages: Math.ceil(total / pageSize),
-    } satisfies IPage.IPagination;
-
-    // Audit logging
-    const auditId = v4() satisfies string & tags.Format<"uuid">;
-    await MyGlobal.prisma.todo_app_audit_records.create({
-      data: {
-        id: auditId,
-        admin_id: admin.id,
-        user_id: null,
-        actor_role: "admin",
-        action_type: "list_admins",
-        target_resource: "todo_app_admin",
-        target_id: null,
-        reason: body.emailLike ?? body.email ?? null,
-        created_at: toISOStringSafe(new Date()),
-      },
-    });
-
-    return {
-      pagination,
-      data,
-    } satisfies IPageITodoAppAdmin.ISummary;
-  } catch (error) {
-    throw new HttpException("Internal Server Error", 500);
-  }
+      pages: Number(Math.ceil(total / pageSize)),
+    },
+    data,
+  };
 }

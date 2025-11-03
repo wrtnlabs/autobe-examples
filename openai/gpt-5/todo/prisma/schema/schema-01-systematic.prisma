@@ -1,0 +1,92 @@
+/// System-wide audit trail capturing security- and business-relevant events
+/// such as registration, login/logout, todo CRUD operations, and
+/// unauthorized attempts. Each record optionally references the acting
+/// {@link todo_users} and the originating {@link todo_user_sessions}, and
+/// may point to the affected {@link todo_todos} resource when applicable.
+/// The table centralizes observability while keeping domain models clean.
+/// Rows are append-only in practice; soft deletion is reserved for
+/// exceptional redaction needs.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_audit_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Acting user's {@link todo_users.id}. Enables attribution of who performed
+  /// the action.
+  todo_user_id String?
+  
+  /// Originating session's {@link todo_user_sessions.id}. Provides connection
+  /// context for the action.
+  todo_user_session_id String?
+  
+  /// Target todo resource's {@link todo_todos.id} when the event pertains to a
+  /// specific todo item.
+  todo_todo_id String?
+  
+  /// Actor class that originated the event (e.g., "user", "system"). Used for
+  /// quick filtering without joining.
+  actor_type String
+  
+  /// High-level category for the event (e.g., "auth", "todo", "security").
+  category String
+  
+  /// Concrete action keyword (e.g., "register", "login", "logout",
+  /// "todo_create", "todo_update", "todo_delete", "unauthorized_attempt").
+  action String
+  
+  /// Whether the attempted action completed successfully (true) or failed
+  /// (false).
+  success Boolean
+  
+  /// Human-readable summary appropriate for operator review. Optional to avoid
+  /// storing redundant text.
+  message String?
+  
+  /// Client IP address captured at the time of the event, if available.
+  ip String?
+  
+  /// Request URL at the time of the event, if available.
+  href String?
+  
+  /// Referrer URL associated with the request, if available.
+  referrer String?
+  
+  /// Type name of the affected resource (e.g., "user", "todo"). Present when
+  /// the event is tied to a specific resource.
+  resource_type String?
+  
+  /// Opaque identifier of the affected resource when the event refers to a
+  /// specific entity. Not a foreign key to allow polymorphism beyond current
+  /// domains.
+  resource_id String?
+  
+  /// Event creation timestamp (when the event was recorded).
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this audit row, typically equal to
+  /// creation in append-only usage.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for exceptional redaction needs. Null means
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_users? @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  userSession todo_user_sessions? @relation(fields: [todo_user_session_id], references: [id], onDelete: Cascade)
+  todo todo_todos? @relation(fields: [todo_todo_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_at])
+  @@index([todo_user_id, created_at])
+  @@index([todo_user_session_id, created_at])
+  @@index([category, action, created_at])
+  @@index([resource_type, resource_id])
+  @@index([todo_todo_id, created_at])
+}

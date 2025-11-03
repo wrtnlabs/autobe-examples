@@ -8,93 +8,132 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAdmin";
+import { ITodoAppAdminRole } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAdminRole";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function putTodoAppAdminAdminsAdminId(props: {
   admin: AdminPayload;
   adminId: string & tags.Format<"uuid">;
   body: ITodoAppAdmin.IUpdate;
-}): Promise<ITodoAppAdmin.ISummary> {
+}): Promise<ITodoAppAdmin> {
   const { admin, adminId, body } = props;
 
-  // Business validation: at least one mutable field must be present
-  if (
-    body.email === undefined &&
-    body.is_super === undefined &&
-    body.last_active_at === undefined
-  ) {
-    throw new HttpException("Bad Request: no updatable fields provided", 400);
-  }
-
-  // Authorization for privileged change
-  if (body.is_super !== undefined) {
-    const caller = await MyGlobal.prisma.todo_app_admin.findUnique({
-      where: { id: admin.id },
-    });
-    if (!caller) throw new HttpException("Unauthorized: caller not found", 401);
-    if (caller.is_super !== true) {
-      throw new HttpException(
-        "Forbidden: only super-admin can modify is_super",
-        403,
-      );
-    }
-  }
-
-  // Ensure the target admin exists
-  const target = await MyGlobal.prisma.todo_app_admin.findUnique({
-    where: { id: adminId },
+  // Validate actor and fetch its latest record (to get role and active status)
+  const actor = await MyGlobal.prisma.todo_app_admin.findUniqueOrThrow({
+    where: { id: admin.id },
   });
-  if (!target) throw new HttpException("Not Found", 404);
 
-  // Email uniqueness check
-  if (body.email !== undefined) {
-    const existing = await MyGlobal.prisma.todo_app_admin.findFirst({
-      where: { email: body.email },
-    });
-    if (existing && existing.id !== adminId) {
-      throw new HttpException("Conflict: email already in use", 409);
-    }
+  if (!actor.is_active || actor.deleted_at) {
+    throw new HttpException("Unauthorized: inactive admin", 403);
   }
 
-  // Perform update with inline data object
+  const actorIsSuper = actor.role === "superadmin";
+
+  // Ensure target admin exists and is not soft-deleted
+  const target = await MyGlobal.prisma.todo_app_admin.findFirstOrThrow({
+    where: { id: adminId, deleted_at: null },
+  });
+
+  // Authorization: only superadmin or self can update target
+  if (!actorIsSuper && actor.id !== adminId) {
+    throw new HttpException(
+      "Unauthorized: only superadmin or the admin themselves can update this account",
+      403,
+    );
+  }
+
+  // Prevent non-superadmins from modifying a superadmin
+  if (!actorIsSuper && target.role === "superadmin") {
+    throw new HttpException(
+      "Unauthorized: cannot modify a superadmin account",
+      403,
+    );
+  }
+
+  // Prepare timestamp for updates/audit
+  const now = toISOStringSafe(new Date());
+
+  // Update allowed fields (inline to preserve Prisma type error clarity)
   const updated = await MyGlobal.prisma.todo_app_admin.update({
     where: { id: adminId },
     data: {
-      ...(body.email !== undefined ? { email: body.email } : {}),
-      ...(body.is_super !== undefined ? { is_super: body.is_super } : {}),
-      ...(body.last_active_at !== undefined
-        ? {
-            last_active_at:
-              body.last_active_at === null
-                ? null
-                : toISOStringSafe(body.last_active_at),
-          }
-        : {}),
+      display_name:
+        body.displayName === undefined
+          ? undefined
+          : body.displayName === null
+            ? null
+            : body.displayName,
+      role: body.role ?? undefined,
+      is_active: body.isActive ?? undefined,
+      updated_at: now,
     },
   });
 
-  // Audit side-effect
-  await MyGlobal.prisma.todo_app_audit_records.create({
+  // Create admin action audit record
+  await MyGlobal.prisma.todo_app_admin_actions.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      admin_id: admin.id,
-      user_id: null,
-      actor_role: "admin",
-      action_type: "update_admin",
-      target_resource: "admin",
-      target_id: adminId,
+      todo_app_admin_id: admin.id,
+      todo_app_admin_session_id: admin.session_id,
+      action: "update_admin",
       reason: null,
-      created_at: toISOStringSafe(new Date()),
+      target_type: "admin",
+      target_id: adminId,
+      details: JSON.stringify({
+        before: {
+          role: target.role,
+          display_name: target.display_name,
+          is_active: target.is_active,
+        },
+        after: {
+          role: updated.role,
+          display_name: updated.display_name,
+          is_active: updated.is_active,
+        },
+      }),
+      created_at: now,
+      updated_at: now,
     },
   });
 
+  // Create general audit log for system-wide traceability
+  await MyGlobal.prisma.todo_app_audit_logs.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      todo_app_admin_id: admin.id,
+      todo_app_admin_session_id: admin.session_id,
+      event_type: "update_admin",
+      target_type: "admin",
+      target_id: adminId,
+      details: JSON.stringify({
+        before: {
+          role: target.role,
+          display_name: target.display_name,
+          is_active: target.is_active,
+        },
+        after: {
+          role: updated.role,
+          display_name: updated.display_name,
+          is_active: updated.is_active,
+        },
+      }),
+      created_at: now,
+      updated_at: now,
+    },
+  });
+
+  // Map database record to API DTO, converting Date -> ISO strings
   return {
     id: updated.id as string & tags.Format<"uuid">,
     email: updated.email as string & tags.Format<"email">,
-    is_super: updated.is_super,
-    created_at: toISOStringSafe(updated.created_at),
-    last_active_at: updated.last_active_at
-      ? toISOStringSafe(updated.last_active_at)
-      : null,
+    display_name:
+      updated.display_name === null
+        ? null
+        : (updated.display_name ?? undefined),
+    role: updated.role as ITodoAppAdminRole,
+    is_active: updated.is_active,
+    createdAt: toISOStringSafe(updated.created_at),
+    updatedAt: toISOStringSafe(updated.updated_at),
+    deletedAt: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
   };
 }
