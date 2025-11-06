@@ -15,6 +15,7 @@ AI Model | Score | FCSR | Status
 [`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 47.5 | 79% | 🟡
 [`qwen/qwen3-30b-a3b-thinking-2507`](#qwenqwen3-30b-a3b-thinking-2507) | 33.75 | 66% | ❌
 [`meta-llama/llama-4-maverick`](#meta-llamallama-4-maverick) | 12.5 | 94% | ❌
+[`google/gemini-2.5-pro`](#googlegemini-25-pro) | 10 | 97% | ❌
 
 - FCSR: Function Calling Success Rate
 - Status:
@@ -846,6 +847,83 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
 🟢 Analyze | `actors`: 4, `documents`: 8 | 273.1K | 31s | 100%
+⚪ Prisma |  |  |  | 
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
+## `google/gemini-2.5-pro`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./google/gemini-2.5-pro/todo/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
+[`bbs`](./google/gemini-2.5-pro/bbs/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
+[`reddit`](./google/gemini-2.5-pro/reddit/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
+[`shopping`](./google/gemini-2.5-pro/shopping/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
+
+### `google/gemini-2.5-pro` - `todo`
+
+- Source Code: [`google/gemini-2.5-pro/todo`](./google/gemini-2.5-pro/todo/)
+- Score: 10
+- Elapsed Time: 3m 40s
+- Token Usage: 524.1K
+- Function Calling Success Rate: 100.00%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 1, `documents`: 11 | 524.1K | 3m 40s | 100%
+⚪ Prisma |  |  |  | 
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
+### `google/gemini-2.5-pro` - `bbs`
+
+- Source Code: [`google/gemini-2.5-pro/bbs`](./google/gemini-2.5-pro/bbs/)
+- Score: 10
+- Elapsed Time: 3m 46s
+- Token Usage: 388.2K
+- Function Calling Success Rate: 100.00%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 8 | 388.2K | 3m 46s | 100%
+⚪ Prisma |  |  |  | 
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
+### `google/gemini-2.5-pro` - `reddit`
+
+- Source Code: [`google/gemini-2.5-pro/reddit`](./google/gemini-2.5-pro/reddit/)
+- Score: 10
+- Elapsed Time: 3m 37s
+- Token Usage: 691.6K
+- Function Calling Success Rate: 100.00%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 12 | 691.6K | 3m 37s | 100%
+⚪ Prisma |  |  |  | 
+⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
+### `google/gemini-2.5-pro` - `shopping`
+
+- Source Code: [`google/gemini-2.5-pro/shopping`](./google/gemini-2.5-pro/shopping/)
+- Score: 10
+- Elapsed Time: 6m 4s
+- Token Usage: 975.3K
+- Function Calling Success Rate: 93.94%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 15 | 975.3K | 6m 4s | 93%
 ⚪ Prisma |  |  |  | 
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
