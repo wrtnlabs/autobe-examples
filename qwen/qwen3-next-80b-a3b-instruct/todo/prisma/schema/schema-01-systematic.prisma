@@ -1,84 +1,51 @@
-/// Main user entity for the todo application. Each record represents a
-/// unique authenticated user who can create, read, update, and delete their
-/// own todo items. This table is the foundation of the authentication system
-/// and is referenced by todo_user_sessions.
+/// System-wide configuration settings that control operational behavior such
+/// as session timeouts, encryption parameters, and feature flags. This table
+/// is referenced by other components to retrieve runtime settings. Each
+/// configuration is identified by a unique key and may include an optional
+/// description for context. This is a subsidiary table managed through
+/// system administration tools, not user-facing interfaces.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_users {
+model todo_app_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique email address used for user authentication. Must be unique across
-  /// the system.
-  email String
+  /// Unique identifier for the configuration setting (e.g.,
+  /// 'session_timeout_minutes', 'encrypt_data_at_rest'). Required for lookup.
+  key String
   
-  /// Cryptographic hash of the user's password. Never store plain text
-  /// passwords.
-  password_hash String
+  /// The actual configuration value. Serialized as string (JSON, text, number
+  /// as string) to support any data type. Example: "30" for 30 minutes,
+  /// "{\"algorithm\": \"aes-256\"}" for complex settings.
+  value String
   
-  /// Timestamp when the user account was created. Used for audit and sorting
-  /// purposes.
+  /// Human-readable description explaining the purpose, acceptable values, or
+  /// implications of this configuration. Used for documentation and support.
+  description String?
+  
+  /// Timestamp of when this configuration was first created. Required for
+  /// audit trails.
   created_at DateTime
   
-  /// Timestamp when the user account was last updated. Automatically updated
-  /// on changes to user profile.
+  /// Timestamp of the last modification to this configuration. Required for
+  /// audit trails.
   updated_at DateTime
   
-  /// Soft delete timestamp. When null, user account is active. When set,
-  /// account is marked for deletion.
+  /// Optional timestamp indicating when this configuration was logically
+  /// deleted. Used for soft delete capability if needed in the future. If
+  /// null, the configuration is active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_user_sessions todo_user_sessions[]
-  todo_items todo_items[]
-  
-  @@unique([email])
+  @@unique([key])
+  @@unique([key, deleted_at])
   @@index([created_at])
+  @@index([updated_at])
   @@index([deleted_at])
-}
-
-/// Session records for authenticated todo users. Each session represents a
-/// single active connection from a user. Sessions are managed automatically
-/// by the authentication system and are not directly manipulated by users.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_user_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the user who owns this session. {@link todo_users.id}.
-  todo_user_id String
-  
-  /// The IP address from which the session was created.
-  ip String
-  
-  /// The URL of the connection that created this session.
-  href String
-  
-  /// The referrer URL that led to this session.
-  referrer String
-  
-  /// Timestamp when the session was created.
-  created_at DateTime
-  
-  /// Timestamp when the session expires or is terminated. Null means the
-  /// session is still active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
-  
-  @@index([todo_user_id, created_at])
 }

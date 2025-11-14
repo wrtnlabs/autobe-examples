@@ -1,0 +1,225 @@
+/// Active shopping carts owned by authenticated customers. Each cart
+/// represents a session of product selections that the user intends to
+/// purchase. Items are added and removed by the customer until checkout.
+/// This is a primary entity because customers independently manage their
+/// carts, view contents, and initiate checkout from this context. {@link
+/// shopping_mall_cart_items} records belong to this cart.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this cart. {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// When the cart was created. Always populated.
+  created_at DateTime
+  
+  /// When the cart was last modified (item added/removed). Always populated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, cart is active. Used for user-initiated
+  /// cart deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  
+  @@index([customer_id])
+}
+
+/// Individual product items within a customer's active shopping cart. Each
+/// item references a specific SKU and locks in the price at the time it was
+/// added to the cart. This is a subsidiary entity because it only exists
+/// within the context of a cart and is managed entirely through the parent
+/// cart (do not create/modify directly). Cart items may be moved to wishlist
+/// or removed. {@link shopping_mall_carts} contains these items. {@link
+/// shopping_mall_skus} represents the product variation stored.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Cart that contains this item. {@link shopping_mall_carts.id}.
+  cart_id String
+  
+  /// The specific SKU (product variant) being added to cart. {@link
+  /// shopping_mall_skus.id}.
+  sku_id String
+  
+  /// Number of units of this SKU in the cart. Must be at least 1.
+  quantity Int
+  
+  /// Price of the SKU at the time it was added to the cart. Maintains price
+  /// lock even if product price changes later. This ensures customer trust and
+  /// consistency during checkout.
+  price_at_addition Float
+  
+  /// When this item was added to the cart. Always populated.
+  created_at DateTime
+  
+  /// When this item's quantity was last modified or it was moved from
+  /// wishlist. Always populated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, item is active in cart. Used for item
+  /// removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [sku_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_orders shopping_mall_orders[]
+  
+  @@unique([cart_id, sku_id])
+  @@index([cart_id])
+  @@index([sku_id])
+}
+
+/// Active wishlists owned by authenticated customers. Each wishlist
+/// represents items the customer has saved for future consideration. Unlike
+/// carts, wishlists don't imply immediate purchase intent. This is a primary
+/// entity because customers independently manage their wishlists (add/remove
+/// items, view contents). {@link shopping_mall_wishlist_items} records
+/// belong to this wishlist.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this wishlist. {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// When the wishlist was created. Always populated.
+  created_at DateTime
+  
+  /// When the wishlist was last modified (item added/removed). Always
+  /// populated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, wishlist is active. Used for
+  /// user-initiated wishlist deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@index([customer_id])
+}
+
+/// Individual product items within a customer's wishlist. Each item
+/// references a specific SKU and locks in the price at the time it was added
+/// to the wishlist. This is a subsidiary entity because it only exists
+/// within the context of a wishlist and is managed entirely through the
+/// parent wishlist (do not create/modify directly). Items may be moved to
+/// cart or removed. {@link shopping_mall_wishlists} contains these items.
+/// {@link shopping_mall_skus} represents the product variation stored.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Wishlist that contains this item. {@link shopping_mall_wishlists.id}.
+  wishlist_id String
+  
+  /// The specific SKU (product variant) being saved to wishlist. {@link
+  /// shopping_mall_skus.id}.
+  sku_id String
+  
+  /// Price of the SKU at the time it was added to the wishlist. Maintains
+  /// price lock even if product price changes later. Used for price-drop
+  /// notifications to customers.
+  price_at_addition Float
+  
+  /// When this item was added to the wishlist. Always populated.
+  created_at DateTime
+  
+  /// When this item was last modified (moved from cart or updated metadata).
+  /// Always populated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, item is active in wishlist. Used for item
+  /// removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [wishlist_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_skus @relation(fields: [sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([wishlist_id, sku_id])
+  @@index([wishlist_id])
+  @@index([sku_id])
+}
+
+/// Shopping carts for anonymous (guest) users who are not logged in. These
+/// carts are tied to a browser session (guest_session_id) rather than a user
+/// account. Used to allow guest users to add items to cart before login.
+/// This is a primary entity because guests independently manage these carts
+/// and may merge them when logging in. {@link shopping_mall_cart_items}
+/// records belong to this guest cart. {@link
+/// shopping_mall_customer_sessions} stores session data.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guest_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer session tied to this guest cart. {@link
+  /// shopping_mall_customer_sessions.id}.
+  guest_session_id String
+  
+  /// When the guest cart was created. Always populated.
+  created_at DateTime
+  
+  /// When the guest cart was last modified (item added/removed). Always
+  /// populated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, cart is active. Used for session
+  /// expiration (after 30 days).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customerSession shopping_mall_customer_sessions @relation(fields: [guest_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([guest_session_id])
+}

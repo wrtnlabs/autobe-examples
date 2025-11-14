@@ -1,118 +1,125 @@
-# Functional Requirements for Discussion Board
+# User Journey Documentation
 
-## Core Posting Functionality
+This document details the complete end-to-end user interaction flows for the politicalForum system. All workflows are described in natural language, focusing solely on user actions, system responses, and business logic conditions. No technical API, database, or UI specifications are included. Developers are free to implement these flows using any architecture that satisfies the behavioral requirements.
 
-THE citizen SHALL be able to create a new discussion post by providing a title and content.
+## Citizen: Create a Post
 
-WHEN a citizen submits a new post, THE system SHALL require both a title (minimum 5 characters) and content (minimum 10 characters).
+A citizen begins by navigating to the homepage or a selected discussion category. They locate and select the "New Post" button. The system displays a form with a title field, a rich text editor for content, and an optional attachment section.
 
-WHEN a citizen attempts to create a post with an empty title or content, THE system SHALL prevent submission and display a clear message indicating which field is missing.
+WHEN a citizen fills the title field with text, THE system SHALL enable the "Post" button only if the title contains at least 3 characters and no more than 150 characters. 
 
-THE citizen SHALL be able to select "public" visibility for their post, and the system SHALL display all public posts to all authenticated users.
+WHEN a citizen enters content into the rich text editor, THE system SHALL enable the "Post" button only if the content contains at least 10 characters and no more than 5,000 characters. The system SHALL NOT allow submission if the content is empty or contains only spaces or non-printable characters.
 
-THE system SHALL automatically assign a unique identifier and timestamp to every post upon creation.
+WHEN the citizen clicks the "Post" button, THE system SHALL validate that the user is authenticated. IF the user is not authenticated, THEN THE system SHALL display the message "You must be logged in to create a post." and redirect the user to the login page.
 
-## Commenting System
+WHEN the post is submitted successfully, THE system SHALL create a new post entity with a unique identifier, the citizen’s user ID, timestamp, title, content, and status set to "pending_review". 
 
-WHEN a citizen views a post, THE system SHALL display an input field for adding a comment beneath the post.
+WHERE the post contains URLs or keywords flagged in the moderation database (e.g., hate speech, threats, harassment), THEN THE system SHALL display the message "Your post is under review by a moderator and will be visible once approved." and disable editing for 5 minutes.
 
-THE citizen SHALL be able to submit a comment with a minimum of 1 character and a maximum of 1,000 characters.
+WHILE the post is in "pending_review" status, THE system SHALL NOT display the post publicly in feeds or search results. 
 
-WHEN a citizen submits a comment, THE system SHALL associate it with the specific post and the citizen who created it.
+WHEN the post is approved by a moderator, THE system SHALL automatically update its status to "published" and make it visible to all users. 
 
-THE system SHALL display comments in chronological order, with the oldest comment appearing first under each post.
+WHEN a post is rejected by a moderator, THE system SHALL notify the citizen with the message "Your post was not approved. It may have violated community guidelines." and allow the citizen to revise and resubmit. 
 
-THE moderator SHALL be able to delete any comment at any time, regardless of who posted it.
+## Citizen: Upload Attachment
 
-WHILE a comment exists on a post, THE system SHALL display the username of the author and the time it was posted.
+During the creation or editing of a post, a citizen may choose to attach files or images. The system displays an "Add Attachment" button that opens a file picker dialog.
 
-WHEN a moderator deletes a comment, THE system SHALL replace the comment content with "[Deleted by moderator]" and preserve the author name and timestamp.
+WHEN a citizen selects a file, THE system SHALL validate the file type and size before uploading. 
 
-## Image and File Attachment Support
+WHERE the file type is not an image (JPG, JPEG, PNG, GIF, WEBP) or a document (PDF, DOC, DOCX, TXT, CSV), THEN THE system SHALL display the message "Only images and common document files are allowed." and prevent the file from being selected.
 
-THE system SHALL allow citizens to attach one or more files to a new post during creation or editing.
+WHERE the file size exceeds 10 MB, THEN THE system SHALL display the message "Files must be 10 MB or smaller." and prevent the upload.
 
-THE system SHALL support the following file types for upload:
-- Image files: JPEG, PNG, GIF
-- Document files: PDF, TXT, DOCX
+WHILE uploading, THE system SHALL display a progress indicator showing percentage completed. The upload SHALL be interrupted and canceled if the network connection is lost.
 
-THE system SHALL limit the total size of all attachments per post to 10 megabytes (MB).
+WHEN an upload completes successfully, THE system SHALL attach the file to the post draft with a unique identifier and display its filename and thumbnail (if image) in the attachment preview area. The citizen SHALL be able to remove the attachment before submitting the post.
 
-THE system SHALL limit individual file size to 5 megabytes (MB)
+WHEN a post containing attachments is submitted, THE system SHALL create a corresponding attachment record linked to the post and store the file in secure cloud storage. 
 
-WHEN a citizen attempts to upload a file with an unsupported extension, THE system SHALL reject it and display a message listing allowed file types.
+WHEN a citizen edits a post after submission, THEY SHALL NOT be allowed to remove or replace attachments that have already been published unless the Moderator has unlocked the post for revision.
 
-WHEN a citizen attempts to upload a file exceeding 5 MB individually or a total post attachment size exceeding 10 MB, THE system SHALL reject the upload and display a clear message indicating the size limit.
+## Citizen: Comment on a Post
 
-THE system SHALL display attached files beneath the post content as clickable links with the original filename.
+A citizen views a published post and locates the comment section. They click within the comment input box and type their message.
 
-THE moderator SHALL be able to view, download, and remove any attachment from any post.
+WHEN a citizen submits a comment, THE system SHALL validate that the comment text contains at least 1 character and no more than 500 characters. IF the comment is blank or contains only whitespace, THEN THE system SHALL display "Your comment cannot be empty." and retain focus on the input field.
 
-WHEN an attachment is removed by a moderator, THE system SHALL replace the file link with "[Attachment removed by moderator]".
+WHEN a comment is successfully submitted, THE system SHALL create a comment entity linked to the post and the citizen’s user ID, with a timestamp and status set to "approved" by default.
 
-## Content Moderation Rules
+WHILE the parent post is still in "pending_review" status, THE system SHALL NOT allow new comments to be submitted. 
 
-WHEN a citizen identifies content they believe violates community guidelines, THE system SHALL provide a "Report" button on each post and comment.
+IF a citizen attempts to comment on a post that has been locked by a moderator, THEN THE system SHALL display the message "This thread has been locked. No new comments are allowed." and disable the comment input.
 
-WHEN a citizen submits a report, THE system SHALL record the report with the post/comment ID, reporter ID, timestamp, and optional reason.
+WHEN a comment is flagged by other users (via "Report" button), THE system SHALL mark the comment as "under_review" and hide it from public view until a moderator reviews it. 
 
-THE moderator SHALL be able to view all reported items in a dedicated moderation queue, sorted by report timestamp.
+WHERE the comment contains the same flagged keywords as in post moderation, THEN THE system SHALL automatically mark the comment as "under_review" without waiting for user reports.
 
-THE moderator SHALL be able to review a reported post or comment and select one of the following actions:
-- "Dismiss: No violation found"
-- "Edit: Fix content violation"
-- "Delete: Remove content permanently"
+## Citizen: Edit Own Post
 
-WHEN a moderator selects "Edit", THE system SHALL allow the moderator to modify the post or comment content and save the change with a note: "[Edited by moderator]" appended to the original content.
+A citizen views one of their own published posts and sees an "Edit" button below the post content.
 
-WHEN a moderator selects "Delete", THE system SHALL remove the post or comment from public view and replace it with "[Removed by moderator for violating guidelines]".
+WHEN a citizen clicks the "Edit" button, THE system SHALL check the timestamp of the post. IF the current time is more than 24 hours after the post’s creation timestamp, THEN THE system SHALL display the message "You can no longer edit this post. It has been more than 24 hours since you submitted it." and disable the edit interface.
 
-WHEN a post or comment is deleted by a moderator, THE system SHALL notify the original author via system message: "Your post/comment was removed by a moderator. Reason: [reason]."
+WHEN the edit is allowed, THE system SHALL load the original title and content into editable fields. The attachment preview shall remain visible, and attachments may be removed or replaced.
 
-THE system SHALL retain all deleted content and reports in a private database for audit purposes, but SHALL NOT display them to any user.
+WHEN the citizen clicks "Save Changes", THE system SHALL validate the updated title and content against the same character limits as initial creation. IF validation fails, THEN THE system SHALL display the appropriate error message and retain the draft.
 
-## Edit and Delete Policies
+WHEN the update is successful, THE system SHALL update the post’s last_edited field, retain the original creation timestamp, and increment an edit counter.
 
-THE citizen SHALL be able to edit their own post within 24 hours of creation.
+WHEN a post is edited after having been approved, THE system SHALL automatically set its status to "editted_review" and temporarily hide it from public view. The invited moderator then re-reviews the content. 
 
-WHEN a citizen edits a post after its initial creation, THE system SHALL append "[Edited]" to the post's timestamp.
+IF a moderator denies the revised version, THE system SHALL revert to the original published version and notify the citizen: "Your edit was rejected. Your original post remains published."
 
-THE citizen SHALL be able to delete their own post within 24 hours of creation.
+WHERE a citizen attempts to edit a post they did not create, THEN THE system SHALL display "You cannot edit this post." and prevent access to the editor.
 
-WHEN a citizen deletes their own post, THE system SHALL replace the entire post content with "[Deleted by author]" and preserve the title, author, and timestamp.
+## Moderator: Delete a Post
 
-THE moderator SHALL be able to edit or delete any post or comment at any time, regardless of its age or ownership.
+A moderator accesses the moderation dashboard and inspects the list of flagged or reported content. They locate a specific post and select the "Delete Post" action.
 
-WHEN a moderator edits a post or comment, THE system SHALL append a note beside the content: "[Edited by moderator]".
+WHEN a moderator clicks "Delete Post", THE system SHALL display a confirmation dialog: "Are you sure you want to delete this post? This action cannot be undone."
 
-WHEN a moderator deletes a post, THE system SHALL replace the entire post with the message: "[Removed by moderator for violating guidelines]" and preserve the title, author, and creation timestamp.
+WHEN the moderator confirms deletion, THE system SHALL mark the post’s status as "deleted" and immediately remove it from all public feeds, search results, and comment threads.
 
-## Search and Discovery
+WHEN a post is deleted, THE system SHALL retain a public record of deletion for audit purposes (user ID, post ID, timestamp, moderator ID, reason). THIS RECORD SHALL NOT be visible to citizens.
 
-THE system SHALL allow citizens to search for posts using keyword matching in titles and content.
+WHEN a post is deleted, THE system SHALL NOT delete the associated attachments from cloud storage immediately. They SHALL be marked for deletion and removed after 7 days unless re-attached to another active post.
 
-WHEN a citizen performs a search, THE system SHALL return results matching words in either the post title or post content, ordered by creation date descending (newest first).
+WHEN a post is deleted, THE system SHALL notify the original citizen with the message: "Your post has been removed by a moderator. Reason: [Reason provided by moderator]." The post’s content shall not be disclosed in the notification.
 
-THE system SHALL display up to 20 posts per search result page.
+IF a moderator attempts to delete a post already marked as "deleted" or "rejected", THEN THE system SHALL display "This post has already been removed." and disable the action.
 
-THE system SHALL allow citizens to browse all public posts sorted chronologically from newest to oldest.
+## Moderator: Lock a Thread
 
-THE system SHALL display the number of comments and attachments on each post in the main listing.
+A moderator observes a post thread that has devolved into harassment, spam, or repeated policy violations. They select the "Lock Thread" option in the moderation panel.
 
-THE system SHALL not allow browsing or searching of deleted or reported posts.
+WHEN a moderator selects "Lock Thread", THE system SHALL display a modal requiring a reason to be specified (minimum 10 characters). IF no reason is entered, THEN THE system SHALL prevent the action.
 
-## Performance Expectations
+WHEN a thread is locked, THE system SHALL change the status of the parent post to "locked" and disable all new comment submissions.
 
-WHEN a citizen loads the main feed of posts, THE system SHALL render the page and display all content within 2 seconds.
+WHEN a thread is locked, THE system SHALL display a banner above the comment section: "This thread has been locked by a moderator. No further comments can be added."
 
-WHEN a citizen performs a search with common keywords, THE system SHALL return results immediately (under 1 second).
+WHILE a thread is locked, THE system SHALL continue to allow existing comments to be reported or flagged, but SHALL NOT permit any new comments.
 
-WHEN a citizen uploads a file under the size limit, THE system SHALL show a progress indicator and complete the upload within 10 seconds for a 5 MB file on average internet connection.
+WHERE a moderator attempts to lock a thread that is already locked, THE system SHALL display "This thread is already locked." and disable the option.
 
-WHEN a citizen clicks an attached file link, THE system SHALL initiate download immediately without requiring additional authentication.
+WHEN a moderator unlocks a thread, THE system SHALL change the status back to "published" and allow new comments to be submitted again.
 
-WHILE a citizen is viewing a post with 50+ comments, THE system SHALL load and display comments smoothly without noticeable lag.
+## Moderator: Mark as Verified
 
-WHEN a moderator reviews a reported post, THE system SHALL load all related data (post, comments, reports) in under 1.5 seconds.
+A moderator reviews a post that demonstrates exceptional insight, accurate information, or authoritative contribution to the discussion. They select the "Mark as Verified" action.
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.
+WHEN a moderator selects "Mark as Verified", THE system SHALL add a badge icon (e.g., "✓ Verified") next to the post’s title and author name. The badge SHALL appear to all users, including anonymous visitors.
+
+WHEN a post is marked as verified, THE system SHALL lock the post’s editing privileges permanently for the original citizen, even within the 24-hour window.
+
+WHEN a post is marked as verified, THE system SHALL log the action in a private audit log with the moderator’s ID and timestamp. This log SHALL NOT be visible to citizens.
+
+WHEN a post is marked as verified, THE system SHALL NOT affect the moderation status of comments attached to the post — comments follow the same approval rules as always.
+
+WHERE a moderator attempts to mark their own post as verified, THE system SHALL prevent the action and display: "You cannot verify your own post. Please request another moderator to review it."
+
+IF a post is later removed from verification status (by another moderator), THE system SHALL remove the badge and log the unverification event. The citizen SHALL NOT be notified unless the post is also deleted.
+
+The system SHALL allow only one "Verified" badge per post. No additional badges may be assigned.

@@ -4,622 +4,1213 @@
 
 - [Systematic](#systematic)
 - [Actors](#actors)
-- [Posts](#posts)
-- [Comments](#comments)
+- [Content](#content)
 - [Attachments](#attachments)
+- [Moderation](#moderation)
 - [Reports](#reports)
-- [ModerationActions](#moderationactions)
+- [Settings](#settings)
+- [Audit](#audit)
+- [Analytics](#analytics)
+- [Archival](#archival)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"discussion_board_configs" {
+"political_forum_post_states" {
   String id PK
-  String key UK
-  String value
+  String name UK
   String description
-  String category
+  DateTime created_at
+  DateTime updated_at
+}
+"political_forum_moderation_status" {
+  String id PK
+  String name UK
+  String description
+  DateTime created_at
+  DateTime updated_at
+}
+"political_forum_attachment_types" {
+  String id PK
+  String name UK
+  String description
+  String file_extensions UK
+  DateTime created_at
+  DateTime updated_at
+}
+"political_forum_system_settings" {
+  String id PK
+  String setting_key UK
+  String setting_value
+  String description
   DateTime created_at
   DateTime updated_at
 }
 ```
 
-### `discussion_board_configs`
+### `political_forum_post_states`
 
-System-wide configuration settings for the discussion board. Contains
-key-value pairs defining behavioral limits and policies that govern
-posting, commenting, file uploads, moderation actions, and report
-handling. Managed by administrators through external tools, not by end
-users.
+Defines all possible states a post can have in its lifecycle. Used as
+reference by political_forum_posts to indicate current status. States
+include: draft, published, moderation_queue, deleted, archived, restored.
+This table ensures consistency across the system by providing
+authoritative state definitions for post lifecycle management.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `key`
-  > Unique identifier for the configuration parameter. Examples:
-  > "max_file_size_per_post_mb", "allowed_image_types",
-  > "min_post_title_length".
-- `value`
-  > String representation of the configuration value. Can be JSON-encoded for
-  > complex values (e.g., array of string types).
+- `name`
+  > The machine-readable name of the post state (e.g., 'draft', 'published').
+  > Must be unique.
 - `description`
-  > Human-readable explanation of what this configuration controls and its
-  > intended purpose.
-- `category`
-  > Grouping for related configuration settings. Examples: "media",
-  > "content", "moderation", "session".
-- `created_at`: Timestamp when this configuration was created.
-- `updated_at`: Timestamp when this configuration was last modified.
+  > Human-readable description of what this state means in business context.
+  > Explains when this state is applied and what actions are allowed.
+- `created_at`: Timestamp when this state definition was created in the system.
+- `updated_at`
+  > Timestamp when this state definition was last modified. Should be rarely
+  > updated as these are reference data.
+
+### `political_forum_moderation_status`
+
+Defines the possible moderation states for content. Used as reference by
+political_forum_posts and political_forum_comments to indicate
+verification status. States include: unverified, verified, flagged,
+under_review, rejected. This table defines the authoritative set of
+moderation statuses that can be applied to content, ensuring consistent
+behavior across the system.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `name`
+  > The machine-readable name of the moderation status (e.g., 'verified',
+  > 'flagged'). Must be unique.
+- `description`
+  > Human-readable description of what this moderation status means in
+  > business context. Explains when this status is applied and its
+  > implications for content visibility.
+- `created_at`
+  > Timestamp when this moderation status definition was created in the
+  > system.
+- `updated_at`
+  > Timestamp when this moderation status definition was last modified.
+  > Should be rarely updated as these are reference data.
+
+### `political_forum_attachment_types`
+
+Defines the allowed file types for attachments to posts. Used as
+reference by political_forum_post_attachments to validate uploaded files.
+Types include: image (jpg, jpeg, png, gif), document (pdf, doc, docx,
+txt). This table ensures system-wide consistency in allowed attachment
+formats and provides metadata for UI display (e.g., icons for different
+file types).
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `name`
+  > The machine-readable name of the attachment type category (e.g., 'image',
+  > 'document'). Must be unique.
+- `description`
+  > Human-readable description of this attachment type category and what file
+  > extensions it includes.
+- `file_extensions`
+  > Comma-separated list of allowed file extensions for this attachment type
+  > (e.g., 'jpg,jpeg,png,gif'). Used for upload validation.
+- `created_at`: Timestamp when this attachment type definition was created in the system.
+- `updated_at`
+  > Timestamp when this attachment type definition was last modified. Should
+  > be rarely updated as these are reference data.
+
+### `political_forum_system_settings`
+
+Stores system-wide configuration parameters for the political discussion
+board. Used as reference by the backend to enforce business rules such as
+character limits, timeouts, and feature toggles. This table contains
+vital parameters that control system behavior without requiring code
+deployment to change.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `setting_key`
+  > Unique identifier for this system setting (e.g., 'MAX_POST_LENGTH',
+  > 'EDIT_WINDOW_HOURS'). Must be unique.
+- `setting_value`
+  > The value of this system setting. Stored as string to accommodate various
+  > data types (integers, booleans, strings) that can be parsed by the
+  > application layer.
+- `description`
+  > Human-readable description of what this setting controls, how it affects
+  > the system, and its business purpose.
+- `created_at`: Timestamp when this system setting was created or first registered.
+- `updated_at`: Timestamp when this system setting was last modified.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"discussion_board_citizens" {
+"political_forum_citizens" {
   String id PK
   String email UK
   String password_hash
-  Boolean email_verified
+  String display_name "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
+  Boolean email_verified
 }
-"discussion_board_citizen_sessions" {
+"political_forum_citizen_sessions" {
   String id PK
-  String discussion_board_citizen_id FK
+  String political_forum_citizen_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"discussion_board_moderators" {
+"political_forum_moderators" {
   String id PK
   String email UK
   String password_hash
-  Boolean email_verified
+  String display_name "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
+  Boolean email_verified
 }
-"discussion_board_moderator_sessions" {
+"political_forum_moderator_sessions" {
   String id PK
-  String discussion_board_moderator_id FK
+  String political_forum_moderator_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"discussion_board_citizen_sessions" }o--|| "discussion_board_citizens" : discussionBoardCitizen
-"discussion_board_moderator_sessions" }o--|| "discussion_board_moderators" : discussionBoardModerator
+"political_forum_citizen_sessions" }o--|| "political_forum_citizens" : citizen
+"political_forum_moderator_sessions" }o--|| "political_forum_moderators" : moderator
 ```
 
-### `discussion_board_citizens`
+### `political_forum_citizens`
 
-Main entity representing a citizen user in the discussion board system.
-Each citizen can create posts, comments, and attach files. Requires email
-verification to post or commenting. This table stores authentication
-credentials and basic profile information for citizen users.
+Primary actor table storing citizen user identity and authentication
+data. Citizens create posts, comment, and attach files. Their data is
+linked to all actions performed by them, including posts and reports.
+Managed through registration and login workflows. {@link
+political_forum_citizen_sessions.id}
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Unique email address used for authentication and notifications. Must be
-  > verified before posting or commenting.
+  > Unique email address for citizen communication and login. Must be
+  > verified.
 - `password_hash`
-  > Hashed password for authentication. Never stored in plain text. Required
-  > for login functionality.
-- `email_verified`
-  > Indicates whether the user has verified their email address. When false,
-  > the user cannot create posts or comments.
+  > Hashed password for authentication. Never stored in plaintext. Required
+  > for login.
+- `display_name`
+  > User-chosen display name for public visibility in posts/comments. Can be
+  > changed.
 - `created_at`: Timestamp when the citizen account was created.
-- `updated_at`: Timestamp when the citizen account was last updated.
+- `updated_at`
+  > Timestamp when the citizen account was last updated (e.g. display name
+  > change).
 - `deleted_at`
-  > Timestamp when the citizen account was soft-deleted (if applicable).
-  > Nullable since account deletion is not a required feature.
+  > Soft-delete timestamp. If null, account is active. If set, account is
+  > marked for deletion.
+- `email_verified`
+  > Flag indicating whether the citizen's email has been verified via email
+  > link.
 
-### `discussion_board_citizen_sessions`
+### `political_forum_citizen_sessions`
 
-Session tracking table for citizen users. Each record represents one
-active or expired authentication session for a citizen. Follows exact
-mandatory schema for actor session tables with no additional fields.
-Managed exclusively through the authentication system, not directly by
-users.
+Session records for authenticated citizens. Each session is tied to a
+unique citizen and tracks the login context. Used for access control and
+revocation. Follows strict session pattern: no token storage, no
+updated_at, no deleted_at. [political_forum_citizens.id](#political_forum_citizens)
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_citizen_id`
-  > References the citizen user who owns this session. {@link
-  > discussion_board_citizens.id}.
-- `ip`: IP address from which the session was initiated.
-- `href`: URL where the user accessed the system during this session.
-- `referrer`
-  > Referrer URL indicating the source of this session (e.g., which page
-  > linked to the login).
-- `created_at`: Timestamp when this session was created.
+- `political_forum_citizen_id`
+  > Reference to the citizen this session belongs to. {@link
+  > political_forum_citizens.id}
+- `ip`: IP address used during this session login.
+- `href`: URL of the page where the session was initiated.
+- `referrer`: Referrer URL that led the user to the login page.
+- `created_at`: Timestamp when the session was created on login.
 - `expired_at`
-  > Timestamp when this session expired or was invalidated. Nullable since
-  > active sessions have no expiration.
+  > Timestamp when this session expires or was manually invalidated. If null,
+  > session is still active.
 
-### `discussion_board_moderators`
+### `political_forum_moderators`
 
-Main entity representing a moderator user in the discussion board system.
-Each moderator has elevated permissions to edit, delete, and moderate
-content. Requires email verification. This table stores authentication
-credentials and basic profile information for moderator users.
+Primary actor table storing moderator identity and authentication data.
+Moderators have elevated permissions to delete, lock, and verify content.
+Their actions are logged for audit. Managed by system administrators
+only. [political_forum_moderator_sessions.id](#political_forum_moderator_sessions)
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Unique email address used for authentication and notifications. Must be
-  > verified before moderating content.
+  > Unique email address for moderator communication and login. Must be
+  > verified.
 - `password_hash`
-  > Hashed password for authentication. Never stored in plain text. Required
-  > for login functionality.
-- `email_verified`
-  > Indicates whether the moderator has verified their email address. When
-  > false, the moderator cannot perform moderation actions.
-- `created_at`: Timestamp when the moderator account was created.
-- `updated_at`: Timestamp when the moderator account was last updated.
+  > Hashed password for authentication. Never stored in plaintext. Required
+  > for login.
+- `display_name`: User-chosen display name for public visibility in moderation logs.
+- `created_at`: Timestamp when the moderator account was created by system administrator.
+- `updated_at`
+  > Timestamp when the moderator account was last updated (e.g. display name
+  > change).
 - `deleted_at`
-  > Timestamp when the moderator account was soft-deleted (if applicable).
-  > Nullable since account deletion is not a required feature.
+  > Soft-delete timestamp. If null, account is active. If set, account is
+  > marked for deletion.
+- `email_verified`
+  > Flag indicating whether the moderator's email has been verified via email
+  > link.
 
-### `discussion_board_moderator_sessions`
+### `political_forum_moderator_sessions`
 
-Session tracking table for moderator users. Each record represents one
-active or expired authentication session for a moderator. Follows exact
-mandatory schema for actor session tables with no additional fields.
-Managed exclusively through the authentication system, not directly by
-users.
+Session records for authenticated moderators. Each session is tied to a
+unique moderator and tracks login context. Used for access control and
+audit trails. Follows strict session pattern: no token storage, no
+updated_at, no deleted_at. [political_forum_moderators.id](#political_forum_moderators)
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_moderator_id`
-  > References the moderator user who owns this session. {@link
-  > discussion_board_moderators.id}.
-- `ip`: IP address from which the session was initiated.
-- `href`: URL where the user accessed the system during this session.
-- `referrer`
-  > Referrer URL indicating the source of this session (e.g., which page
-  > linked to the login).
-- `created_at`: Timestamp when this session was created.
+- `political_forum_moderator_id`
+  > Reference to the moderator this session belongs to. {@link
+  > political_forum_moderators.id}
+- `ip`: IP address used during this session login.
+- `href`: URL of the page where the session was initiated.
+- `referrer`: Referrer URL that led the user to the login page.
+- `created_at`: Timestamp when the session was created on login.
 - `expired_at`
-  > Timestamp when this session expired or was invalidated. Nullable since
-  > active sessions have no expiration.
+  > Timestamp when this session expires or was manually invalidated. If null,
+  > session is still active.
 
-## Posts
+## Content
 
 ```mermaid
 erDiagram
-"discussion_board_posts" {
+"political_forum_posts" {
   String id PK
   String citizen_id FK
-  String moderator_id FK "nullable"
+  String post_state_id FK
   String title
   String body
-  String status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
+  Int edit_count
 }
-```
-
-### `discussion_board_posts`
-
-Core discussion board posts created by citizens or moderated by
-administrators. Posts have independent lifecycles with versioning through
-status changes. This is a primary entity that must be independently
-searchable, browsable, and manageable. Foreign keys reference existing
-citizen and moderator tables for ownership and moderation actions. No
-denormalized fields are included; derived counts must be computed via
-joins or materialized views when necessary.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `citizen_id`: Creator of the post. [discussion_board_citizens.id](#discussion_board_citizens).
-- `moderator_id`
-  > Moderator who last modified this post through deletion or editing. {@link
-  > discussion_board_moderators.id}. Null if no moderator action taken.
-- `title`
-  > Title of the discussion post. Minimum 5 characters required by business
-  > rules.
-- `body`
-  > Content body of the discussion post. Minimum 10 characters required by
-  > business rules.
-- `status`
-  > Current state of the post. Values: "active" (visible),
-  > "deleted_by_author" (soft-deleted by creator), "removed_by_moderator"
-  > (removed by moderator for policy violation), "pending_moderation" (under
-  > review after report).
-- `created_at`
-  > Timestamp when the post was initially created. Always set at creation and
-  > never modified.
-- `updated_at`
-  > Timestamp when the post was last edited or modified. Updated when citizen
-  > edits within 24 hours or moderator edits at any time.
-- `deleted_at`
-  > Timestamp when the post was deleted or removed. NULL if active. Used for
-  > soft delete and audit trail purposes.
-
-## Comments
-
-```mermaid
-erDiagram
-"discussion_board_comments" {
+"political_forum_comments" {
   String id PK
-  String discussion_board_post_id FK
-  String author_id FK
-  String author_type
-  String content
-  String status
+  String post_id FK
+  String citizen_id FK
+  String body
   DateTime created_at
-  DateTime updated_at
+  DateTime updated_at "nullable"
   DateTime deleted_at "nullable"
 }
+"political_forum_comments" }o--|| "political_forum_posts" : post
 ```
 
-### `discussion_board_comments`
+### `political_forum_posts`
 
-User comments on discussion board posts. Comments are primary entities
-requiring independent management, search, and filtering. Each comment is
-associated with a specific post and authored by either a citizen or
-moderator. Comments have a character limit of 1,000 and display in
-chronological order. When deleted by a moderator or author, the content
-is replaced with a system message while preserving authorship and
-timestamp for audit purposes. Uses polymorphic ownership pattern with
-author_type field to distinguish between citizen and moderator authors.
+Main entity representing citizen-submitted political discussion posts.
+Posts are primary content objects with a lifecycle: created, published,
+edited (within 24h), locked, or deleted. This table stores raw content
+and metadata. Relationships: references political_forum_citizens
+(author), political_forum_post_states (status), and
+political_forum_post_attachments (via join).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_post_id`: The post this comment belongs to. [discussion_board_posts.id](#discussion_board_posts).
-- `author_id`
-  > The ID of the user who created this comment. Can be either a citizen or
-  > moderator. Use author_type to determine which table to reference. {@link
-  > discussion_board_citizens.id} if author_type is "citizen", {@link
-  > discussion_board_moderators.id} if author_type is "moderator".
-- `author_type`
-  > The type of user who authored this comment. Must be either "citizen" or
-  > "moderator". This discriminates which subtype table contains the
-  > actor-specific details.
-- `content`
-  > The content of the comment. Must be between 1 and 1,000 characters as per
-  > requirements. Never null due to minimum character constraint.
-- `status`
-  > The current status of the comment. Values: "active" (normal state),
-  > "deleted_by_moderator" (removed by moderator with [Deleted by moderator]
-  > message), "deleted_by_author" (removed by original author with [Deleted
-  > by author] message). Used to control visibility and moderation actions.
-- `created_at`
-  > Timestamp when the comment was originally created. Required for
-  > chronological display and audit trail. Always present.
+- `citizen_id`: Author's citizen account. [political_forum_citizens.id](#political_forum_citizens).
+- `post_state_id`
+  > Current state of the post (e.g., published, pending, deleted, locked).
+  > [political_forum_post_states.id](#political_forum_post_states).
+- `title`
+  > Title of the post. Required field with 3-150 characters as per
+  > requirements.
+- `body`
+  > Main content body of the post. Must be 10-5000 characters as per business
+  > rules.
+- `created_at`: Timestamp when the post was created. Always non-null.
 - `updated_at`
-  > Timestamp when the comment was last updated (e.g., edited). Required for
-  > tracking modifications and display of [Edited] marker.
+  > Timestamp when the post was last edited. Updated only if edited within
+  > 24-hour window.
 - `deleted_at`
-  > Timestamp when the comment was soft-deleted by a moderator or author.
-  > Nullable because comments are not always deleted. Used for audit purposes
-  > to track deletion history.
+  > Timestamp when the post was deleted by a moderator. Null if not deleted.
+  > Required for soft delete audit.
+- `edit_count`
+  > Number of times this post has been edited within the 24-hour window. Used
+  > for audit and transparency.
+
+### `political_forum_comments`
+
+Public comments made by citizens on posts. Comments are independent
+entities with their own lifecycle and moderation status. They are not
+subsidiary to posts because they require independent search (e.g., all
+comments by user X), moderation, and tracking. Associated with a post via
+foreign key but managed as primary entity.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `post_id`: Parent post this comment replies to. [political_forum_posts.id](#political_forum_posts).
+- `citizen_id`: Author's citizen account. [political_forum_citizens.id](#political_forum_citizens).
+- `body`: Content of the comment. Must be 5-1500 characters as per requirements.
+- `created_at`: Timestamp when the comment was posted. Always non-null.
+- `updated_at`: Timestamp when the comment was last edited (within 24h of posting).
+- `deleted_at`
+  > Timestamp when the comment was deleted by a moderator. Null if not
+  > deleted. Required for soft delete audit.
 
 ## Attachments
 
 ```mermaid
 erDiagram
-"discussion_board_attachments" {
+"political_forum_post_attachments" {
   String id PK
-  String discussion_board_post_id FK
-  String filename
-  String filetype
-  Int filesize
-  String(80000) storage_path
-  String status
+  String political_forum_post_id FK
+  String political_forum_attachment_type_id FK
+  String original_filename
+  String(80000) file_path
+  Int file_size
+  DateTime uploaded_at
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 ```
 
-### `discussion_board_attachments`
+### `political_forum_post_attachments`
 
-File attachments associated with posts on the discussion board. Each
-attachment represents a single file uploaded by a citizen, with metadata
-for file type, size, and moderation status. Attachments are managed
-independently by moderators who can view, download, and remove them,
-replacing links with [Attachment removed by moderator]. This table stores
-the physical file reference and metadata while supporting audit trails
-through soft deletion. Associated with discussion_board_posts via foreign
-key.
+Stores metadata for files uploaded with political forum posts. Each
+record represents one attachment linked to a specific post. Attachments
+are managed solely through the post they belong to — no independent user
+actions on attachments. No comment attachments allowed. File types are
+restricted to images (JPG, PNG, GIF) and documents (PDF, TXT) as per
+business rules. File size capped at 10MB per file. Fields include
+original filename, cloud storage path, size in bytes, upload timestamp,
+and deletion state. When a post is deleted, attachments are preserved for
+13 months for audit, then purged. This table follows the subsidiary
+stance — attachments are never independently created or managed. Their
+visibility and lifecycle are entirely dependent on the parent post's
+state. [political_forum_posts](#political_forum_posts) is the parent. {@link
+political_forum_attachment_types} defines the allowed MIME type
+categories.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_post_id`: Post that this attachment belongs to. [discussion_board_posts.id](#discussion_board_posts).
-- `filename`
-  > Original name of the uploaded file. Examples: "photo.jpg",
-  > "document.pdf". This is the filename as provided by the user during
-  > upload.
-- `filetype`
-  > File extension indicating the type of uploaded file. Must be one of:
-  > jpeg, png, gif, pdf, txt, docx. This field is used for content-type
-  > validation during upload and to determine display behavior.
-- `filesize`
-  > Size of the file in bytes. Maximum allowed size is 5,000,000 bytes (5 MB)
-  > per file. Used to enforce upload limits and storage calculations.
-- `storage_path`
-  > Server-specific path where the file is stored. Typically a URL or
-  > filesystem path that the application can use to serve the file when
-  > requested. This is generated by the system upon successful upload.
-- `status`
-  > Current status of the attachment. Values: 'active', 'removed'. Initial
-  > state is 'active'. When a moderator removes an attachment, status changes
-  > to 'removed' and the file link is replaced with [Attachment removed by
-  > moderator]. This enables soft deletion while preserving audit trail.
-- `created_at`
-  > Timestamp when the attachment was first uploaded. Automatically generated
-  > by the system when the file completes upload. Follows ISO 8601 format.
+- `political_forum_post_id`
+  > Reference to the post this attachment belongs to. {@link
+  > political_forum_posts.id}
+- `political_forum_attachment_type_id`
+  > Reference to the allowed file type category (e.g., image/jpeg,
+  > application/pdf). [political_forum_attachment_types.id](#political_forum_attachment_types)
+- `original_filename`
+  > The original filename provided by the user during upload. Preserved
+  > exactly as submitted for display and audit purposes. Used for user-facing
+  > display and full-text search.
+- `file_path`
+  > The external URL pointing to the file stored in cloud storage. Generated
+  > and returned by cloud service upon upload. Used to render file previews
+  > or download links. Never stored locally.
+- `file_size`
+  > Size of the uploaded file in bytes. Must be <= 10,485,760 (10MB).
+  > Enforced during upload. Used for budgeting storage and compliance with
+  > attachment rules.
+- `uploaded_at`
+  > The precise timestamp when the file was successfully uploaded to cloud
+  > storage. Different from created_at to reflect actual cloud ingestion
+  > time, not system record creation.
+- `created_at`: Timestamp when this attachment record was created in the database.
 - `updated_at`
-  > Timestamp when the attachment was last modified. For attachments, this
-  > usually corresponds to when the status was changed from 'active' to
-  > 'removed'.
+  > Timestamp when this attachment record was last updated (e.g., renamed
+  > metadata, status change).
 - `deleted_at`
-  > Timestamp when the attachment was marked as removed by a moderator.
-  > Nullable because active attachments have not been deleted. Used for audit
-  > trail and historical tracking of removal actions.
+  > Soft delete flag. When null, attachment is active. When set, the
+  > attachment is marked for deletion but retained for audit (13 months).
+  > After 13 months, the file is purged from cloud storage. Indicates
+  > permanent deletion via user or moderator action on the parent post.
+
+## Moderation
+
+```mermaid
+erDiagram
+"political_forum_moderation_actions" {
+  String id PK
+  String political_forum_moderator_id FK
+  String political_forum_post_id FK
+  String action_type
+  String reason
+  DateTime created_at
+}
+"political_forum_post_modifications" {
+  String id PK
+  String political_forum_post_id FK,UK
+  String political_forum_moderation_action_id FK,UK
+  String new_state
+  DateTime created_at
+}
+"political_forum_post_modifications" |o--|| "political_forum_moderation_actions" : action
+```
+
+### `political_forum_moderation_actions`
+
+Audit log of moderator actions: deletion, locking, or verification of
+posts. Each record represents a single action taken by a moderator on a
+post. Records are immutable and used exclusively for audit,
+accountability, and transparency. Tracks who did what, when, and why.
+Links to political_forum_moderators.id and political_forum_posts.id.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_moderator_id`
+  > The moderator who performed this action. {@link
+  > political_forum_moderators.id}.
+- `political_forum_post_id`
+  > The post that was affected by this action. {@link
+  > political_forum_posts.id}.
+- `action_type`
+  > Type of moderator action: 'delete', 'lock', or 'verify'. Case-sensitive
+  > string that defines the nature of the moderation event.
+- `reason`
+  > Brief description provided by the moderator explaining why this action
+  > was taken. Required for accountability and to inform the post author in
+  > notifications.
+- `created_at`
+  > Timestamp when the moderation action was executed. Immutable audit
+  > record. This field establishes chronological order of events.
+
+### `political_forum_post_modifications`
+
+Track the historical state changes of posts due to moderation actions.
+Records each instance when a post's public status changed to 'deleted',
+'locked', or 'verified'. This table captures the result state of a post
+at time of action, while political_forum_moderation_actions captures the
+action itself. Immutable audit record. Links to political_forum_posts.id
+and political_forum_moderation_actions.id.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_post_id`: The post whose state was modified. [political_forum_posts.id](#political_forum_posts).
+- `political_forum_moderation_action_id`
+  > The moderation action that caused this state change. {@link
+  > political_forum_moderation_actions.id}.
+- `new_state`
+  > The target state applied to the post: 'deleted', 'locked', or 'verified'.
+  > Used by frontend to display banners, badges, or removed notices.
+- `created_at`
+  > Timestamp when the post's state was changed. This field correlates with
+  > political_forum_moderation_actions.created_at for full audit trail
+  > alignment.
 
 ## Reports
 
 ```mermaid
 erDiagram
-"discussion_board_reports" {
+"political_forum_post_reports" {
   String id PK
-  String reported_post_id FK,UK "nullable"
-  String reported_comment_id FK,UK "nullable"
-  String actor_type
-  String complaint_reason
+  String political_forum_post_id FK
+  String political_forum_citizen_id FK
   String status
-  DateTime created_at
-}
-"discussion_board_report_of_citizens" {
-  String id PK
-  String discussion_board_report_id FK,UK
-  String citizen_id FK
-  DateTime created_at
-}
-"discussion_board_report_of_moderators" {
-  String id PK
-  String discussion_board_report_id FK,UK
-  String moderator_id FK
-  DateTime created_at
-}
-"discussion_board_report_of_citizens" |o--|| "discussion_board_reports" : report
-"discussion_board_report_of_moderators" |o--|| "discussion_board_reports" : report
-```
-
-### `discussion_board_reports`
-
-Main entity for all reported content. This table contains shared
-attributes for reports initiated by either citizens or moderators. The
-actor_type field identifies which subtype table contains the specific
-actor information. This structure follows the Polymorphic Ownership
-Pattern to ensure database-level referential integrity and eliminate
-nullable foreign key anti-patterns. Each report is associated with
-exactly one post or comment being reported. This table may be referenced
-by discussion_board_report_of_citizens and
-discussion_board_report_of_moderators via 1:1 relationships.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reported_post_id`: The post being reported. [discussion_board_posts.id](#discussion_board_posts).
-- `reported_comment_id`: The comment being reported. [discussion_board_comments.id](#discussion_board_comments).
-- `actor_type`
-  > The type of actor who initiated the report. Must be either "citizen" or
-  > "moderator". This discriminates which subtype table contains the
-  > actor-specific details.
-- `complaint_reason`
-  > The reason provided by the reporter for this report. This field is
-  > mandatory when reported by a citizen. When a moderator initiates a
-  > report, this field may contain an internal note.
-- `status`
-  > The current status of this report. Values: "pending" (awaiting review),
-  > "dismissed" (investigation concluded with no violation), "edited"
-  > (content was edited after report), "deleted" (content was deleted after
-  > report). This status guides moderator workflows and audit trails.
-- `created_at`: The timestamp when the report was created and submitted.
-
-### `discussion_board_report_of_citizens`
-
-Subtype entity for reports initiated by citizens. This table contains
-citizen-specific information about the report as part of the Polymorphic
-Ownership Pattern. There is a 1:1 relationship with the main
-discussion_board_reports entity. Each citizen-initiated report is
-uniquely associated with one citizen who reported it and one main report
-entity. This schema ensures referential integrity by eliminating the
-nullable actor foreign key anti-pattern in the main table.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_report_id`
-  > The main report entity this citizen report belongs to. {@link
-  > discussion_board_reports.id}.
-- `citizen_id`
-  > The citizen who submitted this report. {@link
-  > discussion_board_citizens.id}.
-- `created_at`
-  > The timestamp when the citizen submitted this report, recorded separately
-  > for audit and timestamp accuracy.
-
-### `discussion_board_report_of_moderators`
-
-Subtype entity for reports initiated by moderators. This table contains
-moderator-specific information about the report as part of the
-Polymorphic Ownership Pattern. There is a 1:1 relationship with the main
-discussion_board_reports entity. Each moderator-initiated report is
-uniquely associated with one moderator who reported it and one main
-report entity. This schema ensures referential integrity by eliminating
-the nullable actor foreign key anti-pattern in the main table. Note:
-Moderators can initiate reports for internal audit purposes without
-awaiting a citizen report.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_report_id`
-  > The main report entity this moderator report belongs to. {@link
-  > discussion_board_reports.id}.
-- `moderator_id`
-  > The moderator who initiated this report. {@link
-  > discussion_board_moderators.id}.
-- `created_at`
-  > The timestamp when the moderator initiated this report, recorded
-  > separately for audit and timestamp accuracy.
-
-## ModerationActions
-
-```mermaid
-erDiagram
-"discussion_board_moderation_actions" {
-  String id PK
-  String moderator_id FK
-  String action_type
-  String reason "nullable"
+  String reason
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_moderation_action_of_posts" {
+"political_forum_comment_reports" {
   String id PK
-  String moderation_action_id FK,UK
-  String discussion_board_post_id FK
+  String political_forum_comment_id FK
+  String political_forum_citizen_id FK
+  String status
+  String reason
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"discussion_board_moderation_action_of_comments" {
-  String id PK
-  String moderation_action_id FK,UK
-  String discussion_board_comment_id FK
-}
-"discussion_board_moderation_action_of_attachments" {
-  String id PK
-  String moderation_action_id FK,UK
-  String discussion_board_attachment_id FK
-}
-"discussion_board_moderation_action_of_posts" |o--|| "discussion_board_moderation_actions" : moderationAction
-"discussion_board_moderation_action_of_comments" |o--|| "discussion_board_moderation_actions" : moderationAction
-"discussion_board_moderation_action_of_attachments" |o--|| "discussion_board_moderation_actions" : moderationAction
 ```
 
-### `discussion_board_moderation_actions`
+### `political_forum_post_reports`
 
-Main entity capturing the audit event of a moderation action performed by
-a moderator. This is the central record that stores the action type,
-reason, timestamp, and discriminator for the moderated entity. Each
-moderation event (edit or delete) is a discrete business transaction.
-References to specific moderated entities (posts, comments, attachments)
-are handled through subsidiary tables to ensure referential integrity and
-compliance with 3NF normalization. This is NOT a standalone table; it
-must be joined with one of the three *_of_* subsidiary tables to
-determine what exactly was moderated. Use this table to count total
-moderation actions or filter by action_type. @link
-discussion_board_moderation_action_of_posts, @link
-discussion_board_moderation_action_of_comments, @link
-discussion_board_moderation_action_of_attachments
+Records reports submitted by citizens against specific political forum
+posts. Each report captures the reporting citizen, the post being
+reported, the reason for the report, and its current moderation status.
+This table is independent and allows moderators to efficiently review and
+filter all reported posts across the system without needing to load the
+parent post content. Each report can be independently queried, sorted,
+and archived. Linked to political_forum_posts.id and
+political_forum_citizens.id.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_post_id`: The post being reported. [political_forum_posts.id](#political_forum_posts)
+- `political_forum_citizen_id`: The citizen who submitted the report. [political_forum_citizens.id](#political_forum_citizens)
+- `status`: Status of the report. Values: pending, reviewed, dismissed, escalated.
+- `reason`
+  > The reason or explanation provided by the citizen for why they are
+  > reporting this post. Should contain at least 10 characters.
+- `created_at`: Timestamp of when the report was submitted.
+- `updated_at`: Timestamp of the last update to the report status or reason.
+- `deleted_at`: Soft delete timestamp. If null, the report is active.
+
+### `political_forum_comment_reports`
+
+Records reports submitted by citizens against specific political forum
+comments. Each report captures the reporting citizen, the comment being
+reported, the reason for the report, and its current moderation status.
+This table is independent and allows moderators to efficiently review and
+filter all reported comments across the system regardless of the parent
+post. Each report can be independently queried, sorted, and archived.
+Linked to political_forum_comments.id and political_forum_citizens.id.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_comment_id`: The comment being reported. [political_forum_comments.id](#political_forum_comments)
+- `political_forum_citizen_id`: The citizen who submitted the report. [political_forum_citizens.id](#political_forum_citizens)
+- `status`: Status of the report. Values: pending, reviewed, dismissed, escalated.
+- `reason`
+  > The reason or explanation provided by the citizen for why they are
+  > reporting this comment. Should contain at least 10 characters.
+- `created_at`: Timestamp of when the report was submitted.
+- `updated_at`: Timestamp of the last update to the report status or reason.
+- `deleted_at`: Soft delete timestamp. If null, the report is active.
+
+## Settings
+
+```mermaid
+erDiagram
+"political_forum_system_parameters" {
+  String id PK
+  Int edit_window_hours
+  Int max_file_size_mb
+  String allowed_attachment_types
+  DateTime created_at
+  DateTime updated_at
+}
+"political_forum_system_parameters_current" {
+  String id PK
+  String moderator_id FK "nullable"
+  Int edit_window_hours
+  Int max_file_size_mb
+  String allowed_attachment_types
+  DateTime created_at
+  DateTime updated_at
+  String updated_by "nullable"
+}
+"political_forum_system_parameter_snapshots" {
+  String id PK
+  String political_forum_system_parameters_current_id FK
+  String moderator_id FK "nullable"
+  Int edit_window_hours
+  Int max_file_size_mb
+  String allowed_attachment_types
+  DateTime created_at
+  String description "nullable"
+}
+"political_forum_system_parameter_snapshots" }o--|| "political_forum_system_parameters_current" : currentParameter
+```
+
+### `political_forum_system_parameters`
+
+Global system configuration parameters that control the behavior of the
+political forum. This table defines system-wide limits and policies that
+apply uniformly to all citizens and moderators. Values in this table are
+managed through administrative interfaces, not directly by end users.
+These settings provide the foundation for business rules such as edit
+windows, file size restrictions, and permitted attachment types.
+
+This table is referenced by all components of the system to enforce
+consistent behavior. It is updated rarely through secure administrative
+channels and does not require user-facing CRUD operations.
+
+All values are authoritative and override any default hard-coded values
+in the application layer.
+
+For example:
+- edit_window_hours determines how long citizens can edit their own posts
+(24 hours)
+- max_file_size_mb sets the maximum upload size per file (10 MB)
+- allowed_attachment_types defines which MIME types are acceptable for
+uploads
+
+This entity has no relationships to other tables - it is a singleton
+configuration store.
+
+See also: [political_forum_audit_logs](#political_forum_audit_logs) for change history of these
+settings.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `edit_window_hours`
+  > The number of hours during which a citizen may edit their own post after
+  > initial submission. Standard value is 24 hours.
+- `max_file_size_mb`
+  > Maximum size allowed for any single attachment file uploaded with a post,
+  > in megabytes. Standard value is 10 MB.
+- `allowed_attachment_types`
+  > Comma-separated list of allowed file extensions for attachments. Includes
+  > image types (.jpg, .jpeg, .png, .gif) and document types (.pdf, .txt,
+  > .doc, .docx). Must be stored as a single string for simplicity in
+  > application logic.
+- `created_at`
+  > Timestamp when this system configuration record was created. Immutable
+  > after creation.
+- `updated_at`
+  > Timestamp when this system configuration record was last updated. Updated
+  > automatically on every change.
+
+### `political_forum_system_parameters_current`
+
+Current system-wide configuration parameters that control the behavior of
+the political forum. This table defines a single authoritative set of
+system-wide limits and policies that apply uniformly to all citizens and
+moderators. Values in this table are managed through administrative
+interfaces, not directly by end users. These settings provide the
+foundation for business rules such as edit windows, file size
+restrictions, and permitted attachment types.
+
+This table is referenced by all components of the system to enforce
+consistent behavior. It is updated rarely through secure administrative
+channels and does not require user-facing CRUD operations.
+
+This current value reference is always the latest commit of configuration
+in the system.
+
+See also: [political_forum_system_parameter_snapshots](#political_forum_system_parameter_snapshots) for
+historical versions.
+
+See also: [political_forum_audit_logs](#political_forum_audit_logs) for change history of these
+settings.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `moderator_id`
-  > The moderator who performed this moderation action. {@link
-  > discussion_board_moderators.id}
-- `action_type`
-  > Type of moderation action performed. Must be exactly 'edit' or 'delete'.
-  > This field is required to distinguish between modifications and removals
-  > in the audit trail.
-- `reason`
-  > Optional textual reason provided by the moderator for the moderation
-  > action. When a moderator actions follows a report, this field may capture
-  > the report reason. This complements the audit trail.
+  > The moderator who last modified this configuration. References {@link
+  > political_forum_moderators.id}.
+- `edit_window_hours`
+  > The number of hours during which a citizen may edit their own post after
+  > initial submission. Standard value is 24 hours.
+- `max_file_size_mb`
+  > Maximum size allowed for any single attachment file uploaded with a post,
+  > in megabytes. Standard value is 10 MB.
+- `allowed_attachment_types`
+  > Comma-separated list of allowed file extensions for attachments. Includes
+  > image types (.jpg, .jpeg, .png, .gif) and document types (.pdf, .txt,
+  > .doc, .docx). Must be stored as a single string for simplicity in
+  > application logic.
 - `created_at`
-  > Timestamp when the moderation action was performed. This is the moment
-  > the action was recorded. Always required.
+  > Timestamp when this system configuration record was created. Immutable
+  > after creation.
 - `updated_at`
-  > Timestamp when this moderation record was last updated. Will be equal to
-  > created_at unless the moderation action is later updated (rare). Used for
-  > consistency tracking.
+  > Timestamp when this system configuration record was last updated. Updated
+  > automatically on every change.
+- `updated_by`
+  > The moderator ID who last modified this configuration. References {@link
+  > political_forum_moderators.id}.
+
+### `political_forum_system_parameter_snapshots`
+
+Historical snapshots of system-wide configuration parameters. This table
+captures point-in-time versions of the
+political_forum_system_parameters_current table for audit trail,
+compliance, and forensic analysis.
+
+Each record represents a configuration state and is immutable. Whenever
+the current configuration is updated, a new snapshot is created instead
+of modifying existing records.
+
+This enables:
+- Full audit trail of system policy changes
+- Compliance with regulatory requirements (GDPR, HIPAA if applicable)
+- Forensic investigations into configuration-related incidents
+- Rollback capability to previous configuration states if needed
+
+This table is write-once and read-only from any external interface.
+
+See also: [political_forum_system_parameters_current](#political_forum_system_parameters_current) for the
+current configuration value.
+
+See also: [political_forum_audit_logs](#political_forum_audit_logs) for system-level audit trail
+of what changed.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_system_parameters_current_id`
+  > Reference to the current configuration state that was snapshotted.
+  > References [political_forum_system_parameters_current.id](#political_forum_system_parameters_current).
+- `moderator_id`
+  > The moderator who performed the configuration change being snapped.
+  > References [political_forum_moderators.id](#political_forum_moderators).
+- `edit_window_hours`
+  > The number of hours during which a citizen may edit their own post after
+  > initial submission. Standard value is 24 hours. This value is captured at
+  > time of snapshot.
+- `max_file_size_mb`
+  > Maximum size allowed for any single attachment file uploaded with a post,
+  > in megabytes. Standard value is 10 MB. This value is captured at time of
+  > snapshot.
+- `allowed_attachment_types`
+  > Comma-separated list of allowed file extensions for attachments. Includes
+  > image types (.jpg, .jpeg, .png, .gif) and document types (.pdf, .txt,
+  > .doc, .docx). Must be stored as a single string for simplicity in
+  > application logic. This value is captured at time of snapshot.
+- `created_at`
+  > Timestamp when this exact configuration snapshot was generated. This is
+  > NOT the same as when the current configuration was last updated - this is
+  > when the snapshot was created.
+- `description`
+  > Human-readable description of what changed in this configuration update.
+  > e.g., 'Increased file size limit from 5MB to 10MB due to user
+  > feedback','Reduced edit window from 48 to 24 hours','Added .mp4 extension
+  > to allowed types'
+
+## Audit
+
+```mermaid
+erDiagram
+"political_forum_audit_logs" {
+  String id PK
+  String actor_log_id FK
+  String entity_log_id FK
+  String actor_type
+  String target_type
+  String action
+  String description
+  String old_state "nullable"
+  String new_state "nullable"
+  String ip_address
+  String user_agent
+  DateTime created_at
+}
+"political_forum_audit_log_of_citizens" {
+  String id PK
+  String political_forum_citizen_id FK,UK
+}
+"political_forum_audit_log_of_moderators" {
+  String id PK
+  String political_forum_moderator_id FK,UK
+}
+"political_forum_audit_log_target_of_posts" {
+  String id PK
+  String political_forum_post_id FK,UK
+}
+"political_forum_audit_log_target_of_comments" {
+  String id PK
+  String political_forum_comment_id FK,UK
+}
+"political_forum_audit_log_target_of_sessions" {
+  String id PK
+  String political_forum_citizen_session_id FK,UK
+}
+"political_forum_audit_log_targets" {
+  String id PK
+  String target_type UK
+}
+"political_forum_audit_logs" }o--|| "political_forum_audit_log_of_citizens" : actorLog
+"political_forum_audit_logs" }o--|| "political_forum_audit_log_targets" : entityLog
+```
+
+### `political_forum_audit_logs`
+
+Immutable audit log entries that record all significant system events for
+compliance and forensic purposes. This is the main entity that
+coordinates the polymorphic actor and target systems using IDs and
+discriminators. Uses actor_log_id and entity_log_id to reference specific
+subtype tables based on actor_type and target_type.
+
+All direct foreign keys have been removed and replaced with discriminator
++ subtype pattern to preserve referential integrity and normalization.
+Every audit entry is validated against the subtype relationships rather
+than direct database FKs.
+
+Links to political_forum_audit_log_of_citizens,
+political_forum_audit_log_of_moderators,
+political_forum_audit_log_targets through their respective ID fields.
+Dependent entirely on subtype tables to resolve actor and target identity
+with type safety.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `actor_log_id`
+  > Foreign key to either political_forum_audit_log_of_citizens.id or
+  > political_forum_audit_log_of_moderators.id, determined by actor_type.
+  > This ensures referential integrity while enabling polymorphic actor
+  > tracking. Never references directly to citizens or moderators.
+- `entity_log_id`
+  > Foreign key to political_forum_audit_log_targets.id. This point of
+  > reference resolves the target_type and enables JOIN to one of the
+  > specific target subtypes (post, comment, session).
+- `actor_type`
+  > Specifies the type of actor performing the action. Must be exactly
+  > "citizen" or "moderator" as defined in the authentication system. Used
+  > with actor_log_id to determine which subtype table to join.
+- `target_type`
+  > Specifies the type of entity being audited. Must be one of: "post",
+  > "comment", "session". Used with entity_log_id to determine which target
+  > subtype to join during query resolution.
+- `action`
+  > Type of action taken. Valid values: "created", "modified", "deleted",
+  > "locked", "verified", "login", "logout", "report", "flagged". Derived
+  > from business rules governing system events.
+- `description`
+  > A human-readable description of the action performed, including optional
+  > reason provided by moderator (e.g., "Removed for hate speech") or system
+  > context (e.g., "Post flagged by 5 users"). Required for forensic
+  > accountability.
+- `old_state`
+  > JSON string representing the state of the target entity before the
+  > action. For example: {"title": "Original Title", "text": "Original
+  > content"}. Use for change comparison and audit recovery.
+- `new_state`
+  > JSON string representing the state of the target entity after the action.
+  > For example: {"title": "Updated Title", "text": "Updated content"}.
+  > Contains the final state after modification, deletion, or verification.
+- `ip_address`
+  > The public IP address used by the actor when performing the action.
+  > Captured from HTTP request header for accountability.
+- `user_agent`
+  > The HTTP User-Agent header sent by the client when performing the action.
+  > Used for identifying device or browser type for forensic analysis.
+- `created_at`
+  > The precise UTC timestamp when the audit event was recorded by the
+  > system. Always uses server clock to ensure immutability. Follows ISO 8601
+  > format.
+
+### `political_forum_audit_log_of_citizens`
+
+Subtype entity for audit logs executed specifically by citizens. This
+table enforces referential integrity by linking only to
+political_forum_citizens.id. The main political_forum_audit_logs table
+references this via actor_log_id, ensuring that all audit logs by
+citizens have a valid actor identity.
+
+Does not require additional fields beyond the relationship to citizen.
+Cornerstone of polymorphic actor pattern.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_citizen_id`
+  > Reference to the citizen who performed the audited action. Must be
+  > non-null and link directly to political_forum_citizens.id. Ensures valid
+  > actor authentication context.
+
+### `political_forum_audit_log_of_moderators`
+
+Subtype entity for audit logs executed specifically by moderators. This
+table enforces referential integrity by linking only to
+political_forum_moderators.id. The main political_forum_audit_logs table
+references this via actor_log_id, ensuring that all audit logs by
+moderators have a valid actor identity.
+
+Does not require additional fields beyond the relationship to moderator.
+Cornerstone of polymorphic actor pattern.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_moderator_id`
+  > Reference to the moderator who performed the audited action. Must be
+  > non-null and link directly to political_forum_moderators.id. Ensures
+  > valid actor authentication context.
+
+### `political_forum_audit_log_target_of_posts`
+
+Subtype entity for audit logs targeting political_forum_posts. Links the
+audit entry to the post being modified, deleted, locked, or verified.
+This ensures referential integrity for post-targeted events.
+
+Does not require additional fields beyond the relationship to post.
+Cornerstone of polymorphic target pattern.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_post_id`
+  > Reference to the post being audited. Must be non-null and link directly
+  > to political_forum_posts.id. Applies to actions: created, modified,
+  > deleted, locked, verified.
+
+### `political_forum_audit_log_target_of_comments`
+
+Subtype entity for audit logs targeting political_forum_comments. Links
+the audit entry to the comment being modified or deleted. This ensures
+referential integrity for comment-targeted events.
+
+Does not require additional fields beyond the relationship to comment.
+Cornerstone of polymorphic target pattern.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_comment_id`
+  > Reference to the comment being audited. Must be non-null and link
+  > directly to political_forum_comments.id. Applies to actions: created,
+  > modified, deleted, flagged, reported.
+
+### `political_forum_audit_log_target_of_sessions`
+
+Subtype entity for audit logs targeting user sessions. Links the audit
+entry to the citizen_session being logged in or out. This ensures
+referential integrity for session-based audit events.
+
+Does not require additional fields beyond the relationship to session.
+Cornerstone of polymorphic target pattern.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_citizen_session_id`
+  > Reference to the citizen session being audited. Must be non-null and link
+  > directly to political_forum_citizen_sessions.id. Applies to actions:
+  > login, logout.
+
+### `political_forum_audit_log_targets`
+
+Main entity for audit log target types. Serves as the discriminator for
+different entities being audited.
+
+Stores the target_type (post, comment, session) and links to respective
+subtype tables (political_forum_audit_log_target_of_posts, etc.). This
+allows the main audit_log table to reference exactly one target entity
+with full type safety and referential integrity.
+
+Must be used with target_type field in political_forum_audit_logs to
+select the correct subtype for target resolution.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `target_type`
+  > The exact type of entity being audited. Must be one of: "post",
+  > "comment", "session". Matches the name of the corresponding subtype
+  > table. Used to determine which subtype table to JOIN during query
+  > resolution.
+
+## Analytics
+
+```mermaid
+erDiagram
+"political_forum_analytics_events" {
+  String id PK
+  String target_post_id FK "nullable"
+  String target_comment_id FK "nullable"
+  String actor_citizen_id FK "nullable"
+  String actor_moderator_id FK "nullable"
+  String event_type
+  String context "nullable"
+  DateTime created_at
+}
+```
+
+### `political_forum_analytics_events`
+
+Event log for analytics tracking system-wide user and moderator actions.
+This table captures summaries of operational events (post creation,
+comment addition, moderation actions) to enable reporting without
+impacting transactional tables. Each entry represents a single event
+triggered by system activity. The actor is either a citizen or moderator,
+and the target is either a post or comment. This data is append-only and
+used exclusively for business intelligence. References to
+political_forum_posts, political_forum_comments,
+political_forum_citizens, and political_forum_moderators are maintained
+for audit and correlation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `target_post_id`
+  > Reference to the target post if the event is related to a post. {@link
+  > political_forum_posts.id}
+- `target_comment_id`
+  > Reference to the target comment if the event is related to a comment.
+  > [political_forum_comments.id](#political_forum_comments)
+- `actor_citizen_id`
+  > Reference to the citizen who initiated the event, if applicable (e.g.,
+  > post_created or comment_added). [political_forum_citizens.id](#political_forum_citizens)
+- `actor_moderator_id`
+  > Reference to the moderator who performed the action, if applicable (e.g.,
+  > post_deleted or thread_locked). [political_forum_moderators.id](#political_forum_moderators)
+- `event_type`
+  > Type of analytics event. Examples: "post_created", "comment_added",
+  > "post_deleted", "thread_locked", "post_verified", "file_uploaded".
+- `context`
+  > Optional contextual JSON string with additional event details (e.g., file
+  > count, reason for deletion, IP address).
+- `created_at`: Timestamp when the event was logged in the analytics system.
+
+## Archival
+
+```mermaid
+erDiagram
+"political_forum_archived_posts" {
+  String id PK
+  String political_forum_post_id FK,UK
+  String title
+  String content
+  String author_id
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+  String status
+  Boolean is_verified
+  String lock_reason "nullable"
+  Int attachment_count
+  Int comment_count
+  String archival_reason
+}
+"political_forum_archived_comments" {
+  String id PK
+  String political_forum_comment_id FK,UK
+  String political_forum_post_id FK
+  String content
+  String author_id
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+  String status
+  Boolean is_reported
+  Int report_count
+}
+"political_forum_archived_attachments" {
+  String id PK
+  String political_forum_archived_post_id FK
+  String political_forum_attachment_id FK,UK
+  String filename
+  String file_type
+  String(80000) url
+  Int size_bytes
+  DateTime created_at
+  DateTime archived_at
+}
+"political_forum_archived_attachments" }o--|| "political_forum_archived_posts" : archivedPost
+```
+
+### `political_forum_archived_posts`
+
+Snapshot of political_forum_posts at time of archival. Preserves the
+complete state of the post as it existed when moved to archival storage.
+This table is read-only and used solely for historical access and audit.
+References the original post in political_forum_posts. This is a snapshot
+table, so it is not editable and only populated through system-triggered
+archival process. [political_forum_posts.id](#political_forum_posts)
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `political_forum_post_id`
+  > Reference to the original active post in political_forum_posts. {@link
+  > political_forum_posts.id}
+- `title`: The title of the post as it was at time of archival.
+- `content`: The full text content of the post as it was at time of archival.
+- `author_id`: The citizen ID of the original author. [political_forum_citizens.id](#political_forum_citizens)
+- `created_at`: The timestamp when the post was originally created in the active system.
+- `updated_at`
+  > The timestamp when the post was last modified in the active system before
+  > archival.
 - `deleted_at`
-  > Soft delete marker. Only set if the moderation action itself is flagged
-  > as invalid (e.g., if a moderator overruled their own action). This
-  > preserves the audit trail but hides it from normal queries.
+  > The timestamp when this post was archived (moved from active system).
+  > This represents the archival transition time.
+- `status`
+  > The moderation status at time of archival: 'published',
+  > 'moderation_queue', 'deleted'.
+- `is_verified`
+  > True if the post was marked as verified by a moderator at the time of
+  > archival.
+- `lock_reason`
+  > The reason for lock if the post was locked at time of archival. Null if
+  > not locked.
+- `attachment_count`: Number of attachments this post had at time of archival.
+- `comment_count`: Number of comments this post had at time of archival.
+- `archival_reason`: The reason this post was archived: '2_years_inactivity'
 
-### `discussion_board_moderation_action_of_posts`
+### `political_forum_archived_comments`
 
-Subsidiary table that links a specific moderation action to the post that
-was moderated. This table ensures referential integrity between
-moderation events and posts. Each row represents one moderation action
-applied to one post. Cannot exist without a parent in
-discussion_board_moderation_actions. This table only contains the FK to
-the moderated post and the parent moderation action. Used for querying
-all moderation actions on posts. @link
-discussion_board_moderation_actions
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `moderation_action_id`
-  > The moderation action record this subsidiary entry belongs to. {@link
-  > discussion_board_moderation_actions.id}
-- `discussion_board_post_id`
-  > The specific post that was moderated. This FK is non-nullable and enforce
-  > referential integrity with the discussion_board_posts table. {@link
-  > discussion_board_posts.id}
-
-### `discussion_board_moderation_action_of_comments`
-
-Subsidiary table that links a specific moderation action to the comment
-that was moderated. This table ensures referential integrity between
-moderation events and comments. Each row represents one moderation action
-applied to one comment. Cannot exist without a parent in
-discussion_board_moderation_actions. This table only contains the FK to
-the moderated comment and the parent moderation action. Used for querying
-all moderation actions on comments. @link
-discussion_board_moderation_actions
+Snapshot of political_forum_comments at time of archival. Preserves the
+complete state of the comment as it existed when moved to archival
+storage. This table is read-only and used solely for historical access
+and audit. References the original comment in political_forum_comments
+and the parent post in political_forum_posts. This is a snapshot table,
+so it is not editable and only populated through system-triggered
+archival process. [political_forum_comments.id](#political_forum_comments) {@link
+political_forum_posts.id}
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `moderation_action_id`
-  > The moderation action record this subsidiary entry belongs to. {@link
-  > discussion_board_moderation_actions.id}
-- `discussion_board_comment_id`
-  > The specific comment that was moderated. This FK is non-nullable and
-  > enforce referential integrity with the discussion_board_comments table.
-  > [discussion_board_comments.id](#discussion_board_comments)
+- `political_forum_comment_id`
+  > Reference to the original active comment in political_forum_comments.
+  > [political_forum_comments.id](#political_forum_comments)
+- `political_forum_post_id`
+  > Reference to the parent post in political_forum_posts. {@link
+  > political_forum_posts.id}
+- `content`: The full text content of the comment as it was at time of archival.
+- `author_id`: The citizen ID of the original author. [political_forum_citizens.id](#political_forum_citizens)
+- `created_at`
+  > The timestamp when the comment was originally created in the active
+  > system.
+- `updated_at`
+  > The timestamp when the comment was last modified in the active system
+  > before archival.
+- `deleted_at`
+  > The timestamp when this comment was archived (moved from active system).
+  > This represents the archival transition time.
+- `status`
+  > The moderation status at time of archival: 'approved', 'under_review',
+  > 'deleted'.
+- `is_reported`: True if the comment was reported by users at time of archival.
+- `report_count`: Number of reports accumulated on this comment at time of archival.
 
-### `discussion_board_moderation_action_of_attachments`
+### `political_forum_archived_attachments`
 
-Subsidiary table that links a specific moderation action to the
-attachment that was moderated. This table ensures referential integrity
-between moderation events and attachments. Each row represents one
-moderation action applied to one attachment. Cannot exist without a
-parent in discussion_board_moderation_actions. This table only contains
-the FK to the moderated attachment and the parent moderation action. Used
-for querying all moderation actions on attachments. @link
-discussion_board_moderation_actions
+Snapshot of political_forum_post_attachments at time of archival.
+Preserves the URL, filename, type, and metadata of attachments linked to
+archival posts. This is a subsidiary table, managed through the
+archival_post context. Each attachment is stored via URL from cloud
+storage and retained for audit. This table is not directly editable and
+is populated through system archival triggers. {@link
+political_forum_post_attachments.id} {@link
+political_forum_archived_posts.id}
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `moderation_action_id`
-  > The moderation action record this subsidiary entry belongs to. {@link
-  > discussion_board_moderation_actions.id}
-- `discussion_board_attachment_id`
-  > The specific attachment that was moderated. This FK is non-nullable and
-  > enforce referential integrity with the discussion_board_attachments
-  > table. [discussion_board_attachments.id](#discussion_board_attachments)
+- `political_forum_archived_post_id`
+  > Reference to the parent archival post. {@link
+  > political_forum_archived_posts.id}
+- `political_forum_attachment_id`
+  > Reference to the original attachment record in
+  > political_forum_post_attachments. {@link
+  > political_forum_post_attachments.id}
+- `filename`: The original filename of the attachment as it was uploaded.
+- `file_type`
+  > The MIME file type at time of upload (e.g., 'image/png',
+  > 'application/pdf').
+- `url`
+  > The persistent URL to the file in cloud storage (e.g., from AWS S3 or
+  > Cloudinary).
+- `size_bytes`: The file size in bytes at time of upload.
+- `created_at`
+  > The timestamp when the attachment was originally created in the active
+  > system.
+- `archived_at`: The timestamp when this attachment was moved to archival storage.

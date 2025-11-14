@@ -7,70 +7,63 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { UserPayload } from "../decorators/payload/UserPayload";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
+import { ITodoAppAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAuthorizationToken";
 
 export async function postAuthUserRefresh(props: {
-  user: UserPayload;
-  refreshToken: string & tags.MinLength<32>;
-  body: ITodoUser.IRefresh;
-}): Promise<ITodoUser.IAuthorized> {
-  // 1. Verify and decode refresh token
-  let decoded: {
+  body: ITodoAppUser.IRefresh;
+}): Promise<ITodoAppUser.IAuthorized> {
+  // Step 1: Verify and decode refresh token
+  const decoded = jwt.verify(
+    props.body.refresh_token,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { issuer: "autobe" },
+  ) as {
     id: string;
     session_id: string;
     type: "user";
   };
-  try {
-    decoded = jwt.verify(props.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as {
-      id: string;
-      session_id: string;
-      type: "user";
-    };
-  } catch (error) {
-    throw new HttpException("Invalid or expired refresh token", 401);
+
+  // Step 2: Validate type matches expected actor type
+  if (decoded.type !== "user") {
+    throw new HttpException("Invalid token type", 403);
   }
 
-  // 2. Validate session exists and is active
-  const session = await MyGlobal.prisma.todo_user_sessions.findFirst({
+  // Step 3: Validate session exists and is active
+  const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
     where: {
       id: decoded.session_id,
-      todo_user_id: decoded.id,
-      expired_at: null, // Session must be active
+      user_id: decoded.id,
     },
     include: {
-      user: true, // Include user to check for deletion
+      user: true, // Fixed: Use 'user' as the relationship name instead of 'todo_app_user'
     },
   });
-
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   } else if (session.user.deleted_at !== null) {
+    // Fixed: Access 'session.user.deleted_at' instead of 'session.todo_app_user.deleted_at'
     throw new HttpException("Account has been deleted", 403);
   }
 
-  // 3. Generate new access token (SAME session_id)
-  const now = new Date();
+  // Step 4: Generate new access token with SAME session_id
   const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(now.getTime() + 30 * 60 * 1000),
-  ); // 30 minutes
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
   const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-  ); // 7 days
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
   const access = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id, // Reuse existing session_id
-      created_at: toISOStringSafe(now),
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "30m",
+      expiresIn: "1h",
       issuer: "autobe",
     },
   );
@@ -81,7 +74,7 @@ export async function postAuthUserRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id, // Reuse existing session_id
       tokenType: "refresh",
-      created_at: toISOStringSafe(now),
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -90,8 +83,8 @@ export async function postAuthUserRefresh(props: {
     },
   );
 
-  // 4. Update session expiration time to match new refresh token expiration
-  await MyGlobal.prisma.todo_user_sessions.update({
+  // Step 5: Update session expiration time
+  await MyGlobal.prisma.todo_app_user_sessions.update({
     where: {
       id: decoded.session_id,
     },
@@ -100,17 +93,9 @@ export async function postAuthUserRefresh(props: {
     },
   });
 
-  // 5. Return authorized response using session.user data (already loaded)
+  // Step 6: Return new tokens in IAuthorized response
   return {
-    id: session.user.id,
-    email: session.user.email,
-    created_at: toISOStringSafe(session.user.created_at),
-    updated_at: toISOStringSafe(session.user.updated_at),
-    deleted_at: typia.assert<string & tags.Format<"date-time">>(
-      session.user.deleted_at
-        ? toISOStringSafe(session.user.deleted_at)
-        : "1970-01-01T00:00:00Z",
-    ),
+    id: decoded.id,
     token: {
       access,
       refresh,

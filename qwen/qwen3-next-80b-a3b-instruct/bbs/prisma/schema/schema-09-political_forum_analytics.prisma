@@ -1,0 +1,65 @@
+/// Event log for analytics tracking system-wide user and moderator actions.
+/// This table captures summaries of operational events (post creation,
+/// comment addition, moderation actions) to enable reporting without
+/// impacting transactional tables. Each entry represents a single event
+/// triggered by system activity. The actor is either a citizen or moderator,
+/// and the target is either a post or comment. This data is append-only and
+/// used exclusively for business intelligence. References to
+/// political_forum_posts, political_forum_comments,
+/// political_forum_citizens, and political_forum_moderators are maintained
+/// for audit and correlation.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_analytics_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the target post if the event is related to a post. {@link
+  /// political_forum_posts.id}
+  target_post_id String?
+  
+  /// Reference to the target comment if the event is related to a comment.
+  /// {@link political_forum_comments.id}
+  target_comment_id String?
+  
+  /// Reference to the citizen who initiated the event, if applicable (e.g.,
+  /// post_created or comment_added). {@link political_forum_citizens.id}
+  actor_citizen_id String?
+  
+  /// Reference to the moderator who performed the action, if applicable (e.g.,
+  /// post_deleted or thread_locked). {@link political_forum_moderators.id}
+  actor_moderator_id String?
+  
+  /// Type of analytics event. Examples: "post_created", "comment_added",
+  /// "post_deleted", "thread_locked", "post_verified", "file_uploaded".
+  event_type String
+  
+  /// Optional contextual JSON string with additional event details (e.g., file
+  /// count, reason for deletion, IP address).
+  context String?
+  
+  /// Timestamp when the event was logged in the analytics system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  targetPost political_forum_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment political_forum_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  actorCitizen political_forum_citizens? @relation(fields: [actor_citizen_id], references: [id], onDelete: Cascade)
+  actorModerator political_forum_moderators? @relation(fields: [actor_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_at])
+  @@index([event_type, created_at])
+  @@index([target_post_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([target_comment_id, created_at], map: "political_forum_analytics_events_target_comment_id_cre_ad24a422")
+  // spellchecker: ignore-next-line
+  @@index([actor_citizen_id, created_at], map: "political_forum_analytics_events_actor_citizen_id_crea_628b9eac")
+  // spellchecker: ignore-next-line
+  @@index([actor_moderator_id, created_at], map: "political_forum_analytics_events_actor_moderator_id_cr_24e2bc89")
+}

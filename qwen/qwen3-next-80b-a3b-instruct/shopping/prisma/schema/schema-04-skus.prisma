@@ -1,0 +1,169 @@
+/// Core SKU (Stock Keeping Unit) entity representing a unique variant of a
+/// product defined by attribute combinations. Each SKU has independent
+/// inventory and pricing. This table establishes the primary link between
+/// products and their variants. Related to shopping_mall_products.id via
+/// foreign key. Must never be modified directly by users - only through
+/// product management with attribute selection.
+///
+/// @namespace SKUs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_skus {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The parent product this SKU belongs to. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Timestamp when this SKU was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this SKU was last updated.
+  updated_at DateTime
+  
+  /// Soft delete indicator. When set, this SKU is considered archived and no
+  /// longer active in the catalog. Null means active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sku_attributes shopping_mall_sku_attributes[]
+  shopping_mall_sku_prices shopping_mall_sku_prices?
+  shopping_mall_sku_inventory shopping_mall_sku_inventory?
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_inventory shopping_mall_inventory?
+  shopping_mall_inventory_alerts shopping_mall_inventory_alerts?
+  shopping_mall_inventory_audits shopping_mall_inventory_audits[]
+  shopping_mall_inventory_deltas shopping_mall_inventory_deltas[]
+  
+  @@index([shopping_mall_product_id])
+  @@index([created_at])
+}
+
+/// Junction table that establishes the many-to-many relationship between
+/// SKUs (shopping_mall_skus) and product attribute values
+/// (shopping_mall_product_attribute_values). Each row represents one
+/// attribute value assigned to a specific SKU. For example, 'color=blue' or
+/// 'size=large'. Dynamically populated when a product with attributes is
+/// created. Avoids denormalization of attribute values into the SKUs table.
+///
+/// @namespace SKUs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The SKU to which this attribute value is assigned. {@link
+  /// shopping_mall_skus.id}.
+  shopping_mall_sku_id String
+  
+  /// The specific attribute value (e.g., 'red', 'xl') assigned to this SKU.
+  /// {@link shopping_mall_product_attribute_values.id}.
+  shopping_mall_product_attribute_value_id String
+  
+  /// Timestamp when this SKU-attribute relationship was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  attributeValue shopping_mall_product_attribute_values @relation(fields: [shopping_mall_product_attribute_value_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_sku_id, shopping_mall_product_attribute_value_id], map: "shopping_mall_sku_attributes_shopping_mall_sku_id_shop_6e3c1f90")
+  @@index([shopping_mall_sku_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_attribute_value_id], map: "shopping_mall_sku_attributes_shopping_mall_product_att_1e007eef")
+}
+
+/// Stores override pricing for individual SKUs when the price differs from
+/// the base product price. Default price inheritance is handled
+/// application-side: if price_value is null, use product's base price.
+/// Allows sellers to set different prices for different variants (e.g., size
+/// XL costs more than size S). Only the active price for each SKU is stored
+/// - no history kept here as price history is captured in order items. Never
+/// calculate this value; store exact override amounts.
+///
+/// @namespace SKUs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_prices {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The SKU for which this price is set. {@link shopping_mall_skus.id}.
+  shopping_mall_sku_id String
+  
+  /// The override price for this SKU. Null means inherit parent product price.
+  /// Non-negative value.
+  price_value Float?
+  
+  /// Timestamp when this price was created or last updated.
+  created_at DateTime
+  
+  /// Timestamp when this price was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_sku_id])
+  
+  @@index([shopping_mall_sku_id])
+}
+
+/// Records the current inventory level for each SKU. This is the
+/// authoritative source for stock quantity. Inventory automatically
+/// decreases when an order is confirmed. May be manually increased by
+/// sellers during restock. Zero inventory means the SKU is out-of-stock and
+/// hidden from customers. No negative inventory allowed. This table is
+/// updated atomically with order confirmation and direct seller adjustments.
+///
+/// @namespace SKUs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The SKU for which inventory is tracked. {@link shopping_mall_skus.id}.
+  shopping_mall_sku_id String
+  
+  /// Current quantity in stock. Must be zero or positive integer. Zero means
+  /// the SKU is out of stock. Never negative.
+  quantity Int
+  
+  /// Timestamp when this inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when this inventory level was last updated (e.g., by order or
+  /// seller restock).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sku shopping_mall_skus @relation(fields: [shopping_mall_sku_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_sku_id])
+  
+  @@index([shopping_mall_sku_id])
+  @@index([quantity])
+}

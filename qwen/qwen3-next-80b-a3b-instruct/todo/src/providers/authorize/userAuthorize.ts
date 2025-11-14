@@ -1,4 +1,4 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
@@ -16,8 +16,8 @@ export async function userAuthorize(request: {
   }
 
   // payload.id contains top-level user table ID
-  // For todo_users table (standalone user model), query directly by id
-  const user = await MyGlobal.prisma.todo_users.findFirst({
+  // Query using appropriate field based on schema structure
+  const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,

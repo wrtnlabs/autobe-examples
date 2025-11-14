@@ -1,0 +1,400 @@
+/// System-wide audit logs capturing important events across the platform.
+/// These logs support debugging, security audits, and compliance tracking.
+/// Each entry records the event type, affected resource, actor (system or
+/// admin), and timestamp. This is a subsidiary table managed by the system
+/// and should not be modified directly by users.
+///
+/// @namespace Maintenance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_system_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of system event (e.g., API_REQUEST, DATABASE_ERROR,
+  /// CACHE_INVALIDATE).
+  event_type String
+  
+  /// Category of the event (e.g., security, performance, infrastructure).
+  category String
+  
+  /// Severity level of the event (info, warning, error, critical).
+  severity String
+  
+  /// Type of resource affected (e.g., user, post, community, system).
+  resource_type String?
+  
+  /// UUID of the affected resource, if any.
+  resource_id String?
+  
+  /// Type of actor triggering the event (system, admin).
+  actor_type String
+  
+  /// ID of the actor (admin user ID if actor_type is admin, null if system).
+  actor_id String?
+  
+  /// JSON-encoded details of the event with additional context.
+  details String?
+  
+  /// IP address from which the event originated.
+  ip_address String?
+  
+  /// User agent string of the client that triggered the event.
+  user_agent String?
+  
+  /// Timestamp when the log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the log entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the log entry was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([event_type])
+  @@index([category])
+  @@index([severity])
+  @@index([created_at, severity])
+  @@index([resource_type, resource_id])
+  @@index([actor_type, actor_id])
+}
+
+/// Records the status and metrics of system health checks performed at
+/// regular intervals. These checks monitor critical system components such
+/// as database connectivity, API endpoints, and external services. This
+/// subsidiary table is automatically updated by system jobs and provides a
+/// historical record of system reliability.
+///
+/// @namespace Maintenance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_health_checks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the system component being checked (e.g., database, caching,
+  /// search).
+  component String
+  
+  /// Current health status (ok, warning, critical).
+  status String
+  
+  /// Time taken (in milliseconds) to complete the check.
+  response_time_ms Int?
+  
+  /// Additional diagnostic data in JSON format.
+  details String?
+  
+  /// Timestamp when the health check was performed.
+  checked_at DateTime
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the record was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([component, checked_at])
+  @@index([status])
+  @@index([checked_at])
+}
+
+/// Tracks the lifecycle and status of asynchronous background jobs running
+/// on the platform. These tasks include queue processing, data exports,
+/// report generation, and automated maintenance. This subsidiary table
+/// records task parameters, execution status, progress, and completion
+/// timestamps.
+///
+/// @namespace Maintenance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_background_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Canonical name of the background task (e.g., process_notifications,
+  /// generate_report, purge_old_logs).
+  task_name String
+  
+  /// Current status (pending, running, completed, failed, canceled).
+  status String
+  
+  /// Priority level (low, normal, high).
+  priority String
+  
+  /// JSON-encoded parameters passed to the task.
+  payload String?
+  
+  /// Number of times the task has been retried.
+  attempts Int
+  
+  /// Maximum number of allowed attempts before marking as failed.
+  max_attempts Int
+  
+  /// Timestamp when the task was first started.
+  started_at DateTime?
+  
+  /// Timestamp when the task completed (or failed).
+  completed_at DateTime?
+  
+  /// Error message if the task has failed.
+  error_message String?
+  
+  /// Worker identifier or process name that processed this task.
+  processed_by String?
+  
+  /// Timestamp when the task record was created.
+  created_at DateTime
+  
+  /// Timestamp when the task record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the task record was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([task_name])
+  @@index([status, started_at])
+  @@index([priority])
+  @@index([started_at])
+  @@index([completed_at])
+}
+
+/// Aggregates performance counters for all caching systems in the platform,
+/// including Redis, in-memory caches, and CDN hit rates. This subsidiary
+/// table records cache operations, hit/miss ratios, and memory usage for
+/// system optimization and capacity planning.
+///
+/// @namespace Maintenance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_cache_statistics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of cache (redis, in_memory, cdn).
+  cache_type String
+  
+  /// Key or namespace being monitored.
+  cache_key String
+  
+  /// Number of successful cache hits.
+  hit_count Int
+  
+  /// Number of cache misses.
+  miss_count Int
+  
+  /// Total number of operations (hits + misses).
+  total_operations Int
+  
+  /// Computed hit ratio (hit_count / total_operations).
+  hit_ratio Float
+  
+  /// Memory currently used by the cache in bytes.
+  memory_used_bytes Int
+  
+  /// Maximum memory capacity of the cache in bytes.
+  max_memory_bytes Int
+  
+  /// Default time-to-live for cached items in seconds.
+  ttl_seconds Int?
+  
+  /// Timestamp when these statistics were captured.
+  recorded_at DateTime
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the record was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([cache_type, recorded_at])
+  @@index([recorded_at])
+}
+
+/// Collects system-wide performance metrics including response times,
+/// request rates, error rates, and resource utilization. This subsidiary
+/// table is populated by monitoring agents and enables identifying
+/// performance bottlenecks, capacity planning, and SLA enforcement.
+///
+/// @namespace Maintenance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_performance_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of metric (request_rate, response_time, error_rate, cpu_utilization,
+  /// memory_usage).
+  metric_type String
+  
+  /// Platform component the metric relates to (api_gateway, worker_pool,
+  /// database, cache).
+  component String
+  
+  /// The measured value (e.g., 0.21 seconds, 0.75 for 75% CPU).
+  value Float
+  
+  /// Unit of measurement (ms, percent, requests/sec, bytes).
+  unit String
+  
+  /// Time period over which this metric was aggregated (e.g., 60 for 1-minute
+  /// stats).
+  period_seconds Int
+  
+  /// Timestamp when this metric sample was taken.
+  measure_time DateTime
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the record was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@index([metric_type, measure_time], map: "community_platform_performance_metrics_metric_type_mea_a8b6f7c1")
+  // spellchecker: ignore-next-line
+  @@index([component, metric_type], map: "community_platform_performance_metrics_component_metri_3be91539")
+}
+
+/// Tracks the history of all database schema migrations applied to the
+/// system. Each record represents a single migration script that has been
+/// successfully executed. This subsidiary table ensures all environments are
+/// synchronized to the same schema version and prevents duplicate
+/// migrations.
+///
+/// @namespace Maintenance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_db_migrations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique filename identifier of the migration script (e.g.,
+  /// 2025_05_15_add_user_profile_table).
+  migration_name String
+  
+  /// Version number of the migration (e.g., 2025.05.15.01).
+  version String
+  
+  /// Timestamp when the migration was applied to the database.
+  applied_at DateTime
+  
+  /// User or system identifier that applied the migration.
+  applied_by String
+  
+  /// Cryptographic checksum of the migration file content.
+  checksum String
+  
+  /// Migration status (applied, failed, pending).
+  status String
+  
+  /// Error message if migration failed (nullable).
+  error_message String?
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the record was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([migration_name])
+  @@unique([version])
+  @@index([status])
+  @@index([applied_at])
+  @@index([applied_by])
+}
+
+/// Stores environment-specific configuration settings for the platform. This
+/// subsidiary table contains key-value pairs for configuration overrides
+/// that vary between development, staging, and production environments. This
+/// enables consistent deployment while allowing environment-specific tuning.
+///
+/// @namespace Maintenance
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_environment_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target environment (development, staging, production).
+  environment String
+  
+  /// Configuration key, dot-separated if hierarchical (e.g., cache.ttl,
+  /// database.pool_size).
+  config_key String
+  
+  /// String representation of the configuration value.
+  config_value String
+  
+  /// Data type of the value (string, number, boolean, json).
+  config_type String
+  
+  /// Human-readable description of the configuration option.
+  description String?
+  
+  /// Timestamp when the configuration was last updated.
+  updated_at DateTime
+  
+  /// User or system that last modified this configuration.
+  updated_by String
+  
+  /// Timestamp when the configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([environment, config_key], map: "community_platform_environment_configurations_environm_cb1aff8e")
+  @@index([config_type])
+  @@index([updated_at])
+  // spellchecker: ignore-next-line
+  @@index([environment, config_type], map: "community_platform_environment_configurations_environm_6b565d0a")
+}

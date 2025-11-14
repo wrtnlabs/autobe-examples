@@ -1,0 +1,316 @@
+/// Primary customer entity representing registered buyers on the
+/// shoppingMall platform. Each customer has unique authentication
+/// credentials and identity. This is a primary entity because customers
+/// directly manage their accounts (registration, login, profile updates) and
+/// require independent API endpoints for user management operations.
+/// Customer account status can be active, suspended, banned, or pending
+/// email verification. Note: This is not a person, but a connection basis
+/// for purchasing activities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's unique email address used for authentication and
+  /// communication. Must be unique across all customers.
+  email String
+  
+  /// Hashed password using secure algorithm for authentication. Never stored
+  /// as plain text. Required for login functionality.
+  password_hash String
+  
+  /// Account status of the customer. Valid values: "active", "suspended",
+  /// "banned", "pending_email_verification", "rejected". Controls access to
+  /// platform features.
+  status String
+  
+  /// Timestamp when the customer account was created. Tracks account lifecycle
+  /// onset.
+  created_at DateTime
+  
+  /// Timestamp when the customer account was last updated. Tracks active
+  /// account modifications.
+  updated_at DateTime
+  
+  /// Timestamp when the customer account was soft-deleted. NULL if account is
+  /// still active. Enables account recovery and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_customer_sessions shopping_mall_customer_sessions[]
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_review_reports shopping_mall_review_reports[]
+  shopping_mall_review_votes shopping_mall_review_votes[]
+  shopping_mall_admin_actions shopping_mall_admin_actions[]
+  shopping_mall_admin_audit_logs shopping_mall_admin_audit_logs[]
+  shopping_mall_admin_disputes shopping_mall_admin_disputes[]
+  
+  @@unique([email])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Supporting entity for customer authentication sessions. Each record
+/// represents an active or expired login session for a customer. This is a
+/// subsidiary entity because sessions are managed entirely through customer
+/// account operations (login creates session, logout invalidates session)
+/// and do not require independent user-facing API endpoints. Mirroring the
+/// required session table pattern: id, customer_id, ip, href, referrer,
+/// created_at, expired_at with composite index.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer account that owns this session. {@link
+  /// shopping_mall_customers.id}
+  customer_id String
+  
+  /// Client IP address from which the session was initiated.
+  ip String
+  
+  /// URL of the page where the session was initiated.
+  href String
+  
+  /// Referrer URL that led the customer to the platform.
+  referrer String
+  
+  /// Timestamp when this session was created and authenticated.
+  created_at DateTime
+  
+  /// Timestamp when this session expired or was explicitly invalidated. NULL
+  /// if session is still active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_guest_carts shopping_mall_guest_carts[]
+  
+  @@index([customer_id, created_at])
+}
+
+/// Primary seller entity representing registered merchants who list and sell
+/// products on the shoppingMall platform. Each seller has unique
+/// authentication credentials and identity. This is a primary entity because
+/// sellers directly manage their merchant accounts (registration, login,
+/// profile updates) and require independent API endpoints for dealer
+/// management operations. Seller account status can be active, suspended,
+/// banned, pending_review, or rejected. Note: This is not a person, but a
+/// business entity for selling activities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's unique email address used for authentication and communication.
+  /// Must be unique across all sellers.
+  email String
+  
+  /// Hashed password using secure algorithm for authentication. Never stored
+  /// as plain text. Required for login functionality.
+  password_hash String
+  
+  /// Account status of the seller. Valid values: "active", "suspended",
+  /// "banned", "pending_review", "rejected". Controls access to merchant
+  /// features.
+  status String
+  
+  /// Timestamp when the seller account was created. Tracks account lifecycle
+  /// onset.
+  created_at DateTime
+  
+  /// Timestamp when the seller account was last updated. Tracks active account
+  /// modifications.
+  updated_at DateTime
+  
+  /// Timestamp when the seller account was soft-deleted. NULL if account is
+  /// still active. Enables account recovery and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_seller_sessions shopping_mall_seller_sessions[]
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_review_responses shopping_mall_review_responses[]
+  shopping_mall_inventory_audits shopping_mall_inventory_audits[]
+  shopping_mall_admin_disputes shopping_mall_admin_disputes[]
+  
+  @@unique([email])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Supporting entity for seller authentication sessions. Each record
+/// represents an active or expired login session for a seller. This is a
+/// subsidiary entity because sessions are managed entirely through seller
+/// account operations (login creates session, logout invalidates session)
+/// and do not require independent user-facing API endpoints. Mirroring the
+/// required session table pattern: id, seller_id, ip, href, referrer,
+/// created_at, expired_at with composite index.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller account that owns this session. {@link
+  /// shopping_mall_sellers.id}
+  seller_id String
+  
+  /// Client IP address from which the session was initiated.
+  ip String
+  
+  /// URL of the page where the session was initiated.
+  href String
+  
+  /// Referrer URL that led the seller to the platform.
+  referrer String
+  
+  /// Timestamp when this session was created and authenticated.
+  created_at DateTime
+  
+  /// Timestamp when this session expired or was explicitly invalidated. NULL
+  /// if session is still active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([seller_id, created_at])
+}
+
+/// Primary admin entity representing platform administrators with full
+/// system access and control. Each admin has unique authentication
+/// credentials and identity. This is a primary entity because admins
+/// directly manage their system accounts (login, logout, password reset) and
+/// require independent API endpoints for administrative operations. Admin
+/// account status can be active, suspended, or banned (rejected/pending not
+/// applicable). Note: This is a system operator role with elevated
+/// privileges.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin's unique email address used for authentication and communication.
+  /// Must be unique across all admins.
+  email String
+  
+  /// Hashed password using secure algorithm for authentication. Never stored
+  /// as plain text. Required for login functionality.
+  password_hash String
+  
+  /// Account status of the admin. Valid values: "active", "suspended",
+  /// "banned". Controls access to system administration features.
+  status String
+  
+  /// Timestamp when the admin account was created. Tracks account lifecycle
+  /// onset.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last updated. Tracks active account
+  /// modifications.
+  updated_at DateTime
+  
+  /// Timestamp when the admin account was soft-deleted. NULL if account is
+  /// still active. Enables account recovery and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_admin_sessions shopping_mall_admin_sessions[]
+  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_refund_status_history shopping_mall_refund_status_history[]
+  shopping_mall_admin_actions shopping_mall_admin_actions[]
+  shopping_mall_admin_audit_logs shopping_mall_admin_audit_logs[]
+  shopping_mall_admin_dispute_decisions shopping_mall_admin_dispute_decisions[]
+  shopping_mall_admin_notifications_of_send_to_admin_id shopping_mall_admin_notifications[] @relation("shopping_mall_admin_notifications_of_send_to_admin_id")
+  shopping_mall_admin_notifications_of_sent_by_admin_id shopping_mall_admin_notifications[] @relation("shopping_mall_admin_notifications_of_sent_by_admin_id")
+  
+  @@unique([email])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Supporting entity for admin authentication sessions. Each record
+/// represents an active or expired login session for an admin. This is a
+/// subsidiary entity because sessions are managed entirely through admin
+/// account operations (login creates session, logout invalidates session)
+/// and do not require independent user-facing API endpoints. Mirroring the
+/// required session table pattern: id, admin_id, ip, href, referrer,
+/// created_at, expired_at with composite index.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the admin account that owns this session. {@link
+  /// shopping_mall_admins.id}
+  admin_id String
+  
+  /// Client IP address from which the session was initiated.
+  ip String
+  
+  /// URL of the page where the session was initiated.
+  href String
+  
+  /// Referrer URL that led the admin to the platform.
+  referrer String
+  
+  /// Timestamp when this session was created and authenticated.
+  created_at DateTime
+  
+  /// Timestamp when this session expired or was explicitly invalidated. NULL
+  /// if session is still active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+}

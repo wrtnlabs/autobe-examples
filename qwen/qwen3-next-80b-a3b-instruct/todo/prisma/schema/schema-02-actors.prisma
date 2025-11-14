@@ -1,0 +1,221 @@
+/// Core user entity for authenticated individuals who create and manage
+/// their own todo items. This table contains only authentication and
+/// identity data. User accounts must be verified before accessing todo data.
+/// All other user data is stored in todo_app_todos, connected via user_id.
+/// This table is not joined with any table in otherTables outside this
+/// component.
+///
+/// Primary role: authentication endpoint subject. Follows strict write-once
+/// security model for passwords.
+///
+/// Referenced by: todo_app_user_sessions (via user_id).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for user registration and authentication. Must be
+  /// unique across all users.
+  email String
+  
+  /// Bcrypt-hashed password. Never stores plain text password. Generated
+  /// during registration.
+  password_hash String
+  
+  /// Timestamp when the user account was created. UTC time.
+  created_at DateTime
+  
+  /// Timestamp of the last update to user account details. Updated on password
+  /// change or profile modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, account is active. If set, account is
+  /// deleted and all associated data is eligible for purging after 72 hours as
+  /// per privacy policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_user_sessions todo_app_user_sessions[]
+  todo_app_todos todo_app_todos[]
+  todo_app_auth_logs todo_app_auth_logs[]
+  todo_app_audit_logs todo_app_audit_logs[]
+  todo_app_auth_logs_of_users todo_app_auth_logs_of_users[]
+  todo_app_backups todo_app_backups[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([email, created_at])
+}
+
+/// Records user authentication sessions. Each session is tied to a single
+/// user and represents an active login from a specific device or browser.
+/// Session tokens are issued upon successful authentication and consumed for
+/// API access. Sessions are managed entirely by the authentication system
+/// and do not require direct user interaction. This table is strictly
+/// subsidiary since users do not create, fetch, or manage sessions directly.
+///
+/// Developed per requirements: session management requires specific fields
+/// (ip, href, referrer) and follow exact spec. Never store tokens, device
+/// info, or user agent.
+///
+/// Referenced by: none. Only referenced from authentication layer.
+///
+/// Follows session table pattern exactly.
+///
+/// Note: This is a subsidiary table: sessions are created and managed by the
+/// authentication system based on login events, not directly
+/// user-controlled.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the authenticating user. {@link todo_app_users.id}
+  user_id String
+  
+  /// IP address of the device from which the session was initiated.
+  ip String
+  
+  /// Full URL of the connection endpoint used for login.
+  href String
+  
+  /// Referrer URL indicating where the user came from when logging in.
+  referrer String
+  
+  /// The moment the session was created and the access token was issued. UTC
+  /// time.
+  created_at DateTime
+  
+  /// The expiration time of this session. Null indicates an active (not
+  /// expired) session. Session is invalidated once expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+}
+
+/// Core admin entity with elevated privileges to access and manage all user
+/// accounts and todo items. This table contains only authentication and
+/// identity data for system administrators. Admin accounts are strictly
+/// controlled and should only be created via out-of-band mechanisms. Admins
+/// can access all user data but their own identity is isolated from users.
+/// This table is not joined with any table in otherTables outside this
+/// component.
+///
+/// Primary role: administrative system endpoint subject. Follows strict
+/// write-once security model for passwords.
+///
+/// Referenced by: todo_app_admin_sessions (via admin_id).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for admin registration and authentication. Must be
+  /// unique across all admins.
+  email String
+  
+  /// Bcrypt-hashed password. Never stores plain text password. Generated
+  /// during registration.
+  password_hash String
+  
+  /// Timestamp when the admin account was created. UTC time.
+  created_at DateTime
+  
+  /// Timestamp of the last update to admin account details. Updated on
+  /// password change or profile modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, account is active. If set, account is
+  /// deleted. Admin deletion is irreversible and triggers full audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_admin_sessions todo_app_admin_sessions[]
+  todo_app_audit_logs todo_app_audit_logs[]
+  todo_app_auth_logs_of_admins todo_app_auth_logs_of_admins[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([email, created_at])
+}
+
+/// Records admin authentication sessions. Each session is tied to a single
+/// admin and represents an active login session from an administrative
+/// console. This is critical for audit trails. Session tokens are issued
+/// upon successful admin login and consumed for administrative API access.
+/// Sessions are managed entirely by the authentication system and do not
+/// require direct admin interaction. This table is strictly subsidiary since
+/// admins do not create, fetch, or manage sessions directly.
+///
+/// Developed per requirements: session management requires specific fields
+/// (ip, href, referrer) and follow exact spec. Never store tokens, device
+/// info, or user agent.
+///
+/// Referenced by: none. Only referenced from authentication layer.
+///
+/// Follows session table pattern exactly.
+///
+/// Note: This is a subsidiary table: sessions are created and managed by the
+/// authentication system based on admin login events, not directly
+/// user-controlled.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the authenticating admin. {@link todo_app_admins.id}
+  admin_id String
+  
+  /// IP address of the device from which the session was initiated.
+  ip String
+  
+  /// Full URL of the connection endpoint used for login.
+  href String
+  
+  /// Referrer URL indicating where the admin came from when logging in.
+  referrer String
+  
+  /// The moment the session was created and the access token was issued. UTC
+  /// time.
+  created_at DateTime
+  
+  /// The expiration time of this session. Null indicates an active (not
+  /// expired) session. Session is invalidated once expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin todo_app_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+}

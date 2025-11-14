@@ -1,187 +1,177 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Ip } from "@nestjs/common";
 import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
+import { postAuthCitizenJoin } from "../../../providers/postAuthCitizenJoin";
+import { postAuthCitizenLogin } from "../../../providers/postAuthCitizenLogin";
+import { postAuthCitizenRefresh } from "../../../providers/postAuthCitizenRefresh";
 
-import { IDiscussionBoardCitizen } from "../../../api/structures/IDiscussionBoardCitizen";
+import { IPoliticalForumCitizen } from "../../../api/structures/IPoliticalForumCitizen";
 
 @Controller("/auth/citizen")
 export class AuthCitizenController {
   /**
-   * Register a new citizen user for the discussion board system.
+   * Register a new citizen user and issue initial authentication tokens.
    *
-   * This API endpoint handles the registration of new citizen users for the
-   * discussion board system. When a user submits their email and password,
-   * the system creates a new record in the discussion_board_citizens table
-   * with the provided email and password_hash values. The email_verified flag
-   * is set to false by default, requiring the user to verify their email
-   * before they can create posts or comments. The operation strictly follows
-   * the schema of the discussion_board_citizens table which contains the
-   * necessary fields: email (unique), password_hash, and email_verified. The
-   * email must be unique and follow standard email format, while the
-   * password_hash is stored as a hashed value created from the provided
-   * password. This registration process ensures that only users with verified
-   * email addresses can participate in discussions, maintaining system
-   * integrity and accountability. The operation is designed to be public and
-   * accessible without authentication, allowing any user to initiate account
-   * creation.
+   * This endpoint registers a new citizen user in the political discussion
+   * forum by creating an entry in the political_forum_citizens table. The
+   * process verifies that the provided email is not already registered and
+   * ensures the password meets complexity requirements. Upon successful
+   * registration, the system generates both access and refresh JWT tokens as
+   * specified by the authentication strategy.
    *
-   * Implementation is based directly on the discussion_board_citizens schema
-   * fields: email (mandatory, unique), password_hash (mandatory), and
-   * email_verified (boolean, default false). No other fields from the table
-   * are used as they are not relevant to the registration process. The system
-   * will validate that the email format is correct and that the password
-   * meets minimum security requirements before creating the record.
+   * The implementation references the following fields from the
+   * political_forum_citizens schema: email (required, unique), password_hash
+   * (required, stored as hashed value), display_name (optional, defaulted to
+   * email username if not provided), created_at (automatically set by
+   * database), and last_login_at (initialized to null). Additional fields like
+   * email_verified and two_factor_enabled are set to false by default,
+   * requiring subsequent verification steps.
    *
-   * This registration flow is specifically for citizen users as defined in
-   * the business requirements, and it aligns with the citizen actor's
-   * characteristics which require email verification before posting or
-   * commenting. The operation is named 'join' as per the standard naming
-   * convention for user registration in authentication systems. The response
-   * will include a JWT token with the user's ID and role (citizen) upon
-   * successful registration, even though the account is not yet verified,
-   * allowing the user to proceed to verification.
+   * The registration process includes a built-in validation that prevents
+   * duplicate emails and enforces password security policies. After creating
+   * the user record, the system immediately generates a session entry in
+   * political_forum_citizen_sessions with the initial refresh token, which is
+   * returned to the client with the access token.
    *
-   * Security considerations include ensuring password hashing is performed
-   * properly before storage, validating email format against RFC standards,
-   * and ensuring the email field is unique before creation to prevent
-   * duplicate accounts. The operation does not use soft delete functionality
-   * as account deletion is handled separately.
+   * The security model ensures that newly registered users have their
+   * permissions correctly scoped to citizen capabilities only, with no
+   * administrative or moderation privileges. This registration endpoint is
+   * publicly accessible to allow new users to join the platform without
+   * requiring prior authentication.
    *
-   * Related operations include the login endpoint which authenticates
-   * registered users with their credentials, and the refresh endpoint which
-   * allows token renewal. The verify email endpoint (not created here as it's
-   * handled by email system) would be the next step in this workflow to
-   * enable posting capabilities.
+   * Related operations include POST /auth/citizen/login for subsequent
+   * authentication and POST /auth/citizen/refresh for token renewal after the
+   * access token expires.
    *
    * @param connection
-   * @param body Request body containing registration data for a new citizen
-   *   user. Includes the email address and password required to create a
-   *   citizen account in the discussion_board_citizens table. The email field
-   *   stores the user's email address which must be unique, and the password
-   *   field contains the plain text password that will be hashed and stored
-   *   as password_hash in the database.
+   * @param body Registration data for creating a new citizen user account
    * @setHeader token.access Authorization
    *
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
   public async join(
+    @Ip()
+    ip: string,
     @TypedBody()
-    body: IDiscussionBoardCitizen.ICreate,
-  ): Promise<IDiscussionBoardCitizen.IAuthorized> {
-    body;
-    return typia.random<IDiscussionBoardCitizen.IAuthorized>();
+    body: IPoliticalForumCitizen.ICreate,
+  ): Promise<IPoliticalForumCitizen.IAuthorized> {
+    try {
+      return await postAuthCitizenJoin({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Authenticate a citizen user and issue access token.
+   * Authenticate citizen user and issue access and refresh tokens.
    *
-   * This API endpoint authenticates citizen users who have previously
-   * registered with the discussion board system. The user provides their
-   * email and password, which the system verifies against the
-   * discussion_board_citizens table by comparing the provided password
-   * against the stored password_hash. The operation uses the email field to
-   * identify the user account and the password_hash field to validate the
-   * provided password. When credentials are valid, the system generates a JWT
-   * token containing the user's ID, role ('citizen'), and other relevant
-   * information as required by the authentication system. This token is
-   * returned in the response alongside a refresh token for session
-   * management.
+   * This endpoint allows a registered citizen to authenticate their identity by
+   * providing their email and password. The system verifies these credentials
+   * against the political_forum_citizens table by matching the provided email
+   * with a record and validating the password hash against the stored
+   * password_hash field.
    *
-   * Implementation strictly follows the discussion_board_citizens schema
-   * which contains the required fields: email (unique identifier) and
-   * password_hash (hashed value). The email_verified field is not used in
-   * authentication but determines the user's ability to post or comment after
-   * login. The operation does not implement soft delete functionality as
-   * account deletion is handled separately, and the disabled_at field is not
-   * relevant to this authentication flow.
+   * The operation first checks if the user exists and is not deleted or
+   * inactive. It then uses bcrypt comparison to verify the password against the
+   * password_hash value. If successful, it generates a new access token (JWT)
+   * with the citizen ID and a refresh token stored in
+   * political_forum_citizen_sessions with an expiration period.
    *
-   * Security considerations include using secure password hashing (bcrypt or
-   * similar), preventing brute force attacks through rate limiting, and
-   * ensuring secure token transmission. The operation is public as any
-   * registered user can log in. The response follows the required naming
-   * pattern for authentication responses:
-   * I{PascalPrefixName}{ActorName}.IAuthorized where PascalPrefixName is
-   * 'DiscussionBoard' and ActorName is 'Citizen'.
+   * The resulting response includes the access token, refresh token, and
+   * minimal user metadata (user ID and email) for client-side use. The system
+   * excludes sensitive information like password_hash from the returned data.
+   * This endpoint is publicly accessible to enable direct login without
+   * pre-existing authentication.
    *
-   * Related operations include the join endpoint for registration and the
-   * refresh endpoint for token renewal. This login operation assumes the user
-   * has already registered and has a valid citizen account in the
-   * discussion_board_citizens table.
+   * Authentication requires the email and password fields to be present in the
+   * political_forum_citizens schema. Session management is implemented via the
+   * political_forum_citizen_sessions table, which maintains active refresh
+   * tokens for revocation and expiration control. This login operation is
+   * required for citizen actors as part of their member authentication workflow
+   * before accessing protected resources.
+   *
+   * Related operations include POST /auth/citizen/join for registration and
+   * POST /auth/citizen/refresh for token renewal.
    *
    * @param connection
-   * @param body Request body containing authentication credentials for a
-   *   citizen user. Includes the email address and password required to
-   *   authenticate against the discussion_board_citizens table. The email
-   *   field is used to locate the user record, and the password is validated
-   *   against the stored password_hash.
+   * @param body Login credentials consisting of email and password for citizen
+   *   authentication
    * @setHeader token.access Authorization
    *
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
   public async login(
+    @Ip()
+    ip: string,
     @TypedBody()
-    body: IDiscussionBoardCitizen.IRequest,
-  ): Promise<IDiscussionBoardCitizen.IAuthorized> {
-    body;
-    return typia.random<IDiscussionBoardCitizen.IAuthorized>();
+    body: IPoliticalForumCitizen.ILogin,
+  ): Promise<IPoliticalForumCitizen.IAuthorized> {
+    try {
+      return await postAuthCitizenLogin({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**
-   * Refresh the access token for a citizen user using a valid refresh token.
+   * Refresh access token for citizen using valid refresh token.
    *
-   * This API endpoint enables citizen users to refresh their expired access
-   * tokens using a valid refresh token, maintaining session continuity
-   * without requiring the user to re-enter their credentials. The operation
-   * validates the provided refresh token against the
-   * discussion_board_citizen_sessions table, which stores active session
-   * information including the citizen_id and expired_at timestamp. When the
-   * refresh token is valid and has not expired, the system generates a new
-   * access token with updated expiration while maintaining the user's role
-   * and authentication state.
+   * This endpoint allows a citizen user to obtain a new access token using a
+   * valid refresh token stored in the political_forum_citizen_sessions table.
+   * The refresh token is validated against the stored token record, which
+   * includes checks for expiration, revocation, and association with an active
+   * citizen account in political_forum_citizens.
    *
-   * Implementation strictly follows the session management requirements based
-   * on the discussion_board_citizen_sessions schema, which contains
-   * discussion_board_citizen_id (linking to citizen), created_at, and
-   * expired_at fields. The refresh token system relies on these fields to
-   * validate session validity and prevent unauthorized access. The
-   * email_verified flag from the discussion_board_citizens table is also
-   * considered - if the user's email is not verified, the refresh operation
-   * will succeed but the returned access token will not grant
-   * posting/commenting privileges.
+   * Upon successful validation, the system generates a new JWT access token
+   * with updated expiration time while preserving the existing refresh token
+   * (unless rotation is enforced by policy). The implementation references the
+   * refresh_token, expires_at, and citizen_id fields in
+   * political_forum_citizen_sessions. The citizen_id is matched against
+   * political_forum_citizens to validate that the user account has not been
+   * deleted or suspended.
    *
-   * Security considerations include using cryptographically secure refresh
-   * tokens, implementing token expiration policies (7 days as specified), and
-   * ensuring refresh tokens cannot be reused after expiration. The refresh
-   * token must be blacklisted if the user logs out or if suspicious activity
-   * is detected. The operation does not use soft delete functionality as
-   * session invalidation is handled through the expired_at field.
+   * The refresh operation is designed to minimize disruption to user sessions
+   * while maintaining security. The token must be presented in the request
+   * header, and the system performs integrity checks to prevent replay attacks.
+   * A new refresh token may be issued depending on configured rotation
+   * policies.
    *
-   * The response follows the required naming pattern for authentication
-   * responses: I{PascalPrefixName}{ActorName}.IAuthorized where
-   * PascalPrefixName is 'DiscussionBoard' and ActorName is 'Citizen'. Related
-   * operations include the login endpoint for initial authentication and the
-   * join endpoint for registration. This refresh operation is called when the
-   * access token expires to maintain a seamless user experience while
-   * preserving system security.
+   * This operation is essential for maintaining user sessions without requiring
+   * repeated login with credentials. It follows the OAuth2 refresh token
+   * pattern and applies specifically to member actors like citizens who require
+   * persistent authentication. The refresh endpoint ensures continuous access
+   * to protected resources by extending the authentication session lifecycle.
+   *
+   * Related operations include POST /auth/citizen/login for initial
+   * authentication and POST /auth/citizen/join for registration.
    *
    * @param connection
-   * @param body Request body containing a valid refresh token which was
-   *   previously issued during login or join operations. The refresh token is
-   *   a long-lived credential that allows the client to obtain a new access
-   *   token without requiring re-authentication with email and password. This
-   *   token must be securely stored on the client side.
+   * @param body Refresh token to be validated for generating a new access token
+   *   in citizen authentication flow
    * @setHeader token.access Authorization
    *
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")
   public async refresh(
     @TypedBody()
-    body: IDiscussionBoardCitizen.IRequest,
-  ): Promise<IDiscussionBoardCitizen.IAuthorized> {
-    body;
-    return typia.random<IDiscussionBoardCitizen.IAuthorized>();
+    body: IPoliticalForumCitizen.IRefresh,
+  ): Promise<IPoliticalForumCitizen.IAuthorized> {
+    try {
+      return await postAuthCitizenRefresh({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

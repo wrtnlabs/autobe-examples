@@ -2,61 +2,53 @@ import { Module } from "@nestjs/common";
 
 import { AuthCitizenController } from "./controllers/auth/citizen/AuthCitizenController";
 import { AuthModeratorController } from "./controllers/auth/moderator/AuthModeratorController";
-import { DiscussionboardSystemConfigController } from "./controllers/discussionBoard/system/config/DiscussionboardSystemConfigController";
-import { DiscussionboardModeratorSystemConfigController } from "./controllers/discussionBoard/moderator/system/config/DiscussionboardModeratorSystemConfigController";
-import { DiscussionboardAuthCitizenJoinController } from "./controllers/discussionBoard/auth/citizen/join/DiscussionboardAuthCitizenJoinController";
-import { DiscussionboardAuthCitizenLoginController } from "./controllers/discussionBoard/auth/citizen/login/DiscussionboardAuthCitizenLoginController";
-import { DiscussionboardAuthCitizenRefreshController } from "./controllers/discussionBoard/auth/citizen/refresh/DiscussionboardAuthCitizenRefreshController";
-import { DiscussionboardAuthModeratorJoinController } from "./controllers/discussionBoard/auth/moderator/join/DiscussionboardAuthModeratorJoinController";
-import { DiscussionboardAuthModeratorLoginController } from "./controllers/discussionBoard/auth/moderator/login/DiscussionboardAuthModeratorLoginController";
-import { DiscussionboardModeratorAuthModeratorController } from "./controllers/discussionBoard/moderator/auth/moderator/refresh/DiscussionboardModeratorAuthModeratorController";
-import { DiscussionboardPostsController } from "./controllers/discussionBoard/posts/DiscussionboardPostsController";
-import { DiscussionboardCitizenPostsController } from "./controllers/discussionBoard/citizen/posts/DiscussionboardCitizenPostsController";
-import { DiscussionboardModeratorPostsController } from "./controllers/discussionBoard/moderator/posts/DiscussionboardModeratorPostsController";
-import { DiscussionboardCitizenPostsCommentsController } from "./controllers/discussionBoard/citizen/posts/comments/DiscussionboardCitizenPostsCommentsController";
-import { DiscussionboardModeratorPostsCommentsController } from "./controllers/discussionBoard/moderator/posts/comments/DiscussionboardModeratorPostsCommentsController";
-import { DiscussionboardPostsCommentsController } from "./controllers/discussionBoard/posts/comments/DiscussionboardPostsCommentsController";
-import { DiscussionboardPostsAttachmentsController } from "./controllers/discussionBoard/posts/attachments/DiscussionboardPostsAttachmentsController";
-import { DiscussionboardModeratorPostsAttachmentsController } from "./controllers/discussionBoard/moderator/posts/attachments/DiscussionboardModeratorPostsAttachmentsController";
-import { DiscussionboardSearchPostsController } from "./controllers/discussionBoard/search/posts/DiscussionboardSearchPostsController";
-import { DiscussionboardCommentsController } from "./controllers/discussionBoard/comments/DiscussionboardCommentsController";
-import { DiscussionboardCitizenCommentsController } from "./controllers/discussionBoard/citizen/comments/DiscussionboardCitizenCommentsController";
-import { DiscussionboardModeratorCommentsController } from "./controllers/discussionBoard/moderator/comments/DiscussionboardModeratorCommentsController";
-import { DiscussionboardCitizenAttachmentfilesController } from "./controllers/discussionBoard/citizen/attachmentFiles/DiscussionboardCitizenAttachmentfilesController";
-import { DiscussionboardModeratorAttachmentfilesController } from "./controllers/discussionBoard/moderator/attachmentFiles/DiscussionboardModeratorAttachmentfilesController";
-import { DiscussionboardAttachmentfilesController } from "./controllers/discussionBoard/attachmentFiles/DiscussionboardAttachmentfilesController";
-import { DiscussionboardModeratorReportsController } from "./controllers/discussionBoard/moderator/reports/DiscussionboardModeratorReportsController";
-import { DiscussionboardModeratorModeration_actionsController } from "./controllers/discussionBoard/moderator/moderation-actions/DiscussionboardModeratorModeration_actionsController";
+import { PoliticalforumPostsController } from "./controllers/politicalForum/posts/PoliticalforumPostsController";
+import { PoliticalforumCitizenPostsController } from "./controllers/politicalForum/citizen/posts/PoliticalforumCitizenPostsController";
+import { PoliticalforumModeratorPostsController } from "./controllers/politicalForum/moderator/posts/PoliticalforumModeratorPostsController";
+import { PoliticalforumPostsCommentsController } from "./controllers/politicalForum/posts/comments/PoliticalforumPostsCommentsController";
+import { PoliticalforumCitizenPostsCommentsController } from "./controllers/politicalForum/citizen/posts/comments/PoliticalforumCitizenPostsCommentsController";
+import { PoliticalforumModeratorPostsCommentsController } from "./controllers/politicalForum/moderator/posts/comments/PoliticalforumModeratorPostsCommentsController";
+import { PoliticalforumCitizenPostsReportsController } from "./controllers/politicalForum/citizen/posts/reports/PoliticalforumCitizenPostsReportsController";
+import { PoliticalforumCitizenCommentsReportsController } from "./controllers/politicalForum/citizen/comments/reports/PoliticalforumCitizenCommentsReportsController";
+import { PoliticalforumCitizenPostsAttachmentfilesController } from "./controllers/politicalForum/citizen/posts/attachmentFiles/PoliticalforumCitizenPostsAttachmentfilesController";
+import { PoliticalforumPostsAttachmentfilesController } from "./controllers/politicalForum/posts/attachmentFiles/PoliticalforumPostsAttachmentfilesController";
+import { PoliticalforumCitizenReportsController } from "./controllers/politicalForum/citizen/reports/PoliticalforumCitizenReportsController";
+import { PoliticalforumModeratorReportsController } from "./controllers/politicalForum/moderator/reports/PoliticalforumModeratorReportsController";
+import { PoliticalforumReportsPostController } from "./controllers/politicalForum/reports/post/PoliticalforumReportsPostController";
+import { PoliticalforumReportsCommentController } from "./controllers/politicalForum/reports/comment/PoliticalforumReportsCommentController";
+import { PoliticalforumCommentsController } from "./controllers/politicalForum/comments/PoliticalforumCommentsController";
+import { PoliticalforumModeratorUsersController } from "./controllers/politicalForum/moderator/users/PoliticalforumModeratorUsersController";
+import { PoliticalforumCitizenUsersController } from "./controllers/politicalForum/citizen/users/PoliticalforumCitizenUsersController";
+import { PoliticalforumModeratorDashboardsPlatform_activityController } from "./controllers/politicalForum/moderator/dashboards/platform-activity/PoliticalforumModeratorDashboardsPlatform_activityController";
+import { PoliticalforumModeratorDashboardsModeration_efficiencyController } from "./controllers/politicalForum/moderator/dashboards/moderation-efficiency/PoliticalforumModeratorDashboardsModeration_efficiencyController";
+import { PoliticalforumModeratorReportsWeekly_activityController } from "./controllers/politicalForum/moderator/reports/weekly-activity/PoliticalforumModeratorReportsWeekly_activityController";
+import { PoliticalforumModeratorReportsUser_engagementController } from "./controllers/politicalForum/moderator/reports/user-engagement/PoliticalforumModeratorReportsUser_engagementController";
 
 @Module({
   controllers: [
     AuthCitizenController,
     AuthModeratorController,
-    DiscussionboardSystemConfigController,
-    DiscussionboardModeratorSystemConfigController,
-    DiscussionboardAuthCitizenJoinController,
-    DiscussionboardAuthCitizenLoginController,
-    DiscussionboardAuthCitizenRefreshController,
-    DiscussionboardAuthModeratorJoinController,
-    DiscussionboardAuthModeratorLoginController,
-    DiscussionboardModeratorAuthModeratorController,
-    DiscussionboardPostsController,
-    DiscussionboardCitizenPostsController,
-    DiscussionboardModeratorPostsController,
-    DiscussionboardCitizenPostsCommentsController,
-    DiscussionboardModeratorPostsCommentsController,
-    DiscussionboardPostsCommentsController,
-    DiscussionboardPostsAttachmentsController,
-    DiscussionboardModeratorPostsAttachmentsController,
-    DiscussionboardSearchPostsController,
-    DiscussionboardCommentsController,
-    DiscussionboardCitizenCommentsController,
-    DiscussionboardModeratorCommentsController,
-    DiscussionboardCitizenAttachmentfilesController,
-    DiscussionboardModeratorAttachmentfilesController,
-    DiscussionboardAttachmentfilesController,
-    DiscussionboardModeratorReportsController,
-    DiscussionboardModeratorModeration_actionsController,
+    PoliticalforumPostsController,
+    PoliticalforumCitizenPostsController,
+    PoliticalforumModeratorPostsController,
+    PoliticalforumPostsCommentsController,
+    PoliticalforumCitizenPostsCommentsController,
+    PoliticalforumModeratorPostsCommentsController,
+    PoliticalforumCitizenPostsReportsController,
+    PoliticalforumCitizenCommentsReportsController,
+    PoliticalforumCitizenPostsAttachmentfilesController,
+    PoliticalforumPostsAttachmentfilesController,
+    PoliticalforumCitizenReportsController,
+    PoliticalforumModeratorReportsController,
+    PoliticalforumReportsPostController,
+    PoliticalforumReportsCommentController,
+    PoliticalforumCommentsController,
+    PoliticalforumModeratorUsersController,
+    PoliticalforumCitizenUsersController,
+    PoliticalforumModeratorDashboardsPlatform_activityController,
+    PoliticalforumModeratorDashboardsModeration_efficiencyController,
+    PoliticalforumModeratorReportsWeekly_activityController,
+    PoliticalforumModeratorReportsUser_engagementController,
   ],
 })
 export class MyModule {}

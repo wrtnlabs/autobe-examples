@@ -1,0 +1,308 @@
+/// User profile information including display name, bio, location, and other
+/// public-facing details. Represents the primary user profile that users
+/// directly manage and customize.
+///
+/// This table stores the core profile data visible to other users. Changes
+/// to this profile are managed exclusively by the associated member.
+///
+/// {@link community_platform_member.id} references the member who owns this
+/// profile.
+///
+/// @namespace Personalization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who owns this profile. {@link community_platform_member.id}.
+  member_id String
+  
+  /// The display name shown to other users. This may differ from the username
+  /// and can be customized by the user.
+  display_name String?
+  
+  /// Optional short bio provided by the user to describe themselves or their
+  /// interests.
+  bio String?
+  
+  /// Optional location information entered by the user, typically as text
+  /// (city, region, etc.) rather than geolocation.
+  location String?
+  
+  /// Timestamp when the profile was first created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated by the user.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  community_platform_guest community_platform_guest[]
+  
+  @@unique([member_id])
+  @@index([display_name])
+  @@index([created_at])
+}
+
+/// User-specific theme preferences for their profile and UI appearance.
+/// Defines the color scheme, layout preferences, and visual styling options
+/// applied to the user's interface.
+///
+/// These settings are application UI customizations that do not affect core
+/// functionality. The user selects themes to personalize their experience.
+///
+/// @namespace Personalization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_themes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who owns these theme preferences. {@link
+  /// community_platform_member.id}.
+  member_id String
+  
+  /// Name of the selected theme (e.g., 'dark', 'light', 'auto', 'custom-1').
+  theme_name String
+  
+  /// Hex code for the primary theme color (e.g., '#3b82f6').
+  color_primary String?
+  
+  /// Hex code for the secondary theme color (e.g., '#10b981').
+  color_secondary String?
+  
+  /// Preferred font size in pixels (e.g., 14, 16, 18).
+  font_size Int?
+  
+  /// Timestamp when these theme preferences were first set.
+  created_at DateTime
+  
+  /// Timestamp when these theme preferences were last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id])
+  @@index([theme_name])
+  @@index([created_at])
+}
+
+/// User profile avatar images stored for display in the community platform.
+/// Each user has one current avatar which may be updated over time.
+///
+/// Avatars are managed through profile settings but are not independently
+/// queried. This table tracks the avatar file metadata and URI.
+///
+/// @namespace Personalization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_avatars {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who owns this avatar. {@link community_platform_member.id}.
+  member_id String
+  
+  /// The public URI or path where the avatar image file is stored (e.g.,
+  /// 'https://cdn.example.com/avatars/user123.jpg').
+  file_uri String
+  
+  /// The file format extension of the avatar (e.g., 'jpg', 'png', 'webp').
+  file_extension String
+  
+  /// The size of the avatar file in bytes.
+  file_size Int
+  
+  /// Indicates whether this avatar is the system-generated default (true) or a
+  /// user-uploaded custom avatar (false).
+  is_default Boolean
+  
+  /// Timestamp when this avatar was uploaded or set as primary.
+  created_at DateTime
+  
+  /// Timestamp when this avatar was last updated (e.g., replaced with new
+  /// image).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id])
+  @@index([is_default])
+  @@index([created_at])
+}
+
+/// User preferences that determine how content is displayed on the
+/// interface, including layout, sorting, and rendering options.
+///
+/// These preferences affect UI presentation only and do not change behavior
+/// of core systems. Multiple preferences can be set for different contexts.
+///
+/// @namespace Personalization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_display_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who owns these display preferences. {@link
+  /// community_platform_member.id}.
+  member_id String
+  
+  /// The default post sorting preference for view (e.g., 'new', 'hot', 'top',
+  /// 'controversial').
+  default_sort_order String
+  
+  /// Whether comment replies are expanded by default when viewing a post.
+  show_comment_replies_by_default Boolean
+  
+  /// Whether to receive notifications when someone upvotes or downvotes a
+  /// user's post.
+  enable_notifications_on_post_votes Boolean
+  
+  /// Whether to receive notifications when someone replies to a user's comment.
+  enable_notifications_on_comment_replies Boolean
+  
+  /// Maximum reply depth to display (1-5), controlling how many nested levels
+  /// are expanded.
+  max_comment_depth Int
+  
+  /// Timestamp when these preferences were first set.
+  created_at DateTime
+  
+  /// Timestamp when these preferences were last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id])
+  @@index([default_sort_order])
+  @@index([created_at])
+}
+
+/// User privacy controls determining who can view or interact with their
+/// content and profile information.
+///
+/// These settings act as visibility gates for different types of profile
+/// data and activity, allowing users to control their online presence.
+///
+/// @namespace Personalization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_privacy_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who owns these privacy settings. {@link
+  /// community_platform_member.id}.
+  member_id String
+  
+  /// Prevents unauthenticated users (guests) from viewing any part of the
+  /// profile.
+  hide_profile_from_guests Boolean
+  
+  /// Hides all posts from public discovery feeds and profiles, visible only to
+  /// subscribers and direct links.
+  hide_all_posts_from_public Boolean
+  
+  /// Hides all comments from public discovery feeds and profiles, visible only
+  /// to subscribers and direct links.
+  hide_all_comments_from_public Boolean
+  
+  /// Hides the karma score from public view, showing 'Karma: Hidden' instead.
+  hide_karma_score Boolean
+  
+  /// Hides the list of subscribed communities from other users.
+  hide_subscription_list Boolean
+  
+  /// Timestamp when these privacy settings were first configured.
+  created_at DateTime
+  
+  /// Timestamp when these privacy settings were last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id])
+  // spellchecker: ignore-next-line
+  @@index([hide_profile_from_guests], map: "community_platform_privacy_settings_hide_profile_from__bbf0e903")
+  @@index([created_at])
+}
+
+/// Badges earned by users based on their achievements and activity
+/// milestones within the platform.
+///
+/// Badges are automatically awarded by the system based on predefined
+/// criteria (e.g., karma thresholds, content contributions) and displayed on
+/// user profiles to recognize achievements.
+///
+/// @namespace Personalization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_badge_achievements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who earned this badge. {@link community_platform_member.id}.
+  member_id String
+  
+  /// Name of the badge earned (e.g., 'High Karma', 'Trusted Member',
+  /// 'Community Veteran').
+  badge_name String
+  
+  /// Description explaining the achievement criteria for this badge.
+  badge_description String
+  
+  /// Timestamp when the badge was automatically awarded by the system.
+  earned_at DateTime
+  
+  /// Indicates whether this badge is still active and visible on the profile
+  /// (false if permanently revoked).
+  is_active Boolean
+  
+  /// Timestamp when this badge achievement record was first created in the
+  /// system.
+  created_at DateTime
+  
+  /// Timestamp when this badge record was last updated (e.g., deactivated).
+  updated_at DateTime
+  
+  /// Timestamp when this badge was soft-deleted (if revoked or made inactive).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  @@index([member_id, earned_at])
+  @@index([badge_name])
+  @@index([is_active])
+}

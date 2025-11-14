@@ -1,0 +1,160 @@
+/// Defines all possible states a post can have in its lifecycle. Used as
+/// reference by political_forum_posts to indicate current status. States
+/// include: draft, published, moderation_queue, deleted, archived, restored.
+/// This table ensures consistency across the system by providing
+/// authoritative state definitions for post lifecycle management.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_post_states {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The machine-readable name of the post state (e.g., 'draft', 'published').
+  /// Must be unique.
+  name String
+  
+  /// Human-readable description of what this state means in business context.
+  /// Explains when this state is applied and what actions are allowed.
+  description String
+  
+  /// Timestamp when this state definition was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this state definition was last modified. Should be rarely
+  /// updated as these are reference data.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  political_forum_posts political_forum_posts[]
+  
+  @@unique([name])
+}
+
+/// Defines the possible moderation states for content. Used as reference by
+/// political_forum_posts and political_forum_comments to indicate
+/// verification status. States include: unverified, verified, flagged,
+/// under_review, rejected. This table defines the authoritative set of
+/// moderation statuses that can be applied to content, ensuring consistent
+/// behavior across the system.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_moderation_status {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The machine-readable name of the moderation status (e.g., 'verified',
+  /// 'flagged'). Must be unique.
+  name String
+  
+  /// Human-readable description of what this moderation status means in
+  /// business context. Explains when this status is applied and its
+  /// implications for content visibility.
+  description String
+  
+  /// Timestamp when this moderation status definition was created in the
+  /// system.
+  created_at DateTime
+  
+  /// Timestamp when this moderation status definition was last modified.
+  /// Should be rarely updated as these are reference data.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+}
+
+/// Defines the allowed file types for attachments to posts. Used as
+/// reference by political_forum_post_attachments to validate uploaded files.
+/// Types include: image (jpg, jpeg, png, gif), document (pdf, doc, docx,
+/// txt). This table ensures system-wide consistency in allowed attachment
+/// formats and provides metadata for UI display (e.g., icons for different
+/// file types).
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_attachment_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The machine-readable name of the attachment type category (e.g., 'image',
+  /// 'document'). Must be unique.
+  name String
+  
+  /// Human-readable description of this attachment type category and what file
+  /// extensions it includes.
+  description String
+  
+  /// Comma-separated list of allowed file extensions for this attachment type
+  /// (e.g., 'jpg,jpeg,png,gif'). Used for upload validation.
+  file_extensions String
+  
+  /// Timestamp when this attachment type definition was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this attachment type definition was last modified. Should
+  /// be rarely updated as these are reference data.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  political_forum_post_attachments political_forum_post_attachments[]
+  
+  @@unique([name])
+  @@unique([file_extensions])
+}
+
+/// Stores system-wide configuration parameters for the political discussion
+/// board. Used as reference by the backend to enforce business rules such as
+/// character limits, timeouts, and feature toggles. This table contains
+/// vital parameters that control system behavior without requiring code
+/// deployment to change.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for this system setting (e.g., 'MAX_POST_LENGTH',
+  /// 'EDIT_WINDOW_HOURS'). Must be unique.
+  setting_key String
+  
+  /// The value of this system setting. Stored as string to accommodate various
+  /// data types (integers, booleans, strings) that can be parsed by the
+  /// application layer.
+  setting_value String
+  
+  /// Human-readable description of what this setting controls, how it affects
+  /// the system, and its business purpose.
+  description String
+  
+  /// Timestamp when this system setting was created or first registered.
+  created_at DateTime
+  
+  /// Timestamp when this system setting was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([setting_key])
+}

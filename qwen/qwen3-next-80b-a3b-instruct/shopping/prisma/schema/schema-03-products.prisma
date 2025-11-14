@@ -1,0 +1,238 @@
+/// Main product entity representing items listed by sellers in the shopping
+/// mall. Each product can have multiple variants (SKUs) managed in a
+/// separate component. This table stores core product metadata. @link
+/// shopping_mall_sellers.id represents the seller who created and owns this
+/// product.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller who owns this product. @link shopping_mall_sellers.id.
+  seller_id String
+  
+  /// The title of the product shown to customers. Must be descriptive.
+  title String
+  
+  /// Detailed description of the product including features and benefits.
+  description String
+  
+  /// Brand name associated with this product. Can be the seller's brand or
+  /// third-party.
+  brand String?
+  
+  /// Duration of product warranty expressed in natural language (e.g., '1
+  /// year', 'Limited lifetime').
+  warranty_period String?
+  
+  /// Weight of the product in kilograms (kg). Used for shipping cost
+  /// calculation.
+  weight Float?
+  
+  /// Current status of the product. Possible values: 'draft', 'active',
+  /// 'frozen'. Draft: not visible to customers. Active: visible and
+  /// purchasable. Frozen: hidden and non-purchasable, but retains history.
+  status String
+  
+  /// Timestamp when the product was created.
+  created_at DateTime
+  
+  /// Timestamp when the product was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the product was logically deleted (soft delete). Null if
+  /// not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_skus shopping_mall_skus[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_admin_actions shopping_mall_admin_actions[]
+  shopping_mall_admin_audit_logs shopping_mall_admin_audit_logs[]
+  
+  @@index([seller_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Hierarchical categories for organizing products. Categories can have
+/// parent-child relationships to form a tree structure. Customers browse and
+/// filter products by category. Admins manage the category tree.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category this category belongs to, if any. Self-referential
+  /// relationship. @link shopping_mall_product_categories.id.
+  parent_category_id String?
+  
+  /// Human-readable name of the category displayed to users in UI (e.g.,
+  /// 'Electronics').
+  name String
+  
+  /// Detailed description of the category's purpose and included products.
+  description String?
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was logically deleted (soft delete). Null if
+  /// not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parentCategory shopping_mall_product_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_product_categories[] @relation("recursive")
+  
+  @@unique([name])
+  @@index([parent_category_id])
+  @@index([created_at])
+}
+
+/// Definition of reusable product attributes such as color, size, material,
+/// etc. Attributes are created once and can be applied to multiple products
+/// to define variation options. Defined by admins or sellers with product
+/// creation privileges.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Internal name of the attribute (e.g., 'color'). Used in code and APIs.
+  /// Must be unique.
+  name String
+  
+  /// Human-readable label of the attribute shown to users (e.g., 'Color').
+  display_label String
+  
+  /// Data type of the attribute values. Possible values: 'text', 'select',
+  /// 'range'. Text: freeform string. Select: predefined choices. Range:
+  /// numeric range with min/max.
+  data_type String
+  
+  /// Timestamp when the attribute was created.
+  created_at DateTime
+  
+  /// Timestamp when the attribute was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the attribute was logically deleted (soft delete). Null if
+  /// not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_product_attribute_values shopping_mall_product_attribute_values[]
+  
+  @@unique([name])
+  @@index([data_type])
+  @@index([created_at])
+}
+
+/// The actual values for a product attribute. Each value is linked to a
+/// specific attribute (e.g., 'red' for 'color' attribute). These are managed
+/// through the parent attribute and are subsidiary to it. Used to define
+/// possible selections for SKUs.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_attribute_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The attribute this value belongs to. @link
+  /// shopping_mall_product_attributes.id.
+  product_attribute_id String
+  
+  /// The actual value (e.g., 'Red', 'Large', 'Cotton') that users can select.
+  /// Must be unique per attribute.
+  value String
+  
+  /// Timestamp when this attribute value was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  attribute shopping_mall_product_attributes @relation(fields: [product_attribute_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sku_attributes shopping_mall_sku_attributes[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([product_attribute_id, value], map: "shopping_mall_product_attribute_values_product_attribu_bb065c4d")
+  @@index([product_attribute_id])
+}
+
+/// Images associated with products. A product can have multiple images
+/// (e.g., multiple angles, details). One image can be marked as primary.
+/// Images are managed as subsidiary to products.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product this image belongs to. @link shopping_mall_products.id.
+  product_id String
+  
+  /// URL to the hosted image file. Must be a valid HTTP/HTTPS URI.
+  image_url String
+  
+  /// True if this is the primary image used as the product's thumbnail. Only
+  /// one image per product can be primary.
+  is_primary Boolean
+  
+  /// Timestamp when the image was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when the image metadata was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the image was logically deleted (soft delete). Null if not
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([product_id, is_primary])
+  @@index([product_id])
+  @@index([created_at])
+}

@@ -1,0 +1,353 @@
+/// System channels for organizing content and features. Represents distinct
+/// sections or areas of the platform like primary shopping, seller
+/// marketplace, admin portal, etc. This is a reference table used by other
+/// components to route functionality. Must maintain active/inactive states
+/// for management.
+///
+/// @link shopping_mall_sections (1:N) - channels contain multiple sections
+/// - 'active' status determines whether channel is visible to users
+/// - 'code' is the internal identifier used in configuration
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Internal identifier code used in configuration files and system
+  /// references. Must be unique and snake_case format. Examples: 'sales',
+  /// 'sellerHub', 'adminDashboard'.
+  code String
+  
+  /// Human-readable name of the channel displayed in admin interface.
+  /// Examples: 'Sales Channel', 'Seller Hub', 'Admin Dashboard'.
+  name String
+  
+  /// Detailed description of the channel's purpose and scope. Used for admin
+  /// documentation.
+  description String?
+  
+  /// Active/inactive state of the channel. Only active channels are available
+  /// for assignment to sections and features. Values: 'active', 'inactive'.
+  status String
+  
+  /// Timestamp when this channel was created. Standard temporal field for
+  /// audit trails.
+  created_at DateTime
+  
+  /// Timestamp when this channel was last updated. Standard temporal field for
+  /// audit trails.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used for audit purposes when channels are
+  /// deactivated permanently. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_sections shopping_mall_sections[]
+  
+  @@unique([code])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Content sections within channels, providing organization for user
+/// interfaces and system navigation. Each section belongs to exactly one
+/// channel and can be organized hierarchically. Used by frontend routing and
+/// admin configuration.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Section's parent channel. {@link shopping_mall_channels.id}.
+  shopping_mall_channel_id String
+  
+  /// Internal identifier code used in configuration files and system
+  /// references. Must be unique across all sections and follow snake_case
+  /// format. Examples: 'productList', 'cartSummary', 'checkoutProcess'.
+  code String
+  
+  /// Human-readable name of the section displayed in admin interface.
+  /// Examples: 'Product List', 'Cart Summary', 'Checkout Process'.
+  name String
+  
+  /// Detailed description of the section's purpose and scope. Used for admin
+  /// documentation.
+  description String?
+  
+  /// Active/inactive state of the section. Only active sections are rendered
+  /// to users. Values: 'active', 'inactive'.
+  status String
+  
+  /// Timestamp when this section was created. Standard temporal field for
+  /// audit trails.
+  created_at DateTime
+  
+  /// Timestamp when this section was last updated. Standard temporal field for
+  /// audit trails.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used for audit purposes when sections are
+  /// deactivated permanently. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  
+  @@unique([code])
+  @@unique([shopping_mall_channel_id, code])
+  @@index([shopping_mall_channel_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Global platform configuration settings that control behavior across the
+/// system. These are key-value pairs that determine feature flags, business
+/// rules, and operational parameters. No semantic structure assumed -
+/// maintains flexibility for future configurations.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique business key identifying this configuration setting. Follows
+  /// snake_case format with domain-specific prefixes. Examples:
+  /// 'platform_transaction_fee', 'payment_gateway_default',
+  /// 'max_items_in_cart'.
+  code String
+  
+  /// Human-readable name for this configuration, shown in admin UI. Examples:
+  /// 'Platform Transaction Fee Percentage', 'Default Payment Gateway',
+  /// 'Maximum Items Allowed in Cart'.
+  name String
+  
+  /// Configuration value as a string. Can represent JSON, boolean, number, or
+  /// text strings depending on context. Examples: '0.05', 'true', '{"enabled":
+  /// true}', 'stripe'.
+  value String
+  
+  /// Data type of the configuration value. Used by admin interface for proper
+  /// rendering and parsing. Values: 'string', 'number', 'boolean', 'json'.
+  type String
+  
+  /// Detailed description of the configuration's purpose, usage, and
+  /// acceptable values. Used for admin documentation.
+  description String?
+  
+  /// Timestamp when this configuration was created. Standard temporal field
+  /// for audit trails.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last updated. Standard temporal
+  /// field for audit trails.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used for audit purposes when configurations are
+  /// deactivated permanently. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@index([type])
+  @@index([created_at])
+}
+
+/// Supported payment gateway configurations for processing transactions.
+/// Defines which payment methods are available to customers and how they
+/// integrate with the system. Used by checkout process to determine
+/// available payment options.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_payment_gateways {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Internal identifier code used in configuration. Follows snake_case
+  /// format. Examples: 'stripe', 'paypal', 'bank_transfer'.
+  code String
+  
+  /// Human-readable name of the payment gateway displayed to users. Examples:
+  /// 'Credit/Debit Card', 'PayPal', 'Bank Transfer'.
+  name String
+  
+  /// Detailed description of the payment gateway's functionality and usage
+  /// notes for administrators and customers.
+  description String?
+  
+  /// Enabled/disabled state of the payment gateway. Only 'active' gateways are
+  /// shown to customers during checkout. Values: 'active', 'inactive'.
+  status String
+  
+  /// Display priority for payment methods in the UI. Higher values appear
+  /// first in the list. Range: 1-100.
+  priority Int
+  
+  /// Timestamp when this payment gateway was configured. Standard temporal
+  /// field for audit trails.
+  created_at DateTime
+  
+  /// Timestamp when this payment gateway was last updated. Standard temporal
+  /// field for audit trails.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used for audit purposes when payment gateways are
+  /// deactivated permanently. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_refund_payments shopping_mall_refund_payments[]
+  
+  @@unique([code])
+  @@index([status])
+  @@index([priority])
+  @@index([created_at])
+}
+
+/// Categorized dispute types for customer-seller conflicts, used to
+/// standardize resolution processes. Each dispute type defines the category
+/// and typical handling procedures. This is reference data used by the
+/// dispute resolution system.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_dispute_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// System identifier code for the dispute type. Follows snake_case format.
+  /// Examples: 'product_damaged', 'wrong_item_received', 'not_delivered'.
+  code String
+  
+  /// Human-readable name of the dispute category displayed in admin interface
+  /// and customer forms. Examples: 'Product Damaged', 'Wrong Item Received',
+  /// 'Item Not Delivered'.
+  name String
+  
+  /// Detailed explanation of the dispute type, criteria for categorization,
+  /// and typical resolution steps. Used for admin training and customer
+  /// guidance.
+  description String?
+  
+  /// Whether this dispute type typically qualifies for refund processing. True
+  /// for cases where customer is entitled to full or partial refund.
+  refund_eligible Boolean
+  
+  /// Whether this dispute type typically requires the customer to return the
+  /// product. True for physical goods that must be returned for resolution.
+  return_required Boolean
+  
+  /// Timestamp when this dispute type was added to the system. Standard
+  /// temporal field for audit trails.
+  created_at DateTime
+  
+  /// Timestamp when this dispute type was last updated. Standard temporal
+  /// field for audit trails.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used for audit purposes when dispute types are
+  /// deactivated permanently. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_admin_disputes shopping_mall_admin_disputes[]
+  
+  @@unique([code])
+  @@index([refund_eligible])
+  @@index([return_required])
+  @@index([created_at])
+}
+
+/// Supported shipping carriers for order fulfillment. Defines courier
+/// partners that the platform integrates with for shipment tracking and
+/// logistics management. Used by sellers to select shipping options and by
+/// system to parse tracking data.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_carriers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Internal identifier code used in configuration and API integrations.
+  /// Follows snake_case format. Examples: 'fedex', 'ups', 'dhl', 'usps',
+  /// 'local_courier'.
+  code String
+  
+  /// Human-readable name of the shipping carrier displayed to sellers and
+  /// customers. Examples: 'FedEx', 'UPS', 'DHL', 'USPS', 'Local Courier'.
+  name String
+  
+  /// Detailed description of the carrier's service coverage, delivery times,
+  /// and integration requirements.
+  description String?
+  
+  /// Active/inactive state of the carrier integration. Only 'active' carriers
+  /// are available for selection during shipping. Values: 'active',
+  /// 'inactive'.
+  status String
+  
+  /// URL template for generating tracking links using tracking numbers. Use
+  /// {tracking_number} as placeholder. Examples:
+  /// 'https://www.fedex.com/tracking?trackingnumber={tracking_number}'
+  tracking_url_format String
+  
+  /// Regular expression pattern for validating tracking numbers format for
+  /// this carrier. Examples: '^[0-9]{12}$' for FedEx, '1Z[0-9A-Z]{16}$' for
+  /// UPS.
+  tracking_number_pattern String
+  
+  /// Timestamp when this carrier was added to the system. Standard temporal
+  /// field for audit trails.
+  created_at DateTime
+  
+  /// Timestamp when this carrier was last updated. Standard temporal field for
+  /// audit trails.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Used for audit purposes when carriers are
+  /// deactivated permanently. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_refund_return_labels shopping_mall_refund_return_labels[]
+  
+  @@unique([code])
+  @@index([status])
+  @@index([created_at])
+}

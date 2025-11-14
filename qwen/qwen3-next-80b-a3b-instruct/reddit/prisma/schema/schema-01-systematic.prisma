@@ -1,165 +1,553 @@
-/// Global system settings controlling platform-wide behavior and feature
-/// toggles. This table stores key-value pairs for immutable configuration
-/// defaults that govern system-wide operations such as rate limits, default
-/// community rules, and platform-wide policies. All settings are read by the
-/// system at startup and cached in memory to avoid repeated database
-/// queries.
-///
-/// This table is referenced indirectly by all components when determining
-/// default behaviors. It is not modified by users and is only updated by
-/// system administrators.
-///
-/// @link community_platform_admin
+/// Core community entities that users can subscribe to and participate in.
+/// Represents a topic-based discussion group. Each community has a moderator
+/// and settings. Related to posts (one-to-many) and settings (one-to-one).
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_settings {
+model community_platform_communities {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the setting (e.g., 'max_posts_per_minute',
-  /// 'default_community_rules'). Must be unique.
-  setting_key String
+  /// Owner moderator's {@link community_platform_moderator.id}.
+  community_moderator_id String?
   
-  /// The configured value as a serialized string (JSON, plain text, or
-  /// number). Can be any type but stored as string for flexibility.
-  setting_value String
+  /// Configuration settings of this community. {@link
+  /// community_platform_community_settings.id}.
+  community_settings_id String
   
-  /// Human-readable description explaining what this setting controls and its
-  /// business purpose.
+  /// The unique URL-safe identifier for the community (slug). Example:
+  /// 'technology'.
+  name String
+  
+  /// Human-readable display name of the community. Example: 'Technology &
+  /// Innovation'.
+  display_name String
+  
+  /// Brief description of the community's purpose and rules.
   description String?
   
-  /// Timestamp of the last update to this setting. Tracks administrative
-  /// changes.
-  updated_at DateTime
+  /// Indicates whether the community contains Not Safe For Work content.
+  is_nsfw Boolean
   
-  /// Reference to the admin who last modified this setting. External reference
-  /// to {@link community_platform_admin.id}.
-  updated_by_admin_id String
+  /// Whether the community is currently active and visible to users.
+  is_active Boolean
   
-  //----
-  // RELATIONS
-  //----
-  @@unique([setting_key])
-  @@index([updated_at])
-}
-
-/// Standard ISO 3166-1 country code lookup table. Contains all globally
-/// recognized country codes and their display names. Used to validate user
-/// country selection during registration and to localize content.
-///
-/// This table is referenced by user profile fields to ensure country data
-/// consistency. No direct user management — these are system-maintained
-/// static lookup values.
-///
-/// @link community_platform_profiles
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_country_codes {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
+  /// Total number of users subscribed to this community.
+  subscriber_count Int
   
-  /// ISO 3166-1 alpha-2 two-letter country code (e.g., 'US', 'JP', 'DE').
-  country_code String
+  /// Total number of posts created in this community.
+  post_count Int
   
-  /// Full English name of the country (e.g., 'United States', 'Japan',
-  /// 'Germany').
-  country_name String
-  
-  /// ISO 3166-1 numeric country code (three-digit).
-  iso_numeric String
-  
-  /// Geographic region (e.g., 'Americas', 'Asia', 'Europe').
-  region String
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([country_code])
-  @@unique([iso_numeric])
-  @@index([region])
-}
-
-/// List of IP addresses and CIDR blocks that are permanently banned from
-/// accessing any part of the platform. Used to block known spammers,
-/// malicious actors, or regions with systemic abuse.
-///
-/// This table is checked on every incoming HTTP request before processing
-/// any action. Entries are managed exclusively by system administrators.
-///
-/// @link community_platform_admin
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_ip_blocklist {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// IP address or CIDR block (e.g., '192.168.1.1', '10.0.0.0/8') that is
-  /// blocked.
-  ip_range String
-  
-  /// Reason for blocklisting (e.g., 'Spam bot network', 'Phishing domain',
-  /// 'Abuse from region').
-  reason String
-  
-  /// Timestamp when this IP range was added to the blocklist.
+  /// Timestamp when the community was created.
   created_at DateTime
   
-  /// Reference to the admin who added this blocklist entry. External reference
-  /// to {@link community_platform_admin.id}.
-  created_by_admin_id String
+  /// Timestamp when the community was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft-deleted (archived). null if active.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([ip_range])
+  moderator community_platform_moderator? @relation(fields: [community_moderator_id], references: [id], onDelete: Cascade)
+  settings community_platform_community_settings @relation(fields: [community_settings_id], references: [id], onDelete: Cascade)
+  
+  community_platform_posts community_platform_posts[]
+  community_platform_reports community_platform_reports[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_community_memberships community_platform_community_memberships[]
+  community_platform_community_moderators community_platform_community_moderators[]
+  community_platform_community_banner_images community_platform_community_banner_images?
+  community_platform_community_themes community_platform_community_themes?
+  community_platform_community_invitations community_platform_community_invitations[]
+  
+  @@unique([community_moderator_id])
+  
+  @@unique([name])
+  @@unique([community_settings_id])
+  @@index([is_active])
+  @@index([is_nsfw])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_moderator_id, created_at], map: "community_platform_communities_community_moderator_id__1e424600")
+}
+
+/// User-generated content items posted in communities. Posts are the primary
+/// content type and can be of different types (text, link, image). Each post
+/// is associated with a community, author (member), and status.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where this post was created. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Member who created this post. {@link community_platform_member.id}.
+  author_id String
+  
+  /// Type of the post (text/link/image). {@link
+  /// community_platform_post_types.id}.
+  post_type_id String
+  
+  /// Current status of the post (published/rejected/removed/etc.). {@link
+  /// community_platform_post_status.id}.
+  post_status_id String
+  
+  /// Title of the post. Required for all post types.
+  title String
+  
+  /// Main text content of the post (e.g., body of a text post). Nullable for
+  /// link/image posts.
+  content String?
+  
+  /// URL for link-type posts. Nullable for text/image posts.
+  link_url String?
+  
+  /// The URL to the uploaded image file. Nullable for text/link posts.
+  image_url String?
+  
+  /// Total number of upvotes received.
+  upvote_count Int
+  
+  /// Total number of downvotes received.
+  downvote_count Int
+  
+  /// Total number of comments on this post.
+  comment_count Int
+  
+  /// Timestamp when the post was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted. null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  author community_platform_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  postType community_platform_post_types @relation(fields: [post_type_id], references: [id], onDelete: Cascade)
+  status community_platform_post_status @relation(fields: [post_status_id], references: [id], onDelete: Cascade)
+  
+  community_platform_comments community_platform_comments[]
+  community_platform_reactions community_platform_reactions[]
+  community_platform_karma_ledger community_platform_karma_ledger[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_reports community_platform_reports[]
+  community_platform_report_audit_trail community_platform_report_audit_trail[]
+  community_platform_search_indexes community_platform_search_indexes[]
+  community_platform_search_popularity_scores community_platform_search_popularity_scores?
+  community_platform_search_recommendations community_platform_search_recommendations[]
+  
+  @@unique([community_id, title])
+  @@index([community_id, created_at])
+  @@index([author_id, created_at])
+  @@index([post_type_id])
+  @@index([post_status_id])
+  @@index([upvote_count, created_at])
+}
+
+/// Lookup table that defines the possible types of posts allowed on the
+/// platform (e.g., 'text', 'link', 'image'). This ensures constraint and
+/// consistency across all posts.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The unique identifier for the post type (e.g., 'text', 'link', 'image').
+  name String
+  
+  /// Human-readable name for display in UI (e.g., 'Text Post', 'Link Post',
+  /// 'Image Post').
+  display_name String
+  
+  /// Whether this post type is currently enabled for use by members.
+  is_enabled Boolean
+  
+  /// Timestamp when the post type was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the post type was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_posts community_platform_posts[]
+  
+  @@unique([name])
+  @@index([is_enabled])
+}
+
+/// User comments on posts or replies to other comments. Comments are
+/// human-generated text responses that support threaded discussions.
+/// Comments are associated with a post, author, and status.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this comment is responding to. {@link
+  /// community_platform_posts.id}.
+  post_id String
+  
+  /// The parent comment if this is a reply. {@link
+  /// community_platform_comments.id} (self-referencing).
+  parent_comment_id String?
+  
+  /// Member who wrote this comment. {@link community_platform_member.id}.
+  author_id String
+  
+  /// Current status of the comment (published/rejected/removed/etc.). {@link
+  /// community_platform_comment_status.id}.
+  comment_status_id String
+  
+  /// The text content of the comment, limited to 500 characters as per
+  /// requirements.
+  content String
+  
+  /// Total number of upvotes received.
+  upvote_count Int
+  
+  /// Total number of downvotes received.
+  downvote_count Int
+  
+  /// Number of direct replies to this comment.
+  reply_count Int
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted. null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  author community_platform_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  status community_platform_comment_status @relation(fields: [comment_status_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_reactions community_platform_reactions[]
+  community_platform_karma_ledger community_platform_karma_ledger[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_reports community_platform_reports[]
+  community_platform_report_audit_trail community_platform_report_audit_trail[]
+  community_platform_search_indexes community_platform_search_indexes[]
+  community_platform_search_popularity_scores community_platform_search_popularity_scores?
+  
+  @@index([post_id, created_at])
+  @@index([parent_comment_id, created_at])
+  @@index([author_id, created_at])
+  @@index([comment_status_id])
+}
+
+/// Represents replies to comments. This table is logically a subset of
+/// comments but modeled separately due to its nested structure and to
+/// prevent circular dependencies. However, since replies are a direct form
+/// of comment, this table is deprecated in favor of recursive comments with
+/// parent_id. According to requirements, replies are simply comments with
+/// parent_comment_id referencing a parent comment. This table has been
+/// omitted as it's redundant and violates normalization - the
+/// 'community_platform_comments' table handles all comment/reply nesting
+/// with parent_comment_id.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+}
+
+/// User reactions (e.g., upvote/downvote, emoji) to posts or comments. While
+/// upvotes/downvotes are tracked numerically in posts/comments, this table
+/// captures individual voter actions as events for audit and integrity.
+/// Upvote/downvote here represents the specific vote action, not cumulative
+/// count.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who cast the reaction. {@link community_platform_member.id}.
+  author_id String
+  
+  /// The post this reaction is on. Either post_id or comment_id must be
+  /// non-null. {@link community_platform_posts.id}.
+  post_id String?
+  
+  /// The comment this reaction is on. Either post_id or comment_id must be
+  /// non-null. {@link community_platform_comments.id}.
+  comment_id String?
+  
+  /// The type of reaction (e.g., upvote, downvote). {@link
+  /// community_platform_notification_types.id}.
+  reaction_type_id String
+  
+  /// Timestamp when the reaction was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  author community_platform_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  type community_platform_notification_types @relation(fields: [reaction_type_id], references: [id], onDelete: Cascade)
+  
+  @@unique([author_id, post_id])
+  @@unique([author_id, comment_id])
+  @@index([post_id])
+  @@index([comment_id])
+  @@index([author_id])
+  @@index([reaction_type_id])
   @@index([created_at])
 }
 
-/// System-reserved keywords that cannot be used as community names or
-/// usernames. Prevents impersonation of system roles (e.g., 'admin', 'mod',
-/// 'support') and avoids naming conflicts.
-///
-/// Used during community creation and username registration to block
-/// forbidden terms.
-///
-/// @link community_platform_communities
-/// @link community_platform_profiles
+/// System-defined categories of reports that users can select when reporting
+/// content. This lookup table standardizes reporting reason codes.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_reserved_keywords {
+model community_platform_report_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The reserved keyword (e.g., 'admin', 'mod', 'help', 'system'). Must be
-  /// unique and case-insensitive.
-  keyword String
+  /// Unique identifier for the category (e.g., 'spam', 'hate_speech').
+  name String
   
-  /// Category of reserved term: 'community_name', 'username', or 'system'.
-  type String
+  /// Human-readable label shown to users (e.g., 'Spam or irrelevant').
+  display_name String
   
-  /// Reason this keyword is reserved (e.g., 'prevents impersonation of admin',
-  /// 'conflicts with internal API route').
-  reason String
+  /// Priority level: 'low', 'medium', or 'high'. Determines escalation path.
+  priority String
+  
+  /// Whether this category is currently available for selection.
+  is_active Boolean
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@unique([keyword, type])
-  @@index([type])
+  community_platform_reports community_platform_reports[]
+  
+  @@unique([name])
+  @@index([priority])
+  @@index([is_active])
+}
+
+/// Configuration settings for each community, defining moderation policies
+/// and behavioral rules. Each community has exactly one settings record.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Maximum character length allowed for a post's text content.
+  max_post_length Int
+  
+  /// Minimum character length required for a post's text content.
+  min_post_length Int
+  
+  /// Maximum character length allowed for a comment.
+  max_comment_length Int
+  
+  /// Maximum file size (in KB) allowed for image uploads.
+  max_image_size_kb Int
+  
+  /// Whether users must verify their email before posting in this community.
+  require_email_verification_to_post Boolean
+  
+  /// Whether 'guest' users can post (should always be false, but kept for
+  /// extensibility).
+  allow_anonymous_posting Boolean
+  
+  /// Whether comments are allowed on posts in this community.
+  allow_comments Boolean
+  
+  /// If true, new posts are automatically published (no moderation queue).
+  auto_approve_posts Boolean
+  
+  /// Timestamp when settings were created or last modified.
+  created_at DateTime
+  
+  /// Timestamp when settings were last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_communities community_platform_communities?
+  
+  @@index([auto_approve_posts])
+  // spellchecker: ignore-next-line
+  @@index([require_email_verification_to_post], map: "community_platform_community_settings_require_email_ve_085f72e5")
+}
+
+/// Lookup table for possible statuses of a post (e.g., 'draft', 'published',
+/// 'rejected', 'removed'). Defines lifecycle states.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_status {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Status identifier (e.g., 'published', 'removed').
+  name String
+  
+  /// UI label (e.g., 'Published', 'Post Removed').
+  display_name String
+  
+  /// If true, this status cannot be changed (e.g., 'removed' or 'deleted').
+  is_final Boolean
+  
+  /// If true, posts with this status are visible to users.
+  is_public Boolean
+  
+  /// Timestamp when this status type was created in the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_posts community_platform_posts[]
+  
+  @@unique([name])
+  @@index([is_public])
+  @@index([is_final])
+}
+
+/// Lookup table for possible statuses of a comment (e.g., 'published',
+/// 'moderation_pending', 'removed'). Defines lifecycle states.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_status {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Status identifier (e.g., 'published', 'removed').
+  name String
+  
+  /// UI label (e.g., 'Published', 'Comment Removed').
+  display_name String
+  
+  /// If true, this status cannot be changed (e.g., 'removed').
+  is_final Boolean
+  
+  /// If true, comments with this status are visible to users.
+  is_public Boolean
+  
+  /// Timestamp when this status type was created in the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_comments community_platform_comments[]
+  
+  @@unique([name])
+  @@index([is_public])
+  @@index([is_final])
+}
+
+/// Defines types of notifications that can be triggered in the system (e.g.,
+/// 'new_post', 'comment_reply', 'report_submitted'). Used to categorize and
+/// template notifications.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Identifier for notification type (e.g., 'new_post', 'reaction',
+  /// 'report_status').
+  name String
+  
+  /// Human-readable label (e.g., 'New Post in Community', 'Your Comment Was
+  /// Replied To').
+  display_name String
+  
+  /// Whether notifications of this type are enabled by default.
+  is_enabled Boolean
+  
+  /// Whether this is a core system notification (cannot be disabled by user).
+  is_system Boolean
+  
+  /// Timestamp when this notification type was defined in the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_reactions community_platform_reactions[]
+  community_platform_notifications community_platform_notifications[]
+  community_platform_notification_preferences community_platform_notification_preferences[]
+  community_platform_notification_delivery_logs community_platform_notification_delivery_logs[]
+  
+  @@unique([name])
+  @@index([is_enabled])
+  @@index([is_system])
 }

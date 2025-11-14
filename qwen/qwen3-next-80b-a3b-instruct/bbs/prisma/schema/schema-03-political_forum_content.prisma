@@ -1,0 +1,115 @@
+/// Main entity representing citizen-submitted political discussion posts.
+/// Posts are primary content objects with a lifecycle: created, published,
+/// edited (within 24h), locked, or deleted. This table stores raw content
+/// and metadata. Relationships: references political_forum_citizens
+/// (author), political_forum_post_states (status), and
+/// political_forum_post_attachments (via join).
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's citizen account. {@link political_forum_citizens.id}.
+  citizen_id String
+  
+  /// Current state of the post (e.g., published, pending, deleted, locked).
+  /// {@link political_forum_post_states.id}.
+  post_state_id String
+  
+  /// Title of the post. Required field with 3-150 characters as per
+  /// requirements.
+  title String
+  
+  /// Main content body of the post. Must be 10-5000 characters as per business
+  /// rules.
+  body String
+  
+  /// Timestamp when the post was created. Always non-null.
+  created_at DateTime
+  
+  /// Timestamp when the post was last edited. Updated only if edited within
+  /// 24-hour window.
+  updated_at DateTime
+  
+  /// Timestamp when the post was deleted by a moderator. Null if not deleted.
+  /// Required for soft delete audit.
+  deleted_at DateTime?
+  
+  /// Number of times this post has been edited within the 24-hour window. Used
+  /// for audit and transparency.
+  edit_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  citizen political_forum_citizens @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  postState political_forum_post_states @relation(fields: [post_state_id], references: [id], onDelete: Cascade)
+  
+  political_forum_comments political_forum_comments[]
+  political_forum_post_attachments political_forum_post_attachments[]
+  political_forum_moderation_actions political_forum_moderation_actions[]
+  political_forum_post_modifications political_forum_post_modifications[]
+  political_forum_post_reports political_forum_post_reports[]
+  political_forum_audit_log_target_of_posts political_forum_audit_log_target_of_posts?
+  political_forum_analytics_events political_forum_analytics_events[]
+  political_forum_archived_posts political_forum_archived_posts?
+  political_forum_archived_comments political_forum_archived_comments[]
+  
+  @@unique([citizen_id, created_at])
+  @@index([post_state_id, created_at])
+  @@index([citizen_id, deleted_at])
+}
+
+/// Public comments made by citizens on posts. Comments are independent
+/// entities with their own lifecycle and moderation status. They are not
+/// subsidiary to posts because they require independent search (e.g., all
+/// comments by user X), moderation, and tracking. Associated with a post via
+/// foreign key but managed as primary entity.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post this comment replies to. {@link political_forum_posts.id}.
+  post_id String
+  
+  /// Author's citizen account. {@link political_forum_citizens.id}.
+  citizen_id String
+  
+  /// Content of the comment. Must be 5-1500 characters as per requirements.
+  body String
+  
+  /// Timestamp when the comment was posted. Always non-null.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last edited (within 24h of posting).
+  updated_at DateTime?
+  
+  /// Timestamp when the comment was deleted by a moderator. Null if not
+  /// deleted. Required for soft delete audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post political_forum_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  citizen political_forum_citizens @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  
+  political_forum_comment_reports political_forum_comment_reports[]
+  political_forum_audit_log_target_of_comments political_forum_audit_log_target_of_comments?
+  political_forum_analytics_events political_forum_analytics_events[]
+  political_forum_archived_comments political_forum_archived_comments?
+  
+  @@index([post_id, created_at])
+  @@index([citizen_id, created_at])
+}

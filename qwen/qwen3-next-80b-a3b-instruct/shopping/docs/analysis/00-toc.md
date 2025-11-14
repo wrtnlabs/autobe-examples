@@ -1,152 +1,84 @@
-# Shopping Mall Platform: Service Overview
+## Service Overview
 
-## Executive Summary
+This document provides a high-level overview of the ShoppingMall platform—a multi-vendor e-commerce ecosystem designed to connect independent sellers directly with consumers. The platform enables sellers to list, manage, and sell products with full autonomy while empowering customers with comprehensive tools for discovery, purchasing, and post-purchase engagement. Unlike single-vendor marketplaces, ShoppingMall operates as a decentralized marketplace where each seller manages their own inventory, pricing, fulfillment, and customer interactions, with the platform providing infrastructure, trust mechanisms, and systemic coordination.
 
-The Shopping Mall Platform is a modern, multi-vendor e-commerce ecosystem designed to connect independent sellers with customers seeking authentic, diverse, and specialized products. Unlike monolithic platforms like Amazon or eBay, this system empowers small and mid-sized businesses to establish branded storefronts with full control over their inventory, pricing, and customer experience — while providing buyers with a curated, trustworthy marketplace built on local and independent commerce.
+## Business Model
 
-This platform is not a simple product aggregator. It is a living business network where sellers are active participants in customer relationships, fulfillment, and feedback loops. The system enables individual vendors to thrive by offering them tools to manage products, inventory, orders, and reviews — while customers benefit from personalized discovery, secure transactions, and direct seller communication.
+### Why This Service Exists
 
-Our goal is to build a marketplace where the success of every seller is a direct measure of the platform’s success.
+Modern consumers seek personalized, diverse, and authentic product experiences, while independent sellers struggle with the high costs, rigid policies, and limited exposure of dominant single-vendor platforms. ShoppingMall addresses this market gap by creating an open, transparent, and seller-empowered commerce ecosystem. Customers benefit from greater variety, niche product access, and direct vendor relationships. Sellers gain control over their brand, pricing, and customer data, with lower fees and higher retention of profits. The platform fills the void between rigid corporate marketplaces and unstructured peer-to-peer platforms by offering professional infrastructure—secure payments, standardized logistics, dispute resolution, and discoverability—without imposing restrictive vendor rules.
 
-## Business Vision
+### Revenue Strategy
 
-The vision of the Shopping Mall Platform is to become the most trusted, human-centered digital marketplace for independent sellers and discerning customers in Asia and beyond. We believe that the future of e-commerce lies not in centralization and scale, but in authenticity, personalization, and community-based trust.
+ShoppingMall generates revenue through three primary channels:
 
-By eliminating the systemic exploitation present in dominant platforms — where sellers compete on price alone and customers receive generic experiences — we create a sustainable ecosystem where:
-- Sellers own their customer relationships and brand equity
-- Customers discover curated products from real businesses with transparent practices
-- The platform earns value by enabling organic growth, not by extracting fees
+1. **Transaction Fee**: A flat 8% fee applied to every completed sale, collected at the time of payment processing. This fee applies to all products regardless of category or price point.
+2. **Seller Subscription Tiers**: Optional premium memberships for sellers:
+   - Basic: $0/month (free tier with 8% transaction fee)
+   - Pro: $19.99/month—reduces transaction fee to 5% + access to advanced analytics and priority support
+   - Enterprise: $99.99/month—reduces transaction fee to 3% + bulk listing tools, custom domain support, and dedicated account manager
+3. **Featured Listings**: Sellers may pay $1.99 per day to feature a single product in targeted homepage banners, category carousels, or search result boosts. This is optional and non-disruptive to organic discovery.
 
-Our goal is to build a marketplace where the success of every seller is a direct measure of the platform’s success.
+No listing fees, subscription fees for customers, or hidden charges exist. All monetization is directly tied to value creation and transaction volume.
 
-## Market Opportunity
+### Growth Plan
 
-The global e-commerce market is projected to exceed $7.4 trillion by 2025. However, the market is increasingly polarized:
+The platform will grow through a three-phase strategy:
 
-- **Dominant platforms** (e.g., Amazon, Alibaba) cater to high-volume, low-margin commodity sales, squeezing out small and local businesses with opacity, algorithmic penalties, and excessive fees.
-- **Shopify and similar platforms** empower sellers to build independent stores but lack the discovery power and unified customer experience of a marketplace.
-- **Consumer preferences are shifting**: 74% of buyers in Asia report they prefer purchasing from local, independent businesses they perceive as trustworthy and authentic (2024 Digital Commerce Survey).
+1. **Seed Phase (Months 0–6)**: Onboard 500 vetted, high-quality sellers with unique product offerings (handmade, specialty, niche). Focus on building a loyal early-adopter customer base through targeted social campaigns and referral incentives.
+2. **Scale Phase (Months 7–18)**: Expand seller onboarding to include larger SMEs and regional brands. Launch localized language and currency support. Introduce customer loyalty programs (e.g., points for reviews, referrals, repeat purchases). Begin affiliate marketing partnerships.
+3. **Mature Phase (Months 19+)**: Expand internationally with localized fulfillment hubs. Introduce seller ratings and badges for trust. Integrate with third-party logistics providers to offer guaranteed delivery windows. Launch B2B bulk purchasing capabilities for resellers.
 
-There is a growing gap: customers want personalized, authentic shopping experiences — but they do not want to visit 20 different websites to find them.
+### Success Metrics
 
-The Shopping Mall Platform fills this gap by combining the discoverability and convenience of a centralized marketplace with the authenticity and ownership of independent storefronts.
+The platform’s success will be measured by the following key performance indicators (KPIs), each with target thresholds:
 
-### Competitive Differentiation
+- **Monthly Active Users (MAU)**: 100,000 within 18 months
+- **Monthly Transaction Volume (MTV)**: $5M in gross merchandise value (GMV) by Month 12
+- **Seller Retention Rate**: 85% of sellers remain active after 6 months
+- **Average Order Value (AOV)**: $75 across all purchases
+- **Customer Satisfaction (CSAT)**: 4.5/5 average rating from post-purchase surveys
+- **Order Fulfillment Time**: 95% of orders shipped within 48 hours of placement
+- **Refund/Return Rate**: Below 7% of total transactions
+- **Platform Revenue Per User (RPU)**: $1.50 per monthly active user after Month 12
 
-| Feature | Amazon/eBay | Shopify | Shopping Mall Platform |
-|--------|-------------|---------|------------------------|
-| **Vendor Control** | Limited — algorithm-driven pricing and visibility | Full — standalone stores | Full — branded storefronts within a unified marketplace |
-| **Discoverability** | High — massive search volume | Low — requires external traffic | High — curated search, categories, and seller highlights |
-| **Fees** | 8–15% + advertising costs | $30–300/month + transaction fees | 5% transaction fee (no subscription) |
-| **Customer Trust** | Eroding — anonymous sellers, fake reviews | High (if branded) | High — verified sellers, authentic reviews, direct communication |
-| **Seller Experience** | Competitive, punitive | Complex, fragmented | Collaborative, supportive, community-focused |
+## Core Functions Summary
 
-We are not competing with Amazon for volume. We are competing for trust.
+The ShoppingMall platform delivers a comprehensive set of interdependent functions that serve both customers and sellers:
 
-## Core Value Proposition
+- **Customer-Centric Functions**: Registration/login with address management, product catalog browsing and search, SKU variant selection, cart and wishlist management, order placement, multi-method payment processing, order tracking with real-time shipping updates, product reviews and ratings, order history, and refund/cancellation requests.
+- **Seller-Centric Functions**: Product listing and management, SKU inventory control per variant, order fulfillment notification and status updates, sales dashboard analytics, low-stock alerts, product visibility controls, and review response capabilities.
+- **Platform Governance Functions (Admin)**: User account management (including seller/customer suspension), product moderation, order dispute resolution, payment gateway configuration, inventory oversight across all sellers, sales reporting, and audit logging.
 
-The Shopping Mall Platform delivers unique value to both customers and sellers:
+All functions are designed to operate in concert: customers discover and purchase, sellers fulfill and communicate, and administrators ensure fairness, safety, and system integrity.
 
-### For Customers:
+## User Actor Overview
 
-- **Authentic Discovery**: Find unique, handcrafted, locally sourced, and niche products not available on mass-market platforms.
-- **Trusted Sellers**: Every seller is verified; average seller rating is publicly displayed with real customer reviews.
-- **Direct Communication**: Message sellers directly with questions before purchasing — no chatbot, no robotic responses.
-- **Full Transparency**: Know exactly who made your product, where it’s shipped from, and how it’s made.
-- **Ethical Shopping**: Support independent businesses — your purchases directly enable livelihoods.
-- **Seamless Experience**: Enjoy the convenience of one checkout, unified order tracking, and a single account — without sacrificing seller authenticity.
+The system is explicitly architected around three distinct user actor roles, each with specialized roles, permissions, and data models:
 
-### For Sellers:
+1. **Customer** (type: member): A buyer who registers to browse, purchase, review, and track products. Cannot manage listings, inventory, or other users.
+2. **Seller** (type: member): A merchant who lists products, manages SKUs, fulfills orders, and responds to reviews. Separately authenticated from customers with different data schema and access controls. Cannot manage system-wide functions.
+3. **Admin** (type: admin): System operator with full capabilities to manage users, products, orders, disbursements, and platform settings. Has oversight authority over all customers and sellers.
 
-- **Own Your Brand**: Build your identity. No forced coupons, no generic templates, no de-platforming risk.
-- **Real-Time Inventory Control**: Accurately manage stock per SKU with automatic reservation and low-stock alerts.
-- **Direct Customer Insights**: See individual buyer behavior, review sentiment, and purchasing patterns — not just aggregated metrics.
-- **No National Price Wars**: Compete on authenticity, quality, and service — not on which vendor can undercut by $0.50.
-- **Earn More**: Pay only a 5% transaction fee — no hidden costs, no mandatory advertising.
-- **Grow Your Community**: Build repeat customers through direct messaging, welcome discounts, and loyalty encouragement.
+The separation between Customer and Seller is not merely a role toggle—it represents two fundamentally different data models, authentication contexts, and behavioral workflows. A user may be both a customer and a seller (e.g., a hobbyist selling handmade goods), but they must register and authenticate as two separate identities within the system.
 
-## Target User Segments
+## Document Roadmap
 
-The platform serves two primary user groups, each with distinct behaviors, motivations, and expectations:
+This document (00-toc.md) serves as the foundational overview for the entire ShoppingMall platform. All subsequent documents build directly from this scope:
 
-### 1. Customer (Primary Audience)
+- [01-business-model.md](./01-business-model.md): Deep dive into revenue strategy, market positioning, and growth metrics.
+- [02-user-actors.md](./02-user-actors.md): Full specification of permissions, authentication flows, and JWT payload structure per actor.
+- [03-authentication-flow.md](./03-authentication-flow.md): End-to-end user journey for registration, login, password reset, and session management.
+- [04-product-catalog.md](./04-product-catalog.md): Product categorization, attribute system, and SKU variant structure.
+- [05-shopping-cart-wishlist.md](./05-shopping-cart-wishlist.md): Functionality for managing items, quantity, preservation across sessions, and sharing.
+- [06-checkout-process.md](./06-checkout-process.md): Payment method integration, validation rules, tax calculation, and failure recovery.
+- [07-order-processing.md](./07-order-processing.md): Order capture, seller notification, shipping status flow, and tracking.
+- [08-seller-inventory.md](./08-seller-inventory.md): Real-time inventory management, stock alerts, and atomic update rules.
+- [09-product-reviews.md](./09-product-reviews.md): Review submission constraints, rating logic, moderation, and display rules.
+- [10-order-history-refunds.md](./10-order-history-refunds.md): Cancellation windows, refund eligibility, processing paths, and return logistics.
+- [11-admin-dashboard.md](./11-admin-dashboard.md): Full admin capabilities for user, product, order, and audit control.
+- [12-conclusion-summary.md](./12-conclusion-summary.md): Final consolidated summary for business stakeholders.
 
-- **Demographics**: Urban professionals (25–45), value-driven shoppers, ethically conscious consumers, collectors, gift-seekers.
-- **Motivations**:
-  - Desire unique, non-mass-produced products
-  - Trust reviews and seller reputation over brand advertising
-  - Prefer supporting small businesses
-  - Value transparency in sourcing and shipping
-- **Behaviors**:
-  - Browse by category or search.
-  - Add items to cart and wishlist.
-  - Compare similar products across sellers.
-  - Leave detailed reviews after delivery.
-  - Reorder from favorite sellers.
-  - Use delivery tracking as a signal of reliability.
-- **Pain Points Solved**:
-  - Avoiding counterfeit goods from anonymous sellers
-  - Navigating dozens of independent sites
-  - Lack of communication with product creators
-
-### 2. Seller (Secondary Audience)
-
-- **Demographics**: Artisans, boutique owners, home-based producers, small retailers, regional brands (Korea, Thailand, Vietnam, Indonesia, etc.).
-- **Motivations**:
-  - Expand reach without paying for ads on Amazon or Facebook
-  - Maintain control over pricing and product presentation
-  - Build loyal, repeat customers
-  - Avoid predatory platform fees
-  - Access customer feedback to improve products
-- **Behaviors**:
-  - Upload products with detailed variants (SKU-by-SKU)
-  - Set inventory limits per variant
-  - Respond to reviews and customer questions
-  - Update shipping status after dispatch
-  - Track sales analytics by product and month
-  - Apply for payouts when funds reach threshold
-- **Pain Points Solved**:
-  - Shopify’s monthly fee burden
-  - Marketplaces’ opaque algorithms
-  - No control over customer communication
-
-### 3. Admin (Internal Authority)
-
-- Responsible for platform integrity, fraud detection, dispute resolution, and system reliability.
-- Holds final authority to suspend listings or accounts that violate integrity policies.
-- Does *not* interfere with seller pricing, branding, or customer communication.
-- Monitors key metrics to ensure platform health and balances seller/customer experience.
-
-## Success Metrics
-
-Business success will be measured by the following **quantifiable, customer-centric** KPIs:
-
-| Metric | Target | Purpose |
-|--------|--------|---------|
-| **Gross Merchandise Volume (GMV)** | $5 million in Year 1 | Measure of total sales through the platform |
-| **Active Sellers** | 2,000 after 12 months | Indirect measure of platform trust and usability |
-| **Customer Retention Rate** | 40% return within 90 days | Indicates satisfaction with product quality and experience |
-| **Average Seller Rating** | 4.7/5 stars | Measures trust and service quality delivered by sellers |
-| **Review Rate** | 30% of completed orders include a review | Confidence in authenticity of feedback system |
-| **Order Cancellation Rate** | Below 3% | Indicates accurate product descriptions and inventory management |
-| **Average Order Value (AOV)** | $75 | Reflects customer willingness to invest in curated, premium items |
-| **Seller Onboarding Completion Rate** | 85% of applicants complete setup | Measures usability and support quality for sellers |
-| **Platform Uptime** | 99.9% monthly | Essential for trust and reliability |
-
-Success is not defined by how many users sign up, but by how many customers return, how many sellers thrive, and how few disputes occur.
-
-## Related Documents
-
-This document provides the high-level business context for the Shopping Mall Platform. The following documents define the specific business requirements that will enable this vision:
-
-- [Authentication Architecture](./01-authentication-architecture.md) — Defines the three user actors: customer, seller, and admin, with their respective permissions and access controls.
-- [Product Catalog](./02-product-catalog.md) — Specifies how products, categories, and variants (SKUs) are structured and displayed.
-- [Cart and Wishlist](./03-cart-wishlist.md) — Details the workflows for adding, modifying, and persisting cart and wishlist items.
-- [Order Placement](./04-order-placement.md) — Maps the end-to-end checkout and payment process.
-- [Order Tracking](./05-order-tracking.md) — Defines the state transitions and communication requirements for order fulfillment.
-- [Reviews and Ratings](./06-reviews-ratings.md) — Establishes rules for product feedback, moderation, and seller responses.
-- [Seller Account](./07-seller-account.md) — Documents the registration, verification, and management processes for sellers.
-- [Inventory Management](./08-inventory-management.md) — Specifies how stock is tracked, reserved, and updated per SKU.
-- [Order History and Refunds](./09-order-history-refunds.md) — Outlines cancellation eligibility, return policies, and refund workflows.
+Every document in this progression is designed to be implemented independently while adhering to the context defined here. No feature may be added, modified, or omitted without alignment to this document’s established scope.
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

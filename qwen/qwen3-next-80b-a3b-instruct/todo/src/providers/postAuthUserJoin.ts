@@ -7,64 +7,57 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { UserPayload } from "../decorators/payload/UserPayload";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
+import { ITodoAppAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAuthorizationToken";
 
 export async function postAuthUserJoin(props: {
-  user: UserPayload;
-  email: string & tags.Format<"email"> & tags.MinLength<1>;
-  password: string & tags.MinLength<8> & tags.MaxLength<128>;
-  body: ITodoUser.IJoin;
-}): Promise<ITodoUser.IAuthorized> {
-  // Extract the email and password from body
-  const { email, password } = props.body;
-
-  // Verify that the email doesn't already exist
-  const existingUser = await MyGlobal.prisma.todo_users.findFirst({
-    where: { email },
+  body: ITodoAppUser.ICreate;
+}): Promise<ITodoAppUser.IAuthorized> {
+  // Check for existing user with same email
+  const existingUser = await MyGlobal.prisma.todo_app_users.findFirst({
+    where: { email: props.body.email },
   });
 
   if (existingUser) {
     throw new HttpException("Email already registered", 409);
   }
 
-  // Hash the password using PasswordUtil
-  const hashedPassword = await PasswordUtil.hash(password);
+  // Hash password using PasswordUtil (mandatory for security)
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // Create the new user record
-  const newUser = await MyGlobal.prisma.todo_users.create({
+  // Create new user record with required created_at and updated_at fields
+  const user = await MyGlobal.prisma.todo_app_users.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      email,
+      email: props.body.email,
       password_hash: hashedPassword,
       created_at: toISOStringSafe(new Date()),
       updated_at: toISOStringSafe(new Date()),
-      deleted_at: null,
     },
   });
 
-  // Create the session record
+  // Calculate expiration times (1h access, 7d refresh)
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  const session = await MyGlobal.prisma.todo_user_sessions.create({
+  // Create session record linked to user - using safe defaults since these properties are not in params
+  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      todo_user_id: newUser.id,
-      ip: props.user ? props.user.id : "0.0.0.0",
-      href: "https://example.com/auth/join",
-      referrer: "",
+      user_id: user.id,
+      ip: "0.0.0.0", // Default value for IP
+      href: "", // Default value for href (request URL)
+      referrer: "", // Default value for referrer
       created_at: toISOStringSafe(new Date()),
       expired_at: toISOStringSafe(accessExpires),
     },
   });
 
-  // Generate JWT tokens
+  // Generate JWT access token with required payload structure (using toISOStringSafe for date-time format)
   const accessToken = jwt.sign(
     {
       type: "user",
-      id: newUser.id,
+      id: user.id,
       session_id: session.id,
       created_at: toISOStringSafe(new Date()),
     },
@@ -75,10 +68,11 @@ export async function postAuthUserJoin(props: {
     },
   );
 
+  // Generate JWT refresh token (using toISOStringSafe for date-time format)
   const refreshToken = jwt.sign(
     {
       type: "user",
-      id: newUser.id,
+      id: user.id,
       session_id: session.id,
       tokenType: "refresh",
       created_at: toISOStringSafe(new Date()),
@@ -90,18 +84,14 @@ export async function postAuthUserJoin(props: {
     },
   );
 
-  // Return the authorized response
+  // Return authorized response with token information using toISOStringSafe for date-time fields
   return {
-    id: newUser.id,
-    email: newUser.email,
-    created_at: toISOStringSafe(newUser.created_at),
-    updated_at: toISOStringSafe(newUser.updated_at),
-    deleted_at: toISOStringSafe(newUser.deleted_at ?? new Date(0)),
+    id: user.id,
     token: {
       access: accessToken,
       refresh: refreshToken,
       expired_at: toISOStringSafe(accessExpires),
       refreshable_until: toISOStringSafe(refreshExpires),
     },
-  } satisfies ITodoUser.IAuthorized;
+  } satisfies ITodoAppUser.IAuthorized;
 }

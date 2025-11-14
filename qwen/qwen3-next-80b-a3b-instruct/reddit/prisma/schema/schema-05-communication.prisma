@@ -1,0 +1,294 @@
+/// Stores active notifications sent to users. Each notification is
+/// associated with an actor (member, moderator, admin) and includes the
+/// type, content, and delivery status. Users directly interact with
+/// notifications by viewing and marking them as read or dismissed. This is a
+/// primary entity because users need to independently search, filter, and
+/// manage their notifications across all context (e.g., unread notifications
+/// from any content type).
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User receiving this notification. Points to the actor's session record.
+  /// Links to {@link community_platform_member_sessions} for members, {@link
+  /// community_platform_moderator_sessions} for moderators, and {@link
+  /// community_platform_admin_sessions} for admins.
+  recipient_id String
+  
+  /// Type of notification as defined in templates. Links to {@link
+  /// community_platform_notification_types.id}.
+  notification_type_id String
+  
+  /// Short title of the notification.
+  title String
+  
+  /// Full body content of the notification.
+  body String
+  
+  /// Current status of the notification: 'unread', 'read', or 'dismissed'.
+  status String
+  
+  /// Timestamp when the notification was created.
+  created_at DateTime
+  
+  /// Timestamp when the notification was last updated (e.g., marked as read).
+  updated_at DateTime
+  
+  /// Timestamp when the notification was soft-deleted (e.g., user cleared all
+  /// notifications).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  recipient community_platform_member_sessions @relation(fields: [recipient_id], references: [id], onDelete: Cascade)
+  notificationType community_platform_notification_types @relation(fields: [notification_type_id], references: [id], onDelete: Cascade)
+  
+  community_platform_notification_queue community_platform_notification_queue?
+  community_platform_notification_delivery_logs community_platform_notification_delivery_logs[]
+  
+  @@index([notification_type_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([recipient_id, notification_type_id, created_at], map: "community_platform_notifications_recipient_id_notifica_954ef278")
+  @@index([recipient_id, status])
+  @@index([status, created_at])
+}
+
+/// Defines user-specific preferences for which types of notifications they
+/// wish to receive. Each user can opt-in or out of types of notifications.
+/// This entity is primary because users directly configure these settings
+/// and expect to be able to query and update their preferences independently
+/// across the platform.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user (member/moderator/admin) who owns these preferences. Links to
+  /// their session record (e.g., {@link community_platform_member_sessions} or
+  /// equivalent for moderator/admin).
+  user_id String
+  
+  /// The notification type this preference applies to. Links to {@link
+  /// community_platform_notification_types.id}.
+  notification_type_id String
+  
+  /// Whether the user wants to receive notifications of this type (true) or
+  /// not (false).
+  enabled Boolean
+  
+  /// Timestamp when this preference was created.
+  created_at DateTime
+  
+  /// Timestamp when this preference was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this preference was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_member_sessions @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  notificationType community_platform_notification_types @relation(fields: [notification_type_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+  // spellchecker: ignore-next-line
+  @@index([notification_type_id], map: "community_platform_notification_preferences_notificati_ac364245")
+  
+  // spellchecker: ignore-next-line
+  @@unique([user_id, notification_type_id], map: "community_platform_notification_preferences_user_id_no_76778b3b")
+  @@index([user_id, enabled])
+}
+
+/// System-defined templates for notifications. These templates define the
+/// structure and content of notifications that can be sent to users, such as
+/// '(Author) posted a new comment in {community}' or 'You have {n} unread
+/// notifications'. Templates are managed by the platform and not directly by
+/// users. Therefore, this is a subsidiary entity used by the system to
+/// populate notifications.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_templates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The actor type this template is targetable to (points to a record in the
+  /// actor type model). Links to the existing {@link
+  /// community_platform_member}, {@link community_platform_moderator}, or
+  /// {@link community_platform_admin} record types. This is used to determine
+  /// which actors can receive notifications of this template type.
+  recipient_actor_type String
+  
+  /// Internal name to identify this template (e.g., 'new_comment',
+  /// 'user_mention').
+  name String
+  
+  /// Template string for the notification title. May contain placeholders like
+  /// {user_name} or {community_name}.
+  title_template String
+  
+  /// Template string for the notification body content. May contain
+  /// placeholders like {user_name} or {post_title}.
+  body_template String
+  
+  /// Whether this template is currently active and can be used to generate
+  /// notifications.
+  is_enabled Boolean
+  
+  /// Timestamp when this template was created.
+  created_at DateTime
+  
+  /// Timestamp when this template was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this template was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  recipientActorType community_platform_member @relation(fields: [recipient_actor_type], references: [id], onDelete: Cascade)
+  
+  @@unique([name])
+  // spellchecker: ignore-next-line
+  @@index([recipient_actor_type, is_enabled], map: "community_platform_notification_templates_recipient_ac_c438da5d")
+}
+
+/// A queue system for notifications awaiting delivery. This table holds
+/// notifications that have been generated by the system but are awaiting
+/// processing by background workers. This is a subsidiary entity managed
+/// entirely by the system for scalability and reliability of notification
+/// delivery, not intended for direct user interaction.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_queue {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The notification this queue entry is for. Links to {@link
+  /// community_platform_notifications.id}.
+  notification_id String
+  
+  /// Number of times this notification has been attempted for delivery.
+  attempt_count Int
+  
+  /// When the last delivery attempt occurred.
+  last_attempted_at DateTime?
+  
+  /// When the next retry attempt should occur (for exponential backoff).
+  next_retry_at DateTime?
+  
+  /// Qualifies the state: 'pending', 'failed', or 'processed'.
+  status String
+  
+  /// Timestamp when this queue entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this queue entry was updated (e.g., retry attempted).
+  updated_at DateTime
+  
+  /// Timestamp when this entry was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  notification community_platform_notifications @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+  
+  @@unique([notification_id])
+  
+  @@index([status, next_retry_at])
+  @@index([created_at])
+}
+
+/// Immutable audit trail of notification delivery attempts. Each log entry
+/// records the time, outcome, and method (email/in-app) of a notification
+/// delivery. This table is strictly append-only and serves as an audit trail
+/// for reliability and compliance. It is subsidiary because it is managed by
+/// the system and does not require direct user interaction for CRUD
+/// operations.
+///
+/// @namespace Communication
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_delivery_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The notification that was delivered. Links to {@link
+  /// community_platform_notifications.id}.
+  notification_id String
+  
+  /// User recipient ID as it was at time of delivery (links to original
+  /// session record: {@link community_platform_member_sessions}, etc.).
+  recipient_id String
+  
+  /// The notification type at time of delivery (links to {@link
+  /// community_platform_notification_types.id}).
+  notification_type_id String
+  
+  /// Method used for delivery: 'email' or 'in_app'.
+  delivery_method String
+  
+  /// Outcome of delivery: 'success', 'failed', 'deferred', or 'suppressed'.
+  status String
+  
+  /// Detailed error message if delivery failed.
+  error_message String?
+  
+  /// Timestamp when delivery was attempted and completion status is known.
+  delivered_at DateTime?
+  
+  /// Timestamp when this log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this log entry was updated (e.g., when status changed from
+  /// deferred to successful).
+  updated_at DateTime
+  
+  /// This field is added for consistency but should never be set since
+  /// delivery logs are append-only, immutable audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  notification community_platform_notifications @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+  recipient community_platform_member_sessions @relation(fields: [recipient_id], references: [id], onDelete: Cascade)
+  notificationType community_platform_notification_types @relation(fields: [notification_type_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([notification_type_id], map: "community_platform_notification_delivery_logs_notifica_5f87b051")
+  
+  // spellchecker: ignore-next-line
+  @@index([recipient_id, delivered_at], map: "community_platform_notification_delivery_logs_recipien_eb7904b6")
+  // spellchecker: ignore-next-line
+  @@index([notification_id, status], map: "community_platform_notification_delivery_logs_notifica_dff3a504")
+  // spellchecker: ignore-next-line
+  @@index([status, delivered_at], map: "community_platform_notification_delivery_logs_status_d_5cccffc4")
+  // spellchecker: ignore-next-line
+  @@index([delivery_method, status], map: "community_platform_notification_delivery_logs_delivery_8ec32284")
+}

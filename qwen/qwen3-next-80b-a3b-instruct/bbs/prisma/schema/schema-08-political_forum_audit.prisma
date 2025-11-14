@@ -1,0 +1,283 @@
+/// Immutable audit log entries that record all significant system events for
+/// compliance and forensic purposes. This is the main entity that
+/// coordinates the polymorphic actor and target systems using IDs and
+/// discriminators. Uses actor_log_id and entity_log_id to reference specific
+/// subtype tables based on actor_type and target_type.
+///
+/// All direct foreign keys have been removed and replaced with discriminator
+/// + subtype pattern to preserve referential integrity and normalization.
+/// Every audit entry is validated against the subtype relationships rather
+/// than direct database FKs.
+///
+/// Links to political_forum_audit_log_of_citizens,
+/// political_forum_audit_log_of_moderators,
+/// political_forum_audit_log_targets through their respective ID fields.
+/// Dependent entirely on subtype tables to resolve actor and target identity
+/// with type safety.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to either political_forum_audit_log_of_citizens.id or
+  /// political_forum_audit_log_of_moderators.id, determined by actor_type.
+  /// This ensures referential integrity while enabling polymorphic actor
+  /// tracking. Never references directly to citizens or moderators.
+  actor_log_id String
+  
+  /// Foreign key to political_forum_audit_log_targets.id. This point of
+  /// reference resolves the target_type and enables JOIN to one of the
+  /// specific target subtypes (post, comment, session).
+  entity_log_id String
+  
+  /// Specifies the type of actor performing the action. Must be exactly
+  /// "citizen" or "moderator" as defined in the authentication system. Used
+  /// with actor_log_id to determine which subtype table to join.
+  actor_type String
+  
+  /// Specifies the type of entity being audited. Must be one of: "post",
+  /// "comment", "session". Used with entity_log_id to determine which target
+  /// subtype to join during query resolution.
+  target_type String
+  
+  /// Type of action taken. Valid values: "created", "modified", "deleted",
+  /// "locked", "verified", "login", "logout", "report", "flagged". Derived
+  /// from business rules governing system events.
+  action String
+  
+  /// A human-readable description of the action performed, including optional
+  /// reason provided by moderator (e.g., "Removed for hate speech") or system
+  /// context (e.g., "Post flagged by 5 users"). Required for forensic
+  /// accountability.
+  description String
+  
+  /// JSON string representing the state of the target entity before the
+  /// action. For example: {"title": "Original Title", "text": "Original
+  /// content"}. Use for change comparison and audit recovery.
+  old_state String?
+  
+  /// JSON string representing the state of the target entity after the action.
+  /// For example: {"title": "Updated Title", "text": "Updated content"}.
+  /// Contains the final state after modification, deletion, or verification.
+  new_state String?
+  
+  /// The public IP address used by the actor when performing the action.
+  /// Captured from HTTP request header for accountability.
+  ip_address String
+  
+  /// The HTTP User-Agent header sent by the client when performing the action.
+  /// Used for identifying device or browser type for forensic analysis.
+  user_agent String
+  
+  /// The precise UTC timestamp when the audit event was recorded by the
+  /// system. Always uses server clock to ensure immutability. Follows ISO 8601
+  /// format.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  actorLog political_forum_audit_log_of_citizens @relation(fields: [actor_log_id], references: [id], onDelete: Cascade)
+  entityLog political_forum_audit_log_targets @relation(fields: [entity_log_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_log_id])
+  @@index([entity_log_id])
+  
+  @@index([actor_type, created_at])
+  @@index([target_type, entity_log_id])
+}
+
+/// Subtype entity for audit logs executed specifically by citizens. This
+/// table enforces referential integrity by linking only to
+/// political_forum_citizens.id. The main political_forum_audit_logs table
+/// references this via actor_log_id, ensuring that all audit logs by
+/// citizens have a valid actor identity.
+///
+/// Does not require additional fields beyond the relationship to citizen.
+/// Cornerstone of polymorphic actor pattern.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_audit_log_of_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the citizen who performed the audited action. Must be
+  /// non-null and link directly to political_forum_citizens.id. Ensures valid
+  /// actor authentication context.
+  political_forum_citizen_id String
+  
+  //----
+  // RELATIONS
+  //----
+  citizen political_forum_citizens @relation(fields: [political_forum_citizen_id], references: [id], onDelete: Cascade)
+  
+  political_forum_audit_logs political_forum_audit_logs[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([political_forum_citizen_id], map: "political_forum_audit_log_of_citizens_political_forum__3d3bfd94")
+}
+
+/// Subtype entity for audit logs executed specifically by moderators. This
+/// table enforces referential integrity by linking only to
+/// political_forum_moderators.id. The main political_forum_audit_logs table
+/// references this via actor_log_id, ensuring that all audit logs by
+/// moderators have a valid actor identity.
+///
+/// Does not require additional fields beyond the relationship to moderator.
+/// Cornerstone of polymorphic actor pattern.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_audit_log_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the moderator who performed the audited action. Must be
+  /// non-null and link directly to political_forum_moderators.id. Ensures
+  /// valid actor authentication context.
+  political_forum_moderator_id String
+  
+  //----
+  // RELATIONS
+  //----
+  moderator political_forum_moderators @relation(fields: [political_forum_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([political_forum_moderator_id], map: "political_forum_audit_log_of_moderators_political_foru_bb04becd")
+}
+
+/// Subtype entity for audit logs targeting political_forum_posts. Links the
+/// audit entry to the post being modified, deleted, locked, or verified.
+/// This ensures referential integrity for post-targeted events.
+///
+/// Does not require additional fields beyond the relationship to post.
+/// Cornerstone of polymorphic target pattern.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_audit_log_target_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post being audited. Must be non-null and link directly
+  /// to political_forum_posts.id. Applies to actions: created, modified,
+  /// deleted, locked, verified.
+  political_forum_post_id String
+  
+  //----
+  // RELATIONS
+  //----
+  post political_forum_posts @relation(fields: [political_forum_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([political_forum_post_id], map: "political_forum_audit_log_target_of_posts_political_fo_2b4fa4a2")
+}
+
+/// Subtype entity for audit logs targeting political_forum_comments. Links
+/// the audit entry to the comment being modified or deleted. This ensures
+/// referential integrity for comment-targeted events.
+///
+/// Does not require additional fields beyond the relationship to comment.
+/// Cornerstone of polymorphic target pattern.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_audit_log_target_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment being audited. Must be non-null and link
+  /// directly to political_forum_comments.id. Applies to actions: created,
+  /// modified, deleted, flagged, reported.
+  political_forum_comment_id String
+  
+  //----
+  // RELATIONS
+  //----
+  comment political_forum_comments @relation(fields: [political_forum_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([political_forum_comment_id], map: "political_forum_audit_log_target_of_comments_political_5635842b")
+}
+
+/// Subtype entity for audit logs targeting user sessions. Links the audit
+/// entry to the citizen_session being logged in or out. This ensures
+/// referential integrity for session-based audit events.
+///
+/// Does not require additional fields beyond the relationship to session.
+/// Cornerstone of polymorphic target pattern.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_audit_log_target_of_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the citizen session being audited. Must be non-null and link
+  /// directly to political_forum_citizen_sessions.id. Applies to actions:
+  /// login, logout.
+  political_forum_citizen_session_id String
+  
+  //----
+  // RELATIONS
+  //----
+  session political_forum_citizen_sessions @relation(fields: [political_forum_citizen_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([political_forum_citizen_session_id], map: "political_forum_audit_log_target_of_sessions_political_bd097944")
+}
+
+/// Main entity for audit log target types. Serves as the discriminator for
+/// different entities being audited.
+///
+/// Stores the target_type (post, comment, session) and links to respective
+/// subtype tables (political_forum_audit_log_target_of_posts, etc.). This
+/// allows the main audit_log table to reference exactly one target entity
+/// with full type safety and referential integrity.
+///
+/// Must be used with target_type field in political_forum_audit_logs to
+/// select the correct subtype for target resolution.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_audit_log_targets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The exact type of entity being audited. Must be one of: "post",
+  /// "comment", "session". Matches the name of the corresponding subtype
+  /// table. Used to determine which subtype table to JOIN during query
+  /// resolution.
+  target_type String
+  
+  //----
+  // RELATIONS
+  //----
+  political_forum_audit_logs political_forum_audit_logs[]
+  
+  @@unique([target_type])
+}

@@ -7,29 +7,29 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { UserPayload } from "../decorators/payload/UserPayload";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
+import { ITodoAppAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAuthorizationToken";
 
 export async function postAuthUserLogin(props: {
-  user: UserPayload;
-  email: string & tags.Format<"email">;
-  password: string & tags.MinLength<8> & tags.MaxLength<128>;
-  body: ITodoUser.ILogin;
-}): Promise<ITodoUser.IAuthorized> {
-  // Validate user credentials against todo_users schema
-  const user = await MyGlobal.prisma.todo_users.findFirst({
+  body: ITodoAppUser.ILogin;
+  ip: string;
+  href: string;
+  referrer: string;
+}): Promise<ITodoAppUser.IAuthorized> {
+  // 1. Find user by email
+  const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: {
       email: props.body.email,
-      deleted_at: null, // Ensure account is not deleted
+      deleted_at: null,
     },
   });
 
+  // 2. Validate user exists
   if (!user) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Verify password using PasswordUtil
+  // 3. Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
@@ -39,66 +39,61 @@ export async function postAuthUserLogin(props: {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Create new session record in todo_user_sessions
-  const accessExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-  const session = await MyGlobal.prisma.todo_user_sessions.create({
+  // 4. Create new session record
+  const accessExpiresStr = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiresStr = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      todo_user_id: user.id,
-      ip: props.body.ip ?? "",
-      href: props.body.href,
-      referrer: props.body.referrer,
+      user_id: user.id,
+      ip: props.ip,
+      href: props.href,
+      referrer: props.referrer,
       created_at: toISOStringSafe(new Date()),
-      expired_at: toISOStringSafe(accessExpires),
+      expired_at: accessExpiresStr,
     },
   });
 
-  // Generate JWT access and refresh tokens
-  const accessToken = jwt.sign(
-    {
-      type: "user",
-      id: user.id,
-      session_id: session.id,
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "30m",
-      issuer: "autobe",
-    },
-  );
+  // 5. Generate JWT tokens
+  const token = {
+    access: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpiresStr,
+    refreshable_until: refreshExpiresStr,
+  };
 
-  const refreshToken = jwt.sign(
-    {
-      type: "user",
-      id: user.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-
-  // Return authorized user response
+  // 6. Return authorized response
   return {
     id: user.id,
-    email: user.email,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: typia.assert<string & tags.Format<"date-time">>(
-      user.deleted_at ? toISOStringSafe(user.deleted_at) : "",
-    ),
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    },
-  } satisfies ITodoUser.IAuthorized;
+    token,
+  } satisfies ITodoAppUser.IAuthorized;
 }

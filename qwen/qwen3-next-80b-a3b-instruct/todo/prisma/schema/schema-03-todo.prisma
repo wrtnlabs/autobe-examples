@@ -1,0 +1,50 @@
+/// Individual task items created by authenticated users. Each todo is owned
+/// exclusively by one user and contains an actionable item represented by a
+/// text title. Completion status is binary: either true (completed) or false
+/// (incomplete). The system does not track historical versions, priorities,
+/// categories, or tags. This model satisfies 3NF as all fields depend solely
+/// on the primary key and there are no transitive dependencies. Reference
+/// user via {@link todo_app_users.id}.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The authenticated user who created this todo item. {@link
+  /// todo_app_users.id}.
+  user_id String
+  
+  /// The text content of the todo item. Must be between 1 and 255 characters.
+  /// Whitespace-only strings are not allowed. This is the only user-editable
+  /// field besides completion status. Field must be non-null per business
+  /// requirement.
+  title String
+  
+  /// Binary flag indicating if the todo item has been completed. Default is
+  /// false when created. Users may toggle this status any number of times.
+  /// This represents state, not progress.
+  completed Boolean
+  
+  /// Timestamp when the todo item was created. Set automatically by system
+  /// upon creation and immutable thereafter.
+  created_at DateTime
+  
+  /// Timestamp when the todo item was last updated (title or completion status
+  /// changed). Updated automatically by system.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  todo_app_audit_logs todo_app_audit_logs[]
+  
+  @@unique([user_id, title])
+  @@index([user_id])
+}

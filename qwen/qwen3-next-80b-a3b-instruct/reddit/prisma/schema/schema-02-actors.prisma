@@ -1,6 +1,9 @@
-/// Represents unauthenticated visitors to the platform. Guests have limited
-/// access to public content and cannot create posts, comments, or accounts.
-/// Account lifecycle is temporary and tied to session expiration.
+/// Guest users who have not logged in. Represents anonymous visitors to the
+/// platform. This table tracks guest identity for session correlation and
+/// abuse detection. Does not have stored credentials. Guest record is
+/// created upon first visit and persistently linked to browser session.
+/// Linked to community_platform_guest_sessions via {@link
+/// community_platform_guest_sessions.actor_id}.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -11,33 +14,49 @@ model community_platform_guest {
   /// Primary Key.
   id String @id
   
-  /// Timestamp when guest first visited the platform.
+  /// Reference to the user profile if this guest ever becomes a member,
+  /// otherwise null. {@link community_platform_user_profiles.id}.
+  user_profile_id String?
+  
+  /// Timestamp when the guest was first recorded.
   created_at DateTime
   
-  /// Timestamp of last activity by this guest.
+  /// Timestamp when the guest record was last updated.
   updated_at DateTime
   
-  /// Timestamp when this guest record was deactivated (soft delete). Null if
-  /// active.
+  /// Timestamp when this guest record was logically deleted (e.g., if flagged
+  /// for abuse). Null if active.
   deleted_at DateTime?
   
-  /// Current status of the guest. Enum values: "active", "suspended".
+  /// Current state of the guest. Values: 'active', 'flagged', 'banned'.
   status String
+  
+  /// The last known IP address of the guest.
+  ip String
+  
+  /// The user agent string from the browser request.
+  user_agent String
   
   //----
   // RELATIONS
   //----
-  community_platform_guest_sessions community_platform_guest_sessions[]
-  community_platform_report_of_guests community_platform_report_of_guests[]
+  userProfile community_platform_user_profiles? @relation(fields: [user_profile_id], references: [id], onDelete: Cascade)
   
-  @@index([created_at])
-  @@index([status])
-  @@index([updated_at])
+  community_platform_guest_sessions community_platform_guest_sessions[]
+  community_platform_actor_sessions community_platform_actor_sessions[]
+  
+  @@unique([ip, user_agent])
+  @@unique([created_at])
+  @@index([status, created_at])
+  @@index([deleted_at])
+  @@index([user_profile_id])
 }
 
-/// Represents authenticated users who can create content, vote, comment, and
-/// subscribe to communities. Members can be verified, suspended, or banned.
-/// Each member has unique username/email and password credentials.
+/// Registered users who have verified their email and are active members of
+/// the community. These users can create posts, comment, vote, subscribe and
+/// manage their profiles. The primary user entity for meaningful
+/// interaction. Linked to community_platform_member_sessions via {@link
+/// community_platform_member_sessions.actor_id}.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -48,68 +67,134 @@ model community_platform_member {
   /// Primary Key.
   id String @id
   
+  /// Unique email address of the member. Used for login and notifications.
+  email String
+  
+  /// Securely hashed password using bcrypt. Never stored in plaintext.
+  password_hash String
+  
   /// Timestamp when the member account was created.
   created_at DateTime
   
-  /// Timestamp of last modification to member profile.
+  /// Timestamp when the member record was last updated.
   updated_at DateTime
   
-  /// Timestamp when this member account was deactivated (soft delete). Null if
-  /// active.
+  /// Timestamp when this member account was logically deleted (e.g., if
+  /// banned). Null if active.
   deleted_at DateTime?
   
-  /// Current status of the member. Enum values: "unverified", "active",
-  /// "suspended", "banned".
+  /// Current state of the member account. Values: 'unverified', 'verified',
+  /// 'suspended', 'banned'.
   status String
   
-  /// Unique email address for login and notifications.
-  email String
-  
-  /// Unique display name for public profile.
-  username String
-  
-  /// Hashed password for authentication. Never store plain text passwords.
-  password_hash String
-  
-  /// Total reputation score earned through contributions. Updated
-  /// automatically by karma system.
+  /// Reputation score calculated from upvotes, downvotes, and community
+  /// contributions. Used to grant privileges.
   karma Int
+  
+  /// Timestamp of the member's last successful login.
+  last_login_at DateTime?
+  
+  /// Timestamp when the email was verified. Null if unverified.
+  email_verified_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community_platform_member_sessions community_platform_member_sessions[]
-  community_platform_communities community_platform_communities[]
   community_platform_posts community_platform_posts[]
   community_platform_comments community_platform_comments[]
-  community_platform_votes community_platform_votes[]
-  community_platform_karma community_platform_karma?
-  community_platform_karma_history community_platform_karma_history[]
-  community_platform_report_of_members community_platform_report_of_members[]
-  community_platform_subscriptions community_platform_subscriptions[]
-  community_platform_profiles community_platform_profiles?
-  community_platform_profile_badges community_platform_profile_badges[]
-  community_platform_profile_privacy_settings community_platform_profile_privacy_settings?
-  community_platform_messages_of_sender_member_id community_platform_messages[] @relation("community_platform_messages_of_sender_member_id")
-  community_platform_messages_of_recipient_member_id community_platform_messages[] @relation("community_platform_messages_of_recipient_member_id")
-  community_platform_message_status community_platform_message_status[]
-  community_platform_notifications_of_members community_platform_notifications_of_members[]
-  community_platform_karma_job_of_members community_platform_karma_job_of_members[]
-  community_platform_ranking_job_of_members community_platform_ranking_job_of_members[]
-  community_platform_background_task_of_members community_platform_background_task_of_members[]
-  community_platform_audit_logs community_platform_audit_logs[]
-  community_platform_deleted_entities community_platform_deleted_entities[]
+  community_platform_reactions community_platform_reactions[]
+  community_platform_moderator community_platform_moderator?
+  community_platform_admin community_platform_admin?
+  community_platform_member_sessions community_platform_member_sessions[]
+  community_platform_karma_ledger_of_user_id community_platform_karma_ledger[] @relation("community_platform_karma_ledger_of_user_id")
+  community_platform_karma_ledger_of_actor_id community_platform_karma_ledger[] @relation("community_platform_karma_ledger_of_actor_id")
+  community_platform_karma_decay_log community_platform_karma_decay_log[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_vote_rate_limits community_platform_vote_rate_limits[]
+  community_platform_vote_abuse_flags community_platform_vote_abuse_flags[]
+  community_platform_notification_templates community_platform_notification_templates[]
+  community_platform_reports community_platform_reports[]
+  community_platform_report_audit_trail community_platform_report_audit_trail[]
+  community_platform_report_appeals community_platform_report_appeals[]
+  community_platform_search_recommendations community_platform_search_recommendations[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_community_memberships community_platform_community_memberships[]
+  community_platform_community_moderators community_platform_community_moderators[]
+  community_platform_community_invitations_of_inviter_id community_platform_community_invitations[] @relation("community_platform_community_invitations_of_inviter_id")
+  community_platform_community_invitations_of_invitee_id community_platform_community_invitations[] @relation("community_platform_community_invitations_of_invitee_id")
+  community_platform_user_profiles community_platform_user_profiles?
+  community_platform_profile_themes community_platform_profile_themes?
+  community_platform_profile_avatars community_platform_profile_avatars?
+  community_platform_display_preferences community_platform_display_preferences?
+  community_platform_privacy_settings community_platform_privacy_settings?
+  community_platform_badge_achievements community_platform_badge_achievements[]
   
   @@unique([email])
-  @@unique([username])
-  @@index([created_at])
-  @@index([status])
+  @@index([status, created_at])
+  @@index([deleted_at])
   @@index([karma])
+  @@index([last_login_at])
+  @@index([email_verified_at])
 }
 
-/// Represents system administrators with elevated privileges for moderation,
-/// policy enforcement, and platform governance. Admins can ban users, remove
-/// content, and modify system settings.
+/// Trusted members appointed to moderate specific communities. Possesses
+/// elevated privileges within assigned communities to remove content, ban
+/// users, and enforce guidelines. This is a role-based extension of a
+/// member, not an independent actor type. Any moderator must first be
+/// registered as a member. Linked to community_platform_moderator_sessions
+/// via {@link community_platform_moderator_sessions.actor_id}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderator {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the underlying member account that is granted moderator
+  /// privileges. {@link community_platform_member.id}.
+  member_id String
+  
+  /// Timestamp when moderator status was granted.
+  created_at DateTime
+  
+  /// Timestamp when the moderator record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when moderator privileges were revoked. Null if active.
+  deleted_at DateTime?
+  
+  /// Current status of moderator privileges. Values: 'active', 'suspended',
+  /// 'revoked'.
+  status String
+  
+  /// JSON array of community IDs this moderator is assigned to manage.
+  assigned_communities String
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  community_platform_communities community_platform_communities?
+  community_platform_moderator_sessions community_platform_moderator_sessions[]
+  community_platform_vote_history community_platform_vote_history[]
+  community_platform_report_actions community_platform_report_actions[]
+  community_platform_report_moderator_assignments community_platform_report_moderator_assignments[]
+  
+  @@unique([member_id])
+  @@index([status, created_at])
+  @@index([deleted_at])
+}
+
+/// Platform administrators with full system-wide control. Can manage users,
+/// communities, system settings, and moderation decisions. All admins must
+/// be verified members first. This is the highest privilege level. Linked to
+/// community_platform_admin_sessions via {@link
+/// community_platform_admin_sessions.actor_id}.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -120,55 +205,43 @@ model community_platform_admin {
   /// Primary Key.
   id String @id
   
-  /// Timestamp when the admin account was created.
+  /// Reference to the underlying member account that is granted admin
+  /// privileges. {@link community_platform_member.id}.
+  member_id String
+  
+  /// Timestamp when admin privileges were granted.
   created_at DateTime
   
-  /// Timestamp of last modification to admin profile.
+  /// Timestamp when the admin record was last updated.
   updated_at DateTime
   
-  /// Timestamp when this admin account was deactivated (soft delete). Null if
-  /// active.
+  /// Timestamp when admin privileges were revoked. Null if active.
   deleted_at DateTime?
   
-  /// Current status of the admin. Enum values: "active", "suspended", "banned".
+  /// Current status of admin privileges. Values: 'active', 'suspended',
+  /// 'revoked'.
   status String
-  
-  /// Unique email address for login and notifications.
-  email String
-  
-  /// Unique display name for public profile.
-  username String
-  
-  /// Hashed password for authentication. Never store plain text passwords.
-  password_hash String
-  
-  /// Indicates whether this admin has global super-admin privileges (can
-  /// modify system settings).
-  is_super_admin Boolean
   
   //----
   // RELATIONS
   //----
-  community_platform_admin_sessions community_platform_admin_sessions[]
-  community_platform_reports community_platform_reports[]
-  community_platform_messages_of_sender_admin_id community_platform_messages[] @relation("community_platform_messages_of_sender_admin_id")
-  community_platform_messages_of_recipient_admin_id community_platform_messages[] @relation("community_platform_messages_of_recipient_admin_id")
-  community_platform_message_status community_platform_message_status[]
-  community_platform_notifications_of_admins community_platform_notifications_of_admins[]
-  community_platform_karma_job_of_admins community_platform_karma_job_of_admins[]
-  community_platform_ranking_job_of_admins community_platform_ranking_job_of_admins[]
-  community_platform_background_task_of_admins community_platform_background_task_of_admins[]
-  community_platform_moderation_actions community_platform_moderation_actions[]
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
   
-  @@unique([email])
-  @@unique([username])
-  @@index([created_at])
-  @@index([status])
+  community_platform_admin_sessions community_platform_admin_sessions[]
+  community_platform_report_actions community_platform_report_actions[]
+  
+  @@unique([member_id])
+  @@index([status, created_at])
+  @@index([deleted_at])
 }
 
-/// Stores transient authentication sessions for guest users. Sessions are
-/// temporary, created upon first visit, and expired after inactivity or page
-/// refresh. Used for tracking anonymous activity.
+/// Session records for guest users. Tracks authentication state for
+/// anonymous users during their visit. Automatically expires after
+/// disconnection. Must reference community_platform_guest via guest_id, but
+/// since guest is anonymous, guest_id is a direct link to the guest record.
+/// This table uniquely identifies the guest session and prevents credential
+/// spoofing. Stance is subsidiary because sessions are managed through
+/// authentication flow and do not have independent CRUD operations.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -179,39 +252,40 @@ model community_platform_guest_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the guest user's {@link community_platform_guest.id}.
-  community_platform_guest_id String
+  /// Reference to the guest this session belongs to. {@link
+  /// community_platform_guest.id}.
+  guest_id String
   
-  /// Client IP address of the session.
+  /// IP address of the session origin.
   ip String
   
-  /// URL of the page where the session was initiated.
+  /// The URL path the user was accessing when this session started.
   href String
   
-  /// Referrer URL that brought the guest to the platform.
-  referrer String
+  /// The previous page URL that referred the user to the platform.
+  referrer String?
   
-  /// Timestamp when the session was created.
+  /// Timestamp when this session was initiated.
   created_at DateTime
   
-  /// Timestamp when the session expired. Null if still active.
+  /// Timestamp when this session expires. Automatic cleanup expires sessions
+  /// after 15 minutes of inactivity.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  guest community_platform_guest @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
+  guest community_platform_guest @relation(fields: [guest_id], references: [id], onDelete: Cascade)
   
-  community_platform_report_of_guests community_platform_report_of_guests[]
-  
-  // spellchecker: ignore-next-line
-  @@index([community_platform_guest_id, created_at], map: "community_platform_guest_sessions_community_platform_g_009bc68c")
-  @@index([expired_at])
+  @@index([guest_id, created_at])
 }
 
-/// Stores persistent authentication sessions for verified member users.
-/// Sessions are created upon login and invalidated on logout or password
-/// change. Supports JWT refresh token mechanism.
+/// Session records for authenticated members. Tracks the active login state
+/// of registered users. Validated against JWT tokens. Must reference their
+/// member via member_id and uses secure cookie-based refresh tokens. Session
+/// expires upon logout or after 30 days of inactivity. Stance is subsidiary
+/// because sessions are managed through authentication flow and do not have
+/// independent CRUD operations.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -222,39 +296,88 @@ model community_platform_member_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the member's {@link community_platform_member.id}.
-  community_platform_member_id String
+  /// Reference to the member this session belongs to. {@link
+  /// community_platform_member.id}.
+  member_id String
   
-  /// Client IP address of the session.
+  /// IP address of the session origin.
   ip String
   
-  /// URL of the page where the session was initiated.
+  /// The URL path the user was accessing when this session started.
   href String
   
-  /// Referrer URL that brought the member to the platform.
-  referrer String
+  /// The previous page URL that referred the user to the platform.
+  referrer String?
   
-  /// Timestamp when the session was created.
+  /// Timestamp when this session was initiated.
   created_at DateTime
   
-  /// Timestamp when the session expired. Null if still active.
+  /// Timestamp when this session expires. Populated by refresh token expiry
+  /// (30 days).
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
   
-  community_platform_report_of_members community_platform_report_of_members[]
+  community_platform_notifications community_platform_notifications[]
+  community_platform_notification_preferences community_platform_notification_preferences?
+  community_platform_notification_delivery_logs community_platform_notification_delivery_logs[]
   
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id, created_at], map: "community_platform_member_sessions_community_platform__9260a62c")
-  @@index([expired_at])
+  @@index([member_id, created_at])
 }
 
-/// Stores high-security authentication sessions for system administrators.
-/// Sessions require two-factor authentication and are closely monitored for
-/// audit purposes.
+/// Session records for authenticated moderators. Inherited from the member
+/// session but tracks moderator-specific authentication state. This ensures
+/// that moderator actions are uniquely tied to their elevated role and
+/// session context. Must reference their moderator via moderator_id. Stance
+/// is subsidiary because sessions are managed through authentication flow
+/// and do not have independent CRUD operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the moderator this session belongs to. {@link
+  /// community_platform_moderator.id}.
+  moderator_id String
+  
+  /// IP address of the session origin.
+  ip String
+  
+  /// The URL path the user was accessing when this session started.
+  href String
+  
+  /// The previous page URL that referred the user to the platform.
+  referrer String?
+  
+  /// Timestamp when this session was initiated.
+  created_at DateTime
+  
+  /// Timestamp when this session expires. Populated by refresh token expiry
+  /// (30 days).
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_platform_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([moderator_id, created_at], map: "community_platform_moderator_sessions_moderator_id_cre_ceb8e38f")
+}
+
+/// Session records for authenticated administrators. Inherits from member
+/// session and tracks elevated admin authentication state. Ensures all admin
+/// actions are traceable to a unique, secure session. Must reference their
+/// admin via admin_id. Stance is subsidiary because sessions are managed
+/// through authentication flow and do not have independent CRUD operations.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -265,30 +388,89 @@ model community_platform_admin_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the admin's {@link community_platform_admin.id}.
-  community_platform_admin_id String
+  /// Reference to the admin this session belongs to. {@link
+  /// community_platform_admin.id}.
+  admin_id String
   
-  /// Client IP address of the session.
+  /// IP address of the session origin.
   ip String
   
-  /// URL of the page where the session was initiated.
+  /// The URL path the user was accessing when this session started.
   href String
   
-  /// Referrer URL that brought the admin to the platform.
-  referrer String
+  /// The previous page URL that referred the user to the platform.
+  referrer String?
   
-  /// Timestamp when the session was created.
+  /// Timestamp when this session was initiated.
   created_at DateTime
   
-  /// Timestamp when the session expired. Null if still active.
+  /// Timestamp when this session expires. Populated by refresh token expiry
+  /// (30 days).
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  admin community_platform_admin @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  admin community_platform_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+}
+
+/// Unified session records for all actor types. Tracks the active
+/// authentication state of users regardless of their actor type. Functions
+/// as a polymorphic relationship with four possible actor types: guest,
+/// member, moderator, admin. Each session references exactly one actor
+/// through the actor_id field and actor_type discriminator. Uses
+/// single-table inheritance pattern to eliminate 4 redundant session tables.
+/// Stance is subsidiary because sessions are managed through authentication
+/// flow and do not have independent CRUD operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_actor_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the actor this session belongs to. The target model is
+  /// determined by actor_type field. {@link community_platform_guest.id} if
+  /// actor_type is "guest", {@link community_platform_member.id} if actor_type
+  /// is "member", {@link community_platform_moderator.id} if actor_type is
+  /// "moderator", {@link community_platform_admin.id} if actor_type is
+  /// "admin".
+  actor_id String
+  
+  /// Type of actor this session belongs to. Must be one of: 'guest', 'member',
+  /// 'moderator', 'admin'. This creates a polymorphic relationship allowing
+  /// session data to reference any actor type with a single table design.
+  /// Required for query performance and data normalization.
+  actor_type String
+  
+  /// IP address of the session origin.
+  ip String
+  
+  /// The URL path the user was accessing when this session started.
+  href String
+  
+  /// The previous page URL that referred the user to the platform.
+  referrer String?
+  
+  /// Timestamp when this session was initiated.
+  created_at DateTime
+  
+  /// Timestamp when this session expires. Populated based on token expiry
+  /// policy: 15 minutes for guests, 30 days for authenticated actors.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  actor community_platform_guest @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_id])
   
   // spellchecker: ignore-next-line
-  @@index([community_platform_admin_id, created_at], map: "community_platform_admin_sessions_community_platform_a_481f9112")
-  @@index([expired_at])
+  @@index([actor_type, actor_id, created_at], map: "community_platform_actor_sessions_actor_type_actor_id__893f26b7")
 }

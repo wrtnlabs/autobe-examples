@@ -1,0 +1,209 @@
+/// Snapshot of political_forum_posts at time of archival. Preserves the
+/// complete state of the post as it existed when moved to archival storage.
+/// This table is read-only and used solely for historical access and audit.
+/// References the original post in political_forum_posts. This is a snapshot
+/// table, so it is not editable and only populated through system-triggered
+/// archival process. {@link political_forum_posts.id}
+///
+/// @namespace Archival
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_archived_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original active post in political_forum_posts. {@link
+  /// political_forum_posts.id}
+  political_forum_post_id String
+  
+  /// The title of the post as it was at time of archival.
+  title String
+  
+  /// The full text content of the post as it was at time of archival.
+  content String
+  
+  /// The citizen ID of the original author. {@link political_forum_citizens.id}
+  author_id String
+  
+  /// The timestamp when the post was originally created in the active system.
+  created_at DateTime
+  
+  /// The timestamp when the post was last modified in the active system before
+  /// archival.
+  updated_at DateTime
+  
+  /// The timestamp when this post was archived (moved from active system).
+  /// This represents the archival transition time.
+  deleted_at DateTime?
+  
+  /// The moderation status at time of archival: 'published',
+  /// 'moderation_queue', 'deleted'.
+  status String
+  
+  /// True if the post was marked as verified by a moderator at the time of
+  /// archival.
+  is_verified Boolean
+  
+  /// The reason for lock if the post was locked at time of archival. Null if
+  /// not locked.
+  lock_reason String?
+  
+  /// Number of attachments this post had at time of archival.
+  attachment_count Int
+  
+  /// Number of comments this post had at time of archival.
+  comment_count Int
+  
+  /// The reason this post was archived: '2_years_inactivity'
+  archival_reason String
+  
+  //----
+  // RELATIONS
+  //----
+  post political_forum_posts @relation(fields: [political_forum_post_id], references: [id], onDelete: Cascade)
+  
+  political_forum_archived_attachments political_forum_archived_attachments[]
+  
+  @@unique([political_forum_post_id])
+  
+  @@index([political_forum_post_id])
+  @@index([author_id, created_at])
+  @@index([status, created_at])
+  @@index([archival_reason, created_at])
+}
+
+/// Snapshot of political_forum_comments at time of archival. Preserves the
+/// complete state of the comment as it existed when moved to archival
+/// storage. This table is read-only and used solely for historical access
+/// and audit. References the original comment in political_forum_comments
+/// and the parent post in political_forum_posts. This is a snapshot table,
+/// so it is not editable and only populated through system-triggered
+/// archival process. {@link political_forum_comments.id} {@link
+/// political_forum_posts.id}
+///
+/// @namespace Archival
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_archived_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original active comment in political_forum_comments.
+  /// {@link political_forum_comments.id}
+  political_forum_comment_id String
+  
+  /// Reference to the parent post in political_forum_posts. {@link
+  /// political_forum_posts.id}
+  political_forum_post_id String
+  
+  /// The full text content of the comment as it was at time of archival.
+  content String
+  
+  /// The citizen ID of the original author. {@link political_forum_citizens.id}
+  author_id String
+  
+  /// The timestamp when the comment was originally created in the active
+  /// system.
+  created_at DateTime
+  
+  /// The timestamp when the comment was last modified in the active system
+  /// before archival.
+  updated_at DateTime
+  
+  /// The timestamp when this comment was archived (moved from active system).
+  /// This represents the archival transition time.
+  deleted_at DateTime?
+  
+  /// The moderation status at time of archival: 'approved', 'under_review',
+  /// 'deleted'.
+  status String
+  
+  /// True if the comment was reported by users at time of archival.
+  is_reported Boolean
+  
+  /// Number of reports accumulated on this comment at time of archival.
+  report_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  comment political_forum_comments @relation(fields: [political_forum_comment_id], references: [id], onDelete: Cascade)
+  post political_forum_posts @relation(fields: [political_forum_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([political_forum_comment_id], map: "political_forum_archived_comments_political_forum_comm_61cd727e")
+  
+  // spellchecker: ignore-next-line
+  @@index([political_forum_comment_id], map: "political_forum_archived_comments_political_forum_comm_93d9e793")
+  // spellchecker: ignore-next-line
+  @@index([political_forum_post_id, created_at], map: "political_forum_archived_comments_political_forum_post_7e714f53")
+  @@index([author_id, created_at])
+  @@index([status, created_at])
+}
+
+/// Snapshot of political_forum_post_attachments at time of archival.
+/// Preserves the URL, filename, type, and metadata of attachments linked to
+/// archival posts. This is a subsidiary table, managed through the
+/// archival_post context. Each attachment is stored via URL from cloud
+/// storage and retained for audit. This table is not directly editable and
+/// is populated through system archival triggers. {@link
+/// political_forum_post_attachments.id} {@link
+/// political_forum_archived_posts.id}
+///
+/// @namespace Archival
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model political_forum_archived_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent archival post. {@link
+  /// political_forum_archived_posts.id}
+  political_forum_archived_post_id String
+  
+  /// Reference to the original attachment record in
+  /// political_forum_post_attachments. {@link
+  /// political_forum_post_attachments.id}
+  political_forum_attachment_id String
+  
+  /// The original filename of the attachment as it was uploaded.
+  filename String
+  
+  /// The MIME file type at time of upload (e.g., 'image/png',
+  /// 'application/pdf').
+  file_type String
+  
+  /// The persistent URL to the file in cloud storage (e.g., from AWS S3 or
+  /// Cloudinary).
+  url String
+  
+  /// The file size in bytes at time of upload.
+  size_bytes Int
+  
+  /// The timestamp when the attachment was originally created in the active
+  /// system.
+  created_at DateTime
+  
+  /// The timestamp when this attachment was moved to archival storage.
+  archived_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  archivedPost political_forum_archived_posts @relation(fields: [political_forum_archived_post_id], references: [id], onDelete: Cascade)
+  originalAttachment political_forum_post_attachments @relation(fields: [political_forum_attachment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([political_forum_attachment_id], map: "political_forum_archived_attachments_political_forum_a_93bbce8c")
+  
+  // spellchecker: ignore-next-line
+  @@index([political_forum_archived_post_id], map: "political_forum_archived_attachments_political_forum_a_9db6763c")
+  @@index([file_type, created_at])
+  @@index([archived_at])
+}

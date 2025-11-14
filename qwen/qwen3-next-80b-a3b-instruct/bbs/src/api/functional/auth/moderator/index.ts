@@ -3,65 +3,44 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IDiscussionBoardModerator } from "../../../structures/IDiscussionBoardModerator";
+import { IPoliticalForumModerator } from "../../../structures/IPoliticalForumModerator";
 
 /**
- * Register a new moderator account with email and password credentials.
+ * Register a new moderator account with email and password.
  *
- * This API endpoint allows the creation of new moderator accounts for the
- * discussion board system. The endpoint accepts an email address and password
- * hash, which are validated and stored in the discussion_board_moderators
- * table. The email field must be unique and will serve as the authentication
- * identifier, while the password_hash field stores a securely hashed version of
- * the user's password as required for authentication. An initial email_verified
- * flag is set to false, meaning the moderator must verify their email address
- * through a separate confirmation process before gaining access to moderation
- * capabilities. The created_at and updated_at timestamps are automatically set
- * to the current system time, ensuring traceability of account creation. This
- * implementation aligns with the Prisma schema's discussion_board_moderators
- * table structure which includes these exact fields with the same naming
- * convention, and the deleted_at field is set to null to indicate the account
- * is active, not soft-deleted.
+ * This endpoint creates a new moderator account in the
+ * political_forum_moderators table, using the 'email' field as the unique
+ * identifier and the 'password_hash' field to securely store the password. The
+ * creation process automatically sets 'is_active: true' to enable immediate
+ * authentication and records the 'created_at' timestamp according to the
+ * system's current time.
  *
- * The moderation system is designed such that even after registration, a
- * moderator cannot perform any moderation actions until their email is
- * verified, as specified by the email_verified boolean field in the schema.
- * Only when email_verified is true can the moderator successfully authenticate
- * and access moderation endpoints. This separation of registration and
- * activation ensures security compliance and prevents unverified users from
- * gaining moderation privileges. The system enforces this business rule during
- * the login process by checking the email_verified status against the user's
- * account in the discussion_board_moderators table before generating any
- * authentication tokens.
+ * Security implementation follows industry best practices: passwords are never
+ * stored in plain text but are hashed using a strong algorithm like bcrypt with
+ * a salt, as required by the 'password_hash' field. The resulting token
+ * response includes both access_token and refresh_token with appropriate
+ * expiration policies.
  *
- * This registration flow requires the moderator to complete the email
- * verification step via a separate verification workflow that sends a
- * confirmation link to the provided email address. Only after clicking this
- * link and having the system update email_verified to true can the moderator
- * log in and use moderation functions. This two-step process prevents spam
- * account creation and ensures moderation privileges are only granted to
- * verified, legitimate users. The registration endpoint cannot be used to
- * create accounts with pre-verified status, as the schema and business logic
- * require explicit user verification.
+ * This registration endpoint is publicly accessible to allow system
+ * administrators to on-board new moderator accounts, but the 'email' field must
+ * be unique per the database constraints defined in the
+ * political_forum_moderators schema. The system rejects attempts to register
+ * duplicate emails with a 409 Conflict error.
  *
- * This operation is distinct from login because it creates a new account record
- * with no prior authentication state, while login authenticates an existing
- * account against credentials. This separation maintains a clear lifecycle:
- * register (create account), verify (confirm identity), login (authenticate
- * access). The implementation strictly follows the discussion_board_moderators
- * table definition without assuming any additional fields not explicitly
- * present in the schema, ensuring compatibility with the Prisma model and
- * database structure.
+ * The moderation system relies on this registration flow to establish the
+ * foundational identity of each moderator, and any new moderator account
+ * created here becomes immediately eligible to perform moderation actions on
+ * posts and comments as defined in the authorization model.
  *
- * Related operations include the /auth/moderator/login endpoint for
- * authentication and the /auth/moderator/refresh endpoint for token renewal
- * after authentication. Verification is not handled through this endpoint but
- * through a separate email confirmation workflow that updates the
- * email_verified field directly.
+ * This operation is directly linked to the 'political_forum_moderators' model
+ * and must be called prior to any subsequent moderator login attempt.
  *
  * @param props.connection
- * @param props.body Request body containing the credentials required to
- *   register a new moderator account.
+ * @param props.body Request payload for creating a new moderator account.
+ *   Contains required 'email' and 'password' fields for authentication set-up.
+ *   The 'email' field must follow standard email format and be unique within
+ *   the political_forum_moderators table. The 'password' is transformed to a
+ *   hash before storage via 'password_hash' column.
  * @setHeader token.access Authorization
  *
  * @path /auth/moderator/join
@@ -97,13 +76,16 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Request body containing the credentials required to register a new
-     * moderator account.
+     * Request payload for creating a new moderator account. Contains
+     * required 'email' and 'password' fields for authentication set-up. The
+     * 'email' field must follow standard email format and be unique within
+     * the political_forum_moderators table. The 'password' is transformed
+     * to a hash before storage via 'password_hash' column.
      */
-    body: IDiscussionBoardModerator.ICreate;
+    body: IPoliticalForumModerator.ICreate;
   };
-  export type Body = IDiscussionBoardModerator.ICreate;
-  export type Response = IDiscussionBoardModerator.IAuthorized;
+  export type Body = IPoliticalForumModerator.ICreate;
+  export type Response = IPoliticalForumModerator.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -119,8 +101,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/moderator/join";
-  export const random = (): IDiscussionBoardModerator.IAuthorized =>
-    typia.random<IDiscussionBoardModerator.IAuthorized>();
+  export const random = (): IPoliticalForumModerator.IAuthorized =>
+    typia.random<IPoliticalForumModerator.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -147,52 +129,35 @@ export namespace join {
 }
 
 /**
- * Authenticate a moderator user and issue session tokens.
+ * Authenticate and obtain JWT tokens for moderator access.
  *
- * This API endpoint authenticates a moderator user by verifying their email
- * address and password hash against records in the discussion_board_moderators
- * table. The provided email must exactly match an existing record's email
- * field, and the password must successfully decrypt against the stored
- * password_hash field using the system's hashing algorithm. Before generating
- * authentication tokens, the system checks the email_verified boolean field to
- * ensure the moderator has completed the email verification process. If
- * email_verified is false, authentication fails with a clear error message to
- * prevent unverified users from gaining moderation privileges, as required by
- * the system's business logic.
+ * This endpoint authenticates a moderator by validating their provided
+ * credentials ('email' and 'password') against the database records in the
+ * political_forum_moderators table. The system looks up the email in the
+ * 'email' field and then verifies the password by comparing the hash of the
+ * provided password with the value stored in the 'password_hash' column using a
+ * secure algorithm like bcrypt.
  *
- * Upon successful authentication, the system issues two JWT tokens: a
- * short-lived access token (30 minutes) and a long-lived refresh token (7
- * days). The access token is included in all subsequent protected requests,
- * while the refresh token is used exclusively to obtain new access tokens when
- * expired, through the /auth/moderator/refresh endpoint. The JWT payload
- * contains the moderator's unique id, email, and role ("moderator") as required
- * by the authentication system, with no additional fields assumed since the
- * schema does not include fields like username, name, or avatar. The token
- * issuance strictly follows the Prisma schema definition without assuming extra
- * fields that do not exist.
+ * Upon successful authentication, the system generates a short-lived JWT access
+ * token (typically 15-30 minutes) for API requests and a longer-lived refresh
+ * token (typically 7-30 days) for token renewal. The access token includes the
+ * moderator's 'id' and 'email' as claims for authorization purposes.
  *
- * This endpoint does not handle password reset or email recovery, as the
- * discussion_board_moderators table does not contain fields for password reset
- * tokens, expiration, or recovery questions. Any password management would
- * require a separate workflow and is not part of this login endpoint.
- * Similarly, rate limiting and login attempt tracking are handled system-wide
- * through middleware or security services, not through fields in this actor
- * table. No session tracking occurs at this endpoint since session data is
- * stored in the separate discussion_board_moderator_sessions table, which is
- * populated only after successful authentication through a separate process.
+ * The moderation system requires this login flow to establish a valid user
+ * session before any moderation actions can be performed. If the credentials
+ * are invalid or the account is inactive (is_active: false), the system returns
+ * a 401 Unauthorized response.
  *
- * The authentication flow is an essential precursor to other moderation
- * operations. Access to all moderation endpoints requires successful
- * authentication, and this login endpoint is the only way to obtain the
- * necessary tokens for subsequent requests. Related operation is
- * /auth/moderator/join for registration and /auth/moderator/refresh for token
- * renewal. There is no endpoint to delete an account from this login flow since
- * the system only supports soft-deletion via the deleted_at field, which is
- * managed separately.
+ * This operation is explicitly tied to the political_forum_moderators model and
+ * must be executed successfully before any moderator-specific API operations
+ * can proceed.
  *
  * @param props.connection
- * @param props.body Request body containing the moderator's email and password
- *   to authenticate and generate access tokens.
+ * @param props.body Request payload containing 'email' and 'password' for
+ *   moderator authentication. The system checks these credentials against the
+ *   'email' and 'password_hash' fields in the political_forum_moderators table.
+ *   The 'password' is never stored in plain text but is transformed and
+ *   compared against the stored password hash.
  * @setHeader token.access Authorization
  *
  * @path /auth/moderator/login
@@ -228,13 +193,16 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Request body containing the moderator's email and password to
-     * authenticate and generate access tokens.
+     * Request payload containing 'email' and 'password' for moderator
+     * authentication. The system checks these credentials against the
+     * 'email' and 'password_hash' fields in the political_forum_moderators
+     * table. The 'password' is never stored in plain text but is
+     * transformed and compared against the stored password hash.
      */
-    body: IDiscussionBoardModerator.ILogin;
+    body: IPoliticalForumModerator.ILogin;
   };
-  export type Body = IDiscussionBoardModerator.ILogin;
-  export type Response = IDiscussionBoardModerator.IAuthorized;
+  export type Body = IPoliticalForumModerator.ILogin;
+  export type Response = IPoliticalForumModerator.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -250,8 +218,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/moderator/login";
-  export const random = (): IDiscussionBoardModerator.IAuthorized =>
-    typia.random<IDiscussionBoardModerator.IAuthorized>();
+  export const random = (): IPoliticalForumModerator.IAuthorized =>
+    typia.random<IPoliticalForumModerator.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -278,48 +246,33 @@ export namespace login {
 }
 
 /**
- * Refresh expired access token using a valid refresh token.
+ * Refresh moderator's access token using a valid refresh token.
  *
- * This API endpoint allows a moderator to refresh their access token after it
- * expires (after 30 minutes), using a previously issued refresh token. The
- * endpoint receives the refresh token as a request payload, verifies its
- * validity, signature, and expiration, and validates that the associated
- * moderator account still exists and has not been soft-deleted (deleted_at is
- * null). The refresh token must correspond to an active session recorded in the
- * discussion_board_moderator_sessions table, ensuring the session has not been
- * invalidated through logout or expiration.
+ * This endpoint extends a moderator's session by exchanging a valid refresh
+ * token for a new access token. The system verifies the refresh token against
+ * active session records in the political_forum_moderator_sessions table, which
+ * are associated with a specific moderator via their 'moderator_id' reference.
  *
- * After successful validation, the system issues a new access token with the
- * same payload - containing the moderator's id, email, and role - but with a
- * new issued-at timestamp (iat) and expiration time (exp). The refresh token
- * itself remains unchanged, continuing to be valid for the remainder of its
- * 7-day lifespan. This mechanism ensures the moderator can maintain
- * uninterrupted access to moderation features while the system enforces regular
- * token rotation for security. No new authentication session is created; the
- * existing session context persists.
+ * Persistent sessions enable a better user experience by avoiding repeated
+ * password authentication. If the refresh token is valid and not expired, a new
+ * JWT access token is generated with updated expiration time while the
+ * underlying identity remains the same. The user's 'id' and 'email' claims are
+ * preserved for authorization purposes.
  *
- * This endpoint does not require the moderator's email or password since
- * authentication has already been established. Authentication and password
- * checking are performed during the initial /auth/moderator/login call. The
- * refresh endpoint only validates the refresh token against the system's token
- * store and associated moderator account status. The schema's
- * discussion_board_moderators table does not contain fields for refresh token
- * storage, secret keys, or token counters, so this validation is performed
- * through a separate secure token management service rather than database
- * fields.
+ * If the refresh token is invalid, expired, or revoked (including if associated
+ * session is deleted), the system returns a 401 Unauthorized response to prompt
+ * re-authentication. This operation helps maintain system security while
+ * allowing users to remain authenticated over extended periods.
  *
- * Rate limits and failure tracking are also implemented in the authentication
- * service rather than through fields in the moderator table. This endpoint is
- * critical for maintaining user experience in a stateless, token-based system
- * where access tokens expire frequently. The only related operations are
- * /auth/moderator/login (initial authentication) and /auth/moderator/refresh
- * (this endpoint). There is no logout endpoint defined since token invalidation
- * is handled by client-side deletion and server-side token revocation lists,
- * neither of which require changes to the Prisma schema.
+ * This flow relies entirely on the political_forum_moderator_sessions table
+ * structure, which stores refresh tokens, their expiration times, and linkages
+ * to moderator accounts.
  *
  * @param props.connection
- * @param props.body Request body containing the valid refresh token to obtain a
- *   new access token.
+ * @param props.body Request payload containing only the refresh_token field.
+ *   This token must have been previously issued by the /auth/moderator/login or
+ *   /auth/moderator/refresh endpoint and must be linked to an active session in
+ *   the political_forum_moderator_sessions table.
  * @setHeader token.access Authorization
  *
  * @path /auth/moderator/refresh
@@ -355,13 +308,15 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Request body containing the valid refresh token to obtain a new
-     * access token.
+     * Request payload containing only the refresh_token field. This token
+     * must have been previously issued by the /auth/moderator/login or
+     * /auth/moderator/refresh endpoint and must be linked to an active
+     * session in the political_forum_moderator_sessions table.
      */
-    body: IDiscussionBoardModerator.IRefresh;
+    body: IPoliticalForumModerator.IRefresh;
   };
-  export type Body = IDiscussionBoardModerator.IRefresh;
-  export type Response = IDiscussionBoardModerator.IAuthorized;
+  export type Body = IPoliticalForumModerator.IRefresh;
+  export type Response = IPoliticalForumModerator.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -377,8 +332,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/moderator/refresh";
-  export const random = (): IDiscussionBoardModerator.IAuthorized =>
-    typia.random<IDiscussionBoardModerator.IAuthorized>();
+  export const random = (): IPoliticalForumModerator.IAuthorized =>
+    typia.random<IPoliticalForumModerator.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

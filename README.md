@@ -7,11 +7,11 @@ AI Model | Score | FCSR | Status
 [`openai/gpt-4.1`](#openaigpt-41) | 100 | 90% | 🟢
 [`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 100 | 76% | 🟢
 [`openai/gpt-5-mini`](#openaigpt-5-mini) | 82.5 | 85% | 🟢
+[`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 77.5 | 63% | 🟡
 [`anthropic/claude-sonnet-4.5`](#anthropicclaude-sonnet-45) | 65 | 69% | 🟡
 [`moonshotai/kimi-k2-0905-exacto`](#moonshotaikimi-k2-0905-exacto) | 65 | 61% | 🟡
 [`openai/gpt-5`](#openaigpt-5) | 57.5 | 92% | 🟡
 [`anthropic/claude-haiku-4.5`](#anthropicclaude-haiku-45) | 55 | 40% | 🟡
-[`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 55 | 70% | 🟡
 [`deepseek/deepseek-v3.1-terminus-exacto`](#deepseekdeepseek-v31-terminus-exacto) | 47.5 | 79% | 🟡
 [`qwen/qwen3-30b-a3b-thinking-2507`](#qwenqwen3-30b-a3b-thinking-2507) | 33.75 | 66% | ❌
 [`meta-llama/llama-4-maverick`](#meta-llamallama-4-maverick) | 12.5 | 94% | ❌
@@ -250,6 +250,83 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Analyze | `actors`: 3, `documents`: 11 | 1.03M | 11m 43s | 95%
 🟢 Prisma | `namespaces`: 10, `models`: 50 | 2.19M | 13m 23s | 88%
 ⚪ Interface |  |  |  | 
+⚪ Test |  |  |  | 
+⚪ Realize |  |  |  | 
+
+
+## `qwen/qwen3-next-80b-a3b-instruct`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/) | 80 | 🟢 | 🟢 | 🟢 | 🟡 | 🟡
+[`bbs`](./qwen/qwen3-next-80b-a3b-instruct/bbs/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/) | 70 | 🟢 | 🟢 | 🟢 | 🟡 | ❌
+[`shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/) | 60 | 🟢 | 🟢 | 🟢 | ❌ | ❌
+
+### `qwen/qwen3-next-80b-a3b-instruct` - `todo`
+
+- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/)
+- Score: 80
+- Elapsed Time: 2h 30m 29s
+- Token Usage: 34.64M
+- Function Calling Success Rate: 72.84%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 11 | 563.8K | 1m 49s | 100%
+🟢 Prisma | `namespaces`: 5, `models`: 11 | 449.7K | 1m 55s | 92%
+🟢 Interface | `operations`: 28, `schemas`: 29 | 19.73M | 1h 44m 20s | 50%
+🔴 Test | `functions`: 24, `errors`: 4 | 5.82M | 11m 31s | 78%
+🔴 Realize | `functions`: 28, `errors`: 4 | 8.08M | 30m 52s | 92%
+
+
+### `qwen/qwen3-next-80b-a3b-instruct` - `bbs`
+
+- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/bbs`](./qwen/qwen3-next-80b-a3b-instruct/bbs/)
+- Score: 100
+- Elapsed Time: 1h 56m 50s
+- Token Usage: 69.41M
+- Function Calling Success Rate: 74.19%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 11 | 551.7K | 1m 42s | 100%
+🟢 Prisma | `namespaces`: 10, `models`: 29 | 781.5K | 3m 18s | 95%
+🟢 Interface | `operations`: 42, `schemas`: 44 | 29.73M | 1h 1m 57s | 53%
+🟢 Test | `functions`: 106 | 27.50M | 16m 31s | 71%
+🟢 Realize | `functions`: 42 | 10.85M | 33m 21s | 95%
+
+
+### `qwen/qwen3-next-80b-a3b-instruct` - `reddit`
+
+- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/)
+- Score: 70
+- Elapsed Time: 2h 32m 15s
+- Token Usage: 83.01M
+- Function Calling Success Rate: 45.06%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 11 | 807.5K | 2m 42s | 100%
+🟢 Prisma | `namespaces`: 10, `models`: 67 | 1.35M | 7m 56s | 89%
+🟢 Interface | `operations`: 63, `schemas`: 73 | 60.51M | 2h 3m 18s | 34%
+🔴 Test | `functions`: 24, `errors`: 3 | 20.33M | 18m 18s | 66%
+⚪ Realize |  |  |  | 
+
+
+### `qwen/qwen3-next-80b-a3b-instruct` - `shopping`
+
+- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/)
+- Score: 60
+- Elapsed Time: 39m 19s
+- Token Usage: 7.26M
+- Function Calling Success Rate: 87.86%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 13 | 941.8K | 4m 20s | 100%
+🟢 Prisma | `namespaces`: 10, `models`: 54 | 2.50M | 15m 8s | 83%
+🟢 Interface | `operations`: 9, `schemas`: 13 | 3.82M | 19m 50s | 85%
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
 
@@ -557,83 +634,6 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
 🟢 Analyze | `actors`: 3, `documents`: 12 | 1.58M | 14m 31s | 75%
 🟢 Prisma | `namespaces`: 11, `models`: 79 | 2.13M | 5m 29s | 81%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
-## `qwen/qwen3-next-80b-a3b-instruct`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`bbs`](./qwen/qwen3-next-80b-a3b-instruct/bbs/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | ❌
-[`reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/) | 30 | 🟢 | 🟢 | ❌ | ❌ | ❌
-[`shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/) | 10 | 🟢 | ❌ | ❌ | ❌ | ❌
-
-### `qwen/qwen3-next-80b-a3b-instruct` - `todo`
-
-- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/todo`](./qwen/qwen3-next-80b-a3b-instruct/todo/)
-- Score: 100
-- Elapsed Time: 1h 8m 53s
-- Token Usage: 8.34M
-- Function Calling Success Rate: 72.86%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 1, `documents`: 3 | 111.6K | 32s | 100%
-🟢 Prisma | `namespaces`: 2, `models`: 3 | 114.5K | 8m 34s | 29%
-🟢 Interface | `operations`: 8, `schemas`: 12 | 3.95M | 45m 3s | 65%
-🟢 Test | `functions`: 2 | 2.39M | 7m 31s | 77%
-🟢 Realize | `functions`: 8 | 1.78M | 7m 11s | 97%
-
-
-### `qwen/qwen3-next-80b-a3b-instruct` - `bbs`
-
-- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/bbs`](./qwen/qwen3-next-80b-a3b-instruct/bbs/)
-- Score: 80
-- Elapsed Time: 1h 3m 52s
-- Token Usage: 30.98M
-- Function Calling Success Rate: 68.36%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 5 | 206.0K | 51s | 100%
-🟢 Prisma | `namespaces`: 7, `models`: 15 | 558.9K | 2m 34s | 94%
-🟢 Interface | `operations`: 57, `schemas`: 48 | 18.31M | 33m 58s | 62%
-🟢 Test | `functions`: 22 | 11.91M | 26m 29s | 73%
-⚪ Realize |  |  |  | 
-
-
-### `qwen/qwen3-next-80b-a3b-instruct` - `reddit`
-
-- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/reddit`](./qwen/qwen3-next-80b-a3b-instruct/reddit/)
-- Score: 30
-- Elapsed Time: 13m 16s
-- Token Usage: 2.79M
-- Function Calling Success Rate: 80.00%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 10 | 639.6K | 2m 42s | 100%
-🟢 Prisma | `namespaces`: 10, `models`: 40 | 2.15M | 10m 33s | 67%
-⚪ Interface |  |  |  | 
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
-
-
-### `qwen/qwen3-next-80b-a3b-instruct` - `shopping`
-
-- Source Code: [`qwen/qwen3-next-80b-a3b-instruct/shopping`](./qwen/qwen3-next-80b-a3b-instruct/shopping/)
-- Score: 10
-- Elapsed Time: 5m 29s
-- Token Usage: 576.5K
-- Function Calling Success Rate: 87.50%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 10 | 576.5K | 5m 29s | 87%
-⚪ Prisma |  |  |  | 
 ⚪ Interface |  |  |  | 
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
