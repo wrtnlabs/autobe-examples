@@ -1,18 +1,24 @@
 import { Module } from "@nestjs/common";
 
+import { AuthGuestController } from "./controllers/auth/guest/AuthGuestController";
 import { AuthUserController } from "./controllers/auth/user/AuthUserController";
-import { TodoUserTodousersController } from "./controllers/todo/user/todoUsers/TodoUserTodousersController";
-import { TodoTodousersController } from "./controllers/todo/todoUsers/TodoTodousersController";
-import { TodoUserTodousersSessionsController } from "./controllers/todo/user/todoUsers/sessions/TodoUserTodousersSessionsController";
-import { TodoUserTodoitemsController } from "./controllers/todo/user/todoItems/TodoUserTodoitemsController";
+import { TodolistTodolistguestsController } from "./controllers/todoList/todoListGuests/TodolistTodolistguestsController";
+import { TodolistUserTodolistguestsController } from "./controllers/todoList/user/todoListGuests/TodolistUserTodolistguestsController";
+import { TodolistUserTodolistusersController } from "./controllers/todoList/user/todoListUsers/TodolistUserTodolistusersController";
+import { TodolistUserTodolistusersessionsController } from "./controllers/todoList/user/todoListUserSessions/TodolistUserTodolistusersessionsController";
+import { TodolistGuestTodolistusersessionsController } from "./controllers/todoList/guest/todoListUserSessions/TodolistGuestTodolistusersessionsController";
+import { TodolistUserTodolisttodosController } from "./controllers/todoList/user/todoListTodos/TodolistUserTodolisttodosController";
 
 @Module({
   controllers: [
+    AuthGuestController,
     AuthUserController,
-    TodoUserTodousersController,
-    TodoTodousersController,
-    TodoUserTodousersSessionsController,
-    TodoUserTodoitemsController,
+    TodolistTodolistguestsController,
+    TodolistUserTodolistguestsController,
+    TodolistUserTodolistusersController,
+    TodolistUserTodolistusersessionsController,
+    TodolistGuestTodolistusersessionsController,
+    TodolistUserTodolisttodosController,
   ],
 })
 export class MyModule {}

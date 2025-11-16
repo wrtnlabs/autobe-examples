@@ -1,7 +1,22 @@
-/// System-wide application configuration settings for the Todo application.
-/// Stores key-value pairs for various application settings that can be
-/// modified by system administrators. Configuration changes are tracked with
-/// timestamps for audit purposes.
+/// System-wide configuration settings for the Todo application.
+///
+/// Stores key-value pairs that control application behavior, feature flags,
+/// and system parameters. These settings are managed by administrators and
+/// affect the entire application instance.
+///
+/// Configuration values can include feature toggles, default settings,
+/// performance parameters, and business rules. Each configuration item has a
+/// unique key and can store various data types as string values that are
+/// parsed by the application.
+///
+/// The table supports documentation of each configuration item through the
+/// description field, helping administrators understand the purpose and
+/// impact of each setting. Changes to configuration values are tracked
+/// through temporal fields for audit purposes.
+///
+/// Configuration settings are loaded at application startup and cached for
+/// performance. Changes may require application restart or specific refresh
+/// mechanisms to take effect.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -12,37 +27,40 @@ model todo_app_configurations {
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the configuration setting. Used to reference
-  /// specific configuration values throughout the application.
-  config_key String
+  /// Unique configuration key identifier. Used to reference the configuration
+  /// setting in application code. Must follow naming conventions and be unique
+  /// across all configuration items.
+  key String
   
-  /// The value associated with the configuration key. Stores configuration
-  /// data in string format that can be parsed based on the data_type field.
-  config_value String
+  /// Configuration value stored as string. The application parses this value
+  /// according to the expected data type (boolean, number, string, JSON,
+  /// etc.).
+  value String
   
-  /// The data type of the configuration value (e.g., 'string', 'boolean',
-  /// 'number', 'json'). Used for proper parsing and validation of
-  /// configuration values.
+  /// Human-readable description explaining the purpose, usage, and impact of
+  /// this configuration setting. Helps administrators understand what the
+  /// setting controls.
+  description String?
+  
+  /// Expected data type for the value field. Valid values: 'boolean',
+  /// 'number', 'string', 'json', 'array'. Helps with validation and proper
+  /// parsing.
   data_type String
   
-  /// Human-readable description of what this configuration setting controls
-  /// and how it affects application behavior.
-  description String
+  /// Configuration category for organizational purposes. Examples:
+  /// 'feature-flags', 'performance', 'security', 'ui', 'business-rules'.
+  category String
   
-  /// Current status of the configuration setting (e.g., 'active', 'disabled',
-  /// 'deprecated'). Controls whether the setting is currently in effect.
-  status String
-  
-  /// Timestamp when the configuration setting was first created.
+  /// Timestamp when the configuration item was first created.
   created_at DateTime
   
-  /// Timestamp when the configuration setting was last modified.
+  /// Timestamp when the configuration item was last modified.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@unique([config_key])
-  @@index([status])
+  @@unique([key])
+  @@index([category])
   @@index([created_at])
 }

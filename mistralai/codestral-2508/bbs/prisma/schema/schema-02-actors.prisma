@@ -1,0 +1,224 @@
+/// Guest users who can view public content but cannot create or modify
+/// content. Guests must register to become members. {@link
+/// economic_political_discussion_board_members} for registered users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// When the guest was created.
+  created_at DateTime
+  
+  /// When the guest was last updated.
+  updated_at DateTime
+  
+  /// When the guest was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  economic_political_discussion_board_guest_sessions economic_political_discussion_board_guest_sessions[]
+}
+
+/// Session records for guest users. Tracks guest activity and session
+/// context. {@link economic_political_discussion_board_guests} for the
+/// associated guest.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Guest user's {@link economic_political_discussion_board_guests.id}.
+  economic_political_discussion_board_guest_id String
+  
+  /// IP address of the guest's connection.
+  ip String
+  
+  /// URL of the guest's connection.
+  href String
+  
+  /// Referrer URL of the guest's connection.
+  referrer String
+  
+  /// When the session was created.
+  created_at DateTime
+  
+  /// When the session expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  guest economic_political_discussion_board_guests @relation(fields: [economic_political_discussion_board_guest_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_guest_id, created_at], map: "economic_political_discussion_board_guest_sessions_eco_9cbeb19b")
+}
+
+/// Registered members who can create and manage their own content. Members
+/// have full access to the platform's features. {@link
+/// economic_political_discussion_board_articles} for member-created content.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's email address for authentication and communication.
+  email String
+  
+  /// Hashed password for authentication.
+  password_hash String
+  
+  /// When the member was created.
+  created_at DateTime
+  
+  /// When the member was last updated.
+  updated_at DateTime
+  
+  /// When the member was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  economic_political_discussion_board_member_sessions economic_political_discussion_board_member_sessions[]
+  economic_political_discussion_board_articles economic_political_discussion_board_articles[]
+  economic_political_discussion_board_comments economic_political_discussion_board_comments[]
+  
+  @@unique([email])
+}
+
+/// Session records for member users. Tracks member activity and session
+/// context. {@link economic_political_discussion_board_members} for the
+/// associated member.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member user's {@link economic_political_discussion_board_members.id}.
+  economic_political_discussion_board_member_id String
+  
+  /// IP address of the member's connection.
+  ip String
+  
+  /// URL of the member's connection.
+  href String
+  
+  /// Referrer URL of the member's connection.
+  referrer String
+  
+  /// When the session was created.
+  created_at DateTime
+  
+  /// When the session expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member economic_political_discussion_board_members @relation(fields: [economic_political_discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_member_id, created_at], map: "economic_political_discussion_board_member_sessions_ec_ad9baa8a")
+}
+
+/// Moderators who manage the platform's content and users. Moderators have
+/// elevated permissions for content moderation and user management. {@link
+/// economic_political_discussion_board_articles} for moderator-managed
+/// content.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's email address for authentication and communication.
+  email String
+  
+  /// Hashed password for authentication.
+  password_hash String
+  
+  /// When the moderator was created.
+  created_at DateTime
+  
+  /// When the moderator was last updated.
+  updated_at DateTime
+  
+  /// When the moderator was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  economic_political_discussion_board_moderator_sessions economic_political_discussion_board_moderator_sessions[]
+  economic_political_discussion_board_comments economic_political_discussion_board_comments[]
+  
+  @@unique([email])
+}
+
+/// Session records for moderator users. Tracks moderator activity and
+/// session context. {@link economic_political_discussion_board_moderators}
+/// for the associated moderator.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator user's {@link
+  /// economic_political_discussion_board_moderators.id}.
+  economic_political_discussion_board_moderator_id String
+  
+  /// IP address of the moderator's connection.
+  ip String
+  
+  /// URL of the moderator's connection.
+  href String
+  
+  /// Referrer URL of the moderator's connection.
+  referrer String
+  
+  /// When the session was created.
+  created_at DateTime
+  
+  /// When the session expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator economic_political_discussion_board_moderators @relation(fields: [economic_political_discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_political_discussion_board_moderator_id, created_at], map: "economic_political_discussion_board_moderator_sessions_a13280ae")
+}

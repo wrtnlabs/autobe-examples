@@ -1,0 +1,428 @@
+/// Product reviews submitted by verified buyers after purchase.
+///
+/// Captures buyer feedback including star ratings, written content, and
+/// optional product images.
+/// Each review is associated with a specific product SKU variant and
+/// verified against the buyer's purchase history through order records.
+///
+/// Reviews require verified purchase validation to ensure authenticity and
+/// build platform trust.
+/// Buyers can submit one review per product purchase transaction, and can
+/// edit or delete their reviews at any time.
+///
+/// The review system supports moderation workflows with pending, approved,
+/// and rejected statuses.
+/// Reviews contribute to aggregate product ratings and influence product
+/// discovery through search ranking algorithms.
+/// Seller responses are stored separately as distinct entities with their
+/// own lifecycle management.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Buyer who submitted the review. {@link shopping_mall_buyers.id}.
+  shopping_mall_buyer_id String
+  
+  /// Product being reviewed. {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Specific product variant (SKU) being reviewed. {@link
+  /// shopping_mall_sale_skus.id}.
+  shopping_mall_sale_sku_id String
+  
+  /// Order that verifies the purchase for verified purchase validation. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Review moderation status. Valid values: pending_moderation, approved,
+  /// rejected. Determines public visibility.
+  status String
+  
+  /// Star rating from 1 to 5 stars. Required field representing buyer
+  /// satisfaction level.
+  star_rating Int
+  
+  /// Optional review title or summary. Maximum 100 characters. Provides quick
+  /// overview of review content.
+  review_title String?
+  
+  /// Detailed review text content. Minimum 10 characters when provided,
+  /// maximum 5000 characters. Contains substantive buyer feedback about
+  /// product quality, features, and experience.
+  review_body String?
+  
+  /// Whether this review is from a verified purchase. True when buyer
+  /// purchased the product through the platform and order was delivered
+  /// successfully.
+  is_verified_purchase Boolean
+  
+  /// Whether buyer chose to submit review anonymously. When true, reviewer
+  /// name displays as Anonymous Buyer instead of actual name.
+  is_anonymous Boolean
+  
+  /// Total count of helpful votes from other buyers. Used for Most Helpful
+  /// sorting algorithm. Incremented when buyers vote review as helpful.
+  helpfulness_vote_count Int
+  
+  /// Review submission timestamp. Recorded when buyer initially submits the
+  /// review.
+  created_at DateTime
+  
+  /// Last modification timestamp. Updated when buyer edits review content or
+  /// admin moderates the review.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Set when buyer or admin deletes the review.
+  /// Deleted reviews excluded from public display and rating calculations.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  buyer shopping_mall_buyers @relation(fields: [shopping_mall_buyer_id], references: [id], onDelete: Cascade)
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_sale_skus @relation(fields: [shopping_mall_sale_sku_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_review_images shopping_mall_review_images[]
+  shopping_mall_review_seller_responses shopping_mall_review_seller_responses?
+  shopping_mall_review_helpfulness_votes shopping_mall_review_helpfulness_votes[]
+  shopping_mall_review_reports shopping_mall_review_reports[]
+  shopping_mall_review_moderation_logs shopping_mall_review_moderation_logs[]
+  
+  @@index([shopping_mall_sale_sku_id])
+  @@index([shopping_mall_order_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_buyer_id, shopping_mall_order_id, shopping_mall_sale_sku_id], map: "shopping_mall_reviews_shopping_mall_buyer_id_shopping__b52a2a0b")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_id, status, deleted_at], map: "shopping_mall_reviews_shopping_mall_sale_id_status_del_8b7a4cb7")
+  @@index([shopping_mall_buyer_id, created_at])
+  @@index([status, created_at])
+  @@index([star_rating, created_at])
+  @@index([helpfulness_vote_count, created_at])
+}
+
+/// Product images uploaded by buyers as part of their reviews.
+///
+/// Buyers can upload up to 5 images per review to provide visual evidence of
+/// product quality, appearance, and condition.
+/// Images are processed and stored in multiple sizes for optimal display
+/// performance across different contexts.
+///
+/// Review images help other buyers make informed purchase decisions by
+/// showing real-world product appearance beyond seller-provided marketing
+/// images.
+/// Images are displayed in review galleries with thumbnail, lightbox, and
+/// full-size viewing capabilities.
+///
+/// All images undergo automatic validation for format, size, and quality
+/// requirements before acceptance.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review that this image belongs to. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// URL path to the uploaded review image. Points to the original
+  /// high-resolution image stored in the platform's media storage.
+  image_url String
+  
+  /// URL path to the generated thumbnail version. Size 200x200 pixels for
+  /// efficient display in review lists.
+  thumbnail_url String
+  
+  /// URL path to the medium-sized version. Size 800x800 pixels for lightbox
+  /// preview displays.
+  medium_url String
+  
+  /// Display position order within the review's image gallery. Lower numbers
+  /// appear first. Allows buyer to control image sequence.
+  display_order Int
+  
+  /// Image upload timestamp. Recorded when buyer uploads the image during
+  /// review submission or editing.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, display_order], map: "shopping_mall_review_images_shopping_mall_review_id_di_7584b1ce")
+}
+
+/// Seller responses to buyer reviews on their products.
+///
+/// Sellers can submit one response per review to address buyer feedback,
+/// provide explanations, or offer resolutions.
+/// Responses demonstrate seller customer service quality and engagement with
+/// buyer feedback.
+///
+/// Each response is a distinct entity with its own creation timestamp and
+/// ownership separate from the buyer review.
+/// Responses undergo the same moderation checks as buyer reviews to ensure
+/// professional tone and policy compliance.
+///
+/// When buyers edit their original reviews, associated seller responses are
+/// automatically removed to maintain contextual accuracy.
+/// Sellers must submit fresh responses to edited review content.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_seller_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being responded to. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Seller who submitted the response. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Seller response text content. Minimum 10 characters, maximum 2000
+  /// characters. Contains seller's reply to buyer feedback including
+  /// explanations, apologies, or solutions offered.
+  response_body String
+  
+  /// Response moderation status. Valid values: pending_moderation, approved,
+  /// rejected. Controls public visibility.
+  status String
+  
+  /// Response submission timestamp. Recorded when seller initially submits the
+  /// response.
+  created_at DateTime
+  
+  /// Last modification timestamp. Updated when seller edits response or admin
+  /// moderates it.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Set when seller deletes their response or system
+  /// auto-removes due to review edit. Deleted responses excluded from public
+  /// display.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_review_id], map: "shopping_mall_review_seller_responses_shopping_mall_re_530caaae")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_review_seller_responses_shopping_mall_se_a21a5905")
+  @@index([status, created_at])
+}
+
+/// Buyer votes indicating whether reviews were helpful.
+///
+/// Authenticated buyers can vote on reviews to surface the most valuable
+/// feedback for other customers.
+/// Each buyer can submit one vote per review choosing either helpful or not
+/// helpful.
+///
+/// Helpfulness votes determine review ranking in Most Helpful sort order and
+/// influence review visibility.
+/// Votes are used to calculate helpfulness scores that prioritize useful
+/// reviews over less informative ones.
+///
+/// The system prevents duplicate voting, self-voting, and seller voting on
+/// their own product reviews to maintain vote integrity.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_helpfulness_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being voted on. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Buyer who submitted the vote. {@link shopping_mall_buyers.id}.
+  shopping_mall_buyer_id String
+  
+  /// Whether the buyer found the review helpful. True for helpful vote, false
+  /// for not helpful vote. Only helpful votes increment the review's
+  /// helpfulness count.
+  is_helpful Boolean
+  
+  /// Vote submission timestamp. Recorded when buyer votes on review
+  /// helpfulness.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  voter shopping_mall_buyers @relation(fields: [shopping_mall_buyer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_review_id, shopping_mall_buyer_id], map: "shopping_mall_review_helpfulness_votes_shopping_mall_r_830a0bad")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_buyer_id, created_at], map: "shopping_mall_review_helpfulness_votes_shopping_mall_b_754867a8")
+}
+
+/// User-submitted reports flagging reviews for policy violations.
+///
+/// Buyers and sellers can report reviews they believe violate platform
+/// policies including spam, offensive content, fake reviews, or irrelevant
+/// feedback.
+/// Each report requires a reason selection and optional detailed explanation
+/// to help admins investigate.
+///
+/// Reports are routed to the admin moderation queue for manual review.
+/// Multiple reports on the same review escalate priority and may trigger
+/// automatic temporary hiding pending admin investigation.
+///
+/// The system tracks report patterns to identify users who abuse the
+/// reporting system and legitimate reviews that are frequently falsely
+/// reported.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being reported. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Buyer who submitted the report. {@link shopping_mall_buyers.id}.
+  reporter_buyer_id String?
+  
+  /// Seller who submitted the report. {@link shopping_mall_sellers.id}.
+  reporter_seller_id String?
+  
+  /// Reason category for the report. Valid values: spam, offensive_language,
+  /// fake_review, not_about_product, personal_information, other. Helps admins
+  /// prioritize and categorize violations.
+  report_reason String
+  
+  /// Optional detailed explanation from reporter. Maximum 1000 characters.
+  /// Provides context for admin investigation.
+  report_details String?
+  
+  /// Report resolution status. Valid values: pending, reviewed_valid,
+  /// reviewed_invalid, dismissed. Tracks admin moderation outcome.
+  status String
+  
+  /// Report submission timestamp. Recorded when user flags the review.
+  created_at DateTime
+  
+  /// Admin review completion timestamp. Set when admin completes investigation
+  /// and makes moderation decision.
+  reviewed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  reporterBuyer shopping_mall_buyers? @relation(fields: [reporter_buyer_id], references: [id], onDelete: Cascade)
+  reporterSeller shopping_mall_sellers? @relation(fields: [reporter_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([reporter_buyer_id])
+  @@index([reporter_seller_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_review_id, reporter_buyer_id], map: "shopping_mall_review_reports_shopping_mall_review_id_r_e34b2944")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_review_id, reporter_seller_id], map: "shopping_mall_review_reports_shopping_mall_review_id_r_aea1ccde")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_reports_shopping_mall_review_id_c_2223771e")
+}
+
+/// Audit trail of review moderation actions and status changes.
+///
+/// Captures complete history of review lifecycle including submission,
+/// moderation decisions, status transitions, and admin actions.
+/// Each log entry records who performed the action, what changed, and why
+/// the action was taken.
+///
+/// Moderation logs enable accountability, dispute resolution, and quality
+/// assurance for moderation consistency.
+/// Admins can review moderation history to understand decision patterns and
+/// identify training opportunities.
+///
+/// Logs are append-only and immutable to maintain audit trail integrity for
+/// compliance and investigation purposes.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review being moderated. {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Admin who performed the moderation action. {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admin_id String?
+  
+  /// Type of moderation action performed. Valid values: auto_approved,
+  /// auto_flagged, manual_approved, manual_rejected, edited_by_admin,
+  /// deleted_by_admin, deleted_by_buyer, restored. Describes what happened to
+  /// the review.
+  action_type String
+  
+  /// Review status before this action. Valid values: pending_moderation,
+  /// approved, rejected. Captures state transition.
+  previous_status String?
+  
+  /// Review status after this action. Valid values: pending_moderation,
+  /// approved, rejected. Records resulting state.
+  new_status String?
+  
+  /// Reason for the moderation decision. Includes policy violation details,
+  /// rejection reasons, or approval notes. Maximum 1000 characters.
+  moderation_reason String?
+  
+  /// Automatic system flags that triggered moderation. JSON array of flag
+  /// types detected by automated content analysis including profanity, spam
+  /// patterns, or personal information.
+  system_flags String?
+  
+  /// Action timestamp. Recorded when the moderation action was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_moderation_logs_shopping_mall_rev_5a50c3b7")
+  @@index([action_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id, created_at], map: "shopping_mall_review_moderation_logs_shopping_mall_adm_fd65ed1b")
+}

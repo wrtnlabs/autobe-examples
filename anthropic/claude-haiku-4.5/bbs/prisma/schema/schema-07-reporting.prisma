@@ -1,0 +1,92 @@
+/// Member reports of inappropriate content for moderator review.
+///
+/// Members can report articles or comments they believe violate community
+/// guidelines. Each report creates a queue item for moderators to
+/// investigate and take action. Reports track the reported content, reason
+/// for the report, reporter identity, and resolution status.
+///
+/// Reports are distinct from moderation actions. A report is user-generated
+/// feedback flagging content; moderation actions are moderator decisions on
+/// what to do about reported content. This separation enables tracking both
+/// member concerns and moderator decisions independently.
+///
+/// Report status progresses through: pending_review (awaiting moderator
+/// investigation) → resolved (moderator took action) or dismissed (moderator
+/// determined no action needed).
+///
+/// All reports are permanent records for audit and moderation history purposes.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who filed this report. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Reference to reported article (null if report is for a comment). {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String?
+  
+  /// Reference to reported comment (null if report is for an article). {@link
+  /// discussion_board_comments.id}
+  discussion_board_comment_id String?
+  
+  /// Moderator assigned to review this report (null until assignment). {@link
+  /// discussion_board_moderators.id}
+  assigned_moderator_id String?
+  
+  /// Reason for the report. Predefined values: offensive_language,
+  /// personal_attack, spam, off_topic, copyright_violation, harassment, other.
+  /// Helps categorize reports for triage and analysis.
+  reason String
+  
+  /// Optional detailed description provided by reporter explaining why they
+  /// believe content violates guidelines. Maximum 500 characters. Provides
+  /// context for moderators during review.
+  description String?
+  
+  /// Current status of the report. Values: pending_review (awaiting moderator
+  /// investigation), resolved (moderator took action), dismissed (moderator
+  /// reviewed and determined no action needed). Used to track report workflow
+  /// progression.
+  status String
+  
+  /// Notes added by assigned moderator during review. Maximum 500 characters.
+  /// Records moderator's investigation findings and reasoning for resolution
+  /// decision.
+  moderator_notes String?
+  
+  /// Timestamp when report was submitted by member. Used for audit trail and
+  /// report age tracking.
+  created_at DateTime
+  
+  /// Timestamp when report was last updated (status change, moderator notes
+  /// added, etc.). Tracks modification history.
+  updated_at DateTime
+  
+  /// Timestamp when report was resolved or dismissed by moderator. Null while
+  /// report is still pending review. Used to calculate resolution time
+  /// metrics.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles? @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  assignedModerator discussion_board_moderators? @relation(fields: [assigned_moderator_id], references: [id], onDelete: Cascade)
+  
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_reports_discussion_board_member_id_cr_b29a74da")
+  @@index([discussion_board_article_id])
+  @@index([discussion_board_comment_id])
+  @@index([assigned_moderator_id, status])
+  @@index([reason])
+}

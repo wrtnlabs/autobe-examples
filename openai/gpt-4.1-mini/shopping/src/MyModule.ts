@@ -4,67 +4,91 @@ import { AuthGuestController } from "./controllers/auth/guest/AuthGuestControlle
 import { AuthCustomerController } from "./controllers/auth/customer/AuthCustomerController";
 import { AuthSellerController } from "./controllers/auth/seller/AuthSellerController";
 import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
-import { ShoppingmallAdminSystemsettingsController } from "./controllers/shoppingMall/admin/systemSettings/ShoppingmallAdminSystemsettingsController";
-import { ShoppingmallAdminPlatformconfigsController } from "./controllers/shoppingMall/admin/platformConfigs/ShoppingmallAdminPlatformconfigsController";
-import { ShoppingmallChannelsController } from "./controllers/shoppingMall/channels/ShoppingmallChannelsController";
-import { ShoppingmallAdminChannelsController } from "./controllers/shoppingMall/admin/channels/ShoppingmallAdminChannelsController";
-import { ShoppingmallAdminChannelsChildrenController } from "./controllers/shoppingMall/admin/channels/children/ShoppingmallAdminChannelsChildrenController";
-import { ShoppingmallChannelsChildrenController } from "./controllers/shoppingMall/channels/children/ShoppingmallChannelsChildrenController";
+import { ShoppingmallGuestsController } from "./controllers/shoppingMall/guests/ShoppingmallGuestsController";
+import { ShoppingmallAdminGuestsController } from "./controllers/shoppingMall/admin/guests/ShoppingmallAdminGuestsController";
+import { ShoppingmallAdminGuestsGuestsessionsController } from "./controllers/shoppingMall/admin/guests/guestSessions/ShoppingmallAdminGuestsGuestsessionsController";
+import { ShoppingmallGuestsGuestsessionsController } from "./controllers/shoppingMall/guests/guestSessions/ShoppingmallGuestsGuestsessionsController";
 import { ShoppingmallAdminCustomersController } from "./controllers/shoppingMall/admin/customers/ShoppingmallAdminCustomersController";
+import { ShoppingmallCustomersController } from "./controllers/shoppingMall/customers/ShoppingmallCustomersController";
+import { ShoppingmallGuestCustomersController } from "./controllers/shoppingMall/guest/customers/ShoppingmallGuestCustomersController";
 import { ShoppingmallCustomerCustomersController } from "./controllers/shoppingMall/customer/customers/ShoppingmallCustomerCustomersController";
-import { ShoppingmallAdminCustomersessionsController } from "./controllers/shoppingMall/admin/customerSessions/ShoppingmallAdminCustomersessionsController";
-import { ShoppingmallAdminSellerprofilesController } from "./controllers/shoppingMall/admin/sellerProfiles/ShoppingmallAdminSellerprofilesController";
-import { ShoppingmallSellerSellerprofilesController } from "./controllers/shoppingMall/seller/sellerProfiles/ShoppingmallSellerSellerprofilesController";
-import { ShoppingmallSellerSellersController } from "./controllers/shoppingMall/seller/sellers/ShoppingmallSellerSellersController";
+import { ShoppingmallAdminCustomersCustomersessionsController } from "./controllers/shoppingMall/admin/customers/customerSessions/ShoppingmallAdminCustomersCustomersessionsController";
+import { ShoppingmallCustomerCustomersCustomersessionsController } from "./controllers/shoppingMall/customer/customers/customerSessions/ShoppingmallCustomerCustomersCustomersessionsController";
 import { ShoppingmallAdminSellersController } from "./controllers/shoppingMall/admin/sellers/ShoppingmallAdminSellersController";
-import { ShoppingmallAdminSellersessionsController } from "./controllers/shoppingMall/admin/sellerSessions/ShoppingmallAdminSellersessionsController";
+import { ShoppingmallAdminSellersSellersessionsController } from "./controllers/shoppingMall/admin/sellers/sellerSessions/ShoppingmallAdminSellersSellersessionsController";
+import { ShoppingmallSellerSellersSellersessionsController } from "./controllers/shoppingMall/seller/sellers/sellerSessions/ShoppingmallSellerSellersSellersessionsController";
 import { ShoppingmallAdminAdminsController } from "./controllers/shoppingMall/admin/admins/ShoppingmallAdminAdminsController";
-import { ShoppingmallAdminAdminsessionsController } from "./controllers/shoppingMall/admin/adminSessions/ShoppingmallAdminAdminsessionsController";
-import { ShoppingmallProductcategoriesController } from "./controllers/shoppingMall/productCategories/ShoppingmallProductcategoriesController";
-import { ShoppingmallAdminProductcategoriesController } from "./controllers/shoppingMall/admin/productCategories/ShoppingmallAdminProductcategoriesController";
-import { ShoppingmallSellerProductcategoriesController } from "./controllers/shoppingMall/seller/productCategories/ShoppingmallSellerProductcategoriesController";
-import { ShoppingmallProductcategoriesChildrenController } from "./controllers/shoppingMall/productCategories/children/ShoppingmallProductcategoriesChildrenController";
-import { ShoppingmallAdminProductcategoriesChildrenController } from "./controllers/shoppingMall/admin/productCategories/children/ShoppingmallAdminProductcategoriesChildrenController";
-import { ShoppingmallCustomerProductsController } from "./controllers/shoppingMall/customer/products/ShoppingmallCustomerProductsController";
-import { ShoppingmallSellerProductsController } from "./controllers/shoppingMall/seller/products/ShoppingmallSellerProductsController";
-import { ShoppingmallAdminProductsController } from "./controllers/shoppingMall/admin/products/ShoppingmallAdminProductsController";
-import { ShoppingmallSellerProductsSkusController } from "./controllers/shoppingMall/seller/products/skus/ShoppingmallSellerProductsSkusController";
-import { ShoppingmallAdminProductsSkusController } from "./controllers/shoppingMall/admin/products/skus/ShoppingmallAdminProductsSkusController";
-import { ShoppingmallCustomerProductsearchindexController } from "./controllers/shoppingMall/customer/productSearchIndex/ShoppingmallCustomerProductsearchindexController";
+import { ShoppingmallAdminAdminsAdminsessionsController } from "./controllers/shoppingMall/admin/admins/adminSessions/ShoppingmallAdminAdminsAdminsessionsController";
+import { ShoppingmallShoppingmallchannelsController } from "./controllers/shoppingMall/shoppingMallChannels/ShoppingmallShoppingmallchannelsController";
+import { ShoppingmallAdminShoppingmallchannelsController } from "./controllers/shoppingMall/admin/shoppingMallChannels/ShoppingmallAdminShoppingmallchannelsController";
+import { ShoppingmallAdminShoppingmallchannelsShoppingmallsectionsController } from "./controllers/shoppingMall/admin/shoppingMallChannels/shoppingMallSections/ShoppingmallAdminShoppingmallchannelsShoppingmallsectionsController";
+import { ShoppingmallShoppingmallchannelsShoppingmallsectionsController } from "./controllers/shoppingMall/shoppingMallChannels/shoppingMallSections/ShoppingmallShoppingmallchannelsShoppingmallsectionsController";
+import { ShoppingmallShoppingmallchannelsShoppingmallchannelcategoriesController } from "./controllers/shoppingMall/shoppingMallChannels/shoppingMallChannelCategories/ShoppingmallShoppingmallchannelsShoppingmallchannelcategoriesController";
+import { ShoppingmallAdminShoppingmallchannelsShoppingmallchannelcategoriesController } from "./controllers/shoppingMall/admin/shoppingMallChannels/shoppingMallChannelCategories/ShoppingmallAdminShoppingmallchannelsShoppingmallchannelcategoriesController";
+import { ShoppingmallAdminShoppingmallconfigurationsController } from "./controllers/shoppingMall/admin/shoppingMallConfigurations/ShoppingmallAdminShoppingmallconfigurationsController";
+import { ShoppingmallShoppingmallconfigurationsController } from "./controllers/shoppingMall/shoppingMallConfigurations/ShoppingmallShoppingmallconfigurationsController";
+import { ShoppingmallCustomerShoppingmallproductsController } from "./controllers/shoppingMall/customer/shoppingMallProducts/ShoppingmallCustomerShoppingmallproductsController";
+import { ShoppingmallGuestShoppingmallproductsController } from "./controllers/shoppingMall/guest/shoppingMallProducts/ShoppingmallGuestShoppingmallproductsController";
+import { ShoppingmallSellerShoppingmallproductsController } from "./controllers/shoppingMall/seller/shoppingMallProducts/ShoppingmallSellerShoppingmallproductsController";
+import { ShoppingmallAdminShoppingmallproductsController } from "./controllers/shoppingMall/admin/shoppingMallProducts/ShoppingmallAdminShoppingmallproductsController";
+import { ShoppingmallCustomerShoppingmallproductsShoppingmallproductskusController } from "./controllers/shoppingMall/customer/shoppingMallProducts/shoppingMallProductSkus/ShoppingmallCustomerShoppingmallproductsShoppingmallproductskusController";
+import { ShoppingmallSellerShoppingmallproductsShoppingmallproductskusController } from "./controllers/shoppingMall/seller/shoppingMallProducts/shoppingMallProductSkus/ShoppingmallSellerShoppingmallproductsShoppingmallproductskusController";
+import { ShoppingmallAdminShoppingmallproductsShoppingmallproductskusController } from "./controllers/shoppingMall/admin/shoppingMallProducts/shoppingMallProductSkus/ShoppingmallAdminShoppingmallproductsShoppingmallproductskusController";
+import { ShoppingmallShoppingmallproductcategoriesController } from "./controllers/shoppingMall/shoppingMallProductCategories/ShoppingmallShoppingmallproductcategoriesController";
+import { ShoppingmallAdminShoppingmallproductcategoriesController } from "./controllers/shoppingMall/admin/shoppingMallProductCategories/ShoppingmallAdminShoppingmallproductcategoriesController";
+import { ShoppingmallShoppingmallskuattributesController } from "./controllers/shoppingMall/shoppingMallSkuAttributes/ShoppingmallShoppingmallskuattributesController";
+import { ShoppingmallCustomerShoppingmallskuattributesController } from "./controllers/shoppingMall/customer/shoppingMallSkuAttributes/ShoppingmallCustomerShoppingmallskuattributesController";
+import { ShoppingmallAdminShoppingmallskuattributesController } from "./controllers/shoppingMall/admin/shoppingMallSkuAttributes/ShoppingmallAdminShoppingmallskuattributesController";
+import { ShoppingmallCustomerShoppingmallskuattributevaluesController } from "./controllers/shoppingMall/customer/shoppingMallSkuAttributeValues/ShoppingmallCustomerShoppingmallskuattributevaluesController";
+import { ShoppingmallSellerShoppingmallskuattributevaluesController } from "./controllers/shoppingMall/seller/shoppingMallSkuAttributeValues/ShoppingmallSellerShoppingmallskuattributevaluesController";
+import { ShoppingmallAdminShoppingmallskuattributevaluesController } from "./controllers/shoppingMall/admin/shoppingMallSkuAttributeValues/ShoppingmallAdminShoppingmallskuattributevaluesController";
+import { ShoppingmallCustomerShoppingmallskuoptiongroupsController } from "./controllers/shoppingMall/customer/shoppingMallSkuOptionGroups/ShoppingmallCustomerShoppingmallskuoptiongroupsController";
+import { ShoppingmallShoppingmallskuoptiongroupsController } from "./controllers/shoppingMall/shoppingMallSkuOptionGroups/ShoppingmallShoppingmallskuoptiongroupsController";
+import { ShoppingmallAdminShoppingmallskuoptiongroupsController } from "./controllers/shoppingMall/admin/shoppingMallSkuOptionGroups/ShoppingmallAdminShoppingmallskuoptiongroupsController";
+import { ShoppingmallShoppingmallskuoptionsController } from "./controllers/shoppingMall/shoppingMallSkuOptions/ShoppingmallShoppingmallskuoptionsController";
+import { ShoppingmallCustomerShoppingmallskuoptionsController } from "./controllers/shoppingMall/customer/shoppingMallSkuOptions/ShoppingmallCustomerShoppingmallskuoptionsController";
+import { ShoppingmallSellerShoppingmallskuoptionsController } from "./controllers/shoppingMall/seller/shoppingMallSkuOptions/ShoppingmallSellerShoppingmallskuoptionsController";
+import { ShoppingmallAdminShoppingmallskuoptionsController } from "./controllers/shoppingMall/admin/shoppingMallSkuOptions/ShoppingmallAdminShoppingmallskuoptionsController";
+import { ShoppingmallAdminShoppingmallsalessnapshotsController } from "./controllers/shoppingMall/admin/shoppingMallSalesSnapshots/ShoppingmallAdminShoppingmallsalessnapshotsController";
+import { ShoppingmallAdminShoppingcartsController } from "./controllers/shoppingMall/admin/shoppingCarts/ShoppingmallAdminShoppingcartsController";
 import { ShoppingmallCustomerShoppingcartsController } from "./controllers/shoppingMall/customer/shoppingCarts/ShoppingmallCustomerShoppingcartsController";
-import { ShoppingmallCustomerShoppingcartsItemsController } from "./controllers/shoppingMall/customer/shoppingCarts/items/ShoppingmallCustomerShoppingcartsItemsController";
+import { ShoppingmallCustomerShoppingcartsCartitemsController } from "./controllers/shoppingMall/customer/shoppingCarts/cartItems/ShoppingmallCustomerShoppingcartsCartitemsController";
 import { ShoppingmallCustomerWishlistsController } from "./controllers/shoppingMall/customer/wishlists/ShoppingmallCustomerWishlistsController";
-import { ShoppingmallCustomerWishlistsItemsController } from "./controllers/shoppingMall/customer/wishlists/items/ShoppingmallCustomerWishlistsItemsController";
-import { ShoppingmallAdminOrdersController } from "./controllers/shoppingMall/admin/orders/ShoppingmallAdminOrdersController";
-import { ShoppingmallCustomerOrdersController } from "./controllers/shoppingMall/customer/orders/ShoppingmallCustomerOrdersController";
-import { ShoppingmallAdminOrdersItemsController } from "./controllers/shoppingMall/admin/orders/items/ShoppingmallAdminOrdersItemsController";
-import { ShoppingmallCustomerOrdersItemsController } from "./controllers/shoppingMall/customer/orders/items/ShoppingmallCustomerOrdersItemsController";
-import { ShoppingmallSellerOrdersItemsController } from "./controllers/shoppingMall/seller/orders/items/ShoppingmallSellerOrdersItemsController";
-import { ShoppingmallAdminPaymentsController } from "./controllers/shoppingMall/admin/payments/ShoppingmallAdminPaymentsController";
-import { ShoppingmallCustomerPaymentsController } from "./controllers/shoppingMall/customer/payments/ShoppingmallCustomerPaymentsController";
-import { ShoppingmallAdminShipmenttrackingsController } from "./controllers/shoppingMall/admin/shipmentTrackings/ShoppingmallAdminShipmenttrackingsController";
-import { ShoppingmallSellerShipmenttrackingsController } from "./controllers/shoppingMall/seller/shipmentTrackings/ShoppingmallSellerShipmenttrackingsController";
-import { ShoppingmallCustomerShipmenttrackingsController } from "./controllers/shoppingMall/customer/shipmentTrackings/ShoppingmallCustomerShipmenttrackingsController";
-import { ShoppingmallAdminProductreviewsController } from "./controllers/shoppingMall/admin/productReviews/ShoppingmallAdminProductreviewsController";
-import { ShoppingmallCustomerProductreviewsController } from "./controllers/shoppingMall/customer/productReviews/ShoppingmallCustomerProductreviewsController";
-import { ShoppingmallSellerProductreviewsController } from "./controllers/shoppingMall/seller/productReviews/ShoppingmallSellerProductreviewsController";
-import { ShoppingmallAdminReviewmoderationqueuesController } from "./controllers/shoppingMall/admin/reviewModerationQueues/ShoppingmallAdminReviewmoderationqueuesController";
-import { ShoppingmallAdminSkuinventoriesController } from "./controllers/shoppingMall/admin/skuInventories/ShoppingmallAdminSkuinventoriesController";
-import { ShoppingmallSellerSkuinventoriesController } from "./controllers/shoppingMall/seller/skuInventories/ShoppingmallSellerSkuinventoriesController";
-import { ShoppingmallCustomerSkuinventoriesController } from "./controllers/shoppingMall/customer/skuInventories/ShoppingmallCustomerSkuinventoriesController";
-import { ShoppingmallAdminStockadjustmentsController } from "./controllers/shoppingMall/admin/stockAdjustments/ShoppingmallAdminStockadjustmentsController";
-import { ShoppingmallSellerStockadjustmentsController } from "./controllers/shoppingMall/seller/stockAdjustments/ShoppingmallSellerStockadjustmentsController";
-import { ShoppingmallAdminLowstockalertsController } from "./controllers/shoppingMall/admin/lowStockAlerts/ShoppingmallAdminLowstockalertsController";
-import { ShoppingmallLowstockalertsController } from "./controllers/shoppingMall/lowStockAlerts/ShoppingmallLowstockalertsController";
-import { ShoppingmallSellerLowstockalertsController } from "./controllers/shoppingMall/seller/lowStockAlerts/ShoppingmallSellerLowstockalertsController";
-import { ShoppingmallAdminOrderhistoriesController } from "./controllers/shoppingMall/admin/orderHistories/ShoppingmallAdminOrderhistoriesController";
-import { ShoppingmallAdminOrdercancellationsController } from "./controllers/shoppingMall/admin/orderCancellations/ShoppingmallAdminOrdercancellationsController";
-import { ShoppingmallAdminRefundrequestsController } from "./controllers/shoppingMall/admin/refundRequests/ShoppingmallAdminRefundrequestsController";
-import { ShoppingmallCustomerReturnshipmentsController } from "./controllers/shoppingMall/customer/returnShipments/ShoppingmallCustomerReturnshipmentsController";
-import { ShoppingmallAdminAdminactivitiesController } from "./controllers/shoppingMall/admin/adminActivities/ShoppingmallAdminAdminactivitiesController";
-import { ShoppingmallAdminProductapprovalsController } from "./controllers/shoppingMall/admin/productApprovals/ShoppingmallAdminProductapprovalsController";
-import { ShoppingmallAdminUserrolesController } from "./controllers/shoppingMall/admin/userRoles/ShoppingmallAdminUserrolesController";
-import { ShoppingmallAdminPlatformauditlogsController } from "./controllers/shoppingMall/admin/platformAuditLogs/ShoppingmallAdminPlatformauditlogsController";
+import { ShoppingmallCustomerWishlistsWishlistitemsController } from "./controllers/shoppingMall/customer/wishlists/wishlistItems/ShoppingmallCustomerWishlistsWishlistitemsController";
+import { ShoppingmallCustomerShoppingmallordersController } from "./controllers/shoppingMall/customer/shoppingMallOrders/ShoppingmallCustomerShoppingmallordersController";
+import { ShoppingmallCustomerShoppingmallordersOrderitemsController } from "./controllers/shoppingMall/customer/shoppingMallOrders/orderItems/ShoppingmallCustomerShoppingmallordersOrderitemsController";
+import { ShoppingmallAdminShoppingmallordersOrderitemsController } from "./controllers/shoppingMall/admin/shoppingMallOrders/orderItems/ShoppingmallAdminShoppingmallordersOrderitemsController";
+import { ShoppingmallAdminShoppingmallpaymentsController } from "./controllers/shoppingMall/admin/shoppingMallPayments/ShoppingmallAdminShoppingmallpaymentsController";
+import { ShoppingmallCustomerShoppingmallpaymentsController } from "./controllers/shoppingMall/customer/shoppingMallPayments/ShoppingmallCustomerShoppingmallpaymentsController";
+import { ShoppingmallCustomerShoppingmallshipmentsController } from "./controllers/shoppingMall/customer/shoppingMallShipments/ShoppingmallCustomerShoppingmallshipmentsController";
+import { ShoppingmallAdminShoppingmallshipmentsController } from "./controllers/shoppingMall/admin/shoppingMallShipments/ShoppingmallAdminShoppingmallshipmentsController";
+import { ShoppingmallAdminShoppingmallordercancellationsController } from "./controllers/shoppingMall/admin/shoppingMallOrderCancellations/ShoppingmallAdminShoppingmallordercancellationsController";
+import { ShoppingmallCustomerShoppingmallordercancellationsController } from "./controllers/shoppingMall/customer/shoppingMallOrderCancellations/ShoppingmallCustomerShoppingmallordercancellationsController";
+import { ShoppingmallSellerShoppingmallordercancellationsController } from "./controllers/shoppingMall/seller/shoppingMallOrderCancellations/ShoppingmallSellerShoppingmallordercancellationsController";
+import { ShoppingmallAdminShoppingmallorderrefundsController } from "./controllers/shoppingMall/admin/shoppingMallOrderRefunds/ShoppingmallAdminShoppingmallorderrefundsController";
+import { ShoppingmallCustomerShoppingmallorderrefundsController } from "./controllers/shoppingMall/customer/shoppingMallOrderRefunds/ShoppingmallCustomerShoppingmallorderrefundsController";
+import { ShoppingmallAdminCouponsController } from "./controllers/shoppingMall/admin/coupons/ShoppingmallAdminCouponsController";
+import { ShoppingmallAdminCouponsRedemptionsController } from "./controllers/shoppingMall/admin/coupons/redemptions/ShoppingmallAdminCouponsRedemptionsController";
+import { ShoppingmallCustomerCouponsRedemptionsController } from "./controllers/shoppingMall/customer/coupons/redemptions/ShoppingmallCustomerCouponsRedemptionsController";
+import { ShoppingmallAdminShoppingmallcoinsController } from "./controllers/shoppingMall/admin/shoppingMallCoins/ShoppingmallAdminShoppingmallcoinsController";
+import { ShoppingmallCustomerShoppingmallcoinsController } from "./controllers/shoppingMall/customer/shoppingMallCoins/ShoppingmallCustomerShoppingmallcoinsController";
+import { ShoppingmallAdminShoppingmallmileagetransactionsController } from "./controllers/shoppingMall/admin/shoppingMallMileageTransactions/ShoppingmallAdminShoppingmallmileagetransactionsController";
+import { ShoppingmallAdminCustomerinquiriesController } from "./controllers/shoppingMall/admin/customerInquiries/ShoppingmallAdminCustomerinquiriesController";
+import { ShoppingmallCustomerCustomerinquiriesController } from "./controllers/shoppingMall/customer/customerInquiries/ShoppingmallCustomerCustomerinquiriesController";
+import { ShoppingmallFaqsController } from "./controllers/shoppingMall/faqs/ShoppingmallFaqsController";
+import { ShoppingmallCustomerFaqsController } from "./controllers/shoppingMall/customer/faqs/ShoppingmallCustomerFaqsController";
+import { ShoppingmallAdminFaqsController } from "./controllers/shoppingMall/admin/faqs/ShoppingmallAdminFaqsController";
+import { ShoppingmallCustomerShoppingmallFavoriteproductsController } from "./controllers/shoppingMall/customer/shoppingMall/favoriteProducts/ShoppingmallCustomerShoppingmallFavoriteproductsController";
+import { ShoppingmallCustomerShoppingmallFavoritesellersController } from "./controllers/shoppingMall/customer/shoppingMall/favoriteSellers/ShoppingmallCustomerShoppingmallFavoritesellersController";
+import { ShoppingmallCustomerShoppingmallarticlesController } from "./controllers/shoppingMall/customer/shoppingMallArticles/ShoppingmallCustomerShoppingmallarticlesController";
+import { ShoppingmallShoppingmallarticlesController } from "./controllers/shoppingMall/shoppingMallArticles/ShoppingmallShoppingmallarticlesController";
+import { ShoppingmallShoppingmallarticlecategoriesController } from "./controllers/shoppingMall/shoppingMallArticleCategories/ShoppingmallShoppingmallarticlecategoriesController";
+import { ShoppingmallCustomerShoppingmallarticlecategoriesController } from "./controllers/shoppingMall/customer/shoppingMallArticleCategories/ShoppingmallCustomerShoppingmallarticlecategoriesController";
+import { ShoppingmallSellerShoppingmallarticlecategoriesController } from "./controllers/shoppingMall/seller/shoppingMallArticleCategories/ShoppingmallSellerShoppingmallarticlecategoriesController";
+import { ShoppingmallAdminShoppingmallarticlecategoriesController } from "./controllers/shoppingMall/admin/shoppingMallArticleCategories/ShoppingmallAdminShoppingmallarticlecategoriesController";
+import { ShoppingmallShoppingmallarticlecategoriesCommentsController } from "./controllers/shoppingMall/shoppingMallArticleCategories/comments/ShoppingmallShoppingmallarticlecategoriesCommentsController";
+import { ShoppingmallCustomerShoppingmallarticlecategoriesCommentsController } from "./controllers/shoppingMall/customer/shoppingMallArticleCategories/comments/ShoppingmallCustomerShoppingmallarticlecategoriesCommentsController";
+import { ShoppingmallAdminShoppingmallarticlecategoriesCommentsController } from "./controllers/shoppingMall/admin/shoppingMallArticleCategories/comments/ShoppingmallAdminShoppingmallarticlecategoriesCommentsController";
 
 @Module({
   controllers: [
@@ -72,67 +96,91 @@ import { ShoppingmallAdminPlatformauditlogsController } from "./controllers/shop
     AuthCustomerController,
     AuthSellerController,
     AuthAdminController,
-    ShoppingmallAdminSystemsettingsController,
-    ShoppingmallAdminPlatformconfigsController,
-    ShoppingmallChannelsController,
-    ShoppingmallAdminChannelsController,
-    ShoppingmallAdminChannelsChildrenController,
-    ShoppingmallChannelsChildrenController,
+    ShoppingmallGuestsController,
+    ShoppingmallAdminGuestsController,
+    ShoppingmallAdminGuestsGuestsessionsController,
+    ShoppingmallGuestsGuestsessionsController,
     ShoppingmallAdminCustomersController,
+    ShoppingmallCustomersController,
+    ShoppingmallGuestCustomersController,
     ShoppingmallCustomerCustomersController,
-    ShoppingmallAdminCustomersessionsController,
-    ShoppingmallAdminSellerprofilesController,
-    ShoppingmallSellerSellerprofilesController,
-    ShoppingmallSellerSellersController,
+    ShoppingmallAdminCustomersCustomersessionsController,
+    ShoppingmallCustomerCustomersCustomersessionsController,
     ShoppingmallAdminSellersController,
-    ShoppingmallAdminSellersessionsController,
+    ShoppingmallAdminSellersSellersessionsController,
+    ShoppingmallSellerSellersSellersessionsController,
     ShoppingmallAdminAdminsController,
-    ShoppingmallAdminAdminsessionsController,
-    ShoppingmallProductcategoriesController,
-    ShoppingmallAdminProductcategoriesController,
-    ShoppingmallSellerProductcategoriesController,
-    ShoppingmallProductcategoriesChildrenController,
-    ShoppingmallAdminProductcategoriesChildrenController,
-    ShoppingmallCustomerProductsController,
-    ShoppingmallSellerProductsController,
-    ShoppingmallAdminProductsController,
-    ShoppingmallSellerProductsSkusController,
-    ShoppingmallAdminProductsSkusController,
-    ShoppingmallCustomerProductsearchindexController,
+    ShoppingmallAdminAdminsAdminsessionsController,
+    ShoppingmallShoppingmallchannelsController,
+    ShoppingmallAdminShoppingmallchannelsController,
+    ShoppingmallAdminShoppingmallchannelsShoppingmallsectionsController,
+    ShoppingmallShoppingmallchannelsShoppingmallsectionsController,
+    ShoppingmallShoppingmallchannelsShoppingmallchannelcategoriesController,
+    ShoppingmallAdminShoppingmallchannelsShoppingmallchannelcategoriesController,
+    ShoppingmallAdminShoppingmallconfigurationsController,
+    ShoppingmallShoppingmallconfigurationsController,
+    ShoppingmallCustomerShoppingmallproductsController,
+    ShoppingmallGuestShoppingmallproductsController,
+    ShoppingmallSellerShoppingmallproductsController,
+    ShoppingmallAdminShoppingmallproductsController,
+    ShoppingmallCustomerShoppingmallproductsShoppingmallproductskusController,
+    ShoppingmallSellerShoppingmallproductsShoppingmallproductskusController,
+    ShoppingmallAdminShoppingmallproductsShoppingmallproductskusController,
+    ShoppingmallShoppingmallproductcategoriesController,
+    ShoppingmallAdminShoppingmallproductcategoriesController,
+    ShoppingmallShoppingmallskuattributesController,
+    ShoppingmallCustomerShoppingmallskuattributesController,
+    ShoppingmallAdminShoppingmallskuattributesController,
+    ShoppingmallCustomerShoppingmallskuattributevaluesController,
+    ShoppingmallSellerShoppingmallskuattributevaluesController,
+    ShoppingmallAdminShoppingmallskuattributevaluesController,
+    ShoppingmallCustomerShoppingmallskuoptiongroupsController,
+    ShoppingmallShoppingmallskuoptiongroupsController,
+    ShoppingmallAdminShoppingmallskuoptiongroupsController,
+    ShoppingmallShoppingmallskuoptionsController,
+    ShoppingmallCustomerShoppingmallskuoptionsController,
+    ShoppingmallSellerShoppingmallskuoptionsController,
+    ShoppingmallAdminShoppingmallskuoptionsController,
+    ShoppingmallAdminShoppingmallsalessnapshotsController,
+    ShoppingmallAdminShoppingcartsController,
     ShoppingmallCustomerShoppingcartsController,
-    ShoppingmallCustomerShoppingcartsItemsController,
+    ShoppingmallCustomerShoppingcartsCartitemsController,
     ShoppingmallCustomerWishlistsController,
-    ShoppingmallCustomerWishlistsItemsController,
-    ShoppingmallAdminOrdersController,
-    ShoppingmallCustomerOrdersController,
-    ShoppingmallAdminOrdersItemsController,
-    ShoppingmallCustomerOrdersItemsController,
-    ShoppingmallSellerOrdersItemsController,
-    ShoppingmallAdminPaymentsController,
-    ShoppingmallCustomerPaymentsController,
-    ShoppingmallAdminShipmenttrackingsController,
-    ShoppingmallSellerShipmenttrackingsController,
-    ShoppingmallCustomerShipmenttrackingsController,
-    ShoppingmallAdminProductreviewsController,
-    ShoppingmallCustomerProductreviewsController,
-    ShoppingmallSellerProductreviewsController,
-    ShoppingmallAdminReviewmoderationqueuesController,
-    ShoppingmallAdminSkuinventoriesController,
-    ShoppingmallSellerSkuinventoriesController,
-    ShoppingmallCustomerSkuinventoriesController,
-    ShoppingmallAdminStockadjustmentsController,
-    ShoppingmallSellerStockadjustmentsController,
-    ShoppingmallAdminLowstockalertsController,
-    ShoppingmallLowstockalertsController,
-    ShoppingmallSellerLowstockalertsController,
-    ShoppingmallAdminOrderhistoriesController,
-    ShoppingmallAdminOrdercancellationsController,
-    ShoppingmallAdminRefundrequestsController,
-    ShoppingmallCustomerReturnshipmentsController,
-    ShoppingmallAdminAdminactivitiesController,
-    ShoppingmallAdminProductapprovalsController,
-    ShoppingmallAdminUserrolesController,
-    ShoppingmallAdminPlatformauditlogsController,
+    ShoppingmallCustomerWishlistsWishlistitemsController,
+    ShoppingmallCustomerShoppingmallordersController,
+    ShoppingmallCustomerShoppingmallordersOrderitemsController,
+    ShoppingmallAdminShoppingmallordersOrderitemsController,
+    ShoppingmallAdminShoppingmallpaymentsController,
+    ShoppingmallCustomerShoppingmallpaymentsController,
+    ShoppingmallCustomerShoppingmallshipmentsController,
+    ShoppingmallAdminShoppingmallshipmentsController,
+    ShoppingmallAdminShoppingmallordercancellationsController,
+    ShoppingmallCustomerShoppingmallordercancellationsController,
+    ShoppingmallSellerShoppingmallordercancellationsController,
+    ShoppingmallAdminShoppingmallorderrefundsController,
+    ShoppingmallCustomerShoppingmallorderrefundsController,
+    ShoppingmallAdminCouponsController,
+    ShoppingmallAdminCouponsRedemptionsController,
+    ShoppingmallCustomerCouponsRedemptionsController,
+    ShoppingmallAdminShoppingmallcoinsController,
+    ShoppingmallCustomerShoppingmallcoinsController,
+    ShoppingmallAdminShoppingmallmileagetransactionsController,
+    ShoppingmallAdminCustomerinquiriesController,
+    ShoppingmallCustomerCustomerinquiriesController,
+    ShoppingmallFaqsController,
+    ShoppingmallCustomerFaqsController,
+    ShoppingmallAdminFaqsController,
+    ShoppingmallCustomerShoppingmallFavoriteproductsController,
+    ShoppingmallCustomerShoppingmallFavoritesellersController,
+    ShoppingmallCustomerShoppingmallarticlesController,
+    ShoppingmallShoppingmallarticlesController,
+    ShoppingmallShoppingmallarticlecategoriesController,
+    ShoppingmallCustomerShoppingmallarticlecategoriesController,
+    ShoppingmallSellerShoppingmallarticlecategoriesController,
+    ShoppingmallAdminShoppingmallarticlecategoriesController,
+    ShoppingmallShoppingmallarticlecategoriesCommentsController,
+    ShoppingmallCustomerShoppingmallarticlecategoriesCommentsController,
+    ShoppingmallAdminShoppingmallarticlecategoriesCommentsController,
   ],
 })
 export class MyModule {}

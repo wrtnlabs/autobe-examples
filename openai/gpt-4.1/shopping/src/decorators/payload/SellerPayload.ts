@@ -1,16 +1,17 @@
 import { tags } from "typia";
 
-/** Payload for authenticated seller actor (injected by SellerAuth). */
+/**
+ * SellerPayload
+ *
+ * Payload injected for authenticated sellers.
+ */
 export interface SellerPayload {
-  /**
-   * Top-level seller table ID (the fundamental seller identifier in the
-   * system).
-   */
+  /** Seller's unique account id (UUID primary key) */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID associated with the seller. */
+  /** Session identifier (UUID referencing a session row) */
   session_id: string & tags.Format<"uuid">;
 
-  /** Discriminator for type-safe role identification. */
+  /** Actor type discriminator */
   type: "seller";
 }

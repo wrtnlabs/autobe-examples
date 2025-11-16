@@ -8,62 +8,88 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ICommunityPlatformPostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostVote";
+import { ICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPost";
+import { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function putCommunityPlatformUserPostVotesPostVoteId(props: {
   user: UserPayload;
-  postVoteId: string & tags.Format<"uuid">;
+  postVoteId: string;
   body: ICommunityPlatformPostVote.IUpdate;
 }): Promise<ICommunityPlatformPostVote> {
-  // Step 1: Fetch the vote
-  const vote = await MyGlobal.prisma.community_platform_post_votes.findUnique({
+  // 1. Retrieve the vote record, ensure not soft-deleted
+  const found = await MyGlobal.prisma.community_platform_post_votes.findUnique({
     where: { id: props.postVoteId },
   });
-  if (!vote) throw new HttpException("Vote not found", 404);
-  // Step 2: Verify user owns the vote
-  if (vote.community_platform_user_id !== props.user.id) {
-    throw new HttpException("Forbidden: This vote does not belong to you", 403);
+
+  if (!found || found.deleted_at !== null) {
+    throw new HttpException("Vote not found", 404);
   }
-  // Step 3: Fetch the post and check for soft/hard deleted
-  const post = await MyGlobal.prisma.community_platform_posts.findUnique({
-    where: { id: vote.community_platform_post_id },
-  });
-  if (!post) throw new HttpException("Post not found", 404);
-  if (post.deleted_at) {
-    throw new HttpException("Cannot vote on deleted post", 403);
+
+  // 2. Authorization check: only the voter can update/remove the vote
+  if (found.community_platform_user_id !== props.user.id) {
+    throw new HttpException(
+      "Forbidden: Only the voter can edit or remove this vote",
+      403,
+    );
   }
-  // Step 4: Prepare update payload
-  const now = toISOStringSafe(new Date());
+
+  // 3. Update data logic
   let updated;
-  if (typeof props.body.is_upvote === "boolean") {
-    // Toggle (upvote or downvote)
+  if (typeof props.body.vote_type === "string") {
     updated = await MyGlobal.prisma.community_platform_post_votes.update({
       where: { id: props.postVoteId },
       data: {
-        is_upvote: props.body.is_upvote,
-        updated_at: now,
+        vote_type: props.body.vote_type,
         deleted_at: null,
+        updated_at: toISOStringSafe(new Date()),
       },
     });
   } else {
-    // Removal (no is_upvote field means mark deleted)
+    // Vote removal (soft delete)
     updated = await MyGlobal.prisma.community_platform_post_votes.update({
       where: { id: props.postVoteId },
       data: {
-        updated_at: now,
-        deleted_at: now,
+        deleted_at: toISOStringSafe(new Date()),
+        updated_at: toISOStringSafe(new Date()),
       },
     });
   }
+
+  // 4. Fetch minimal summary references for user and post
+  const postSummary = updated.community_platform_post_id
+    ? await MyGlobal.prisma.community_platform_posts.findUnique({
+        where: { id: updated.community_platform_post_id },
+        select: { id: true, community_id: true, user_id: true },
+      })
+    : null;
+  const userSummary = updated.community_platform_user_id
+    ? await MyGlobal.prisma.community_platform_users.findUnique({
+        where: { id: updated.community_platform_user_id },
+        select: { id: true },
+      })
+    : null;
+
   return {
     id: updated.id,
-    community_platform_user_id: updated.community_platform_user_id,
-    community_platform_post_id: updated.community_platform_post_id,
-    is_upvote: updated.is_upvote,
+    vote_type: updated.vote_type,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
     deleted_at: updated.deleted_at
       ? toISOStringSafe(updated.deleted_at)
+      : undefined,
+    post: postSummary
+      ? {
+          id: postSummary.id,
+          community_id: postSummary.community_id,
+          user_id: postSummary.user_id,
+        }
+      : undefined,
+    user: userSummary
+      ? {
+          id: userSummary.id,
+        }
       : undefined,
   };
 }

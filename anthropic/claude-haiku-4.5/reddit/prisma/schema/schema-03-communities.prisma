@@ -1,8 +1,20 @@
-/// Core community entity representing a community space where members can
-/// create posts, comments, and engage in discussions. Each community has a
-/// creator (primary moderator), customizable settings, rules, and member
-/// subscriptions. Communities can be public, private, or restricted based on
-/// visibility settings.
+/// Core community entity representing discussion spaces and organizational
+/// units on the platform.
+///
+/// Each community is a self-contained space where members can create posts,
+/// comments, and engage in discussions. Communities are created by members
+/// and managed by community creators and moderators. Communities have
+/// configurable settings (visibility, post permissions) and can be public
+/// (discoverable by all users) or private (restricted to approved members).
+///
+/// Communities are fundamental to the platform architecture - all posts and
+/// comments belong to specific communities, and community membership is
+/// tracked through subscriptions. Communities support hierarchical
+/// moderation with creator at top, followed by senior and junior moderators.
+///
+/// Community names are not required to be globally unique (multiple
+/// communities can share the same name), but community identifiers (handles)
+/// are globally unique and immutable after creation.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -10,59 +22,85 @@ model community_platform_communities {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Unique identifier for the community.
   id String @id
   
-  /// Reference to the community's category assignment. {@link
-  /// community_platform_categories.id}
+  /// Category classification for the community. References {@link
+  /// community_platform_categories.id}. Determines community topic area
+  /// (Technology, Entertainment, Sports, etc.) and affects community discovery
+  /// and recommendations.
   community_platform_category_id String
   
-  /// Reference to the community creator (primary moderator). {@link
-  /// community_platform_members.id}
+  /// Community creator (original founder). References {@link
+  /// community_platform_members.id}. The member who created this community
+  /// automatically becomes the community creator with all moderator
+  /// permissions. Creator can transfer ownership to another member.
   community_platform_member_id String
   
-  /// Community display name (3-21 characters, converted to lowercase, unique
-  /// across platform). Examples: 'technology', 'photography', 'gaming'
+  /// Community display name shown to users. Length: 3-100 characters. May
+  /// contain spaces and special characters. Not required to be unique
+  /// (multiple communities can share same name). Used in community headers and
+  /// search results.
   name String
   
-  /// Optional community description (max 500 characters) explaining the
-  /// community's purpose and topic.
+  /// Unique, URL-safe community identifier (handle). Format: lowercase
+  /// letters, numbers, underscores only. Length: 3-32 characters. Used in URLs
+  /// (e.g., r/[identifier]). Immutable after community creation. Globally
+  /// unique across entire platform.
+  identifier String
+  
+  /// Community description explaining purpose and scope. Length: 0-500
+  /// characters. Optional field. Used in community directory and search.
+  /// Should explain what topics are welcome and community culture.
   description String?
   
-  /// Community visibility level: 'public' (discoverable and viewable by all),
-  /// 'private' (hidden from discovery, invite-only), or 'restricted'
-  /// (discoverable but membership approval required). Default: 'public'
+  /// Community access level: 'public' (visible to all users, posts readable by
+  /// anyone) or 'private' (only subscribed members can view content). Controls
+  /// who can discover and access the community. Default: 'public'. Can be
+  /// changed by community creator anytime.
   visibility String
   
-  /// URL to community icon/logo image (uploaded during creation or updated by
-  /// moderators). CDN-served image URL.
-  icon_url String?
+  /// Restriction level for who can create posts: 'open_to_all' (any member can
+  /// post), 'moderators_only' (only moderators), 'approved_members_only'
+  /// (posts require approval), 'karma_requirement' (minimum karma required),
+  /// 'account_age_requirement' (minimum account age required). Default:
+  /// 'open_to_all'. Controls post creation permissions.
+  post_creation_restriction String
   
-  /// URL to community banner/header image (displayed at top of community
-  /// page). CDN-served high-res image URL.
-  banner_url String?
+  /// Allowed post types: 'all_types' (text, links, images), 'text_only',
+  /// 'text_and_images', 'text_and_links', 'images_only'. Restricts content
+  /// format per community rules. Default: 'all_types'.
+  post_type_restriction String
   
-  /// Denormalized count of community members (updated when members
-  /// subscribe/unsubscribe). Cached for performance.
-  member_count Int
+  /// Current number of members subscribed to this community. Incremented when
+  /// members subscribe, decremented when unsubscribe. Used for community
+  /// discovery and ranking. Updated in real-time. Minimum value: 0.
+  subscriber_count Int
   
-  /// Denormalized count of posts created in this community (incremented on
-  /// post creation, decremented on deletion).
+  /// Total count of non-deleted posts in this community. Incremented when
+  /// posts created, decremented when posts deleted. Provides activity metrics.
+  /// Minimum value: 0.
   post_count Int
   
-  /// Flag indicating whether community contains Not-Safe-For-Work content
-  /// (age-restricted). Default: false
-  is_nsfw Boolean
+  /// Total count of non-deleted comments across all posts in this community.
+  /// Provides engagement metrics. Updated when comments created/deleted.
+  /// Minimum value: 0.
+  comment_count Int
   
-  /// Timestamp when community was created (server-generated, immutable).
+  /// Timestamp when community was created. Immutable after creation. Used for
+  /// community age calculations and discovery sorting (new communities).
+  /// Stored in UTC.
   created_at DateTime
   
   /// Timestamp when community was last modified (settings, rules, description
-  /// changes).
+  /// changed). Updates whenever community configuration is modified. Used for
+  /// tracking administrative actions.
   updated_at DateTime
   
-  /// Soft delete timestamp. Communities with deleted_at set are marked for
-  /// deletion but data retained for 30-day recovery window.
+  /// Soft-delete timestamp. NULL if community is active, set to deletion time
+  /// if community is archived/deleted. Allows community recovery within grace
+  /// period. Communities with deleted_at set are hidden from search and
+  /// directory but preserved in database.
   deleted_at DateTime?
   
   //----
@@ -71,101 +109,36 @@ model community_platform_communities {
   category community_platform_categories @relation(fields: [community_platform_category_id], references: [id], onDelete: Cascade)
   creator community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
-  community_platform_community_rules community_platform_community_rules[]
   community_platform_community_settings community_platform_community_settings?
-  community_platform_community_members community_platform_community_members[]
-  community_platform_community_moderator_roles community_platform_community_moderator_roles[]
+  community_platform_community_rules community_platform_community_rules[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
   community_platform_community_bans community_platform_community_bans[]
+  community_platform_community_moderators community_platform_community_moderators[]
   community_platform_posts community_platform_posts[]
-  community_platform_post_drafts community_platform_post_drafts[]
-  community_platform_user_karma_community community_platform_user_karma_community[]
-  community_platform_user_badges community_platform_user_badges[]
-  community_platform_content_reports community_platform_content_reports[]
-  community_platform_moderation_actions community_platform_moderation_actions[]
-  community_platform_user_restrictions community_platform_user_restrictions[]
-  community_platform_moderation_log community_platform_moderation_log[]
-  community_platform_content_warnings community_platform_content_warnings[]
+  community_platform_member_activity community_platform_member_activity[]
   community_platform_search_index community_platform_search_index[]
-  community_platform_trending_posts community_platform_trending_posts[]
-  community_platform_feed_cache community_platform_feed_cache[]
+  community_platform_trending_content community_platform_trending_content[]
   
-  @@unique([name])
+  @@unique([identifier])
   // spellchecker: ignore-next-line
   @@index([community_platform_category_id], map: "community_platform_communities_community_platform_cate_ec8e6d6d")
   @@index([community_platform_member_id])
-  @@index([visibility])
   @@index([created_at])
-  @@index([member_count])
+  @@index([subscriber_count, created_at])
 }
 
-/// Community-specific rules and policies that moderate content and behavior
-/// within a community. Rules are set and enforced by community moderators
-/// (up to 10 rules per community). Each rule includes violation category,
-/// enforcement action, and appeal allowability. Rules are displayed to
-/// members and cited during moderation actions.
+/// Extended configuration options for communities, enabling fine-grained
+/// control over community behavior.
 ///
-/// @namespace Communities
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_rules {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the community this rule belongs to. {@link
-  /// community_platform_communities.id}
-  community_platform_community_id String
-  
-  /// Ordinal position of this rule in the community's rule list (1-10). Used
-  /// for display ordering.
-  rule_number Int
-  
-  /// Rule title/name (max 100 characters, concise summary). Example: 'No Spam
-  /// or Self-Promotion'
-  title String
-  
-  /// Detailed rule explanation (max 1000 characters) with examples of
-  /// violations and context. Shown to members when they join community.
-  description String
-  
-  /// Rule violation category: 'content', 'behavior', 'spam', 'off_topic',
-  /// 'harassment', 'adult_content', or 'other'. Used for filtering and
-  /// analytics.
-  category String
-  
-  /// Default enforcement action for violations: 'warning' (informational
-  /// only), 'remove' (content removal), 'temporary_ban' (1-30 days), or
-  /// 'permanent_ban'. Moderator can override.
-  enforcement_action String
-  
-  /// Whether users can appeal moderation actions for this rule violation
-  /// (default: true). Set to false for indisputable rules.
-  allows_appeal Boolean
-  
-  /// Timestamp when rule was created by moderator.
-  created_at DateTime
-  
-  /// Timestamp when rule was last updated (title, description, or enforcement
-  /// action changed).
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_platform_community_id, rule_number], map: "community_platform_community_rules_community_platform__2bd07452")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_community_id], map: "community_platform_community_rules_community_platform__62124d3e")
-  @@index([category])
-}
-
-/// Customizable settings for individual communities controlling post types,
-/// voting, comments, moderation requirements, and content filtering. Each
-/// community has one settings record (1:1 relationship). Settings determine
-/// how the community operates and what features are enabled/restricted.
+/// Stores optional, customizable settings that modify community behavior
+/// beyond basic configuration. Each community has exactly one settings
+/// record (1:1 relationship). Settings include moderation preferences
+/// (require post approval, comment filtering), accessibility (karma
+/// requirements), and display options (default sorting).
+///
+/// Settings are separated from main community entity to keep core community
+/// data lean while allowing extensive optional customization. Settings can
+/// be updated independently without modifying core community metadata.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -173,56 +146,59 @@ model community_platform_community_settings {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Unique identifier for the community settings record.
   id String @id
   
-  /// Reference to the community these settings apply to (1:1 relationship).
-  /// {@link community_platform_communities.id}
+  /// Community these settings belong to. References {@link
+  /// community_platform_communities.id}. 1:1 relationship - exactly one
+  /// settings record per community. Unique constraint ensures exactly one.
   community_platform_community_id String
   
-  /// Whether text-only posts are allowed in this community (default: true).
-  allow_text_posts Boolean
-  
-  /// Whether link posts are allowed in this community (default: true).
-  allow_link_posts Boolean
-  
-  /// Whether image posts are allowed in this community (default: true).
-  allow_image_posts Boolean
-  
-  /// Whether upvoting and downvoting are enabled (default: true). When false,
-  /// posts/comments display no vote counts.
-  allow_voting Boolean
-  
-  /// Whether comments are allowed (default: true). When false, posts exist but
-  /// commenting is disabled.
-  allow_comments Boolean
-  
-  /// Minimum community karma required to comment (default: 0 for
-  /// unrestricted). Users below threshold cannot comment.
-  require_comment_karma Int
-  
-  /// Minimum community karma required to create posts (default: 0 for
-  /// unrestricted). Users below threshold cannot post.
-  require_post_karma Int
-  
-  /// Whether posts require moderator approval before appearing publicly
-  /// (default: false). First-time posters may be restricted.
+  /// If true, all new posts require moderator approval before appearing
+  /// publicly. If false, posts appear immediately. Default: false. Enables
+  /// quality control in communities with high spam risk.
   require_post_approval Boolean
   
-  /// Number of days after post creation before automatically locking
-  /// (preventing new comments). 0 = disabled (default). Example: 180 days for
-  /// old content.
-  auto_lock_posts_days Int
+  /// If true, all new comments require moderator approval before appearing. If
+  /// false, comments appear immediately. Default: false. Can be used for
+  /// communities wanting strict discussion control.
+  require_comment_approval Boolean
   
-  /// Whether to filter offensive language automatically (default: false). When
-  /// enabled, flagged content shown with warning.
-  enable_profanity_filter Boolean
+  /// Minimum user karma required to create posts in this community. 0 means no
+  /// restriction. Default: 0. Used to prevent spam and low-effort content from
+  /// new/low-reputation users.
+  minimum_karma_to_post Int
   
-  /// Timestamp when settings were created (synchronized with community
-  /// creation).
+  /// Minimum account age in days required to post. 0 means no restriction.
+  /// Default: 0. Used to prevent immediate spam from new accounts.
+  minimum_account_age_days Int
+  
+  /// Default sorting algorithm for community feed: 'hot' (trending, default),
+  /// 'new' (chronological), 'top' (highest voted), 'controversial' (balanced
+  /// disagreement). Users can override. Default: 'hot'.
+  default_sort_method String
+  
+  /// Posts older than specified days are archived (hidden from main feed but
+  /// searchable). 0 means no archival. Default: 180. Keeps active feed fresh
+  /// while preserving history.
+  archive_posts_after_days Int
+  
+  /// If true, community accepts and displays NSFW (adult) content with
+  /// appropriate warnings. If false, NSFW content is prohibited. Default:
+  /// false. Affects content filtering in user feeds.
+  enable_nsfw_content Boolean
+  
+  /// If true, users can hide content behind spoiler tags (for movies, games,
+  /// books, etc.). Default: true. Allows community customization of spoiler
+  /// expectations.
+  enable_spoiler_tags Boolean
+  
+  /// Timestamp when settings record was created. Typically matches community
+  /// creation time. Used for audit trail.
   created_at DateTime
   
-  /// Timestamp when settings were last modified by community moderators.
+  /// Timestamp when settings were last modified. Updates whenever any setting
+  /// is changed. Used for tracking configuration history.
   updated_at DateTime
   
   //----
@@ -237,89 +213,111 @@ model community_platform_community_settings {
   @@index([community_platform_community_id], map: "community_platform_community_settings_community_platfo_c980a59b")
 }
 
-/// Membership relationship between members and communities they subscribe
-/// to. Tracks subscription status, join date, and membership-specific
-/// metadata. Many-to-many relationship enabling members to join multiple
-/// communities and communities to have multiple members.
+/// Community-specific rules and guidelines that members must follow.
+///
+/// Stores numbered list of rules that define acceptable behavior in the
+/// community. Each community can have up to 10 rules. Rules are displayed to
+/// members on community page and referenced during moderation. Rules are
+/// community-specific - different communities can have different standards
+/// (e.g., gaming community allows casual language while professional
+/// community forbids it).
+///
+/// Rules are searchable and indexed to support rule-based content filtering
+/// and enforcement. Rules can be updated anytime by community creator or
+/// senior moderators.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_members {
+model community_platform_community_rules {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Unique identifier for the rule record.
   id String @id
   
-  /// Reference to the community being subscribed to. {@link
-  /// community_platform_communities.id}
+  /// Community this rule belongs to. References {@link
+  /// community_platform_communities.id}. Multiple rules per community (1:N).
+  /// Enables community-specific rule sets.
   community_platform_community_id String
   
-  /// Reference to the member subscribing to the community. {@link
-  /// community_platform_members.id}
-  community_platform_member_id String
+  /// Ordinal position of rule in community's rule list. Range: 1-10.
+  /// Determines display order. Unique per community (no duplicate numbers).
+  /// Used to reference rules (e.g., 'Rule 3: Be respectful').
+  rule_number Int
   
-  /// Timestamp when member subscribed to this community (server-generated).
-  joined_at DateTime
+  /// Short rule title/heading (5-50 characters). Concise summary of the rule.
+  /// Example: 'No Harassment'. Displayed prominently in rule lists.
+  title String
   
-  /// Whether member is currently banned from this community (soft deletion by
-  /// ban record instead of flag).
-  is_banned Boolean
+  /// Detailed rule explanation (10-200 characters). Provides context and
+  /// examples. Example: 'Do not target, insult, or mock other community
+  /// members. Respectful disagreement is welcome.' Helps members understand
+  /// expectations.
+  description String
   
-  //----
-  // RELATIONS
-  //----
-  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
-  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_platform_community_id, community_platform_member_id], map: "community_platform_community_members_community_platfor_67665fda")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_community_id], map: "community_platform_community_members_community_platfor_ae7c27c4")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id], map: "community_platform_community_members_community_platfor_018c80b7")
-  @@index([joined_at])
-}
-
-/// Moderator role assignment tracking which members are moderators in which
-/// communities and what permission level each moderator has. Tracks role
-/// creation date and removal date (soft delete). Primary moderator
-/// (community creator) is immutable and cannot be removed.
-///
-/// @namespace Communities
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_moderator_roles {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the community this moderator serves. {@link
-  /// community_platform_communities.id}
-  community_platform_community_id String
-  
-  /// Reference to the member assigned as moderator. {@link
-  /// community_platform_members.id}
-  community_platform_member_id String
-  
-  /// Moderator permission level: 'primary' (immutable community creator),
-  /// 'content' (remove posts/comments), 'user' (+ ban users), or 'full' (+
-  /// manage settings/rules). Role determines what actions moderator can
-  /// perform.
-  role_level String
-  
-  /// Whether this is the primary moderator (community creator). Primary
-  /// moderator cannot be removed by other moderators. Default: false except
-  /// for creator.
-  is_primary Boolean
-  
-  /// Timestamp when moderator role was assigned (server-generated).
+  /// Timestamp when rule was created. Used for audit trail. Rules immutable
+  /// after creation (new rules added, old rules removed, not edited in place).
   created_at DateTime
   
-  /// Timestamp when moderator role was revoked (soft delete of moderator
-  /// status). Null if moderator is still active.
-  removed_at DateTime?
+  /// Timestamp when rule was last updated (if title/description modified).
+  /// Used for tracking rule changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, rule_number], map: "community_platform_community_rules_community_platform__2bd07452")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id], map: "community_platform_community_rules_community_platform__62124d3e")
+}
+
+/// Membership records tracking which members are subscribed to which
+/// communities.
+///
+/// Represents M:N relationship between members and communities. Each
+/// subscription record tracks one member's membership in one community.
+/// Subscriptions include join timestamp (when member subscribed), enabling
+/// activity history and member tenure calculation.
+///
+/// Subscriptions are the mechanism for determining community membership,
+/// controlling content visibility, and personalizing member feeds. Members
+/// can subscribe/unsubscribe from communities freely (unless community is
+/// private and requires approval).
+///
+/// Subscription records are primary data for community discovery, member
+/// management, and feed generation. Each member-community pair has at most
+/// one subscription (no duplicates).
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for the subscription record.
+  id String @id
+  
+  /// Community being subscribed to. References {@link
+  /// community_platform_communities.id}. Many subscriptions per community
+  /// (M:N). Required for community membership.
+  community_platform_community_id String
+  
+  /// Member subscribing to community. References {@link
+  /// community_platform_members.id}. Many subscriptions per member (M:N).
+  /// Tracks member's community affiliations.
+  community_platform_member_id String
+  
+  /// Timestamp when member subscribed to community. Immutable after
+  /// subscription creation. Used to calculate member tenure in community and
+  /// for sorting member lists by join date.
+  subscribed_at DateTime
+  
+  /// Record creation timestamp. Typically matches subscribed_at (record
+  /// created when subscription occurs). Used for audit trail.
+  created_at DateTime
   
   //----
   // RELATIONS
@@ -328,18 +326,27 @@ model community_platform_community_moderator_roles {
   member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([community_platform_community_id, community_platform_member_id], map: "community_platform_community_moderator_roles_community_163d7791")
+  @@unique([community_platform_community_id, community_platform_member_id], map: "community_platform_community_subscriptions_community_p_10f976be")
   // spellchecker: ignore-next-line
-  @@index([community_platform_community_id], map: "community_platform_community_moderator_roles_community_c1948111")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id], map: "community_platform_community_moderator_roles_community_552874d3")
-  @@index([role_level])
+  @@index([community_platform_member_id], map: "community_platform_community_subscriptions_community_p_21a3350e")
+  @@index([subscribed_at])
 }
 
-/// Ban records for members restricted from communities (temporary or
-/// permanent). Tracks ban start date, duration/expiration, reason, and which
-/// moderator issued ban. Temporary bans auto-expire; permanent bans require
-/// explicit reversal or appeal approval.
+/// Community-specific member bans tracking discipline and access restrictions.
+///
+/// Records instances when members are banned or suspended from specific
+/// communities by moderators. Bans can be temporary (with expiration date)
+/// or permanent. Ban records include reason and moderator who issued ban.
+///
+/// Bans prevent banned members from posting, commenting, or voting in banned
+/// community (but they can still view public content). Bans are
+/// community-scoped (member can be banned from one community but active in
+/// others). Ban records are retained indefinitely for audit trail even after
+/// ban expires or is appealed.
+///
+/// Ban records support appeals workflow - appeal timestamps and outcomes
+/// tracked in same record. Bans escalate from temporary suspensions to
+/// permanent bans based on repeat violations.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -347,122 +354,142 @@ model community_platform_community_bans {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Unique identifier for the ban record.
   id String @id
   
-  /// Reference to the community the member is banned from. {@link
-  /// community_platform_communities.id}
+  /// Community where member is banned. References {@link
+  /// community_platform_communities.id}. Multiple bans per community (M:N).
+  /// Ban is scoped to this community only.
   community_platform_community_id String
   
-  /// Reference to the banned member. {@link community_platform_members.id}
+  /// Member being banned. References {@link community_platform_members.id}.
+  /// Tracks banned members for access control and moderation.
   community_platform_member_id String
   
-  /// Reference to the moderator who issued the ban. {@link
-  /// community_platform_members.id}
+  /// Moderator who issued the ban. References {@link
+  /// community_platform_moderators.id}. Tracks who took the action for audit
+  /// and appeal purposes.
   community_platform_moderator_id String
   
-  /// Ban duration type: 'temporary' (expires after duration_days) or
-  /// 'permanent' (indefinite until reversal/appeal). Determines ban behavior.
+  /// Type of ban: 'temporary' (suspension with end date), 'permanent'
+  /// (indefinite). Determines enforcement duration. Temporary bans
+  /// automatically expire; permanent bans require moderator action to lift.
   ban_type String
   
-  /// For temporary bans: number of days until ban auto-expires (1-90 days
-  /// typical range). For permanent bans: null (ignored).
-  duration_days Int?
-  
-  /// Moderator-provided reason for ban (required, max 500 characters). Shown
-  /// to banned member and in moderation logs.
+  /// Reason for ban (0-500 characters). Example: 'Repeated violation of Rule
+  /// 5: Be respectful'. Displayed to banned member. Used for appeal
+  /// evaluation.
   reason String
   
-  /// Timestamp when ban was issued (server-generated).
+  /// Timestamp when ban was issued. Used to calculate ban duration and
+  /// determine if temporary ban has expired.
   created_at DateTime
   
-  /// For temporary bans: calculated expiration timestamp (created_at +
-  /// duration_days). For permanent bans: null. System auto-lifts ban when this
-  /// time passes.
+  /// Expiration timestamp for temporary bans. NULL for permanent bans. When
+  /// NOW() > expires_at, temporary ban expires automatically and member
+  /// regains access. Used to determine ban status.
   expires_at DateTime?
   
-  /// If ban was lifted before expiration (by moderator or appeal): timestamp
-  /// of lifting. Null if ban still active or auto-expired.
-  lifted_at DateTime?
+  /// Timestamp when member submitted appeal of this ban. NULL if no appeal
+  /// submitted. After appeal submitted, timestamps subsequent appeal activity
+  /// in other records.
+  appeal_submitted_at DateTime?
+  
+  /// Timestamp when appeal was resolved (approved or denied). NULL if appeal
+  /// pending or not submitted. Marks completion of appeal process.
+  appeal_resolved_at DateTime?
+  
+  /// Appeal outcome: true if appeal was approved and ban lifted, false if
+  /// appeal was denied. NULL if no appeal submitted or appeal pending. Used to
+  /// determine if ban is still active.
+  appeal_approved Boolean?
   
   //----
   // RELATIONS
   //----
   community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
-  member community_platform_members @relation("community_platform_community_bans_of_community_platfor_4fcb4215", fields: [community_platform_member_id], references: [id], onDelete: Cascade)
-  moderator community_platform_members @relation("community_platform_community_bans_of_community_platfor_0cc4b325", fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
-  
-  community_platform_community_ban_appeals community_platform_community_ban_appeals[]
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
   @@index([community_platform_moderator_id], map: "community_platform_community_bans_community_platform_m_56d65f9e")
   
   // spellchecker: ignore-next-line
-  @@index([community_platform_community_id, community_platform_member_id], map: "community_platform_community_bans_community_platform_c_46fc3f7e")
+  @@index([community_platform_community_id], map: "community_platform_community_bans_community_platform_c_4efa70e7")
   // spellchecker: ignore-next-line
   @@index([community_platform_member_id], map: "community_platform_community_bans_community_platform_m_cf61c96a")
+  @@index([created_at])
   @@index([expires_at])
-  @@index([ban_type])
 }
 
-/// Appeal records for users appealing their community bans. Appeals are
-/// routed to community primary moderators first; if rejected, can be
-/// escalated to platform admins. Tracks appeal submission, decision,
-/// reasoning, and status. Enforces appeal limits (maximum 2 additional
-/// appeals per ban).
+/// Moderator assignments tracking which members moderate which communities
+/// and their role tier.
+///
+/// Associates members with communities they moderate, including role tier
+/// (Creator, Senior, Junior). Each moderator can manage one or more
+/// communities; each community can have multiple moderators. Moderator
+/// records include appointment date and optional removal date (soft-delete
+/// for audit trail).
+///
+/// ModeratorTier hierarchy determines permissions: Creator has ultimate
+/// authority, Senior moderators have broad permissions, Junior moderators
+/// have limited permissions. Within each community, moderators form
+/// hierarchy based on appointment order - more recently appointed moderators
+/// have limited ability to remove older moderators.
+///
+/// Moderation records are retained indefinitely even after moderator is
+/// removed (audit trail). Removed moderators have removed_at timestamp but
+/// record preserved for accountability.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_ban_appeals {
+model community_platform_community_moderators {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Unique identifier for the moderator assignment record.
   id String @id
   
-  /// Reference to the ban being appealed. {@link
-  /// community_platform_community_bans.id}
-  community_platform_community_ban_id String
+  /// Community where member is moderating. References {@link
+  /// community_platform_communities.id}. Multiple moderators per community.
+  /// Determines scope of moderator authority.
+  community_platform_community_id String
   
-  /// Reference to the member submitting the appeal. {@link
-  /// community_platform_members.id}
+  /// Member assigned as moderator. References {@link
+  /// community_platform_members.id}. Members can moderate multiple communities
+  /// (1:N from member perspective). Tracks who has moderation authority.
   community_platform_member_id String
   
-  /// Current appeal status: 'submitted' (awaiting review), 'approved' (appeal
-  /// succeeded, ban lifted), 'rejected' (appeal denied, ban upheld), or
-  /// 'escalated' (routed to platform admin). Determines appeal workflow stage.
-  appeal_status String
+  /// Role tier: 'creator' (community founder, ultimate authority), 'senior'
+  /// (broad moderation powers), 'junior' (limited powers). Determines
+  /// permissions in community moderation workflows. Community creator always
+  /// has 'creator' tier.
+  moderator_tier String
   
-  /// Member's explanation for why ban should be overturned (required, max 1000
-  /// characters). Shown to reviewers.
-  appeal_reason String
+  /// Timestamp when member was appointed as moderator. Immutable after
+  /// appointment. Used to determine seniority and hierarchy - earlier
+  /// appointments = more senior. Affects permission to remove other
+  /// moderators.
+  appointed_at DateTime
   
-  /// Timestamp when appeal was submitted by member.
-  submitted_at DateTime
+  /// Soft-delete timestamp. NULL if moderator is currently active, set to
+  /// removal time if moderator was removed. Allows moderator reinstatement.
+  /// Preserves audit trail of moderator history.
+  removed_at DateTime?
   
-  /// Timestamp when appeal decision was made by reviewer. Null if appeal still
-  /// pending.
-  decided_at DateTime?
-  
-  /// Reviewer's reasoning for approval/rejection decision (max 1000
-  /// characters). Shown to appellant.
-  decision_reason String?
-  
-  /// Which appeal this is for the ban (1st, 2nd, 3rd attempt). Limited to 2
-  /// additional appeals after initial rejection. Incremented with each new
-  /// appeal.
-  appeal_number Int
+  /// Record creation timestamp. Typically matches appointed_at. Used for audit
+  /// trail.
+  created_at DateTime
   
   //----
   // RELATIONS
   //----
-  ban community_platform_community_bans @relation(fields: [community_platform_community_ban_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
   member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([community_platform_community_ban_id], map: "community_platform_community_ban_appeals_community_pla_1f899788")
+  @@index([community_platform_community_id], map: "community_platform_community_moderators_community_plat_31557b9f")
   // spellchecker: ignore-next-line
-  @@index([community_platform_member_id], map: "community_platform_community_ban_appeals_community_pla_a7e93daf")
-  @@index([appeal_status])
-  @@index([submitted_at])
+  @@index([community_platform_member_id], map: "community_platform_community_moderators_community_plat_02ea82f2")
+  @@index([appointed_at])
 }

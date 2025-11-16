@@ -1,6 +1,10 @@
-/// Shopping mall channels representing different marketplace environments or
-/// regional storefronts that organize the platform's product offerings and
-/// seller operations across different markets or business segments.
+/// Platform channel management defining different marketplace environments,
+/// configurations, and business rules.
+///
+/// Channels represent distinct platform instances with unique settings,
+/// policies, and user experiences. Each channel can have different
+/// commission structures, supported countries, and operational
+/// configurations while sharing the same underlying infrastructure.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -11,64 +15,64 @@ model shopping_mall_channels {
   /// Primary Key.
   id String @id
   
-  /// Parent channel's {@link shopping_mall_channels.id} for hierarchical
-  /// channel organization.
-  parent_id String?
-  
-  /// Unique channel identifier code used for routing and configuration.
+  /// Unique channel identifier used for routing and configuration.
   code String
   
-  /// Channel display name shown to administrators and sellers.
+  /// Channel display name shown to users across the platform.
   name String
   
-  /// Detailed channel description explaining business purpose and target
-  /// audience.
+  /// Detailed description of channel purpose and business model.
   description String?
   
-  /// Whether the channel is currently active and available for operations.
-  is_active Boolean
+  /// Channel operational status: active, inactive, maintenance, suspended.
+  status String
   
-  /// Primary domain or subdomain associated with this channel.
-  domain String
+  /// Primary currency for transactions in this channel (ISO 4217 code).
+  currency String
   
-  /// Default language code for this channel's content and communications.
-  default_language String
+  /// Primary country code for this channel (ISO 3166-1 alpha-2).
+  country_code String?
   
-  /// Default currency code used for pricing in this channel.
-  default_currency String
+  /// Primary language for this channel (ISO 639-1).
+  language String
   
-  /// Numeric sort order for channel listing and navigation display.
-  sort_order Int
+  /// Default commission percentage charged by platform (0-100%).
+  commission_rate Float
   
-  /// Timestamp when the channel was created.
+  /// Minimum order amount required for checkout in this channel.
+  minimum_order_value Float
+  
+  /// Whether tax calculation is enabled for this channel.
+  tax_enabled Boolean
+  
+  /// Channel creation timestamp.
   created_at DateTime
   
-  /// Timestamp when the channel was last updated.
+  /// Last modification timestamp.
   updated_at DateTime
   
-  /// Soft delete timestamp. null if channel is active.
+  /// Soft deletion timestamp.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  parent shopping_mall_channels? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
-  
-  recursive shopping_mall_channels[] @relation("recursive")
   shopping_mall_sections shopping_mall_sections[]
-  shopping_mall_channel_categories shopping_mall_channel_categories[]
-  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_configurations shopping_mall_configurations[]
+  shopping_mall_sales shopping_mall_sales[]
   
   @@unique([code])
-  @@unique([domain])
-  @@index([parent_id])
-  @@index([is_active, sort_order])
+  @@index([status])
   @@index([created_at])
 }
 
-/// Shopping mall sections representing different functional areas or
-/// departments within channels, organizing content and products into logical
-/// browsing hierarchies for improved customer experience.
+/// Channel section organization providing hierarchical navigation and
+/// content distribution within marketplace channels.
+///
+/// Sections organize content within channels through hierarchical
+/// categorization, creating intuitive navigation for customers while
+/// enabling flexible merchandising and content management strategies per
+/// channel.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -79,299 +83,123 @@ model shopping_mall_sections {
   /// Primary Key.
   id String @id
   
-  /// Parent channel's {@link shopping_mall_channels.id}.
+  /// Channel's {@link shopping_mall_channels.id}
   shopping_mall_channel_id String
   
-  /// Parent section's {@link shopping_mall_sections.id} for nested section
-  /// hierarchies.
-  parent_id String?
-  
-  /// Unique section identifier code used for routing and organization.
+  /// Unique section identifier within the channel.
   code String
   
-  /// Section display name shown in navigation and breadcrumbs.
+  /// Section display name shown to users.
   name String
   
-  /// Detailed section description explaining content scope and featured
-  /// products.
+  /// Detailed description of section content and purpose.
   description String?
   
-  /// URL path to section banner image or thumbnail for visual identification.
-  image_url String?
+  /// Hierarchy level for nested sections (0 for top-level).
+  level Int
   
-  /// Whether the section is currently active and visible to users.
-  is_active Boolean
+  /// Parent section reference for nested hierarchies.
+  parent_id String?
   
-  /// Display type defining how products are presented in this section (grid,
-  /// list, featured).
-  display_type String
-  
-  /// Numeric sort order for section arrangement within parent channel.
+  /// Display order for sections within the same level.
   sort_order Int
   
-  /// SEO-optimized title for search engine indexing and social sharing.
-  seo_title String?
+  /// Section status: active, inactive, hidden.
+  status String
   
-  /// SEO-optimized description for search engine snippets.
-  seo_description String?
+  /// Whether section appears in featured navigation.
+  is_featured Boolean
   
-  /// Timestamp when the section was created.
+  /// Section creation timestamp.
   created_at DateTime
   
-  /// Timestamp when the section was last updated.
+  /// Last modification timestamp.
   updated_at DateTime
   
-  /// Soft delete timestamp. null if section is active.
+  /// Soft deletion timestamp.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
-  parent shopping_mall_sections? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
   
-  recursive shopping_mall_sections[] @relation("recursive")
+  shopping_mall_sales shopping_mall_sales[]
+  shopping_mall_articles shopping_mall_articles[]
+  shopping_mall_bbs_posts shopping_mall_bbs_posts[]
   
   @@unique([shopping_mall_channel_id, code])
-  @@index([shopping_mall_channel_id])
-  @@index([parent_id])
-  @@index([is_active, sort_order])
-  @@index([created_at])
+  @@index([shopping_mall_channel_id, parent_id])
+  @@index([status])
+  @@index([level, sort_order])
 }
 
-/// Junction table establishing many-to-many relationships between channels
-/// and product categories, enabling category-specific content organization
-/// within different marketplace channels.
+/// Platform-wide configuration management providing centralized settings and
+/// parameters for system-wide functionality.
+///
+/// Configuration options control operational behavior, feature toggles,
+/// security settings, and business rules that apply across all marketplace
+/// channels and sections.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_channel_categories {
+model shopping_mall_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Channel's {@link shopping_mall_channels.id}.
-  shopping_mall_channel_id String
+  /// Channel's {@link shopping_mall_channels.id} (nullable for global configs).
+  shopping_mall_channel_id String?
   
-  /// Product category's {@link shopping_mall_product_categories.id}.
-  shopping_mall_product_category_id String
+  /// Configuration key (namespace.value format).
+  key String
   
-  /// Whether this channel-category relationship is currently active.
-  is_active Boolean
+  /// Configuration value (string representing JSON, text, or data).
+  value String
   
-  /// Order in which this category appears within the channel.
-  display_order Int
+  /// Data type: string, number, boolean, json, text, file.
+  type String
   
-  /// Featured positioning priority (0 for regular, 1+ for featured display).
-  featured_position Int
-  
-  /// Timestamp when the relationship was created.
-  created_at DateTime
-  
-  /// Timestamp when the relationship was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
-  category shopping_mall_product_categories @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_channel_id, shopping_mall_product_category_id], map: "shopping_mall_channel_categories_shopping_mall_channel_a161cb1e")
-  @@index([shopping_mall_channel_id])
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_category_id], map: "shopping_mall_channel_categories_shopping_mall_product_4c711dc8")
-  @@index([is_active, display_order])
-  @@index([featured_position])
-}
-
-/// System-wide configuration settings and feature flags that control
-/// platform behavior, business rules, and operational parameters across all
-/// marketplace channels and seller operations.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique configuration key identifier for system-wide settings access.
-  config_key String
-  
-  /// Configuration value stored as serialized data appropriate for the setting
-  /// type.
-  config_value String?
-  
-  /// Data type hint for the configuration value (string, number, boolean,
-  /// json).
-  config_type String
-  
-  /// Human-readable description of the configuration setting's purpose and
-  /// usage.
+  /// Configuration purpose and usage description.
   description String?
   
-  /// Whether this configuration value is encrypted for security purposes.
+  /// Configuration category: security, features, business, technical.
+  category String
+  
+  /// Scope: global, channel, section, user.
+  scope String
+  
+  /// Whether the value is encrypted at rest.
   is_encrypted Boolean
   
-  /// Whether this configuration setting functions as a feature toggle flag.
-  is_feature_flag Boolean
+  /// Whether channel sections can override this setting.
+  is_overridable Boolean
   
-  /// Channel scope: 'global', 'channel:<id>', or 'category:<id>' for targeted
-  /// settings.
-  channel_scope String?
+  /// Whether configuration appears in admin interfaces.
+  is_visible Boolean
   
-  /// Timestamp when the configuration was created.
+  /// JSON rules for value validation.
+  validation_rules String?
+  
+  /// Configuration creation timestamp.
   created_at DateTime
   
-  /// Timestamp when the configuration was last updated.
+  /// Last modification timestamp.
   updated_at DateTime
   
-  /// Identifier of admin user who last updated this configuration.
-  updated_by String?
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([config_key])
-  @@index([is_feature_flag])
-  @@index([channel_scope])
-}
-
-/// Supported shipping carriers and delivery service providers that sellers
-/// and the platform use for order fulfillment with integrated tracking
-/// capabilities and service level definitions.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shipping_carriers {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
+  channel shopping_mall_channels? @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
   
-  /// Unique carrier identifier code for system integration and tracking
-  /// purposes.
-  code String
-  
-  /// Carrier display name for customer and seller interface presentation.
-  name String
-  
-  /// Detailed carrier information including service areas and special
-  /// capabilities.
-  description String?
-  
-  /// API endpoint URL for package tracking integration when available.
-  tracking_api_endpoint String?
-  
-  /// URL pattern for customer tracking links with placeholder for tracking
-  /// number.
-  tracking_url_pattern String?
-  
-  /// Whether this carrier is currently available for shipping selections.
-  is_active Boolean
-  
-  /// JSON array of available domestic shipping service codes and names.
-  domestic_services String?
-  
-  /// JSON array of available international shipping service codes and names.
-  international_services String?
-  
-  /// Maximum package weight in kilograms supported by this carrier.
-  max_package_weight Float?
-  
-  /// Maximum package dimensions in JSON format (length, width, height).
-  max_package_dimensions String?
-  
-  /// Timestamp when the carrier was added to the system.
-  created_at DateTime
-  
-  /// Timestamp when the carrier information was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([code])
-  @@index([is_active])
-  @@index([name])
-}
-
-/// Integrated payment processing gateways that handle customer payments
-/// across different channels with comprehensive fee structures and security
-/// configurations.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payment_gateways {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique gateway identifier code for system integration and configuration.
-  code String
-  
-  /// Gateway display name for customer and seller interface presentation.
-  name String
-  
-  /// Detailed gateway information including supported payment methods and
-  /// features.
-  description String?
-  
-  /// Gateway type: credit_card, digital_wallet, bank_transfer, crypto, or
-  /// buy_now_pay_later.
-  gateway_type String
-  
-  /// Whether this gateway is currently available for customer payment
-  /// selection.
-  is_active Boolean
-  
-  /// Percentage fee charged by the gateway for each transaction.
-  processing_fee_percentage Float?
-  
-  /// Fixed fee amount charged by the gateway per transaction.
-  processing_fee_fixed Float?
-  
-  /// JSON array of ISO currency codes supported by this gateway.
-  supported_currencies String
-  
-  /// JSON array of ISO country codes where this gateway operates.
-  supported_countries String
-  
-  /// Minimum transaction amount allowed by this gateway in platform currency.
-  minimum_transaction_amount Float?
-  
-  /// Maximum transaction amount allowed by this gateway in platform currency.
-  maximum_transaction_amount Float?
-  
-  /// API endpoint URL for payment processing integration.
-  api_endpoint String
-  
-  /// Webhook endpoint URL for payment status notifications.
-  webhook_endpoint String?
-  
-  /// JSON schema defining required configuration parameters for this gateway.
-  configuration_schema String
-  
-  /// Timestamp when the gateway was integrated into the system.
-  created_at DateTime
-  
-  /// Timestamp when the gateway configuration was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([code])
-  @@index([is_active])
-  @@index([gateway_type])
-  @@index([name])
+  @@unique([key, shopping_mall_channel_id])
+  @@index([category, scope])
+  @@index([shopping_mall_channel_id])
+  @@index([key])
+  @@index([is_encrypted])
 }

@@ -1,0 +1,31 @@
+/// Votes for community comments.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// FK to community_post_comments.id.
+  community_comment_id String
+  
+  /// FK to community_user.id.
+  community_user_id String
+  
+  /// Upvote (1) or downvote (-1).
+  vote Int
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_post_comments @relation(fields: [community_comment_id], references: [id], onDelete: Cascade)
+  user community_user @relation(fields: [community_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_user_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_comment_id, community_user_id], map: "community_comment_votes_community_comment_id_community_0f35d145")
+}

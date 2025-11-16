@@ -1,0 +1,813 @@
+/// Minimal records for unauthenticated visitors that the platform chooses to
+/// track as guest actors.
+///
+/// This table stores optional identifiers for guest visitors so that
+/// security events, reports, or abuse patterns can be associated with a
+/// stable guest handle without requiring full registration. It allows the
+/// platform to reason about repeated anonymous behavior, throttling, or
+/// follow-up actions.
+///
+/// Guest users do not authenticate with credentials. They exist only for
+/// tracking and safety use cases, and can later be correlated to registered
+/// accounts via higher-level logic if needed.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guestusers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the guest user record.
+  id String @id
+  
+  /// Optional account status reference for this guest user. {@link
+  /// community_platform_account_statuses.id}.
+  account_status_id String?
+  
+  /// Optional opaque handle assigned to this guest to correlate multiple
+  /// visits or actions without revealing personal identity.
+  anonymous_handle String?
+  
+  /// Last observed user agent string for this guest, captured for security and
+  /// abuse analysis purposes.
+  user_agent String?
+  
+  /// Timestamp when this guest user record was first created.
+  created_at DateTime
+  
+  /// Timestamp when this guest user record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the guest record is considered
+  /// logically removed while retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  accountStatus community_platform_account_statuses? @relation(fields: [account_status_id], references: [id], onDelete: Cascade)
+  
+  community_platform_guestuser_sessions community_platform_guestuser_sessions[]
+  community_platform_user_security_event_of_guests community_platform_user_security_event_of_guests[]
+  community_platform_reports community_platform_reports[]
+  community_platform_audit_logs community_platform_audit_logs[]
+  
+  @@unique([anonymous_handle])
+  @@index([account_status_id, created_at])
+}
+
+/// Sessions representing browsing or interaction contexts for guest users.
+///
+/// Each row models a single guest session, typically corresponding to a
+/// browser session or app instance. It records basic connection metadata to
+/// support security analysis, rate limiting, and auditing.
+///
+/// Guest sessions do not grant authentication privileges but help correlate
+/// actions for the same anonymous actor across multiple requests.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guestuser_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the guest user session.
+  id String @id
+  
+  /// Guest user that owns this session. {@link
+  /// community_platform_guestusers.id}.
+  community_platform_guestuser_id String
+  
+  /// IP address observed when the session was established.
+  ip String
+  
+  /// Full URL or entry point that initiated this guest session.
+  href String
+  
+  /// Referrer URL indicating the previous page or source when the session
+  /// started.
+  referrer String
+  
+  /// Timestamp when the guest session was created or first seen.
+  created_at DateTime
+  
+  /// Timestamp when the guest session expired or was explicitly invalidated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  guestUser community_platform_guestusers @relation(fields: [community_platform_guestuser_id], references: [id], onDelete: Cascade)
+  
+  community_platform_user_security_event_of_guests community_platform_user_security_event_of_guests[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guestuser_id, created_at], map: "community_platform_guestuser_sessions_community_platfo_d0208643")
+}
+
+/// Registered member accounts representing standard authenticated users of
+/// the community platform.
+///
+/// Member users own communities, posts, comments, votes, subscriptions,
+/// reports, and many other business objects. They authenticate with
+/// credentials and have an associated account status that governs what
+/// actions they are allowed to perform.
+///
+/// This table centralizes identity information and high-level lifecycle
+/// control for regular users without mixing in moderator or admin
+/// responsibilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_memberusers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the member user account.
+  id String @id
+  
+  /// Current account status for this member user. {@link
+  /// community_platform_account_statuses.id}.
+  account_status_id String
+  
+  /// Unique username chosen by the member user for identification within the
+  /// platform.
+  username String
+  
+  /// Unique email address used for authentication, verification, and
+  /// notifications.
+  email String
+  
+  /// Hashed password used for login. Plain-text passwords are never stored.
+  password_hash String
+  
+  /// Optional display name shown in profiles or UI instead of the raw username.
+  display_name String?
+  
+  /// Timestamp when the member user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member user account was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the account is treated as deleted
+  /// while preserving data for audit and legal purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  accountStatus community_platform_account_statuses @relation(fields: [account_status_id], references: [id], onDelete: Cascade)
+  
+  community_platform_memberuser_sessions community_platform_memberuser_sessions[]
+  community_platform_user_security_event_of_memberusers community_platform_user_security_event_of_memberusers[]
+  community_platform_communities community_platform_communities[]
+  community_platform_community_memberships community_platform_community_memberships[]
+  community_platform_community_membership_requests community_platform_community_membership_requests[]
+  community_platform_community_bans community_platform_community_bans[]
+  community_platform_posts community_platform_posts[]
+  community_platform_post_snapshots community_platform_post_snapshots[]
+  community_platform_comments community_platform_comments[]
+  community_platform_comment_snapshots community_platform_comment_snapshots[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_user_post_karmas community_platform_user_post_karmas?
+  community_platform_user_comment_karmas community_platform_user_comment_karmas?
+  community_platform_user_total_karmas community_platform_user_total_karmas?
+  community_platform_voting_rate_limits community_platform_voting_rate_limits[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_user_feed_preferences community_platform_user_feed_preferences?
+  community_platform_reports community_platform_reports[]
+  community_platform_report_of_users community_platform_report_of_users[]
+  community_platform_user_sanctions community_platform_user_sanctions[]
+  community_platform_appeals community_platform_appeals[]
+  community_platform_audit_logs community_platform_audit_logs[]
+  community_platform_error_logs community_platform_error_logs[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([account_status_id, created_at])
+}
+
+/// Authenticated sessions for member users.
+///
+/// Each row represents a single authenticated session associated with a
+/// member user account. Sessions carry only minimal connection context and
+/// timing information and are used to drive authorization decisions and
+/// security audits.
+///
+/// This table strictly follows the standardized session pattern for
+/// authenticated actors in the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_memberuser_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the member user session.
+  id String @id
+  
+  /// Member user that owns this session. {@link
+  /// community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// IP address observed when the member user session was created.
+  ip String
+  
+  /// URL or entry point requested when the session was established.
+  href String
+  
+  /// Referrer URL indicating where the user came from when starting this
+  /// session.
+  referrer String
+  
+  /// Timestamp when the member user session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was revoked. Null while the session
+  /// is active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  
+  community_platform_user_security_event_of_memberusers community_platform_user_security_event_of_memberusers[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_memberuser_id, created_at], map: "community_platform_memberuser_sessions_community_platf_e089b695")
+}
+
+/// Actor table for community moderators who hold elevated privileges in one
+/// or more communities.
+///
+/// Community moderators are conceptually distinct from regular member users
+/// even though they may correspond to the same person. This table captures
+/// the identity used when exercising moderation powers and allows separate
+/// lifecycle and policy handling.
+///
+/// Assignments that bind moderators to specific communities are held in a
+/// separate component table
+/// (community_platform_community_moderator_assignments) that references this
+/// actor entity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communitymoderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the community moderator account.
+  id String @id
+  
+  /// Current account status for this moderator. {@link
+  /// community_platform_account_statuses.id}.
+  account_status_id String
+  
+  /// Unique username for the community moderator actor.
+  username String
+  
+  /// Unique email address for moderator authentication and notifications.
+  email String
+  
+  /// Hashed password for moderator login credentials.
+  password_hash String
+  
+  /// Optional display name used in moderator-facing or public UIs.
+  display_name String?
+  
+  /// Timestamp when the moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator account record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the moderator account. When set, the account
+  /// is no longer usable but retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  accountStatus community_platform_account_statuses @relation(fields: [account_status_id], references: [id], onDelete: Cascade)
+  
+  community_platform_communitymoderator_sessions community_platform_communitymoderator_sessions[]
+  community_platform_user_security_event_of_communitymoderators community_platform_user_security_event_of_communitymoderators[]
+  community_platform_community_membership_requests community_platform_community_membership_requests[]
+  community_platform_community_moderator_assignments community_platform_community_moderator_assignments[]
+  community_platform_community_bans community_platform_community_bans[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_appeals community_platform_appeals[]
+  community_platform_audit_logs community_platform_audit_logs[]
+  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  
+  @@unique([username])
+  @@unique([email])
+  // spellchecker: ignore-next-line
+  @@index([account_status_id, created_at], map: "community_platform_communitymoderators_account_status__f102ed21")
+}
+
+/// Authenticated sessions for community moderator actors.
+///
+/// Each row represents a login session for a moderator account. These
+/// sessions are critical for auditing moderation actions and enforcing
+/// session-based security policies.
+///
+/// The schema adheres exactly to the standardized session structure used
+/// across actors in the system.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communitymoderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the community moderator session.
+  id String @id
+  
+  /// Community moderator that owns this session. {@link
+  /// community_platform_communitymoderators.id}.
+  community_platform_communitymoderator_id String
+  
+  /// IP address captured when the moderator session was created.
+  ip String
+  
+  /// Entry-point URL or resource requested at the start of the session.
+  href String
+  
+  /// Referrer URL indicating where the moderator navigated from when starting
+  /// the session.
+  referrer String
+  
+  /// Timestamp when the moderator session was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderator session expired, was revoked, or otherwise
+  /// ended.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  communityModerator community_platform_communitymoderators @relation(fields: [community_platform_communitymoderator_id], references: [id], onDelete: Cascade)
+  
+  community_platform_user_security_event_of_communitymoderators community_platform_user_security_event_of_communitymoderators[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_communitymoderator_id, created_at], map: "community_platform_communitymoderator_sessions_communi_b9164792")
+}
+
+/// Actor table for platform administrators with global authority across all
+/// communities.
+///
+/// Platform admins can review and act on any content, manage global
+/// configuration, and enforce platform-wide moderation and safety policies.
+/// This table stores their identity, authentication credentials, and
+/// lifecycle information.
+///
+/// Separating platform admins from member and moderator actors ensures clear
+/// boundaries for elevated privileges and simplifies enforcement and audit
+/// logic.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_platformadmins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the platform administrator account.
+  id String @id
+  
+  /// Current account status for this platform administrator. {@link
+  /// community_platform_account_statuses.id}.
+  account_status_id String
+  
+  /// Unique username for the platform administrator.
+  username String
+  
+  /// Unique email address for admin authentication and communication.
+  email String
+  
+  /// Hashed password used for admin login. Stored securely following security
+  /// best practices.
+  password_hash String
+  
+  /// Optional human-friendly display name for the administrator.
+  display_name String?
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When non-null, the administrator account is
+  /// logically disabled while retained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  accountStatus community_platform_account_statuses @relation(fields: [account_status_id], references: [id], onDelete: Cascade)
+  
+  community_platform_platformadmin_sessions community_platform_platformadmin_sessions[]
+  community_platform_user_security_event_of_platformadmins community_platform_user_security_event_of_platformadmins[]
+  community_platform_community_moderator_assignments community_platform_community_moderator_assignments[]
+  community_platform_community_bans community_platform_community_bans[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_appeals community_platform_appeals[]
+  community_platform_audit_logs community_platform_audit_logs[]
+  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  
+  @@unique([username])
+  @@unique([email])
+  // spellchecker: ignore-next-line
+  @@index([account_status_id, created_at], map: "community_platform_platformadmins_account_status_id_cr_219c11af")
+}
+
+/// Authenticated sessions for platform administrator accounts.
+///
+/// These sessions are highly sensitive because they are used for
+/// platform-wide configuration and enforcement actions. The table records
+/// minimal connection and timing data while relying on other components for
+/// detailed action auditing.
+///
+/// The structure matches the common session pattern to allow consistent
+/// handling across all actor types.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_platformadmin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the platform administrator session.
+  id String @id
+  
+  /// Platform administrator that owns this session. {@link
+  /// community_platform_platformadmins.id}.
+  community_platform_platformadmin_id String
+  
+  /// IP address that initiated the administrator session.
+  ip String
+  
+  /// Entry-point URL or resource requested when the admin session was created.
+  href String
+  
+  /// Referrer URL describing where the admin navigated from when starting the
+  /// session.
+  referrer String
+  
+  /// Timestamp when the admin session was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin session expired or was explicitly terminated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  platformAdmin community_platform_platformadmins @relation(fields: [community_platform_platformadmin_id], references: [id], onDelete: Cascade)
+  
+  community_platform_user_security_event_of_platformadmins community_platform_user_security_event_of_platformadmins[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_platformadmin_id, created_at], map: "community_platform_platformadmin_sessions_community_pl_19375003")
+}
+
+/// Lookup table defining possible account statuses for all actor types.
+///
+/// This table centralizes the lifecycle and access control state of guest,
+/// member, moderator, and admin accounts. Typical statuses include active,
+/// pending_verification, suspended, and banned, but the actual values are
+/// determined by platform policy.
+///
+/// By normalizing status into its own table, the platform can evolve status
+/// semantics without changing actor schemas and can query or report on
+/// accounts grouped by status efficiently.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_account_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the account status entry.
+  id String @id
+  
+  /// Machine-readable key for the status, such as active,
+  /// pending_verification, suspended, or banned.
+  key String
+  
+  /// Human-friendly label for this status used in administrative user
+  /// interfaces.
+  label String
+  
+  /// Detailed description of what this status means and how it affects allowed
+  /// actions.
+  description String?
+  
+  /// Timestamp when this account status entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this account status entry was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_guestusers community_platform_guestusers[]
+  community_platform_memberusers community_platform_memberusers[]
+  community_platform_communitymoderators community_platform_communitymoderators[]
+  community_platform_platformadmins community_platform_platformadmins[]
+  community_platform_user_security_events community_platform_user_security_events[]
+  
+  @@unique([key])
+}
+
+/// Main security event entity capturing security-relevant occurrences across
+/// all actor types.
+///
+/// This table stores the shared attributes of security events such as
+/// logins, password changes, account status transitions, suspicious
+/// activity, and other safety-related signals. It intentionally does not
+/// embed concrete actor foreign keys; instead, it is linked to
+/// actor-specific subtype tables that enforce which actor and session are
+/// associated with the event.
+///
+/// The actor_type field provides a quick discriminator and filter to
+/// identify which subtype table contains the actor binding. This design
+/// avoids multiple nullable foreign keys and supports polymorphic ownership
+/// in a normalized way.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_security_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the security event record.
+  id String @id
+  
+  /// Optional account status referenced by this event, for example the status
+  /// after a transition. {@link community_platform_account_statuses.id}.
+  account_status_id String?
+  
+  /// Actor type discriminator for this event. Typical values: guest,
+  /// memberuser, communitymoderator, platformadmin. Used to route to the
+  /// correct subtype table for actor-specific details.
+  actor_type String
+  
+  /// Machine-readable code for the event type, such as login_success,
+  /// login_failure, password_changed, account_locked, or account_unlocked.
+  event_type String
+  
+  /// IP address associated with this event, if available, used for security
+  /// analysis.
+  ip String?
+  
+  /// User agent string captured at the time of the event, if available.
+  user_agent String?
+  
+  /// Optional serialized metadata payload (for example JSON) containing
+  /// additional parameters relevant to the security event.
+  metadata_json String?
+  
+  /// Timestamp when this security event was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  accountStatus community_platform_account_statuses? @relation(fields: [account_status_id], references: [id], onDelete: Cascade)
+  
+  community_platform_user_security_event_of_guests community_platform_user_security_event_of_guests?
+  community_platform_user_security_event_of_memberusers community_platform_user_security_event_of_memberusers?
+  community_platform_user_security_event_of_communitymoderators community_platform_user_security_event_of_communitymoderators?
+  community_platform_user_security_event_of_platformadmins community_platform_user_security_event_of_platformadmins?
+  
+  @@index([account_status_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([actor_type, created_at], map: "community_platform_user_security_events_actor_type_cre_6f5154ed")
+  // spellchecker: ignore-next-line
+  @@index([event_type, created_at], map: "community_platform_user_security_events_event_type_cre_297cb04c")
+}
+
+/// Subtype table binding a security event to a concrete guest user and
+/// optionally a guest session.
+///
+/// Each row represents the association between one {@link
+/// community_platform_user_security_events} record and a specific {@link
+/// community_platform_guestusers} actor, plus an optional {@link
+/// community_platform_guestuser_sessions} session context. The 1:1
+/// relationship to the main event is enforced via a unique constraint on the
+/// security_event_id.
+///
+/// This design allows the database to enforce correct guest associations
+/// without nullable foreign keys in the main event table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_security_event_of_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the guest-linked security event subtype record.
+  id String @id
+  
+  /// Main security event that this guest-specific record extends. {@link
+  /// community_platform_user_security_events.id}.
+  security_event_id String
+  
+  /// Guest user associated with this security event. {@link
+  /// community_platform_guestusers.id}.
+  community_platform_guestuser_id String
+  
+  /// Guest session associated with this event, when applicable. {@link
+  /// community_platform_guestuser_sessions.id}.
+  community_platform_guestuser_session_id String?
+  
+  /// Timestamp when this guest-specific association record was created.
+  /// Typically matches the main event time but stored separately for auditing.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  securityEvent community_platform_user_security_events @relation(fields: [security_event_id], references: [id], onDelete: Cascade)
+  guestUser community_platform_guestusers @relation(fields: [community_platform_guestuser_id], references: [id], onDelete: Cascade)
+  guestSession community_platform_guestuser_sessions? @relation(fields: [community_platform_guestuser_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guestuser_session_id], map: "community_platform_user_security_event_of_guests_commu_76a4ae69")
+  
+  // spellchecker: ignore-next-line
+  @@unique([security_event_id], map: "community_platform_user_security_event_of_guests_secur_fc2b69fb")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guestuser_id, created_at], map: "community_platform_user_security_event_of_guests_commu_b932606b")
+}
+
+/// Subtype table binding a security event to a concrete member user and
+/// optionally a member user session.
+///
+/// Each row links one {@link community_platform_user_security_events} record
+/// to a specific {@link community_platform_memberusers} actor and, when
+/// applicable, to a {@link community_platform_memberuser_sessions} session.
+/// The unique constraint on security_event_id ensures a strict 1:1
+/// relationship between the main event and this subtype record.
+///
+/// This structure enables clean querying and auditing of member user
+/// security events without multiple nullable foreign keys on the main table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_security_event_of_memberusers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the member user-linked security event subtype record.
+  id String @id
+  
+  /// Main security event that this member-specific record extends. {@link
+  /// community_platform_user_security_events.id}.
+  security_event_id String
+  
+  /// Member user associated with this security event. {@link
+  /// community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Member user session associated with this event, if any. {@link
+  /// community_platform_memberuser_sessions.id}.
+  community_platform_memberuser_session_id String?
+  
+  /// Timestamp when this member-specific association record was created.
+  /// Usually matches the main event time but may differ for asynchronous
+  /// ingestion.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  securityEvent community_platform_user_security_events @relation(fields: [security_event_id], references: [id], onDelete: Cascade)
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  memberSession community_platform_memberuser_sessions? @relation(fields: [community_platform_memberuser_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_memberuser_session_id], map: "community_platform_user_security_event_of_memberusers__a1b26e7f")
+  
+  // spellchecker: ignore-next-line
+  @@unique([security_event_id], map: "community_platform_user_security_event_of_memberusers__4c2da4da")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_memberuser_id, created_at], map: "community_platform_user_security_event_of_memberusers__b8fc3a13")
+}
+
+/// Subtype table binding a security event to a community moderator and
+/// optionally a community moderator session.
+///
+/// Each record links one {@link community_platform_user_security_events} row
+/// to a concrete {@link community_platform_communitymoderators} actor and an
+/// optional {@link community_platform_communitymoderator_sessions} session.
+/// This enables precise auditing of moderator-related security events while
+/// keeping the main event table normalized.
+///
+/// The 1:1 relationship with the main event is enforced via a unique
+/// constraint on security_event_id.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_security_event_of_communitymoderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the community moderator-linked security event subtype
+  /// record.
+  id String @id(map: "community_platform_user_security_event_of_communitymod_dd68080d")
+  
+  /// Main security event that this community moderator-specific record
+  /// extends. {@link community_platform_user_security_events.id}.
+  security_event_id String
+  
+  /// Community moderator associated with this security event. {@link
+  /// community_platform_communitymoderators.id}.
+  community_platform_communitymoderator_id String
+  
+  /// Community moderator session associated with this event, if applicable.
+  /// {@link community_platform_communitymoderator_sessions.id}.
+  community_platform_communitymoderator_session_id String?
+  
+  /// Timestamp when this community moderator-specific association record was
+  /// created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  securityEvent community_platform_user_security_events @relation(fields: [security_event_id], references: [id], onDelete: Cascade)
+  communityModerator community_platform_communitymoderators @relation(fields: [community_platform_communitymoderator_id], references: [id], onDelete: Cascade)
+  communityModeratorSession community_platform_communitymoderator_sessions? @relation(fields: [community_platform_communitymoderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_communitymoderator_session_id], map: "community_platform_user_security_event_of_communitymod_b599aaaa")
+  
+  // spellchecker: ignore-next-line
+  @@unique([security_event_id], map: "community_platform_user_security_event_of_communitymod_eed235f0")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_communitymoderator_id, created_at], map: "community_platform_user_security_event_of_communitymod_086bbc48")
+}
+
+/// Subtype table binding a security event to a platform administrator and
+/// optionally a platform admin session.
+///
+/// Each row associates one {@link community_platform_user_security_events}
+/// record with a specific {@link community_platform_platformadmins} actor
+/// and, when present, a {@link community_platform_platformadmin_sessions}
+/// session. This supports high-fidelity auditing of administrator-related
+/// security events.
+///
+/// A unique constraint on security_event_id enforces the 1:1 linkage with
+/// the main event table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_security_event_of_platformadmins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the platform administrator-linked security event subtype
+  /// record.
+  id String @id
+  
+  /// Main security event that this platform admin-specific record extends.
+  /// {@link community_platform_user_security_events.id}.
+  security_event_id String
+  
+  /// Platform administrator associated with this security event. {@link
+  /// community_platform_platformadmins.id}.
+  community_platform_platformadmin_id String
+  
+  /// Platform administrator session associated with this event, if any. {@link
+  /// community_platform_platformadmin_sessions.id}.
+  community_platform_platformadmin_session_id String?
+  
+  /// Timestamp when this platform administrator-specific association record
+  /// was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  securityEvent community_platform_user_security_events @relation(fields: [security_event_id], references: [id], onDelete: Cascade)
+  platformAdmin community_platform_platformadmins @relation(fields: [community_platform_platformadmin_id], references: [id], onDelete: Cascade)
+  platformAdminSession community_platform_platformadmin_sessions? @relation(fields: [community_platform_platformadmin_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_platformadmin_session_id], map: "community_platform_user_security_event_of_platformadmi_ca44e5fd")
+  
+  // spellchecker: ignore-next-line
+  @@unique([security_event_id], map: "community_platform_user_security_event_of_platformadmi_7791254a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_platformadmin_id, created_at], map: "community_platform_user_security_event_of_platformadmi_a23981bf")
+}

@@ -1,484 +1,343 @@
-/// Core catalog products available in the shopping mall platform. Each
-/// product contains general product information (name, description, price,
-/// main image, etc.) and is associated with a seller (FK to
-/// shopping_sellers), categories, tags, and SKUs. Supports both published
-/// (active) and draft/archived status, provides audit and soft delete
-/// fields. Subject to category and tag assignments via subsidiary tables.
+/// Top-level catalog entity representing a unique product offered on the
+/// platform.
+///
+/// Each product record defines the core business information for listing in
+/// the marketplace, including title, description, price, and owner seller
+/// reference (as a foreign key to sellers in another domain component
+/// already created). Products are assigned to one or more categories via a
+/// separate mapping table. Multiple variant SKUs and images are associated
+/// with each product, reflecting available purchase options and media
+/// assets. The product table includes status fields (e.g., draft, published,
+/// archived), audit fields for full lifecycle traceability (created,
+/// updated, deleted times), and is the anchor point for all product
+/// filtering, search, and analytics.
+///
+/// Soft delete is supported for recovery and moderation workflows.
+///
+///
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_products {
+model shopping_mall_products {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key.
   id String @id
   
-  /// Belonged seller's {@link shopping_sellers.id}.
-  shopping_seller_id String
+  /// Owning seller for this product. References the {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
   
-  /// Unique business code for the product, used for lookup or external
-  /// referencing.
-  code String
+  /// Public product name, shown in catalog and search results.
+  title String
   
-  /// Product display name shown to shoppers. Used for search and catalog
-  /// display.
-  name String
-  
-  /// Long description of the product for customer information and search
-  /// indexing.
+  /// Detailed product description, with rich text and formatting if allowed by
+  /// system.
   description String
   
-  /// URI to the primary display image associated with this product.
-  main_image_uri String?
+  /// Default display price for product overview (actual purchase price may be
+  /// per SKU/variant).
+  default_price Float
   
-  /// Product status (e.g., draft, active, archived, under_review). Used in
-  /// workflow.
-  status String
-  
-  /// Business workflow status (e.g., in_review, approved, rejected).
+  /// Workflow status string; valid values: draft, published, archived,
+  /// blocked, pending_approval, etc.
   business_status String
   
-  /// Creation timestamp for auditing.
+  /// UTC timestamp for product creation.
   created_at DateTime
   
-  /// Last updated timestamp for auditing.
+  /// UTC timestamp for last modification of this product.
   updated_at DateTime
   
-  /// Soft-deleted timestamp. If not null, product is archived/not shown to
-  /// shoppers.
+  /// Soft delete marker; null if product is active, set when product is
+  /// deleted/archived.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
-  shopping_product_snapshots shopping_product_snapshots[]
-  shopping_product_images shopping_product_images[]
-  shopping_skus shopping_skus[]
-  shopping_product_attributes shopping_product_attributes[]
-  shopping_category_product_assignments shopping_category_product_assignments[]
-  shopping_product_tag_assignments shopping_product_tag_assignments[]
-  shopping_review_rating_aggregates shopping_review_rating_aggregates[]
-  shopping_policy_violations shopping_policy_violations[]
+  shopping_mall_products_categories shopping_mall_products_categories[]
+  shopping_mall_product_skus shopping_mall_product_skus[]
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_product_attributes shopping_mall_product_attributes[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_product_ratings shopping_mall_product_ratings[]
   
-  @@unique([code])
-  @@index([shopping_seller_id])
-  @@index([status])
-  @@index([created_at])
+  @@unique([shopping_mall_seller_id, title])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, business_status], map: "shopping_mall_products_shopping_mall_seller_id_busines_03cdb581")
 }
 
-/// Historical snapshots of full product state for audit trail and change
-/// history. Captures all product fields and foreign key references as they
-/// were at the time of the snapshot. Used to reconstruct prior states,
-/// enable moderation, or restore historical product versions. All edits to
-/// shopping_products generate a snapshot entry.
+/// Junction table mapping multi-category assignments for each product.
+///
+/// Associates each product with one or more marketplace categories,
+/// supporting hierarchical or multi-category navigation, search, and
+/// filtering. Each row represents the membership of a single product in a
+/// single category. Indexes support efficient filtering and common lookup
+/// patterns.
+///
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_product_snapshots {
+model shopping_mall_products_categories {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key.
   id String @id
   
-  /// Parent product's {@link shopping_products.id}.
-  shopping_product_id String
+  /// Mapped catalog product. References {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
   
-  /// Business code at time of snapshot.
-  code String
+  /// Assigned marketplace category. References {@link
+  /// shopping_mall_categories.id}.
+  shopping_mall_category_id String
   
-  /// Name at time of snapshot.
-  name String
-  
-  /// Long description at time of snapshot.
-  description String
-  
-  /// Primary image at time of snapshot.
-  main_image_uri String?
-  
-  /// Product status at time of snapshot.
-  status String
-  
-  /// Business workflow status at time of snapshot.
-  business_status String
-  
-  /// Snapshot creation timestamp.
+  /// UTC timestamp for mapping creation.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_product_id])
-  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, shopping_mall_category_id], map: "shopping_mall_products_categories_shopping_mall_produc_4e72ec26")
+  @@index([shopping_mall_category_id])
 }
 
-/// Images associated with products for catalog display. Each image is linked
-/// to a product and stores a URI reference. Allows multiple images per
-/// product (up to 10 per business rules).
+/// Individual SKU (Stock Keeping Unit) for a specific variant or option of a
+/// catalog product.
+///
+/// Each SKU represents a unique variant of a product (e.g., color, size,
+/// option combinations), with independent inventory, price, and status. SKUs
+/// are linked to the parent product and to their attribute values (via
+/// subsidiary mapping table). Inventory, per-SKU pricing, out-of-stock
+/// flags, and barcode/business reference codes are managed here. SKUs are
+/// included in search and filtering.
+///
+/// Audit, status, and soft delete fields support traceability, operation,
+/// and moderation.
+///
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_product_images {
+model shopping_mall_product_skus {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key.
   id String @id
   
-  /// Parent product's {@link shopping_products.id}.
-  shopping_product_id String
+  /// Parent catalog product for this SKU. References {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
   
-  /// URI pointing to an image file (JPEG/PNG, up to 5MB per upload).
-  image_uri String
-  
-  /// Zero-based display order for product images.
-  order_index Int?
-  
-  /// Upload/creation timestamp.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
-  
-  shopping_refund_attachments shopping_refund_attachments[]
-  
-  @@index([shopping_product_id, order_index])
-}
-
-/// Individual sellable SKU entities under a product. Each SKU represents a
-/// unique combination of attribute values (variant), price, and inventory
-/// reference. Linked to parent product, and optionally to inventory and
-/// category. Carries pricing, in-stock state, and audit fields.
-///
-/// @namespace Catalog
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_skus {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Parent product's {@link shopping_products.id}.
-  shopping_product_id String
-  
-  /// Unique SKU business code (externally visible, globally unique).
+  /// Unique business SKU/barcode identifier within a product scope.
   sku_code String
   
-  /// Retail price for this SKU variant.
+  /// Sale price for this variant (overrides product default price if present).
   price Float
   
-  /// SKU enabled/disabled state. If false, not purchasable.
-  is_active Boolean
+  /// Inventory units available for this SKU.
+  stock Int
   
-  /// Optional barcode/UPC for scanning.
-  barcode String?
-  
-  /// Business process status (e.g., in_stock, discontinued, archived).
+  /// Workflow status for SKU (e.g., active, out_of_stock, archived, draft).
   status String
   
-  /// Creation timestamp.
+  /// UTC timestamp for SKU creation.
   created_at DateTime
   
-  /// Updated timestamp.
+  /// UTC timestamp for last SKU change.
   updated_at DateTime
   
-  /// Soft-deleted timestamp (if set, SKU is archived).
+  /// Soft delete flag: null if active, set when archived/deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   
-  shopping_sku_variants shopping_sku_variants[]
-  shopping_sku_images shopping_sku_images[]
-  shopping_inventory shopping_inventory?
-  shopping_inventory_adjustments shopping_inventory_adjustments[]
-  shopping_inventory_alerts shopping_inventory_alerts[]
-  shopping_cart_items shopping_cart_items[]
-  shopping_guest_cart_items shopping_guest_cart_items[]
-  shopping_wishlist_items shopping_wishlist_items[]
-  shopping_order_lines shopping_order_lines[]
-  shopping_reviews shopping_reviews[]
-  shopping_review_rating_aggregates shopping_review_rating_aggregates?
-  
-  @@unique([sku_code])
-  @@index([shopping_product_id])
-  @@index([is_active])
-}
-
-/// Junction table mapping each SKU to its set of selected variant attribute
-/// values. Supports up to 5 attribute variants per SKU (e.g., color, size,
-/// material). M:N between SKU and attribute value, allowing rich filtering
-/// and search.
-///
-/// @namespace Catalog
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_sku_variants {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Parent SKU's {@link shopping_skus.id}.
-  shopping_sku_id String
-  
-  /// Associated attribute value's {@link shopping_attribute_values.id}.
-  shopping_attribute_value_id String
-  
-  /// Order of this attribute among the variants for the SKU.
-  order_index Int
-  
-  //----
-  // RELATIONS
-  //----
-  sku shopping_skus @relation(fields: [shopping_sku_id], references: [id], onDelete: Cascade)
-  attributeValue shopping_attribute_values @relation(fields: [shopping_attribute_value_id], references: [id], onDelete: Cascade)
-  
-  @@index([shopping_attribute_value_id])
+  shopping_mall_product_images shopping_mall_product_images[]
+  shopping_mall_product_attribute_values shopping_mall_product_attribute_values[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_product_ratings shopping_mall_product_ratings[]
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_sku_id, shopping_attribute_value_id], map: "shopping_sku_variants_shopping_sku_id_shopping_attribu_d520f6b8")
+  @@unique([shopping_mall_product_id, sku_code], map: "shopping_mall_product_skus_shopping_mall_product_id_sk_d9eb9aba")
+  @@index([shopping_mall_product_id, status])
 }
 
-/// Images assigned directly to a SKU (variant). Used to represent visual
-/// attributes of a SKU (e.g., color swatch).
+/// Image/media asset records associated with products or SKUs.
+///
+/// Each row stores a single image file or media asset for a specific product
+/// or SKU. Images support position-based ordering (e.g., main image, gallery
+/// order), alt text for accessibility, CDN/URI reference, and a label for
+/// internal management. Can attach images directly to product or specific
+/// SKU using foreign key, but never both at the same time (business logic
+/// ensures this).
+///
+/// Audit fields and soft delete are included for digital asset lifecycle.
+///
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_sku_images {
+model shopping_mall_product_images {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key.
   id String @id
   
-  /// Parent SKU's {@link shopping_skus.id}.
-  shopping_sku_id String
+  /// Product that this image is associated with. Nullable if this is a
+  /// SKU-specific image.
+  shopping_mall_product_id String?
   
-  /// URI of the SKU-specific image asset.
-  image_uri String
+  /// SKU variant this image is associated with. Nullable if this is a
+  /// product-level image.
+  shopping_mall_product_sku_id String?
   
-  /// Upload timestamp.
+  /// CDN or publicly accessible URI for the image media.
+  cdn_uri String
+  
+  /// Accessibility/text alternative for the image, shown on error/load fail.
+  alt_text String?
+  
+  /// Image display position ordering for carousels/galleries. Lower values
+  /// displayed first.
+  position Int
+  
+  /// System/business management label (not shown to end users).
+  label String?
+  
+  /// UTC timestamp for asset creation.
   created_at DateTime
   
+  /// UTC timestamp for any update to asset.
+  updated_at DateTime
+  
+  /// Soft delete marker: null if active, set when removed/archived.
+  deleted_at DateTime?
+  
   //----
   // RELATIONS
   //----
-  sku shopping_skus @relation(fields: [shopping_sku_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_product_skus? @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_sku_id])
+  @@unique([cdn_uri])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, position], map: "shopping_mall_product_images_shopping_mall_product_id__c61fc426")
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_product_sku_id])
 }
 
-/// Defines the possible attribute types used for product/SKU variants (e.g.,
-/// Color, Size, Material). Managed by admins/sellers for flexible product
-/// setup. Each dimension may apply to many products and values.
+/// Dictionary of attribute types supported for variant construction in the
+/// catalog (e.g., color, size, material, option labels).
+///
+/// Defines the allowed attributes for SKUs under each product, managed
+/// separately from global attributes. Provides structure and display name
+/// for each attribute type, supports ordering in variant selection UIs, and
+/// ties to allowed values in the mapping table. Each attribute is linked to
+/// exactly one product.
+///
+/// Audit and soft delete fields for traceability.
+///
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_attribute_dimensions {
+model shopping_mall_product_attributes {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key.
   id String @id
   
-  /// Business code for this attribute dimension (used for filtering, must be
-  /// unique).
-  dimension_code String
+  /// Product for which this attribute is used. References {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
   
-  /// Display name of the attribute dimension (e.g., Color, Size).
-  name String
+  /// Logical name for this attribute (e.g., color, size); visible in variant
+  /// picker.
+  attribute_name String
   
-  /// Long description for this attribute dimension's purpose.
-  description String
+  /// Display order for attribute in UI context. Lower appears first.
+  position Int
   
-  /// Creation timestamp.
+  /// UTC timestamp for attribute creation.
   created_at DateTime
   
+  /// UTC timestamp for last update of attribute.
+  updated_at DateTime
+  
+  /// Soft delete marker: null if active, set for attribute removal.
+  deleted_at DateTime?
+  
   //----
   // RELATIONS
   //----
-  shopping_attribute_values shopping_attribute_values[]
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   
-  @@unique([dimension_code])
+  shopping_mall_product_attribute_values shopping_mall_product_attribute_values[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, attribute_name], map: "shopping_mall_product_attributes_shopping_mall_product_fd79683f")
+  @@index([shopping_mall_product_id])
 }
 
-/// Possible selectable values for each attribute dimension (e.g., Red, Blue
-/// for Color). Each value is connected to its dimension and may be shared
-/// among products. Enables SKU variant composition.
+/// Link table mapping (for each SKU) the value of a particular attribute
+/// (e.g., red for color, XL for size) in variant construction.
+///
+/// Each row records the value of an attribute for a specific SKU, allowing
+/// the flexible definition of multi-attribute variants per SKU. Enables full
+/// filter and product option selection. Provides value name/label, audit
+/// fields, and supports multiple values per attribute/SKU mapping.
+///
 ///
 /// @namespace Catalog
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_attribute_values {
+model shopping_mall_product_attribute_values {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key.
   id String @id
   
-  /// Parent attribute dimension's {@link shopping_attribute_dimensions.id}.
-  shopping_attribute_dimension_id String
+  /// SKU instance for which this attribute value is defined. References {@link
+  /// shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
   
-  /// Unique code for this attribute value (used in filtering, must be unique
-  /// within the dimension).
-  value_code String
+  /// Corresponding attribute type for this value. References {@link
+  /// shopping_mall_product_attributes.id}.
+  shopping_mall_product_attribute_id String
   
-  /// Display string (e.g., "Red", "Large", "Cotton").
-  display_value String
+  /// Renderable text for value (e.g., 'Red', 'XL', 'Matte').
+  value_display_name String
   
-  /// Sort order for this value among siblings.
-  display_order Int?
-  
-  /// Creation timestamp.
+  /// UTC timestamp for value mapping creation.
   created_at DateTime
   
+  /// UTC timestamp for any value update.
+  updated_at DateTime
+  
   //----
   // RELATIONS
   //----
-  attributeDimension shopping_attribute_dimensions @relation(fields: [shopping_attribute_dimension_id], references: [id], onDelete: Cascade)
-  
-  shopping_sku_variants shopping_sku_variants[]
-  shopping_product_attributes shopping_product_attributes[]
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  attribute shopping_mall_product_attributes @relation(fields: [shopping_mall_product_attribute_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_attribute_dimension_id, value_code], map: "shopping_attribute_values_shopping_attribute_dimension_d80d5234")
-  @@index([shopping_attribute_dimension_id])
-}
-
-/// Junction table marking which attribute dimensions and values apply to a
-/// given product (not variant-specific). Used to expose filtering and
-/// faceted search features in the product catalog. M:N between
-/// shopping_products and attribute values.
-///
-/// @namespace Catalog
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_product_attributes {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Parent product's {@link shopping_products.id}.
-  shopping_product_id String
-  
-  /// Assigned attribute value's {@link shopping_attribute_values.id}.
-  shopping_attribute_value_id String
-  
-  //----
-  // RELATIONS
-  //----
-  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
-  attributeValue shopping_attribute_values @relation(fields: [shopping_attribute_value_id], references: [id], onDelete: Cascade)
-  
-  @@index([shopping_attribute_value_id])
+  @@index([shopping_mall_product_attribute_id], map: "shopping_mall_product_attribute_values_shopping_mall_p_bd54b71b")
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_product_id, shopping_attribute_value_id], map: "shopping_product_attributes_shopping_product_id_shoppi_fc6ea71a")
-}
-
-/// Junction table assigning products to one or more categories. Many-to-many
-/// mapping between products and shopping_categories. Used for catalog
-/// display and filtering. Only leaf categories are valid assignments.
-///
-/// @namespace Catalog
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_category_product_assignments {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Assigned product's {@link shopping_products.id}.
-  shopping_product_id String
-  
-  /// Category's {@link shopping_categories.id}. Only leaf nodes allowed.
-  shopping_category_id String
-  
-  //----
-  // RELATIONS
-  //----
-  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
-  category shopping_categories @relation(fields: [shopping_category_id], references: [id], onDelete: Cascade)
-  
-  @@index([shopping_category_id])
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_product_id, shopping_category_id], map: "shopping_category_product_assignments_shopping_product_bafbb020")
-}
-
-/// Defines tags that can be applied to products for filtering and search
-/// enhancement. Each tag is a free-form label managed by sellers or admins.
-/// Tags can be assigned to multiple products through the tag assignment
-/// table.
-///
-/// @namespace Catalog
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_product_tags {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Business code/slug for the tag (must be unique).
-  tag_code String
-  
-  /// Displayed tag name (e.g., "Eco-Friendly").
-  display_value String
-  
-  /// Description/purpose of this tag.
-  description String
-  
-  /// Creation timestamp.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_product_tag_assignments shopping_product_tag_assignments[]
-  
-  @@unique([tag_code])
-}
-
-/// Junction table connecting products and tags (M:N). Enables sellers to
-/// attach multiple tags to any product for catalog search and filter
-/// operations.
-///
-/// @namespace Catalog
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_product_tag_assignments {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Assigned product's {@link shopping_products.id}.
-  shopping_product_id String
-  
-  /// Tag's {@link shopping_product_tags.id}.
-  shopping_product_tag_id String
-  
-  //----
-  // RELATIONS
-  //----
-  product shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
-  tag shopping_product_tags @relation(fields: [shopping_product_tag_id], references: [id], onDelete: Cascade)
-  
-  @@index([shopping_product_tag_id])
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_product_id, shopping_product_tag_id], map: "shopping_product_tag_assignments_shopping_product_id_s_672522b7")
+  @@unique([shopping_mall_product_sku_id, shopping_mall_product_attribute_id], map: "shopping_mall_product_attribute_values_shopping_mall_p_73661189")
 }

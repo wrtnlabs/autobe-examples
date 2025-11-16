@@ -15,18 +15,27 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const member = await MyGlobal.prisma.politics_bbs_member_sessions.findFirst({
+  const session = await MyGlobal.prisma.economic_discussion_member_sessions.findFirst({
     where: {
       id: payload.session_id,
-      member: {
-        id: payload.id,
-        deleted_at: null,
-      },
+      economic_discussion_member_id: payload.id,
+      expired_at: null,
+    },
+  });
+
+  if (session === null) {
+    throw new ForbiddenException("You're not enrolled");
+  }
+
+  const member = await MyGlobal.prisma.economic_discussion_members.findFirst({
+    where: {
+      id: payload.id,
+      email_verified: true,
     },
   });
 
   if (member === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("Member not found or email not verified");
   }
 
   return payload;

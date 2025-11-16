@@ -1,0 +1,10 @@
+export * as customers from "./customers/index";
+export * as carts from "./carts/index";
+export * as wishlists from "./wishlists/index";
+export * as orders from "./orders/index";
+export * as reviews from "./reviews/index";
+export * as productRatings from "./productRatings/index";
+export * as refundRequests from "./refundRequests/index";
+export * as disputes from "./disputes/index";
+export * as shipments from "./shipments/index";
+export * as returnRequests from "./returnRequests/index";

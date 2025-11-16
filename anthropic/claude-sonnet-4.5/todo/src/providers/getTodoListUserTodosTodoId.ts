@@ -14,34 +14,35 @@ export async function getTodoListUserTodosTodoId(props: {
   user: UserPayload;
   todoId: string & tags.Format<"uuid">;
 }): Promise<ITodoListTodo> {
-  const { user, todoId } = props;
-
-  const todo = await MyGlobal.prisma.todo_list_todos.findFirst({
+  const todo = await MyGlobal.prisma.todo_list_todos.findUnique({
     where: {
-      id: todoId,
-      deleted_at: null,
+      id: props.todoId,
     },
   });
 
-  if (!todo) {
+  if (!todo || todo.deleted_at !== null) {
     throw new HttpException("Todo not found", 404);
   }
 
-  if (todo.todo_list_user_id !== user.id) {
-    throw new HttpException(
-      "Unauthorized: You can only access your own todos",
-      403,
-    );
+  if (todo.todo_list_user_id !== props.user.id) {
+    throw new HttpException("Forbidden", 403);
   }
 
   return {
-    id: todo.id as string & tags.Format<"uuid">,
-    todo_list_user_id: todo.todo_list_user_id as string & tags.Format<"uuid">,
+    id: todo.id,
     title: todo.title,
-    description: todo.description ?? undefined,
-    status: todo.status as "complete" | "incomplete",
+    description: todo.description,
+    status: typia.assert<"completed" | "pending" | "in_progress" | "cancelled">(
+      todo.status,
+    ),
+    priority: typia.assert<"low" | "medium" | "high" | null | undefined>(
+      todo.priority,
+    ),
+    due_date: todo.due_date ? toISOStringSafe(todo.due_date) : null,
+    completed: todo.completed,
+    completed_at: todo.completed_at ? toISOStringSafe(todo.completed_at) : null,
     created_at: toISOStringSafe(todo.created_at),
     updated_at: toISOStringSafe(todo.updated_at),
-    deleted_at: todo.deleted_at ? toISOStringSafe(todo.deleted_at) : undefined,
+    deleted_at: todo.deleted_at ? toISOStringSafe(todo.deleted_at) : null,
   };
 }

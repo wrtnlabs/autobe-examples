@@ -1,533 +1,377 @@
-/// Core system channels representing different seller communities or market
-/// segments. Channels organize the overall marketplace structure and enable
-/// multiple independent market communities to operate within the platform.
-/// Each channel has its own configuration for commission rates, policies,
-/// and branding.
+/// Product category taxonomy and hierarchical structure for organizing
+/// products. Categories provide the foundational organization system that
+/// sellers use to classify products and customers use for browsing and
+/// navigation. The category system supports multi-level hierarchies where
+/// categories can have parent categories, enabling flexible organizational
+/// structures from broad top-level categories down to specific product
+/// types. Each category defines attributes that products in that category
+/// must or optionally provide, ensuring consistent product information at
+/// the database level.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_channels {
+model ecommerce_mall_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique channel identifier code in format like CHANNEL_PRIMARY,
-  /// CHANNEL_LUXURY, etc. Used in URLs and system references. Maximum 50
-  /// characters.
-  channel_code String
-  
-  /// Display name for the channel shown to customers and sellers. Example:
-  /// 'Primary Marketplace', 'Premium Store', 'Local Sellers'. Maximum 100
-  /// characters.
-  channel_name String
-  
-  /// Detailed description of the channel's purpose and positioning. Helps
-  /// sellers understand which channel suits their business. Maximum 1000
-  /// characters.
-  description String?
-  
-  /// Default commission percentage (0-100) charged to sellers in this channel.
-  /// Example: 10.5 means 10.5% commission. Specific product categories can
-  /// override this.
-  base_commission_rate Float
-  
-  /// Minimum order value in platform currency required for orders in this
-  /// channel. Prevents very small orders. Example: 100.00
-  min_order_value Float
-  
-  /// Whether this channel is currently active and accepting new sellers and
-  /// orders. Inactive channels may have read-only access.
-  is_active Boolean
-  
-  /// Sort order for displaying channels in user interfaces. Lower numbers
-  /// appear first. Used for UI ordering, not business logic.
-  display_order Int
-  
-  /// Timestamp when this channel was created in the system. ISO 8601 format
-  /// with timezone.
-  created_at DateTime
-  
-  /// Timestamp when this channel was last updated. Updated whenever any
-  /// channel field changes. ISO 8601 format with timezone.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_sections shopping_mall_sections[]
-  
-  @@unique([channel_code])
-  @@index([is_active, display_order])
-}
-
-/// Organizational sections within channels that group related product
-/// categories. Sections provide a second-level organization hierarchy
-/// between channels and specific product categories. Enables structured
-/// navigation for customers browsing products. Example sections:
-/// Electronics, Clothing, Home & Garden.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sections {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the parent channel this section belongs to. {@link
-  /// shopping_mall_channels.id}
-  shopping_mall_channel_id String
-  
-  /// Unique section identifier code within a channel. Format:
-  /// SECTION_ELECTRONICS, SECTION_FASHION. Maximum 50 characters.
-  section_code String
-  
-  /// Display name for the section shown in navigation and category browsing.
-  /// Example: 'Electronics & Gadgets'. Maximum 100 characters.
-  section_name String
-  
-  /// Detailed description of the section's scope and types of products
-  /// included. Helps customers understand what products are in this section.
-  /// Maximum 500 characters.
-  description String?
-  
-  /// URL to an image/icon representing this section for visual display in
-  /// category navigation. Optional visual identifier.
-  section_image_url String?
-  
-  /// Sort order for displaying sections within parent channel. Lower numbers
-  /// appear first in UI navigation.
-  display_order Int
-  
-  /// Whether this section is currently active. Inactive sections are hidden
-  /// from customer view but preserved for historical data.
-  is_active Boolean
-  
-  /// Timestamp when this section was created. ISO 8601 format with timezone.
-  created_at DateTime
-  
-  /// Timestamp when this section was last updated. ISO 8601 format with
-  /// timezone.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_channel_id, section_code], map: "shopping_mall_sections_shopping_mall_channel_id_sectio_060f4d00")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_channel_id, display_order], map: "shopping_mall_sections_shopping_mall_channel_id_displa_d6778c49")
-  @@index([is_active])
-}
-
-/// Product categories that organize the product catalog into hierarchical
-/// browsing structure. Categories enable customers to navigate and discover
-/// products. Categories can be nested in a tree structure where each
-/// category may have a parent category. Examples: Smartphones, Laptops,
-/// Clothing, Shoes, Accessories. Used for both customer browsing and seller
-/// product organization.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_categories {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to parent category in hierarchical structure for nested
-  /// categories. Null if this is a top-level category. {@link
-  /// shopping_mall_categories.id}
+  /// Optional parent category for hierarchical organization. Enables
+  /// multi-level category structure where each category can have a parent
+  /// category. Self-referencing relationship to ecommerce_mall_categories.
+  /// Null for top-level categories.
   parent_category_id String?
   
-  /// Unique category identifier code used internally. Format: CAT_ELECTRONICS,
-  /// CAT_SMARTPHONES, etc. Maximum 50 characters.
-  category_code String
+  /// Category name displayed to customers and sellers. Must be unique within
+  /// the platform. Examples: Electronics, Clothing, Home & Garden.
+  name String
   
-  /// Display name for the category shown in navigation and product listings.
-  /// Example: 'Smartphones', 'Laptop Computers'. Maximum 100 characters.
-  category_name String
+  /// URL-friendly slug for the category used in category pages. Generated from
+  /// category name, lowercase with hyphens. Example: home-and-garden.
+  slug String
   
-  /// URL-friendly slug for SEO and navigation URLs. Lowercase alphanumeric
-  /// with hyphens. Example: 'smartphones', 'laptop-computers'. Maximum 100
-  /// characters.
-  category_slug String
-  
-  /// Detailed description of products in this category. Displayed on category
-  /// landing page. Maximum 1000 characters.
+  /// Detailed description of the category explaining what products it
+  /// contains. Displayed on category pages to help customers understand
+  /// category scope.
   description String?
   
-  /// URL to an image/icon representing this category for visual display in
-  /// navigation and category pages.
-  category_image_url String?
+  /// URL to icon or image representing the category. Displayed in category
+  /// navigation and category pages for visual identification.
+  icon_url String?
   
-  /// Sort order for displaying categories at same hierarchy level. Lower
-  /// numbers appear first in navigation.
+  /// Sort order for displaying categories in navigation menus and category
+  /// lists. Lower numbers appear first. Allows admins to customize category
+  /// display order.
   display_order Int
   
-  /// Denormalized count of active products in this category (includes products
-  /// in subcategories). Updated when products are added/removed from category.
-  /// Used for display efficiency.
-  product_count Int
-  
-  /// Whether this category is currently visible to customers. Inactive
-  /// categories are hidden but preserved for historical data and existing
-  /// product references.
+  /// Whether the category is visible to customers. Inactive categories are
+  /// hidden from browsing but existing products remain in the system. Allows
+  /// temporarily disabling categories without data deletion.
   is_active Boolean
   
-  /// Timestamp when this category was created. ISO 8601 format with timezone.
+  /// Timestamp when the category was created. Used for audit trail and
+  /// category age tracking.
   created_at DateTime
   
-  /// Timestamp when this category was last updated. ISO 8601 format with
-  /// timezone.
+  /// Timestamp of the last update to the category. Tracks when category
+  /// information was last modified.
   updated_at DateTime
+  
+  /// Soft delete timestamp. When set, category is considered deleted but data
+  /// is retained for compliance and historical purposes. Used for soft
+  /// deletion allowing data recovery.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  parentCategory shopping_mall_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
   
-  recursive shopping_mall_categories[] @relation("recursive")
-  shopping_mall_category_attributes shopping_mall_category_attributes[]
-  shopping_mall_products shopping_mall_products[]
-  shopping_mall_product_categories_mapping shopping_mall_product_categories_mapping[]
-  shopping_mall_commission_rates shopping_mall_commission_rates?
+  recursive ecommerce_mall_categories[] @relation("recursive")
+  ecommerce_mall_category_attributes ecommerce_mall_category_attributes[]
   
-  @@unique([category_code])
-  @@unique([category_slug])
-  @@index([parent_category_id, display_order])
+  @@unique([name])
+  @@unique([slug])
+  @@index([parent_category_id])
   @@index([is_active])
+  @@index([display_order])
 }
 
-/// Configurable attributes that products in a specific category can have.
-/// Attributes define the possible variants (colors, sizes, materials, etc.)
-/// that products in a category can use. Enables structured product variant
-/// management and customer filtering. Example: In Clothing category,
-/// attributes might be Color, Size, Material, Style.
+/// Attribute specifications for product categories. Each category can define
+/// required and optional attributes that products must provide (e.g.,
+/// apparel requires size, color; electronics requires specifications,
+/// warranty). Category attributes establish consistency expectations for
+/// products in each category, enabling structured product information
+/// capture and display. Attributes defined here are enforced when sellers
+/// create products in these categories.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_category_attributes {
+model ecommerce_mall_category_attributes {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the category these attributes are available for. {@link
-  /// shopping_mall_categories.id}
-  shopping_mall_category_id String
+  /// The category this attribute belongs to. Links to
+  /// ecommerce_mall_categories.id. Cannot be changed after creation.
+  ecommerce_mall_category_id String
   
-  /// Unique identifier for this attribute within the category. Format:
-  /// ATTR_COLOR, ATTR_SIZE, ATTR_MATERIAL. Maximum 50 characters.
-  attribute_code String
+  /// Attribute name that sellers provide values for. Examples: Color, Size,
+  /// Material, Warranty Period, Specifications.
+  name String
   
-  /// Display name for the attribute. Example: 'Color', 'Size', 'Material'.
-  /// Maximum 100 characters.
-  attribute_name String
-  
-  /// Data type of attribute values: 'text' (free text), 'number' (numeric
-  /// values), 'selection' (predefined options from attribute_values),
-  /// 'boolean' (true/false toggle). Determines how attribute values are
-  /// managed and displayed.
+  /// Data type for the attribute value: text (free text input), select
+  /// (predefined options), multiselect (multiple options), number, boolean.
+  /// Determines how sellers input values for this attribute.
   attribute_type String
   
-  /// JSON array of predefined values for selection-type attributes. Example:
-  /// ["Red", "Blue", "Green"] for color. Null for text/number types. Stored as
-  /// JSON string.
-  attribute_values String?
+  /// Whether sellers must provide a value for this attribute when creating
+  /// products in this category. Required attributes must have values; optional
+  /// attributes can be left empty.
+  is_required Boolean
   
-  /// Whether products in this category MUST specify a value for this attribute
-  /// when creating variants. Mandatory attributes for variant definition.
-  is_required_for_variant Boolean
-  
-  /// Whether customers can filter products by this attribute in category view.
-  /// Affects customer-facing filtering options.
-  is_filterable Boolean
-  
-  /// Sort order for displaying attributes in variant selector and product
-  /// forms. Lower numbers appear first.
+  /// Display order for attributes in the product creation form. Lower numbers
+  /// appear first, organizing the form for better user experience.
   display_order Int
   
-  /// Timestamp when this attribute was created. ISO 8601 format with timezone.
+  /// Timestamp when the attribute was defined. Used for audit trail.
   created_at DateTime
   
-  /// Timestamp when this attribute was last updated. ISO 8601 format with
-  /// timezone.
+  /// Timestamp of last update to the attribute definition.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_category_id, attribute_code], map: "shopping_mall_category_attributes_shopping_mall_catego_2c50110b")
+  @@unique([ecommerce_mall_category_id, name], map: "ecommerce_mall_category_attributes_ecommerce_mall_cate_0080c689")
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_category_id, display_order], map: "shopping_mall_category_attributes_shopping_mall_catego_a30c8d9a")
-  @@index([is_filterable])
+  @@index([ecommerce_mall_category_id], map: "ecommerce_mall_category_attributes_ecommerce_mall_cate_6d58f104")
 }
 
-/// Global platform configuration settings for feature toggles, system
-/// behavior, and operational policies. Single-purpose configuration table
-/// storing key-value pairs that control platform-wide behavior. Examples:
-/// enable/disable review system, enable/disable wishlist feature, maximum
-/// cart items, etc.
+/// System-wide configuration settings that control platform behavior and
+/// policies. Platform settings define defaults for commissions, return
+/// windows, payment methods, notification preferences, feature flags, and
+/// other system-wide parameters. Admin users modify these settings to
+/// configure platform behavior without code changes. Settings are referenced
+/// by multiple systems (order processing, refund handling, payment
+/// processing) to enforce consistent policies across the platform.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_configurations {
+model ecommerce_mall_platform_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key identifier. Format: 'feature_reviews_enabled',
-  /// 'feature_wishlist_enabled', 'max_cart_items',
-  /// 'default_order_timeout_minutes'. Maximum 100 characters. Used as primary
-  /// identifier for lookups.
-  config_key String
+  /// Unique identifier for the setting. Examples: default_commission_rate,
+  /// return_window_days, payment_retry_attempts, platform_name, support_email.
+  /// Used as lookup key when retrieving setting values.
+  setting_key String
   
-  /// Configuration value as string. Interpretations: 'true'/'false' for
-  /// boolean flags, numeric strings for numbers, JSON for complex objects.
-  /// Stored as text for flexibility. Maximum 5000 characters.
-  config_value String
+  /// The configuration value for the setting. Stored as string and converted
+  /// to appropriate type (number, boolean, etc.) by application code.
+  /// Examples: 15, 30, 5, ecommercemall@company.com.
+  setting_value String
   
-  /// Data type indicator: 'boolean', 'integer', 'decimal', 'string', 'json'.
-  /// Helps with value interpretation and validation.
-  config_type String
-  
-  /// Human-readable description of this configuration's purpose and expected
-  /// values. Helps admins understand what each setting controls. Maximum 500
-  /// characters.
+  /// Human-readable description explaining what this setting controls and how
+  /// it affects platform behavior. Displayed in admin configuration UI to
+  /// guide admins in setting values.
   description String?
   
-  /// Whether admins can modify this configuration from the admin panel. Some
-  /// system-critical configs may be read-only. Controls admin UI visibility.
+  /// Data type for the setting: string, integer, decimal, boolean, email, url.
+  /// Indicates how the value should be interpreted and validated by the
+  /// application.
+  setting_type String
+  
+  /// Whether admins can modify this setting through the admin panel. Core
+  /// system settings may be read-only to prevent misconfiguration. Editable
+  /// settings can be changed by authorized admins.
   is_editable Boolean
   
-  /// Timestamp when this configuration was created. ISO 8601 format with
-  /// timezone.
+  /// Timestamp when the setting was created. Used for audit trail.
   created_at DateTime
   
-  /// Timestamp when this configuration was last updated. ISO 8601 format with
-  /// timezone.
+  /// Timestamp of last update to the setting value. Tracks when configuration
+  /// was last changed.
   updated_at DateTime
+  
+  /// Soft delete timestamp. Allows settings to be archived without deletion.
+  /// Deleted settings are not used but data is retained for compliance.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([config_key])
+  @@unique([setting_key])
   @@index([is_editable])
 }
 
-/// System-wide operational settings for business rules, policies, and
-/// limits. Stores global business settings like minimum order values,
-/// maximum product price, commission structures, default timeouts, and
-/// policy parameters. Unlike configurations which are feature toggles,
-/// settings are business rule values.
+/// Geographic regions supported by the platform for shipping, tax, and
+/// currency operations. Regions represent distinct geographic areas
+/// (countries, states, provinces) where the platform operates and where
+/// specific shipping methods, tax rules, and currencies apply. Regions are
+/// referenced when calculating shipping costs, applying taxes, and
+/// displaying region-specific information. The platform uses regions to
+/// determine which shipping carriers serve an address and which tax rules
+/// apply.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_settings {
+model ecommerce_mall_regions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Identifier for this setting. Format: 'minimum_order_value',
-  /// 'maximum_product_price', 'default_commission_rate',
-  /// 'payment_timeout_minutes', 'order_cancellation_window_hours'. Maximum 100
-  /// characters.
-  setting_name String
+  /// Region name displayed in dropdowns and configuration. Examples: United
+  /// States, California, United Kingdom, Japan. Unique within the platform.
+  name String
   
-  /// Value for this setting as string. Numeric settings stored as numeric
-  /// strings, currency amounts include decimal point. Maximum 1000 characters.
-  setting_value String
+  /// Standardized code for the region. Uses ISO 3166-1 alpha-2 for countries
+  /// (US, GB, JP) or ISO 3166-2 for states (US-CA, US-TX). Used for lookups
+  /// and integrations.
+  code String
   
-  /// Unit of measurement if applicable. Examples: 'currency', 'minutes',
-  /// 'hours', 'days', 'percentage', 'units'. Helps interpret numeric values.
-  /// Maximum 50 characters.
-  setting_unit String?
+  /// Type of region: country or state/province. Indicates the hierarchical
+  /// level. Used for organizing regions and determining shipping zone
+  /// calculations.
+  region_type String
   
-  /// Explanation of what this setting controls and why it matters. Helps
-  /// admins understand business impact. Maximum 500 characters.
-  description String?
+  /// For states/provinces, the country code of the parent country. Enables
+  /// hierarchical organization (e.g., CA region's parent is US). For
+  /// countries, null.
+  parent_region_code String?
   
-  /// Minimum allowed value for this setting if numeric. Used for validation
-  /// when setting is updated. Null for non-numeric settings.
-  min_value Float?
-  
-  /// Maximum allowed value for this setting if numeric. Used for validation
-  /// when setting is updated. Null for non-numeric settings.
-  max_value Float?
-  
-  /// Timestamp when this setting was created. ISO 8601 format with timezone.
-  created_at DateTime
-  
-  /// Timestamp when this setting was last updated. ISO 8601 format with
-  /// timezone.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([setting_name])
-}
-
-/// Registry of countries supported by the platform for shipping, tax, and
-/// regulatory purposes. Defines which countries are available for customer
-/// addresses, seller registration, and shipping destinations. Each country
-/// entry includes tax rates, shipping info, and operational flags.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_supported_countries {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB', 'IN', 'JP'). Used for
-  /// all country references throughout the system. Exactly 2 uppercase
-  /// letters.
-  country_code String
-  
-  /// Full country name as displayed to users (e.g., 'United States', 'United
-  /// Kingdom', 'India'). Maximum 100 characters.
-  country_name String
-  
-  /// ISO 4217 currency code for this country (e.g., 'USD', 'GBP', 'INR'). Used
-  /// for pricing and financial transactions. Exactly 3 uppercase letters.
-  currency_code String
-  
-  /// Default VAT/sales tax rate as percentage (0-100). Example: 15.5 for 15.5%
-  /// tax. Applied to orders shipping to this country unless category-specific
-  /// rate exists.
-  tax_rate Float
-  
-  /// Regular expression pattern for validating postal codes in this country.
-  /// Example: '^[0-9]{5}(-[0-9]{4})?$' for US zip codes. Used in address
-  /// validation.
-  postal_code_format String?
-  
-  /// Whether the platform can ship orders to this country. Used to determine
-  /// available shipping destinations for customers.
-  is_shipping_available Boolean
-  
-  /// Whether sellers can register and operate from this country. May be false
-  /// for countries with regulatory restrictions.
-  is_seller_registration_allowed Boolean
-  
-  /// Whether this country is currently active on the platform. Inactive
-  /// countries are hidden from selection but historical data is preserved.
+  /// Whether the region is available for operations (shipping, tax
+  /// calculations). Inactive regions are not presented to customers as
+  /// shipping destinations or tax jurisdictions.
   is_active Boolean
   
-  /// Timestamp when this country was added to the system. ISO 8601 format with
-  /// timezone.
+  /// Timestamp when the region was added to the system. Used for audit trail.
   created_at DateTime
   
-  /// Timestamp when this country configuration was last updated. ISO 8601
-  /// format with timezone.
+  /// Timestamp of last update to region configuration.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@unique([country_code])
+  @@unique([name])
+  @@unique([code])
+  @@index([region_type])
   @@index([is_active])
-  @@index([is_shipping_available])
+  @@index([parent_region_code])
+}
+
+/// Currencies supported by the platform for pricing and payment processing.
+/// Each currency represents a specific monetary unit (USD, EUR, GBP, JPY,
+/// etc.) that the platform uses for displaying prices, calculating totals,
+/// and processing payments. Currencies are associated with regions (USD for
+/// US, EUR for EU countries, GBP for UK) to determine which currencies
+/// customers see when shopping. The platform uses currency records to format
+/// prices correctly and convert between currencies for international orders.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_currencies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ISO 4217 currency code (3 characters). Examples: USD (US Dollar), EUR
+  /// (Euro), GBP (British Pound), JPY (Japanese Yen). Unique identifier for
+  /// the currency.
+  code String
+  
+  /// Full currency name for display in user interfaces. Examples: US Dollar,
+  /// Euro, British Pound, Japanese Yen.
+  name String
+  
+  /// Currency symbol for displaying prices. Examples: $ for USD, € for EUR, £
+  /// for GBP, ¥ for JPY. Used in price formatting for customer display.
+  symbol String
+  
+  /// Number of decimal places for this currency. Most currencies use 2 (USD,
+  /// EUR = $19.99), some use 0 (JPY = ¥1999), some use 3 (KWD = د.ك 19.999).
+  /// Used for price rounding and formatting.
+  decimal_places Int
+  
+  /// Whether the currency is currently available for transactions and display.
+  /// Inactive currencies are not presented to customers but existing prices in
+  /// that currency are preserved for historical records.
+  is_active Boolean
+  
+  /// Timestamp when the currency was added to the platform. Used for audit
+  /// trail.
+  created_at DateTime
+  
+  /// Timestamp of last update to currency configuration.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@index([is_active])
+}
+
+/// Tax calculation rules that apply to orders based on shipping destination
+/// and product category. Tax rules define the percentage of tax to apply and
+/// the conditions under which they apply (which region, which product
+/// category, base amount calculation). The platform uses tax rules to
+/// automatically calculate tax amounts during checkout based on the
+/// customer's shipping address and the products they're purchasing. Tax
+/// rules can be region-specific (different tax rates for different
+/// countries/states) and may vary by product category.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_tax_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Region code (e.g., US, US-CA, GB) that this tax rule applies to. The tax
+  /// rate specified applies when the customer's shipping address is in this
+  /// region. Must match a region code in ecommerce_mall_regions table.
+  region_code String
+  
+  /// Product category this tax rule applies to. If null, the rule applies to
+  /// all categories (default tax rate). If specified, applies only to products
+  /// in that category. Enables category-specific tax rates (e.g., groceries
+  /// may be tax-exempt).
+  category_name String?
+  
+  /// The tax rate as a percentage (0-100). Examples: 8.5 for 8.5%, 0 for
+  /// tax-exempt, 20 for 20% VAT. Stored as decimal for accurate calculations.
+  tax_percentage Float
+  
+  /// What the tax percentage applies to: subtotal (merchandise only),
+  /// subtotal_with_shipping (includes shipping cost), or gross (after
+  /// discounts). Determines how tax is calculated for orders in this
+  /// jurisdiction.
+  tax_basis String
+  
+  /// Whether this tax rule is currently applied during tax calculations.
+  /// Inactive rules are not used but are retained for historical reference and
+  /// potential reactivation.
+  is_active Boolean
+  
+  /// Date when this tax rule becomes effective. Used for tracking tax law
+  /// changes. Orders after this date use this rule; orders before may use
+  /// older rules.
+  effective_from DateTime
+  
+  /// Date when this tax rule expires. When set, the rule is no longer used
+  /// after this date. Used for temporary tax changes or seasonal variations.
+  /// Null means rule has no end date.
+  effective_until DateTime?
+  
+  /// Timestamp when the tax rule was created. Used for audit trail.
+  created_at DateTime
+  
+  /// Timestamp of last update to the tax rule.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
   // spellchecker: ignore-next-line
-  @@index([is_seller_registration_allowed], map: "shopping_mall_supported_countries_is_seller_registrati_a7424513")
-}
-
-/// Shipping carriers available on the platform for order fulfillment.
-/// Registry of carrier integrations including courier services, postal
-/// services, and logistics providers. Stores carrier information, API
-/// endpoints, tracking URL formats, and operational details for carrier
-/// integration.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shipping_carriers {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique identifier for this carrier used in system references. Format:
-  /// 'CARRIER_FEDEX', 'CARRIER_UPS', 'CARRIER_DHL'. Maximum 50 characters.
-  /// Used for internal references, not display.
-  carrier_code String
-  
-  /// Display name of the shipping carrier shown to customers and sellers.
-  /// Example: 'FedEx', 'UPS', 'DHL Express'. Maximum 100 characters.
-  carrier_name String
-  
-  /// API endpoint URL for carrier tracking and rate queries. Used by system to
-  /// integrate with carrier systems. Example: 'https://api.fedex.com/v1/'. May
-  /// be null for manual carriers.
-  api_endpoint String?
-  
-  /// Encrypted API key or credentials for carrier API authentication. Stored
-  /// encrypted in database. Decrypted only when needed for API calls. Null if
-  /// no API integration.
-  api_key String?
-  
-  /// URL template for customer tracking pages. Format:
-  /// 'https://tracking.fedex.com/tracking?tracknumbers={TRACKING_NUMBER}'.
-  /// {TRACKING_NUMBER} is placeholder for actual tracking number.
-  tracking_url_format String?
-  
-  /// JSON array of ISO country codes this carrier operates in. Example:
-  /// '["US", "CA", "MX"]'. Used to filter available carriers by destination.
-  supported_countries_json String
-  
-  /// JSON array of service types offered (Standard, Express, Overnight, etc.).
-  /// Format: '["Standard", "Express", "Overnight"]'. Used for service
-  /// selection during shipping.
-  service_types String?
-  
-  /// Whether this carrier is currently available for shipping. Inactive
-  /// carriers are hidden from seller selections.
-  is_active Boolean
-  
-  /// Whether carrier has active API integration for tracking and rate quotes.
-  /// False means manual tracking number entry required.
-  is_api_integrated Boolean
-  
-  /// Frequency (in minutes) to poll carrier API for tracking updates. Example:
-  /// 120 = check every 2 hours. Null or 0 means no automatic syncing.
-  sync_interval_minutes Int
-  
-  /// Timestamp when this carrier was added to the system. ISO 8601 format with
-  /// timezone.
-  created_at DateTime
-  
-  /// Timestamp when this carrier configuration was last updated. ISO 8601
-  /// format with timezone.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_shipments shopping_mall_shipments[]
-  shopping_mall_shipping_labels shopping_mall_shipping_labels[]
-  shopping_mall_carrier_integrations shopping_mall_carrier_integrations?
-  shopping_mall_tracking_updates shopping_mall_tracking_updates[]
-  shopping_mall_return_shipments shopping_mall_return_shipments[]
-  
-  @@unique([carrier_code])
+  @@unique([region_code, category_name, effective_from], map: "ecommerce_mall_tax_rules_region_code_category_name_eff_8442ede0")
+  @@index([region_code])
   @@index([is_active])
-  @@index([is_api_integrated])
+  @@index([effective_from])
 }

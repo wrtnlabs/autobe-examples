@@ -1,0 +1,1031 @@
+/// Customer-facing master orders representing a checkout result and
+/// aggregating items from multiple sellers.
+///
+/// Each order belongs to a single customer and may contain items from
+/// multiple sellers via seller segments and order lines. The model stores
+/// immutable business snapshots such as order code, currency, and price
+/// totals at creation time, as well as mutable lifecycle fields like
+/// order_status and payment_status that mirror current business state.
+///
+/// It references customer identity and optionally the originating customer
+/// cart for traceability. Historical changes in order and payment status are
+/// tracked via {@link shopping_mall_order_status_events}. Cancellation,
+/// return, and dispute records reference this entity as their primary
+/// context.
+///
+/// Soft deletion is supported for operational removal from primary views
+/// while preserving auditability.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the order.
+  id String @id
+  
+  /// Customer who owns this order. {@link shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// Optional reference to the customer cart from which this order was
+  /// created. {@link shopping_mall_customer_carts.id}.
+  shopping_mall_customer_cart_id String?
+  
+  /// Business order code visible to customers and support. Typically unique
+  /// and human-readable (for example, 'ORD-20251114-0001').
+  order_code String
+  
+  /// ISO 4217 currency code for all monetary fields in this order snapshot
+  /// (for example, 'USD' or 'KRW').
+  currency_code String
+  
+  /// Current high-level business status of the order (for example,
+  /// pending_payment, processing, shipped, delivered, cancelled, refunded).
+  /// Managed by order workflows and mirrored by status events.
+  order_status String
+  
+  /// Current payment status snapshot for this order (for example,
+  /// payment_pending, payment_captured, payment_failed, partially_refunded,
+  /// refunded). Synchronized with payment domain events but stored as raw
+  /// state here.
+  payment_status String
+  
+  /// Snapshot subtotal of all line items before discounts, taxes, and
+  /// shipping, recorded at order creation time.
+  items_subtotal_amount Float
+  
+  /// Snapshot total of all discounts applied to this order at creation time,
+  /// including item-level and order-level promotions.
+  discount_total_amount Float
+  
+  /// Snapshot total shipping cost across all seller segments at order creation
+  /// time.
+  shipping_total_amount Float
+  
+  /// Snapshot total tax amount calculated for this order at creation time.
+  tax_total_amount Float
+  
+  /// Snapshot grand total amount payable for this order (items_subtotal_amount
+  /// - discount_total_amount + shipping_total_amount + tax_total_amount).
+  grand_total_amount Float
+  
+  /// Optional free-text note provided by the customer during checkout for
+  /// sellers or support to see.
+  customer_note String?
+  
+  /// Internal note for support or platformAdmin about this order, not visible
+  /// to customers.
+  internal_note String?
+  
+  /// Timestamp when the order was successfully placed after checkout and
+  /// payment initiation.
+  placed_at DateTime
+  
+  /// Timestamp when the order was confirmed as ready for fulfillment according
+  /// to payment and validation rules.
+  confirmed_at DateTime?
+  
+  /// Timestamp when the order became fully cancelled, if applicable.
+  cancelled_at DateTime?
+  
+  /// Timestamp when the order lifecycle finished successfully (for example,
+  /// all items delivered and beyond return window).
+  completed_at DateTime?
+  
+  /// Timestamp when this order record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this order record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the order is hidden from normal
+  /// listings but retained for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  sourceCart shopping_mall_customer_carts? @relation(fields: [shopping_mall_customer_cart_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_seller_segments shopping_mall_order_seller_segments[]
+  shopping_mall_order_addresses shopping_mall_order_addresses[]
+  shopping_mall_order_lines shopping_mall_order_lines[]
+  shopping_mall_order_status_events shopping_mall_order_status_events[]
+  shopping_mall_order_cancellation_requests shopping_mall_order_cancellation_requests[]
+  shopping_mall_order_return_requests shopping_mall_order_return_requests[]
+  shopping_mall_order_disputes shopping_mall_order_disputes[]
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  shopping_mall_refund_transactions shopping_mall_refund_transactions[]
+  shopping_mall_payment_chargebacks shopping_mall_payment_chargebacks[]
+  shopping_mall_seller_payout_items shopping_mall_seller_payout_items[]
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_inventory_movements shopping_mall_inventory_movements[]
+  shopping_mall_fulfillments shopping_mall_fulfillments[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_fraud_rule_violations shopping_mall_fraud_rule_violations[]
+  
+  @@index([shopping_mall_customer_cart_id])
+  
+  @@unique([order_code])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([order_status, created_at])
+  @@index([payment_status, created_at])
+}
+
+/// Per-seller segments of a customer order representing the portion of the
+/// order handled by a single seller.
+///
+/// Each segment links a {@link shopping_mall_orders} record with a specific
+/// {@link shopping_mall_seller}. It aggregates price totals, shipping
+/// amounts, and fulfillment status for that seller’s portion of the order.
+///
+/// Sellers operate primarily on these segments for picking, packing,
+/// shipping, and after-sales flows such as cancellations and refunds scoped
+/// to their items. Soft deletion is supported for operational cleanup while
+/// historical data is maintained.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_seller_segments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the order seller segment.
+  id String @id
+  
+  /// Order to which this seller segment belongs. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Seller responsible for fulfilling this segment of the order. {@link
+  /// shopping_mall_seller.id}.
+  shopping_mall_seller_id String
+  
+  /// Business-visible code that uniquely identifies this seller segment within
+  /// the order context (for example, 'ORD-20251114-0001-S1').
+  segment_code String
+  
+  /// Current fulfillment-oriented status for this seller segment (for example,
+  /// new, preparing, shipped, delivered, cancelled).
+  segment_status String
+  
+  /// Snapshot subtotal of line items belonging to this seller segment before
+  /// discounts, taxes, and shipping.
+  items_subtotal_amount Float
+  
+  /// Snapshot total discount amount applied to this seller segment.
+  discount_total_amount Float
+  
+  /// Snapshot shipping cost charged for this segment only.
+  shipping_amount Float
+  
+  /// Snapshot tax amount allocated to this seller segment.
+  tax_amount Float
+  
+  /// Snapshot grand total amount for this seller segment (items_subtotal -
+  /// discounts + shipping + tax).
+  grand_total_amount Float
+  
+  /// Timestamp when this seller segment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this seller segment record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this seller segment. When set, the segment is
+  /// excluded from normal lists but preserved for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_lines shopping_mall_order_lines[]
+  shopping_mall_refund_items shopping_mall_refund_items[]
+  shopping_mall_seller_payout_items shopping_mall_seller_payout_items[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_id, shopping_mall_seller_id], map: "shopping_mall_order_seller_segments_shopping_mall_orde_3613c3b2")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_order_seller_segments_shopping_mall_sell_ae93e450")
+  // spellchecker: ignore-next-line
+  @@index([segment_status, created_at], map: "shopping_mall_order_seller_segments_segment_status_cre_8aa74dc3")
+}
+
+/// Snapshot of shipping and billing addresses associated with an order at
+/// the time of checkout.
+///
+/// Addresses are stored as denormalized raw fields so that later changes to
+/// customer address book do not affect historical orders. Each record is
+/// tied to a {@link shopping_mall_orders} entity and categorized by
+/// address_type (for example, shipping or billing).
+///
+/// The model is subsidiary since addresses are managed through order
+/// workflows and not independently. A uniqueness constraint ensures at most
+/// one address per order and address_type combination.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the order address snapshot.
+  id String @id
+  
+  /// Order that this address snapshot belongs to. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Type of address in relation to the order (for example, shipping,
+  /// billing). Determines how the address is used during fulfillment and
+  /// invoicing.
+  address_type String
+  
+  /// Name of the recipient as provided at checkout for this order address.
+  recipient_name String
+  
+  /// First line of the street address for this order address snapshot.
+  street_line1 String
+  
+  /// Second line of the street address such as apartment, suite, or building
+  /// information.
+  street_line2 String?
+  
+  /// City component of the address at the time of order.
+  city String
+  
+  /// Region, state, or province component of the address at the time of order.
+  region String
+  
+  /// Postal or ZIP code for this order address snapshot.
+  postal_code String
+  
+  /// ISO 3166-1 alpha-2 country code for this address (for example, 'KR' or
+  /// 'US').
+  country_code String
+  
+  /// Recipient contact phone number associated with this address at the time
+  /// of order.
+  phone_number String?
+  
+  /// Timestamp when this address snapshot record was created.
+  created_at DateTime
+  
+  /// Timestamp when this address snapshot record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this address snapshot, used if an address
+  /// needs to be hidden from standard views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_id, address_type], map: "shopping_mall_order_addresses_shopping_mall_order_id_a_3cf44896")
+  @@index([country_code, postal_code])
+}
+
+/// Individual line items within an order representing concrete SKUs,
+/// quantities, and pricing snapshots.
+///
+/// Each line belongs to a {@link shopping_mall_orders} record and optionally
+/// to a {@link shopping_mall_order_seller_segments} entity when multi-seller
+/// orders are split by seller. Lines reference catalog entities such as
+/// {@link shopping_mall_products} and {@link shopping_mall_product_skus}
+/// rather than duplicating product attributes, while storing immutable price
+/// and tax amounts recorded at order creation.
+///
+/// Lines are primary because they support independent queries across orders,
+/// such as seller analytics, fulfillment operations, and item-level
+/// cancellation, return, and dispute flows.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_lines {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the order line.
+  id String @id
+  
+  /// Order that this line item belongs to. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Optional seller segment that is responsible for fulfilling this line.
+  /// {@link shopping_mall_order_seller_segments.id}.
+  shopping_mall_order_seller_segment_id String?
+  
+  /// Seller that owns this item and will fulfill it. {@link
+  /// shopping_mall_seller.id}.
+  shopping_mall_seller_id String
+  
+  /// Product purchased in this line. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// SKU representing the specific variant purchased in this line. {@link
+  /// shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Product name as displayed to the customer at the time of ordering. Stored
+  /// as raw text to preserve historical names.
+  product_name_snapshot String
+  
+  /// Seller-facing or system SKU code value at the time of order, providing
+  /// historical traceability even if SKU metadata later changes.
+  sku_code_snapshot String
+  
+  /// Number of units of the SKU purchased in this line. Represents the ordered
+  /// quantity, not necessarily shipped yet.
+  quantity Int
+  
+  /// Per-unit price of the SKU at the time of order before discounts and tax,
+  /// in the order currency.
+  unit_price_amount Float
+  
+  /// Total discount applied to this line across all units, recorded at order
+  /// creation.
+  discount_amount Float
+  
+  /// Total tax amount applied to this line across all units, recorded at order
+  /// creation.
+  tax_amount Float
+  
+  /// Final total amount charged for this line after discounts and taxes,
+  /// recorded at order creation.
+  line_total_amount Float
+  
+  /// Current status of this line from an order and fulfillment perspective
+  /// (for example, pending, fulfilled, cancelled, returned).
+  line_status String
+  
+  /// Timestamp when this order line record was created.
+  created_at DateTime
+  
+  /// Timestamp when this order line record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this order line, used when the line should
+  /// not appear in normal operations.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  sellerSegment shopping_mall_order_seller_segments? @relation(fields: [shopping_mall_order_seller_segment_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_cancellation_requests shopping_mall_order_cancellation_requests[]
+  shopping_mall_order_return_requests shopping_mall_order_return_requests[]
+  shopping_mall_order_disputes shopping_mall_order_disputes[]
+  shopping_mall_refund_items shopping_mall_refund_items[]
+  shopping_mall_seller_payout_items shopping_mall_seller_payout_items[]
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_inventory_movements shopping_mall_inventory_movements[]
+  shopping_mall_fulfillments shopping_mall_fulfillments?
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_seller_segment_id], map: "shopping_mall_order_lines_shopping_mall_order_seller_s_9693238c")
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_product_sku_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_order_lines_shopping_mall_seller_id_crea_8720d3a0")
+  @@index([shopping_mall_order_id, created_at])
+  @@index([line_status, created_at])
+}
+
+/// Historical log of status transitions for orders, capturing how order and
+/// payment states evolve over time.
+///
+/// Each status event is associated with a {@link shopping_mall_orders}
+/// record and records the previous and next status values as well as the
+/// actor_type and source channel that triggered the change. This provides an
+/// audit trail useful for customer support, compliance, and analytics.
+///
+/// The model is subsidiary because it is append-only supporting data for
+/// orders and is not managed directly by end users.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_status_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the order status event.
+  id String @id
+  
+  /// Order whose status was changed. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Order status value before this transition occurred. Nullable when this is
+  /// the initial status event for the order.
+  previous_order_status String?
+  
+  /// Order status value after this transition occurred.
+  next_order_status String
+  
+  /// Payment status value before this transition occurred. Nullable when no
+  /// payment state was previously set.
+  previous_payment_status String?
+  
+  /// Payment status value after this transition occurred, if the payment state
+  /// changed as part of this event.
+  next_payment_status String?
+  
+  /// Type of actor that triggered the status change (for example, system,
+  /// customer, seller, platform_admin).
+  actor_type String
+  
+  /// Channel through which the status change was initiated (for example, api,
+  /// admin_dashboard, seller_portal, customer_portal).
+  source_channel String
+  
+  /// Optional category describing why the status changed (for example,
+  /// payment_confirmed, stock_issue, manual_adjustment).
+  reason_category String?
+  
+  /// Optional free-text explanation or additional context for the status
+  /// change event.
+  reason_detail String?
+  
+  /// Timestamp when this status event was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this status event record was last updated, usually equal
+  /// to created_at since events are append-only.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this status event, used rarely for
+  /// operational cleanup while preserving integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_status_events_shopping_mall_order__b3d5fdee")
+  // spellchecker: ignore-next-line
+  @@index([next_order_status, created_at], map: "shopping_mall_order_status_events_next_order_status_cr_e83ca310")
+}
+
+/// Cancellation requests raised against orders or specific order lines,
+/// regardless of which actor initiated the request.
+///
+/// This main entity holds shared business fields for all cancellations such
+/// as order linkage, optional line linkage, request_reason_category,
+/// free-text details, current request_status, and resolution information. It
+/// is associated with orders via {@link shopping_mall_orders} and optionally
+/// to lines via {@link shopping_mall_order_lines}.
+///
+/// Compatible actor subtypes {@link
+/// shopping_mall_order_cancellation_request_of_customers} and {@link
+/// shopping_mall_order_cancellation_request_of_sellers} carry actor-specific
+/// foreign keys and sessions, enforcing 1:1 relationships and avoiding
+/// multiple nullable FKs. The actor_type field enables filtering by actor
+/// class while keeping the core cancellation behavior centralized.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the cancellation request.
+  id String @id
+  
+  /// Order that this cancellation request refers to. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Optional order line that this cancellation request targets, enabling
+  /// line-level cancellations. {@link shopping_mall_order_lines.id}.
+  shopping_mall_order_line_id String?
+  
+  /// Actor type that triggered the request (for example, customer, seller,
+  /// platform_admin). Used for filtering and consistency with subtype tables.
+  actor_type String
+  
+  /// Categorized reason for the cancellation request (for example,
+  /// changed_mind, ordered_by_mistake, stock_issue, policy_violation).
+  request_reason_category String
+  
+  /// Free-text explanation provided by the actor describing why the
+  /// cancellation is being requested.
+  request_reason_detail String?
+  
+  /// Current status of the cancellation request (for example, pending,
+  /// approved, rejected, cancelled_by_actor).
+  request_status String
+  
+  /// Category describing how the request was resolved (for example,
+  /// auto_approved, seller_approved, admin_override, rejected_policy).
+  resolution_category String?
+  
+  /// Timestamp when the request reached a terminal state such as approved or
+  /// rejected.
+  resolved_at DateTime?
+  
+  /// Timestamp when this cancellation request was created.
+  created_at DateTime
+  
+  /// Timestamp when this cancellation request was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this cancellation request record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderLine shopping_mall_order_lines? @relation(fields: [shopping_mall_order_line_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_cancellation_request_of_customers shopping_mall_order_cancellation_request_of_customers?
+  shopping_mall_order_cancellation_request_of_sellers shopping_mall_order_cancellation_request_of_sellers?
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_line_id], map: "shopping_mall_order_cancellation_requests_shopping_mal_aceddd11")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_cancellation_requests_shopping_mal_391b9115")
+  // spellchecker: ignore-next-line
+  @@index([request_status, created_at], map: "shopping_mall_order_cancellation_requests_request_stat_653df38f")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, created_at], map: "shopping_mall_order_cancellation_requests_actor_type_c_3e2bc351")
+}
+
+/// Customer-specific subtype entity linking a cancellation request to the
+/// customer identity and session that created it.
+///
+/// Each record forms a 1:1 relationship with {@link
+/// shopping_mall_order_cancellation_requests}, enforced via a unique index
+/// on shopping_mall_order_cancellation_request_id. It references the {@link
+/// shopping_mall_customer} and the {@link shopping_mall_customer_sessions}
+/// used when issuing the request.
+///
+/// This model is subsidiary because it is managed through the main
+/// cancellation request lifecycle and is not manipulated independently from
+/// business workflows.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_cancellation_request_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the customer cancellation request
+  /// subtype record.
+  id String @id
+  
+  /// Cancellation request main record that this customer subtype details.
+  /// {@link shopping_mall_order_cancellation_requests.id}.
+  shopping_mall_order_cancellation_request_id String
+  
+  /// Customer who initiated this cancellation request. {@link
+  /// shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer session used when submitting the request, providing audit
+  /// context. {@link shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String
+  
+  /// Timestamp when this customer subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this customer subtype record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this customer subtype record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest shopping_mall_order_cancellation_requests @relation(fields: [shopping_mall_order_cancellation_request_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_order_cancellation_request_of_customers__9e3d881d")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_cancellation_request_id], map: "shopping_mall_order_cancellation_request_of_customers__47e90366")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_order_cancellation_request_of_customers__1ffd5ac7")
+}
+
+/// Seller-specific subtype entity linking a cancellation request to the
+/// seller identity and session that created it.
+///
+/// Each record represents a cancellation request initiated by a seller for
+/// their own order lines or segments. It forms a 1:1 relationship with
+/// {@link shopping_mall_order_cancellation_requests} via a unique index.
+/// Actor-specific context such as seller and seller session are retained
+/// here instead of in the main table to preserve normalization.
+///
+/// The model is subsidiary and accessed through cancellation request
+/// workflows and seller dashboards rather than managed independently.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_cancellation_request_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the seller cancellation request subtype
+  /// record.
+  id String @id
+  
+  /// Cancellation request main record that this seller subtype details. {@link
+  /// shopping_mall_order_cancellation_requests.id}.
+  shopping_mall_order_cancellation_request_id String
+  
+  /// Seller who initiated this cancellation request. {@link
+  /// shopping_mall_seller.id}.
+  shopping_mall_seller_id String
+  
+  /// Seller session used when submitting the request, enabling audit and risk
+  /// analysis. {@link shopping_mall_seller_sessions.id}.
+  shopping_mall_seller_session_id String
+  
+  /// Timestamp when this seller subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this seller subtype record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this seller subtype record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest shopping_mall_order_cancellation_requests @relation(fields: [shopping_mall_order_cancellation_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_order_cancellation_request_of_sellers_sh_d3d6f1fc")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_cancellation_request_id], map: "shopping_mall_order_cancellation_request_of_sellers_sh_ef2546c1")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_order_cancellation_request_of_sellers_sh_8e984b25")
+}
+
+/// Return or refund requests initiated for delivered order items, usually by
+/// customers within the allowed return window.
+///
+/// The main entity captures common attributes such as the target order and
+/// optional specific line, actor_type (normally customer but extensible),
+/// reason category and details, requested resolution, and request_status. It
+/// also stores resolution information such as resolution_category and
+/// resolved_at.
+///
+/// It is complemented by the subtype {@link
+/// shopping_mall_order_return_request_of_customers}, which ties the request
+/// to the customer and session. Financial refund transactions are handled by
+/// the Payments component, which references this entity when necessary.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_return_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the return request.
+  id String @id
+  
+  /// Order that this return or refund request refers to. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Optional specific order line that this return request targets when the
+  /// request is item-level. {@link shopping_mall_order_lines.id}.
+  shopping_mall_order_line_id String?
+  
+  /// Actor type that initiated the request, typically 'customer', but modeled
+  /// generically for future extensions.
+  actor_type String
+  
+  /// Categorized reason for the return (for example, defective_item,
+  /// wrong_item, not_as_described, changed_mind).
+  request_reason_category String
+  
+  /// Free-text description of the problem from the actor's perspective, such
+  /// as defect description or fit issues.
+  request_reason_detail String?
+  
+  /// Requested resolution type (for example, refund, replacement,
+  /// store_credit).
+  requested_resolution String
+  
+  /// Current status of the return request (for example, pending, approved,
+  /// rejected, awaiting_item, refunded, closed).
+  request_status String
+  
+  /// Category describing how the request was resolved (for example,
+  /// refund_issued, replacement_shipped, denied_policy).
+  resolution_category String?
+  
+  /// Timestamp when the request reached a final resolution state.
+  resolved_at DateTime?
+  
+  /// Timestamp when this return request was created.
+  created_at DateTime
+  
+  /// Timestamp when this return request was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this return request.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderLine shopping_mall_order_lines? @relation(fields: [shopping_mall_order_line_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_return_request_of_customers shopping_mall_order_return_request_of_customers?
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_line_id], map: "shopping_mall_order_return_requests_shopping_mall_orde_6f4b0ec9")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_return_requests_shopping_mall_orde_411df42b")
+  // spellchecker: ignore-next-line
+  @@index([request_status, created_at], map: "shopping_mall_order_return_requests_request_status_cre_ddb49e44")
+  @@index([actor_type, created_at])
+}
+
+/// Customer-specific subtype entity linking a return request to the customer
+/// identity and session that created it.
+///
+/// This model enforces a 1:1 relationship with {@link
+/// shopping_mall_order_return_requests} via a unique index on
+/// shopping_mall_order_return_request_id. It references the {@link
+/// shopping_mall_customer} and the {@link shopping_mall_customer_sessions}
+/// active at the time of submission.
+///
+/// It is subsidiary because it is managed exclusively through return request
+/// workflows and serves to preserve actor context for audit, fraud analysis,
+/// and customer service traces.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_return_request_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the customer return request subtype
+  /// record.
+  id String @id
+  
+  /// Return request main record that this customer subtype details. {@link
+  /// shopping_mall_order_return_requests.id}.
+  shopping_mall_order_return_request_id String
+  
+  /// Customer who initiated this return request. {@link
+  /// shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer session used when submitting the return request. {@link
+  /// shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String
+  
+  /// Timestamp when this customer subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this customer subtype record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this customer subtype record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  returnRequest shopping_mall_order_return_requests @relation(fields: [shopping_mall_order_return_request_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_order_return_request_of_customers_shoppi_77b1e625")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_return_request_id], map: "shopping_mall_order_return_request_of_customers_shoppi_8561e4bf")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_order_return_request_of_customers_shoppi_a2dab657")
+}
+
+/// Disputes raised in relation to orders, order lines, or after-sales
+/// interactions, covering complaints such as non-delivery, damaged goods, or
+/// service dissatisfaction.
+///
+/// This main entity contains shared dispute data including links to {@link
+/// shopping_mall_orders}, optional {@link shopping_mall_order_lines},
+/// actor_type, issue_category, description, dispute_status, and resolution
+/// information. It is complemented by subtype entities for customer and
+/// seller perspectives.
+///
+/// Disputes provide a central record for platformAdmin to resolve conflicts
+/// and interact with payment chargebacks, refunds, and inventory
+/// corrections, while preserving a full timeline of interactions from
+/// different actors.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_disputes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the dispute.
+  id String @id
+  
+  /// Order that this dispute is about. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Optional specific order line that the dispute targets when it is
+  /// line-level. {@link shopping_mall_order_lines.id}.
+  shopping_mall_order_line_id String?
+  
+  /// Actor type that opened the dispute (for example, customer, seller,
+  /// platform_admin).
+  actor_type String
+  
+  /// Categorized type of problem being disputed (for example, non_delivery,
+  /// damaged_item, incorrect_item, payment_issue, policy_violation).
+  issue_category String
+  
+  /// Short summary title describing the dispute, used in lists and dashboards.
+  issue_title String
+  
+  /// Detailed description of the problem, including contextual information
+  /// provided by the actor.
+  issue_description String?
+  
+  /// Current status of the dispute (for example, open, awaiting_seller,
+  /// awaiting_customer, resolved_customer_favored, resolved_seller_favored,
+  /// closed_without_action).
+  dispute_status String
+  
+  /// Category describing the resolution outcome (for example, refund_given,
+  /// replacement_sent, claim_rejected, goodwill_credit).
+  resolution_category String?
+  
+  /// Timestamp when the dispute reached a terminal resolved state.
+  resolved_at DateTime?
+  
+  /// Timestamp when this dispute was opened.
+  created_at DateTime
+  
+  /// Timestamp when this dispute record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this dispute record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderLine shopping_mall_order_lines? @relation(fields: [shopping_mall_order_line_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_dispute_of_customers shopping_mall_order_dispute_of_customers?
+  shopping_mall_order_dispute_of_sellers shopping_mall_order_dispute_of_sellers?
+  shopping_mall_dispute_resolution_logs shopping_mall_dispute_resolution_logs[]
+  
+  @@index([shopping_mall_order_line_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_disputes_shopping_mall_order_id_cr_32ed4a61")
+  @@index([dispute_status, created_at])
+  @@index([actor_type, created_at])
+}
+
+/// Customer-specific subtype entity linking a dispute to the customer and
+/// session that opened it.
+///
+/// It enforces a 1:1 relationship with {@link shopping_mall_order_disputes}
+/// using a unique constraint on shopping_mall_order_dispute_id. The entity
+/// references {@link shopping_mall_customer} and {@link
+/// shopping_mall_customer_sessions} to provide traceable actor context.
+///
+/// Being subsidiary, the model is created and managed only as part of
+/// dispute workflows and not through independent CRUD operations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_dispute_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the customer dispute subtype record.
+  id String @id
+  
+  /// Main dispute record that this customer subtype details. {@link
+  /// shopping_mall_order_disputes.id}.
+  shopping_mall_order_dispute_id String
+  
+  /// Customer who opened this dispute. {@link shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer session used when submitting the dispute. {@link
+  /// shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String
+  
+  /// Timestamp when this customer subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this customer subtype record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this customer subtype record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_order_disputes @relation(fields: [shopping_mall_order_dispute_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_order_dispute_of_customers_shopping_mall_f9553a53")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_dispute_id], map: "shopping_mall_order_dispute_of_customers_shopping_mall_0522c94f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_order_dispute_of_customers_shopping_mall_a86cf83a")
+}
+
+/// Seller-specific subtype entity linking a dispute to the seller and
+/// session that opened it.
+///
+/// The model captures disputes initiated by sellers about order items, such
+/// as fraudulent customer claims or logistical issues. It maintains a 1:1
+/// relationship with {@link shopping_mall_order_disputes} and references
+/// {@link shopping_mall_seller} and {@link shopping_mall_seller_sessions}.
+///
+/// This entity is subsidiary, created and modified through dispute
+/// management workflows and seller tools, ensuring that ownership and
+/// session context remains normalized and auditable.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_dispute_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier of the seller dispute subtype record.
+  id String @id
+  
+  /// Main dispute record that this seller subtype details. {@link
+  /// shopping_mall_order_disputes.id}.
+  shopping_mall_order_dispute_id String
+  
+  /// Seller who opened this dispute. {@link shopping_mall_seller.id}.
+  shopping_mall_seller_id String
+  
+  /// Seller session used when submitting the dispute. {@link
+  /// shopping_mall_seller_sessions.id}.
+  shopping_mall_seller_session_id String
+  
+  /// Timestamp when this seller subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this seller subtype record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this seller subtype record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  dispute shopping_mall_order_disputes @relation(fields: [shopping_mall_order_dispute_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_order_dispute_of_sellers_shopping_mall_s_7ef69b85")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_dispute_id], map: "shopping_mall_order_dispute_of_sellers_shopping_mall_o_ac7f78c1")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_order_dispute_of_sellers_shopping_mall_s_173ada97")
+}

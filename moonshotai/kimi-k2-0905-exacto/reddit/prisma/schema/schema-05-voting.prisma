@@ -1,447 +1,304 @@
-/// Core voting records tracking all upvote and downvote actions on posts and
-/// comments. This table maintains the democratic content curation mechanism
-/// of the Reddit-like community platform, recording immediate voting actions
-/// while enabling real-time score updates and historical analysis. Each vote
-/// targets exactly one content type through exclusive-or foreign key
-/// relationships ensuring data integrity.
+/// Individual user votes on posts and comments that drive content ranking
+/// and karma calculations.
+///
+/// This table records every upvote and downvote cast by users on platform
+/// content, forming the foundation of the content curation system. Votes are
+/// used with appropriate anti-manipulation measures and contribute directly
+/// to user karma calculations according to the platform's voting algorithms.
+///
+/// All votes are permanent records that cannot be deleted, only updated
+/// through the voting mechanism (changing upvote to downvote or vice versa).
 ///
 /// @namespace Voting
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_votes {
+model reddit_community_votes {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The member who cast this vote. References reddit_like_community_members.id
-  reddit_like_community_member_id String
+  /// Voter member. {@link reddit_community_members.id}
+  reddit_community_member_id String
   
-  /// The content (post or comment) being voted on through the content_vote
-  /// relationship table
-  reddit_like_community_content_vote_id String
+  /// Session during which the vote was cast. {@link
+  /// reddit_community_member_sessions.id}
+  reddit_community_member_session_id String
   
-  /// The voting direction: 1 for upvote, -1 for downvote
-  vote_value Int
+  /// Type of vote (upvote or downvote). {@link reddit_community_vote_types.id}
+  reddit_community_vote_type_id String
   
-  /// Optional reason for vote selection supporting sentiment analysis
-  vote_reason String?
+  /// Target post being voted on (if voting on a post). {@link
+  /// reddit_community_posts.id}
+  reddit_community_post_id String?
   
-  /// Timestamp when the vote was cast for chronological analysis and real-time
-  /// updates
+  /// Target comment being voted on (if voting on a comment). {@link
+  /// reddit_community_comments.id}
+  reddit_community_comment_id String?
+  
+  /// Timestamp when the vote was cast.
   created_at DateTime
   
-  /// Timestamp of the most recent vote change for tracking modifications and
-  /// audit
+  /// Timestamp when the vote was last modified.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  member reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
-  contentVote reddit_like_community_content_votes @relation(fields: [reddit_like_community_content_vote_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  session reddit_community_member_sessions @relation(fields: [reddit_community_member_session_id], references: [id], onDelete: Cascade)
+  voteType reddit_community_vote_types @relation(fields: [reddit_community_vote_type_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts? @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments? @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
   
-  reddit_like_community_vote_fraud_alerts reddit_like_community_vote_fraud_alerts[]
+  @@index([reddit_community_member_session_id])
+  @@index([reddit_community_vote_type_id])
+  @@index([reddit_community_post_id])
+  @@index([reddit_community_comment_id])
   
   // spellchecker: ignore-next-line
-  @@index([reddit_like_community_content_vote_id], map: "reddit_like_community_votes_reddit_like_community_cont_b6243051")
-  
+  @@unique([reddit_community_member_id, reddit_community_post_id], map: "reddit_community_votes_reddit_community_member_id_redd_aa96c8a6")
   // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_member_id, reddit_like_community_content_vote_id], map: "reddit_like_community_votes_reddit_like_community_memb_e881d439")
+  @@unique([reddit_community_member_id, reddit_community_comment_id], map: "reddit_community_votes_reddit_community_member_id_redd_c3421151")
   @@index([created_at])
-  // spellchecker: ignore-next-line
-  @@index([reddit_like_community_member_id, created_at], map: "reddit_like_community_votes_reddit_like_community_memb_60baeba4")
-  @@index([vote_value, created_at])
 }
 
-/// Fraud detection alerts capturing suspicious voting patterns and potential
-/// manipulation attempts. This table maintains an audit trail of unusual
-/// voting behavior detected through pattern analysis, rate limiting
-/// violations, or coordinated voting activities. Alerts are classified by
-/// type and severity to enable graduated response mechanisms and mitigation
-/// strategies.
+/// Reference data defining the types of votes available on the platform.
+///
+/// This table contains the classification system for different types of
+/// votes that users can cast. Currently supports upvotes and downvotes but
+/// provides extensibility for future voting mechanisms like awards or
+/// specialized community rating systems.
+///
+/// Vote types are used throughout the platform for filtering, analytics, and
+/// algorithmic content ranking to ensure fair and consistent voting behavior
+/// management.
 ///
 /// @namespace Voting
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_vote_fraud_alerts {
+model reddit_community_vote_types {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The member associated with the fraudulent activity (suspected
-  /// manipulator). References {@link reddit_like_community_members.id}
-  reddit_like_community_member_id String?
+  /// Name of the vote type (e.g., 'upvote', 'downvote').
+  name String
   
-  /// The specific vote that triggered the fraud alert. References {@link
-  /// reddit_like_community_votes.id}
-  reddit_like_community_vote_id String?
+  /// Detailed description of this vote type and its purpose.
+  description String?
   
-  /// The content targeted by suspected manipulation. References {@link
-  /// reddit_like_community_posts.id}
-  reddit_like_community_post_id String?
-  
-  /// The comment targeted by suspected manipulation. References {@link
-  /// reddit_like_community_comments.id}
-  reddit_like_community_comment_id String?
-  
-  /// Classification of fraud type: 'rate_violation', 'brigade', 'coordinated',
-  /// 'self_vote', 'bot_activity', 'ip_cluster'. Enables targeted response
-  /// strategies and pattern analysis.
-  fraud_type String
-  
-  /// Severity rating from 1-10 indicating manipulation risk level. Higher
-  /// scores trigger more aggressive mitigation responses and faster
-  /// investigative timelines.
-  severity_score Int
-  
-  /// Algorithmic confidence level (0.0-1.0) indicating fraud detection
-  /// certainty. Used for escalation thresholds and challenge/response
-  /// mechanisms.
-  confidence_level Float
-  
-  /// Serialized evidence supporting the fraud alert including IP patterns,
-  /// timing analysis, vote velocity data, and account clustering indicators.
-  evidence_data String
-  
-  /// Current status of fraud investigation: 'open', 'investigating',
-  /// 'mitigated', 'resolved', 'false_positive'. Tracks investigation lifecycle
-  /// and response effectiveness.
-  alert_status String
-  
-  /// When the fraud alert was generated by detection algorithms. Used for
-  /// investigation timelines and escalation procedures.
+  /// Timestamp when this vote type was created.
   created_at DateTime
   
-  /// Last modification of alert status or evidence. Tracks investigation
-  /// progress and resolution times.
+  /// Timestamp when this vote type was last updated.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  suspectedMember reddit_like_community_members? @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
-  triggerVote reddit_like_community_votes? @relation(fields: [reddit_like_community_vote_id], references: [id], onDelete: Cascade)
-  targetPost reddit_like_community_posts? @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
-  targetComment reddit_like_community_comments? @relation(fields: [reddit_like_community_comment_id], references: [id], onDelete: Cascade)
+  reddit_community_votes reddit_community_votes[]
   
-  // spellchecker: ignore-next-line
-  @@index([reddit_like_community_vote_id], map: "reddit_like_community_vote_fraud_alerts_reddit_like_co_bfbcc878")
-  // spellchecker: ignore-next-line
-  @@index([reddit_like_community_post_id], map: "reddit_like_community_vote_fraud_alerts_reddit_like_co_9ee66ee9")
-  // spellchecker: ignore-next-line
-  @@index([reddit_like_community_comment_id], map: "reddit_like_community_vote_fraud_alerts_reddit_like_co_abbfa81e")
-  
-  @@index([created_at])
-  // spellchecker: ignore-next-line
-  @@index([fraud_type, created_at], map: "reddit_like_community_vote_fraud_alerts_fraud_type_cre_0778dfff")
-  // spellchecker: ignore-next-line
-  @@index([alert_status, created_at], map: "reddit_like_community_vote_fraud_alerts_alert_status_c_188b24a2")
-  // spellchecker: ignore-next-line
-  @@index([reddit_like_community_member_id, created_at], map: "reddit_like_community_vote_fraud_alerts_reddit_like_co_58097e6d")
+  @@unique([name])
 }
 
-/// Statistical pattern analysis for voting behavior providing comprehensive
-/// monitoring capabilities. This table aggregates voting data across time
-/// windows and user segments to identify emerging trends, baseline metrics,
-/// and anomalous deviations that may indicate manipulation attempts.
-/// Patterns are computed via periodic analysis to enable proactive detection
-/// while maintaining system responsiveness.
+/// System for calculating and tracking user karma scores based on voting
+/// activity.
+///
+/// This table represents the core karma calculation engine that processes
+/// voting data to generate user reputation scores. It implements the
+/// platform's karma algorithms including vote weighting, time-decay factors,
+/// and community-specific adjustments while maintaining transparency and
+/// fairness across all user activities.
+///
+/// Karma calculations are performed periodically to balance real-time
+/// responsiveness with system performance, and provide the foundation for
+/// user privilege systems and content ranking algorithms throughout the
+/// platform.
 ///
 /// @namespace Voting
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_vote_patterns {
+model reddit_community_karma_calculations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The member whose voting patterns are being analyzed. References {@link
-  /// reddit_like_community_members.id} for user-specific pattern detection.
-  reddit_like_community_member_id String?
+  /// Member whose karma is being calculated. {@link
+  /// reddit_community_members.id}
+  reddit_community_member_id String
   
-  /// The post being analyzed for voting patterns. References {@link
-  /// reddit_like_community_posts.id} for content-specific anomaly detection.
-  reddit_like_community_post_id String?
+  /// Karma earned from post votes.
+  post_karma Int
   
-  /// The comment being analyzed for voting patterns. References {@link
-  /// reddit_like_community_comments.id} for comment-specific pattern tracking.
-  reddit_like_community_comment_id String?
+  /// Karma earned from comment votes.
+  comment_karma Int
   
-  /// Type of pattern being tracked: 'baseline', 'trending', 'baseline_user',
-  /// 'anomaly'. Defines analysis methodology and alerting thresholds.
-  pattern_type String
+  /// Total combined karma score.
+  total_karma Int
   
-  /// Time period for pattern analysis: 'hour', 'day', 'week', 'month'. Enables
-  /// temporal pattern detection and comparative analysis.
-  time_window String
+  /// Timestamp of the last calculation.
+  calculation_timestamp DateTime
   
-  /// Total number of votes captured in this pattern analysis window. Used for
-  /// percentage calculations and baseline establishment.
-  vote_count Int
-  
-  /// Percentage of upvotes within the analysis window (0.0-1.0). Used for
-  /// trend analysis and anomaly detection.
-  upvote_percentage Float
-  
-  /// Statistical novelty indicating deviation from expected patterns
-  /// (0.0=normal, 1.0=highly unusual). Triggers investigation thresholds.
-  novelty_score Float
-  
-  /// Serialized statistical data including velocity metrics, geographic
-  /// distribution, device diversity, and behavioral indicators for
-  /// comprehensive analysis.
-  analysis_data String
-  
-  /// When this pattern analysis was computed. Used for trend tracking and
-  /// analysis scheduling.
+  /// Timestamp when karma record was created.
   created_at DateTime
   
-  //----
-  // RELATIONS
-  //----
-  member reddit_like_community_members? @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
-  targetPost reddit_like_community_posts? @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
-  targetComment reddit_like_community_comments? @relation(fields: [reddit_like_community_comment_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_member_id, pattern_type, time_window], map: "reddit_like_community_vote_patterns_reddit_like_commun_12dd2e6d")
-  // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_post_id, pattern_type, time_window], map: "reddit_like_community_vote_patterns_reddit_like_commun_c28f5139")
-  // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_comment_id, pattern_type, time_window], map: "reddit_like_community_vote_patterns_reddit_like_commun_fe5127a1")
-  // spellchecker: ignore-next-line
-  @@index([novelty_score, created_at], map: "reddit_like_community_vote_patterns_novelty_score_crea_f2d1e467")
-  @@index([created_at])
-}
-
-/// Real-time computed scores for posts and comments enabling efficient
-/// content curation and discovery. This table maintains pre-calculated vote
-/// aggregation metrics optimized for high-performance queries supporting
-/// personalized feeds, community sorting, and trending algorithms. Scores
-/// are updated periodically through background processing to balance
-/// accuracy with system performance.
-///
-/// @namespace Voting
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_content_scores {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The post being scored. References {@link reddit_like_community_posts.id}.
-  /// Unique constraint ensures optimized lookup performance.
-  reddit_like_community_post_id String?
-  
-  /// The comment being scored. References {@link
-  /// reddit_like_community_comments.id}. Unique constraint ensures efficient
-  /// query performance.
-  reddit_like_community_comment_id String?
-  
-  /// Aggregated vote score (upvotes - downvotes) for content. Used as primary
-  /// sorting metric in content discovery algorithms.
-  total_vote_score Int
-  
-  /// Total number of upvotes received. Used for engagement metrics and
-  /// percentage calculations.
-  upvote_count Int
-  
-  /// Total number of downvotes received. Provides complete vote transparency
-  /// and supports controversial content identification.
-  downvote_count Int
-  
-  /// Reddit-style hotness score factoring in vote velocity and time decay.
-  /// Enables trending content identification with community-specific
-  /// algorithms.
-  hot_score Float
-  
-  /// Metric indicating vote divisiveness (high updown vote variance). Used for
-  /// identifying discussion-worthy content likely to generate engagement.
-  controversy_score Float
-  
-  /// When this score was last updated by aggregation process. Used for
-  /// freshness validation and recalculation scheduling.
-  last_calculation_at DateTime
-  
-  /// When this score entry was originally computed. Provides audit trail for
-  /// score computation history.
-  created_at DateTime
-  
-  /// Timestamp of the most recent score adjustment. Enables cache invalidation
-  /// and update notifications.
+  /// Timestamp when karma was last updated.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  post reddit_like_community_posts? @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
-  comment reddit_like_community_comments? @relation(fields: [reddit_like_community_comment_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_karma_history reddit_community_karma_history[]
   
   // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_post_id], map: "reddit_like_community_content_scores_reddit_like_commu_2ad36940")
+  @@unique([reddit_community_member_id], map: "reddit_community_karma_calculations_reddit_community_m_905b135d")
+  
   // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_comment_id], map: "reddit_like_community_content_scores_reddit_like_commu_d3b06ad4")
+  @@index([total_karma, calculation_timestamp], map: "reddit_community_karma_calculations_total_karma_calcul_c7a979c0")
   // spellchecker: ignore-next-line
-  @@index([hot_score, last_calculation_at], map: "reddit_like_community_content_scores_hot_score_last_ca_9d498fd7")
-  // spellchecker: ignore-next-line
-  @@index([total_vote_score, last_calculation_at], map: "reddit_like_community_content_scores_total_vote_score__4c6374db")
-  // spellchecker: ignore-next-line
-  @@index([controversy_score, last_calculation_at], map: "reddit_like_community_content_scores_controversy_score_9137b66f")
+  @@index([reddit_community_member_id, calculation_timestamp], map: "reddit_community_karma_calculations_reddit_community_m_87bfbc95")
 }
 
-/// Content vote mapping table that resolves the content type (post or
-/// comment) for each vote through polymorphic relationship. This design
-/// maintains proper 3NF normalization by separating the vote content
-/// relationship from vote metadata, enabling efficient aggregation queries
-/// while preventing orphaned vote records.
+/// Historical record of karma changes for audit and transparency purposes.
+///
+/// This table maintains a complete audit trail of all karma modifications
+/// providing transparency in reputation building and supporting dispute
+/// resolution when necessary. It records the source events that contribute
+/// to karma changes, enabling users to understand how their reputation is
+/// built and changed over time.
+///
+/// The karma history serves as the authoritative record for addressing user
+/// concerns about reputation calculations and supports analytics for
+/// understanding platform engagement patterns while maintaining
+/// comprehensive audit capabilities.
 ///
 /// @namespace Voting
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_content_votes {
+model reddit_community_karma_history {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The post being voted on. References reddit_like_community_posts.id
-  reddit_like_community_post_id String?
+  /// Member whose karma changed. {@link reddit_community_members.id}
+  reddit_community_member_id String
   
-  /// The comment being voted on. References reddit_like_community_comments.id
-  reddit_like_community_comment_id String?
+  /// Session during which the karma change occurred. {@link
+  /// reddit_community_member_sessions.id}
+  reddit_community_member_session_id String
   
-  /// Type of content being voted on: 'post' or 'comment' for validation
-  content_type String
+  /// Associated karma calculation record. {@link
+  /// reddit_community_karma_calculations.id}
+  reddit_community_karma_calculation_id String
   
-  /// Current vote score maintaining real-time totals after each vote
-  current_score Int
+  /// Amount of karma change (positive or negative).
+  change_amount Int
   
-  /// When this score was last updated through vote aggregation process
-  cached_at DateTime
+  /// Reason for the karma change (vote_received, post_removal, etc.).
+  reason String
   
-  //----
-  // RELATIONS
-  //----
-  post reddit_like_community_posts? @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
-  comment reddit_like_community_comments? @relation(fields: [reddit_like_community_comment_id], references: [id], onDelete: Cascade)
+  /// Reference to the source event that caused this change.
+  reference_id String?
   
-  reddit_like_community_votes reddit_like_community_votes[]
-  reddit_like_community_real_time_scores reddit_like_community_real_time_scores?
-  
-  // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_post_id], map: "reddit_like_community_content_votes_reddit_like_commun_571c66a0")
-  // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_comment_id], map: "reddit_like_community_content_votes_reddit_like_commun_b776c010")
-  @@index([content_type, cached_at])
-}
-
-/// Comprehensive behavioral analysis for sophisticated voter behavior
-/// pattern detection. This primary entity stores atomic voter statistics and
-/// temporal patterns supporting machine learning integration for fraud
-/// detection while maintaining audit trails for investigation and trend
-/// analysis.
-///
-/// @namespace Voting
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_vote_behavior_analysis {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Member whose voting behavior is being analyzed
-  reddit_like_community_member_id String
-  
-  /// Community context for behavior analysis supporting community-specific
-  /// patterns
-  reddit_like_community_id String
-  
-  /// Time period analyzed: 'hour', 'day', 'week', 'month' for temporal pattern
-  /// detection
-  analysis_window String
-  
-  /// Rate of voting actions per minute enabling spam and bot detection
-  vote_velocity Int
-  
-  /// Geographic distribution score from 0.0 to 1.0 indicating coordinated
-  /// behavior
-  geographic_diversity_score Float
-  
-  /// Number of unique devices used for voting supporting authentic behavior
-  /// detection
-  device_diversity_count Int
-  
-  /// Novelty indicator from 0.0 to 1.0 for identifying emerging manipulation
-  /// patterns
-  pattern_freshness_score Float
-  
-  /// Analysis confidence score helping determine investigation priority
-  confidence_level Float
-  
-  /// When this behavior analysis was computed providing audit trail
+  /// Timestamp when the karma change occurred.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  member reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
-  community reddit_like_community_communities @relation(fields: [reddit_like_community_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  session reddit_community_member_sessions @relation(fields: [reddit_community_member_session_id], references: [id], onDelete: Cascade)
+  karmaCalculation reddit_community_karma_calculations @relation(fields: [reddit_community_karma_calculation_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([reddit_like_community_id], map: "reddit_like_community_vote_behavior_analysis_reddit_li_926efb1e")
-  
+  @@index([reddit_community_member_session_id], map: "reddit_community_karma_history_reddit_community_member_22302668")
   // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_member_id, reddit_like_community_id, analysis_window], map: "reddit_like_community_vote_behavior_analysis_reddit_li_1ca2e9bc")
-  @@index([vote_velocity])
+  @@index([reddit_community_karma_calculation_id], map: "reddit_community_karma_history_reddit_community_karma__d29232e4")
+  
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_karma_history_reddit_community_member_902bdf5d")
 }
 
-/// Real-time computed scores for posts and comments optimized for
-/// high-performance content curation and discovery queries. This subsidiary
-/// table maintains pre-calculated vote aggregation metrics updated through
-/// event-driven architecture supporting personalized feeds, community
-/// sorting algorithms, and trending content identification with sub-500ms
-/// response requirements.
+/// Calculated rankings of content based on voting, age, and engagement metrics.
+///
+/// This table stores the computed rankings that power the platform's content
+/// discovery algorithms including Hot, Top, New, and Controversial sorting
+/// mechanisms. It maintains cached results of complex ranking calculations
+/// to provide fast and consistent content presentation across all user
+/// interfaces.
+///
+/// Content rankings are recalculated periodically based on platform
+/// algorithms and serve as the foundation for content discovery, community
+/// navigation, and trending content identification throughout the platform
+/// environment.
 ///
 /// @namespace Voting
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_real_time_scores {
+model reddit_community_content_rankings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The content vote mapping record this score belongs to
-  reddit_like_community_content_vote_id String
+  /// Community scope for this ranking (if community-specific). {@link
+  /// reddit_community_communities.id}
+  reddit_community_community_id String?
   
-  /// Aggregated vote score from upvotes minus downvotes for content ranking
-  total_vote_score Int
+  /// Target post being ranked (if ranking posts). {@link
+  /// reddit_community_posts.id}
+  reddit_community_post_id String?
   
-  /// Rate of upvotes per hour enabling real-time trending detection
-  upvote_velocity_per_hour Int
+  /// Target comment being ranked (if ranking comments). {@link
+  /// reddit_community_comments.id}
+  reddit_community_comment_id String?
   
-  /// Rate of downvotes per hour supporting anomaly detection
-  downvote_velocity_per_hour Int
+  /// Type of ranking (hot, top, new, controversial).
+  ranking_type String
   
-  /// Timestamp of the most recent vote affecting this score for freshness
-  last_vote_at DateTime
+  /// Calculated ranking score for sorting purposes.
+  score Float
   
-  /// When this score was last recalculated through aggregation process
-  calculated_at DateTime
+  /// Calculated ranking position within the ranking type.
+  rank_position Int?
+  
+  /// Timestamp when this ranking was calculated.
+  calculation_timestamp DateTime
+  
+  /// Timestamp when this ranking expires and should be recalculated.
+  valid_until DateTime
+  
+  /// Time period for this ranking (past_hour, past_day, past_week, past_month,
+  /// all_time).
+  time_period String?
+  
+  /// Timestamp when the ranking record was created.
+  created_at DateTime
+  
+  /// Timestamp when the ranking was last updated.
+  updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  contentVote reddit_like_community_content_votes @relation(fields: [reddit_like_community_content_vote_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities? @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts? @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments? @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
   
+  @@index([reddit_community_post_id])
   // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_content_vote_id], map: "reddit_like_community_real_time_scores_reddit_like_com_35c639dc")
+  @@index([reddit_community_comment_id], map: "reddit_community_content_rankings_reddit_community_com_cd8e2aff")
   
+  @@index([ranking_type, score])
   // spellchecker: ignore-next-line
-  @@index([upvote_velocity_per_hour, calculated_at], map: "reddit_like_community_real_time_scores_upvote_velocity_4be54699")
+  @@index([reddit_community_community_id, ranking_type, score], map: "reddit_community_content_rankings_reddit_community_com_e972f57f")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id, ranking_type, valid_until], map: "reddit_community_content_rankings_reddit_community_com_d29f5cc1")
 }

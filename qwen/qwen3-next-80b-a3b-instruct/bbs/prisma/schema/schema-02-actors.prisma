@@ -1,0 +1,256 @@
+/// Core identity record for citizens who participate in economic and
+/// political discussions.
+///
+/// Each citizen has a unique, persistent account that links all their posts,
+/// comments, attachments, warnings, and moderation history. This table
+/// stores authentication credentials and account status metadata.
+///
+/// Citizens initiate content creation and interaction, requiring
+/// authentication and authorization. This table serves as the authoritative
+/// source for citizen identity and ban/suspension status within the system.
+///
+/// The relationship to citizen_sessions is one-to-many. Each citizen can
+/// have multiple active sessions concurrently via different devices or
+/// browsing contexts.
+///
+/// Account deletion triggers anonymization of content ({@link
+/// economic_board_posts}, {@link economic_board_comments}) while preserving
+/// audit trail integrity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Citizen's contact email address used for authentication and
+  /// notifications. Must be unique and verified before posting content.
+  email String
+  
+  /// Hashed password for authentication using bcrypt algorithm. Never stores
+  /// plain text passwords.
+  password_hash String
+  
+  /// Timestamp when this citizen account was created. Always reflects the
+  /// system's UTC clock.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this citizen account record.
+  /// Updated on password changes, profile edits, or status changes.
+  updated_at DateTime
+  
+  /// Timestamp when this citizen account was deleted. When not null, the
+  /// account is considered deleted and inaccessible. Null indicates active
+  /// account.
+  deleted_at DateTime?
+  
+  /// Current account status. Valid values: 'active', 'suspended', 'banned'.
+  /// Suspended (3 warnings) temporarily blocks posting. Banned (3 suspensions)
+  /// permanently blocks all activity.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  economic_board_citizen_sessions economic_board_citizen_sessions[]
+  economic_board_posts economic_board_posts[]
+  economic_board_post_revisions economic_board_post_revisions[]
+  economic_board_comments economic_board_comments[]
+  economic_board_attachment_logs economic_board_attachment_logs[]
+  economic_board_moderation_actions economic_board_moderation_actions[]
+  
+  @@index([status, created_at])
+  @@index([deleted_at])
+}
+
+/// Session records for authenticated citizen sessions.
+///
+/// Tracks active connections from citizens to the platform using JWT
+/// authentication. Each record represents a single login session from a
+/// specific device, browser, or IP address.
+///
+/// Sessions are managed purely by the authentication service and are not
+/// directly manipulated by citizens. They are automatically expired based on
+/// timeout policies and invalidated during logout or password changes.
+///
+/// All required fields match the session table specification exactly. No
+/// additional fields are permitted. This table does not store tokens, user
+/// agent, or device information.
+///
+/// Relationship to economic_board_citizens is many-to-one: one citizen can
+/// have many active sessions concurrently.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_citizen_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen this session belongs to. {@link economic_board_citizens.id}.
+  economic_board_citizen_id String
+  
+  /// IP address from which this session was initiated. Used for security
+  /// monitoring and abuse detection.
+  ip String
+  
+  /// URL of the page from which the user initiated the login session. Used for
+  /// traffic origin analysis.
+  href String
+  
+  /// Referrer URL that led the user to the login page. Used for marketing and
+  /// user acquisition analysis.
+  referrer String
+  
+  /// Timestamp when this session was created and the JWT token was issued.
+  /// This is the authoritative start time of the session.
+  created_at DateTime
+  
+  /// Timestamp when this session will expire. If null, the session has not yet
+  /// been explicitly expired through logout or password change. When null, the
+  /// session may be manually invalidated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen economic_board_citizens @relation(fields: [economic_board_citizen_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_board_citizen_id, created_at], map: "economic_board_citizen_sessions_economic_board_citizen_e09de559")
+}
+
+/// Core identity record for moderators who administrate and oversee economic
+/// and political discussion content.
+///
+/// Each moderator has a unique, persistent account that links all their
+/// moderation actions, warnings issued, posts approved or rejected, and
+/// audit logs. This table stores authentication credentials and account
+/// status metadata.
+///
+/// Moderators are granted elevated privileges to manage content integrity
+/// and enforce community guidelines. This table serves as the authoritative
+/// source for moderator identity and activity within the system.
+///
+/// The relationship to moderator_sessions is one-to-many. Each moderator can
+/// have multiple active sessions concurrently via different devices or
+/// browsing contexts.
+///
+/// Moderator accounts are created only by administrators and cannot be
+/// self-signed up. Account deletion is not permitted - only deactivation via
+/// status change.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's contact email address used for authentication and
+  /// notifications. Must be unique and verified during account creation.
+  email String
+  
+  /// Hashed password for authentication using bcrypt algorithm. Never stores
+  /// plain text passwords.
+  password_hash String
+  
+  /// Timestamp when this moderator account was created. Always reflects the
+  /// system's UTC clock.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this moderator account record.
+  /// Updated on password changes or status changes.
+  updated_at DateTime
+  
+  /// Timestamp when this moderator account was deactivated. Cannot be truly
+  /// deleted per business rules - only deactivated via status field. When not
+  /// null, the account is effectively disabled.
+  deleted_at DateTime?
+  
+  /// Current account status. Valid values: 'active', 'deactivated'. When
+  /// 'deactivated', the moderator can no longer authenticate and perform any
+  /// moderator actions. No permanent deletion of moderator accounts permitted.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  economic_board_moderator_sessions economic_board_moderator_sessions[]
+  economic_board_posts_of_moderator_approved_id economic_board_posts[] @relation("economic_board_posts_of_moderator_approved_id")
+  economic_board_posts_of_moderator_rejected_id economic_board_posts[] @relation("economic_board_posts_of_moderator_rejected_id")
+  economic_board_posts_of_moderator_deleted_id economic_board_posts[] @relation("economic_board_posts_of_moderator_deleted_id")
+  economic_board_comments economic_board_comments[]
+  economic_board_attachment_logs economic_board_attachment_logs[]
+  economic_board_moderation_actions economic_board_moderation_actions[]
+  
+  @@index([status, created_at])
+  @@index([deleted_at])
+}
+
+/// Session records for authenticated moderator sessions.
+///
+/// Tracks active connections from moderators to the platform using JWT
+/// authentication. Each record represents a single login session from a
+/// specific device, browser, or IP address.
+///
+/// Sessions are managed purely by the authentication service and are not
+/// directly manipulated by moderators. They are automatically expired based
+/// on timeout policies and invalidated during logout or password changes.
+///
+/// All required fields match the session table specification exactly. No
+/// additional fields are permitted. This table does not store tokens, user
+/// agent, or device information.
+///
+/// Relationship to economic_board_moderators is many-to-one: one moderator
+/// can have many active sessions concurrently.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderator this session belongs to. {@link
+  /// economic_board_moderators.id}.
+  economic_board_moderator_id String
+  
+  /// IP address from which this session was initiated. Used for security
+  /// monitoring and abuse detection.
+  ip String
+  
+  /// URL of the page from which the user initiated the login session. Used for
+  /// traffic origin analysis.
+  href String
+  
+  /// Referrer URL that led the user to the login page. Used for marketing and
+  /// user acquisition analysis.
+  referrer String
+  
+  /// Timestamp when this session was created and the JWT token was issued.
+  /// This is the authoritative start time of the session.
+  created_at DateTime
+  
+  /// Timestamp when this session will expire. If null, the session has not yet
+  /// been explicitly expired through logout or password change. When null, the
+  /// session may be manually invalidated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator economic_board_moderators @relation(fields: [economic_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_board_moderator_id, created_at], map: "economic_board_moderator_sessions_economic_board_moder_aa770bd4")
+}

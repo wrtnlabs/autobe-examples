@@ -1,456 +1,388 @@
-/// User profile information including customizable personal information such
-/// as display name, bio, avatar, and profile enhancement data. Each user has
-/// exactly one profile record that extends their base account information
-/// with public-facing customization options.
+/// User profile information and public-facing member data. Stores display
+/// name, biography, avatar, and location information that members customize
+/// to present themselves to the community. Separated from authentication
+/// tables for performance - profile data loaded independently of auth
+/// checks. Contains optional customization fields allowing members to
+/// personalize how they appear across the platform.
+///
+/// Each member has exactly one profile record (1:1 relationship with
+/// member). Profile remains even if member account is suspended, enabling
+/// profile viewing in moderation workflows. Rich personal customization
+/// supports community engagement and identity building.
 ///
 /// @namespace Profiles
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_profiles {
+model community_platform_member_profiles {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the member's account. {@link community_platform_members.id}
-  member_id String
+  /// Reference to the member account this profile belongs to. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
   
-  /// Full name or pseudonym displayed on user's profile. Maximum 50
-  /// characters, can differ from username.
+  /// Optional display name chosen by the member (0-100 characters). Separate
+  /// from username for flexible identity presentation. Can include spaces and
+  /// special characters. If empty, username is used for display.
   display_name String?
   
-  /// User-written about me description. Maximum 500 characters supporting
-  /// markdown formatting.
+  /// Optional biography or self-description (0-500 characters). Members use
+  /// this to share background, interests, expertise. Plain text with optional
+  /// markdown formatting. Displayed on profile page.
   bio String?
   
-  /// CDN URL to user's profile avatar image. Points to optimized profile
-  /// picture.
-  avatar_url String?
+  /// URL to member's profile picture/avatar. Stored as CDN URL for fast
+  /// delivery. Image is square (1:1 aspect ratio), typically 200x200 or
+  /// 400x400 pixels. Null if member hasn't uploaded custom avatar (system
+  /// provides default).
+  profile_image_url String?
   
-  /// CDN URL to user's profile banner/header image. Points to header
-  /// background image.
-  banner_url String?
-  
-  /// User's geographic location or city. Optional text field, maximum 100
-  /// characters.
+  /// Optional geographic location provided by member (0-100 characters). Text
+  /// field, not geocoded. Examples: 'San Francisco, CA' or 'Berlin, Germany'.
+  /// For context and discoverability only.
   location String?
   
-  /// User's personal or professional website link. Must be valid HTTP/HTTPS
-  /// URL.
+  /// Optional external website or social media link (0-2048 characters). Must
+  /// be valid URL format (http:// or https://). Displayed on profile as
+  /// clickable link. Allows members to promote personal websites or
+  /// portfolios.
   website_url String?
   
-  /// JSON array of user interest tags (max 10 tags, each max 50 characters).
-  /// Enables topic-based discovery.
-  interests String?
-  
-  /// Profile theme preference: 'light', 'dark', 'system', or 'custom'.
-  /// Controls profile display appearance.
+  /// User interface theme preference. Values: 'light', 'dark', or 'auto'
+  /// (follow system setting). Defaults to 'auto'. Applied only to current
+  /// user's session, not stored on server permanently.
   theme_preference String?
   
-  /// Hex color code for custom theme (e.g., #FF5733) when theme_preference is
-  /// 'custom'. Valid hex color format.
-  theme_color String?
-  
-  /// Profile privacy level: 'public' (visible to all), 'private' (followers
-  /// only), or 'anonymous'. Determines who can view profile.
-  profile_visibility String
-  
-  /// Whether to display user's online status to other members. False = status
-  /// hidden from public view.
-  show_activity_status Boolean
-  
-  /// Whether to display last active timestamp on profile. False = timestamp
-  /// hidden, activity status hidden from public.
-  show_last_active Boolean
-  
-  /// Direct message permission level: 'anyone' (all members),
-  /// 'followers_only', or 'nobody'. Controls who can message user.
-  allow_direct_messages String
-  
-  /// Timestamp when profile was created (usually same as account creation).
+  /// When this profile record was created. Typically matches member account
+  /// creation time. Used for profile age calculations and historical tracking.
   created_at DateTime
   
-  /// Timestamp when profile information was last updated.
+  /// When profile information was last updated. Tracks modifications to
+  /// display name, bio, avatar, location, website. Updated on any profile
+  /// field change.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
-  community_platform_content_reports community_platform_content_reports[]
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id], map: "community_platform_member_profiles_community_platform__ab668e3f")
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// User settings and preferences controlling platform behavior. Stores
+/// notification preferences, display settings, privacy controls, and content
+/// filtering options. Each member has one preferences record (1:1
+/// relationship). Preferences are sparse (optional fields) - members only
+/// update settings they care about; unset fields use platform defaults.
+///
+/// Separated into dedicated table because preferences are rarely accessed
+/// during performance-critical auth requests. Settings include notification
+/// frequency, content visibility, email subscriptions, and interface
+/// customization.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
   
-  @@unique([member_id])
-  @@index([profile_visibility])
+  /// Reference to the member whose preferences this record stores. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Whether to send email notifications when member's posts receive upvotes.
+  /// Defaults to true if not set. Members can opt out to reduce email volume.
+  notify_on_post_upvotes Boolean?
+  
+  /// Whether to send email notifications when member's comments receive
+  /// upvotes. Defaults to true. Independent control from post notifications.
+  notify_on_comment_upvotes Boolean?
+  
+  /// Whether to send email when someone replies to member's comment. Defaults
+  /// to true. Critical engagement notification.
+  notify_on_comment_replies Boolean?
+  
+  /// Whether to send email when member is mentioned using @username in
+  /// comments or posts. Defaults to true. Enables conversation participation
+  /// awareness.
+  notify_on_mentions Boolean?
+  
+  /// Whether to send email about moderator actions affecting member (warnings,
+  /// removals, suspensions). Defaults to true. Important for transparency.
+  notify_on_moderator_actions Boolean?
+  
+  /// How often to send notification emails. Values: 'instant' (immediate),
+  /// 'daily' (once per day), 'weekly' (once per week), 'disabled' (no emails).
+  /// Defaults to 'instant' if not set.
+  notification_frequency String?
+  
+  /// Whether profile is visible to non-authenticated guests and other members.
+  /// If false, profile only visible to self and administrators. Defaults to
+  /// true.
+  show_profile_publicly Boolean?
+  
+  /// Whether post history is visible on member's profile. If false, posts tab
+  /// hidden from others (but member can still view own posts). Defaults to
+  /// true.
+  show_post_history Boolean?
+  
+  /// Whether comment history is visible on member's profile. Controls
+  /// visibility of comments archive. Defaults to true.
+  show_comment_history Boolean?
+  
+  /// Whether karma score is visible to other members. If false, only member
+  /// and admins can see karma. Defaults to true for transparency.
+  show_karma_publicly Boolean?
+  
+  /// Whether to display when member was last active (e.g., 'Active 2 hours
+  /// ago'). If false, last_active is hidden. Defaults to false for privacy.
+  show_activity_status Boolean?
+  
+  /// Who can send direct messages to this member. Values: 'anyone',
+  /// 'followers_only', 'disabled'. Defaults to 'anyone' if not set.
+  allow_direct_messages String?
+  
+  /// Whether to filter NSFW-flagged posts from feeds. If true, adult content
+  /// hidden by default. Defaults to true (safe default for unknown users).
+  hide_nsfw_content Boolean?
+  
+  /// Whether to auto-expand inline images and videos in posts. If false, show
+  /// thumbnails only until clicked. Defaults to true.
+  expand_inline_media Boolean?
+  
+  /// Whether external links open in new tab/window. Defaults to true to
+  /// prevent leaving community platform.
+  open_links_new_tab Boolean?
+  
+  /// When preferences record was created. Usually matches member creation date.
+  created_at DateTime
+  
+  /// When preferences were last modified. Tracks setting changes for audit
+  /// purposes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id], map: "community_platform_member_preferences_community_platfo_7da41313")
+}
+
+/// Denormalized cache of member activities for efficient profile page
+/// display. Stores recent posts and comments created by member with
+/// denormalized metadata (title, preview, vote counts). Enables fast
+/// 'Activity' tab loading without querying posts/comments tables repeatedly.
+///
+/// This is a performance denormalization - data could be computed from posts
+/// and comments, but caching here speeds up profile page loads. Activity
+/// records are created when member posts/comments and updated when votes
+/// change. Deleted when parent post/comment is deleted.
+///
+/// Separated from profiles for organizational clarity and independent cache
+/// management. Each record represents one activity (post or comment) with
+/// snapshots of engagement metrics.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_activity {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who created this activity. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// If activity_type is 'post', reference to the post. {@link
+  /// community_platform_posts.id}. Null if activity_type is 'comment'.
+  community_platform_post_id String?
+  
+  /// If activity_type is 'comment', reference to the comment. {@link
+  /// community_platform_comments.id}. Null if activity_type is 'post'.
+  community_platform_comment_id String?
+  
+  /// Community where this activity occurred. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Type of activity. Values: 'post' (member created a post) or 'comment'
+  /// (member created a comment). Determines which FK is populated.
+  activity_type String
+  
+  /// Preview text of the post or comment for display in activity feed (first
+  /// 200 characters truncated with ellipsis). Text-only, HTML stripped. Null
+  /// if content removed by moderator.
+  content_preview String?
+  
+  /// For posts, the post title (up to 300 characters). For comments, null.
+  /// Used to identify activity in timeline.
+  content_title String?
+  
+  /// Current number of upvotes on this post/comment. Cached from votes table.
+  /// Updated in real-time as votes change. Used for ranking in activity
+  /// timeline.
+  upvote_count Int
+  
+  /// Current number of downvotes on this post/comment. Cached count. Used for
+  /// net score calculation.
+  downvote_count Int
+  
+  /// For posts, number of comments received. For comments, number of replies.
+  /// Cached count updated when comments added/removed. Null for activities
+  /// older than 6 months (for storage optimization).
+  comment_count Int?
+  
+  /// When this activity was created (timestamp when member created the
+  /// post/comment). Used for sorting activity timeline.
+  created_at DateTime
+  
+  /// When activity engagement metrics were last updated (votes changed). Null
+  /// if never updated since creation.
+  updated_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id], map: "community_platform_member_activity_community_platform__6fccf7f8")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_member_activity_community_platform__c6d0fbf6")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_activity_community_platform__0a2f2f3a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_member_activity_community_platform__e7ab8321")
   @@index([created_at])
 }
 
-/// User preference settings for notifications, content display, interface
-/// customization, and privacy controls. Separated from profile to enable
-/// efficient updates without affecting core profile data. Contains all
-/// user-configurable behavior settings.
+/// Social graph tracking which members follow which other members. Enables
+/// follower system allowing members to track activity of other community
+/// members. Each record represents one follow relationship: a follower
+/// member following a following member.
+///
+/// Stores bidirectional relationships: if A follows B, record shows
+/// follower_id=A, following_id=B. Separate records for reverse relationship
+/// if mutual follows exist. Used to build follower/following lists on
+/// profile pages and for social notifications.
+///
+/// Prevents duplicate follows (unique constraint on follower+following
+/// pair). Cannot follow self (validated in application). Follows are
+/// independent of community subscriptions - can follow members in any
+/// communities.
 ///
 /// @namespace Profiles
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_preferences {
+model community_platform_member_followers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the member account. {@link community_platform_members.id}
-  member_id String
-  
-  /// Post/comment reply notification preference: 'none', 'email', 'in_app',
-  /// 'both'. Controls reply alerts.
-  notifications_replies String
-  
-  /// Mention notification preference: 'none', 'email', 'in_app', 'both'.
-  /// Controls when @mentions trigger alerts.
-  notifications_mentions String
-  
-  /// Community post notification: 'none', 'email_digest', 'in_app_realtime',
-  /// 'all'. Controls how community updates delivered.
-  notifications_community_posts String
-  
-  /// Upvote milestone notification: 'none', 'milestones' (10/50/100), 'all'.
-  /// Controls vote notifications.
-  notifications_upvotes String
-  
-  /// Notification delivery frequency: 'realtime', 'daily_digest',
-  /// 'weekly_digest'. Controls batching of notifications.
-  notification_frequency String
-  
-  /// Whether quiet hours (do not disturb) period is enabled. Suppresses
-  /// non-urgent notifications.
-  quiet_hours_enabled Boolean
-  
-  /// Quiet hours start time in HH:MM format (e.g., '21:00' for 9 PM). Null if
-  /// quiet_hours_enabled is false.
-  quiet_hours_start String?
-  
-  /// Quiet hours end time in HH:MM format (e.g., '09:00' for 9 AM). Null if
-  /// quiet_hours_enabled is false.
-  quiet_hours_end String?
-  
-  /// Number of posts to display per feed page: 10, 20, 50, or 100. Affects
-  /// pagination.
-  content_posts_per_page Int
-  
-  /// Maximum comment nesting depth to display: 3, 5, 8, or -1 (unlimited).
-  /// Controls thread expansion.
-  content_comment_nesting_depth Int
-  
-  /// Whether to display image/video thumbnails in feeds. False = thumbnails
-  /// hidden.
-  content_show_thumbnails Boolean
-  
-  /// Whether to show Not Safe For Work flagged content. False = NSFW content
-  /// filtered.
-  content_show_nsfw Boolean
-  
-  /// Whether to autoplay videos in feeds. False = videos require manual click
-  /// to play.
-  content_autoplay_videos Boolean
-  
-  /// Whether to use infinite scroll or pagination. True = infinite scroll,
-  /// False = pagination controls.
-  content_infinite_scroll Boolean
-  
-  /// Interface theme: 'light', 'dark', or 'system_default'. Controls UI
-  /// appearance.
-  theme_color_mode String
-  
-  /// Whether to use condensed compact layout. True = reduced spacing, False =
-  /// standard spacing.
-  theme_compact_mode Boolean
-  
-  /// Font size preference: 'small', 'normal', 'large', 'extra_large'. Controls
-  /// text size across UI.
-  theme_font_size String
-  
-  /// Whether to disable animations and transitions. True = animations disabled
-  /// for accessibility.
-  theme_reduce_motion Boolean
-  
-  /// Whether voting history is visible to others. False = votes kept private.
-  privacy_show_voting_history Boolean
-  
-  /// Whether to display user's subscribed communities on profile. False =
-  /// community list hidden.
-  privacy_show_community_list Boolean
-  
-  /// Whether to display user's saved posts collection. False = bookmarks kept
-  /// private.
-  privacy_show_saved_posts Boolean
-  
-  /// Whether profile appears in search and recommendations. False = profile
-  /// not discoverable.
-  privacy_allow_profile_discovery Boolean
-  
-  /// Whether to receive promotional emails and newsletters. False = marketing
-  /// emails disabled.
-  privacy_email_marketing Boolean
-  
-  /// JSON array of muted keywords (max 50). Posts containing these words are
-  /// hidden from user's feed.
-  blocked_keywords String?
-  
-  /// JSON array of community IDs to exclude from feeds (max 50). Blacklist of
-  /// communities user doesn't want to see.
-  excluded_communities String?
-  
-  /// JSON array of community IDs to prioritize in feeds (max 20). Whitelist of
-  /// communities promoted in feed.
-  prioritized_communities String?
-  
-  /// Default feed sorting preference: 'hot', 'new', 'top', 'controversial'.
-  /// Applied when no sort selected.
-  default_sort_order String
-  
-  /// Timestamp when preference record was created (usually at account
-  /// creation).
-  created_at DateTime
-  
-  /// Timestamp when any preference was last modified.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  
-  @@unique([member_id])
-}
-
-/// M:N relationship tracking which users have been blocked by each user.
-/// Blocks are one-way (A blocking B doesn't mean B blocks A). Blocked users
-/// cannot view the blocker's profile or interact with their content.
-///
-/// @namespace Profiles
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_blocked_users {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Member who performed the block action. {@link
+  /// Member who is following (the follower). {@link
   /// community_platform_members.id}
-  blocker_id String
+  follower_member_id String
   
-  /// Member who was blocked. {@link community_platform_members.id}
-  blocked_member_id String
+  /// Member being followed (the target). {@link community_platform_members.id}
+  following_member_id String
   
-  /// Timestamp when the block action was performed. Records when user was
-  /// blocked.
+  /// When the follow relationship was established. Used to sort follower lists
+  /// by recency. Helps identify when member started following another.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  blocker community_platform_members @relation("community_platform_user_blocked_users_of_blocker_id", fields: [blocker_id], references: [id], onDelete: Cascade)
-  blockedMember community_platform_members @relation("community_platform_user_blocked_users_of_blocked_member_id", fields: [blocked_member_id], references: [id], onDelete: Cascade)
+  follower community_platform_members @relation("community_platform_member_followers_of_follower_member_id", fields: [follower_member_id], references: [id], onDelete: Cascade)
+  following community_platform_members @relation("community_platform_member_followers_of_following_member_id", fields: [following_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([blocker_id, blocked_member_id], map: "community_platform_user_blocked_users_blocker_id_block_1803eb89")
-  @@index([blocker_id, created_at])
-  @@index([blocked_member_id])
+  @@unique([follower_member_id, following_member_id], map: "community_platform_member_followers_follower_member_id_e8d7e515")
+  // spellchecker: ignore-next-line
+  @@index([follower_member_id, created_at], map: "community_platform_member_followers_follower_member_id_5ce04456")
+  // spellchecker: ignore-next-line
+  @@index([following_member_id, created_at], map: "community_platform_member_followers_following_member_i_5eb0d34a")
 }
 
-/// M:N relationship tracking which users have been muted by each user. Muted
-/// users' posts and comments are hidden from the muter's feeds, but the
-/// muted user doesn't know they've been muted. Muting is one-way.
+/// Bookmarked content saved by members for later viewing. Each record
+/// represents one saved item (post or comment). Members can save any public
+/// post or comment they want to return to later, creating personal
+/// bookmarked collections.
+///
+/// Stores reference to saved content (post or comment, but not both per
+/// record). Includes save timestamp and optional user notes/tags describing
+/// why content was saved. Enables members to maintain personal libraries of
+/// useful, interesting, or important community content.
+///
+/// Separated from main content tables because saving is user-specific,
+/// low-frequency operation not needed during typical browsing. Enables
+/// efficient 'Saved' content viewing on profile with filtering and sorting
+/// options.
 ///
 /// @namespace Profiles
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_muted_users {
+model community_platform_saved_content {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Member who performed the mute action. {@link
-  /// community_platform_members.id}
-  muter_id String
+  /// Member who saved this content. {@link community_platform_members.id}
+  community_platform_member_id String
   
-  /// Member whose content is muted. {@link community_platform_members.id}
-  muted_member_id String
+  /// If content_type is 'post', reference to the saved post. {@link
+  /// community_platform_posts.id}. Null if content_type is 'comment'.
+  community_platform_post_id String?
   
-  /// Timestamp when the mute action was performed. Records when user was muted.
+  /// If content_type is 'comment', reference to the saved comment. {@link
+  /// community_platform_comments.id}. Null if content_type is 'post'.
+  community_platform_comment_id String?
+  
+  /// Type of saved content. Values: 'post' (saved item is a post) or 'comment'
+  /// (saved item is a comment). Determines which FK is populated.
+  content_type String
+  
+  /// Optional note or tag member added when saving (0-200 characters). Allows
+  /// member to remember why they saved this content. Examples: 'reference for
+  /// project', 'useful tutorial', 'disagree with this perspective'.
+  user_note String?
+  
+  /// When content was saved. Used to sort saved items chronologically or by
+  /// recency of save. Allows filtering by date range.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  muter community_platform_members @relation("community_platform_user_muted_users_of_muter_id", fields: [muter_id], references: [id], onDelete: Cascade)
-  mutedMember community_platform_members @relation("community_platform_user_muted_users_of_muted_member_id", fields: [muted_member_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([muter_id, muted_member_id], map: "community_platform_user_muted_users_muter_id_muted_mem_d9484fc7")
-  @@index([muter_id, created_at])
-  @@index([muted_member_id])
-}
-
-/// M:N relationship tracking posts saved (bookmarked) by users. Enables
-/// users to create personal collections of important posts. Saved posts
-/// persist even if original post is deleted. Optional assignment to
-/// user-created collections.
-///
-/// @namespace Profiles
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_saved_posts {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Member who saved the post. {@link community_platform_members.id}
-  member_id String
-  
-  /// Post that was saved. {@link community_platform_posts.id}
-  post_id String
-  
-  /// Optional collection where post is organized. {@link
-  /// community_platform_saved_collections.id}
-  collection_id String?
-  
-  /// Optional user notes about why post was saved. Maximum 500 characters,
-  /// allows user commentary.
-  notes String?
-  
-  /// Timestamp when post was saved (bookmark creation date). Used for sorting
-  /// saved content.
-  created_at DateTime
-  
-  /// Timestamp when saved post record was last modified (e.g., collection
-  /// changed).
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  collection community_platform_saved_collections? @relation(fields: [collection_id], references: [id], onDelete: Cascade)
-  
-  @@unique([member_id, post_id])
-  @@index([member_id, created_at])
-  @@index([collection_id, created_at])
-  @@index([post_id])
-}
-
-/// User-created collections for organizing saved posts. Enables users to
-/// group bookmarks into named categories (e.g., 'Reading List', 'Recipes').
-/// Collections are private to the user unless explicitly shared.
-///
-/// @namespace Profiles
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_saved_collections {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Member who owns the collection. {@link community_platform_members.id}
-  member_id String
-  
-  /// Collection name as chosen by user. Maximum 100 characters (e.g., 'Reading
-  /// List', 'Recipes').
-  name String
-  
-  /// Optional description of collection's purpose. Maximum 500 characters.
-  description String?
-  
-  /// Whether collection is shared publicly via link. False = collection
-  /// private to owner.
-  is_public Boolean
-  
-  /// Unique token for public sharing URL. Null if collection is not public.
-  /// Used to generate shareable link.
-  share_token String?
-  
-  /// Denormalized count of posts in collection for efficient display. Updated
-  /// when posts added/removed.
-  post_count Int
-  
-  /// Timestamp when collection was created.
-  created_at DateTime
-  
-  /// Timestamp when collection was last modified (e.g., posts added, name
-  /// changed).
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  
-  community_platform_saved_posts community_platform_saved_posts[]
-  
-  @@unique([share_token])
-  @@unique([member_id, name])
-  @@index([member_id, created_at])
-}
-
-/// Immutable append-only activity log tracking user actions for profile
-/// activity timeline and auditing. Records significant user events (posts
-/// created, comments, votes, logins) with complete context. Used for
-/// activity display and compliance.
-///
-/// @namespace Profiles
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_activity_log {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Member who performed the action. {@link community_platform_members.id}
-  member_id String
-  
-  /// Type of activity: 'post_created', 'comment_created', 'post_voted',
-  /// 'comment_voted', 'login', 'post_edited', 'comment_edited'. Categorizes
-  /// the action.
-  activity_type String
-  
-  /// Type of entity involved: 'post', 'comment', 'user', 'community'.
-  /// Identifies what entity was affected.
-  entity_type String
-  
-  /// ID of entity involved (post_id, comment_id, user_id, community_id
-  /// depending on entity_type). Null for certain activities.
-  entity_id String?
-  
-  /// JSON object with activity-specific details (e.g., vote direction for
-  /// votes, post title for post_created). Provides context.
-  activity_details String?
-  
-  /// IP address from which activity originated. Used for security monitoring
-  /// and compliance. Format: IPv4 or IPv6.
-  ip_address String?
-  
-  /// User agent string from request (browser/client info). Enables device
-  /// tracking for activity auditing.
-  user_agent String?
-  
-  /// Timestamp when activity occurred. Immutable, recorded at activity time.
-  /// Used for activity timeline.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  
-  @@index([member_id, created_at])
+  @@unique([community_platform_member_id, community_platform_post_id], map: "community_platform_saved_content_community_platform_me_c9a412c6")
   // spellchecker: ignore-next-line
-  @@index([activity_type, created_at], map: "community_platform_user_activity_log_activity_type_cre_aa8131f7")
-  @@index([entity_type, entity_id])
+  @@unique([community_platform_member_id, community_platform_comment_id], map: "community_platform_saved_content_community_platform_me_fee71a91")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_saved_content_community_platform_me_72352aa5")
+  @@index([community_platform_post_id])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_saved_content_community_platform_co_d7d120eb")
 }

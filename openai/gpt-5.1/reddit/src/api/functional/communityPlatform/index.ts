@@ -1,0 +1,11 @@
+export * as platformAdmin from "./platformAdmin/index";
+export * as contentPolicyCategories from "./contentPolicyCategories/index";
+export * as communityRuleCategories from "./communityRuleCategories/index";
+export * as memberUser from "./memberUser/index";
+export * as guestUser from "./guestUser/index";
+export * as communities from "./communities/index";
+export * as communityModerator from "./communityModerator/index";
+export * as statistics from "./statistics/index";
+export * as posts from "./posts/index";
+export * as memberUsers from "./memberUsers/index";
+export * as votingKarma from "./votingKarma/index";

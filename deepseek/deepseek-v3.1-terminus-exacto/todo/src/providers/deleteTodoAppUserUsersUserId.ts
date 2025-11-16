@@ -7,41 +7,28 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function deleteTodoAppUserUsersUserId(props: {
   user: UserPayload;
   userId: string & tags.Format<"uuid">;
-}): Promise<ITodoAppUser> {
-  const { user, userId } = props;
+}): Promise<void> {
+  // Verify the target user exists and is not deleted
+  const targetUser = await MyGlobal.prisma.todo_app_users.findUnique({
+    where: { id: props.userId, deleted_at: null },
+  });
 
-  // Authorization check: user can only delete their own account
-  if (user.id !== userId) {
-    throw new HttpException(
-      "Unauthorized: You can only delete your own account",
-      403,
-    );
+  if (!targetUser) {
+    throw new HttpException("User not found", 404);
   }
 
-  // First verify the user exists and get the record for return
-  const existingUser = await MyGlobal.prisma.todo_app_users.findUniqueOrThrow({
-    where: { id: userId },
-  });
+  // Check authorization: users can only delete their own accounts
+  if (targetUser.id !== props.user.id) {
+    throw new HttpException("You can only delete your own account", 403);
+  }
 
-  // Perform hard delete as specified in operation description
+  // Perform hard deletion - Prisma will handle cascade deletes
   await MyGlobal.prisma.todo_app_users.delete({
-    where: { id: userId },
+    where: { id: props.userId },
   });
-
-  // Return the deleted user information
-  return {
-    id: existingUser.id as string & tags.Format<"uuid">,
-    email: existingUser.email as string & tags.Format<"email">,
-    password_hash: existingUser.password_hash,
-    status: existingUser.status,
-    created_at: toISOStringSafe(existingUser.created_at),
-    updated_at: toISOStringSafe(existingUser.updated_at),
-    deleted_at: undefined, // Hard delete, so no deleted_at
-  } satisfies ITodoAppUser;
 }

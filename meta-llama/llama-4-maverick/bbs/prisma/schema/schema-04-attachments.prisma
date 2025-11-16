@@ -1,0 +1,54 @@
+/// Attachment metadata for articles in the discussion board.
+///
+/// Stores information about files uploaded by users when creating or editing
+/// articles.
+/// Each record represents a single attachment associated with an article.
+///
+/// Key characteristics:
+/// - Associated with a specific article via article_id foreign key
+/// - Contains metadata about the uploaded file (name, type, size)
+/// - Tracks uploader information for accountability
+/// - Records upload timestamp
+/// - Supports cascade delete when parent article is removed
+///
+/// Business rules:
+/// 1. Attachments are always linked to existing articles
+/// 2. File validation occurs before database entry creation
+/// 3. Multiple attachments allowed per article
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article this attachment belongs to. {@link discussion_board_articles.id}.
+  article_id String
+  
+  /// User who uploaded this attachment. {@link discussion_board_users.id}.
+  uploader_id String
+  
+  /// Original name of the uploaded file.
+  file_name String
+  
+  /// MIME type of the uploaded file.
+  file_type String
+  
+  /// Size of the file in bytes.
+  file_size Int
+  
+  /// Timestamp when the file was uploaded.
+  uploaded_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  uploader discussion_board_users @relation(fields: [uploader_id], references: [id], onDelete: Cascade)
+  
+  @@index([article_id])
+  @@index([uploader_id])
+}

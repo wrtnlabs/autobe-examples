@@ -7,81 +7,107 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import { ITodoListTodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserJoin(props: {
   user: UserPayload;
-  body: ITodoUser.ICreate;
-}): Promise<ITodoUser.IAuthorized> {
-  const existingUser = await MyGlobal.prisma.todo_users.findFirst({
+  body: ITodoListTodoListUser.ICreate;
+}): Promise<ITodoListTodoListUser.IAuthorized> {
+  // Check if user email already exists
+  const existingUser = await MyGlobal.prisma.todo_list_users.findFirst({
     where: { email: props.body.email },
   });
-  if (existingUser !== null) {
+  if (existingUser) {
     throw new HttpException("Email already registered", 409);
   }
 
-  const hashedPassword = await PasswordUtil.hash(props.body.password);
-  const nowIso = toISOStringSafe(new Date());
+  // Hash the password
+  const hashedPassword: string = await PasswordUtil.hash(props.body.password);
 
-  const createdUser = await MyGlobal.prisma.todo_users.create({
+  // Current timestamp in ISO 8601 format
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+
+  // Generate user ID with branded uuid type
+  const userId: string & tags.Format<"uuid"> = v4();
+
+  // Create new user
+  const user = await MyGlobal.prisma.todo_list_users.create({
     data: {
-      id: v4(),
+      id: userId,
       email: props.body.email,
       password_hash: hashedPassword,
-      created_at: nowIso,
-      updated_at: nowIso,
+      created_at: now,
+      updated_at: now,
     },
   });
 
-  const session = await MyGlobal.prisma.todo_user_sessions.create({
+  // Calculate session expiry timestamps
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 3600000),
+  ); // 1 hour
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 3600000),
+  ); // 7 days
+
+  // Generate session ID with branded uuid type
+  const sessionId: string & tags.Format<"uuid"> = v4();
+
+  // Create session
+  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
     data: {
-      id: v4(),
-      todo_user_id: createdUser.id,
-      created_at: nowIso,
-      expired_at: null,
+      id: sessionId,
+      todo_list_user_id: userId,
+      created_at: now,
+      expired_at: accessExpires,
       ip: "",
       href: "",
       referrer: "",
     },
   });
 
-  const accessExpireIso = toISOStringSafe(new Date(Date.now() + 3600 * 1000));
-  const refreshExpireIso = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 3600 * 1000),
+  // Generate JWT tokens
+  const createdAt: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(),
   );
 
-  const accessToken = jwt.sign(
+  const accessToken: string = jwt.sign(
     {
       type: "user",
-      id: createdUser.id,
+      id: user.id,
       session_id: session.id,
-      created_at: nowIso,
+      created_at: createdAt,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
   );
 
-  const refreshToken = jwt.sign(
+  const refreshToken: string = jwt.sign(
     {
       type: "user",
-      id: createdUser.id,
+      id: user.id,
       session_id: session.id,
       tokenType: "refresh",
-      created_at: nowIso,
+      created_at: createdAt,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
   );
 
   return {
-    id: createdUser.id,
+    id: user.id,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpireIso,
-      refreshable_until: refreshExpireIso,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
   };
 }

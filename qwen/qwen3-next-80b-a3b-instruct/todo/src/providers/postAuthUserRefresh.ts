@@ -7,74 +7,58 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
-import { ITodoAppAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAuthorizationToken";
+import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserRefresh(props: {
-  body: ITodoAppUser.IRefresh;
-}): Promise<ITodoAppUser.IAuthorized> {
-  // Step 1: Verify and decode refresh token
-  const decoded = jwt.verify(
-    props.body.refresh_token,
-    MyGlobal.env.JWT_SECRET_KEY,
-    { issuer: "autobe" },
-  ) as {
-    id: string;
-    session_id: string;
-    type: "user";
-  };
+  body: ITodoListUser.IRefresh;
+}): Promise<ITodoListUser.IAuthorized> {
+  // 1. Hash the submitted refresh token
+  const hashedRefreshToken = await PasswordUtil.hash(props.body);
 
-  // Step 2: Validate type matches expected actor type
-  if (decoded.type !== "user") {
-    throw new HttpException("Invalid token type", 403);
-  }
-
-  // Step 3: Validate session exists and is active
-  const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
+  // 2. Find matching user with valid refresh token (not expired)
+  const now = toISOStringSafe(new Date());
+  const user = await MyGlobal.prisma.todo_list_users.findFirst({
     where: {
-      id: decoded.session_id,
-      user_id: decoded.id,
-    },
-    include: {
-      user: true, // Fixed: Use 'user' as the relationship name instead of 'todo_app_user'
-    },
+      refreshTokenHash: hashedRefreshToken,
+      refreshTokenExpiresAt: {
+        gt: now,
+      },
+    } as Prisma.todo_list_usersWhereInput,
   });
-  if (!session) {
-    throw new HttpException("Session expired or revoked", 401);
-  } else if (session.user.deleted_at !== null) {
-    // Fixed: Access 'session.user.deleted_at' instead of 'session.todo_app_user.deleted_at'
-    throw new HttpException("Account has been deleted", 403);
+
+  if (!user) {
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  // Step 4: Generate new access token with SAME session_id
-  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
+  // 3. Generate new tokens
+  const nowDate = new Date();
+  const accessExpires = toISOStringSafe(
+    new Date(nowDate.getTime() + 15 * 60 * 1000),
   );
-  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  const refreshExpires = toISOStringSafe(
+    new Date(nowDate.getTime() + 7 * 24 * 60 * 60 * 1000),
   );
 
   const access = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id, // Reuse existing session_id
-      created_at: toISOStringSafe(new Date()),
+      id: user.id,
+      type: "user",
+      created_at: toISOStringSafe(nowDate),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "1h",
+      expiresIn: "15m",
       issuer: "autobe",
     },
   );
 
   const refresh = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id, // Reuse existing session_id
+      id: user.id,
+      type: "user",
+      created_at: toISOStringSafe(nowDate),
       tokenType: "refresh",
-      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -83,22 +67,24 @@ export async function postAuthUserRefresh(props: {
     },
   );
 
-  // Step 5: Update session expiration time
-  await MyGlobal.prisma.todo_app_user_sessions.update({
-    where: {
-      id: decoded.session_id,
-    },
+  // 4. Generate new refresh token and update user record
+  const newRefreshToken = v4();
+  const newRefreshTokenHash = await PasswordUtil.hash(newRefreshToken);
+
+  await MyGlobal.prisma.todo_list_users.update({
+    where: { id: user.id },
     data: {
-      expired_at: refreshExpires,
-    },
+      refreshTokenHash: newRefreshTokenHash,
+      refreshTokenExpiresAt: refreshExpires,
+    } as Prisma.todo_list_usersUpdateInput,
   });
 
-  // Step 6: Return new tokens in IAuthorized response
+  // 5. Return new tokens
   return {
-    id: decoded.id,
+    id: user.id,
     token: {
       access,
-      refresh,
+      refresh: newRefreshToken,
       expired_at: accessExpires,
       refreshable_until: refreshExpires,
     },

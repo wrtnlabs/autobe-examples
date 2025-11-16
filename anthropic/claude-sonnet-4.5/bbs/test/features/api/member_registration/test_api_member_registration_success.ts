@@ -7,62 +7,76 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 
 /**
- * Test successful member account registration workflow.
+ * Test successful member registration workflow.
  *
- * This test validates the complete member registration process including
- * account creation with valid credentials, email verification token generation,
- * and immediate JWT token issuance. The test verifies that a new member account
- * is created with pending_email_verification status, email_verified is false,
- * username and email are unique, password is securely hashed, and the response
- * includes both access and refresh tokens for immediate authenticated access.
+ * This test validates the complete member registration process for the
+ * discussion board. A new user provides valid email, password, username, and
+ * session context to create an account. The system validates input, creates the
+ * member record, and immediately authenticates by issuing JWT tokens. The test
+ * verifies all response fields including member details, status, verification
+ * flags, timestamps, and authentication tokens.
  *
- * Validation confirms:
+ * Steps:
  *
- * 1. Username format (3-30 characters, alphanumeric with underscores/hyphens)
- * 2. Email format validation
- * 3. Password strength (minimum 8 characters with uppercase, lowercase, number,
- *    special char)
- * 4. Account created with correct initial status
- * 5. Authentication tokens issued immediately
+ * 1. Generate valid registration data (email, password, username, session info)
+ * 2. Call the member registration endpoint
+ * 3. Validate the response contains all expected member information
+ * 4. Verify the status is 'active' for new registrations
+ * 5. Verify email_verified is false (requires verification)
+ * 6. Confirm the access token is automatically set in connection headers
  */
 export async function test_api_member_registration_success(
   connection: api.IConnection,
 ) {
-  // Generate valid registration data
-  const username = RandomGenerator.alphaNumeric(10);
-  const email = typia.random<string & tags.Format<"email">>();
-  const password = "SecureP@ss123";
-  const href = typia.random<string & tags.Format<"uri">>();
-  const referrer = typia.random<string & tags.Format<"uri">>();
-
-  // Create registration request body
+  // Step 1: Generate valid registration data
   const registrationData = {
-    username: username,
-    email: email,
-    password: password,
-    ip: null,
-    href: href,
-    referrer: referrer,
-  } satisfies IDiscussionBoardMember.IJoin;
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(12),
+    username: RandomGenerator.name(2),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IDiscussionBoardMember.ICreate;
 
-  // Execute registration API call
-  const member = await api.functional.auth.member.join(connection, {
-    body: registrationData,
-  });
+  // Step 2: Call the member registration endpoint
+  const registeredMember: IDiscussionBoardMember.IAuthorized =
+    await api.functional.auth.member.join(connection, {
+      body: registrationData,
+    });
 
-  // Validate complete response structure
-  typia.assert(member);
+  // Step 3: Validate the response structure (COMPLETE validation - no additional checks needed)
+  typia.assert(registeredMember);
 
-  // Verify username matches input
-  TestValidator.equals("username matches input", member.username, username);
-
-  // Verify email matches input
-  TestValidator.equals("email matches input", member.email, email);
-
-  // Verify email_verified is false for new accounts
+  // Step 4: Verify registration data matches response (business logic validation)
   TestValidator.equals(
-    "email not verified initially",
-    member.email_verified,
+    "registered email matches input",
+    registeredMember.email,
+    registrationData.email,
+  );
+
+  TestValidator.equals(
+    "registered username matches input",
+    registeredMember.username,
+    registrationData.username,
+  );
+
+  // Step 5: Confirm the status is 'active' for new registrations (business rule validation)
+  TestValidator.equals(
+    "new member status should be active",
+    registeredMember.status,
+    "active",
+  );
+
+  // Step 6: Verify email_verified is false (business logic validation)
+  TestValidator.equals(
+    "email should not be verified initially",
+    registeredMember.email_verified,
     false,
+  );
+
+  // Step 7: Verify the access token is set in connection headers (API behavior validation)
+  TestValidator.equals(
+    "access token should be set in connection Authorization header",
+    connection.headers?.Authorization,
+    registeredMember.token.access,
   );
 }

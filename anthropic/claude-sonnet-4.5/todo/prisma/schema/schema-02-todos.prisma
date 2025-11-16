@@ -1,8 +1,37 @@
-/// Todo items representing tasks that users want to track and manage. Each
-/// todo item is owned by a single user and contains the task information,
-/// completion status, and temporal metadata. This is the core business
-/// entity of the application, enabling users to create, organize, and
-/// complete their personal tasks.
+/// Core todo item entity representing user tasks and their management
+/// lifecycle.
+///
+/// Stores individual todo items created by authenticated users for personal
+/// task tracking and productivity management.
+/// Each todo represents a single actionable task with attributes for
+/// organization, prioritization, and completion tracking.
+///
+/// Todos are owned by individual users with complete data isolation - users
+/// can only access and modify their own todo items.
+/// The system enforces strict ownership boundaries ensuring privacy and data
+/// security across all operations.
+///
+/// Each todo contains essential task information including title, optional
+/// description, due date, priority level, and completion status.
+/// The status field tracks the todo's lifecycle through pending,
+/// in_progress, completed, and cancelled states.
+/// Completion tracking uses both a boolean flag and timestamp to record when
+/// tasks are finished.
+///
+/// Soft deletion is supported through the deleted_at field, allowing todos
+/// to be removed from active views while preserving data for potential
+/// recovery and audit purposes.
+/// All modifications are tracked via updated_at timestamp to maintain
+/// comprehensive audit trails.
+///
+/// Todos support advanced organization through priority levels (low, medium,
+/// high) and optional due dates for deadline management.
+/// The system provides filtering, sorting, and searching capabilities to
+/// help users efficiently manage large todo lists.
+///
+/// This is the primary business entity of the Todo List application,
+/// requiring full CRUD API operations and independent user management
+/// capabilities.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -13,38 +42,57 @@ model todo_list_todos {
   /// Primary Key.
   id String @id
   
-  /// Owner of this todo item. {@link todo_list_users.id}
+  /// Owner user who created this todo item. {@link todo_list_users.id}
   todo_list_user_id String
   
-  /// Title of the todo item. A short, descriptive name for the task that users
-  /// want to track. This is the primary text users see when viewing their todo
-  /// list.
+  /// Todo item title - the primary description of the task. Required field
+  /// with maximum 200 characters. This is the main text users see in their
+  /// todo list.
   title String
   
-  /// Extended details about the todo item. Allows users to add additional
-  /// context, notes, or instructions about the task. Can contain multiple
-  /// paragraphs if needed.
+  /// Optional detailed description providing additional context, notes, or
+  /// instructions for the task. Maximum 2000 characters. Can be empty if the
+  /// title is self-explanatory.
   description String?
   
-  /// Completion status of the todo item. Valid values are 'complete' or
-  /// 'incomplete'. Defaults to 'incomplete' when a new todo is created. Users
-  /// can toggle this status at any time.
+  /// Current lifecycle status of the todo item. Valid values: pending (initial
+  /// state), in_progress (actively working), completed (finished), cancelled
+  /// (abandoned). Tracks the todo's workflow state.
   status String
   
-  /// Timestamp when the todo item was first created. Automatically set by the
-  /// system and cannot be modified by users. Used for sorting and organizing
-  /// todos chronologically.
+  /// Task priority level for organization and sorting. Valid values: low,
+  /// medium, high. Defaults to medium when not specified. Helps users identify
+  /// and focus on important tasks.
+  priority String?
+  
+  /// Optional deadline for task completion. Supports past dates for backdating
+  /// and future dates for planning. Used for overdue detection and timeline
+  /// organization. Null indicates no specific deadline.
+  due_date DateTime?
+  
+  /// Boolean flag indicating whether the task is completed. True when status
+  /// is completed, false otherwise. Provides quick completion status checking
+  /// without parsing status field.
+  completed Boolean
+  
+  /// Timestamp recording when the todo was marked as completed. Set
+  /// automatically when status changes to completed. Cleared when todo is
+  /// marked incomplete. Null for incomplete todos.
+  completed_at DateTime?
+  
+  /// Timestamp when the todo item was created. Set automatically by the system
+  /// at creation time. Immutable field used for chronological ordering and
+  /// analytics.
   created_at DateTime
   
-  /// Timestamp when the todo item was last modified. Automatically updated
-  /// whenever any property changes. Helps users track recent activity and
-  /// modifications.
+  /// Timestamp of the most recent modification to any field of the todo item.
+  /// Updated automatically by the system whenever the todo is changed. Used
+  /// for tracking recent activity and conflict detection.
   updated_at DateTime
   
-  /// Timestamp when the todo item was soft deleted. Null indicates the todo is
-  /// active. When set, the todo is considered deleted but can potentially be
-  /// recovered. Enables soft delete functionality for future recovery
-  /// features.
+  /// Soft deletion timestamp indicating when the todo was deleted. Null for
+  /// active todos. When set, the todo is excluded from normal queries while
+  /// preserved for audit trails and potential recovery.
   deleted_at DateTime?
   
   //----
@@ -53,5 +101,7 @@ model todo_list_todos {
   user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
   @@index([todo_list_user_id, created_at])
+  @@index([todo_list_user_id, due_date])
   @@index([todo_list_user_id, status])
+  @@index([todo_list_user_id, completed])
 }

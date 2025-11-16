@@ -1,6 +1,16 @@
-/// Core order entity representing committed customer purchases with
-/// financial and logistical obligations. Tracks order progression from
-/// placement through final delivery with comprehensive state management.
+/// Core order management system for multi-vendor marketplace transactions.
+///
+/// Stores comprehensive order information including customer details, seller
+/// relationships, payment statuses, and fulfillment tracking across the
+/// entire marketplace ecosystem. Each order represents a complete
+/// transaction that may contain items from multiple sellers, with the system
+/// automatically managing order splitting and individual seller fulfillment
+/// workflows.
+///
+/// Orders maintain complete audit trails of all status changes, payment
+/// processing, and customer communications while supporting complex
+/// scenarios like partial fulfillment, split shipments, and multi-currency
+/// transactions.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -11,76 +21,65 @@ model shopping_mall_orders {
   /// Primary Key.
   id String @id
   
-  /// Purchasing customer's {@link shopping_mall_customers.id}.
+  /// Belonged customer's {@link shopping_mall_customers.id}
   shopping_customer_id String
   
-  /// Primary seller for order fulfillment. May represent main seller when
-  /// multiple sellers contribute to order.
-  shopping_seller_id String
+  /// Belonged sale's {@link shopping_mall_sales.id}
+  shopping_sale_id String
   
-  /// Order placement {@link shopping_mall_channels.id} for marketplace
-  /// organization.
-  shopping_channel_id String
+  /// Unique order identifier for customer reference
+  code String
   
-  /// Unique human-readable order identifier for customer reference and
-  /// tracking.
-  order_number String
-  
-  /// Order status tracking progression: pending_payment, paid, processing,
-  /// shipped, delivered, cancelled.
+  /// Current order status: pending, processing, shipped, delivered, cancelled
   status String
   
-  /// Order merchandise subtotal before taxes, shipping, and fees.
-  subtotal Float
+  /// Business workflow status based on seller processing requirements
+  business_status String
   
-  /// Total tax amount calculated based on shipping address jurisdiction.
-  tax_amount Float
+  /// Total order amount including all items and shipping costs
+  price Float
   
-  /// Total shipping cost for all items in the order.
-  shipping_cost Float
-  
-  /// Platform commission charged on the order subtotal.
-  commission_amount Float
-  
-  /// Final order total including merchandise, taxes, shipping, and fees.
-  total_amount Float
-  
-  /// Currency code for all monetary values (USD, EUR, etc.).
-  currency String
-  
-  /// Customer-provided special instructions or gift messages for the order.
-  notes String?
-  
-  /// Order creation timestamp when customer placed the order.
+  /// Order creation timestamp
   created_at DateTime
   
-  /// Last modification timestamp for any order property changes.
+  /// Last modification timestamp
   updated_at DateTime
+  
+  /// Soft deletion timestamp for order lifecycle management
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
-  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
-  channel shopping_mall_channels @relation(fields: [shopping_channel_id], references: [id], onDelete: Cascade)
+  sale shopping_mall_sales @relation(fields: [shopping_sale_id], references: [id], onDelete: Cascade)
   
   shopping_mall_order_items shopping_mall_order_items[]
-  shopping_mall_order_status_history shopping_mall_order_status_history[]
-  shopping_mall_payments shopping_mall_payments[]
-  shopping_mall_shipping_details shopping_mall_shipping_details[]
-  shopping_mall_order_tracking shopping_mall_order_tracking[]
-  shopping_mall_refunds shopping_mall_refunds[]
+  shopping_mall_order_snapshots shopping_mall_order_snapshots[]
+  shopping_mall_order_fulfillments shopping_mall_order_fulfillments[]
+  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
   
-  @@unique([order_number])
+  @@index([shopping_sale_id])
+  
+  @@unique([code])
   @@index([shopping_customer_id, created_at])
-  @@index([shopping_seller_id, created_at])
   @@index([status, created_at])
-  @@index([shopping_channel_id, created_at])
+  @@index([business_status, created_at])
 }
 
-/// Individual order line items linking orders to specific product variants
-/// with committed pricing and quantities. Represents snapshot of product
-/// data at order time.
+/// Individual items within marketplace orders providing detailed product,
+/// pricing, and fulfillment tracking.
+///
+/// Each order item represents a specific product variant with associated
+/// pricing, quantities, and fulfillment details. The system tracks
+/// item-level status including inventory allocation, picking confirmation,
+/// packing status, and shipping details while supporting partial fulfillment
+/// scenarios.
+///
+/// The tracking system maintains comprehensive item journey records
+/// including warehouse operations, carrier handoffs, delivery confirmations,
+/// and return processing while linking to the specific seller responsible
+/// for fulfillment.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -91,289 +90,103 @@ model shopping_mall_order_items {
   /// Primary Key.
   id String @id
   
-  /// Parent {@link shopping_mall_orders.id} for this order item.
+  /// Belonged order's {@link shopping_mall_orders.id}
   shopping_mall_order_id String
   
-  /// Ordered {@link shopping_mall_product_variants.id} for inventory
-  /// fulfillment.
-  shopping_mall_product_variant_id String
+  /// Belonged sale unit's {@link shopping_mall_sale_units.id}
+  shopping_sale_unit_id String
   
-  /// Number of units ordered for this specific item.
+  /// Belonged seller's {@link shopping_mall_sellers.id}
+  shopping_seller_id String
+  
+  /// Display order within the order confirmation
+  sequence Int
+  
+  /// Item price at time of purchase
+  price Float
+  
+  /// Number of units ordered
   quantity Int
   
-  /// Price per unit at time of order placement for pricing integrity.
-  unit_price Float
-  
-  /// Total price for this line item (quantity * unit_price).
-  total_price Float
-  
-  /// Any discount applied to this specific item at order time.
-  discount_amount Float
-  
-  /// Stock-keeping unit code for variant tracking and fulfillment.
-  sku String
-  
-  /// Product name snapshot at order time for display consistency.
-  product_name String
-  
-  /// Variant specification string at order time for clarity.
-  variant_name String
-  
-  /// Order item creation timestamp.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
-  
-  shopping_mall_commissions shopping_mall_commissions[]
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_order_id, shopping_mall_product_variant_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_d221d815")
-  @@index([shopping_mall_order_id])
-  @@index([shopping_mall_product_variant_id])
-}
-
-/// Immutable audit trail capturing all order state transitions for business
-/// intelligence, dispute resolution, and customer transparency. Each status
-/// change creates permanent record for regulatory compliance.
-///
-/// @namespace Orders
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_order_status_history {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Related {@link shopping_mall_orders.id} that experienced status change.
-  shopping_mall_order_id String
-  
-  /// Responsible administrator if status change required manual override.
-  administrator_id String?
-  
-  /// Order status before this transition for complete change tracking.
-  previous_status String
-  
-  /// Updated order status after this state change.
-  new_status String
-  
-  /// Business reason for status change including user actions, system logic,
-  /// or operational factors.
-  transition_reason String?
-  
-  /// Additional context or comments about this specific status transition.
-  notes String?
-  
-  /// Status transition timestamp for audit trail sequence.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  administrator shopping_mall_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
-  
-  @@index([administrator_id])
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_status_history_shopping_mall_order_e30a1d11")
-  // spellchecker: ignore-next-line
-  @@index([previous_status, new_status], map: "shopping_mall_order_status_history_previous_status_new_1887fb2e")
-}
-
-/// Payment processing records for all order transactions supporting multiple
-/// payment methods, currencies, and gateway integrations while maintaining
-/// PCI compliance through tokenization patterns.
-///
-/// @namespace Orders
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payments {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Payment's associated {@link shopping_mall_orders.id} for consolidation.
-  shopping_mall_order_id String
-  
-  /// Payment amount processed in the original transaction currency.
-  amount Float
-  
-  /// Payment currency code (USD, EUR, GBP, etc.) for this specific payment.
-  currency String
-  
-  /// Payment method type: credit_card, debit_card, paypal, bank_transfer,
-  /// digital_wallet, etc.
-  payment_method String
-  
-  /// Payment status: pending, authorized, captured, voided, refunded, failed.
+  /// Item fulfillment status: pending, allocated, packed, shipped, delivered
   status String
   
-  /// External payment gateway reference number for transaction tracking.
-  transaction_id String
+  /// When item was picked from inventory
+  picked_at DateTime?
   
-  /// Payment processor response code for debugging and audit purposes.
-  gateway_response_code String?
+  /// When item was packed for shipment
+  packed_at DateTime?
   
-  /// CVV verification credential check results: pass, fail, unavailable.
-  cvv_status String?
+  /// When item was handed to carrier
+  shipped_at DateTime?
   
-  /// AVS verification results: pass, fail, partial, unavailable, not_checked.
-  address_verification_status String?
+  /// When carrier confirmed delivery
+  delivered_at DateTime?
   
-  /// Fraud detection score (0-100) from payment processor risk assessment.
-  fraud_strength Int?
-  
-  /// Payment gateway processing fees charged for this specific payment.
-  gateway_fees Float
-  
-  /// Currency exchange rate applied for multi-currency transactions.
-  exchange_rate Float?
-  
-  /// Timestamp when payment was successfully processed by gateway.
-  processed_at DateTime?
-  
-  /// Initial payment record creation timestamp.
+  /// Item creation timestamp
   created_at DateTime
   
-  //----
-  // RELATIONS
-  //----
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  
-  @@index([shopping_mall_order_id])
-  @@index([status])
-  @@index([transaction_id])
-  @@index([payment_method, status])
-}
-
-/// Order shipping information including addresses, carrier selection,
-/// tracking, and delivery details. Supports complex shipping scenarios with
-/// multiple packages and carriers per order.
-///
-/// @namespace Orders
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shipping_details {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Related {@link shopping_mall_orders.id} these shipping details belong to.
-  shopping_mall_order_id String
-  
-  /// Linked {@link shopping_mall_customers.id} for address sourcing.
-  shopping_customer_address_id String?
-  
-  /// Name of recipient for accurate package delivery.
-  recipient_name String
-  
-  /// Primary delivery street address including apartment/suite numbers.
-  street_address String
-  
-  /// Secondary address information for apartment numbers or building names.
-  street_address_2 String?
-  
-  /// Delivery city for geographical routing and tax calculation purposes.
-  city String
-  
-  /// State, province, or region designation for address completion.
-  province String
-  
-  /// Zone-based postal code for carrier routing and tax application.
-  postal_code String
-  
-  /// Two-letter country code following ISO 3166-1 alpha-2 standards.
-  country String
-  
-  /// Recipient contact phone for delivery confirmation and problem resolution.
-  phone_number String
-  
-  /// Selected shipping carrier: ups, fedex, usps, dhl or other providers.
-  carrier_name String
-  
-  /// Standard, expedited, express, overnight or other delivery speed options.
-  shipping_method String
-  
-  /// Estimated delivery date calculated from carrier and shipping method.
-  estimated_delivery_date DateTime?
-  
-  /// Actual package delivery date from carrier confirmation.
-  actual_delivery_date DateTime?
-  
-  /// Special delivery instructions left for carrier or recipient coordination.
-  notes String?
-  
-  /// Shipping detail record creation timestamp.
-  created_at DateTime
-  
-  /// Last modification timestamp for shipping details updates.
+  /// Last modification timestamp
   updated_at DateTime
   
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
   //----
   // RELATIONS
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  customerAddress shopping_mall_customers? @relation(fields: [shopping_customer_address_id], references: [id], onDelete: Cascade)
+  saleUnit shopping_mall_sale_units @relation(fields: [shopping_sale_unit_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
   
-  // spellchecker: ignore-next-line
-  @@index([shopping_customer_address_id], map: "shopping_mall_shipping_details_shopping_customer_addre_deb5cf51")
+  @@index([shopping_sale_unit_id])
   
-  @@index([shopping_mall_order_id])
-  @@index([country, province, postal_code])
-  @@index([carrier_name, shipping_method])
+  @@unique([shopping_mall_order_id, sequence])
+  @@index([shopping_mall_order_id, status])
+  @@index([shopping_seller_id, status])
 }
 
-/// External carrier tracking information integration providing real-time
-/// shipment updates and delivery confirmations without maintaining primary
-/// shipping responsibility in platform.
+/// Historical point-in-time captures of order state for audit trails and
+/// compliance.
+///
+/// Order snapshots preserve the exact state of orders including prices,
+/// items, seller information, and customer details at specific moments in
+/// time. This enables accurate reconstruction of order history for dispute
+/// resolution, compliance reporting, and business intelligence analysis.
+///
+/// The system creates snapshots at critical lifecycle events including order
+/// creation, payment completion, shipment confirmation, delivery
+/// confirmation, and order completion while maintaining all relevant data
+/// for regulatory compliance and customer service requirements.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_order_tracking {
+model shopping_mall_order_snapshots {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Related {@link shopping_mall_orders.id} this tracking applies to.
+  /// Belonged order's {@link shopping_mall_orders.id}
   shopping_mall_order_id String
   
-  /// External tracking number from shipping carrier for shipment
-  /// identification.
-  tracking_number String
+  /// Snapshot of order code at time of capture
+  code String
   
-  /// Direct link to carrier's tracking page for this specific shipment.
-  carrier_tracking_url String?
+  /// Snapshot of order status at time of capture
+  status String
   
-  /// Carrier-provided estimated delivery date with service level agreements.
-  estimated_delivery DateTime?
+  /// Snapshot of business workflow status
+  business_status String
   
-  /// Carrier status: pre_transit, in_transit, out_for_delivery, delivered,
-  /// failed_attempt.
-  delivery_status String
+  /// Snapshot of total order amount at capture time
+  price Float
   
-  /// Carrier facility or city where package originated for tracking route.
-  origin_location String?
+  /// Complete snapshot data as JSON preserving comprehensive order state
+  content String
   
-  /// Carrier facility or city where package will be delivered for route
-  /// tracking.
-  destination_location String?
-  
-  /// Whether carrier has provided confirmed delivery timestamp.
-  delivery_confirmed Boolean
-  
-  /// When tracking information was last updated from carrier API.
-  tracking_updated_at DateTime
-  
-  /// Initial tracking record creation timestamp.
+  /// Snapshot creation timestamp
   created_at DateTime
   
   //----
@@ -381,10 +194,86 @@ model shopping_mall_order_tracking {
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   
-  @@unique([tracking_number])
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_id, tracking_updated_at], map: "shopping_mall_order_tracking_shopping_mall_order_id_tr_689805b3")
-  @@index([delivery_status])
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_snapshots_shopping_mall_order_id_c_07acd28a")
+  @@index([status, created_at])
+}
+
+/// Order fulfillment coordination and tracking across multiple carriers and
+/// shipping partners.
+///
+/// Order fulfillments manage the complex shipping logistics for marketplace
+/// orders including carrier coordination, tracking number management,
+/// delivery scheduling, and exception handling across multiple sellers and
+/// shipping services.
+///
+/// The system supports sophisticated routing logic including optimal carrier
+/// selection, shipment consolidation, delivery scheduling, and exception
+/// management while maintaining real-time tracking visibility for all
+/// stakeholders throughout the fulfillment process.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_fulfillments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Belonged seller's {@link shopping_mall_sellers.id}
+  shopping_seller_id String
+  
+  /// Belonged courier's {@link shopping_mall_couriers.id}
+  shopping_courier_id String
+  
+  /// Carrier tracking number for package identification
+  shipping_code String
+  
+  /// Shipping service level: Ground, Express, Overnight
+  shipping_service String
+  
+  /// Actual shipping cost charged to customer
+  shipping_cost Float
+  
+  /// Predicted delivery date based on carrier estimates
+  estimated_delivery_at DateTime?
+  
+  /// When package was handed to carrier
+  shipped_at DateTime?
+  
+  /// When carrier confirmed final delivery
+  delivered_at DateTime?
+  
+  /// Fulfillment status: scheduled, in_transit, delivered, exception
+  status String
+  
+  /// Real-time tracking information from carrier API
+  tracking_data String?
+  
+  /// Fulfillment creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  courier shopping_mall_couriers @relation(fields: [shopping_courier_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_seller_id])
+  
+  @@unique([shipping_code])
   // spellchecker: ignore-next-line
-  @@index([origin_location, destination_location], map: "shopping_mall_order_tracking_origin_location_destinati_3dd33bd6")
+  @@index([shopping_mall_order_id, shopping_seller_id], map: "shopping_mall_order_fulfillments_shopping_mall_order_i_afd121c7")
+  @@index([shopping_courier_id, status])
 }

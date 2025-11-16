@@ -1,0 +1,78 @@
+/// User accounts for the Todo application.
+///
+/// Registered users who can authenticate to the system and manage their
+/// personal todo items.
+/// Each user is identified by email and manages their account independently.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address used for authentication and identification.
+  email String
+  
+  /// Hashed password for user authentication. Never stores plain text
+  /// passwords.
+  password_hash String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo_app_user_sessions todo_app_user_sessions[]
+  todo_app_todos todo_app_todos[]
+  
+  @@unique([email])
+}
+
+/// Authentication sessions for tracking user login activities.
+///
+/// Sessions are created when users authenticate and track connection details
+/// for security auditing.
+/// Each session is managed through the authentication flow and expires after
+/// configured duration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// IP address from which the user authenticated.
+  ip String
+  
+  /// URL where authentication occurred.
+  href String
+  
+  /// Referrer information for the authentication request.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was terminated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_user_id, created_at])
+}

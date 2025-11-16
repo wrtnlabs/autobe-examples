@@ -1,0 +1,454 @@
+/// Core content entries created by community members including text posts,
+/// link posts, and image posts. Posts serve as the primary discussion
+/// starters and content sharing mechanism within communities, supporting the
+/// platform's community-driven content ecosystem.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where the post was created. \n{@link
+  /// reddit_community_communities.id}
+  reddit_community_id String
+  
+  /// Member who created the post. \n{@link reddit_community_members.id}
+  reddit_member_id String
+  
+  /// Post type classification (text, link, image). \n{@link
+  /// reddit_community_post_types.id}
+  reddit_post_type_id String
+  
+  /// Post title displayed in community feeds. Maximum length follows platform
+  /// standards for post titles.
+  title String
+  
+  /// Main content body for text posts. Nullable to accommodate link and image
+  /// posts that don't require body text.
+  content String?
+  
+  /// External URL for link posts. Nullable since not all post types include
+  /// links.
+  link_url String?
+  
+  /// Current number of upvotes received. Updated in real-time as users vote.
+  upvote_count Int
+  
+  /// Current number of downvotes received. Updated in real-time as users vote.
+  downvote_count Int
+  
+  /// Number of times the post has been viewed. Used for engagement metrics.
+  view_count Int
+  
+  /// Number of comments on the post. Maintained for performance optimization.
+  comment_count Int
+  
+  /// Whether the post is locked and cannot receive new comments.
+  /// Moderator-controlled.
+  is_locked Boolean
+  
+  /// Whether the post is pinned to the top of the community.
+  /// Moderator-controlled feature.
+  is_pinned Boolean
+  
+  /// When the post was first created. Uses standard creation timestamp pattern.
+  created_at DateTime
+  
+  /// When the post was last modified. Updated automatically on post edits.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_member_id], references: [id], onDelete: Cascade)
+  postType reddit_community_post_types @relation(fields: [reddit_post_type_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_post_snapshots reddit_community_post_snapshots[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_content_reports reddit_community_content_reports[]
+  reddit_community_votes reddit_community_votes[]
+  reddit_community_content_rankings reddit_community_content_rankings[]
+  
+  @@index([reddit_post_type_id])
+  
+  @@unique([reddit_community_id, title])
+  @@index([reddit_community_id, created_at])
+  @@index([reddit_member_id, created_at])
+  @@index([upvote_count, created_at])
+}
+
+/// Historical snapshots of post content and metadata. Captures point-in-time
+/// states of posts for audit trails, content moderation history, and
+/// preserving community discussions even when posts are edited.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original post that this snapshot represents. \n{@link
+  /// reddit_community_posts.id}
+  reddit_post_id String
+  
+  /// Member state when the snapshot was created. \n{@link
+  /// reddit_community_members.id}
+  reddit_member_id String
+  
+  /// Snapshot of post title at creation time. Preserves historical title
+  /// information.
+  title String
+  
+  /// Snapshot of post content at creation time. May be null for link/image
+  /// posts.
+  content String?
+  
+  /// Snapshot of link URL if present at creation time. Preserves external link
+  /// references.
+  link_url String?
+  
+  /// Posted vote count at snapshot time. Captures community reaction metrics.
+  upvote_count Int
+  
+  /// Posted downvote count at snapshot time. Preserves vote differential
+  /// history.
+  downvote_count Int
+  
+  /// View count at snapshot time. Records audience engagement metrics.
+  view_count Int
+  
+  /// Comment count at snapshot moment. Tracks discussion activity levels.
+  comment_count Int
+  
+  /// Snapshot trigger cause (edit, moderation, scheduled). Documents why the
+  /// snapshot was created.
+  snapshot_reason String
+  
+  /// Snapshot creation timestamp. Standard creation timestamp pattern.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_post_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_member_id])
+  
+  @@unique([reddit_post_id, created_at])
+  @@index([reddit_post_id])
+  @@index([created_at])
+}
+
+/// Classification system for different post formats. Defines the available
+/// posting types (text posts, link posts, image posts) that community
+/// members can create within the platform.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post type identifier used throughout the platform (text, link, image).
+  /// Defines the display and interaction model.
+  name String
+  
+  /// Human-readable description of the post type purpose. Explains when to use
+  /// each format.
+  description String
+  
+  /// Whether posts of this type can contain text bodies. Determines title-only
+  /// vs title+content display.
+  allows_text_content Boolean
+  
+  /// Whether posts of this type can include external URLs. Controls link
+  /// submission capabilities.
+  allows_links Boolean
+  
+  /// Whether posts of this type must include media files. Used for
+  /// image/video-only post types.
+  requires_media Boolean
+  
+  /// When this post type was defined. System configuration timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_posts reddit_community_posts[]
+  
+  @@unique([name])
+}
+
+/// User-generated responses to posts and other comments. Comments enable
+/// threaded discussions and community dialogue, supporting the platform's
+/// core engagement mechanism through nested replies and voting.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post that this comment responds to. \n{@link reddit_community_posts.id}
+  reddit_post_id String
+  
+  /// Member who created the comment. \n{@link reddit_community_members.id}
+  reddit_member_id String
+  
+  /// Parent comment for nested replies. Nullable for top-level comments.
+  /// Enables threading. \n{@link reddit_community_comments.id}
+  parent_comment_id String?
+  
+  /// Comment text content submitted by the user. Minimum 1 character, maximum
+  /// 10,000 characters for meaningful discussions.
+  content String
+  
+  /// Current number of upvotes. Updated in real-time as users vote on the
+  /// comment.
+  upvote_count Int
+  
+  /// Current number of downvotes. Updated in real-time for vote differential
+  /// calculation.
+  downvote_count Int
+  
+  /// Whether the comment has been soft deleted by the author. Maintains thread
+  /// structure while hiding content.
+  is_deleted Boolean
+  
+  /// Whether the comment has been removed by moderators. Community enforcement
+  /// tracking without author deletion.
+  is_removed Boolean
+  
+  /// Nesting level in comment thread (0 for top-level, increments for
+  /// replies). Controls display formatting and hierarchy.
+  thread_depth Int
+  
+  /// Comment creation timestamp. Standard creation timestamp pattern.
+  created_at DateTime
+  
+  /// Comment last update timestamp. Nullable since many comments are never
+  /// edited.
+  updated_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_post_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_member_id], references: [id], onDelete: Cascade)
+  parentComment reddit_community_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_community_comments[] @relation("recursive")
+  reddit_community_comment_snapshots reddit_community_comment_snapshots[]
+  reddit_community_content_reports reddit_community_content_reports[]
+  reddit_community_votes reddit_community_votes[]
+  reddit_community_content_rankings reddit_community_content_rankings[]
+  
+  @@index([reddit_post_id, thread_depth])
+  @@index([reddit_member_id, created_at])
+  @@index([parent_comment_id])
+  @@index([created_at])
+}
+
+/// Historical snapshots of comment content. Preserves comment editing
+/// history and provides audit trails for content moderation while
+/// maintaining discussion integrity throughout comment lifecycle changes.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original comment that this snapshot represents. \n{@link
+  /// reddit_community_comments.id}
+  reddit_comment_id String
+  
+  /// Member state when the snapshot was created. \n{@link
+  /// reddit_community_members.id}
+  reddit_member_id String
+  
+  /// Snapshot of comment content at creation time. Preserves historical text
+  /// information.
+  content String
+  
+  /// Posted upvote count at snapshot time. Captures community reaction at
+  /// moment.
+  upvote_count Int
+  
+  /// Posted downvote count at snapshot time. Preserves voting ratio history.
+  downvote_count Int
+  
+  /// Deletion status at snapshot time. Tracks comment lifecycle state.
+  is_deleted Boolean
+  
+  /// Removal status at snapshot time. Records moderation action history.
+  is_removed Boolean
+  
+  /// Snapshot trigger cause (edit, moderation, scheduled). Documents why the
+  /// snapshot was created.
+  snapshot_reason String
+  
+  /// Snapshot creation timestamp. Standard creation timestamp pattern.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment reddit_community_comments @relation(fields: [reddit_comment_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_member_id], references: [id], onDelete: Cascade)
+  
+  @@index([reddit_member_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_comment_id, created_at], map: "reddit_community_comment_snapshots_reddit_comment_id_c_587eeee5")
+  @@index([reddit_comment_id])
+  @@index([created_at])
+}
+
+/// Media attachments for posts and comments supporting multiple file types.
+/// Manages images, videos, and other media content uploaded by community
+/// members to enhance their posts and discussions.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_media_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who uploaded the media file. \n{@link reddit_community_members.id}
+  reddit_member_id String
+  
+  /// Original filename when uploaded. Preserves user-provided naming for
+  /// identification.
+  filename String
+  
+  /// File size in bytes. Tracks storage usage and helps with bandwidth
+  /// optimization.
+  file_size Int
+  
+  /// File MIME type (image/jpeg, video/mp4, etc.). Enables proper browser
+  /// rendering and security validation.
+  mime_type String
+  
+  /// CDN URL for accessing the media file. Provides distributed access to
+  /// uploaded content.
+  url String
+  
+  /// Thumbnail URL for preview generation. Nullable for file types that don't
+  /// support thumbnails.
+  thumbnail_url String?
+  
+  /// Image/video width in pixels. Nullable for non-visual media types.
+  width Int?
+  
+  /// Image/video height in pixels. Nullable for non-visual media types.
+  height Int?
+  
+  /// Video/audio duration in seconds. Nullable for static media types.
+  duration Int?
+  
+  /// Media file upload timestamp. Standard creation timestamp pattern.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  uploader reddit_community_members @relation(fields: [reddit_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([filename, reddit_member_id])
+  @@index([reddit_member_id, created_at])
+  @@index([mime_type])
+}
+
+/// User-generated reports about inappropriate or policy-violating content.
+/// Enables community-driven moderation by allowing members to flag posts,
+/// comments, and other content for review by moderators and administrators.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who submitted the report. \n{@link reddit_community_members.id}
+  reddit_reporter_id String
+  
+  /// Member whose content was reported. Used for audit trails and user safety
+  /// monitoring. \n{@link reddit_community_members.id}
+  reddit_reported_member_id String
+  
+  /// Post being reported if applicable. Nullable since reports can target
+  /// comments or other content. \n{@link reddit_community_posts.id}
+  reddit_content_post_id String?
+  
+  /// Comment being reported if applicable. Nullable since reports can target
+  /// posts or other content. \n{@link reddit_community_comments.id}
+  reddit_content_comment_id String?
+  
+  /// Brief explanation of why the content was reported. Summarizes the
+  /// violation or concern identified.
+  report_reason String
+  
+  /// Classification of reported violation (harassment, spam, hate speech,
+  /// misinformation, etc.). Enables moderation routing.
+  report_category String
+  
+  /// Report processing status (submitted, under_review, resolved, dismissed).
+  /// Tracks moderation workflow progression.
+  status String
+  
+  /// When the report was submitted. Standard creation timestamp for tracking
+  /// report timing.
+  reported_at DateTime
+  
+  /// When the report was resolved or dismissed. Nullable for reports still
+  /// under review.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter reddit_community_members @relation("reddit_community_content_reports_of_reddit_reporter_id", fields: [reddit_reporter_id], references: [id], onDelete: Cascade)
+  reportedMember reddit_community_members @relation("reddit_community_content_reports_of_reddit_reported_member_id", fields: [reddit_reported_member_id], references: [id], onDelete: Cascade)
+  reportedPost reddit_community_posts? @relation(fields: [reddit_content_post_id], references: [id], onDelete: Cascade)
+  reportedComment reddit_community_comments? @relation(fields: [reddit_content_comment_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_moderation_queue reddit_community_moderation_queue?
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  
+  @@index([reddit_content_post_id])
+  @@index([reddit_content_comment_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_reporter_id, reddit_content_post_id, reddit_content_comment_id], map: "reddit_community_content_reports_reddit_reporter_id_re_02b7fa2b")
+  @@index([status, reported_at])
+  // spellchecker: ignore-next-line
+  @@index([reddit_reported_member_id, reported_at], map: "reddit_community_content_reports_reddit_reported_membe_7f761c67")
+  // spellchecker: ignore-next-line
+  @@index([report_category, reported_at], map: "reddit_community_content_reports_report_category_repor_1d89ee6f")
+}

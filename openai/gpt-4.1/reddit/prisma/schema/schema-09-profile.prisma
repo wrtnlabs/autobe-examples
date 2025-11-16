@@ -1,0 +1,277 @@
+/// Per-user editable settings governing user experience preferences and key
+/// interaction toggles.
+///
+/// Stores global and UI-specific user preferences, such as language, theme,
+/// default post sort, and feature switches. Each user has a unique settings
+/// record linked by FK to the dedicated user table, enabling direct
+/// configuration management from the user's perspective. Audit fields enable
+/// reversible changes and support GDPR compliance for preference history and
+/// recovery.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the core user entity associated with these settings.
+  /// Required for one-to-one mapping. {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// User's preferred language/locale code for UI display. Example: 'en-US',
+  /// 'ko-KR'.
+  language String
+  
+  /// Preferred UI theme for the user; possible values include 'light', 'dark',
+  /// or system default.
+  theme String
+  
+  /// User’s default post sorting mode: 'hot', 'new', 'top', or 'controversial'.
+  default_post_sort String
+  
+  /// Serialized settings or JSON string for UI/feature opt-ins (e.g., beta
+  /// features, accessibility options).
+  feature_toggles String
+  
+  /// Timestamp when the settings were created.
+  created_at DateTime
+  
+  /// Timestamp for the most recent update to these settings.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the settings record, for compliance and
+  /// recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_user_id])
+  @@index([language, theme])
+}
+
+/// User-specific notification configuration controlling all notification
+/// channels and rules.
+///
+/// Defines which notifications a user will receive by channel (email, mobile
+/// push, web) and alert type (mentions, votes, replies, moderation notices,
+/// platform news, etc.). Enables fine-grained control for notification
+/// delivery, supporting regulatory requirements for consent and
+/// user-directed muting or pausing. Each user can have only one active
+/// notification settings record.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_notification_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user whose notifications these settings manage. Enforces
+  /// 1:1 per user. {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Flag indicating whether email notifications are enabled for the user.
+  email_notifications_enabled Boolean
+  
+  /// Flag for enabling/disabling mobile and browser push notifications.
+  push_notifications_enabled Boolean
+  
+  /// Flag for enabling or disabling mentions or reply alerts.
+  mentions_alerts_enabled Boolean
+  
+  /// Controls notification delivery for general platform activity (votes,
+  /// reports, news, etc.).
+  activity_notifications_enabled Boolean
+  
+  /// Determines if the user receives direct moderator or admin notices.
+  moderator_alerts_enabled Boolean
+  
+  /// Creation timestamp for this notification settings record.
+  created_at DateTime
+  
+  /// Last modification time for this record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp to support GDPR traceability and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_id], map: "community_platform_notification_settings_community_pla_fdf91563")
+  // spellchecker: ignore-next-line
+  @@index([email_notifications_enabled, push_notifications_enabled], map: "community_platform_notification_settings_email_notific_5b063f16")
+}
+
+/// End-user administrative privacy settings for profile visibility, data
+/// sharing, and search exposure.
+///
+/// Manages user-level controls for personal information visibility, search
+/// discoverability, data download/export consent, and other
+/// privacy-sensitive toggles. Supports audit logging and regulatory data
+/// management requirements. Each user has a single, unique privacy settings
+/// record as part of compliance and transparency guarantees.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_privacy_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user for whom these privacy settings apply. 1:1 mapping.
+  /// {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Profile visibility mode: 'public', 'private', or 'follower_only'.
+  /// Controls who can view user profile information.
+  profile_visibility String
+  
+  /// Determines whether this user appears in platform/global search results.
+  search_discoverable Boolean
+  
+  /// User opt-in for data processing or analytics, as per privacy law
+  /// requirements.
+  data_processing_consent Boolean
+  
+  /// Controls the user's ability to export or download their data per
+  /// regulatory compliance.
+  data_export_enabled Boolean
+  
+  /// Creation time for this privacy settings record.
+  created_at DateTime
+  
+  /// Most recent update time.
+  updated_at DateTime
+  
+  /// Soft deletion time for historical audit and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_id], map: "community_platform_privacy_settings_community_platform_dfce4e6f")
+  // spellchecker: ignore-next-line
+  @@index([profile_visibility, search_discoverable], map: "community_platform_privacy_settings_profile_visibility_a680e1c0")
+}
+
+/// History and audit log of profile images ever uploaded by each user.
+///
+/// Stores all previously used profile image URIs along with upload,
+/// effective, and removal timestamps to support audit trails, profile image
+/// recovery, and regulatory data retention needs. Enables management,
+/// rollback, and compliance scenarios without retaining actual image blobs
+/// in the DB. Images are linked 1:N to users; latest image is referenced in
+/// the user profile, but history is preserved here for all uploads/changes.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_image_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the owning user. Enables N images per user. {@link
+  /// community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// URI or path to the profile image (relative or absolute, not stored blob).
+  image_uri String
+  
+  /// Timestamp when this profile image was uploaded.
+  uploaded_at DateTime
+  
+  /// Timestamp when this image became the active user profile image.
+  effective_from DateTime
+  
+  /// Timestamp when this image was replaced or removed.
+  removed_at DateTime?
+  
+  /// Soft deletion timestamp for historical integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_id, image_uri], map: "community_platform_profile_image_history_community_pla_6005d000")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, uploaded_at], map: "community_platform_profile_image_history_community_pla_63c2f7e3")
+}
+
+/// Current display, analytics, and engagement-related metric snapshot for
+/// each user profile.
+///
+/// Captures analytics on profile views, impressions, last display time, and
+/// session interaction count. Designed for performance auditing, detecting
+/// suspicious/excessive activity, and enabling user-driven privacy insight
+/// on who may have accessed their profile. Updated automatically by backend,
+/// not directly by end users. Only one active record per user; historical
+/// metrics can be snapshotted elsewhere if needed.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_display_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user whose profile metrics are tracked. Enforces 1:1 per
+  /// user. {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Total number of times this user's profile has been viewed.
+  profile_view_count Int
+  
+  /// Total number of profile impressions, including non-authenticated views or
+  /// search previews.
+  impression_count Int
+  
+  /// Timestamp for latest profile view (nullable if never viewed).
+  last_viewed_at DateTime?
+  
+  /// FK referencing the last user session that viewed this profile (nullable
+  /// for anonymized or guest views).
+  last_interaction_session_id String?
+  
+  /// Timestamp for record creation.
+  created_at DateTime
+  
+  /// Most recent update time for this record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_id], map: "community_platform_profile_display_metrics_community_p_f3057552")
+  // spellchecker: ignore-next-line
+  @@index([profile_view_count, impression_count], map: "community_platform_profile_display_metrics_profile_vie_7b2fc1a9")
+}

@@ -17,18 +17,19 @@ export async function getDiscussionBoardAdminUsersUserId(props: {
   const user = await MyGlobal.prisma.discussion_board_users.findUnique({
     where: { id: props.userId },
   });
+
   if (!user) {
     throw new HttpException("User not found", 404);
   }
+
   return {
     id: user.id,
     email: user.email,
-    display_name: user.display_name,
-    avatar_url: user.avatar_url === null ? undefined : user.avatar_url,
-    is_locked: user.is_locked,
-    deleted_at:
-      user.deleted_at === null ? undefined : toISOStringSafe(user.deleted_at),
+    is_email_verified: user.is_email_verified,
+    is_active: user.is_active,
+    is_blocked: user.is_blocked,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
   };
 }

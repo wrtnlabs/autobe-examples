@@ -1,0 +1,604 @@
+/// Top-level reports submitted about content, communities, or users.
+///
+/// This model stores the main report record that represents a user or guest
+/// raising a safety or policy concern. It captures who reported, which
+/// high-level reason category was chosen, any free-text description, and the
+/// current status of the report.
+///
+/// Specific report targets (post, comment, community, or user) are modeled
+/// in subtype tables that reference this main report. Moderation actions,
+/// sanctions, and appeals all attach back to these reports for traceability
+/// and audit.
+///
+/// Reports are never hard-deleted under normal operation; instead, their
+/// status is updated as they progress through the moderation workflow.
+///
+/// @namespace ReportingModeration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the report record.
+  id String @id
+  
+  /// Authenticated member user who submitted the report when the reporter is
+  /// logged in. {@link community_platform_memberusers.id}.
+  reporter_memberuser_id String?
+  
+  /// Guest user identifier when the platform allows unauthenticated reporting.
+  /// {@link community_platform_guestusers.id}.
+  reporter_guestuser_id String?
+  
+  /// Primary reason category selected by the reporter describing why the
+  /// entity is being reported. {@link
+  /// community_platform_report_reason_categories.id}.
+  report_reason_category_id String
+  
+  /// Community context where the reported entity belongs when applicable.
+  /// {@link community_platform_communities.id}.
+  community_id String?
+  
+  /// Type of reporter for this report. Typical values: 'guest', 'member',
+  /// 'community_moderator', 'platform_admin'. Used to interpret which reporter
+  /// foreign key is populated.
+  reporter_type String
+  
+  /// Current lifecycle status of the report. Examples: 'submitted', 'queued',
+  /// 'under_review', 'resolved_no_action', 'resolved_content_action',
+  /// 'resolved_user_action', 'escalated', 'unprocessable'.
+  status String
+  
+  /// Optional severity classification assigned during triage. Examples: 'low',
+  /// 'medium', 'high', 'critical'.
+  severity String?
+  
+  /// Optional free-text details provided by the reporter describing the issue
+  /// in their own words.
+  description String?
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated, for example when status or
+  /// triage metadata changed.
+  updated_at DateTime
+  
+  /// Timestamp when the report reached a resolved state, regardless of whether
+  /// action was taken.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporterMemberUser community_platform_memberusers? @relation(fields: [reporter_memberuser_id], references: [id], onDelete: Cascade)
+  reporterGuestUser community_platform_guestusers? @relation(fields: [reporter_guestuser_id], references: [id], onDelete: Cascade)
+  reasonCategory community_platform_report_reason_categories @relation(fields: [report_reason_category_id], references: [id], onDelete: Cascade)
+  contextCommunity community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_report_of_posts community_platform_report_of_posts?
+  community_platform_report_of_comments community_platform_report_of_comments?
+  community_platform_report_of_communities community_platform_report_of_communities?
+  community_platform_report_of_users community_platform_report_of_users?
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_user_sanctions community_platform_user_sanctions[]
+  community_platform_appeals community_platform_appeals[]
+  community_platform_audit_logs community_platform_audit_logs[]
+  community_platform_error_logs community_platform_error_logs[]
+  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  
+  @@index([reporter_memberuser_id])
+  @@index([reporter_guestuser_id])
+  @@index([report_reason_category_id])
+  
+  @@index([status, created_at])
+  @@index([community_id, status, created_at])
+}
+
+/// Subtype records that link reports to specific posts.
+///
+/// Each row connects a single main report to a specific post that is the
+/// subject of the report. This uses a 1:1 relationship with
+/// community_platform_reports to avoid polymorphic nullable foreign keys on
+/// the main table.
+///
+/// This table enables efficient queries such as "all reports about this
+/// post" and supports moderation workflows targeting post-level content
+/// actions.
+///
+/// @namespace ReportingModeration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the post report subtype record.
+  id String @id
+  
+  /// Reference to the main report record that this subtype row extends.
+  /// Enforced as 1:1 with the main report. {@link
+  /// community_platform_reports.id}.
+  community_platform_report_id String
+  
+  /// Post that is the target of the report. {@link
+  /// community_platform_posts.id}.
+  post_id String
+  
+  /// Timestamp when this post-specific linkage was created. Usually matches
+  /// the parent report creation time.
+  created_at DateTime
+  
+  /// Timestamp when this subtype record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_report_id], map: "community_platform_report_of_posts_community_platform__f7d03a49")
+  @@index([post_id, created_at])
+}
+
+/// Subtype records that link reports to specific comments.
+///
+/// Each row connects a single main report to a specific comment that is
+/// being reported. This parallels the post subtype but focuses on comment
+/// entities, including nested replies.
+///
+/// It supports queries like "all reports about this comment" and efficient
+/// moderation of comment-level violations.
+///
+/// @namespace ReportingModeration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the comment report subtype record.
+  id String @id
+  
+  /// Reference to the main report record that this subtype row extends.
+  /// Enforced as 1:1 with the main report. {@link
+  /// community_platform_reports.id}.
+  community_platform_report_id String
+  
+  /// Comment that is the target of the report. {@link
+  /// community_platform_comments.id}.
+  comment_id String
+  
+  /// Timestamp when this comment-specific linkage was created.
+  created_at DateTime
+  
+  /// Timestamp when this subtype record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_report_id], map: "community_platform_report_of_comments_community_platfo_aa61ecbf")
+  @@index([comment_id, created_at])
+}
+
+/// Subtype records that link reports to specific communities.
+///
+/// This table attaches main reports to communities that are being reported
+/// for rule violations, unsafe configuration, or other community-level
+/// issues.
+///
+/// It enables moderation workflows that focus on entire communities rather
+/// than individual posts or comments.
+///
+/// @namespace ReportingModeration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_of_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the community report subtype record.
+  id String @id
+  
+  /// Reference to the main report record that this subtype row extends.
+  /// Enforced as 1:1 with the main report. {@link
+  /// community_platform_reports.id}.
+  community_platform_report_id String
+  
+  /// Community that is the target of the report. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Timestamp when this community-specific linkage was created.
+  created_at DateTime
+  
+  /// Timestamp when this subtype record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_report_id], map: "community_platform_report_of_communities_community_pla_a090430f")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_report_of_communities_community_id__fff26c78")
+}
+
+/// Subtype records that link reports to specific user accounts.
+///
+/// Each row connects a main report to a user who is the subject of the
+/// report. This covers abusive behavior patterns, harassment, or other
+/// user-level policy violations.
+///
+/// The reported user can be any member account; community-specific
+/// consequences are tracked via separate sanction tables.
+///
+/// @namespace ReportingModeration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_of_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the user report subtype record.
+  id String @id
+  
+  /// Reference to the main report record that this subtype row extends.
+  /// Enforced as 1:1 with the main report. {@link
+  /// community_platform_reports.id}.
+  community_platform_report_id String
+  
+  /// User account that is the subject of this report. {@link
+  /// community_platform_memberusers.id}.
+  reported_memberuser_id String
+  
+  /// Timestamp when this user-specific linkage was created.
+  created_at DateTime
+  
+  /// Timestamp when this subtype record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  reportedMemberUser community_platform_memberusers @relation(fields: [reported_memberuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_report_id], map: "community_platform_report_of_users_community_platform__216084fc")
+  // spellchecker: ignore-next-line
+  @@index([reported_memberuser_id, created_at], map: "community_platform_report_of_users_reported_memberuser_40f0b6df")
+}
+
+/// Concrete moderation actions taken in response to reports.
+///
+/// This model records each decision made by a community moderator or
+/// platform administrator when handling reports. Actions can target content
+/// (removal, locking, labeling) or users (warnings, restrictions), and they
+/// store high-level action type, scope, and outcome details.
+///
+/// Each action references the report that prompted it and the responsible
+/// actor. Together with sanctions and appeals, this forms the core audit
+/// trail for safety enforcement.
+///
+/// @namespace ReportingModeration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the moderation action record.
+  id String @id
+  
+  /// Report that this moderation action is responding to. {@link
+  /// community_platform_reports.id}.
+  community_platform_report_id String
+  
+  /// Community moderator who performed the action when the action is
+  /// community-level. {@link community_platform_communitymoderators.id}.
+  communitymoderator_id String?
+  
+  /// Platform administrator who performed the action when escalation to
+  /// platform level is involved. {@link community_platform_platformadmins.id}.
+  platformadmin_id String?
+  
+  /// Community context in which the action was taken, if applicable. {@link
+  /// community_platform_communities.id}.
+  community_id String?
+  
+  /// Type of moderation action taken. Examples: 'no_action', 'remove_content',
+  /// 'lock_content', 'label_content', 'warn_user', 'restrict_user',
+  /// 'ban_user', 'escalate'.
+  action_type String
+  
+  /// Business scope of the action. Examples: 'post', 'comment', 'community',
+  /// 'user', 'platform_wide'.
+  target_scope String
+  
+  /// Optional human-readable summary of why this action was taken, suitable
+  /// for internal audit and training.
+  reason_summary String?
+  
+  /// Detailed internal notes about this moderation decision, visible only to
+  /// authorized staff and moderators.
+  notes_internal String?
+  
+  /// Timestamp when the action was created and applied.
+  created_at DateTime
+  
+  /// Timestamp when this action record was last updated, for example to refine
+  /// notes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  communityModerator community_platform_communitymoderators? @relation(fields: [communitymoderator_id], references: [id], onDelete: Cascade)
+  platformAdmin community_platform_platformadmins? @relation(fields: [platformadmin_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_appeals community_platform_appeals[]
+  community_platform_audit_logs community_platform_audit_logs[]
+  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  
+  // spellchecker: ignore-next-line
+  @@index([communitymoderator_id], map: "community_platform_moderation_actions_communitymoderat_93e6e428")
+  @@index([platformadmin_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_report_id, created_at], map: "community_platform_moderation_actions_community_platfo_e938175a")
+  // spellchecker: ignore-next-line
+  @@index([community_id, action_type, created_at], map: "community_platform_moderation_actions_community_id_act_607e92f3")
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "community_platform_moderation_actions_action_type_crea_8beba565")
+}
+
+/// User-level sanctions applied as a result of moderation decisions.
+///
+/// This model captures restrictions that affect a user account, such as
+/// warnings, temporary bans from a community, or platform-wide bans.
+/// Sanctions reference the originating report and optionally the community
+/// when the sanction is scoped to a particular community.
+///
+/// Sanctions have explicit effective_from and effective_until timestamps and
+/// a status field to represent whether they are active, expired, or revoked.
+/// This structure supports enforcement logic in other parts of the system
+/// and long-term safety analytics.
+///
+/// @namespace ReportingModeration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_sanctions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the user sanction record.
+  id String @id
+  
+  /// Report that motivated this sanction. {@link
+  /// community_platform_reports.id}.
+  community_platform_report_id String
+  
+  /// User account that is subject to this sanction. {@link
+  /// community_platform_memberusers.id}.
+  sanctioned_memberuser_id String
+  
+  /// Community to which this sanction applies when it is community-scoped.
+  /// Null for platform-wide sanctions. {@link
+  /// community_platform_communities.id}.
+  community_id String?
+  
+  /// Type of sanction applied to the user. Examples: 'warning',
+  /// 'temporary_community_ban', 'permanent_community_ban',
+  /// 'temporary_platform_ban', 'permanent_platform_ban',
+  /// 'posting_restriction', 'reporting_restriction'.
+  sanction_type String
+  
+  /// Current status of the sanction. Examples: 'scheduled', 'active',
+  /// 'expired', 'revoked'.
+  status String
+  
+  /// Timestamp from which this sanction becomes effective. For immediate
+  /// sanctions this equals created_at.
+  effective_from DateTime
+  
+  /// Timestamp when this sanction is scheduled to expire. Null for permanent
+  /// sanctions.
+  effective_until DateTime?
+  
+  /// Optional short explanation of the sanction suitable for internal tooling
+  /// or user notifications.
+  reason_summary String?
+  
+  /// Detailed internal notes about this sanction, such as contextual
+  /// information about repeated violations or associated policies.
+  notes_internal String?
+  
+  /// Timestamp when the sanction record was created.
+  created_at DateTime
+  
+  /// Timestamp when the sanction record was last updated, for example when
+  /// status changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  sanctionedMemberUser community_platform_memberusers @relation(fields: [sanctioned_memberuser_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_appeals community_platform_appeals[]
+  community_platform_audit_logs community_platform_audit_logs[]
+  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_report_id], map: "community_platform_user_sanctions_community_platform_r_d18bb1cb")
+  
+  // spellchecker: ignore-next-line
+  @@index([sanctioned_memberuser_id, status, effective_from], map: "community_platform_user_sanctions_sanctioned_memberuse_cacd4547")
+  // spellchecker: ignore-next-line
+  @@index([community_id, sanction_type, status], map: "community_platform_user_sanctions_community_id_sanctio_72ecc4aa")
+}
+
+/// Appeals submitted against moderation decisions or sanctions.
+///
+/// This model stores user or moderator-initiated appeals related to reports,
+/// moderation actions, or sanctions. An appeal records who appealed, what
+/// they appealed, their justification, and the outcome of the appeal review.
+///
+/// Appeals provide a structured, auditable mechanism for reconsidering
+/// enforcement decisions and are critical for fairness, transparency, and
+/// policy tuning.
+///
+/// @namespace ReportingModeration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the appeal record.
+  id String @id
+  
+  /// Report associated with this appeal when the appeal concerns a specific
+  /// report and its outcome. {@link community_platform_reports.id}.
+  community_platform_report_id String?
+  
+  /// Moderation action that is being appealed, if the appeal targets a
+  /// specific action. {@link community_platform_moderation_actions.id}.
+  moderation_action_id String?
+  
+  /// Sanction that is being appealed when the user challenges a sanction.
+  /// {@link community_platform_user_sanctions.id}.
+  user_sanction_id String?
+  
+  /// Member user who submitted the appeal when it originates from a user.
+  /// {@link community_platform_memberusers.id}.
+  appellant_memberuser_id String?
+  
+  /// Community moderator who submitted or handled the appeal when
+  /// moderation-level review is involved. {@link
+  /// community_platform_communitymoderators.id}.
+  communitymoderator_id String?
+  
+  /// Platform administrator responsible for the final decision on the appeal
+  /// in platform-level cases. {@link community_platform_platformadmins.id}.
+  platformadmin_id String?
+  
+  /// Lifecycle status of the appeal. Examples: 'submitted',
+  /// 'under_review_community', 'under_review_platform', 'accepted',
+  /// 'rejected', 'escalated', 'expired'.
+  appeal_status String
+  
+  /// Business scope for what is being appealed. Examples: 'content',
+  /// 'sanction', 'account_status', 'other'.
+  appeal_scope String
+  
+  /// Short summary of why the appellant believes the decision should be
+  /// changed.
+  reason_summary String?
+  
+  /// Full free-text explanation provided by the appellant describing their
+  /// perspective on the moderation decision.
+  details String?
+  
+  /// Summary of the outcome after the appeal is reviewed, such as
+  /// 'decision_upheld' or 'sanction_reduced'.
+  outcome_summary String?
+  
+  /// Timestamp when the appeal was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the appeal record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when a final decision was made on the appeal.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  report community_platform_reports? @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  moderationAction community_platform_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  userSanction community_platform_user_sanctions? @relation(fields: [user_sanction_id], references: [id], onDelete: Cascade)
+  appellantMemberUser community_platform_memberusers? @relation(fields: [appellant_memberuser_id], references: [id], onDelete: Cascade)
+  communityModerator community_platform_communitymoderators? @relation(fields: [communitymoderator_id], references: [id], onDelete: Cascade)
+  platformAdmin community_platform_platformadmins? @relation(fields: [platformadmin_id], references: [id], onDelete: Cascade)
+  
+  community_platform_audit_logs community_platform_audit_logs[]
+  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  
+  @@index([community_platform_report_id])
+  @@index([moderation_action_id])
+  @@index([user_sanction_id])
+  @@index([communitymoderator_id])
+  @@index([platformadmin_id])
+  
+  @@index([appeal_status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([appellant_memberuser_id, appeal_status, created_at], map: "community_platform_appeals_appellant_memberuser_id_app_b68c9eac")
+}
+
+/// Logical queues that organize reports for review by moderators and admins.
+///
+/// This model represents routing structures for reports, such as
+/// per-community queues or specialized safety queues (for example, severe or
+/// legal issues). Each queue tracks its type, the owning role, and lifecycle
+/// status.
+///
+/// Queue membership of reports is modeled via other relations (for example,
+/// status and community in reports) while this table provides configuration
+/// and high-level metadata about each queue used in the moderation tooling.
+///
+/// @namespace ReportingModeration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_queues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the moderation queue record.
+  id String @id
+  
+  /// Community to which this moderation queue belongs when the queue is
+  /// community-scoped. Null for global queues. {@link
+  /// community_platform_communities.id}.
+  community_id String?
+  
+  /// Human-readable name of this moderation queue, such as 'Default Community
+  /// Queue' or 'Severe Abuse'.
+  name String
+  
+  /// Type of queue that determines routing semantics. Examples:
+  /// 'community_default', 'community_escalated', 'platform_severe',
+  /// 'platform_legal'.
+  queue_type String
+  
+  /// Operational status of the queue. Examples: 'active', 'paused', 'retired'.
+  status String
+  
+  /// Optional description explaining what kind of reports should appear in
+  /// this queue and how they are prioritized.
+  description String?
+  
+  /// Timestamp when the moderation queue was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderation queue record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  
+  @@unique([community_id, name])
+  @@index([queue_type, status])
+}

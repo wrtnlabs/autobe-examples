@@ -14,80 +14,101 @@ export async function postAuthUserJoin(props: {
   body: ITodoAppUser.ICreate;
 }): Promise<ITodoAppUser.IAuthorized> {
   // Check for existing user with same email
-  const existingUser = await MyGlobal.prisma.todo_app_users.findFirst({
-    where: { email: props.body.email },
+  const existingUser = await MyGlobal.prisma.todo_app_users.findUnique({
+    where: {
+      email: props.body.email,
+    },
   });
 
   if (existingUser) {
     throw new HttpException("Email already registered", 409);
   }
 
-  // Hash the password
+  // Hash the password using PasswordUtil (ignore password_hash from body)
   const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  const userId = v4();
-  const now = toISOStringSafe(new Date());
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const userId = v4() as string & tags.Format<"uuid">;
+  const currentTime = toISOStringSafe(new Date());
 
-  // Create user and session in transaction for data consistency
-  const [user, session] = await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.todo_app_users.create({
-      data: {
-        id: userId,
-        email: props.body.email,
-        password_hash: hashedPassword,
-        status: "active",
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-    }),
-    MyGlobal.prisma.todo_app_user_sessions.create({
-      data: {
-        id: v4(),
-        todo_app_user_id: userId,
-        ip: "unknown", // Default value since not provided in props
-        href: "unknown", // Default value since not provided in props
-        referrer: "unknown", // Default value since not provided in props
-        created_at: now,
-        expired_at: toISOStringSafe(accessExpires),
-      },
-    }),
-  ]);
+  // Calculate expiration times without Date objects
+  const currentTimeMillis = Date.now();
+  const accessExpiresMillis = currentTimeMillis + 60 * 60 * 1000; // 1 hour
+  const refreshExpiresMillis = currentTimeMillis + 7 * 24 * 60 * 60 * 1000; // 7 days
 
-  // Generate JWT tokens with correct payload structure
-  const basePayload = {
-    type: "user" as const,
-    id: userId,
-    session_id: session.id,
-    created_at: now,
-  };
+  const accessExpires = toISOStringSafe(new Date(accessExpiresMillis));
+  const refreshExpires = toISOStringSafe(new Date(refreshExpiresMillis));
 
+  // Create the user (actor) record
+  const user = await MyGlobal.prisma.todo_app_users.create({
+    data: {
+      id: userId,
+      email: props.body.email,
+      password_hash: hashedPassword, // Use the hashed password, not from body
+      status: "pending",
+      created_at: currentTime,
+      updated_at: currentTime,
+      deleted_at: null,
+    },
+  });
+
+  const sessionId = v4() as string & tags.Format<"uuid">;
+
+  // Create session record with default values (since session context not provided)
+  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
+    data: {
+      id: sessionId,
+      todo_app_user_id: userId,
+      ip: "127.0.0.1", // Default IP since not provided in current props structure
+      href: "/", // Default URL
+      referrer: "", // Default referrer
+      created_at: currentTime,
+      expired_at: accessExpires,
+    },
+  });
+
+  // Generate JWT tokens
   const token = {
-    access: jwt.sign(basePayload, MyGlobal.env.JWT_SECRET_KEY, {
-      expiresIn: "1h",
-      issuer: "autobe",
-    }),
+    access: jwt.sign(
+      {
+        type: "user",
+        id: userId,
+        session_id: sessionId,
+        created_at: currentTime,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
     refresh: jwt.sign(
-      { ...basePayload, tokenType: "refresh" as const },
+      {
+        type: "user",
+        id: userId,
+        session_id: sessionId,
+        tokenType: "refresh",
+        created_at: currentTime,
+      },
       MyGlobal.env.JWT_SECRET_KEY,
       {
         expiresIn: "7d",
         issuer: "autobe",
       },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
 
+  // Return authorized user information
   return {
     id: userId,
-    email: props.body.email,
-    status: "active",
-    created_at: now,
-    updated_at: now,
-    deleted_at: undefined, // Optional field - use undefined
+    email: user.email,
+    password_hash: user.password_hash,
+    status: typia.assert<"pending" | "active" | "suspended">(user.status),
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at:
+      user.deleted_at === null ? undefined : toISOStringSafe(user.deleted_at),
     token,
-  } satisfies ITodoAppUser.IAuthorized;
+  };
 }

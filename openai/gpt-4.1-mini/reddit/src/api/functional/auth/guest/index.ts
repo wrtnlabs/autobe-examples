@@ -6,37 +6,32 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityGuest } from "../../../structures/IRedditCommunityGuest";
 
 /**
- * Register a new guest user account and issue temporary access token in
- * reddit_community_guest table.
+ * Create temporary guest user account.
  *
- * Register a new guest user account and issue a temporary JWT token. This
- * operation creates a temporary guest entry and session to facilitate
- * unauthenticated browsing access. The guest's identity and session information
- * are tracked for security and analytics. This endpoint does NOT require login,
- * fitting the guest user kind without credential-based authentication. The
- * system uses the `reddit_community_guest` table for database persistence.
+ * This API operation enables guest users to join the platform by creating a
+ * temporary guest account record in the reddit_community_guests table, which
+ * stores minimal information for unauthenticated browsing. Since guests do not
+ * authenticate with credentials, no password is required. The operation issues
+ * a temporary JWT token for session management allowing access to public
+ * resources. Security is limited to token expiration controls. This operation
+ * must be public, requiring no authentication.
  *
- * The registration does not require email or password but may include
- * connection metadata such as IP address and referer URL for auditing
- * purposes.
+ * As guests have minimal permissions, only a token issuance without credential
+ * verification is performed. Related operations include the refresh token
+ * endpoint, which extends the guest session.
  *
- * Since guests cannot authenticate with credentials, they do not receive
- * long-term tokens. Instead, this operation issues ephemeral access tokens to
- * enable browsing public communities.
+ * The temporary nature of guest accounts means no persistent sensitive
+ * information is stored. This operation integrates with token refresh to
+ * maintain seamless guest access.
  *
- * Use this endpoint as the entry point for new visitors requiring temporary
- * account creation and session token issuance.
+ * Careful handling of token issuance ensures guests cannot escalate privileges.
  *
- * Security Considerations:
+ * Related operations:
  *
- * - No password or credential validation is done here.
- * - Tokens issued are short-lived and scoped to guest permissions.
- * - Guest identity is limited and ephemeral.
+ * - Refresh token for guests
  *
  * @param props.connection
- * @param props.body Request body for creating a guest account with optional
- *   metadata. Fields must align with the database schema for
- *   reddit_community_guest table and any additional connection info for audit.
+ * @param props.body Request body for creating a temporary guest account
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/join
@@ -71,14 +66,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /**
-     * Request body for creating a guest account with optional metadata.
-     * Fields must align with the database schema for reddit_community_guest
-     * table and any additional connection info for audit.
-     */
-    body: IRedditCommunityGuest.ICreate;
+    /** Request body for creating a temporary guest account */
+    body: IRedditCommunityGuest.IJoin;
   };
-  export type Body = IRedditCommunityGuest.ICreate;
+  export type Body = IRedditCommunityGuest.IJoin;
   export type Response = IRedditCommunityGuest.IAuthorized;
 
   export const METADATA = {
@@ -123,28 +114,30 @@ export namespace join {
 }
 
 /**
- * Refresh guest JWT access token securely using refresh token in
- * reddit_community_guest_sessions table.
+ * Refresh temporary guest access token.
  *
- * Refresh an existing guest access token using a valid refresh token. This
- * operation renews the guest's ephemeral JWT token allowing continued browsing
- * access in reddit_community_guest_sessions.
+ * This operation allows guest users to refresh their temporary access tokens
+ * using a valid refresh token. It accesses the reddit_community_guests table to
+ * verify guest session validity and issues a new temporary JWT token. Since
+ * guests do not have permanent credentials, no password handling is involved.
+ * This endpoint helps maintain seamless guest access without repeated
+ * registrations.
  *
- * Refresh tokens are securely validated against stored sessions to prevent
- * unauthorized renewals.
+ * Security considerations include validation of refresh token integrity and
+ * expiry. Related operations include the initial join operation that issues the
+ * first token and any potential logout operations.
  *
- * This operation maintains the guest user's temporary session lifecycle and
- * does not require login credentials.
+ * Integrates with the overall authentication flow for guests to ensure
+ * continuous limited access.
  *
- * Security Considerations:
+ * Token refresh tokens must be securely stored client-side.
  *
- * - Tokens issued remain short-lived and scoped to guest permissions.
- * - Refresh token use enforces token lifecycle security.
- * - Operation supports stateless JWT token renewal for guest sessions.
+ * Related operations:
+ *
+ * - Join to create temporary guest
  *
  * @param props.connection
- * @param props.body Refresh token payload including guest session
- *   identification and refresh token.
+ * @param props.body Request body containing the refresh token
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/refresh
@@ -179,10 +172,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /**
-     * Refresh token payload including guest session identification and
-     * refresh token.
-     */
+    /** Request body containing the refresh token */
     body: IRedditCommunityGuest.IRefresh;
   };
   export type Body = IRedditCommunityGuest.IRefresh;

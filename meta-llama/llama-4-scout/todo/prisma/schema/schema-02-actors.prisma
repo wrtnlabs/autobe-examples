@@ -1,0 +1,120 @@
+/// User accounts for authentication and authorization
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for login and notifications.
+  email String
+  
+  /// Hashed password for secure authentication.
+  password_hash String
+  
+  //----
+  // RELATIONS
+  //----
+  user_sessions user_sessions[]
+  
+  @@unique([email])
+}
+
+/// Session data for authenticated users
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the Users table.
+  user_id String
+  
+  /// User's IP address.
+  ip String
+  
+  /// Session URL.
+  href String
+  
+  /// Referrer URL.
+  referrer String
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session expiration time.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id, created_at])
+}
+
+/// Administrator accounts for system management
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's email for login and notifications.
+  email String
+  
+  //----
+  // RELATIONS
+  //----
+  administrator_sessions administrator_sessions[]
+  
+  @@unique([email])
+}
+
+/// Session data for administrators
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the Administrators table.
+  administrator_id String
+  
+  /// Administrator's IP address.
+  ip String
+  
+  /// Session URL.
+  href String
+  
+  /// Referrer URL.
+  referrer String
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session expiration time.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([administrator_id, created_at])
+}

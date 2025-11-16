@@ -1,135 +1,182 @@
-/// Complete audit trail of all moderation actions taken by moderators
-/// including content removal, user suspension, account bans, and other
-/// enforcement actions. Every moderator decision is logged with full context
-/// for compliance, transparency, and accountability. Supports polymorphic
-/// targeting of articles, comments, or user accounts through target_type
-/// discriminator pattern.
+/// Comprehensive audit trail of all moderation actions taken on discussion
+/// board content. Records every decision to approve, reject, delete, or edit
+/// articles and comments by moderators, with full context including reason
+/// and detailed notes for accountability and audit purposes.
+///
+/// Captures content review workflow where moderators evaluate submitted
+/// articles, approve for publication, request changes, or reject. Also
+/// tracks reactive moderation where moderators delete inappropriate comments
+/// or articles in response to community guidelines violations.
+///
+/// Each action includes the moderator who performed it, the specific content
+/// affected, the type of action taken, and the business reason (rejection
+/// reason, deletion reason, edit notes). This immutable record enables
+/// tracking of moderation patterns, decision consistency, and provides users
+/// with explanation of moderation decisions affecting their content.
+///
+/// Designed as append-only with no updates or deletes - all records
+/// preserved for legal compliance, dispute resolution, and system integrity.
 ///
 /// @namespace Moderation
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_moderation_logs {
+model discussion_board_moderation_actions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the moderator who performed this action. {@link
-  /// discussion_board_moderators.id}.
+  /// Reference to the moderator who performed this action. Identifies which
+  /// moderator approved, rejected, or deleted the content. {@link
+  /// discussion_board_moderators.id}
   discussion_board_moderator_id String
   
-  /// Reference to the member affected by this moderation action (if the action
-  /// targets a user account, such as suspension or ban). Nullable if action
-  /// targets content rather than user. {@link discussion_board_members.id}.
-  affected_discussion_board_member_id String?
+  /// Reference to the member who created the content being moderated (article
+  /// or comment author). Used to track and notify which member's content was
+  /// moderated. {@link discussion_board_members.id}
+  discussion_board_member_id String
   
-  /// Type of moderation action taken. Valid values: 'remove_article',
-  /// 'remove_comment', 'suspend_user', 'ban_user', 'restore_article',
-  /// 'restore_comment', 'warning_issued', 'flag_content'. Standardized
-  /// enumeration ensures consistent action tracking.
+  /// Type of moderation action performed. Valid values: 'approved' (article
+  /// published), 'rejected' (article not approved), 'requested_changes'
+  /// (feedback for revision), 'deleted_article' (article removed),
+  /// 'deleted_comment' (comment removed), 'edited_article' (moderator
+  /// corrected article content), 'edited_comment' (moderator corrected
+  /// comment), 'flagged' (marked for further review). Determines business
+  /// outcome and what notifications are sent.
   action_type String
   
-  /// Type of entity targeted by this moderation action. Valid values:
-  /// 'article', 'comment', 'member'. Used as polymorphic discriminator with
-  /// target_id to determine the specific entity affected.
-  target_type String
+  /// Type of content being moderated. Valid values: 'article' or 'comment'.
+  /// Indicates whether action applies to an article or comment to enable
+  /// polymorphic tracking of moderation across content types.
+  content_type String
   
-  /// UUID of the entity affected by this moderation action. Combined with
-  /// target_type: if 'article' then references discussion_board_articles.id;
-  /// if 'comment' then references discussion_board_comments.id; if 'member'
-  /// then references discussion_board_members.id. Application must validate
-  /// referential integrity based on target_type.
-  target_id String
+  /// UUID identifier of the content being moderated. References either
+  /// discussion_board_articles.id or discussion_board_comments.id depending on
+  /// content_type value. Combined with content_type, enables tracking
+  /// moderation across both article and comment entities.
+  content_id String
   
-  /// Moderator-provided reason or explanation for the moderation action (max
-  /// 500 characters). Documents why the action was taken and what violation
-  /// occurred. Enables transparent communication with users.
-  reason String?
+  /// Business reason for the moderation action in 10-500 characters. For
+  /// rejections: explains policy violation (e.g., 'Personal attacks on
+  /// individuals'). For deletions: explains violation category (e.g., 'Spam
+  /// content'). For requested changes: specific feedback (e.g., 'Add citation
+  /// for economic data in paragraph 3'). Used to notify affected member and
+  /// maintain moderation consistency.
+  reason String
   
-  /// Timestamp when the moderation action was executed. Stored in UTC ISO 8601
-  /// format. Used for audit trails and chronological action sequencing.
+  /// Optional detailed moderator notes up to 1000 characters for internal
+  /// record-keeping. May contain context about decision (policy
+  /// interpretation, precedent, escalation factors). Not necessarily shown to
+  /// user but available to other moderators and administrators for
+  /// understanding decision rationale.
+  notes String?
+  
+  /// Timestamp when moderation action was performed in UTC. System-generated,
+  /// immutable. Used to order moderation history chronologically and determine
+  /// time from content creation to moderation.
   created_at DateTime
-  
-  /// Timestamp when the moderation log record was last modified. Stored in UTC
-  /// ISO 8601 format. Used for audit trail tracking of changes.
-  updated_at DateTime
   
   //----
   // RELATIONS
   //----
   moderator discussion_board_moderators @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
-  affectedMember discussion_board_members? @relation(fields: [affected_discussion_board_member_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_moderation_logs_discussion_board_mode_a10dc83a")
-  @@index([target_type, target_id])
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_moderation_actions_discussion_board_m_74437f0e")
   // spellchecker: ignore-next-line
-  @@index([affected_discussion_board_member_id, created_at], map: "discussion_board_moderation_logs_affected_discussion_b_897768fc")
-  @@index([created_at])
-  @@index([action_type])
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_moderation_actions_discussion_board_m_2bdb025e")
+  @@index([content_type, content_id])
+  @@index([action_type, created_at])
 }
 
-/// Tracks cumulative violations per member for automatic enforcement of
-/// community guidelines. Records when users violate policies (spam,
-/// harassment, inappropriate content, etc.) and enables automatic account
-/// restrictions: 3+ violations in 30 days triggers 7-day suspension, 5+
-/// violations in 90 days triggers permanent ban. Maintains violation history
-/// linked to moderation actions for complete audit trail.
+/// Audit trail tracking user account management actions taken by moderators
+/// including warnings, suspensions, and bans. Maintains immutable record of
+/// every disciplinary action, its reason, duration, and auto-reactivation
+/// schedule for account lifecycle management.
+///
+/// Records when moderators warn a member about guideline violations
+/// (creating accountability for repeated issues), suspend accounts
+/// temporarily (blocking posting but allowing viewing), or permanently ban
+/// accounts (preventing all access). Each action is timestamped and
+/// documented with the moderator name and specific reason.
+///
+/// For temporary suspensions, tracks suspension end date and enables
+/// automatic account reactivation when suspension period expires. For
+/// permanent bans, records the ban decision with no auto-reactivation.
+/// Notifications are sent to affected member explaining restriction reason
+/// and duration.
+///
+/// Designed as append-only record for full history of user management
+/// actions, enabling moderators to review account history, understand
+/// escalation patterns, and make consistent decisions about future
+/// violations.
 ///
 /// @namespace Moderation
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_user_violations {
+model discussion_board_user_warnings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the member who committed the violation. {@link
-  /// discussion_board_members.id}.
+  /// Reference to the member account being warned, suspended, or banned.
+  /// Identifies which user is subject to the moderation action. {@link
+  /// discussion_board_members.id}
   discussion_board_member_id String
   
-  /// Category or type of violation committed. Valid values: 'spam',
-  /// 'harassment', 'inappropriate_content', 'off_topic', 'misinformation',
-  /// 'copyright_violation', 'illegal_content'. Enables violation
-  /// categorization and pattern analysis.
-  violation_type String
+  /// Reference to the moderator who issued the warning or initiated the
+  /// suspension/ban. Tracks accountability for each account management action.
+  /// {@link discussion_board_moderators.id}
+  discussion_board_moderator_id String
   
-  /// Brief description of the specific violation that occurred. Explains what
-  /// policy was violated and provides context for moderation decisions.
-  /// Supports compliance documentation and user communication.
-  reason String?
+  /// Type of user account action taken. Valid values: 'warning' (notification
+  /// about violations), 'suspension' (temporary block from posting, duration
+  /// specified), 'ban' (permanent block from accessing system). Determines
+  /// account restrictions and notification message sent to user.
+  action_type String
   
-  /// Optional reference to the associated discussion_board_moderation_logs
-  /// record if this violation triggered a moderation action. {@link
-  /// discussion_board_moderation_logs.id}. Links violation tracking to
-  /// enforcement actions for complete audit trail. Nullable if violation is
-  /// recorded but no action taken yet.
-  moderation_log_id String?
+  /// Required business reason for the action in 10-500 characters. Examples:
+  /// 'Repeated policy violations', 'Harassment of other members', 'Spam
+  /// content creation', 'Offensive language'. Explains to member why action
+  /// was taken and appears in notification email.
+  reason String
   
-  /// Timestamp when the violation occurred (when user committed the policy
-  /// violation). Stored in UTC ISO 8601 format. Used for calculating 30-day
-  /// and 90-day violation windows that trigger automatic suspension and
-  /// banning. Critical for time-based enforcement thresholds.
-  violation_date DateTime
+  /// Optional detailed moderator notes up to 1000 characters for internal
+  /// record-keeping. May reference specific violations, previous warnings, or
+  /// escalation factors informing the decision. Available to other moderators
+  /// for context on account history.
+  notes String?
   
-  /// Timestamp when this violation record was created in the system. Stored in
-  /// UTC ISO 8601 format. May differ from violation_date if violation is
-  /// recorded after the fact. Used for audit trail tracking.
+  /// For suspension action_type only: timestamp when suspension expires and
+  /// account should automatically reactivate. NULL for warnings and bans
+  /// (which have no auto-reactivation). Used by system job to auto-reactivate
+  /// accounts on expiration.
+  suspension_end_date DateTime?
+  
+  /// Whether this warning/suspension is currently in effect. TRUE when first
+  /// issued. For suspensions: changes to FALSE when suspension expires and
+  /// auto-reactivation occurs. For bans: remains TRUE indefinitely (never
+  /// auto-reactivates). For warnings: remains TRUE (warnings don't expire,
+  /// they accumulate in history).
+  is_active Boolean
+  
+  /// Timestamp when warning/suspension/ban action was issued by moderator in
+  /// UTC. System-generated, immutable. Used to order account history
+  /// chronologically and determine suspension start time.
   created_at DateTime
-  
-  /// Timestamp when this violation record was last modified. Stored in UTC ISO
-  /// 8601 format. Used for audit trail tracking of violation record changes.
-  updated_at DateTime
   
   //----
   // RELATIONS
   //----
   member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([discussion_board_member_id, violation_date], map: "discussion_board_user_violations_discussion_board_memb_78c942c4")
-  @@index([violation_date])
-  @@index([moderation_log_id])
-  @@index([violation_type])
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_user_warnings_discussion_board_member_21e960af")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_user_warnings_discussion_board_modera_3d800875")
+  @@index([action_type, is_active])
+  @@index([suspension_end_date])
 }

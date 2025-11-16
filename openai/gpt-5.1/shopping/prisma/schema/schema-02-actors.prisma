@@ -1,0 +1,935 @@
+/// Guest user identities representing unauthenticated visitors that may
+/// transition into customers.
+///
+/// This table stores minimal, optional identity context for guests when the
+/// platform decides to persist it beyond an in-memory session, such as for
+/// tracking conversion funnels or consent. It does not hold login
+/// credentials because guests cannot authenticate, but it provides a stable
+/// identifier that other systems can reference if needed.
+///
+/// Guest records can later be associated with customer accounts during
+/// registration without retroactively changing historical information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guestuser {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the guest user record.
+  id String @id
+  
+  /// Opaque identifier used to correlate guest activity such as carts or
+  /// visits before registration. Typically derived from cookies or device
+  /// identifiers.
+  temporary_identifier String?
+  
+  /// Captured user agent string or a normalized descriptor for the guest’s
+  /// primary device during the first tracked interaction.
+  user_agent String?
+  
+  /// Timestamp when the guest record was first created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the guest record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the guest record is considered logically
+  /// removed while preserving history for analytics.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_guest_carts shopping_mall_guest_carts[]
+  
+  @@index([temporary_identifier, created_at])
+}
+
+/// Customer accounts representing authenticated buyers on the shoppingMall
+/// platform.
+///
+/// Each record corresponds to a unique customer identity with core profile
+/// attributes and account status. Credentials such as password hashes are
+/// stored in {@link shopping_mall_auth_credentials}, while this table
+/// focuses on identity and lifecycle.
+///
+/// Customers own resources like addresses, carts, wishlists, orders, and
+/// reviews through foreign keys from other components. Status and
+/// risk-related behavior are governed by this table in combination with
+/// {@link shopping_mall_risk_flags}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the customer account.
+  id String @id
+  
+  /// Primary email address for the customer. Used for communication and may
+  /// match the login email stored in credentials. Must be unique across
+  /// customers.
+  email String
+  
+  /// Display name or full name of the customer used in profile views and
+  /// communications.
+  name String
+  
+  /// High-level lifecycle status of the customer such as active, suspended, or
+  /// closed. Authorization logic uses this value to enable or block actions.
+  status String
+  
+  /// Flag indicating whether the customer’s email has passed verification
+  /// flows.
+  is_verified Boolean
+  
+  /// Timestamp when the customer account was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the customer account is logically closed
+  /// but retained for legal and audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_customer_sessions shopping_mall_customer_sessions[]
+  shopping_mall_auth_credentials_of_customers shopping_mall_auth_credentials_of_customers[]
+  shopping_mall_customer_carts shopping_mall_customer_carts[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_order_cancellation_request_of_customers shopping_mall_order_cancellation_request_of_customers[]
+  shopping_mall_order_return_request_of_customers shopping_mall_order_return_request_of_customers[]
+  shopping_mall_order_dispute_of_customers shopping_mall_order_dispute_of_customers[]
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  shopping_mall_refund_transactions shopping_mall_refund_transactions[]
+  shopping_mall_payment_chargebacks shopping_mall_payment_chargebacks[]
+  shopping_mall_product_reviews shopping_mall_product_reviews[]
+  
+  @@unique([email])
+  @@index([status, created_at])
+}
+
+/// Seller accounts representing merchants that operate stores within the
+/// marketplace.
+///
+/// Each record corresponds to a seller identity that controls product
+/// catalogs, SKUs, inventory, and order fulfillment for its listings. Login
+/// credentials live in {@link shopping_mall_auth_credentials}, while this
+/// table stores seller-specific profile data and lifecycle status.
+///
+/// Seller suspension or termination is managed through the status field and
+/// is combined with policy tables and admin actions from other components.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the seller account and store.
+  id String @id
+  
+  /// Primary business email address for the seller. Used for communications
+  /// and may be aligned with the login email stored in credentials.
+  email String
+  
+  /// Public store or brand name shown to customers when viewing products and
+  /// orders from this seller.
+  store_name String
+  
+  /// Optional seller contact phone number used for operations or support
+  /// communication.
+  contact_phone String?
+  
+  /// Lifecycle status of the seller such as pending, active, suspended, or
+  /// terminated. Controls access to catalog and fulfillment features.
+  status String
+  
+  /// Timestamp when the seller account and store record were created.
+  created_at DateTime
+  
+  /// Timestamp when the seller record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the seller account is logically closed
+  /// while retaining historical order, payment, and audit information.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_seller_sessions shopping_mall_seller_sessions[]
+  shopping_mall_auth_credentials_of_sellers shopping_mall_auth_credentials_of_sellers[]
+  shopping_mall_products shopping_mall_products[]
+  shopping_mall_order_seller_segments shopping_mall_order_seller_segments[]
+  shopping_mall_order_lines shopping_mall_order_lines[]
+  shopping_mall_order_cancellation_request_of_sellers shopping_mall_order_cancellation_request_of_sellers[]
+  shopping_mall_order_dispute_of_sellers shopping_mall_order_dispute_of_sellers[]
+  shopping_mall_refund_transactions shopping_mall_refund_transactions[]
+  shopping_mall_seller_payouts shopping_mall_seller_payouts[]
+  shopping_mall_product_review_seller_responses shopping_mall_product_review_seller_responses[]
+  shopping_mall_seller_performance_summaries shopping_mall_seller_performance_summaries[]
+  shopping_mall_dispute_resolution_logs shopping_mall_dispute_resolution_logs[]
+  
+  @@unique([email])
+  @@unique([store_name])
+  @@index([status, created_at])
+}
+
+/// Platform administrator accounts with elevated privileges to operate and
+/// moderate the marketplace.
+///
+/// Each record represents a human operator or system account that can manage
+/// customers, sellers, catalog content, orders, payments, and policies.
+/// Role-based permissions are defined via {@link shopping_mall_admin_roles}
+/// and linked through {@link shopping_mall_admin_role_assignments}.
+///
+/// Authentication credentials are stored in {@link
+/// shopping_mall_auth_credentials}, while this table captures identity and
+/// status attributes required for governance and audit.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_platformadmin {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the platform administrator account.
+  id String @id
+  
+  /// Admin email address used for communication and login. Must be unique
+  /// among platform admins and separate from regular customer or seller emails
+  /// when required by policy.
+  email String
+  
+  /// Display name or full name for the administrator, used in audit records
+  /// and admin listings.
+  name String
+  
+  /// Lifecycle and access status of the admin account such as active,
+  /// suspended, or closed. Critical for restricting sensitive admin actions.
+  status String
+  
+  /// Timestamp when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the admin account is logically removed
+  /// while preserving references in audit logs and configuration change
+  /// histories.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_platformadmin_sessions shopping_mall_platformadmin_sessions[]
+  shopping_mall_admin_role_assignments shopping_mall_admin_role_assignments[]
+  shopping_mall_auth_credentials_of_platformadmins shopping_mall_auth_credentials_of_platformadmins[]
+  shopping_mall_payment_methods_of_created_by_platformadmin_id shopping_mall_payment_methods[] @relation("shopping_mall_payment_methods_of_created_by_platformadmin_id")
+  shopping_mall_payment_methods_of_updated_by_platformadmin_id shopping_mall_payment_methods[] @relation("shopping_mall_payment_methods_of_updated_by_platformadmin_id")
+  shopping_mall_payment_status_events shopping_mall_payment_status_events[]
+  shopping_mall_refund_transactions shopping_mall_refund_transactions[]
+  shopping_mall_product_review_moderation_events shopping_mall_product_review_moderation_events[]
+  shopping_mall_admin_action_audits shopping_mall_admin_action_audits[]
+  shopping_mall_admin_configuration_change_logs shopping_mall_admin_configuration_change_logs[]
+  shopping_mall_dispute_resolution_logs shopping_mall_dispute_resolution_logs[]
+  shopping_mall_fraud_rule_definitions_of_created_by_pla_d2d643f4 shopping_mall_fraud_rule_definitions[] @relation("shopping_mall_fraud_rule_definitions_of_created_by_pla_d2d643f4")
+  shopping_mall_fraud_rule_definitions_of_updated_by_pla_c750ae98 shopping_mall_fraud_rule_definitions[] @relation("shopping_mall_fraud_rule_definitions_of_updated_by_pla_c750ae98")
+  
+  @@unique([email])
+  @@index([status, created_at])
+}
+
+/// Authentication sessions for customer actors used to trace login context
+/// across requests.
+///
+/// Each record represents one authenticated session belonging to a customer,
+/// linked to {@link shopping_mall_customer}. The table follows the strict
+/// session pattern: minimal connection metadata, creation time, and optional
+/// expiry time.
+///
+/// Sessions are used for authorization context, audit trails, and security
+/// analytics but are managed as supporting entities rather than business
+/// objects.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the customer session.
+  id String @id
+  
+  /// Foreign key to the owning customer account. {@link
+  /// shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// IP address captured when the session was established. Used for security
+  /// analytics and anomaly detection.
+  ip String
+  
+  /// URL or path that initiated the authenticated session, such as the login
+  /// page or entry route.
+  href String
+  
+  /// Referring URL when the session was created, used for tracing login
+  /// sources and campaigns.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was terminated. Null for
+  /// still-active sessions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_cancellation_request_of_customers shopping_mall_order_cancellation_request_of_customers[]
+  shopping_mall_order_return_request_of_customers shopping_mall_order_return_request_of_customers[]
+  shopping_mall_order_dispute_of_customers shopping_mall_order_dispute_of_customers[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
+}
+
+/// Authentication sessions for seller actors used to track merchant activity
+/// and security context.
+///
+/// Each record represents a single authenticated session for a seller,
+/// referencing {@link shopping_mall_seller}. The schema follows the global
+/// session pattern with minimal connection metadata and temporal fields.
+///
+/// These sessions allow investigation of inventory changes, catalog
+/// modifications, and order updates in conjunction with audit logs from
+/// other components.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the seller session.
+  id String @id
+  
+  /// Foreign key to the owning seller account. {@link shopping_mall_seller.id}.
+  shopping_mall_seller_id String
+  
+  /// IP address observed when the seller session was established.
+  ip String
+  
+  /// Entry URL that initiated the seller login session.
+  href String
+  
+  /// Referrer URL at the time of seller login creation.
+  referrer String
+  
+  /// Timestamp when the seller session started.
+  created_at DateTime
+  
+  /// Timestamp when the seller session expired or was explicitly terminated.
+  /// Null while still active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_cancellation_request_of_sellers shopping_mall_order_cancellation_request_of_sellers[]
+  shopping_mall_order_dispute_of_sellers shopping_mall_order_dispute_of_sellers[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
+}
+
+/// Authentication sessions for platform administrator actors.
+///
+/// Each record represents one authenticated admin session associated with
+/// {@link shopping_mall_platformadmin}. The table strictly follows the
+/// standardized session schema to keep security-critical session data
+/// minimal and consistent.
+///
+/// These sessions are fundamental for correlating high-impact admin actions
+/// with connection context in audit and security analysis.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_platformadmin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the platform admin session.
+  id String @id
+  
+  /// Foreign key to the owning platform administrator account. {@link
+  /// shopping_mall_platformadmin.id}.
+  shopping_mall_platformadmin_id String
+  
+  /// IP address seen when the admin session was established.
+  ip String
+  
+  /// Entry URL that initiated the admin login session.
+  href String
+  
+  /// Referrer URL at the time of admin login creation.
+  referrer String
+  
+  /// Timestamp when the admin session was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin session expired or was explicitly invalidated.
+  /// Null for active sessions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  platformAdmin shopping_mall_platformadmin @relation(fields: [shopping_mall_platformadmin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_platformadmin_id, created_at], map: "shopping_mall_platformadmin_sessions_shopping_mall_pla_aea23850")
+}
+
+/// Authentication credentials for all persistent actor types in the platform.
+///
+/// This table centralizes login identifiers and password hashes for
+/// customers, sellers, and platform administrators. Each row defines how one
+/// actor authenticates to the system and serves as the root entity for
+/// credential-related subtype records.
+///
+/// Actor ownership is modeled through dedicated subtype tables such as
+/// {@link shopping_mall_auth_credentials_of_customers}, {@link
+/// shopping_mall_auth_credentials_of_sellers}, and {@link
+/// shopping_mall_auth_credentials_of_platformadmins}. This avoids multiple
+/// nullable foreign keys and enforces that each credentials record belongs
+/// to exactly one actor type based on the actor_type field.
+///
+/// Security events and risk flags reference this table for identity-centric
+/// analysis and decision-making.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_auth_credentials {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the credentials record.
+  id String @id
+  
+  /// Type of actor this credential belongs to, such as customer, seller, or
+  /// platformAdmin. Used for authorization routing and to select the
+  /// appropriate subtype entity that links to the concrete actor record.
+  actor_type String
+  
+  /// Login email identifier associated with this credential. Must be unique
+  /// within the scope of actor_type and the owning actor according to platform
+  /// policy.
+  email String
+  
+  /// Secure non-reversible representation of the actor’s password used for
+  /// authentication. Plain text passwords are never stored.
+  password_hash String
+  
+  /// Credential status such as active, locked, or compromised. Controls
+  /// whether authentication using this record is allowed.
+  status String
+  
+  /// Timestamp of the most recent successful login using these credentials, or
+  /// null if no login has occurred yet.
+  last_login_at DateTime?
+  
+  /// Timestamp when the credential record was created.
+  created_at DateTime
+  
+  /// Timestamp when the credential record was last updated, for example when
+  /// rotating password hashes or changing status.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_email_verification_tokens shopping_mall_email_verification_tokens[]
+  shopping_mall_password_reset_tokens shopping_mall_password_reset_tokens[]
+  shopping_mall_risk_flags shopping_mall_risk_flags[]
+  shopping_mall_security_events shopping_mall_security_events[]
+  shopping_mall_auth_credentials_of_customers shopping_mall_auth_credentials_of_customers?
+  shopping_mall_auth_credentials_of_sellers shopping_mall_auth_credentials_of_sellers?
+  shopping_mall_auth_credentials_of_platformadmins shopping_mall_auth_credentials_of_platformadmins?
+  
+  @@unique([actor_type, email])
+  @@index([actor_type, status])
+}
+
+/// Email verification tokens used to confirm ownership of email addresses
+/// for actors.
+///
+/// Each token references a credentials record in {@link
+/// shopping_mall_auth_credentials} and captures the lifecycle of
+/// verification, including expiry and consumption timestamps.
+///
+/// These tokens support customer, seller, and admin onboarding flows as well
+/// as email change confirmations while preserving auditability of
+/// verification attempts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_email_verification_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the email verification token.
+  id String @id
+  
+  /// Foreign key to the credentials record whose email is being verified.
+  /// {@link shopping_mall_auth_credentials.id}.
+  shopping_mall_auth_credentials_id String
+  
+  /// Opaque verification token sent to the user via email. Must be unique to
+  /// safely locate the verification attempt.
+  token String
+  
+  /// Timestamp after which the token is no longer valid for verification.
+  expires_at DateTime
+  
+  /// Timestamp when the token was successfully used to complete email
+  /// verification. Null while pending.
+  consumed_at DateTime?
+  
+  /// Timestamp when the token was created and dispatched.
+  created_at DateTime
+  
+  /// Timestamp when the token record was last updated, typically when marked
+  /// as consumed or expired by background jobs.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  credentials shopping_mall_auth_credentials @relation(fields: [shopping_mall_auth_credentials_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_auth_credentials_id, expires_at], map: "shopping_mall_email_verification_tokens_shopping_mall__83d9b22c")
+}
+
+/// Password reset tokens that allow actors to set new credentials after
+/// passing ownership checks.
+///
+/// Each token is associated with {@link shopping_mall_auth_credentials} and
+/// includes validity and consumption metadata. The system never stores the
+/// new password in this table, only the reset workflow identifiers.
+///
+/// Tokens can be invalidated or expired according to security policies and
+/// are crucial evidence for audit and breach investigations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_password_reset_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the password reset token.
+  id String @id
+  
+  /// Foreign key to the credentials record whose password is being reset.
+  /// {@link shopping_mall_auth_credentials.id}.
+  shopping_mall_auth_credentials_id String
+  
+  /// Opaque password reset token delivered via secure channel. Must be unique
+  /// to prevent collisions and guessing attacks.
+  token String
+  
+  /// Timestamp after which the reset token is no longer valid and must not be
+  /// accepted by the system.
+  expires_at DateTime
+  
+  /// Timestamp when the token was successfully used to complete a password
+  /// reset operation. Null while still pending.
+  consumed_at DateTime?
+  
+  /// Timestamp when the password reset token was created.
+  created_at DateTime
+  
+  /// Timestamp when the token record was last updated, usually when consumed
+  /// or invalidated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  credentials shopping_mall_auth_credentials @relation(fields: [shopping_mall_auth_credentials_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_auth_credentials_id, expires_at], map: "shopping_mall_password_reset_tokens_shopping_mall_auth_72ad44d9")
+}
+
+/// Risk and fraud-related flags attached to actor credentials to influence
+/// authorization and operations.
+///
+/// Each record represents a specific risk assessment or incident tied to
+/// {@link shopping_mall_auth_credentials}, such as suspected fraud or abuse.
+/// Business rules use these flags to tighten security, require manual
+/// review, or restrict actions.
+///
+/// Historical records allow risk teams and admins to analyze patterns, even
+/// after a flag has been cleared.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_risk_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the risk flag entry.
+  id String @id
+  
+  /// Foreign key to the credentials record this risk flag applies to. {@link
+  /// shopping_mall_auth_credentials.id}.
+  shopping_mall_auth_credentials_id String
+  
+  /// Risk severity level such as low, medium, high, or critical indicating the
+  /// strength of the concern.
+  risk_level String
+  
+  /// Categorized reason for the risk flag such as suspected_fraud,
+  /// abuse_reports, chargeback_history, or account_compromise.
+  reason_category String
+  
+  /// Indicates whether this risk flag is currently active and should influence
+  /// authorization decisions.
+  active Boolean
+  
+  /// Optional free-form notes describing the context or evidence behind the
+  /// risk assessment for internal teams.
+  notes String?
+  
+  /// Timestamp when the risk flag was created.
+  created_at DateTime
+  
+  /// Timestamp when the risk flag was cleared or downgraded, or null if the
+  /// flag is still active.
+  cleared_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  credentials shopping_mall_auth_credentials @relation(fields: [shopping_mall_auth_credentials_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_auth_credentials_id, active], map: "shopping_mall_risk_flags_shopping_mall_auth_credential_5acf8de5")
+  @@index([risk_level, created_at])
+}
+
+/// Role definitions for platform administrators that determine available
+/// admin capabilities.
+///
+/// Each row represents a reusable role such as super_admin, support_agent,
+/// or risk_analyst that aggregates permissions outside this schema. Roles
+/// are assigned to admin accounts via {@link
+/// shopping_mall_admin_role_assignments}.
+///
+/// This table is central to the least-privilege model and supports
+/// independent lifecycle management and auditing of administrative
+/// responsibilities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the admin role definition.
+  id String @id
+  
+  /// Short machine-friendly code for the admin role, such as SUPER_ADMIN or
+  /// SUPPORT_AGENT. Must be unique.
+  code String
+  
+  /// Human-readable name for the admin role presented in admin dashboards.
+  name String
+  
+  /// Optional detailed description of what responsibilities and permissions
+  /// this role entails.
+  description_text String?
+  
+  /// Timestamp when the admin role was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin role definition was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the role is no longer assignable but
+  /// remains for historical references.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_admin_role_assignments shopping_mall_admin_role_assignments[]
+  
+  @@unique([code])
+  @@index([created_at])
+}
+
+/// Assignments of admin roles to specific platform administrator accounts.
+///
+/// This junction table links {@link shopping_mall_platformadmin} records
+/// with {@link shopping_mall_admin_roles} to express which roles each admin
+/// has at any given time.
+///
+/// Assignments support start and end timestamps to enable time-bounded
+/// responsibilities and to reconstruct historical permission sets for audit
+/// and compliance.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_role_assignments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the admin role assignment.
+  id String @id
+  
+  /// Foreign key to the platform administrator who receives the role. {@link
+  /// shopping_mall_platformadmin.id}.
+  shopping_mall_platformadmin_id String
+  
+  /// Foreign key to the admin role being assigned. {@link
+  /// shopping_mall_admin_roles.id}.
+  shopping_mall_admin_role_id String
+  
+  /// Timestamp when this role assignment became effective for the admin.
+  assigned_at DateTime
+  
+  /// Timestamp when this role assignment was revoked or expired, or null if it
+  /// is still active.
+  revoked_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  platformAdmin shopping_mall_platformadmin @relation(fields: [shopping_mall_platformadmin_id], references: [id], onDelete: Cascade)
+  adminRole shopping_mall_admin_roles @relation(fields: [shopping_mall_admin_role_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_platformadmin_id, shopping_mall_admin_role_id], map: "shopping_mall_admin_role_assignments_shopping_mall_pla_2dfe075e")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_role_id, assigned_at], map: "shopping_mall_admin_role_assignments_shopping_mall_adm_81fe750e")
+}
+
+/// Security-related events associated with identities and sessions for
+/// monitoring and forensics.
+///
+/// Each row records one significant security event, such as login success,
+/// login failure, password change, token misuse, or suspicious activity.
+/// Events may reference {@link shopping_mall_auth_credentials} when an
+/// identity can be resolved.
+///
+/// This table is not a full audit log for all business operations but
+/// focuses on authentication, authorization, and security anomalies
+/// important for risk and compliance reporting.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_security_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the security event.
+  id String @id
+  
+  /// Optional foreign key to the credentials record involved in the event when
+  /// identifiable. {@link shopping_mall_auth_credentials.id}.
+  shopping_mall_auth_credentials_id String?
+  
+  /// Type of actor involved in the event such as customer, seller,
+  /// platformAdmin, or guestUser. Null when the actor could not be resolved.
+  actor_type String?
+  
+  /// Non-sensitive identifier for the actor such as email or a masked login
+  /// identifier, used only when credentials cannot be linked directly.
+  actor_identifier String?
+  
+  /// Machine-friendly category for the security event such as LOGIN_SUCCESS,
+  /// LOGIN_FAILURE, PASSWORD_RESET_REQUEST, or TOKEN_REVOKED.
+  event_type String
+  
+  /// IP address observed for this security event, used in threat detection and
+  /// analysis.
+  ip String?
+  
+  /// User agent string or normalized device descriptor associated with this
+  /// event.
+  user_agent String?
+  
+  /// Optional JSON-encoded or structured text payload containing additional
+  /// context for the event, such as error codes or geo information.
+  metadata String?
+  
+  /// Timestamp when the security event was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  credentials shopping_mall_auth_credentials? @relation(fields: [shopping_mall_auth_credentials_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_auth_credentials_id], map: "shopping_mall_security_events_shopping_mall_auth_crede_4f690bf3")
+  
+  @@index([event_type, created_at])
+  @@index([actor_type, created_at])
+}
+
+/// Subtype entity connecting authentication credentials to customer actors.
+///
+/// Each record represents the ownership of a {@link
+/// shopping_mall_auth_credentials} row by a specific {@link
+/// shopping_mall_customer}. It enforces a 1:1 relationship between
+/// credentials and customer while keeping the main credentials table free of
+/// multiple nullable foreign keys.
+///
+/// This table is treated as a supporting entity and is managed by
+/// authentication and account management flows rather than directly by end
+/// users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_auth_credentials_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the customer credentials subtype
+  /// record.
+  id String @id
+  
+  /// Foreign key to the root credentials record associated with this customer.
+  /// {@link shopping_mall_auth_credentials.id}. Enforced as unique to maintain
+  /// a 1:1 relationship.
+  shopping_mall_auth_credentials_id String
+  
+  /// Foreign key to the owning customer account. {@link
+  /// shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// Timestamp when this customer-credentials link was created, typically at
+  /// registration or when credentials were first attached to the customer
+  /// account.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  credentials shopping_mall_auth_credentials @relation(fields: [shopping_mall_auth_credentials_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_auth_credentials_id], map: "shopping_mall_auth_credentials_of_customers_shopping_m_308973bf")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_auth_credentials_of_customers_shopping_m_9818ea8e")
+}
+
+/// Subtype entity connecting authentication credentials to seller actors.
+///
+/// Each record represents the ownership of a {@link
+/// shopping_mall_auth_credentials} row by a specific {@link
+/// shopping_mall_seller}. This implements the polymorphic ownership pattern
+/// without multiple nullable foreign keys in the main credentials table.
+///
+/// The table is a supporting entity and is created and updated by seller
+/// onboarding and account management workflows.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_auth_credentials_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the seller credentials subtype record.
+  id String @id
+  
+  /// Foreign key to the root credentials record associated with this seller.
+  /// {@link shopping_mall_auth_credentials.id}. Enforced as unique to maintain
+  /// a 1:1 relationship.
+  shopping_mall_auth_credentials_id String
+  
+  /// Foreign key to the owning seller account. {@link shopping_mall_seller.id}.
+  shopping_mall_seller_id String
+  
+  /// Timestamp when this seller-credentials link was created, usually during
+  /// seller registration or credential assignment.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  credentials shopping_mall_auth_credentials @relation(fields: [shopping_mall_auth_credentials_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_auth_credentials_id], map: "shopping_mall_auth_credentials_of_sellers_shopping_mal_67a16704")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_auth_credentials_of_sellers_shopping_mal_dcbf2df6")
+}
+
+/// Subtype entity connecting authentication credentials to platform
+/// administrator actors.
+///
+/// Each record represents the ownership of a {@link
+/// shopping_mall_auth_credentials} row by a specific {@link
+/// shopping_mall_platformadmin}. This pattern ensures strict normalization
+/// by separating admin-specific ownership data from the main credentials
+/// table.
+///
+/// The table is managed through admin provisioning processes and supports
+/// precise auditability for sensitive administrative access.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_auth_credentials_of_platformadmins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique identifier for the platform admin credentials subtype
+  /// record.
+  id String @id
+  
+  /// Foreign key to the root credentials record associated with this
+  /// administrator. {@link shopping_mall_auth_credentials.id}. Enforced as
+  /// unique to maintain a 1:1 relationship.
+  shopping_mall_auth_credentials_id String
+  
+  /// Foreign key to the owning platform admin account. {@link
+  /// shopping_mall_platformadmin.id}.
+  shopping_mall_platformadmin_id String
+  
+  /// Timestamp when this platform-admin-credentials link was created,
+  /// typically during admin account provisioning.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  credentials shopping_mall_auth_credentials @relation(fields: [shopping_mall_auth_credentials_id], references: [id], onDelete: Cascade)
+  platformAdmin shopping_mall_platformadmin @relation(fields: [shopping_mall_platformadmin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_auth_credentials_id], map: "shopping_mall_auth_credentials_of_platformadmins_shopp_324f5302")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_platformadmin_id, created_at], map: "shopping_mall_auth_credentials_of_platformadmins_shopp_24786fdf")
+}

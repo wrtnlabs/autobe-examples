@@ -7,65 +7,63 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IPoliticsBbsModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IPoliticsBbsModerator";
+import { IEconomicDiscussionModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicDiscussionModerator";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthModeratorLogin(props: {
-  body: IPoliticsBbsModerator.ILogin;
-}): Promise<IPoliticsBbsModerator.IAuthorized> {
-  // Step 1: Find moderator by username or email
-  const moderator = await MyGlobal.prisma.politics_bbs_moderators.findFirst({
-    where: {
-      OR: [
-        { username: props.body.username_or_email },
-        { email: props.body.username_or_email },
-      ],
-      deleted_at: null, // Don't find soft-deleted accounts
-    },
-  });
+  body: IEconomicDiscussionModerator.ILogin;
+}): Promise<IEconomicDiscussionModerator.IAuthorized> {
+  // Find moderator by username
+  const moderator =
+    await MyGlobal.prisma.economic_discussion_moderators.findFirst({
+      where: { username: props.body.username },
+    });
 
-  // Validate moderator exists
   if (!moderator) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Step 2: Verify password
+  // Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     moderator.password_hash,
   );
+
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Step 3: Create new session record - MUST provide explicit id
-  const accessExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-  const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-  const sessionId = v4();
+  // Calculate token expiration dates
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
-  await MyGlobal.prisma.politics_bbs_moderator_sessions.create({
-    data: {
-      id: sessionId,
-      politics_bbs_moderator_id: moderator.id,
-      ip: props.body.ip ?? "",
-      href: props.body.href,
-      referrer: props.body.referrer,
-      created_at: toISOStringSafe(new Date()),
-      expired_at: null,
-    },
-  });
+  // Create new session
+  const session =
+    await MyGlobal.prisma.economic_discussion_moderator_sessions.create({
+      data: {
+        id: v4(),
+        economic_discussion_moderator_id: moderator.id,
+        ip: props.body.ip ?? "unknown",
+        href: props.body.href,
+        referrer: props.body.referrer,
+        created_at: toISOStringSafe(new Date()),
+        expired_at: accessExpires,
+      },
+    });
 
-  // Step 4: Generate JWT tokens
+  // Generate JWT tokens
   const accessToken = jwt.sign(
     {
       type: "moderator",
       id: moderator.id,
-      session_id: sessionId,
+      session_id: session.id,
       created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "15m",
+      expiresIn: "1h",
       issuer: "autobe",
     },
   );
@@ -74,38 +72,33 @@ export async function postAuthModeratorLogin(props: {
     {
       type: "moderator",
       id: moderator.id,
-      session_id: sessionId,
+      session_id: session.id,
       tokenType: "refresh",
       created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
-      expiresIn: "30d",
+      expiresIn: "7d",
       issuer: "autobe",
     },
   );
 
-  const authorizationToken = {
+  const token: IAuthorizationToken = {
     access: accessToken,
     refresh: refreshToken,
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
 
-  // Step 5: Return authorized moderator with token
   return {
     id: moderator.id,
     username: moderator.username,
     email: moderator.email,
-    created_at: toISOStringSafe(
-      moderator.created_at,
-    ) satisfies string as string,
-    updated_at: toISOStringSafe(
-      moderator.updated_at,
-    ) satisfies string as string,
-    deleted_at: moderator.deleted_at
-      ? toISOStringSafe(moderator.deleted_at)
-      : undefined,
-    token: authorizationToken,
-  };
+    email_verified: moderator.email_verified,
+    two_factor_enabled: moderator.two_factor_enabled,
+    moderation_level: moderator.moderation_level,
+    created_at: toISOStringSafe(moderator.created_at),
+    updated_at: toISOStringSafe(moderator.updated_at),
+    token,
+  } satisfies IEconomicDiscussionModerator.IAuthorized;
 }

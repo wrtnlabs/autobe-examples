@@ -4,31 +4,40 @@ import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { CustomerPayload } from "../../decorators/payload/CustomerPayload";
 
-/**
- * JWT-based authentication provider for Customer role.
- *
- * - Verifies the Bearer token using jwtAuthorize
- * - Enforces payload.type === "customer"
- * - Checks existence and active status of shopping_customers
- * - Returns the strongly-typed CustomerPayload
- */
 export async function customerAuthorize(request: {
-  headers: { authorization?: string }
+  headers: {
+    authorization?: string;
+  };
 }): Promise<CustomerPayload> {
   const payload: CustomerPayload = jwtAuthorize({ request }) as CustomerPayload;
+
   if (payload.type !== "customer") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
-  // Check that customer exists and account is active and not deleted
-  const customer = await MyGlobal.prisma.shopping_customers.findFirst({
+
+  // payload.id contains shopping_mall_customers.id (top-level user ID)
+  // payload.session_id contains shopping_mall_customer_sessions.id
+  const session = await MyGlobal.prisma.shopping_mall_customer_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+      shopping_mall_customer_id: payload.id,
+      expired_at: null,
+    },
+  });
+
+  if (session === null) {
+    throw new ForbiddenException("You're not enrolled or session is expired");
+  }
+
+  const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: {
       id: payload.id,
-      is_active: true,
-      deleted_at: null
+      is_email_verified: true,
     },
   });
   if (customer === null) {
-    throw new ForbiddenException("You're not enrolled or account is inactive/deleted");
+    throw new ForbiddenException("Customer is not active or enrolled");
   }
+
   return payload;
 }

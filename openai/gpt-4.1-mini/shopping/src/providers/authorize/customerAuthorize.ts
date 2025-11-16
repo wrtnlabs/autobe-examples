@@ -4,11 +4,7 @@ import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { CustomerPayload } from "../../decorators/payload/CustomerPayload";
 
-export async function customerAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
-}): Promise<CustomerPayload> {
+export async function customerAuthorize(request: { headers: { authorization?: string } }): Promise<CustomerPayload> {
   const payload: CustomerPayload = jwtAuthorize({ request }) as CustomerPayload;
 
   if (payload.type !== "customer") {

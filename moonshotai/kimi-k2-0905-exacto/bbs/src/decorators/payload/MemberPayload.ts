@@ -1,12 +1,12 @@
 import { tags } from "typia";
 
 export interface MemberPayload {
-  /** Top-level user table ID (the fundamental user identifier in the system). */
+  /** Top-level member table ID. */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID associated with the member user. */
+  /** Session ID associated with the member. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Discriminator for the discriminated union type. */
+  /** Discriminator for member role. */
   type: "member";
 }

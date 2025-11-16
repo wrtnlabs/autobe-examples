@@ -16,33 +16,18 @@ export async function getTodoAppUserUsersUserIdSessionsSessionId(props: {
   userId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<ITodoAppUserSession> {
-  const { user, userId, sessionId } = props;
-
-  // Verify user authorization - the user can only access their own sessions
-  if (user.id !== userId) {
-    throw new HttpException(
-      "Unauthorized: You can only access your own sessions",
-      403,
-    );
+  // Verify that the requesting user is accessing their own session
+  if (props.user.id !== props.userId) {
+    throw new HttpException("You can only access your own sessions", 403);
   }
 
-  // Find the session with user relation
-  const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
+  const session = await MyGlobal.prisma.todo_app_user_sessions.findUnique({
     where: {
-      id: sessionId,
-      todo_app_user_id: userId,
+      id: props.sessionId,
+      todo_app_user_id: props.userId,
     },
     include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          status: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-        },
-      },
+      user: true,
     },
   });
 
@@ -50,25 +35,29 @@ export async function getTodoAppUserUsersUserIdSessionsSessionId(props: {
     throw new HttpException("Session not found", 404);
   }
 
-  // Build the response with proper type handling
-  const response = {
+  // Verify the user exists and is active
+  if (
+    !session.user ||
+    session.user.deleted_at !== null ||
+    session.user.status !== "active"
+  ) {
+    throw new HttpException("Invalid session or user not active", 403);
+  }
+
+  return {
     id: session.id,
     user: {
       id: session.user.id,
       email: session.user.email,
       status: session.user.status,
       created_at: toISOStringSafe(session.user.created_at),
-      updated_at: toISOStringSafe(session.user.updated_at),
-      deleted_at: session.user.deleted_at
-        ? toISOStringSafe(session.user.deleted_at)
-        : undefined,
     },
     ip: session.ip,
     href: session.href,
     referrer: session.referrer,
     created_at: toISOStringSafe(session.created_at),
-    expired_at: session.expired_at ? toISOStringSafe(session.expired_at) : null,
-  } satisfies ITodoAppUserSession;
-
-  return response;
+    expired_at: session.expired_at
+      ? toISOStringSafe(session.expired_at)
+      : toISOStringSafe(new Date(0)),
+  } satisfies ITodoAppUserSession as ITodoAppUserSession;
 }

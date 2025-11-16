@@ -1,0 +1,378 @@
+/// Unauthenticated visitors browsing the platform.
+///
+/// Guests represent users who access the platform without creating an
+/// account or logging in. They can view all public content including
+/// communities, posts, and comments, but cannot perform any interactive
+/// actions such as voting, posting, commenting, or subscribing.
+///
+/// Guests are tracked through session mechanisms to enable eventual
+/// conversion to registered members. When a guest decides to participate
+/// actively, they transition to member status through the registration
+/// process.
+///
+/// This table maintains minimal information about guest sessions for
+/// analytics and conversion tracking purposes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique session identifier for tracking guest browsing activity. Used to
+  /// maintain state and enable conversion tracking when guests register.
+  session_token String
+  
+  /// IP address of the guest for analytics and security purposes. Helps track
+  /// geographic distribution and detect suspicious patterns.
+  ip_address String
+  
+  /// Browser and device information from the HTTP user agent header. Used for
+  /// analytics and responsive design optimization.
+  user_agent String
+  
+  /// Timestamp when the guest session was first created. Tracks initial
+  /// platform access time.
+  created_at DateTime
+  
+  /// Timestamp of the guest's most recent activity on the platform. Updated on
+  /// each page view or interaction attempt.
+  last_active_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([session_token])
+  @@index([last_active_at])
+}
+
+/// Registered users with full platform participation capabilities.
+///
+/// Members are authenticated users who have completed registration and can
+/// fully participate in the community platform. They can create posts, write
+/// comments, vote on content, subscribe to communities, earn karma, and
+/// customize their profiles.
+///
+/// Members form the core user base driving content creation, engagement, and
+/// community growth. The karma system incentivizes quality contributions
+/// while full participation capabilities enable vibrant discussions and
+/// community building.
+///
+/// Each member account includes authentication credentials, profile
+/// customization options, reputation metrics, and activity tracking. Email
+/// verification ensures account validity and enables password recovery.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique display name for the member. Must be 3-20 alphanumeric characters
+  /// and underscores, starting with alphanumeric. Immutable after
+  /// registration.
+  username String
+  
+  /// Email address for authentication and communication. Must be unique across
+  /// all members and follow valid email format.
+  email String
+  
+  /// Bcrypt hashed password with work factor of 12. Never stored in plain
+  /// text. Used for authentication during login.
+  password_hash String
+  
+  /// Whether the member's email address has been verified. Set to true after
+  /// clicking verification link sent during registration.
+  email_verified Boolean
+  
+  /// Optional customizable display name shown in place of username. Maximum 50
+  /// characters, supports Unicode. Defaults to username if not set.
+  display_name String?
+  
+  /// User-written profile description supporting basic markdown. Maximum 500
+  /// characters. Displayed on user profile page.
+  bio String?
+  
+  /// URL reference to uploaded profile avatar image. Supports JPEG, PNG, GIF,
+  /// WebP formats. Maximum 5MB file size.
+  avatar_url String?
+  
+  /// Cumulative reputation points earned from net upvotes on the member's
+  /// posts. Calculated as sum of (upvotes - downvotes) across all posts.
+  post_karma Int
+  
+  /// Cumulative reputation points earned from net upvotes on the member's
+  /// comments. Calculated as sum of (upvotes - downvotes) across all comments.
+  comment_karma Int
+  
+  /// Privacy setting controlling visibility of last seen timestamp. When
+  /// false, last active time is hidden from other users. Defaults to false.
+  show_online_status Boolean
+  
+  /// Privacy setting controlling public visibility of subscription list. When
+  /// false, subscribed communities are hidden from profile. Defaults to false.
+  show_subscribed_communities Boolean
+  
+  /// Privacy setting controlling public visibility of posts and comments on
+  /// profile. When false, activity is hidden from other users. Defaults to
+  /// true.
+  show_activity_feed Boolean
+  
+  /// Timestamp when the member account was created. Immutable registration
+  /// date used for account age calculation.
+  created_at DateTime
+  
+  /// Timestamp of the last profile update. Modified when member edits profile,
+  /// changes settings, or updates email/password.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was deleted. Null for active accounts.
+  /// Soft deletion preserves content attribution while anonymizing personal
+  /// data.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_member_sessions reddit_community_member_sessions[]
+  reddit_community_communities reddit_community_communities[]
+  reddit_community_community_subscriptions reddit_community_community_subscriptions[]
+  reddit_community_community_moderators_of_member_id reddit_community_community_moderators[] @relation("reddit_community_community_moderators_of_member_id")
+  reddit_community_community_moderators_of_appointed_by_member_id reddit_community_community_moderators[] @relation("reddit_community_community_moderators_of_appointed_by_member_id")
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_post_votes reddit_community_post_votes[]
+  reddit_community_comment_votes reddit_community_comment_votes[]
+  reddit_community_reports reddit_community_reports[]
+  reddit_community_community_bans reddit_community_community_bans[]
+  reddit_community_notifications reddit_community_notifications[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+  @@index([post_karma])
+  @@index([comment_karma])
+}
+
+/// Authentication sessions for registered members.
+///
+/// Session records track authenticated member login instances for JWT
+/// token-based authentication. Each session represents a member's active
+/// connection from a specific device or browser, enabling concurrent
+/// multi-device access.
+///
+/// Sessions store connection context including IP address, referrer, and
+/// access URL for security auditing and fraud detection. Session expiration
+/// is managed through JWT token lifetimes (30-minute access tokens, 30-day
+/// refresh tokens).
+///
+/// All sessions are automatically created upon successful login and may be
+/// invalidated through logout, password changes, or security events.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who owns this authentication session. {@link
+  /// reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// IP address from which the session was established. Used for security
+  /// monitoring and geographic analytics.
+  ip String
+  
+  /// Connection URL where the session was initiated. Tracks the page or
+  /// endpoint accessed during login.
+  href String
+  
+  /// Referrer URL indicating how the user arrived at the login page. Useful
+  /// for tracking acquisition sources and navigation patterns.
+  referrer String
+  
+  /// Timestamp when the session was created through successful authentication.
+  /// Marks the login time.
+  created_at DateTime
+  
+  /// Timestamp when the session ended through logout, expiration, or
+  /// invalidation. Null for currently active sessions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_member_sessions_reddit_community_memb_ebf18d50")
+}
+
+/// Community moderators with content management authority.
+///
+/// Moderators are members who have been granted elevated permissions to
+/// manage specific communities. They enforce community standards, remove
+/// rule-violating content, ban users from their communities, and maintain
+/// healthy community environments.
+///
+/// Moderator authority is scoped to specific communities only, not
+/// platform-wide. The community creator automatically becomes the founding
+/// moderator, and can appoint additional moderators to help manage community
+/// growth.
+///
+/// Moderators have the same participation capabilities as regular members,
+/// plus moderation tools including content removal, user banning, report
+/// review, and community configuration. All moderation actions are logged
+/// for transparency and accountability.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique display name for the moderator. Must be 3-20 alphanumeric
+  /// characters and underscores. Immutable after account creation.
+  username String
+  
+  /// Email address for authentication and moderation notifications. Must be
+  /// unique across all moderators and follow valid email format.
+  email String
+  
+  /// Bcrypt hashed password with work factor of 12. Never stored in plain
+  /// text. Used for authentication during login.
+  password_hash String
+  
+  /// Whether the moderator's email address has been verified. Set to true
+  /// after clicking verification link.
+  email_verified Boolean
+  
+  /// Optional customizable display name shown in place of username. Maximum 50
+  /// characters, supports Unicode. Defaults to username if not set.
+  display_name String?
+  
+  /// User-written profile description supporting basic markdown. Maximum 500
+  /// characters. Displayed on moderator profile page.
+  bio String?
+  
+  /// URL reference to uploaded profile avatar image. Supports JPEG, PNG, GIF,
+  /// WebP formats. Maximum 5MB file size.
+  avatar_url String?
+  
+  /// Cumulative reputation points earned from net upvotes on the moderator's
+  /// posts. Calculated as sum of (upvotes - downvotes) across all posts.
+  post_karma Int
+  
+  /// Cumulative reputation points earned from net upvotes on the moderator's
+  /// comments. Calculated as sum of (upvotes - downvotes) across all comments.
+  comment_karma Int
+  
+  /// Privacy setting controlling visibility of last seen timestamp. When
+  /// false, last active time is hidden from other users. Defaults to false.
+  show_online_status Boolean
+  
+  /// Privacy setting controlling public visibility of subscription list. When
+  /// false, subscribed communities are hidden from profile. Defaults to false.
+  show_subscribed_communities Boolean
+  
+  /// Privacy setting controlling public visibility of posts and comments on
+  /// profile. When false, activity is hidden from other users. Defaults to
+  /// true.
+  show_activity_feed Boolean
+  
+  /// Timestamp when the moderator account was created. Immutable registration
+  /// date used for account age calculation.
+  created_at DateTime
+  
+  /// Timestamp of the last profile update. Modified when moderator edits
+  /// profile, changes settings, or updates email/password.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator account was deleted. Null for active
+  /// accounts. Soft deletion preserves moderation history while anonymizing
+  /// personal data.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_moderator_sessions reddit_community_moderator_sessions[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  reddit_community_community_bans reddit_community_community_bans[]
+  reddit_community_ban_appeals reddit_community_ban_appeals[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([created_at])
+  @@index([post_karma])
+  @@index([comment_karma])
+}
+
+/// Authentication sessions for community moderators.
+///
+/// Session records track authenticated moderator login instances for JWT
+/// token-based authentication. Each session represents a moderator's active
+/// connection from a specific device or browser, enabling concurrent
+/// multi-device access for moderation activities.
+///
+/// Sessions store connection context including IP address, referrer, and
+/// access URL for security auditing and fraud detection. This is especially
+/// important for moderators given their elevated permissions.
+///
+/// All sessions are automatically created upon successful login and may be
+/// invalidated through logout, password changes, or security events. Session
+/// management follows the same patterns as member sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who owns this authentication session. {@link
+  /// reddit_community_moderators.id}.
+  reddit_community_moderator_id String
+  
+  /// IP address from which the session was established. Used for security
+  /// monitoring and detecting unauthorized access patterns.
+  ip String
+  
+  /// Connection URL where the session was initiated. Tracks the page or
+  /// endpoint accessed during login.
+  href String
+  
+  /// Referrer URL indicating how the moderator arrived at the login page.
+  /// Useful for tracking navigation patterns and security analysis.
+  referrer String
+  
+  /// Timestamp when the session was created through successful authentication.
+  /// Marks the login time.
+  created_at DateTime
+  
+  /// Timestamp when the session ended through logout, expiration, or
+  /// invalidation. Null for currently active sessions.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator reddit_community_moderators @relation(fields: [reddit_community_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_moderator_id, created_at], map: "reddit_community_moderator_sessions_reddit_community_m_d8858d02")
+}

@@ -7,195 +7,172 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ICommunityPlatformReports } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReports";
+import { ICommunityPlatformReport } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReport";
 import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
-import { ICommunityPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformAdmin";
-import { ICommunityPlatformReportOfPosts } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportOfPosts";
-import { ICommunityPlatformReportOfComments } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportOfComments";
-import { ICommunityPlatformReportActions } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportActions";
+import { ICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPost";
+import { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import { ICommunityPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformComment";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postCommunityPlatformUserReports(props: {
   user: UserPayload;
-  body: ICommunityPlatformReports.ICreate;
-}): Promise<ICommunityPlatformReports> {
-  const { user, body } = props;
-  const now = toISOStringSafe(new Date());
-
-  const hasPostTarget =
-    body.target_post_id !== null && body.target_post_id !== undefined;
-  const hasCommentTarget =
-    body.target_comment_id !== null && body.target_comment_id !== undefined;
-  if (hasPostTarget === hasCommentTarget) {
+  body: ICommunityPlatformReport.ICreate;
+}): Promise<ICommunityPlatformReport> {
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const id: string & tags.Format<"uuid"> = v4();
+  const {
+    reported_post_id,
+    reported_comment_id,
+    reported_community_id,
+    report_type,
+    reason,
+  } = props.body;
+  const numTargets = [
+    reported_post_id,
+    reported_comment_id,
+    reported_community_id,
+  ].filter((v) => v !== undefined && v !== null).length;
+  if (numTargets !== 1) {
     throw new HttpException(
-      "Exactly one of target_post_id or target_comment_id must be provided (and not both)",
+      "Exactly one of reported_post_id, reported_comment_id, or reported_community_id must be provided.",
       400,
     );
   }
 
-  let duplicateExists = false;
-  if (hasPostTarget) {
-    const existing = await MyGlobal.prisma.community_platform_reports.findFirst(
-      {
-        where: {
-          reporter_user_id: user.id,
-          deleted_at: null,
-          report_type: body.report_type,
-          status: {
-            notIn: ["resolved", "dismissed"],
-          },
-          community_platform_report_of_posts: {
-            // Use relation filter: some => 'is not valid'. Instead, use 'some' conditions via 'some' root query or flatten
-            // But Prisma for 1:1 or 1:n via a relation filter uses: 'is' (for 1:1) or 'some' for lists; our schema is 1:1
-            // However, this seems to require 'is' with value or 'is not: null' and target_post_id
-            is: {
-              target_post_id: body.target_post_id as string &
-                tags.Format<"uuid">,
-            },
-          },
-        },
-      },
-    );
-    duplicateExists = Boolean(existing);
-  } else if (hasCommentTarget) {
-    const existing = await MyGlobal.prisma.community_platform_reports.findFirst(
-      {
-        where: {
-          reporter_user_id: user.id,
-          deleted_at: null,
-          report_type: body.report_type,
-          status: {
-            notIn: ["resolved", "dismissed"],
-          },
-          community_platform_report_of_comments: {
-            is: {
-              target_comment_id: body.target_comment_id as string &
-                tags.Format<"uuid">,
-            },
-          },
-        },
-      },
-    );
-    duplicateExists = Boolean(existing);
-  }
-  if (duplicateExists) {
-    throw new HttpException(
-      "You have already filed an active report against this content.",
-      409,
-    );
-  }
-
-  let activeReportCount = 0;
-  if (hasPostTarget) {
-    activeReportCount = await MyGlobal.prisma.community_platform_reports.count({
-      where: {
-        deleted_at: null,
-        status: {
-          notIn: ["resolved", "dismissed"],
-        },
-        community_platform_report_of_posts: {
-          is: {
-            target_post_id: body.target_post_id as string & tags.Format<"uuid">,
-          },
-        },
+  let reported_post_summary:
+    | ICommunityPlatformPost.ISummary
+    | null
+    | undefined = undefined;
+  if (reported_post_id !== undefined && reported_post_id !== null) {
+    const post = await MyGlobal.prisma.community_platform_posts.findFirst({
+      where: { id: reported_post_id, deleted_at: null },
+      select: {
+        id: true,
+        community_id: true,
+        user_id: true,
       },
     });
-  } else if (hasCommentTarget) {
-    activeReportCount = await MyGlobal.prisma.community_platform_reports.count({
-      where: {
-        deleted_at: null,
-        status: {
-          notIn: ["resolved", "dismissed"],
-        },
-        community_platform_report_of_comments: {
-          is: {
-            target_comment_id: body.target_comment_id as string &
-              tags.Format<"uuid">,
-          },
+    if (!post) {
+      throw new HttpException("Reported post not found.", 404);
+    }
+    reported_post_summary = {
+      id: post.id,
+      community_id: post.community_id,
+      user_id: post.user_id,
+      // no .community or .user context at this level
+    };
+  }
+
+  let reported_comment_summary:
+    | ICommunityPlatformComment.ISummary
+    | null
+    | undefined = undefined;
+  if (reported_comment_id !== undefined && reported_comment_id !== null) {
+    const comment = await MyGlobal.prisma.community_platform_comments.findFirst(
+      {
+        where: { id: reported_comment_id, deleted_at: null },
+        select: {
+          id: true,
+          user_id: true,
+          post_id: true,
+          parent_id: true,
+          created_at: true,
         },
       },
-    });
+    );
+    if (!comment) {
+      throw new HttpException("Reported comment not found.", 404);
+    }
+    // For compliance with ISummary, we must supply post: ISummary
+    const commentPost =
+      await MyGlobal.prisma.community_platform_posts.findFirst({
+        where: { id: comment.post_id },
+        select: {
+          id: true,
+          community_id: true,
+          user_id: true,
+        },
+      });
+    if (!commentPost) {
+      throw new HttpException("Comment's parent post not found.", 404);
+    }
+    reported_comment_summary = {
+      id: comment.id,
+      user: { id: comment.user_id },
+      post: {
+        id: commentPost.id,
+        community_id: commentPost.community_id,
+        user_id: commentPost.user_id,
+      },
+      parent_id: comment.parent_id ?? undefined,
+      created_at: toISOStringSafe(comment.created_at),
+    };
   }
-  const AUTO_HIDE_THRESHOLD = 5;
-  const auto_hidden = activeReportCount + 1 >= AUTO_HIDE_THRESHOLD;
 
-  const reportId = v4();
-  const report = await MyGlobal.prisma.community_platform_reports.create({
+  let reported_community_summary:
+    | ICommunityPlatformCommunity.ISummary
+    | null
+    | undefined = undefined;
+  if (reported_community_id !== undefined && reported_community_id !== null) {
+    const community =
+      await MyGlobal.prisma.community_platform_communities.findFirst({
+        where: { id: reported_community_id, deleted_at: null },
+        select: {
+          id: true,
+          name: true,
+          display_title: true,
+          description: true,
+          visibility: true,
+          image_url: true,
+          status: true,
+        },
+      });
+    if (!community) {
+      throw new HttpException("Reported community not found.", 404);
+    }
+    reported_community_summary = {
+      id: community.id,
+      name: community.name,
+      display_title: community.display_title,
+      description: community.description,
+      visibility: community.visibility,
+      image_url: community.image_url ?? undefined,
+      status: community.status,
+    };
+  }
+
+  const created = await MyGlobal.prisma.community_platform_reports.create({
     data: {
-      id: reportId,
-      reporter_user_id: user.id,
-      reporter_admin_id: null,
-      report_type: body.report_type,
+      id: id,
+      reporter_user_id: props.user.id,
+      reported_post_id: reported_post_id ?? null,
+      reported_comment_id: reported_comment_id ?? null,
+      reported_community_id: reported_community_id ?? null,
+      report_type,
+      reason,
       status: "open",
-      description: body.description ?? null,
-      auto_hidden,
       created_at: now,
       updated_at: now,
       deleted_at: null,
     },
   });
 
-  let postReport: ICommunityPlatformReportOfPosts | null = null;
-  let commentReport: ICommunityPlatformReportOfComments | null = null;
-  if (hasPostTarget) {
-    const postAssoc =
-      await MyGlobal.prisma.community_platform_report_of_posts.create({
-        data: {
-          id: v4(),
-          report_id: report.id,
-          target_post_id: body.target_post_id as string & tags.Format<"uuid">,
-          created_at: now,
-        },
-      });
-    postReport = {
-      id: postAssoc.id,
-      report_id: postAssoc.report_id,
-      target_post_id: postAssoc.target_post_id,
-      created_at: toISOStringSafe(postAssoc.created_at),
-    };
-  } else if (hasCommentTarget) {
-    const commentAssoc =
-      await MyGlobal.prisma.community_platform_report_of_comments.create({
-        data: {
-          id: v4(),
-          report_id: report.id,
-          target_comment_id: body.target_comment_id as string &
-            tags.Format<"uuid">,
-          created_at: now,
-        },
-      });
-    commentReport = {
-      id: commentAssoc.id,
-      report_id: commentAssoc.report_id,
-      target_comment_id: commentAssoc.target_comment_id,
-      created_at: toISOStringSafe(commentAssoc.created_at),
-    };
-  }
-  const userSummaryRecord =
-    await MyGlobal.prisma.community_platform_users.findUniqueOrThrow({
-      where: { id: user.id },
-      select: { id: true, display_name: true },
-    });
-  const reporter_user = {
-    id: userSummaryRecord.id,
-    display_name: userSummaryRecord.display_name,
-  };
+  const reporter: ICommunityPlatformUser.ISummary = { id: props.user.id };
 
   return {
-    id: report.id,
-    reporter_user,
-    report_type: report.report_type,
-    status: report.status,
-    description: report.description ?? undefined,
-    auto_hidden: report.auto_hidden,
-    created_at: toISOStringSafe(report.created_at),
-    updated_at: toISOStringSafe(report.updated_at),
+    id: created.id,
+    reporter,
+    reported_post: reported_post_summary ?? undefined,
+    reported_comment: reported_comment_summary ?? undefined,
+    reported_community: reported_community_summary ?? undefined,
+    report_type: created.report_type,
+    reason: created.reason,
+    status: created.status,
+    created_at: toISOStringSafe(created.created_at),
+    updated_at: toISOStringSafe(created.updated_at),
     deleted_at:
-      report.deleted_at !== null && report.deleted_at !== undefined
-        ? toISOStringSafe(report.deleted_at)
-        : undefined,
-    post_report: postReport ?? undefined,
-    comment_report: commentReport ?? undefined,
-    actions: [],
+      created.deleted_at === null || created.deleted_at === undefined
+        ? created.deleted_at
+        : toISOStringSafe(created.deleted_at),
   };
 }

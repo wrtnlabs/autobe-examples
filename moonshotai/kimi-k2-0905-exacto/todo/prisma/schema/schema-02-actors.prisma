@@ -1,176 +1,80 @@
-/// Registered users with comprehensive authentication fields supporting
-/// password reset, account security, and multi-factor authentication. Each
-/// user account is associated with a unique email address and encrypted
-/// password hash for secure authentication.
+/// User accounts for authentication and task ownership.
+///
+/// Each user has their own private todo list and can only access tasks they
+/// created. The user entity serves as the primary actor for task management
+/// operations across the application.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_users {
+model todo_app_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User's email address for authentication and communication. Must be unique
-  /// across all registered users.
+  /// User email address used for authentication. Must be unique across all
+  /// users and follows RFC 5322 format.
   email String
   
-  /// Encrypted password hash for secure authentication using industry-standard
-  /// hashing algorithms.
+  /// Hashed password for secure authentication. Meets security requirements of
+  /// minimum 8 characters with letters and numbers.
   password_hash String
   
-  /// Security token for password reset requests. Generated when user requests
-  /// password reset, valid for 30 minutes as specified in requirements.
-  reset_password_token String?
-  
-  /// Timestamp when the password reset token expires. Used to enforce the
-  /// 30-minute token validity requirement.
-  reset_password_expires DateTime?
-  
-  /// Security token for multi-factor authentication setup and verification.
-  /// Enables 2FA functionality as mentioned in requirements analysis.
-  mfa_secret String?
-  
-  /// Whether multi-factor authentication is enabled for this user account.
-  /// Defaults to false for new accounts.
-  mfa_enabled Boolean
-  
-  /// Number of consecutive failed login attempts. Used to implement account
-  /// lockout after 5 failed attempts as specified in security requirements.
-  failed_login_attempts Int
-  
-  /// Timestamp when account lockout expires after failed login attempts.
-  /// Implements time-based account recovery for security protection.
-  locked_until DateTime?
-  
-  /// Timestamp when the user account was created. Automatically set on
-  /// registration.
+  /// Timestamp when the user account was created.
   created_at DateTime
   
-  /// Timestamp when the user account was last updated. Automatically updated
-  /// on any account changes.
+  /// Timestamp when the user account was last modified.
   updated_at DateTime
-  
-  /// Timestamp when the user account was soft deleted. Null if the account is
-  /// active. Enables account recovery without data loss.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_user_sessions todo_user_sessions[]
-  todo_tasks todo_tasks[]
+  todo_app_user_sessions todo_app_user_sessions[]
+  todo_app_tasks todo_app_tasks[]
+  todo_app_task_snapshots todo_app_task_snapshots[]
   
   @@unique([email])
-  @@unique([reset_password_token])
-  @@index([deleted_at])
-  @@index([created_at])
 }
 
-/// User session tracking for authentication and audit purposes. Each session
-/// represents a logged-in user's current session with connection metadata.
+/// User session management for authentication tracking.
+///
+/// Sessions enable secure user authentication across multiple devices while
+/// maintaining audit trails of login activity.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_user_sessions {
+model todo_app_user_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The user's {@link todo_users.id} who owns this session.
-  todo_user_id String
+  /// Reference to the user account this session belongs to. {@link
+  /// todo_app_users.id}
+  user_id String
   
-  /// IP address of the user's connection.
+  /// IP address of the user's connection for security tracking.
   ip String
   
-  /// Connection URL when the session was created.
+  /// Connection URL where the session was established.
   href String
   
-  /// Referrer URL when the session was created.
+  /// Referrer URL that directed to the session creation.
   referrer String
   
   /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when the session expires. Null if the session is still active.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
-  
-  @@index([todo_user_id, created_at])
-}
-
-/// Guest users who can access basic functionality without registration.
-/// Guests provide temporary access to demonstrate the service's value
-/// proposition.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_guests {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Timestamp when the guest access was created.
-  created_at DateTime
-  
-  /// Timestamp when the guest access was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the guest access was soft deleted. Null if the guest
-  /// access is active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  todo_guest_sessions todo_guest_sessions[]
-}
-
-/// Guest session tracking for temporary authentication. Each session
-/// represents a guest user's current session with connection metadata for
-/// audit purposes.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_guest_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The guest user's {@link todo_guests.id} who owns this session.
-  todo_guest_id String
-  
-  /// IP address of the guest's connection.
-  ip String
-  
-  /// Connection URL when the session was created.
-  href String
-  
-  /// Referrer URL when the session was created.
-  referrer String
-  
-  /// Timestamp when the session was created.
-  created_at DateTime
-  
-  /// Timestamp when the guest session expires. Null if the session is still
+  /// Timestamp when the session expires. Null if the session is currently
   /// active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  guest todo_guests @relation(fields: [todo_guest_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_guest_id, created_at])
+  @@index([user_id, created_at])
 }

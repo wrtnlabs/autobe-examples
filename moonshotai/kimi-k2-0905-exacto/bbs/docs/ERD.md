@@ -4,522 +4,603 @@
 
 - [Systematic](#systematic)
 - [Actors](#actors)
-- [Content](#content)
-- [Discussion](#discussion)
+- [Articles](#articles)
+- [Comments](#comments)
 - [Attachments](#attachments)
+- [Search](#search)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"politics_bbs_categories" {
+"economic_discussion_categories" {
   String id PK
   String code UK
   String name
-  String description
-  String color "nullable"
-  String icon "nullable"
-  Int sequence
-  Boolean primary
-  Boolean required
-  Boolean multiplicative
+  String description "nullable"
+  Int display_order
+  Boolean is_active
+  Int article_count
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
+"economic_discussion_system_settings" {
+  String id PK
+  String setting_key UK
+  String setting_value
+  String setting_type
+  String display_name
+  String description "nullable"
+  String category
+  Boolean is_system_critical
+  String last_modified_by "nullable"
+  String validation_rules "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
 ```
 
-### `politics_bbs_categories`
+### `economic_discussion_categories`
 
-Predefined categories for organizing politicsBBS articles and
-discussions. Categories facilitate content discoverability and filtering,
-focusing on economic and political topics as specified in the
-requirements. Categories are created and managed by moderators through
-the system interface.
+Article categories for organizing economic and political discussions.
+
+Categories serve as the primary taxonomy system for content organization
+within the discussion board.
+They enable users to filter and find relevant discussions based on topic
+areas and maintain content discoverability across the platform.
+
+Each category represents a specific field of economic or political
+discourse, allowing users to browse discussions within their areas of
+interest.
+The categories are predefined by the system administrators and remain
+consistent across the platform to ensure standardized content
+organization.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `code`: Unique category code for internal reference and URL generation
-- `name`: Display name for the category shown to users
-- `description`: Detailed description of the category's purpose and scope
-- `color`: CSS color code for visual identification of the category
-- `icon`: Icon identifier for visual representation
-- `sequence`: Display order for category sorting in lists
-- `primary`: Whether this is a primary featured category
-- `required`: Whether this category is required to be assigned
-- `multiplicative`: Whether multiple categories can be assigned to content
-- `created_at`: Category creation timestamp
-- `updated_at`: Last modification timestamp
-- `deleted_at`: Soft delete timestamp
+- `code`: Unique category code used for identification and URL generation.
+- `name`: Display name for the category shown to users in navigation and filters.
+- `description`
+  > Optional detailed description explaining the scope and purpose of this
+  > category.
+- `display_order`
+  > Numerical order position for displaying categories in user interfaces and
+  > menus.
+- `is_active`
+  > Whether this category is currently active and available for new article
+  > creation.
+- `article_count`: Cached count of articles in this category for performance optimization.
+- `created_at`: Timestamp when this category was first created in the system.
+- `updated_at`: Timestamp when this category was last modified or updated.
+- `deleted_at`: Soft deletion timestamp when this category was removed from active use.
+
+### `economic_discussion_system_settings`
+
+System-wide configuration settings for the Economic/Political Discussion
+Board platform.
+
+This table stores platform-wide configuration parameters that affect all
+users and operations across the discussion board.
+Settings control behavior such as posting limits, file upload
+restrictions, security policies, moderation rules, and performance
+parameters.
+
+Each setting represents a specific configuration parameter identified by
+a unique key, with type-appropriate values that determine system
+behavior.
+The settings provide administrators with flexible control over platform
+behavior without requiring code changes or system restarts.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `setting_key`
+  > Unique identifier key for this system setting used for programmatic
+  > access.
+- `setting_value`
+  > The value of this setting as a string, may contain serialized data for
+  > non-string types.
+- `setting_type`
+  > Data type of the setting value: string, integer, boolean, json, or float
+  > for validation purposes.
+- `display_name`
+  > Human-readable display name for this setting shown in administration
+  > interfaces.
+- `description`
+  > Detailed explanation of what this setting controls and its impact on
+  > platform behavior.
+- `category`
+  > Logical grouping category for organizing related settings in the
+  > administration interface.
+- `is_system_critical`
+  > Whether this setting is critical to system operation and should not be
+  > modified without administrator approval.
+- `last_modified_by`
+  > Identifier of the administrator or system process that last modified this
+  > setting for audit purposes.
+- `validation_rules`
+  > Optional JSON-serialized validation rules for this setting value
+  > including allowed ranges or values.
+- `created_at`
+  > Timestamp when this system setting was first established in the
+  > configuration system.
+- `updated_at`
+  > Timestamp when this system setting was last modified or its value was
+  > changed.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"politics_bbs_visitors" {
+"economic_discussion_guests" {
   String id PK
-  String username UK
-  String password_hash
+  String username
+  String ip_address
+  String user_agent "nullable"
   DateTime created_at
-  DateTime last_seen_at "nullable"
+  DateTime last_activity_at
+  Int articles_viewed_count
+  Int downloads_count
 }
-"politics_bbs_members" {
+"economic_discussion_members" {
   String id PK
   String username UK
-  String password_hash
   String email UK
+  String password_hash
+  Boolean email_verified
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
+  Int reputation_score
 }
-"politics_bbs_moderators" {
+"economic_discussion_moderators" {
   String id PK
   String username UK
-  String password_hash
   String email UK
+  String password_hash
+  Boolean email_verified
+  Boolean two_factor_enabled
+  String moderation_level
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"politics_bbs_visitor_sessions" {
+"economic_discussion_guest_sessions" {
   String id PK
-  String politics_bbs_visitor_id FK
+  String economic_discussion_guest_id FK
   String ip
   String href
-  String referrer
+  String referrer "nullable"
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"politics_bbs_member_sessions" {
+"economic_discussion_member_sessions" {
   String id PK
-  String politics_bbs_member_id FK
+  String economic_discussion_member_id FK
   String ip
   String href
-  String referrer
+  String referrer "nullable"
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"politics_bbs_moderator_sessions" {
+"economic_discussion_moderator_sessions" {
   String id PK
-  String politics_bbs_moderator_id FK
+  String economic_discussion_moderator_id FK
   String ip
   String href
-  String referrer
+  String referrer "nullable"
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"politics_bbs_visitor_sessions" }o--|| "politics_bbs_visitors" : visitor
-"politics_bbs_member_sessions" }o--|| "politics_bbs_members" : member
-"politics_bbs_moderator_sessions" }o--|| "politics_bbs_moderators" : moderator
+"economic_discussion_guest_sessions" }o--|| "economic_discussion_guests" : guest
+"economic_discussion_member_sessions" }o--|| "economic_discussion_members" : member
+"economic_discussion_moderator_sessions" }o--|| "economic_discussion_moderators" : moderator
 ```
 
-### `politics_bbs_visitors`
+### `economic_discussion_guests`
 
-Visitor accounts with read-only access to published content. Visitors can
-browse articles, view attachments, and search content without
-authentication requirements.
+Guest users who can browse and read content without registration.
+
+Guests have read-only access to articles, comments, and file attachments.
+They can search and filter content but cannot create, edit, or upload.
+Guest sessions are tracked for analytics and download limits.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `username`: Guest display name for personalization.
+- `ip_address`: IP address for session tracking and download limits.
+- `user_agent`: Browser user agent string for session identification.
+- `created_at`: Guest session creation timestamp.
+- `last_activity_at`: Timestamp of last activity for session management.
+- `articles_viewed_count`: Count of articles viewed in current session.
+- `downloads_count`: Count of file downloads in current session.
+
+### `economic_discussion_members`
+
+Registered community members with full participation privileges.
+
+Members can create articles, post comments, upload files, and access all
+community features. They undergo email verification and authentication
+process for community participation.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `username`
-  > Unique username for display purposes, 3-20 characters using letters,
-  > numbers, and hyphens only.
-- `password_hash`
-  > Hashed password for visitor authentication using secure algorithms with
-  > appropriate salting.
-- `created_at`: Timestamp when the visitor account was created.
-- `last_seen_at`: Timestamp of the visitor's last activity on the platform.
-
-### `politics_bbs_members`
-
-Member accounts with content creation privileges including article
-creation, commenting, and file uploads. Members can manage their own
-content within 24-hour editing window.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `username`
-  > Unique username for member identification, 3-20 characters using letters,
-  > numbers, and hyphens only.
-- `password_hash`
-  > Hashed password for member authentication using secure algorithms with
-  > appropriate salting.
+  > Unique member display name chosen during registration.
+  > Between 3-30 characters with letters, numbers, underscores, and hyphens
+  > only.
 - `email`
-  > Email address for account recovery and notifications, must be unique
-  > across the system.
-- `created_at`: Timestamp when the member account was registered.
-- `updated_at`: Timestamp of the most recent profile update.
-- `deleted_at`: Soft delete timestamp for member account suspension.
-
-### `politics_bbs_moderators`
-
-Moderator accounts with enhanced permissions for content review, approval
-workflows, and community management. Moderators can review all content
-and manage user violations.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `username`
-  > Unique username for moderator identification, 3-20 characters using
-  > letters, numbers, and hyphens only.
+  > Email address for authentication and notifications.
+  > Must be unique across all members.
 - `password_hash`
-  > Hashed password for moderator authentication using secure algorithms with
-  > appropriate salting.
-- `email`
-  > Email address for moderator communications and account recovery, must be
-  > unique across the system.
-- `created_at`: Timestamp when the moderator account was created.
-- `updated_at`: Timestamp of the most recent moderator profile update.
-- `deleted_at`: Soft delete timestamp for moderator account suspension.
+  > Encrypted authentication credential for secure login.
+  > Required for member authentication per requirements.
+- `email_verified`: Email verification status for account activation.
+- `created_at`: Account registration timestamp.
+- `updated_at`: Last profile update timestamp.
+- `reputation_score`: Community participation score based on activity.
 
-### `politics_bbs_visitor_sessions`
+### `economic_discussion_moderators`
 
-Authentication sessions for visitor users to track activity and provide
-session-based functionality. These sessions support audit tracing of
-visitor actions on the platform.
+Community moderators with elevated permissions for content management.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `politics_bbs_visitor_id`: Visitor's [politics_bbs_visitors.id](#politics_bbs_visitors) who owns this session.
-- `ip`: IP address of the visitor for security and audit tracking.
-- `href`: Connection URL or current page location for session context.
-- `referrer`: Referrer URL showing how the visitor arrived at the site.
-- `created_at`: Timestamp when the visitor session was initiated.
-- `expired_at`: Session expiration time, nullable to allow ongoing sessions.
-
-### `politics_bbs_member_sessions`
-
-Authentication sessions for member users to maintain secure access. These
-sessions support audit tracing of member actions across the platform.
+Moderators have additional privileges including editing any content, user
+management, content moderation, and access to administration tools while
+maintaining authentication security.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `politics_bbs_member_id`: Member's [politics_bbs_members.id](#politics_bbs_members) who owns this session.
-- `ip`: IP address of the member for security and audit tracking.
-- `href`: Connection URL or current page location for session context.
-- `referrer`: Referrer URL showing how the member arrived at the site.
-- `created_at`: Timestamp when the member session was initiated.
-- `expired_at`: Session expiration time, nullable to allow extended member sessions.
+- `username`: Unique moderator identifier for community management.
+- `email`: Administrator email address for secure communications.
+- `password_hash`: Advanced authentication credential with enhanced security.
+- `email_verified`: Verification status for administrative account security.
+- `two_factor_enabled`: Two-factor authentication requirement for moderator access.
+- `moderation_level`: Authorization level for different moderation scopes.
+- `created_at`: Moderator appointment timestamp.
+- `updated_at`: Last access timestamp for activity monitoring.
 
-### `politics_bbs_moderator_sessions`
+### `economic_discussion_guest_sessions`
 
-Authentication sessions for moderator users to support administrative
-activities. These sessions provide secure access to moderation tools with
-audit tracking capabilities.
+Session tracking for guest user access and activity monitoring.
+
+Guest sessions track browsing activity, download limits, and provide
+audit trails while maintaining privacy protections for unregistered
+users.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `politics_bbs_moderator_id`: Moderator's [politics_bbs_moderators.id](#politics_bbs_moderators) who owns this session.
-- `ip`: IP address of the moderator for security and audit tracking.
-- `href`: Connection URL or current page location for session context.
-- `referrer`: Referrer URL showing how the moderator arrived at the site.
-- `created_at`: Timestamp when the moderator session was initiated.
-- `expired_at`: Session expiration time, nullable to allow extended moderator sessions.
+- `economic_discussion_guest_id`: Associated guest user's [economic_discussion_guests.id](#economic_discussion_guests).
+- `ip`: Session IP address for security and audit purposes.
+- `href`: Connection URL for session tracking.
+- `referrer`: Referrer URL for navigation tracking.
+- `created_at`: Session creation timestamp.
+- `expired_at`: Session expiration time for cleanup.
 
-## Content
+### `economic_discussion_member_sessions`
+
+Authentication sessions for community member access.
+
+Member sessions handle login authentication with JWT tokens, refresh
+tokens, and session management for registered users to access community
+features.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_member_id`: Associated member account's [economic_discussion_members.id](#economic_discussion_members).
+- `ip`: Session IP address for security verification.
+- `href`: Login connection URL for context.
+- `referrer`: Referral source for member acquisition tracking.
+- `created_at`: Login session creation timestamp.
+- `expired_at`: JWT token expiration time for session cleanup.
+
+### `economic_discussion_moderator_sessions`
+
+Secure sessions for community moderator administrative access.
+
+Moderator sessions provide enhanced security tracking for administrative
+actions, with mandatory audit logging and elevated permission management.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_moderator_id`: Associated moderator account's [economic_discussion_moderators.id](#economic_discussion_moderators).
+- `ip`: Administrative session IP address for audit requirements.
+- `href`: Administrative panel access URL for activity tracking.
+- `referrer`: Referrer for administrative access monitoring.
+- `created_at`: Admin session creation timestamp.
+- `expired_at`: Administrative access expiration for security.
+
+## Articles
 
 ```mermaid
 erDiagram
-"politics_bbs_articles" {
+"economic_discussion_articles" {
   String id PK
-  String politics_bbs_category_id FK
-  String politics_bbs_creator_id FK
+  String economic_discussion_member_id FK "nullable"
+  String economic_discussion_moderator_id FK "nullable"
   String title
   String content
-  String state
+  String status
+  Float version
   Int view_count
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"politics_bbs_article_snapshots" {
+"economic_discussion_article_categories" {
   String id PK
-  String politics_bbs_article_id FK
-  String title
-  String content
-  String state
-  Int view_count
+  String economic_discussion_article_id FK
+  String economic_discussion_category_id FK
   DateTime created_at
 }
-"politics_bbs_article_snapshots" }o--|| "politics_bbs_articles" : article
+"economic_discussion_article_versions" {
+  String id PK
+  String economic_discussion_article_id FK
+  String title
+  String content
+  Float version
+  DateTime created_at
+}
+"economic_discussion_article_categories" }o--|| "economic_discussion_articles" : article
+"economic_discussion_article_versions" }o--|| "economic_discussion_articles" : article
 ```
 
-### `politics_bbs_articles`
+### `economic_discussion_articles`
 
-Core article entity for the politics discussion board, managing the
-complete article lifecycle from creation through publication. Articles
-support title and content with state management, view tracking, and
-attachment capabilities.
+Core content entities representing economic and political discussion
+articles.
 
-Properties as follows:
+Articles serve as the primary content type where members and moderators
+share economic insights, political analysis, and policy discussions. Each
+article contains the main discussion content along with metadata for
+organization and moderation.
 
-- `id`: Primary Key.
-- `politics_bbs_category_id`: Belonged category's [politics_bbs_categories.id](#politics_bbs_categories)
-- `politics_bbs_creator_id`
-  > Creator's [politics_bbs_members.id](#politics_bbs_members) or {@link
-  > politics_bbs_moderators.id} based on actor type
-- `title`
-  > Article title displayed to users, limited to 5-150 characters as per
-  > business rules
-- `content`
-  > Main article content body with 50-10,000 character limit for substantive
-  > discussions
-- `state`
-  > Article lifecycle state: draft, pending, approved, or rejected for
-  > moderation workflow
-- `view_count`: Number of times the article has been viewed for popularity tracking
-- `created_at`: Timestamp when the article was first created
-- `updated_at`: Last modification timestamp for the article
-- `deleted_at`: Soft delete timestamp for article removal
-
-### `politics_bbs_article_snapshots`
-
-Historical snapshots of articles capturing point-in-time states for audit
-trails and version tracking. Snapshots preserve complete article content
-when articles are modified.
+Articles support file attachments, categorization, and have complete
+version history tracking through the associated versions table. The
+content goes through moderation workflow with status tracking.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `politics_bbs_article_id`: Source article's [politics_bbs_articles.id](#politics_bbs_articles)
-- `title`: Snapshot of article title at this point in time
-- `content`: Snapshot of article content at this point in time
-- `state`: Snapshot of article state when this snapshot was created
-- `view_count`: View count snapshot for historical tracking
-- `created_at`: Timestamp when this snapshot was created for audit trail
+- `economic_discussion_member_id`: Author member's [economic_discussion_members.id](#economic_discussion_members)
+- `economic_discussion_moderator_id`: Author moderator's [economic_discussion_moderators.id](#economic_discussion_moderators)
+- `title`: Article title displaying the main topic or question
+- `content`: Main article content body with discussion text
+- `status`: Current workflow status: pending, approved, rejected
+- `version`: Current article version number for tracking edits
+- `view_count`: Number of times the article has been viewed
+- `created_at`: Creation timestamp
+- `updated_at`: Last update timestamp
+- `deleted_at`: Soft deletion timestamp for moderation
 
-## Discussion
+### `economic_discussion_article_categories`
+
+Junction table managing many-to-many relationships between articles and
+categories.
+
+This subsidiary table connects articles to their assigned categories,
+allowing articles to be tagged with multiple categories for better
+organization and discovery. Categories help users filter and browse
+content by topic areas like Economics, Politics, Business, etc.
+
+The junction table maintains referential integrity while supporting
+efficient querying for category-based content discovery.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_article_id`: Associated article's [economic_discussion_articles.id](#economic_discussion_articles)
+- `economic_discussion_category_id`: Associated category's [economic_discussion_categories.id](#economic_discussion_categories)
+- `created_at`: Association creation timestamp
+
+### `economic_discussion_article_versions`
+
+Historical snapshots capturing article states at specific points in time.
+
+This snapshot table preserves complete article versions whenever
+significant changes occur, supporting audit trails and content recovery.
+Each version captures the full article state including content, title,
+and metadata at the time of the edit.
+
+Version history enables rollback capabilities and provides transparency
+for content evolution tracking required in discussion forums.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economic_discussion_article_id`: Original article's [economic_discussion_articles.id](#economic_discussion_articles)
+- `title`: Article title at time of version creation
+- `content`: Article content at time of version creation
+- `version`: Version number for this snapshot
+- `created_at`: Version creation timestamp
+
+## Comments
 
 ```mermaid
 erDiagram
-"politics_bbs_comments" {
+"economic_discussion_comments" {
   String id PK
-  String politics_bbs_article_id FK
+  String economic_discussion_article_id FK
+  String economic_discussion_member_id FK
   String parent_id FK "nullable"
   String content
-  Int depth
   String status
-  String actor_type
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"politics_bbs_comment_of_visitors" {
+"economic_discussion_comment_versions" {
   String id PK
-  String politics_bbs_comment_id FK,UK
-  String politics_bbs_visitor_id FK
+  String economic_discussion_comment_id FK
+  String content
   DateTime created_at
 }
-"politics_bbs_comment_of_members" {
-  String id PK
-  String politics_bbs_comment_id FK,UK
-  String politics_bbs_member_id FK
-  DateTime created_at
-}
-"politics_bbs_comment_of_moderators" {
-  String id PK
-  String politics_bbs_comment_id FK,UK
-  String politics_bbs_moderator_id FK
-  DateTime created_at
-}
-"politics_bbs_comments" }o--o| "politics_bbs_comments" : parent
-"politics_bbs_comment_of_visitors" |o--|| "politics_bbs_comments" : comment
-"politics_bbs_comment_of_members" |o--|| "politics_bbs_comments" : comment
-"politics_bbs_comment_of_moderators" |o--|| "politics_bbs_comments" : comment
+"economic_discussion_comments" }o--o| "economic_discussion_comments" : parent
+"economic_discussion_comment_versions" }o--|| "economic_discussion_comments" : comment
 ```
 
-### `politics_bbs_comments`
+### `economic_discussion_comments`
 
-Core comment entity for the politics discussion board, supporting
-threaded discussions for articles. Comments maintain state, moderation
-status, and support polymorphic ownership through subtypes for visitors,
-members, and moderators.
+User comments on economic and political discussion articles.
+
+Comments enable community discussion and debate around posted articles,
+supporting nested replies up to 3 levels deep for organized conversation
+threads. Each comment maintains relationships with both the parent
+article and the commenting member, ensuring proper content organization
+and user accountability.
+
+The comment system supports moderation workflows with status tracking,
+allowing for content review before public visibility. Edit history is
+preserved through version snapshots, maintaining transparency while
+allowing users to correct typos or clarify statements within the
+permitted time window.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `politics_bbs_article_id`: Belonged article's [politics_bbs_articles.id](#politics_bbs_articles)
-- `parent_id`: Parent comment's [politics_bbs_comments.id](#politics_bbs_comments) for threading
-- `content`
-  > Comment content text supporting rich text formatting, 20-1000 characters
-  > for meaningful dialogue.
-- `depth`
-  > Nesting level for threaded comments (0, 1, or 2) enforcing 3-level thread
-  > limit.
-- `status`: Comment moderation status: pending, approved, rejected, or flagged.
-- `actor_type`: Type of actor who created this comment: visitor, member, or moderator.
-- `created_at`: Comment creation timestamp for audit trail.
+- `economic_discussion_article_id`
+  > The article this comment belongs to. {@link
+  > economic_discussion_articles.id}
+- `economic_discussion_member_id`: Member who created this comment. [economic_discussion_members.id](#economic_discussion_members)
+- `parent_id`: Parent comment for nested replies. [economic_discussion_comments.id](#economic_discussion_comments)
+- `content`: Comment text content. Minimum 10 characters, maximum 1000 characters.
+- `status`: Moderation status: pending, approved, or rejected.
+- `created_at`: Comment creation timestamp.
 - `updated_at`: Last modification timestamp.
-- `deleted_at`: Soft delete timestamp.
+- `deleted_at`: Soft deletion timestamp for content moderation.
 
-### `politics_bbs_comment_of_visitors`
+### `economic_discussion_comment_versions`
 
-Subtype entity for comments created by visitor users. Maintains the
-polymorphic ownership relationship with proper referential integrity and
-audit tracking.
+Historical snapshots of comment content for audit trail and edit tracking.
 
-Properties as follows:
+This table preserves the complete edit history of comments, storing
+point-in-time snapshots whenever users modify their comments within the
+allowed edit window. Each version captures the exact content state,
+modification timestamp, and editor information for transparency.
 
-- `id`: Primary Key.
-- `politics_bbs_comment_id`: Comment's [politics_bbs_comments.id](#politics_bbs_comments) this subtype belongs to.
-- `politics_bbs_visitor_id`: Visitor's [politics_bbs_visitors.id](#politics_bbs_visitors) who created this comment.
-- `created_at`: Visitor-specific creation timestamp.
-
-### `politics_bbs_comment_of_members`
-
-Subtype entity for comments created by member users. Maintains the
-polymorphic ownership relationship with proper referential integrity and
-audit tracking.
+The versioning system ensures accountability while allowing users to
+correct errors or clarify their statements. All versions remain
+accessible for moderation purposes and provide a complete audit trail of
+discussion evolution over time.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `politics_bbs_comment_id`: Comment's [politics_bbs_comments.id](#politics_bbs_comments) this subtype belongs to.
-- `politics_bbs_member_id`: Member's [politics_bbs_members.id](#politics_bbs_members) who created this comment.
-- `created_at`: Member-specific creation timestamp.
-
-### `politics_bbs_comment_of_moderators`
-
-Subtype entity for comments created by moderator users. Maintains the
-polymorphic ownership relationship with proper referential integrity and
-audit tracking.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `politics_bbs_comment_id`: Comment's [politics_bbs_comments.id](#politics_bbs_comments) this subtype belongs to.
-- `politics_bbs_moderator_id`: Moderator's [politics_bbs_moderators.id](#politics_bbs_moderators) who created this comment.
-- `created_at`: Moderator-specific creation timestamp.
+- `economic_discussion_comment_id`
+  > Original comment this version belongs to. {@link
+  > economic_discussion_comments.id}
+- `content`: Comment content at the time of snapshot.
+- `created_at`: Snapshot creation timestamp when version was saved.
 
 ## Attachments
 
 ```mermaid
 erDiagram
-"politics_bbs_image_attachments" {
+"economic_discussion_attachments" {
   String id PK
-  String politics_bbs_attachment_id FK
+  String economic_discussion_article_id FK
   String filename
-  Int file_size
-  String mime_type
   String file_path
-  Int width "nullable"
-  Int height "nullable"
-  DateTime created_at
-}
-"politics_bbs_file_attachments" {
-  String id PK
-  String politics_bbs_article_id FK
-  String politics_bbs_member_id FK
-  String filename
   Int file_size
+  String file_type
   String mime_type
-  String file_path
-  DateTime created_at
+  DateTime uploaded_at
+  Boolean is_scanned
 }
-"politics_bbs_attachment_of_visitors" {
-  String id PK
-  String politics_bbs_attachment_id FK,UK
-  String politics_bbs_visitor_id FK
-  DateTime created_at
-}
-"politics_bbs_attachment_of_members" {
-  String id PK
-  String politics_bbs_attachment_id FK,UK
-  String politics_bbs_member_id FK
-  DateTime created_at
-}
-"politics_bbs_attachment_of_moderators" {
-  String id PK
-  String politics_bbs_attachment_id FK,UK
-  String politics_bbs_moderator_id FK
-  DateTime created_at
-}
-"politics_bbs_image_attachments" }o--|| "politics_bbs_file_attachments" : attachment
-"politics_bbs_attachment_of_visitors" |o--|| "politics_bbs_file_attachments" : attachment
-"politics_bbs_attachment_of_members" |o--|| "politics_bbs_file_attachments" : attachment
-"politics_bbs_attachment_of_moderators" |o--|| "politics_bbs_file_attachments" : attachment
 ```
 
-### `politics_bbs_image_attachments`
+### `economic_discussion_attachments`
 
-Image attachments for articles using polymorphic ownership pattern. Image
-attachments support metadata extraction and image processing for display
-optimization.
+File attachments associated with discussion articles supporting images,
+documents, and spreadsheets.
 
-Properties as follows:
+Stores file metadata and references for attachments uploaded to articles.
+Files inherit visibility permissions from their parent article. Supports
+multiple attachment types with strict size and format validation.
 
-- `id`: Primary Key.
-- `politics_bbs_attachment_id`: Main attachment entity's [politics_bbs_file_attachments.id](#politics_bbs_file_attachments)
-- `filename`: Original filename of the uploaded image
-- `file_size`: Size of the image file in bytes. Maximum 5MB allowed
-- `mime_type`: MIME type of the image
-- `file_path`: Storage path or URL reference to the image file
-- `width`: Image width in pixels for display optimization
-- `height`: Image height in pixels for display optimization
-- `created_at`: Timestamp when the image was uploaded
-
-### `politics_bbs_file_attachments`
-
-Document file attachments for articles supporting up to 10MB per file and
-5 files per article. Manages document uploads with format validation for
-PDF, DOC, DOCX, and TXT formats.
+Attachments are automatically removed when the associated article is
+deleted. All files undergo security scanning before approval. The system
+supports up to 5 attachments per article with combined size limits.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `politics_bbs_article_id`: Attached article's [politics_bbs_articles.id](#politics_bbs_articles).
-- `politics_bbs_member_id`: Uploading member's [politics_bbs_members.id](#politics_bbs_members).
-- `filename`: Original filename of the uploaded document.
-- `file_size`: Size of the document file in bytes. Maximum 10MB allowed.
-- `mime_type`
-  > MIME type of the document (application/pdf, application/msword,
-  > application/vnd.openxmlformats-officedocument.wordprocessingml.document,
-  > text/plain).
-- `file_path`: Storage path or URL reference to the document file.
-- `created_at`: Timestamp when the file was uploaded.
+- `economic_discussion_article_id`: Associated article's [economic_discussion_articles.id](#economic_discussion_articles)
+- `filename`: Original filename provided during upload
+- `file_path`: Storage path for the uploaded file
+- `file_size`: File size in bytes
+- `file_type`: File type category: image, document, or spreadsheet
+- `mime_type`: MIME type for proper file handling
+- `uploaded_at`: Timestamp when file was uploaded
+- `is_scanned`: Whether the file has completed security scanning
 
-### `politics_bbs_attachment_of_visitors`
+## Search
 
-Association table for visitor-created image attachments implementing
-polymorphic ownership pattern. Visitors can upload images for validation
-through proper subtype relationship.
+```mermaid
+erDiagram
+"economic_discussion_search_history" {
+  String id PK
+  String economic_discussion_member_id FK
+  String economic_discussion_search_query_id FK
+  String query_text
+  DateTime created_at
+}
+"economic_discussion_search_queries" {
+  String id PK
+  String query_text UK
+  Int frequency
+  Int results_count "nullable"
+  Float average_click_position "nullable"
+  DateTime last_used_at
+  DateTime created_at
+}
+"economic_discussion_search_history" }o--|| "economic_discussion_search_queries" : searchQuery
+```
+
+### `economic_discussion_search_history`
+
+Personal search history tracking for logged-in members.
+
+Stores individual search queries performed by registered members,
+enabling them to review their search history, find previously viewed
+content, and maintain personal search patterns. Supports the requirement
+for logged-in users to have personalized search history retention.
+
+Search history entries are automatically created when members perform
+searches and can be cleared by users at any time.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `politics_bbs_attachment_id`: Attachment's [politics_bbs_file_attachments.id](#politics_bbs_file_attachments)
-- `politics_bbs_visitor_id`: Visitor uploader's [politics_bbs_visitors.id](#politics_bbs_visitors)
-- `created_at`: Timestamp when visitor uploaded this attachment
+- `economic_discussion_member_id`: Member who performed the search. [economic_discussion_members.id](#economic_discussion_members)
+- `economic_discussion_search_query_id`
+  > Associated search query for reference. {@link
+  > economic_discussion_search_queries.id}
+- `query_text`: Actual search query text entered by the user.
+- `created_at`: When this search was performed.
 
-### `politics_bbs_attachment_of_members`
+### `economic_discussion_search_queries`
 
-Association table for member-created image attachments implementing
-polymorphic ownership pattern. Members can upload images and files for
-their articles through proper subtype relationship.
+Master table for tracking all unique search queries across the platform.
 
-Properties as follows:
+Maintains a centralized list of individual search queries to avoid
+duplication, track frequency, and enable analytics for understanding what
+content and topics are most commonly searched by the community.
 
-- `id`: Primary Key.
-- `politics_bbs_attachment_id`: Attachment's [politics_bbs_file_attachments.id](#politics_bbs_file_attachments)
-- `politics_bbs_member_id`: Member uploader's [politics_bbs_members.id](#politics_bbs_members)
-- `created_at`: Timestamp when member uploaded this attachment
-
-### `politics_bbs_attachment_of_moderators`
-
-Association table for moderator-created image attachments implementing
-polymorphic ownership pattern. Moderators can upload images for
-moderation and administrative content.
+Each unique search query is stored once with frequency tracking, allowing
+efficient aggregation of search patterns and popular content discovery.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `politics_bbs_attachment_id`: Attachment's [politics_bbs_file_attachments.id](#politics_bbs_file_attachments)
-- `politics_bbs_moderator_id`: Moderator uploader's [politics_bbs_moderators.id](#politics_bbs_moderators)
-- `created_at`: Timestamp when moderator uploaded this attachment
+- `query_text`: Unique search query text.
+- `frequency`: Number of times this query has been used across all users.
+- `results_count`: Average result count for this query.
+- `average_click_position`: Average position of clicked results. Helps measure search quality.
+- `last_used_at`: Most recent time this query was executed.
+- `created_at`: When this query was first recorded.

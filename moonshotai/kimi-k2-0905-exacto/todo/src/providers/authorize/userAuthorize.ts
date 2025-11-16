@@ -1,12 +1,10 @@
 import { ForbiddenException } from "@nestjs/common";
-import { MyGlobal } from "../MyGlobal";
+import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
 export async function userAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
+  headers: { authorization?: string };
 }): Promise<UserPayload> {
   const payload: UserPayload = jwtAuthorize({ request }) as UserPayload;
 
@@ -14,15 +12,19 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const user = await MyGlobal.prisma.todo_users.findFirst({
+  // payload.id contains the user ID (top-level user table ID)
+  // payload.session_id contains the session ID
+  const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
+      id: payload.session_id,
+      user: {
+        id: payload.id, // Main user table ID validation (no is_active field)
+      },
     },
   });
 
-  if (user === null) {
-    throw new ForbiddenException("User not found");
+  if (session === null) {
+    throw new ForbiddenException("Session not found");
   }
 
   return payload;

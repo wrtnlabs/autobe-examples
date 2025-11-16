@@ -1,130 +1,134 @@
-/// Records individual upvotes and downvotes cast by members on posts. Each
-/// vote is a separate record enabling vote reversal, change tracking, and
-/// accurate karma calculation. Tracks voting behavior for reputation system
-/// and sorting algorithms.
+/// User voting records tracking upvotes and downvotes on posts and comments.
+/// Each vote represents one user's opinion on one piece of content, whether
+/// positive (upvote) or negative (downvote). This is the core engagement
+/// mechanism driving content visibility through voting algorithms and karma
+/// calculation.
+///
+/// Votes establish the connection between users and content they engage
+/// with. Each vote is immutable once recorded (users can change or remove
+/// votes, which creates a new vote record rather than modifying the
+/// original). The voting history is preserved for audit trails and fraud
+/// detection, enabling administrators to trace voting patterns and reverse
+/// fraudulent votes if necessary.
+///
+/// The table uses polymorphic design to support voting on both posts and
+/// comments through content_type and content_id fields, avoiding the
+/// complexity of separate tables for post votes and comment votes. This
+/// normalized approach maintains data integrity through a unique constraint
+/// ensuring each user can only have one vote (upvote, downvote, or no vote)
+/// per piece of content.
 ///
 /// @namespace Engagement
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_votes {
+model community_platform_votes {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Unique identifier for the vote record.
   id String @id
   
-  /// Reference to the post being voted on. {@link community_platform_posts.id}
-  community_platform_post_id String
-  
-  /// Reference to the member casting the vote. {@link
-  /// community_platform_members.id}
+  /// Foreign key referencing the member who cast this vote. Identifies the
+  /// user performing the voting action. {@link community_platform_members.id}
   community_platform_member_id String
   
-  /// Type of vote: 'upvote' or 'downvote'. Determines karma impact on post
-  /// author.
+  /// Type of content being voted on. Valid values: 'post' for voting on a
+  /// post, 'comment' for voting on a comment. Enables polymorphic relationship
+  /// without separate tables.
+  content_type String
+  
+  /// ID of the content being voted on. References either a post ID or comment
+  /// ID depending on content_type. Combined with content_type to identify the
+  /// exact piece of content.
+  content_id String
+  
+  /// Type of vote cast. Valid values: 'upvote' (+1 karma to creator),
+  /// 'downvote' (-1 karma to creator). Determines whether vote contributes
+  /// positively or negatively to content creator's karma.
   vote_type String
   
-  /// Timestamp when vote was cast. Used for vote history and sorting.
+  /// Timestamp when this vote was cast (ISO 8601 UTC format). Used for
+  /// chronological tracking and vote fraud detection (analyzing vote timing
+  /// patterns).
   created_at DateTime
+  
+  /// Timestamp when this vote was last modified (changed from upvote to
+  /// downvote, or vice versa). Updated whenever user changes their vote. Null
+  /// if vote has never been changed.
+  updated_at DateTime?
   
   //----
   // RELATIONS
   //----
-  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
   member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([community_platform_post_id, community_platform_member_id], map: "community_platform_post_votes_community_platform_post__67424e40")
+  @@unique([community_platform_member_id, content_type, content_id], map: "community_platform_votes_community_platform_member_id__6401b534")
+  @@index([content_type, content_id])
   // spellchecker: ignore-next-line
-  @@index([community_platform_post_id, vote_type], map: "community_platform_post_votes_community_platform_post__6071049b")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id, created_at], map: "community_platform_post_votes_community_platform_membe_59eaad49")
+  @@index([community_platform_member_id, created_at], map: "community_platform_votes_community_platform_member_id__4f28fba5")
+  @@index([created_at])
 }
 
-/// Records individual upvotes and downvotes cast by members on comments.
-/// Parallel structure to post votes enabling independent voting on comments
-/// with separate karma tracking and sorting mechanics.
+/// Cached karma reputation scores for each member, denormalized from vote
+/// records for performance optimization. Rather than aggregating votes every
+/// time karma is needed (slow for large vote counts), karma scores are
+/// stored in this table and updated whenever votes change, enabling instant
+/// karma display on profiles and posts.
+///
+/// Karma score represents a member's reputation and standing in the
+/// community, calculated as the cumulative effect of votes received on their
+/// posts and comments. The score is split into two components: post_karma
+/// (votes on posts) and comment_karma (votes on comments), allowing display
+/// of both total karma and breakdown by content type.
+///
+/// This table maintains a cached denormalization relationship with
+/// community_platform_votes table. The votes are the source of truth;
+/// karma_scores are derived values updated when votes are created, changed,
+/// or removed. This hybrid approach combines normalization (votes stored
+/// once) with denormalization (scores cached) for optimal performance on
+/// high-frequency read operations (displaying karma) while maintaining audit
+/// capability through votes table.
 ///
 /// @namespace Engagement
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_comment_votes {
+model community_platform_karma_scores {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Unique identifier for this karma score record.
   id String @id
   
-  /// Reference to the comment being voted on. {@link
-  /// community_platform_comments.id}
-  community_platform_comment_id String
-  
-  /// Reference to the member casting the vote. {@link
-  /// community_platform_members.id}
+  /// Foreign key referencing the member whose karma score this represents.
+  /// One-to-one relationship: each member has exactly one karma score record.
+  /// {@link community_platform_members.id}
   community_platform_member_id String
   
-  /// Type of vote: 'upvote' or 'downvote'. Determines karma impact on comment
-  /// author.
-  vote_type String
-  
-  /// Timestamp when vote was cast. Used for vote history and trending
-  /// algorithms.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
-  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_platform_comment_id, community_platform_member_id], map: "community_platform_comment_votes_community_platform_co_c5f3e82e")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_comment_id, vote_type], map: "community_platform_comment_votes_community_platform_co_61fbd00c")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id, created_at], map: "community_platform_comment_votes_community_platform_me_2c59b90a")
-}
-
-/// Tracks global karma points earned by each member across all communities.
-/// Aggregated from post and comment votes platform-wide. Determines
-/// reputation tier, privileges, and community discovery ranking.
-///
-/// @namespace Engagement
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_karma_global {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the member whose global karma is tracked. {@link
-  /// community_platform_members.id}
-  community_platform_member_id String
-  
-  /// Total cumulative karma points earned from upvotes and downvotes across
-  /// all communities. Can be negative.
-  total_karma Int
-  
-  /// Karma earned specifically from post votes (upvotes - downvotes on posts).
+  /// Cumulative karma score earned from votes on posts created by this member.
+  /// Calculated as sum of all upvotes minus downvotes on member's posts.
+  /// Minimum value 0 (karma cannot go negative). Updated when votes on
+  /// member's posts are created, changed, or removed.
   post_karma Int
   
-  /// Karma earned specifically from comment votes (upvotes - downvotes on
-  /// comments).
+  /// Cumulative karma score earned from votes on comments created by this
+  /// member. Calculated as sum of all upvotes minus downvotes on member's
+  /// comments. Minimum value 0 (karma enforced floor). Updated when votes on
+  /// member's comments change.
   comment_karma Int
   
-  /// Current reputation tier based on karma: Bronze (10-99), Silver (100-499),
-  /// Gold (500-1999), Platinum (2000-9999), Diamond (10000+).
-  current_reputation_tier String
+  /// Total karma score for the member, calculated as post_karma +
+  /// comment_karma. Denormalized for faster access (avoids addition
+  /// calculation on every profile view). Kept in sync automatically through
+  /// triggers or application logic.
+  total_karma Int
   
-  /// Timestamp when karma was last recalculated. Used to identify stale karma
-  /// records.
-  last_calculated_at DateTime
-  
-  /// Timestamp when karma record was created for this member (typically at
-  /// registration).
+  /// Timestamp when this karma score record was created (when member account
+  /// is created). Immutable after creation. Used to identify earliest karma
+  /// tracking date.
   created_at DateTime
   
-  /// Timestamp when karma was last updated due to voting activity or
-  /// moderation actions.
+  /// Timestamp when karma score was last updated. Updated whenever any vote on
+  /// member's posts or comments is created, changed, or removed. Provides
+  /// tracking of when karma last changed.
   updated_at DateTime
   
   //----
@@ -133,181 +137,89 @@ model community_platform_user_karma_global {
   member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([community_platform_member_id], map: "community_platform_user_karma_global_community_platfor_e99e56aa")
-  
+  @@unique([community_platform_member_id], map: "community_platform_karma_scores_community_platform_mem_c78ac2df")
   @@index([total_karma])
-  // spellchecker: ignore-next-line
-  @@index([current_reputation_tier, total_karma], map: "community_platform_user_karma_global_current_reputatio_bf0d7c40")
+  @@index([post_karma])
+  @@index([comment_karma])
+  @@index([updated_at])
 }
 
-/// Tracks community-specific karma points earned by each member within
-/// individual communities. Separate from global karma, enabling expertise
-/// recognition within specific communities. Used for moderator eligibility
-/// and community-specific privileges.
+/// Audit trail tracking all karma score changes over time, enabling
+/// historical analysis and fraud investigation. Every time a member's karma
+/// changes (through vote creation, modification, or deletion), a history
+/// record is created documenting the change, allowing complete
+/// reconstruction of how karma evolved.
+///
+/// This immutable historical log serves multiple critical functions: enables
+/// reversal of fraudulent karma adjustments by administrators, documents
+/// karma changes for compliance and transparency, supports analysis of
+/// voting fraud patterns (identifying suspicious vote clusters), and
+/// provides evidence for appeals and disputes.
+///
+/// Karma history is append-only; records are never modified or deleted, only
+/// archived after retention period. The complete history provides a detailed
+/// audit trail suitable for legal disputes, fraud investigations, and
+/// performance analysis of moderation systems.
 ///
 /// @namespace Engagement
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_karma_community {
+model community_platform_karma_history {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Unique identifier for this karma history record.
   id String @id
   
-  /// Reference to the member whose community karma is tracked. {@link
+  /// Foreign key referencing the member whose karma changed. Identifies which
+  /// member's karma was affected by this change. {@link
   /// community_platform_members.id}
   community_platform_member_id String
   
-  /// Reference to the community where karma is earned. {@link
-  /// community_platform_communities.id}
-  community_platform_community_id String
+  /// Reason for this karma change. Valid values: 'vote_created'
+  /// (upvote/downvote placed on member's content), 'vote_removed' (member
+  /// removed their vote), 'vote_changed' (member changed upvote to downvote or
+  /// vice versa), 'vote_reversed' (moderator/admin reversed fraudulent vote),
+  /// 'content_removed' (post/comment removed by moderator, karma adjusted),
+  /// 'user_suspended' (suspension penalty applied), 'user_banned' (ban penalty
+  /// applied), 'correction' (manual admin correction). Describes what caused
+  /// the karma change.
+  change_reason String
   
-  /// Total cumulative karma points earned in this specific community from
-  /// posts and comments.
-  total_karma Int
+  /// Amount karma changed (positive or negative integer). Examples: +1 for
+  /// upvote received, -1 for downvote received, -15 for suspension penalty,
+  /// +15 for karma reversal. Signed integer allows tracking both increases and
+  /// decreases.
+  karma_change Int
   
-  /// Karma earned from posts created in this community.
-  post_karma Int
+  /// Total karma before this change was applied. Used to verify calculation
+  /// accuracy and enable reversal (previous_total is the karma value after
+  /// reversal). Minimum 0.
+  previous_total Int
   
-  /// Karma earned from comments created in this community.
-  comment_karma Int
+  /// Total karma after this change was applied. Calculated as previous_total +
+  /// karma_change, enforced to minimum 0 (karma floor). Allows verification
+  /// that change was recorded correctly.
+  new_total Int
   
-  /// Total number of posts and comments created in this community by this
-  /// member.
-  contribution_count Int
+  /// ID of the object triggering this karma change. For vote-related changes:
+  /// the vote ID. For content removal: the post or comment ID. For moderation
+  /// actions: the suspension or ban ID. Enables linking history back to source
+  /// action.
+  reference_id String?
   
-  /// Member's ranking within this community by karma (1st, 2nd, 3rd, etc).
-  /// Recalculated periodically.
-  community_rank Int?
-  
-  /// Timestamp when community karma was last recalculated.
-  last_calculated_at DateTime
-  
-  /// Timestamp when member first earned karma in this community.
-  created_at DateTime
-  
-  /// Timestamp when community karma was last updated due to voting.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
-  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_platform_member_id, community_platform_community_id], map: "community_platform_user_karma_community_community_plat_ebcba696")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_community_id, total_karma], map: "community_platform_user_karma_community_community_plat_3e13ceea")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id, total_karma], map: "community_platform_user_karma_community_community_plat_c51ff32d")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_community_id, community_rank], map: "community_platform_user_karma_community_community_plat_806ac17b")
-}
-
-/// Defines available badge types and their earning criteria. Badge
-/// definitions are static and reusable; actual badge awards to members are
-/// tracked in a separate table. Examples: 'Verified Expert in [Community]',
-/// 'Helpful Contributor', 'Content Creator', etc.
-///
-/// @namespace Engagement
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_badge_definitions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique identifier code for badge type (e.g., 'verified_expert',
-  /// 'helpful_contributor'). Used for system references.
-  badge_code String
-  
-  /// Display name for badge shown to users (e.g., 'Verified Expert', 'Helpful
-  /// Contributor').
-  badge_name String
-  
-  /// Description explaining what the badge represents and how it's earned.
-  badge_description String
-  
-  /// URL to badge icon image for display on profiles and content.
-  badge_icon_url String?
-  
-  /// Category organizing badges: 'achievement', 'longevity', 'contribution',
-  /// 'moderation', 'special'.
-  badge_category String
-  
-  /// Description of criteria required to earn this badge (e.g., '5000+ karma
-  /// in specific community').
-  earning_criteria String
-  
-  /// Whether this badge type is hidden until earned (affects UI display of
-  /// badge progress).
-  is_hidden Boolean
-  
-  /// Display order for badges (lower numbers displayed first on user profiles).
-  sort_order Int
-  
-  /// Timestamp when badge definition was created in the system.
+  /// Timestamp when this karma change occurred (ISO 8601 UTC format). Used for
+  /// chronological tracking of karma evolution. Immutable after record
+  /// creation.
   created_at DateTime
   
   //----
   // RELATIONS
   //----
-  community_platform_user_badges community_platform_user_badges[]
-  
-  @@unique([badge_code])
-  // spellchecker: ignore-next-line
-  @@index([badge_category, sort_order], map: "community_platform_badge_definitions_badge_category_so_fd08fe09")
-}
-
-/// Tracks badges earned by members. Records which members have earned which
-/// badge definitions, when they earned them, and achievement context.
-/// Enables leaderboards and achievement displays on user profiles.
-///
-/// @namespace Engagement
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_badges {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the member who earned the badge. {@link
-  /// community_platform_members.id}
-  community_platform_member_id String
-  
-  /// Reference to the badge definition being awarded. {@link
-  /// community_platform_badge_definitions.id}
-  community_platform_badge_definition_id String
-  
-  /// Reference to community context if badge is community-specific (e.g.,
-  /// 'Verified Expert in [Community]'). Null for global badges. {@link
-  /// community_platform_communities.id}
-  community_platform_community_id String?
-  
-  /// Timestamp when badge was earned by member. Used for 'achievement
-  /// timeline' and sorting.
-  earned_at DateTime
-  
-  /// Context or metadata about badge earning (e.g., 'Reached 5000+ karma in
-  /// photography community'). Displayed in achievement details.
-  achievement_context String?
-  
-  //----
-  // RELATIONS
-  //----
   member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
-  badgeDefinition community_platform_badge_definitions @relation(fields: [community_platform_badge_definition_id], references: [id], onDelete: Cascade)
-  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([community_platform_member_id, community_platform_badge_definition_id, community_platform_community_id], map: "community_platform_user_badges_community_platform_memb_211ad3f6")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_member_id, earned_at], map: "community_platform_user_badges_community_platform_memb_d8e7116a")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_badge_definition_id], map: "community_platform_user_badges_community_platform_badg_2f56848d")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_community_id, earned_at], map: "community_platform_user_badges_community_platform_comm_fde37caa")
+  @@index([community_platform_member_id, created_at], map: "community_platform_karma_history_community_platform_me_ec88879c")
+  @@index([change_reason])
+  @@index([created_at])
+  @@index([reference_id])
 }

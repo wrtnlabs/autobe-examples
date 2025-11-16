@@ -1,11 +1,15 @@
 import { tags } from "typia";
 
-/** Authenticated payload injected for Customer role. */
 export interface CustomerPayload {
-  /** Top-level customer ID (UUID). */
+  /**
+   * Top-level customer account ID (the fundamental user identifier in the
+   * system).
+   */
   id: string & tags.Format<"uuid">;
-  /** Session ID associated with this login. */
+
+  /** Session ID associated with the customer actor. */
   session_id: string & tags.Format<"uuid">;
-  /** Discriminator specifying actor type. */
+
+  /** Discriminator for the discriminated union type. */
   type: "customer";
 }

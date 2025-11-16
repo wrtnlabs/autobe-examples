@@ -1,1164 +1,672 @@
 # Content Sorting Algorithms Requirements
 
-## 1. Introduction and Overview
+## Introduction
 
-### 1.1 Purpose of Content Sorting
+This document defines the business requirements for content sorting algorithms on the Reddit-like community platform. Sorting mechanisms are critical for content discovery, user engagement, and ensuring that valuable content surfaces to users at the right time. The platform implements four primary sorting methods: Hot, New, Top, and Controversial, each serving distinct user needs and content discovery patterns.
 
-Content sorting is the mechanism that determines the order in which posts appear to users throughout the community platform. The sorting system directly impacts user engagement, content discovery, and overall platform experience by presenting the most relevant, interesting, or timely content based on user preferences.
+This document specifies the behavioral requirements, business logic, and user experience expectations for each sorting algorithm. All requirements are written from a business and user perspective, focusing on what the system should achieve rather than technical implementation details.
 
-Effective sorting algorithms ensure that:
-- High-quality content receives appropriate visibility
-- Fresh content gets opportunities for engagement
-- Users can customize their content consumption experience
-- The platform maintains dynamic and engaging feeds
-- Content creators receive fair exposure based on community reception
+## Sorting Algorithm Overview
 
-### 1.2 Importance to User Experience
+### Purpose and User Value
 
-The sorting system is fundamental to the platform's success because:
-- **Content Discovery**: Users discover valuable content through intelligent ranking
-- **Engagement Optimization**: Proper sorting maximizes user interaction and time spent on platform
-- **Community Health**: Fair sorting prevents content stagnation and encourages participation
-- **User Control**: Multiple sorting options empower users to consume content their preferred way
-- **Platform Dynamics**: Sorting algorithms create the "feel" of the platform and influence community culture
+Content sorting algorithms serve multiple critical purposes:
 
-### 1.3 Relationship to Voting and Karma System
+- **Content Discovery**: Enable users to find relevant and engaging content quickly
+- **Timely Information**: Surface fresh content while balancing quality and recency
+- **Quality Recognition**: Reward high-quality contributions with visibility
+- **Diverse Perspectives**: Allow users to explore different content ranking approaches
+- **User Control**: Empower users to choose how they consume community content
 
-Content sorting is intrinsically linked to the voting and karma system detailed in the [Voting and Karma System Requirements](./06-voting-karma-system.md). The sorting algorithms consume vote data (upvotes, downvotes, net scores) as primary inputs for ranking calculations. Additionally:
+### Sorting Methods Summary
 
-- Vote counts directly influence hot, top, and controversial sorting
-- Vote velocity (rate of voting over time) affects hot sorting
-- Vote ratios determine controversial sorting
-- Post creation metadata works alongside votes for comprehensive ranking
-- User voting behavior shapes what content surfaces through different sort methods
+The platform provides four distinct sorting methods:
 
-For complete details on how votes are collected, validated, and counted, refer to the [Voting and Karma System Requirements](./06-voting-karma-system.md).
+1. **Hot**: Surfaces trending posts that are gaining traction recently, balancing recency with engagement
+2. **New**: Displays posts in reverse chronological order, showing the most recently created content first
+3. **Top**: Ranks posts by total score (upvotes minus downvotes) within specified time periods
+4. **Controversial**: Highlights posts with significant debate, having substantial both upvotes and downvotes
 
-### 1.4 Document Scope
+### Context and Applicability
 
-This document specifies the business requirements for four primary sorting algorithms:
-1. **Hot**: Balances post popularity with recency to surface trending content
-2. **New**: Shows newest content first for users wanting latest posts
-3. **Top**: Ranks by total vote score with time-based filtering options
-4. **Controversial**: Highlights content with divisive voting patterns
+Sorting algorithms apply to:
 
-All requirements are written from a business perspective, describing WHAT the system should do from a user's viewpoint, not HOW to implement it technically. Implementation decisions including algorithms, data structures, caching strategies, and technical architecture are at the discretion of the development team.
+- Community feeds (posts within a specific community)
+- Homepage feed (posts from subscribed communities)
+- Global "All" feed (posts from all public communities)
+- User profile post listings
 
-## 2. Sorting System Architecture
+Each context uses the same sorting logic but operates on different content sets.
 
-### 2.1 Overview of Sorting Mechanisms
+## Hot Sorting Algorithm Requirements
 
-The platform provides four distinct sorting methods that users can select to customize their content viewing experience. Each sorting method serves different user needs:
+### Business Objective
 
-- **Hot Sorting**: For users who want to see trending, currently popular content that's actively being discussed
-- **New Sorting**: For users who want to see the latest posts regardless of popularity, often used to discover fresh content early
-- **Top Sorting**: For users who want to see the highest-rated content over specific time periods, useful for finding the "best of" content
-- **Controversial Sorting**: For users interested in divisive topics that generate both strong support and opposition
+The Hot sorting algorithm identifies and surfaces posts that are currently trending and generating engagement. It balances two competing factors: how much engagement a post has received (votes) and how recent that engagement is. This ensures the feed stays fresh while promoting quality content.
 
-All sorting methods operate on the same pool of posts but apply different ranking logic to determine display order. The sorting system must handle posts from multiple sources:
-- Individual community feeds (all posts within a specific community)
-- Personalized home feeds (posts from communities the user has subscribed to)
-- All communities feed (posts from across the entire platform)
+### Core Hot Sorting Behavior
 
-### 2.2 Default Sorting Behaviors
+**THE system SHALL rank posts using a hot score that combines total vote score and post age.**
 
-#### 2.2.1 Community Feed Default Sorting
+**WHEN calculating hot score, THE system SHALL give higher weight to recent posts compared to older posts with similar vote counts.**
 
-WHEN a user views a community feed without having previously selected a sorting preference, THE system SHALL display posts sorted by "Hot" by default.
+**WHEN two posts have identical vote scores, THE system SHALL rank the more recent post higher.**
 
-The hot sorting default ensures that community feeds show currently engaging content that represents active community discussion, providing the best first impression for new visitors.
+**THE system SHALL decay the influence of older posts over time, ensuring content older than 24-48 hours gradually moves down in hot rankings even with high scores.**
 
-#### 2.2.2 Personalized Home Feed Default Sorting
+### Hot Score Calculation Principles
 
-WHEN a user views their personalized home feed (containing posts from subscribed communities) without having previously selected a sorting preference, THE system SHALL display posts sorted by "Hot" by default.
+**THE hot score SHALL increase when a post receives upvotes.**
 
-This default prioritizes recent, popular content from the communities the user cares about, maximizing engagement with their curated feed.
+**THE hot score SHALL decrease when a post receives downvotes.**
 
-#### 2.2.3 All Communities Feed Default Sorting
+**THE hot score SHALL naturally decrease as time passes since post creation, independent of voting activity.**
 
-WHEN a user views the "All" feed (containing posts from all public communities) without having previously selected a sorting preference, THE system SHALL display posts sorted by "Hot" by default.
+**WHEN a post is newly created (less than 1 hour old), THE system SHALL provide a recency boost to give it initial visibility.**
 
-The hot default for the all communities feed surfaces the most engaging content across the platform, providing an exciting and dynamic browsing experience.
+### Time Decay Behavior
 
-#### 2.2.4 First-Time User Experience
+**THE system SHALL apply time decay using the post's creation timestamp as the reference point.**
 
-WHEN a user accesses the platform for the first time, THE system SHALL display all feeds using "Hot" sorting by default.
+**WHEN a post reaches 12 hours old, THE system SHALL begin noticeable decay in its hot score.**
 
-First-time users benefit from seeing trending, popular content that demonstrates the platform's value and encourages exploration.
+**WHEN a post reaches 24 hours old, THE system SHALL apply significant decay, requiring substantially more votes to maintain position.**
 
-### 2.3 User Sorting Preferences and Controls
+**WHEN a post reaches 48 hours or older, THE system SHALL heavily decay the hot score, making it difficult to compete with recent content.**
 
-#### 2.3.1 Sorting Selection Interface
+### Vote Momentum Considerations
 
-THE system SHALL provide users with a sorting selector interface that allows instant switching between Hot, New, Top, and Controversial sorting methods.
+**WHEN a post receives multiple upvotes in a short time period (within 1 hour), THE system SHALL interpret this as strong positive momentum.**
 
-The sorting selector must be:
-- Clearly visible on all feed pages
-- Accessible without scrolling (persistent or easily accessible)
-- Responsive to user selection without page reload (instant application)
-- Clearly indicate the currently active sorting method
+**WHEN a post receives votes shortly after creation, THE system SHALL weight these votes more favorably than votes on older posts.**
 
-#### 2.3.2 Sorting Preference Persistence Per Context
+**THE system SHALL NOT give special weight to votes based on the voter's karma score or account age.**
 
-WHEN a user selects a sorting method for a specific community feed, THE system SHALL remember that preference for that specific community.
+### Edge Cases and Special Scenarios
 
-WHEN a user selects a sorting method for their personalized home feed, THE system SHALL remember that preference for the home feed.
+**WHEN a post has a negative total score (more downvotes than upvotes), THE system SHALL still calculate a hot score but rank it below all positive-scoring posts.**
 
-WHEN a user selects a sorting method for the all communities feed, THE system SHALL remember that preference for the all communities feed.
+**WHEN a post receives no votes within the first hour, THE system SHALL gradually reduce its initial recency boost.**
 
-Each context (individual communities, home feed, all feed) maintains its own sorting preference independently. This allows users to prefer "New" sorting in one community while preferring "Hot" sorting in another, based on their relationship with each community.
+**IF a community has very low posting volume (fewer than 5 posts per day), THE system SHALL extend the time decay period to ensure content remains visible longer.**
 
-#### 2.3.3 Sorting Preference Persistence Duration
+**WHEN a post is edited, THE system SHALL NOT reset or modify its hot score or creation timestamp.**
 
-THE system SHALL persist user sorting preferences across sessions, storing the preference for each user.
+### Hot Sorting Display Order
 
-Sorting preferences should remain active until the user explicitly changes them, providing a consistent experience across multiple visits to the platform.
+**THE system SHALL display posts sorted by hot score in descending order (highest hot score first).**
 
-#### 2.3.4 Cross-Device Preference Synchronization
+**WHEN multiple posts have identical hot scores, THE system SHALL use post creation time as a tiebreaker, with newer posts first.**
 
-WHEN a user is authenticated, THE system SHALL synchronize sorting preferences across all devices and browsers where the user is logged in.
+**THE system SHALL recalculate hot scores in real-time or near-real-time to reflect new votes and time passage.**
 
-This ensures a consistent experience whether the user accesses the platform from desktop, mobile, or multiple browsers.
+### Performance Expectations
 
-#### 2.3.5 Anonymous User Sorting Preferences
+**WHEN a user selects hot sorting, THE feed SHALL load and display results instantly (perceived as immediate response).**
 
-WHEN an anonymous (non-authenticated) user selects a sorting preference, THE system SHALL store the preference in the browser session.
+**WHEN a user refreshes a hot-sorted feed, THE system SHALL reflect vote changes and new posts that occurred since the last load.**
 
-Anonymous user preferences may be stored locally (browser storage) and will apply during the current browsing session but may not persist across devices or after browser data is cleared.
+**THE system SHALL support smooth pagination through hot-sorted content without jarring ranking changes between pages.**
 
-### 2.4 Sorting Algorithm Execution Context
+## New Sorting (Chronological) Requirements
 
-All sorting algorithms operate on posts that are already filtered by the current viewing context:
-- When viewing a community feed, sorting applies only to posts within that community
-- When viewing the personalized home feed, sorting applies only to posts from subscribed communities
-- When viewing the all communities feed, sorting applies to all public posts across the platform
+### Business Objective
 
-The sorting system does not need to handle post filtering by community membership; it receives a pre-filtered set of posts and applies the ranking logic.
+The New sorting method displays posts in reverse chronological order based on creation time. This allows users to see the absolute latest content in their communities, regardless of engagement levels. It's essential for time-sensitive information and for giving all new posts initial visibility.
 
-## 3. Hot Sorting Algorithm
+### Core New Sorting Behavior
 
-### 3.1 Business Logic and Purpose
+**THE system SHALL sort posts by creation timestamp in descending order (newest first).**
 
-Hot sorting is designed to surface content that is currently generating significant engagement and discussion. The algorithm balances two competing factors:
+**WHEN displaying new-sorted content, THE system SHALL show the most recently created post at the top of the feed.**
 
-1. **Popularity**: Posts with more upvotes should rank higher than posts with fewer upvotes
-2. **Recency**: Newer posts should have advantages over older posts, even if older posts have accumulated more total votes
+**THE new sorting method SHALL completely ignore vote counts, scores, and karma when determining order.**
 
-The goal is to create a dynamic feed where:
-- Fresh content has the opportunity to rise quickly if it's well-received
-- Popular content stays visible while it's actively being engaged with
-- Older content naturally decays from the hot feed, making room for newer discussions
-- The feed feels "alive" with current conversations
+**THE new sorting method SHALL completely ignore post type (text, link, or image) when determining order.**
 
-### 3.2 Ranking Factors
+### Timestamp Reference
 
-The hot sorting algorithm must consider the following factors when ranking posts:
+**THE system SHALL use the post's original creation timestamp as the sole ranking factor.**
 
-#### 3.2.1 Vote Score Impact
+**WHEN a post is edited, THE system SHALL NOT update or modify the creation timestamp.**
 
-WHEN calculating hot ranking, THE system SHALL give significant weight to the post's net vote score (upvotes minus downvotes).
+**THE system SHALL store creation timestamps with precision to seconds to ensure accurate chronological ordering.**
 
-Posts with higher net scores should generally rank higher than posts with lower net scores when other factors are equal. The vote score represents community approval and interest.
+### Tiebreaking for Simultaneous Posts
 
-#### 3.2.2 Time Decay Impact
+**WHEN multiple posts have identical creation timestamps (same second), THE system SHALL use the post's unique identifier as a consistent tiebreaker.**
 
-WHEN calculating hot ranking, THE system SHALL apply time-based decay to post rankings such that older posts gradually lose ranking position even if their vote scores remain constant.
+**THE tiebreaking order SHALL remain stable across multiple page loads and user sessions.**
 
-Time decay ensures that:
-- Posts from weeks or months ago don't dominate the hot feed indefinitely
-- The hot feed refreshes regularly with newer content
-- Users see recent discussions rather than archived content
+### New Sorting Display Order
 
-The rate of time decay should be tuned such that:
-- Exceptional content can remain in hot feed for hours, not just minutes
-- Average content cycles out of hot feed within several hours
-- The feed has noticeable changes when refreshed after 30-60 minutes
+**THE system SHALL display posts with the most recent creation time first.**
 
-#### 3.2.3 Vote Velocity Consideration
+**WHEN a user views a new-sorted feed, THE system SHALL present an unambiguous chronological sequence.**
 
-WHEN calculating hot ranking, THE system SHOULD consider the rate at which a post is receiving votes, not just the total vote count.
+**IF a user refreshes the feed, THE system SHALL show any new posts created since the last load at the top.**
 
-Posts that are rapidly accumulating upvotes (high vote velocity) should rank higher than posts with similar total scores but slower voting rates. This ensures that "trending" content rises quickly.
+### Context-Specific Behavior
 
-Vote velocity represents current community interest and helps surface emerging popular content before it accumulates enough total votes to rank highly on vote score alone.
+**WHEN viewing a community feed with new sorting, THE system SHALL show only posts from that community in chronological order.**
 
-#### 3.2.4 Post Age Consideration
+**WHEN viewing the homepage with new sorting, THE system SHALL show posts from all subscribed communities in chronological order.**
 
-WHEN calculating hot ranking, THE system SHALL use the post's creation timestamp as the baseline for time decay calculations.
+**WHEN viewing the global feed with new sorting, THE system SHALL show posts from all public communities in chronological order.**
 
-The age of a post (time elapsed since creation) is the primary temporal factor in hot ranking. Older posts should decay faster than newer posts.
+### Performance Expectations
 
-#### 3.2.5 Minimum Threshold for Hot Ranking
+**WHEN a user selects new sorting, THE feed SHALL load and display results instantly.**
 
-WHEN calculating hot ranking, THE system MAY establish a minimum vote threshold that posts must exceed to appear in hot sorting.
+**THE system SHALL efficiently handle communities with high posting volume (100+ posts per hour) without performance degradation.**
 
-Posts with very low vote counts (e.g., 0 or 1 net votes) may be deprioritized in hot sorting even if they're recent, as they haven't demonstrated sufficient community interest.
+**WHEN paginating through new-sorted content, THE system SHALL maintain consistent ordering even as new posts are created.**
 
-### 3.3 Hot Sorting Functional Requirements
+### Edge Cases
 
-#### 3.3.1 Hot Ranking Calculation
+**WHEN a post is deleted or removed, THE system SHALL immediately exclude it from new-sorted feeds.**
 
-WHEN a user selects "Hot" sorting for a feed, THE system SHALL rank posts using an algorithm that combines vote score and time decay to produce a hotness score for each post.
+**WHEN viewing new-sorted content as a guest user, THE system SHALL show the same chronological order as authenticated members would see.**
 
-THE system SHALL order posts by their hotness score in descending order, with the highest hotness scores appearing first.
+**IF system clocks are temporarily incorrect during post creation, THE system SHALL still maintain consistent ordering based on recorded timestamps.**
 
-#### 3.3.2 Real-Time Ranking Updates
+## Top Sorting with Time Filters Requirements
 
-WHEN new votes are cast on posts, THE system SHALL update hot rankings to reflect the new vote data.
+### Business Objective
 
-The hot feed should feel dynamic and responsive to ongoing voting activity. Users should see ranking changes when they refresh the feed after significant voting activity has occurred.
+The Top sorting method ranks posts by their total score (upvotes minus downvotes) within specified time windows. This allows users to discover the highest-quality or most popular content from different time periods, from the past hour to all time.
 
-#### 3.3.3 Time Decay Progression
+### Core Top Sorting Behavior
 
-THE system SHALL continuously apply time decay to all posts in hot sorting, ensuring that as time passes, older posts naturally decline in ranking regardless of their vote scores.
+**THE system SHALL sort posts by total score in descending order (highest score first).**
 
-Even if no new votes occur, the hot feed should evolve over time as posts age and decay, making room for newer content.
+**THE total score SHALL be calculated as the number of upvotes minus the number of downvotes.**
 
-#### 3.3.4 Handling Negative-Scored Posts
+**WHEN calculating top ranking, THE system SHALL NOT apply any time decay or recency weighting.**
 
-WHEN a post has a negative net vote score (more downvotes than upvotes), THE system SHALL rank it lower than posts with positive or neutral scores in hot sorting.
+**THE top sorting method SHALL purely rank by score within the selected time filter.**
 
-Negative-scored posts should decay faster and may be excluded from hot feeds entirely if their scores are sufficiently negative, as they represent content the community has rejected.
+### Time Filter Options
 
-#### 3.3.5 Tiebreaker Logic
+**THE system SHALL provide the following time filter options for top sorting:**
+- **Now/Past Hour**: Posts created within the last 60 minutes
+- **Today**: Posts created within the last 24 hours
+- **This Week**: Posts created within the last 7 days
+- **This Month**: Posts created within the last 30 days
+- **This Year**: Posts created within the last 365 days
+- **All Time**: All posts regardless of age
 
-WHEN multiple posts have identical or very similar hotness scores, THE system SHALL use post creation timestamp as a tiebreaker, with newer posts ranking higher than older posts.
+**WHEN a user selects a time filter, THE system SHALL only include posts created within that time window.**
 
-This ensures deterministic, consistent ordering even when hotness scores are equal.
+**THE system SHALL calculate time windows based on the current moment when the feed is loaded.**
 
-### 3.4 Performance Expectations
+### Time Window Calculation
 
-#### 3.4.1 Hot Feed Load Time
+**WHEN applying the "Past Hour" filter, THE system SHALL include posts created from exactly 60 minutes ago until now.**
 
-WHEN a user requests a feed with hot sorting, THE system SHALL display the sorted posts within 2 seconds under normal load conditions.
+**WHEN applying the "Today" filter, THE system SHALL include posts created from exactly 24 hours ago until now.**
 
-Users expect instant or near-instant feed loading, and hot sorting must perform efficiently even with large numbers of posts.
+**WHEN applying the "This Week" filter, THE system SHALL include posts created from exactly 7 days (168 hours) ago until now.**
 
-#### 3.4.2 Hot Ranking Calculation Efficiency
+**WHEN applying the "This Month" filter, THE system SHALL include posts created from exactly 30 days ago until now.**
 
-THE system SHALL calculate hot rankings efficiently such that feeds with thousands of posts can be sorted without degrading user experience.
+**WHEN applying the "This Year" filter, THE system SHALL include posts created from exactly 365 days ago until now.**
 
-Hot sorting performance should scale appropriately as post volume grows within communities and across the platform.
+**WHEN applying the "All Time" filter, THE system SHALL include all posts regardless of creation date.**
 
-#### 3.4.3 Ranking Refresh Rate
+### Score Calculation for Top Sorting
 
-THE system SHALL refresh hot rankings frequently enough that users notice ranking changes when significant voting activity occurs.
+**THE system SHALL calculate score as: (number of upvotes) - (number of downvotes).**
 
-Users who refresh the feed after 5-10 minutes should see updated rankings if substantial voting has occurred during that time.
+**WHEN a post has 100 upvotes and 20 downvotes, THE system SHALL calculate a score of 80.**
 
-## 4. New Sorting Algorithm
+**WHEN a post has equal upvotes and downvotes, THE system SHALL calculate a score of 0.**
 
-### 4.1 Business Logic and Purpose
+**WHEN a post has more downvotes than upvotes, THE system SHALL calculate a negative score.**
 
-New sorting is the simplest sorting algorithm, designed to show users the most recently created content first. This sorting method serves several important use cases:
+**THE system SHALL include posts with zero or negative scores in top-sorted feeds, ranked below all positive-scoring posts.**
 
-- **Early Discovery**: Users can discover brand-new content before it has accumulated votes or attention
-- **Completeness**: Users can browse all new content in a community without popularity bias
-- **Fairness**: New content gets visibility regardless of initial vote performance
-- **Real-Time Monitoring**: Active community members can monitor all new posts as they're created
+### Display Order and Tiebreaking
 
-New sorting ignores vote scores entirely, focusing solely on creation time. This creates a purely chronological feed.
+**THE system SHALL display posts in descending order by total score (highest score first).**
 
-### 4.2 Chronological Ordering Requirements
+**WHEN multiple posts have identical scores, THE system SHALL use creation timestamp as a tiebreaker, with newer posts first.**
 
-#### 4.2.1 Creation Timestamp as Sole Ranking Factor
+**WHEN multiple posts have identical scores and timestamps, THEN system SHALL use the post's unique identifier as a final tiebreaker.**
 
-WHEN a user selects "New" sorting, THE system SHALL rank posts exclusively by their creation timestamp, with the most recently created posts appearing first.
+### Default Time Filter
 
-Vote scores, vote counts, user karma, and all other factors must be ignored in new sorting. Only the post creation time determines ranking.
+**WHEN a user first accesses top sorting without specifying a time filter, THE system SHALL default to "Today" (past 24 hours).**
 
-#### 4.2.2 Descending Time Order
+**THE system SHALL remember a user's last-selected time filter preference for top sorting during their session.**
 
-THE system SHALL display posts in new sorting in descending chronological order, meaning:
-- The newest post (most recent creation timestamp) appears at the top
-- The oldest post (earliest creation timestamp) appears at the bottom
-- Posts are ordered from newest to oldest consistently
+**WHEN a user's session ends and they return, THE system SHALL default back to "Today" unless user preferences specify otherwise.**
 
-### 4.3 New Sorting Functional Requirements
+### Time Filter Persistence
 
-#### 4.3.1 New Sorting Ranking Calculation
+**WHEN an authenticated member selects a time filter, THE system SHALL remember this preference for the current session.**
 
-WHEN a user selects "New" sorting for a feed, THE system SHALL order all posts by their creation timestamp in descending order.
+**WHEN a user navigates between different communities while using top sorting, THE system SHALL maintain the selected time filter.**
 
-The implementation should use the post creation timestamp stored when the post was originally created, ensuring accurate chronological ordering.
+**WHEN a user switches to a different sorting method and then returns to top sorting, THE system SHALL restore their previously selected time filter.**
 
-#### 4.3.2 Precise Timestamp Ordering
+### Edge Cases and Special Scenarios
 
-THE system SHALL use precise timestamps (including hours, minutes, seconds, and milliseconds if available) to determine post order in new sorting.
+**WHEN viewing top posts for "Past Hour" in a low-activity community, THE system SHALL show only posts from that period even if the result is empty or contains few posts.**
 
-Posts created within the same second should have deterministic ordering based on the most precise timestamp available.
+**WHEN a post's votes change while a user is viewing a top-sorted feed, THE system SHALL NOT automatically reorder the feed until the user refreshes.**
 
-#### 4.3.3 Feed Consistency Across Refreshes
+**WHEN a post crosses the time boundary (e.g., moves from "Today" to "This Week" category), THE system SHALL reflect this change on next feed load.**
 
-WHEN a user refreshes a feed with new sorting active, THE system SHALL maintain consistent ordering for existing posts while adding any newly created posts at the top.
+**IF a community has no posts within the selected time filter, THE system SHALL display an empty feed with appropriate messaging.**
 
-Posts that existed before the refresh should not change their relative order (unless new posts are inserted above them). This ensures stable, predictable browsing.
+### Performance Expectations
 
-#### 4.3.4 Real-Time New Post Integration
+**WHEN a user selects top sorting with any time filter, THE feed SHALL load and display results instantly.**
 
-WHEN new posts are created after a user loads a feed with new sorting, THE system SHALL be capable of inserting those new posts at the top of the feed when the user refreshes or reloads.
+**WHEN a user switches between time filters, THE system SHALL update the feed instantly without full page reload.**
 
-New sorting must feel fresh and immediate, showing users the latest content as soon as they refresh the feed.
+**THE system SHALL efficiently calculate scores for high-volume communities with thousands of posts.**
 
-#### 4.3.5 Vote Data Irrelevance
+## Controversial Sorting Requirements
 
-THE system SHALL NOT consider vote scores, vote counts, karma, or any voting-related data when calculating new sorting order.
+### Business Objective
 
-Even posts with negative scores or no votes should appear in their correct chronological position in new sorting.
+The Controversial sorting method surfaces posts that have generated significant debate and divided opinion. These are posts that have received substantial numbers of both upvotes and downvotes, indicating disagreement or polarized responses from the community.
 
-### 4.4 New Sorting Display Considerations
+### Core Controversial Sorting Behavior
 
-#### 4.4.1 Timestamp Display
+**THE system SHALL identify controversial posts based on the balance between upvotes and downvotes.**
 
-WHEN displaying posts in new sorting, THE system SHOULD show clear creation timestamps on each post so users can understand the chronological progression.
+**WHEN a post has similar numbers of upvotes and downvotes with high total vote volume, THE system SHALL rank it as highly controversial.**
 
-Timestamps help users gauge post freshness and understand the time distribution of content in the feed.
+**WHEN a post has unanimous voting (all upvotes or all downvotes), THE system SHALL NOT rank it as controversial regardless of vote count.**
 
-#### 4.4.2 Time Zone Handling
+**THE controversial sorting method SHALL favor posts with more total votes over posts with fewer votes, when controversy levels are similar.**
 
-THE system SHALL display creation timestamps in the user's local time zone for readability, while using UTC or a consistent time zone internally for sorting calculations.
+### Controversy Score Calculation Principles
 
-Users should see timestamps that make sense in their context (e.g., "posted 5 minutes ago" or "posted at 3:45 PM"), but the underlying sorting should use consistent time measurement.
+**THE system SHALL consider a post more controversial when the ratio of upvotes to downvotes approaches 1:1.**
 
-### 4.5 Performance Expectations
+**THE system SHALL consider a post more controversial when the total vote count is high.**
 
-#### 4.5.1 New Feed Load Time
+**WHEN a post has 100 upvotes and 95 downvotes, THE system SHALL rank it as highly controversial.**
 
-WHEN a user requests a feed with new sorting, THE system SHALL display the sorted posts within 1 second under normal load conditions.
+**WHEN a post has 10 upvotes and 9 downvotes, THE system SHALL rank it as less controversial than the previous example due to lower total engagement.**
 
-New sorting should be the fastest sorting algorithm since it requires only simple timestamp comparison without complex calculations.
+**WHEN a post has 1000 upvotes and 50 downvotes, THE system SHALL rank it as low controversy due to clear majority opinion.**
 
-#### 4.5.2 Scalability
+### Controversy Detection Rules
 
-THE system SHALL efficiently sort posts by timestamp even when communities contain tens of thousands or hundreds of thousands of posts.
+**A post SHALL be considered controversial WHEN it has received at least 10 total votes (upvotes plus downvotes).**
 
-Chronological sorting should leverage database indexing and efficient query patterns to maintain fast performance at scale.
+**A post SHALL achieve maximum controversy score WHEN the upvote percentage is close to 50% (equal upvotes and downvotes).**
 
-## 5. Top Sorting Algorithm
+**A post SHALL achieve minimum controversy score WHEN upvotes or downvotes dominate overwhelmingly (90% or more in one direction).**
 
-### 5.1 Business Logic and Purpose
+**THE controversy score SHALL increase with total vote volume, rewarding posts with more community engagement.**
 
-Top sorting ranks posts by their total vote score (upvotes minus downvotes) within specified time windows, allowing users to discover the highest-rated content over different time periods. This sorting method serves several important purposes:
+### Display Order
 
-- **Quality Discovery**: Users can find the best-received content in a community or across the platform
-- **Historical Exploration**: Users can browse highly-rated content from specific time periods
-- **Community Highlights**: Top sorting showcases content that the community values most
-- **Archival Access**: Users can discover excellent older content that may no longer appear in hot feeds
+**THE system SHALL display posts sorted by controversy score in descending order (most controversial first).**
 
-Unlike hot sorting, top sorting does not apply time decay—it's a pure popularity contest within the selected time window.
+**WHEN multiple posts have identical controversy scores, THE system SHALL use total vote count as a tiebreaker, with higher vote counts first.**
 
-### 5.2 Time Filter Options
+**WHEN multiple posts have identical controversy scores and vote counts, THE system SHALL use creation timestamp as a final tiebreaker, with newer posts first.**
 
-Top sorting must support multiple time filter options that define the window of time from which posts are included and ranked:
+### Time Considerations
 
-#### 5.2.1 Today Time Filter
+**THE controversial sorting method SHALL consider all posts regardless of age by default.**
 
-WHEN a user selects "Top" sorting with "Today" time filter, THE system SHALL include only posts created within the current calendar day (from midnight to the current time in the user's time zone or platform time zone).
+**THE system MAY optionally support time filters for controversial sorting (similar to top sorting), showing controversial posts within specific time periods.**
 
-THE system SHALL rank these posts by their net vote score (upvotes minus downvotes) in descending order.
+**IF time filters are supported, THE system SHALL use the same time windows as top sorting (hour, day, week, month, year, all time).**
 
-#### 5.2.2 This Week Time Filter
+### Minimum Engagement Threshold
 
-WHEN a user selects "Top" sorting with "This Week" time filter, THE system SHALL include only posts created within the current calendar week (from the start of the week to the current time).
+**THE system SHALL NOT display posts in controversial sorting if they have fewer than 10 total votes.**
 
-THE system SHALL rank these posts by their net vote score in descending order.
+**WHEN a post has fewer than 10 votes, THE system SHALL exclude it from controversial feeds even if the vote ratio is close to 50/50.**
 
-The week start day should be defined consistently (e.g., Monday or Sunday) across the platform.
+**THE minimum vote threshold SHALL prevent low-engagement posts from dominating controversial feeds.**
 
-#### 5.2.3 This Month Time Filter
+### Edge Cases and Special Scenarios
 
-WHEN a user selects "Top" sorting with "This Month" time filter, THE system SHALL include only posts created within the current calendar month (from the first day of the month to the current time).
+**WHEN a post has exactly 0 votes (no upvotes or downvotes), THE system SHALL exclude it from controversial sorting.**
 
-THE system SHALL rank these posts by their net vote score in descending order.
+**WHEN a post has only upvotes and no downvotes, THE system SHALL rank it with minimal controversy score.**
 
-#### 5.2.4 This Year Time Filter
+**WHEN a post has only downvotes and no upvotes, THE system SHALL rank it with minimal controversy score.**
 
-WHEN a user selects "Top" sorting with "This Year" time filter, THE system SHALL include only posts created within the current calendar year (from January 1 to the current time).
+**WHEN voting patterns change over time, THE system SHALL update controversy scores to reflect current vote distribution.**
 
-THE system SHALL rank these posts by their net vote score in descending order.
+**IF a community has no posts meeting the controversy criteria, THE system SHALL display an empty feed with appropriate messaging.**
 
-#### 5.2.5 All Time Filter
+### Controversy Score Examples
 
-WHEN a user selects "Top" sorting with "All Time" time filter, THE system SHALL include all posts regardless of creation date.
+To clarify the business logic, here are example scenarios:
 
-THE system SHALL rank these posts by their net vote score in descending order, allowing users to discover the highest-rated content in the community's entire history.
+- **Highly Controversial**: Post with 500 upvotes and 480 downvotes (49% upvote ratio, 980 total votes)
+- **Moderately Controversial**: Post with 200 upvotes and 150 downvotes (57% upvote ratio, 350 total votes)
+- **Low Controversy**: Post with 1000 upvotes and 100 downvotes (91% upvote ratio, 1100 total votes)
+- **Not Controversial**: Post with 5 upvotes and 4 downvotes (too few total votes, below 10-vote threshold)
 
-### 5.3 Vote Count Ranking Requirements
+### Performance Expectations
 
-#### 5.3.1 Net Vote Score as Primary Ranking Factor
+**WHEN a user selects controversial sorting, THE feed SHALL load and display results instantly.**
 
-WHEN calculating top sorting rankings, THE system SHALL use the net vote score (total upvotes minus total downvotes) as the sole ranking factor.
+**THE system SHALL efficiently calculate controversy scores for all posts in the selected context.**
 
-Posts with higher net scores should always rank above posts with lower net scores within the selected time window.
+**WHEN vote counts change, THE system SHALL recalculate controversy scores to reflect updated data on next feed load.**
 
-#### 5.3.2 No Time Decay in Top Sorting
+## Default Sorting Behavior
 
-THE system SHALL NOT apply time decay to posts in top sorting.
+### Purpose of Default Sorting
 
-A post created at the beginning of the time window should have the same ranking opportunity as a post created at the end of the time window if their vote scores are equal. Only vote score determines ranking.
+Default sorting ensures users have a predictable, optimized initial experience when viewing content. Different contexts benefit from different default sorting methods based on user intent and content discovery patterns.
 
-#### 5.3.3 Handling Negative Scores
+### Default Sorting by Context
 
-WHEN posts have negative net vote scores, THE system SHALL include them in top sorting but rank them below posts with zero or positive scores.
+**WHEN a guest user visits the global "All" feed, THE system SHALL default to hot sorting.**
 
-Posts should be ranked in descending order by score, so a post with -2 net votes ranks above a post with -10 net votes, but both rank below posts with 0 or positive scores.
+**WHEN an authenticated member visits their homepage feed, THE system SHALL default to hot sorting.**
 
-#### 5.3.4 Score Tiebreaker
+**WHEN a user visits a specific community feed for the first time, THE system SHALL default to hot sorting.**
 
-WHEN multiple posts have identical net vote scores within the selected time window, THE system SHALL use post creation timestamp as a tiebreaker, with newer posts ranking higher than older posts.
+**WHEN a user visits their own profile to view their posts, THE system SHALL default to new sorting (most recent first).**
 
-This ensures deterministic, consistent ordering when scores are tied.
+**WHEN a user visits another user's profile to view their posts, THE system SHALL default to top sorting with "All Time" filter.**
 
-### 5.4 Top Sorting Functional Requirements
+### Default Sorting Persistence
 
-#### 5.4.1 Time Filter Selection Interface
+**WHEN a user explicitly changes the sorting method on a feed, THE system SHALL remember this preference for the current session.**
 
-THE system SHALL provide users with a time filter selector when top sorting is active, allowing selection between: Today, This Week, This Month, This Year, and All Time.
+**WHEN a user navigates away from a feed and returns within the same session, THE system SHALL restore their previously selected sorting method.**
 
-The time filter selector should be:
-- Clearly visible when top sorting is active
-- Easy to switch between time periods
-- Clearly indicate the currently selected time filter
+**WHEN a user's session ends and they return in a new session, THE system SHALL revert to default sorting unless user-level preferences override this.**
 
-#### 5.4.2 Default Time Filter for Top Sorting
+### User Preference Override
 
-WHEN a user selects "Top" sorting without having previously selected a time filter preference, THE system SHALL default to "All Time" time filter.
+**WHERE a user has set a preferred default sorting method in their account settings, THE system SHALL use that preference instead of system defaults.**
 
-This default provides the broadest view of top content and aligns with user expectations of "top" meaning "best ever."
+**THE user SHALL be able to set different default sorting preferences for different contexts (homepage, communities, profiles).**
 
-#### 5.4.3 Time Filter Preference Persistence
+**WHEN a user sets a default preference, THE system SHALL apply it across all sessions until the user changes it.**
 
-WHEN a user selects a specific time filter for top sorting, THE system SHALL remember that preference for that feed context.
+### Context-Specific Default Behavior
 
-The next time the user selects top sorting in the same context (e.g., a specific community), the previously selected time filter should be automatically applied.
+**WHEN viewing a community focused on breaking news or time-sensitive content, THE system MAY allow community moderators to set the community's default sorting to "New".**
 
-#### 5.4.4 Time Window Calculation Accuracy
+**WHEN viewing archived or historical communities, THE system MAY default to top sorting with longer time filters.**
 
-THE system SHALL calculate time windows accurately based on calendar boundaries or rolling time periods as appropriate.
+**THE system SHALL clearly indicate which sorting method is currently active through visual highlighting or labels.**
 
-For calendar-based filters (Today, This Week, This Month, This Year):
-- Time windows should align with calendar boundaries (days, weeks, months, years)
-- The system should handle time zone considerations appropriately
-- Window boundaries should be recalculated when users access the feed at different times
+### Guest User vs Authenticated Member Defaults
 
-#### 5.4.5 Dynamic Time Window Updates
+**WHEN a guest user accesses any feed, THE system SHALL always use hot sorting as default.**
 
-WHEN a user keeps a top-sorted feed open across a time boundary (e.g., from 11:59 PM to 12:01 AM, crossing into a new day), THE system SHALL update the time window when the feed is refreshed.
+**WHEN an authenticated member accesses feeds, THE system SHALL respect their saved preferences if they exist.**
 
-Users who refresh a "Today" feed after midnight should see the new day's top posts, not the previous day's.
+**IF an authenticated member has no saved preferences, THE system SHALL use the same defaults as guest users.**
 
-#### 5.4.6 Vote Score Updates in Top Sorting
+## User Sorting Preferences
 
-WHEN votes are cast on posts after they appear in a top-sorted feed, THE system SHALL reflect the updated vote scores when the user refreshes the feed.
+### Preference Management
 
-Top sorting rankings should update in real-time (on refresh) to reflect current vote totals, ensuring the feed shows the current top-rated content.
+**Authenticated members SHALL be able to save their preferred default sorting method for different feed contexts.**
 
-### 5.5 Performance Expectations
+**THE system SHALL provide sorting preference options in user account settings.**
 
-#### 5.5.1 Top Feed Load Time
+**WHEN a member saves a sorting preference, THE system SHALL apply it immediately to all applicable feeds.**
 
-WHEN a user requests a feed with top sorting and any time filter, THE system SHALL display the sorted posts within 2 seconds under normal load conditions.
+### Available Preference Options
 
-Top sorting with time filters may require filtering large datasets, but performance should remain fast enough for good user experience.
+**Members SHALL be able to set default sorting for:**
+- Homepage feed (subscribed communities)
+- Global "All" feed
+- Individual community feeds
+- Their own profile
 
-#### 5.5.2 Time Filter Switching Performance
+**FOR each context, members SHALL be able to choose from:**
+- Hot
+- New
+- Top (with default time filter)
+- Controversial
 
-WHEN a user switches between different time filters while top sorting is active, THE system SHALL display the newly filtered and sorted results within 1-2 seconds.
+**WHEN setting top sorting as a default, members SHALL also be able to specify their preferred time filter.**
 
-Time filter switching should feel instant or near-instant, encouraging users to explore different time periods.
+### Preference Scope
 
-#### 5.5.3 Scalability with Large Time Windows
+**Sorting preferences SHALL be user-specific and SHALL NOT affect other users' experiences.**
 
-THE system SHALL efficiently handle top sorting with "All Time" filter even in communities with hundreds of thousands of posts accumulated over years.
+**WHEN a member changes their sorting preference, THE system SHALL NOT change the preferences of other community members.**
 
-The implementation should leverage database optimization, indexing, and efficient querying to maintain performance regardless of historical post volume.
+**Community moderators SHALL NOT be able to force a specific sorting method on individual users.**
 
-## 6. Controversial Sorting Algorithm
+### Temporary Sorting Overrides
 
-### 6.1 Business Logic and Purpose
+**WHEN a member manually changes sorting on a specific feed, THE system SHALL treat this as a temporary session-level override.**
 
-Controversial sorting identifies and surfaces posts that have generated divisive reactions from the community—content that has received substantial upvotes AND substantial downvotes, indicating disagreement or polarization.
+**THE temporary override SHALL persist for that specific feed during the current session.**
 
-The purpose of controversial sorting is to:
-- **Surface Debate**: Highlight posts that have sparked community disagreement and discussion
-- **Explore Diverse Opinions**: Show content where the community is split, not unified
-- **Identify Hot Topics**: Find subjects that generate strong reactions on both sides
-- **Provide Alternative Perspective**: Offer a different lens than purely popular or recent content
+**WHEN the session ends, THE system SHALL revert to the user's saved default preference on next visit.**
 
-A truly controversial post is one where many users strongly agreed (upvoted) while many users strongly disagreed (downvoted), resulting in a relatively low net score but high total vote volume.
+**WHEN a user visits a different feed or community, THE system SHALL apply the appropriate default preference for that context, not the temporary override from another feed.**
 
-### 6.2 Controversy Calculation Logic
+### Preference Reset
 
-#### 6.2.1 Balance Between Upvotes and Downvotes
+**Members SHALL be able to reset their sorting preferences to system defaults at any time.**
 
-WHEN calculating controversy ranking, THE system SHALL consider both the total number of votes and the balance between upvotes and downvotes.
+**WHEN a member resets preferences, THE system SHALL immediately revert all feeds to use system default sorting behavior.**
 
-The most controversial posts are those where:
-- Both upvote count and downvote count are high (lots of total engagement)
-- The ratio of upvotes to downvotes is close to 1:1 (balanced division)
+## Performance and User Experience Requirements
 
-Less controversial posts are those where:
-- One side dominates (e.g., 100 upvotes and 5 downvotes, or 5 upvotes and 100 downvotes)
-- Total vote count is low (e.g., 2 upvotes and 2 downvotes shows balance but not significance)
+### Load Time Expectations
 
-#### 6.2.2 Controversy Score Factors
+**WHEN a user selects any sorting method, THE system SHALL display results instantly from the user's perspective.**
 
-The controversial sorting algorithm should consider:
+**"Instantly" SHALL mean perceived loading time of less than 1 second under normal network conditions.**
 
-1. **Total Vote Volume**: Posts with more total votes (upvotes + downvotes) should generally rank higher than posts with fewer votes, when vote balance is similar. A post with 100 upvotes and 98 downvotes is more controversial than a post with 10 upvotes and 8 downvotes.
+**WHEN switching between sorting methods on the same feed, THE system SHALL update the view instantly without full page reload.**
 
-2. **Vote Ratio Balance**: Posts where upvotes and downvotes are nearly equal are more controversial than posts where one side dominates. A 50/50 split is maximally controversial, while a 90/10 split is less controversial.
+**WHEN paginating through sorted content, THE system SHALL load the next page instantly.**
 
-3. **Net Score Consideration**: Posts with very high net positive or negative scores are less controversial than posts with scores near zero, assuming similar total vote volumes.
+### Real-Time Updates
 
-#### 6.2.3 Optimal Controversy Pattern
+**WHEN viewing hot-sorted content, THE system SHALL reflect vote changes and new posts on feed refresh.**
 
-WHEN ranking posts by controversy, THE system SHALL rank highest those posts that have:
-- High total vote counts (significant engagement)
-- Vote ratios close to 50% upvotes and 50% downvotes (maximum disagreement)
-- Net scores near zero (indicating balance, not consensus)
+**THE system SHALL NOT automatically reorder feeds while users are actively viewing them.**
 
-Example of highly controversial post: 500 upvotes, 480 downvotes (net score: +20, total votes: 980, ratio: 51%/49%)
+**WHEN a user manually refreshes a feed, THE system SHALL recalculate all sorting scores based on current data.**
 
-Example of non-controversial post: 500 upvotes, 20 downvotes (net score: +480, total votes: 520, ratio: 96%/4%)
+**THE system SHALL provide a manual refresh mechanism for users to update their feed on demand.**
 
-### 6.3 Controversial Sorting Functional Requirements
+### Consistency Across Devices
 
-#### 6.3.1 Controversy Ranking Calculation
+**WHEN a member switches devices mid-session, THE system SHALL maintain their sorting preferences.**
 
-WHEN a user selects "Controversial" sorting, THE system SHALL calculate a controversy score for each post based on the balance and volume of upvotes versus downvotes.
+**WHEN a member uses multiple devices simultaneously, THE system SHALL show consistent sorting results based on the same underlying data.**
 
-THE system SHALL rank posts by their controversy score in descending order, with the most controversial posts appearing first.
+**Sorting preferences SHALL sync across all devices for authenticated members.**
 
-#### 6.3.2 Minimum Vote Threshold for Controversy
+### Pagination Behavior
 
-WHEN calculating controversial sorting, THE system MAY establish a minimum total vote threshold that posts must meet to be considered controversial.
+**THE system SHALL maintain stable pagination when users navigate through sorted feeds.**
 
-Posts with very few total votes (e.g., 1 upvote and 1 downvote) may not appear in controversial sorting despite having perfect vote balance, as they lack sufficient engagement to be meaningfully controversial.
+**WHEN a user moves to page 2 of a sorted feed and then returns to page 1, THE system SHALL show the same content unless data has materially changed.**
 
-A reasonable minimum threshold might be 10-20 total votes, ensuring that only posts with substantive community engagement appear.
+**THE system SHALL use appropriate pagination techniques to prevent duplicate or missing posts when scrolling through large sorted feeds.**
 
-#### 6.3.3 Time Considerations in Controversial Sorting
+### High-Volume Performance
 
-THE system SHOULD consider post age when calculating controversy, potentially applying mild time decay or time windows to controversial sorting.
+**WHEN a community has thousands of posts, THE system SHALL calculate sorting scores efficiently without user-perceivable delays.**
 
-Options include:
-- **No time filter**: Show the most controversial posts of all time (default)
-- **Time filters similar to top sorting**: Allow users to see controversial posts from today, this week, etc.
-- **Mild time decay**: Slightly favor recent controversial posts over very old ones
+**WHEN the global feed includes posts from hundreds of communities, THE system SHALL still deliver instant sorting results.**
 
-The exact time handling approach may be tuned based on platform needs, but controversial sorting should generally not apply aggressive time decay like hot sorting does.
+**THE system SHALL handle voting activity spikes (e.g., 100+ votes on a single post within minutes) without performance degradation.**
 
-#### 6.3.4 Handling Posts with Consensus
+### Error Handling and Degradation
 
-WHEN posts have highly skewed vote ratios (e.g., 95% upvotes or 95% downvotes), THE system SHALL rank them lower in controversial sorting than posts with balanced vote ratios.
+**IF sorting calculation encounters errors, THE system SHALL fall back to new (chronological) sorting and notify users of temporary issues.**
 
-Posts that represent community consensus (whether positive or negative) are not controversial and should not appear high in controversial sorting.
+**IF a specific sorting method is temporarily unavailable, THE system SHALL offer alternative sorting methods and explain the situation.**
 
-#### 6.3.5 Vote Updates and Controversy Ranking
+**THE system SHALL never display a completely broken or empty feed due to sorting algorithm failures.**
 
-WHEN votes are cast on posts after they appear in controversial sorting, THE system SHALL recalculate controversy scores and update rankings when the feed is refreshed.
+## Sorting Interaction Rules
 
-As posts receive more votes, their controversy scores may change (increasing if votes remain balanced, or decreasing if votes become skewed toward one side).
+### Sorting and Voting Integration
 
-#### 6.3.6 Tiebreaker for Equal Controversy Scores
+**WHEN a member upvotes a post, THE system SHALL immediately update that post's score for future sorting calculations.**
 
-WHEN multiple posts have identical or very similar controversy scores, THE system SHALL use total vote count as the first tiebreaker (more votes = higher rank), and post creation timestamp as the second tiebreaker (newer = higher rank).
+**WHEN a member changes their vote (upvote to downvote or vice versa), THE system SHALL recalculate the post's score accordingly.**
 
-This ensures deterministic, consistent ordering when controversy scores are similar.
+**WHEN a member removes their vote, THE system SHALL adjust the post's score to reflect the vote removal.**
 
-### 6.4 Controversial Sorting User Experience
+**THE system SHALL NOT immediately reorder a feed that a user is actively viewing, even when votes change.**
 
-#### 6.4.1 User Understanding of Controversial Sorting
+### Sorting and Post Lifecycle
 
-THE system SHOULD provide clear explanations or tooltips describing what "controversial" means in the platform context.
+**WHEN a post is deleted by its author, THE system SHALL immediately remove it from all sorted feeds.**
 
-Many users may not intuitively understand that controversial sorting shows posts with balanced upvote/downvote ratios. Clear communication helps users understand why certain posts appear in controversial sorting.
+**WHEN a post is removed by a moderator, THE system SHALL immediately exclude it from all sorted feeds.**
 
-#### 6.4.2 Controversial Sorting Use Cases
+**WHEN a post is edited, THE system SHALL NOT reset any timestamps or scores that affect sorting.**
 
-Controversial sorting is particularly useful for:
-- Political or opinion-based communities where disagreement is common
-- Communities discussing subjective topics (e.g., taste, preferences, ethics)
-- Identifying topics that need more nuanced discussion
-- Finding posts that sparked debate rather than consensus
+**WHEN a post is restored after deletion, THE system SHALL reintegrate it into sorted feeds at its appropriate position.**
 
-Users should be able to access controversial sorting in the same manner as other sorting options, through the standard sorting selector interface.
+### Sorting Across Communities
 
-### 6.5 Performance Expectations
+**WHEN viewing the homepage with posts from multiple subscribed communities, THE system SHALL apply the selected sorting algorithm across all posts uniformly.**
 
-#### 6.5.1 Controversial Feed Load Time
+**THE system SHALL NOT give preference to posts from specific communities when sorting, unless the user has explicitly configured community priorities.**
 
-WHEN a user requests a feed with controversial sorting, THE system SHALL display the sorted posts within 2 seconds under normal load conditions.
+**WHEN viewing the global "All" feed, THE system SHALL treat all public communities equally in sorting calculations.**
 
-Controversial sorting may involve more complex calculations than new or top sorting, but performance should remain acceptable for good user experience.
+### Sorting and Content Types
 
-#### 6.5.2 Controversy Calculation Efficiency
+**THE sorting algorithms SHALL apply uniformly to all post types (text, link, image).**
 
-THE system SHALL calculate controversy scores efficiently, potentially using pre-calculated or cached values when appropriate to maintain fast feed loading.
+**THE system SHALL NOT favor or penalize specific post types in sorting calculations.**
 
-Since controversy depends on vote counts that change frequently, the balance between real-time calculation accuracy and performance should be carefully managed.
+**WHEN calculating scores and rankings, THE system SHALL only consider votes and timestamps, not content type.**
 
-## 7. Feed Generation and Sorting Application
+### Sorting Transparency
 
-### 7.1 Sorting Application Across Different Feed Types
+**THE system SHALL clearly display which sorting method is currently active through visual indicators.**
 
-The sorting algorithms described in this document apply across multiple feed contexts within the platform. Each feed type presents a filtered set of posts, and the selected sorting algorithm determines the order in which those posts appear.
+**THE system SHALL make it obvious to users how to change the sorting method.**
 
-### 7.2 Community Feed Sorting
+**WHERE appropriate, THE system MAY show metadata that helps users understand sorting (e.g., post age, vote count, score).**
 
-#### 7.2.1 Community Feed Context
+## Edge Cases and Special Scenarios
 
-WHEN a user views a specific community feed (e.g., /r/technology, /r/gaming), THE system SHALL display posts from only that community.
+### New Communities and Low Activity
 
-The sorting algorithm selected by the user determines the order of posts within that single community.
+**WHEN a community has fewer than 10 posts total, THE system SHALL still apply all sorting algorithms but results may appear similar across methods.**
 
-#### 7.2.2 Community Feed Sorting Options
+**WHEN a community receives no new posts for extended periods (weeks or months), THE hot sorting SHALL gradually show older content to prevent empty feeds.**
 
-THE system SHALL provide all four sorting options (Hot, New, Top, Controversial) for community feeds.
+**IF a community has zero posts, THE system SHALL display an appropriate empty state message regardless of selected sorting.**
 
-Users should be able to switch between sorting methods to explore the community's content in different ways:
-- Hot: See what's currently trending in this community
-- New: See the latest posts in this community
-- Top: See the highest-rated posts in this community over various time periods
-- Controversial: See the most divisive posts in this community
+### Tied Rankings
 
-#### 7.2.3 Community-Specific Sorting Preferences
+**WHEN multiple posts have identical scores across all tiebreaking criteria, THE system SHALL maintain a consistent ordering based on post identifiers.**
 
-WHEN a user selects a sorting method for a specific community, THE system SHALL remember that preference for that community independently of other communities.
+**THE system SHALL ensure that repeated page loads show the same ordering for tied posts to prevent confusing user experiences.**
 
-A user might prefer "New" sorting in a news community but "Hot" sorting in an entertainment community, and these preferences should be maintained separately.
+### Rapid Voting Activity
 
-### 7.3 Personalized Home Feed Sorting
+**WHEN a post receives 50+ votes within a 5-minute period, THE system SHALL immediately recognize this as high engagement for hot sorting purposes.**
 
-#### 7.3.1 Personalized Feed Context
+**THE system SHALL handle vote brigading or unusual voting patterns gracefully without breaking sorting functionality.**
 
-WHEN a user views their personalized home feed, THE system SHALL display posts from all communities the user has subscribed to.
+**WHEN vote manipulation is detected and votes are removed, THE system SHALL recalculate sorting positions accordingly.**
 
-The sorting algorithm operates on the aggregated posts from all subscribed communities, not on each community individually.
+### Time Zone Considerations
 
-#### 7.3.2 Personalized Feed Sorting Behavior
+**THE system SHALL calculate all timestamps in UTC for consistency across global users.**
 
-WHEN a user selects "Hot" sorting for their home feed, THE system SHALL rank all posts from subscribed communities by their hotness scores, intermixing posts from different communities.
+**WHEN displaying "Today" or other time-based filters, THE system SHALL calculate relative to the current UTC time.**
 
-WHEN a user selects "New" sorting for their home feed, THE system SHALL display posts from all subscribed communities in chronological order, intermixing posts from different communities.
+**THE system SHALL ensure users in different time zones see consistent sorting results based on UTC calculations.**
 
-WHEN a user selects "Top" sorting for their home feed, THE system SHALL rank all posts from subscribed communities by their vote scores within the selected time window, intermixing posts from different communities.
+### Deleted or Removed Content
 
-WHEN a user selects "Controversial" sorting for their home feed, THE system SHALL rank all posts from subscribed communities by their controversy scores, intermixing posts from different communities.
+**WHEN a user views a sorted feed and then a post is removed, the next refresh SHALL exclude that post.**
 
-The home feed should feel like a unified stream of content from the user's interests, not separate streams from each community.
+**THE system SHALL not show gaps or placeholders for removed content in sorted feeds.**
 
-#### 7.3.3 Home Feed Sorting Preference Independence
+**IF a highly-ranked post is removed, THE system SHALL promote the next post in the sorted order.**
 
-WHEN a user changes sorting method for their home feed, THE system SHALL NOT affect sorting preferences for individual community feeds.
+### Private and Restricted Communities
 
-Home feed sorting and community feed sorting are independent preferences.
+**WHEN sorting posts in private communities, THE system SHALL only include posts visible to the current user based on their access permissions.**
 
-### 7.4 All Communities Feed Sorting
+**WHEN a community becomes private, THE system SHALL immediately exclude its posts from global sorted feeds for users without access.**
 
-#### 7.4.1 All Communities Feed Context
+**Community-level sorting SHALL respect all access control rules established for that community.**
 
-WHEN a user views the "All" or "Popular" feed, THE system SHALL display posts from all public communities across the platform.
+### User Blocks and Filters
 
-This feed provides discovery across the entire platform and showcases the most engaging content platform-wide.
+**IF a user has blocked specific users, THE system SHALL exclude blocked users' posts from all sorted feeds for that user.**
 
-#### 7.4.2 All Communities Feed Sorting Options
+**User-level content filtering SHALL apply before sorting calculations, ensuring unwanted content never appears regardless of sorting method.**
 
-THE system SHALL provide all four sorting options (Hot, New, Top, Controversial) for the all communities feed.
+### Archived Posts
 
-- Hot: Platform-wide trending content
-- New: Latest posts from across all communities
-- Top: Highest-rated content platform-wide over time periods
-- Controversial: Most divisive content across the platform
+**IF the platform implements post archiving (locking old posts), archived posts SHALL still appear in sorted feeds based on their scores and timestamps.**
 
-#### 7.4.3 All Communities Feed Sorting Preference Independence
+**THE sorting algorithms SHALL NOT treat archived posts differently from active posts.**
 
-WHEN a user changes sorting method for the all communities feed, THE system SHALL NOT affect sorting preferences for the home feed or individual community feeds.
+### System Maintenance and Data Migration
 
-All communities feed sorting is an independent preference.
+**DURING system maintenance, IF sorting functionality is temporarily degraded, THE system SHALL fall back to chronological (new) sorting.**
 
-### 7.5 Feed Refresh and Sorting Consistency
+**WHEN migrating historical data, THE system SHALL preserve accurate creation timestamps to maintain sorting integrity.**
 
-#### 7.5.1 Sorting Persistence During Session
+**IF vote data is recalculated or corrected, THE system SHALL update sorting positions to reflect the corrected data.**
 
-WHEN a user navigates between different feeds and returns to a previously viewed feed, THE system SHALL maintain the sorting method that was active when the user left that feed.
+## Related Business Rules
 
-Users should not need to re-select their preferred sorting method each time they navigate back to a feed.
+### Interaction with Karma System
 
-#### 7.5.2 Feed Refresh Behavior
+**THE sorting algorithms SHALL use raw vote counts (upvotes and downvotes), not karma scores, for ranking calculations.**
 
-WHEN a user refreshes a feed (either manually or by navigating back to it), THE system SHALL recalculate rankings based on current vote data and post data while maintaining the selected sorting method.
+**User karma SHALL NOT influence how posts are sorted or ranked.**
 
-Posts may appear in different positions after refresh if voting activity has occurred, but the sorting method should remain consistent.
+**High-karma users' posts SHALL NOT receive preferential sorting treatment.**
 
-#### 7.5.3 New Posts in Sorted Feeds
+### Interaction with Community Rules
 
-WHEN new posts are created after a user loads a feed, THE system SHALL incorporate those new posts into the sorting when the feed is refreshed.
+**Community moderators SHALL NOT be able to manipulate sorting algorithms to favor or suppress specific posts.**
 
-- In "New" sorting, new posts appear at the top
-- In "Hot" sorting, new posts appear according to their hotness scores
-- In "Top" sorting, new posts appear according to their vote scores (which may be zero initially)
-- In "Controversial" sorting, new posts appear according to their controversy scores (which may be low initially)
+**All posts in a community SHALL compete equally in sorting algorithms based solely on votes and timestamps.**
 
-## 8. User Experience Requirements
+**Moderator actions (pinning posts) MAY override sorting for pinned posts, but SHALL NOT affect the sorting of non-pinned posts.**
 
-### 8.1 Sorting Selection Interface Requirements
+### Sorting and Algorithmic Fairness
 
-#### 8.1.1 Sorting Selector Visibility
+**THE sorting algorithms SHALL apply the same rules to all posts regardless of author, community size, or content type.**
 
-THE system SHALL display a sorting selector control on all feed pages, including:
-- Community feeds
-- Personalized home feed
-- All communities feed
+**THE system SHALL NOT use machine learning or opaque algorithms that could introduce bias into content ranking.**
 
-The sorting selector must be easily discoverable and accessible to users without scrolling or searching.
+**All sorting logic SHALL be deterministic and explainable based on clear business rules defined in this document.**
 
-#### 8.1.2 Sorting Selector Design Requirements
+### Future Extensibility
 
-THE system SHALL design the sorting selector to include:
-- Clear labels for each sorting option: "Hot", "New", "Top", "Controversial"
-- Visual indication of the currently active sorting method
-- One-click or one-tap access to change sorting methods
-- Responsive interaction that applies the new sorting immediately
+**THE system architecture SHALL support adding new sorting methods in the future without disrupting existing sorting functionality.**
 
-The sorting selector may be implemented as:
-- A dropdown menu
-- A set of tab buttons
-- A segmented control
-- Any other interface pattern that provides clear, immediate access to sorting options
+**IF new sorting methods are added, THE system SHALL preserve all existing sorting methods and user preferences.**
 
-#### 8.1.3 Time Filter Selector for Top Sorting
-
-WHEN "Top" sorting is active, THE system SHALL display an additional time filter selector allowing users to choose between: Today, This Week, This Month, This Year, and All Time.
-
-The time filter selector should be:
-- Clearly associated with the Top sorting option
-- Easy to switch between time periods
-- Visible only when Top sorting is active (or always visible but disabled when other sorting is active)
-
-#### 8.1.4 Sorting Change Responsiveness
-
-WHEN a user selects a different sorting method, THE system SHALL apply the new sorting and display the re-ranked feed within 1-2 seconds.
-
-Sorting changes should feel instant or near-instant. Users should not experience long loading delays when switching between sorting methods.
-
-#### 8.1.5 Sorting State Indication
-
-THE system SHALL clearly indicate to users which sorting method and (for Top sorting) which time filter is currently active.
-
-Visual indicators might include:
-- Highlighted or selected state on the active sorting button/tab
-- Bold text for the active option
-- Color changes or icons indicating active state
-- Text label stating "Sorted by: Hot" or similar
-
-### 8.2 Default Sorting Per Context
-
-#### 8.2.1 First Visit Defaults
-
-WHEN a user visits any feed for the first time without having established a sorting preference, THE system SHALL apply "Hot" sorting as the default.
-
-This default applies to:
-- First-time users visiting any feed
-- Authenticated users visiting a new community for the first time
-- Any feed context where the user has not previously selected a sorting preference
-
-#### 8.2.2 Returning User Defaults
-
-WHEN an authenticated user returns to a feed where they have previously selected a sorting preference, THE system SHALL apply that user's preferred sorting method for that feed context.
-
-Users should experience consistency—their sorting choices persist across sessions.
-
-#### 8.2.3 Anonymous User Defaults
-
-WHEN an anonymous (non-authenticated) user selects a sorting preference, THE system SHOULD store that preference in browser local storage or session storage.
-
-Anonymous user sorting preferences may persist during the browsing session but will not sync across devices or persist indefinitely.
-
-### 8.3 Sorting Persistence and Preferences
-
-#### 8.3.1 Per-Context Preference Storage
-
-THE system SHALL store sorting preferences independently for each feed context:
-- Each community has its own sorting preference
-- The home feed has its own sorting preference
-- The all communities feed has its own sorting preference
-
-A user's sorting preference in one context does not affect their preferences in other contexts.
-
-#### 8.3.2 Time Filter Preference Storage
-
-WHEN a user selects a time filter for Top sorting, THE system SHALL store that time filter preference for that feed context.
-
-The next time the user selects Top sorting in the same context, the previously selected time filter should be automatically applied.
-
-#### 8.3.3 Cross-Session Persistence
-
-WHEN an authenticated user logs out and logs back in, THE system SHALL restore all sorting preferences the user had established before logging out.
-
-Sorting preferences are user account data and should persist indefinitely until changed by the user.
-
-#### 8.3.4 Cross-Device Synchronization
-
-WHEN an authenticated user accesses the platform from multiple devices, THE system SHALL synchronize sorting preferences across all devices.
-
-Changing sorting preference on a mobile device should update the preference for desktop and vice versa.
-
-### 8.4 Performance and Responsiveness Expectations
-
-#### 8.4.1 Initial Feed Load Performance
-
-WHEN a user navigates to any feed, THE system SHALL display the sorted feed within 2 seconds under normal load conditions, regardless of which sorting method is active.
-
-Users expect fast, responsive feed loading. Performance must be optimized for all sorting algorithms.
-
-#### 8.4.2 Sorting Method Switch Performance
-
-WHEN a user switches from one sorting method to another, THE system SHALL display the re-sorted feed within 1-2 seconds.
-
-Switching sorting should feel instant. Long delays discourage users from exploring different sorting methods.
-
-#### 8.4.3 Time Filter Switch Performance
-
-WHEN a user switches time filters while Top sorting is active, THE system SHALL display the filtered and re-sorted feed within 1-2 seconds.
-
-Time filter switching should be as fast as sorting method switching.
-
-#### 8.4.4 Smooth Scrolling and Pagination
-
-THE system SHALL support smooth scrolling and pagination within sorted feeds, maintaining sorting order as users scroll through multiple pages or infinite scroll loads more posts.
-
-Users should be able to browse deep into sorted feeds without performance degradation or sorting inconsistencies.
-
-#### 8.4.5 Feed Refresh Performance
-
-WHEN a user refreshes a feed (by pull-to-refresh gesture, clicking refresh, or navigating back), THE system SHALL reload and re-sort the feed within 2 seconds.
-
-Feed refresh should be fast enough to encourage users to check for new content frequently.
-
-### 8.5 Mobile and Responsive Design Considerations
-
-#### 8.5.1 Mobile Sorting Interface
-
-THE system SHALL provide an accessible sorting selector interface on mobile devices that is easy to tap and use with touch input.
-
-Mobile sorting controls should be:
-- Large enough for easy tapping (minimum 44x44 pixels touch target)
-- Positioned for easy thumb access
-- Clear and uncluttered on smaller screens
-
-#### 8.5.2 Responsive Sorting Performance on Mobile
-
-THE system SHALL maintain the same performance expectations for sorting on mobile devices as on desktop.
-
-Mobile users expect fast, responsive sorting even on slower network connections or less powerful devices.
-
-## 9. Functional Requirements (EARS Format)
-
-### 9.1 Hot Sorting Requirements
-
-#### FR-HOT-001: Hot Ranking Calculation
-WHEN a user selects "Hot" sorting for any feed, THE system SHALL calculate a hotness score for each post based on vote score and time decay.
-
-#### FR-HOT-002: Hot Ranking Order
-WHEN displaying posts with Hot sorting, THE system SHALL order posts by hotness score in descending order, with highest scores first.
-
-#### FR-HOT-003: Vote Score Impact on Hot Ranking
-WHEN calculating hotness score, THE system SHALL give significant weight to the post's net vote score (upvotes minus downvotes).
-
-#### FR-HOT-004: Time Decay Application
-WHEN calculating hotness score, THE system SHALL apply time-based decay such that older posts gradually decline in ranking even if vote scores remain constant.
-
-#### FR-HOT-005: Vote Velocity Consideration
-WHEN calculating hotness score, THE system SHOULD consider the rate at which posts are receiving votes, favoring posts with high vote velocity.
-
-#### FR-HOT-006: Negative Score Handling
-WHEN a post has negative net vote score, THE system SHALL rank it lower than posts with positive or neutral scores in hot sorting.
-
-#### FR-HOT-007: Hot Ranking Updates
-WHEN new votes are cast on posts, THE system SHALL update hot rankings to reflect new vote data when feeds are refreshed.
-
-#### FR-HOT-008: Hot Sorting Tiebreaker
-WHEN multiple posts have identical hotness scores, THE system SHALL use post creation timestamp as tiebreaker, with newer posts ranking higher.
-
-#### FR-HOT-009: Hot Sorting Default
-WHEN a user views any feed without having previously selected a sorting preference, THE system SHALL apply "Hot" sorting by default.
-
-### 9.2 New Sorting Requirements
-
-#### FR-NEW-001: New Sorting Chronological Order
-WHEN a user selects "New" sorting, THE system SHALL rank posts exclusively by creation timestamp in descending order (newest first).
-
-#### FR-NEW-002: Vote Irrelevance in New Sorting
-WHEN calculating New sorting order, THE system SHALL NOT consider vote scores, vote counts, karma, or any voting-related data.
-
-#### FR-NEW-003: Precise Timestamp Ordering
-WHEN ordering posts in New sorting, THE system SHALL use precise timestamps including hours, minutes, seconds, and milliseconds to determine exact order.
-
-#### FR-NEW-004: New Post Integration
-WHEN new posts are created after a feed is loaded, THE system SHALL insert those posts at the top of New sorting when the feed is refreshed.
-
-#### FR-NEW-005: New Sorting Consistency
-WHEN a user refreshes a feed with New sorting active, THE system SHALL maintain consistent ordering for existing posts while adding newly created posts at the top.
-
-### 9.3 Top Sorting Requirements
-
-#### FR-TOP-001: Top Sorting Vote Score Ranking
-WHEN a user selects "Top" sorting, THE system SHALL rank posts by net vote score (upvotes minus downvotes) in descending order.
-
-#### FR-TOP-002: No Time Decay in Top Sorting
-WHEN calculating Top sorting rankings, THE system SHALL NOT apply time decay to posts.
-
-#### FR-TOP-003: Today Time Filter
-WHEN a user selects "Top" sorting with "Today" time filter, THE system SHALL include only posts created within the current calendar day and rank them by vote score.
-
-#### FR-TOP-004: This Week Time Filter
-WHEN a user selects "Top" sorting with "This Week" time filter, THE system SHALL include only posts created within the current calendar week and rank them by vote score.
-
-#### FR-TOP-005: This Month Time Filter
-WHEN a user selects "Top" sorting with "This Month" time filter, THE system SHALL include only posts created within the current calendar month and rank them by vote score.
-
-#### FR-TOP-006: This Year Time Filter
-WHEN a user selects "Top" sorting with "This Year" time filter, THE system SHALL include only posts created within the current calendar year and rank them by vote score.
-
-#### FR-TOP-007: All Time Filter
-WHEN a user selects "Top" sorting with "All Time" time filter, THE system SHALL include all posts regardless of creation date and rank them by vote score.
-
-#### FR-TOP-008: Top Sorting Default Time Filter
-WHEN a user selects "Top" sorting without having previously selected a time filter, THE system SHALL default to "All Time" time filter.
-
-#### FR-TOP-009: Top Sorting Tiebreaker
-WHEN multiple posts have identical net vote scores, THE system SHALL use post creation timestamp as tiebreaker, with newer posts ranking higher.
-
-#### FR-TOP-010: Time Window Recalculation
-WHEN a user refreshes a Top-sorted feed after crossing a time boundary (e.g., midnight for "Today" filter), THE system SHALL recalculate the time window and display appropriate posts for the new time period.
-
-#### FR-TOP-011: Top Ranking Vote Updates
-WHEN votes are cast on posts after they appear in Top sorting, THE system SHALL reflect updated vote scores when the feed is refreshed.
-
-### 9.4 Controversial Sorting Requirements
-
-#### FR-CON-001: Controversy Score Calculation
-WHEN a user selects "Controversial" sorting, THE system SHALL calculate a controversy score for each post based on the balance and volume of upvotes versus downvotes.
-
-#### FR-CON-002: Controversy Ranking Order
-WHEN displaying posts with Controversial sorting, THE system SHALL order posts by controversy score in descending order, with most controversial posts first.
-
-#### FR-CON-003: Vote Balance Impact
-WHEN calculating controversy score, THE system SHALL favor posts where upvote and downvote counts are nearly equal (close to 50/50 ratio).
-
-#### FR-CON-004: Total Vote Volume Impact
-WHEN calculating controversy score, THE system SHALL favor posts with higher total vote counts (upvotes + downvotes) over posts with lower total vote counts, when vote balance is similar.
-
-#### FR-CON-005: Consensus Handling
-WHEN posts have highly skewed vote ratios (e.g., 95% upvotes or 95% downvotes), THE system SHALL rank them lower than posts with balanced vote ratios.
-
-#### FR-CON-006: Minimum Vote Threshold
-WHEN calculating controversial sorting, THE system MAY establish a minimum total vote threshold that posts must meet to be considered controversial.
-
-#### FR-CON-007: Controversy Ranking Updates
-WHEN votes are cast on posts after they appear in Controversial sorting, THE system SHALL recalculate controversy scores and update rankings when the feed is refreshed.
-
-#### FR-CON-008: Controversial Sorting Tiebreaker
-WHEN multiple posts have identical controversy scores, THE system SHALL use total vote count as first tiebreaker (more votes = higher rank) and post creation timestamp as second tiebreaker (newer = higher rank).
-
-### 9.5 Sorting Interface Requirements
-
-#### FR-INT-001: Sorting Selector Availability
-THE system SHALL display a sorting selector control on all feed pages, including community feeds, personalized home feed, and all communities feed.
-
-#### FR-INT-002: Sorting Options Display
-THE system SHALL provide clear labels for each sorting option in the sorting selector: "Hot", "New", "Top", and "Controversial".
-
-#### FR-INT-003: Active Sorting Indication
-THE system SHALL visually indicate which sorting method is currently active in the sorting selector.
-
-#### FR-INT-004: Time Filter Selector Display
-WHEN "Top" sorting is active, THE system SHALL display a time filter selector with options: Today, This Week, This Month, This Year, and All Time.
-
-#### FR-INT-005: Sorting Change Application
-WHEN a user selects a different sorting method, THE system SHALL apply the new sorting and display the re-ranked feed within 1-2 seconds.
-
-#### FR-INT-006: Time Filter Change Application
-WHEN a user switches time filters while Top sorting is active, THE system SHALL display the filtered and re-sorted feed within 1-2 seconds.
-
-### 9.6 Sorting Preference Requirements
-
-#### FR-PREF-001: Per-Context Preference Storage
-THE system SHALL store sorting preferences independently for each feed context (each community, home feed, all communities feed).
-
-#### FR-PREF-002: Time Filter Preference Storage
-WHEN a user selects a time filter for Top sorting, THE system SHALL store that preference for that feed context.
-
-#### FR-PREF-003: Cross-Session Persistence
-WHEN an authenticated user logs out and logs back in, THE system SHALL restore all sorting preferences established before logout.
-
-#### FR-PREF-004: Cross-Device Synchronization
-WHEN an authenticated user accesses the platform from multiple devices, THE system SHALL synchronize sorting preferences across all devices.
-
-#### FR-PREF-005: Anonymous User Preference Storage
-WHEN an anonymous user selects a sorting preference, THE system SHALL store that preference in browser local storage or session storage for the current browsing session.
-
-#### FR-PREF-006: Preference Restoration
-WHEN a user returns to a feed where they previously selected a sorting preference, THE system SHALL automatically apply that preferred sorting method.
-
-### 9.7 Performance Requirements
-
-#### FR-PERF-001: Initial Feed Load Performance
-WHEN a user navigates to any feed, THE system SHALL display the sorted feed within 2 seconds under normal load conditions.
-
-#### FR-PERF-002: Sorting Switch Performance
-WHEN a user switches sorting methods, THE system SHALL display the re-sorted feed within 1-2 seconds.
-
-#### FR-PERF-003: Feed Refresh Performance
-WHEN a user refreshes a feed, THE system SHALL reload and re-sort the feed within 2 seconds.
-
-#### FR-PERF-004: Scalability for Large Post Volumes
-THE system SHALL efficiently sort and display feeds even in communities with tens of thousands or hundreds of thousands of posts.
-
-#### FR-PERF-005: Mobile Performance Parity
-THE system SHALL maintain the same performance expectations for sorting on mobile devices as on desktop devices.
-
-## 10. Business Rules and Constraints
-
-### 10.1 Content Eligibility for Sorting
-
-#### BR-001: All Posts Eligible for All Sorting Methods
-THE system SHALL include all posts in all sorting methods, regardless of vote scores, age, or other attributes.
-
-No posts should be excluded from sorting unless they have been deleted, removed by moderators, or hidden by content filters unrelated to sorting.
-
-#### BR-002: Deleted or Removed Posts Exclusion
-WHEN posts are deleted by users or removed by moderators, THE system SHALL exclude those posts from all sorting methods and feeds.
-
-Deleted/removed posts should not appear in any sorted feed.
-
-#### BR-003: User-Blocked Content Filtering
-WHEN a user has blocked another user or muted a community, THE system SHALL exclude posts from those blocked sources before applying sorting algorithms.
-
-Sorting operates on the filtered set of posts that the user is eligible to see.
-
-### 10.2 Vote Weight Considerations
-
-#### BR-004: All Votes Equal Weight
-THE system SHALL treat all votes equally when calculating vote scores for sorting purposes.
-
-A vote from a new user should have the same weight as a vote from a high-karma user. No vote weighting based on voter reputation or karma.
-
-#### BR-005: Vote Validation
-THE system SHALL only include validated votes in sorting calculations.
-
-Votes that have been identified as fraudulent, spam, or from banned users should not affect sorting rankings.
-
-### 10.3 Time Zone Handling
-
-#### BR-006: Consistent Internal Time Representation
-THE system SHALL use a consistent time zone (UTC recommended) for all internal timestamp storage and sorting calculations.
-
-All post creation timestamps and time-based calculations should use UTC or another consistent time zone to ensure sorting consistency across users in different time zones.
-
-#### BR-007: User-Facing Time Display
-THE system SHALL display post creation times and relative timestamps (e.g., "posted 2 hours ago") in the user's local time zone or a user-selected time zone.
-
-While internal calculations use consistent time zone, user-facing displays should be localized for readability.
-
-#### BR-008: Calendar Boundary Calculations
-WHEN calculating time windows for Top sorting filters (Today, This Week, This Month, This Year), THE system SHALL use calendar boundaries appropriate to the user's time zone or a platform-standard time zone.
-
-For example, "Today" should mean the current calendar day in the user's time zone, not necessarily UTC day.
-
-### 10.4 Caching and Performance Optimization Requirements
-
-#### BR-009: Sorting Calculation Optimization
-THE system MAY use pre-calculated scores, cached rankings, or other performance optimization techniques to achieve the required response times for sorting operations.
-
-While real-time accuracy is important, reasonable caching strategies (e.g., recalculating hot scores every 5 minutes rather than on every request) are acceptable if they maintain good user experience.
-
-#### BR-010: Feed Pagination Consistency
-WHEN users paginate through sorted feeds (scrolling through pages or infinite scroll), THE system SHALL maintain consistent sorting within the user's browsing session.
-
-Posts should not jump between pages or disappear due to ranking changes while the user is actively browsing. Ranking updates should apply when the user refreshes or starts a new session.
-
-#### BR-011: Large Community Performance
-THE system SHALL implement performance optimizations for sorting in very large communities (those with hundreds of thousands or millions of posts).
-
-Techniques such as limiting the sorting window, using approximate ranking for lower-ranked posts, or other optimization strategies may be employed to maintain required performance.
-
-### 10.5 Sorting Algorithm Evolution
-
-#### BR-012: Algorithm Tuning Flexibility
-THE system SHOULD allow for tuning and adjustment of sorting algorithm parameters (e.g., hot sorting time decay rate, controversial balance formulas) without requiring code changes.
-
-Sorting algorithm behavior may need to be adjusted based on platform growth, user feedback, and observed behavior. Configuration-based tuning is preferred over hard-coded values.
-
-#### BR-013: A/B Testing Support
-THE system MAY support A/B testing of different sorting algorithm variations to optimize user engagement and satisfaction.
-
-Different users or cohorts may experience different sorting algorithm implementations to determine which performs better.
-
-#### BR-014: Algorithm Transparency
-THE system SHOULD provide users with basic understanding of how each sorting method works through tooltips, help text, or documentation.
-
-Users should understand that:
-- Hot = trending content balancing popularity and recency
-- New = newest content first
-- Top = highest-rated content over time periods
-- Controversial = content with balanced upvotes and downvotes
-
-### 10.6 Sorting and Moderation Interaction
-
-#### BR-015: Removed Content Exclusion
-WHEN posts are removed by moderators, THE system SHALL immediately exclude them from all sorting methods and feeds.
-
-Removed posts should not appear even if they had high rankings before removal.
-
-#### BR-016: Pinned Posts Priority
-WHEN community moderators pin posts to the top of a community, THE system MAY display pinned posts above normally sorted posts regardless of sorting method.
-
-Pinned posts override sorting for visibility purposes. The specific behavior of pinned posts relative to sorting should be clearly defined.
-
-#### BR-017: Reported Content Visibility
-WHEN posts are reported but not yet removed, THE system SHALL continue to include them in normal sorting.
-
-Reported posts should not be hidden from sorting until moderators take action to remove them.
-
-### 10.7 Special Sorting Scenarios
-
-#### BR-018: Zero-Vote Post Handling
-WHEN posts have zero net votes (either no votes at all, or equal upvotes and downvotes), THE system SHALL include them in all sorting methods using appropriate logic:
-- Hot sorting: Very low hotness score due to lack of engagement
-- New sorting: Position based solely on creation time
-- Top sorting: Low ranking due to zero score
-- Controversial sorting: May rank highly if they have equal upvotes/downvotes with sufficient volume
-
-#### BR-019: Newly Created Post Handling
-WHEN posts are first created, THE system SHALL immediately make them available in New sorting and other sorting methods.
-
-New posts should appear instantly in New sorting (at the top) and in Hot sorting (with appropriate initial hotness score based on age).
-
-#### BR-020: Archived Post Handling
-IF the platform implements post archiving (locking old posts from new votes/comments), THE system SHALL continue to include archived posts in all sorting methods using their final vote scores.
-
-Archived posts can still appear in Top sorting for historical periods and should be handled consistently across sorting methods.
+**New sorting methods SHALL be documented with the same level of detail as the methods defined in this document.**
 
 ---
 
-## Document Summary
-
-This document has defined comprehensive business requirements for the content sorting system of the communityPlatform, covering:
-
-- **Four sorting algorithms** (Hot, New, Top, Controversial) with detailed business logic
-- **User interface requirements** for sorting selection and time filter controls
-- **Sorting persistence and preferences** across sessions and devices
-- **Performance expectations** for all sorting operations
-- **Functional requirements** in EARS format for implementation clarity
-- **Business rules and constraints** governing sorting behavior
-
-The sorting system is critical to user experience and engagement on the platform. Implementation should prioritize:
-1. **Performance**: All sorting operations must be fast and responsive
-2. **Consistency**: Sorting behavior should be predictable and reliable
-3. **Flexibility**: Users should have full control over how they view content
-4. **Scalability**: Sorting must perform well as post volume grows
-
-All technical implementation decisions, including specific algorithms, data structures, caching strategies, database indexing, and performance optimization techniques, are at the discretion of the development team. This document provides the business requirements that the implementation must satisfy from a user and functional perspective.
+**Document Version**: 1.0  
+**Last Updated**: 2025-11-14  
+**Related Documents**:
+- [Voting and Karma System Requirements](./05-voting-karma-system.md)
+- [Content Feeds and Discovery Requirements](./08-content-feeds-discovery.md)
+- [User Actors and Authentication Requirements](./02-user-actors-authentication.md)
+- [Content Creation and Posts Requirements](./04-content-creation-posts.md)

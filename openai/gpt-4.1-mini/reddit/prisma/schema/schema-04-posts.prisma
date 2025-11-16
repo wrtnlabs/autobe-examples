@@ -1,11 +1,12 @@
-/// Main business entity representing user posts within communities. Each
-/// post is authored by a user and is associated with a specific community.
-/// Posts include textual content, optional image URIs, metadata details such
-/// as content type, title, and post status. The entity supports soft
-/// deletion and tracks creation and modification timestamps. This table
-/// serves as the core content management for posts independent of comments
-/// or votes. It references users, communities, and content types for data
-/// integrity.
+/// Community posts containing text, link, or image content contributed by
+/// registered users.
+///
+/// Each post belongs to a subreddit community and attributed to an author
+/// (registered user). Posts support soft deletion for moderation and include
+/// timestamps to support audit trails and user activity tracking.
+///
+/// Posts are core content entities within the redditCommunity platform,
+/// referenced by comments, votes, subscriptions, and reports.
 ///
 /// @namespace Posts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -16,27 +17,22 @@ model reddit_community_posts {
   /// Primary Key.
   id String @id
   
-  /// Authoring user's {@link reddit_community_user.id}.
-  reddit_community_user_id String
+  /// Reference to the community this post belongs. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_id String
   
-  /// Associated community's {@link reddit_community_communities.id}.
-  reddit_community_community_id String
+  /// Reference to the registered user who authored the post. {@link
+  /// reddit_community_registered_users.id}.
+  reddit_registered_user_id String
   
-  /// Content type's {@link reddit_community_content_types.id} to specify post
-  /// format (text, link, image).
-  reddit_community_content_type_id String
+  /// Type of the post content: text, link, or image.
+  post_type String
   
-  /// Title of the post summarizing the content.
+  /// Title of the post.
   title String
   
-  /// Main textual content of the post.
-  body String
-  
-  /// Optional URI for an image associated with the post.
-  image_uri String?
-  
-  /// Current status of the post (e.g., 'active', 'removed', 'hidden').
-  status String
+  /// Optional content for text or link posts; nullable for image-only posts.
+  content String?
   
   /// Timestamp when the post was created.
   created_at DateTime
@@ -44,67 +40,72 @@ model reddit_community_posts {
   /// Timestamp when the post was last updated.
   updated_at DateTime
   
-  /// Timestamp when the post was soft-deleted, if applicable.
+  /// Timestamp when the post was soft deleted; null if active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  author reddit_community_user @relation(fields: [reddit_community_user_id], references: [id], onDelete: Cascade)
-  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
-  contentType reddit_community_content_types @relation(fields: [reddit_community_content_type_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_id], references: [id], onDelete: Cascade)
+  author reddit_community_registered_users @relation(fields: [reddit_registered_user_id], references: [id], onDelete: Cascade)
   
-  reddit_community_post_snapshots reddit_community_post_snapshots[]
+  reddit_community_post_images reddit_community_post_images[]
   reddit_community_comments reddit_community_comments[]
   reddit_community_post_votes reddit_community_post_votes[]
-  reddit_community_content_reports reddit_community_content_reports[]
+  reddit_community_reports reddit_community_reports[]
   
-  @@index([reddit_community_content_type_id])
+  @@index([reddit_registered_user_id])
   
-  @@unique([reddit_community_community_id, title])
-  @@index([reddit_community_user_id, created_at])
   // spellchecker: ignore-next-line
-  @@index([reddit_community_community_id, created_at], map: "reddit_community_posts_reddit_community_community_id_c_ede20472")
+  @@unique([reddit_community_id, title, reddit_registered_user_id], map: "reddit_community_posts_reddit_community_id_title_reddi_4751d3dc")
+  @@index([created_at, reddit_community_id])
 }
 
-/// Snapshot entity capturing point-in-time states of user posts for audit
-/// trails and historical tracking. Each snapshot references the main post
-/// and preserves all post fields such as title, body, image URI, status, and
-/// timestamps reflecting the snapshot creation time. This table supports
-/// append-only pattern ensuring immutability and historical accountability.
+/// Images associated with posts, supporting multiple images per post.
+///
+/// This table supports media handling separate from textual post content,
+/// maintaining data normalization and compliance with size and format
+/// constraints.
+///
+/// Each image record links to a post and includes the MIME type and URL for
+/// retrieving the image. Soft deletion and timestamp tracking ensure audit
+/// and moderation capabilities.
 ///
 /// @namespace Posts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_post_snapshots {
+model reddit_community_post_images {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Referenced post's {@link reddit_community_posts.id}.
+  /// Reference to the post owning this image. {@link
+  /// reddit_community_posts.id}.
   reddit_community_post_id String
   
-  /// Title of the post snapshot.
-  title String
+  /// MIME type of the image (e.g., image/jpeg, image/png).
+  mime_type String
   
-  /// Textual content of the post snapshot.
-  body String
+  /// URL where the image is stored and accessible.
+  url String
   
-  /// Optional image URI captured at snapshot time.
-  image_uri String?
-  
-  /// Post status at snapshot time.
-  status String
-  
-  /// Timestamp when the snapshot was created.
+  /// Timestamp when the image was uploaded.
   created_at DateTime
+  
+  /// Timestamp when the image metadata was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft deleted; null if active.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
   
+  @@index([reddit_community_post_id])
+  
   // spellchecker: ignore-next-line
-  @@index([reddit_community_post_id, created_at], map: "reddit_community_post_snapshots_reddit_community_post__d8065680")
+  @@index([created_at, reddit_community_post_id], map: "reddit_community_post_images_created_at_reddit_communi_3c2b7943")
 }

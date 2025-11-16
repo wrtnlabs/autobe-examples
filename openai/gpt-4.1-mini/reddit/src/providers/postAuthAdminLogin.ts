@@ -8,104 +8,107 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IRedditCommunityAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityAdmin";
+import { IRedditCommunityAdminSettings } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityAdminSettings";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { IRedditCommunityUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUser";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminLogin(props: {
   admin: AdminPayload;
   body: IRedditCommunityAdmin.ILogin;
 }): Promise<IRedditCommunityAdmin.IAuthorized> {
-  // Find user by email
-  const user = await MyGlobal.prisma.reddit_community_user.findFirst({
-    where: { email: props.body.email },
+  const admin = await MyGlobal.prisma.reddit_community_admins.findFirst({
+    where: {
+      email: props.body.email,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      email: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      password_hash: true,
+    },
   });
 
-  if (!user) {
+  if (admin === null) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Find admin by user_id
-  const admin = await MyGlobal.prisma.reddit_community_admin.findFirst({
-    where: { user_id: user.id },
-  });
-
-  if (!admin) {
-    throw new HttpException("Invalid credentials", 401);
-  }
-
-  // Verify password
-  const verified = await PasswordUtil.verify(
+  const validPassword = await PasswordUtil.verify(
     props.body.password,
-    user.password_hash,
+    admin.password_hash,
   );
-  if (!verified) {
+
+  if (!validPassword) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Generate timestamps
-  const now = toISOStringSafe(new Date());
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const accessExpireAt = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const sessionId = v4();
 
-  // Create new session
-  const sessionId = v4() as string & tags.Format<"uuid">;
   const session = await MyGlobal.prisma.reddit_community_admin_sessions.create({
     data: {
-      id: sessionId,
+      id: sessionId as string & tags.Format<"uuid">,
       reddit_community_admin_id: admin.id,
       ip: props.body.ip ?? "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: now,
-      expired_at: null,
+      created_at: toISOStringSafe(new Date()),
+      expired_at: toISOStringSafe(accessExpireAt),
     },
   });
 
-  // Generate JWT tokens
-  const token = {
-    access: jwt.sign(
-      {
-        type: "admin",
-        id: user.id,
-        session_id: session.id,
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "admin",
-        id: user.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
-  };
+  const tokenAccess = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session.id,
+      created_at: toISOStringSafe(new Date()),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
 
-  // Return authorized response
+  const tokenRefresh = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(new Date()),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
   return {
     id: admin.id,
-    user_id: user.id,
+    email: admin.email,
+    name: "",
+    role: "",
     created_at: toISOStringSafe(admin.created_at),
-    token: token,
-    user: {
-      id: user.id,
-      email: user.email,
+    updated_at: toISOStringSafe(admin.updated_at),
+    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    is_active: false,
+    last_login_at: "",
+    last_login_ip: "",
+    permissions: [],
+    notes: "",
+    avatar_url: "",
+    settings: undefined,
+    token: {
+      access: tokenAccess,
+      refresh: tokenRefresh,
+      expired_at: toISOStringSafe(accessExpireAt),
+      refreshable_until: toISOStringSafe(refreshExpireAt),
     },
   };
 }

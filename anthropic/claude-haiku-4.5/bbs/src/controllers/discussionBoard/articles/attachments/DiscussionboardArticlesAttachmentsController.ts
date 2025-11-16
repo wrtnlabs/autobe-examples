@@ -1,115 +1,56 @@
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
+import { TypedRoute, TypedParam } from "@nestia/core";
 import typia, { tags } from "typia";
 
-import { IPageIDiscussionBoardAttachment } from "../../../../api/structures/IPageIDiscussionBoardAttachment";
 import { IDiscussionBoardAttachment } from "../../../../api/structures/IDiscussionBoardAttachment";
 
-@Controller("/discussionBoard/articles/:articleId/attachments")
+@Controller("/discussionBoard/articles/:articleId/attachments/:attachmentId")
 export class DiscussionboardArticlesAttachmentsController {
   /**
-   * Search and retrieve a paginated list of attachments for a specific
-   * article.
+   * Retrieve a specific attachment from a discussion board article.
    *
-   * Retrieve a filtered and paginated list of attachments associated with a
-   * specific article from the discussion board platform. This operation
-   * provides comprehensive search and filtering capabilities for finding
-   * attachments by filename, file type, upload date, or security status. The
-   * operation supports pagination with configurable page sizes and sorting
-   * options.
+   * Retrieve detailed information about a single attachment file associated
+   * with a discussion board article. This operation returns complete
+   * attachment metadata including the original filename, file size, MIME
+   * type, storage path, and for image attachments, the image dimensions
+   * (width and height).
    *
-   * The operation retrieves attachment metadata from the
-   * discussion_board_attachments table, including original filename, file
-   * type, file size, image dimensions (if applicable), upload timestamp, and
-   * security validation status. Only active attachments are returned
-   * (soft-deleted attachments with deleted_at timestamp are excluded).
+   * The attachment is identified by both the article ID (to scope the
+   * attachment to a specific article) and the attachment ID (to identify the
+   * specific file). This two-level identification ensures users can only
+   * access attachments that belong to the requested article, preventing
+   * unauthorized access to attachments from other articles.
    *
-   * Security considerations include verifying that the requesting user has
-   * appropriate permissions to view the article and its attachments. The
-   * operation respects article visibility (only published articles return
-   * attachments to non-moderators). Attachment access is controlled through
-   * article permissions - only authenticated members can view attachments on
-   * their own articles or public articles, while guests can view attachments
-   * on published articles.
+   * For image attachments, the response includes image dimensions (width and
+   * height in pixels) which are used for rendering the image at the correct
+   * aspect ratio. For non-image attachments, these dimension fields are null.
+   * The is_image flag indicates whether this is an image file for display
+   * purposes.
    *
-   * The response includes detailed attachment information optimized for
-   * displaying attachment lists and previews. For images, this includes width
-   * and height dimensions. For all files, this includes MIME type, file size
-   * in bytes, and security status (pending_scan, safe, infected,
-   * quarantined). Download links and metadata allow users to understand what
-   * files are available before downloading.
+   * The response includes file metadata such as original filename (for
+   * display in the UI), file size in bytes (for quota tracking and user
+   * information), MIME type for proper content handling, and creation
+   * timestamp. The file_hash provides integrity verification capability.
    *
-   * This operation integrates with the discussion_board_articles and
-   * discussion_board_attachments tables, respecting the polymorphic
-   * relationship where attachments can belong to either articles or comments.
-   * For article attachments specifically, the article_id filter isolates only
-   * files attached to the specified article, excluding any attachments on
-   * comments within that article.
+   * Access control is enforced through the parent article - users can view
+   * this attachment if they have access to view the article containing it.
+   * Guests can view attachments from published articles, members can view
+   * attachments from articles they created or published articles, and
+   * moderators can view attachments from all articles including rejected and
+   * pending articles.
+   *
+   * This operation is commonly used to retrieve attachment details before
+   * download, to display attachment information in article views, and to
+   * verify attachment existence and properties.
    *
    * @param connection
-   * @param articleId Unique identifier (UUID) of the target article whose
-   *   attachments are being retrieved
-   * @param body Search criteria, filtering options, and pagination parameters
-   *   for attachment retrieval
+   * @param articleId Unique identifier of the article containing this
+   *   attachment (UUID format)
+   * @param attachmentId Unique identifier of the attachment to retrieve (UUID
+   *   format)
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
-  @TypedRoute.Patch()
-  public async index(
-    @TypedParam("articleId")
-    articleId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IDiscussionBoardAttachment.IRequest,
-  ): Promise<IPageIDiscussionBoardAttachment> {
-    articleId;
-    body;
-    return typia.random<IPageIDiscussionBoardAttachment>();
-  }
-
-  /**
-   * Retrieve a specific attachment file metadata and download/display
-   * information for an article.
-   *
-   * This operation retrieves detailed information about a specific attachment
-   * (image or document file) associated with an article. The attachment
-   * metadata includes filename, file type, file size, dimensions for images,
-   * and security validation status.
-   *
-   * The operation fetches from the discussion_board_attachments table which
-   * maintains separate metadata for each file uploaded to articles. Both
-   * image attachments (displayed inline in articles) and document attachments
-   * (available for download) are stored in the same table, differentiated by
-   * their file_type MIME classification.
-   *
-   * Security validation is critical for this operation. The returned
-   * attachment includes security_status field indicating whether the file has
-   * passed malware/antivirus scanning. Files with security_status of 'safe'
-   * are cleared for serving to users, while files with status 'infected',
-   * 'pending_scan', or 'quarantined' should be restricted or hidden from user
-   * access.
-   *
-   * For image attachments, the operation returns image dimensions
-   * (image_width, image_height in pixels) allowing the client to render
-   * images responsively. For document attachments, only the filename and file
-   * size are relevant for download functionality.
-   *
-   * The operation validates that the requested article exists
-   * (discussion_board_articles table) and that the attachment belongs to that
-   * specific article (verified through discussion_board_article_id foreign
-   * key). If either the article or attachment does not exist, the operation
-   * returns an appropriate 404 error.
-   *
-   * Guest users and authenticated members can retrieve attachments, subject
-   * to the article's visibility status. Archived articles (status =
-   * 'archived') restrict attachment access to moderators only.
-   *
-   * @param connection
-   * @param articleId Unique identifier (UUID) of the article containing the
-   *   attachment
-   * @param attachmentId Unique identifier (UUID) of the specific attachment
-   *   file to retrieve
-   * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
-   */
-  @TypedRoute.Get(":attachmentId")
+  @TypedRoute.Get()
   public async at(
     @TypedParam("articleId")
     articleId: string & tags.Format<"uuid">,
@@ -122,58 +63,57 @@ export class DiscussionboardArticlesAttachmentsController {
   }
 
   /**
-   * Delete an attachment file from an article.
+   * Delete an attachment from a discussion board article.
    *
-   * This operation permanently removes an attachment file from an article.
-   * The attachment is deleted from the discussion_board_attachments table and
-   * the physical file is removed from server storage.
+   * Delete a specific attachment file from a discussion board article. This
+   * operation performs a soft deletion by recording the deletion timestamp
+   * without removing the attachment record from the database, preserving the
+   * audit trail and enabling recovery within the retention window.
    *
-   * Ownership and permission enforcement is critical for this operation.
-   * Members can only delete attachments they personally uploaded (verified by
-   * comparing authenticated user ID with attachment's
-   * discussion_board_member_id field). Moderators can delete any attachment
-   * from any article as part of content management and moderation duties.
+   * The attachment is identified by both the article ID (to scope to a
+   * specific article) and the attachment ID (to identify the specific file to
+   * delete). This two-level identification ensures users can only delete
+   * attachments from articles they have permission to modify.
    *
-   * Guest users cannot delete any attachments - the operation returns a 401
-   * Unauthorized error for unauthenticated requests with a message directing
-   * them to log in. Members who are suspended or banned cannot delete
-   * attachments - their accounts have account_status of 'suspended' or
-   * 'banned' in the discussion_board_members table, restricting this action.
+   * Permission to delete an attachment is determined by the parent article's
+   * permissions: Members can delete attachments from their own unpublished
+   * (draft, rejected) articles, but cannot remove attachments from published
+   * articles (to prevent retroactive changes to discussion content). Members
+   * can also delete attachments from their own comments. Moderators can
+   * delete attachments from any article or comment to remove problematic
+   * content.
    *
-   * The operation validates that both the article and attachment exist before
-   * attempting deletion. If either resource is not found, a 404 error is
-   * returned. If the attachment does not belong to the specified article
-   * (discussion_board_article_id mismatch), a 400 Bad Request error is
-   * returned indicating the attachment is not part of the specified article.
+   * When an attachment is deleted, the associated file is marked as deleted
+   * (deleted_at timestamp is set) and is hidden from user views. Moderators
+   * retain access to deleted attachments for up to 30 days for audit
+   * purposes. After the retention window, the physical file is permanently
+   * removed from storage by automated cleanup jobs.
    *
-   * Upon successful deletion, the file is permanently removed from storage
-   * (storage_path location) and the attachment metadata is deleted from the
-   * database. No recovery is possible after this operation completes. The
-   * parent article display is updated to reflect the removed attachment. If a
-   * moderator deletes an attachment, the action is recorded in
-   * discussion_board_moderation_logs table for audit trail purposes.
+   * If the parent article is deleted, all associated attachments are
+   * automatically soft-deleted along with the article. Attempting to delete
+   * an attachment from a published article when not a moderator will result
+   * in a permission error.
    *
-   * Error scenarios include: 404 Not Found if article or attachment missing,
-   * 403 Forbidden if member attempts to delete another member's attachment,
-   * 401 Unauthorized if guest user attempts deletion, 403 Forbidden if member
-   * account is suspended or banned.
+   * The operation returns the deleted attachment metadata confirming
+   * successful deletion, or an appropriate error if the attachment does not
+   * exist, the user lacks permission, or the attachment is already deleted.
    *
    * @param connection
-   * @param articleId Unique identifier (UUID) of the article containing the
-   *   attachment to delete
-   * @param attachmentId Unique identifier (UUID) of the specific attachment
-   *   file to delete
+   * @param articleId Unique identifier of the article containing this
+   *   attachment (UUID format)
+   * @param attachmentId Unique identifier of the attachment to delete (UUID
+   *   format)
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
-  @TypedRoute.Delete(":attachmentId")
+  @TypedRoute.Delete()
   public async erase(
     @TypedParam("articleId")
     articleId: string & tags.Format<"uuid">,
     @TypedParam("attachmentId")
     attachmentId: string & tags.Format<"uuid">,
-  ): Promise<void> {
+  ): Promise<IDiscussionBoardAttachment> {
     articleId;
     attachmentId;
-    return typia.random<void>();
+    return typia.random<IDiscussionBoardAttachment>();
   }
 }

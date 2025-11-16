@@ -1,0 +1,323 @@
+/// Customer shopping carts for temporary product selection before purchase.
+///
+/// Stores active shopping sessions where customers add products they intend
+/// to purchase. Each cart belongs to a specific customer and maintains the
+/// current selection of products with quantities and pricing. Carts support
+/// temporary storage of shopping intent and can be abandoned or converted to
+/// orders.
+///
+/// Carts include pricing calculations, tax estimates, and shipping cost
+/// previews to help customers make informed purchasing decisions. Soft
+/// deletion allows customers to clear carts while maintaining audit trails
+/// for abandoned cart analysis.
+///
+/// Customer session tracking ensures proper audit trail for all cart
+/// operations and modifications.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this shopping cart. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Customer session when cart was created or modified. {@link
+  /// ecommerce_mall_customer_sessions.id}
+  ecommerce_mall_customer_session_id String
+  
+  /// Current cart status: active, abandoned, converted_to_order,
+  /// saved_for_later.
+  status String
+  
+  /// Total number of items in the shopping cart.
+  item_count Int
+  
+  /// Timestamp when the cart was created.
+  created_at DateTime
+  
+  /// Timestamp when the cart was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the cart was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession ecommerce_mall_customer_sessions @relation(fields: [ecommerce_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_cart_items ecommerce_mall_cart_items[]
+  
+  @@index([ecommerce_mall_customer_id, created_at])
+  @@index([status, updated_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_session_id, created_at], map: "ecommerce_mall_carts_ecommerce_mall_customer_session_i_0738e2d1")
+}
+
+/// Individual products added to customer shopping carts.
+///
+/// Represents specific product variants selected by customers for potential
+/// purchase. Each cart item links to a product variant and includes
+/// quantity, unit price, and any selected options. Cart items maintain
+/// pricing consistency during the shopping session.
+///
+/// Items can be added, removed, or have quantities adjusted by customers.
+/// The system tracks inventory availability and prevents overselling by
+/// validating stock levels during cart operations.
+///
+/// Customer session tracking ensures audit trail for all item modifications
+/// and selections.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shopping cart that contains this item. {@link ecommerce_mall_carts.id}
+  ecommerce_mall_cart_id String
+  
+  /// Specific product variant selected by customer. {@link
+  /// ecommerce_mall_product_variants.id}
+  ecommerce_mall_product_variant_id String
+  
+  /// Customer session when item was added or modified. {@link
+  /// ecommerce_mall_customer_sessions.id}
+  ecommerce_mall_customer_session_id String
+  
+  /// Number of units of this product variant in cart.
+  quantity Int
+  
+  /// Price per unit at time of adding to cart.
+  unit_price Float
+  
+  /// Item status: active, saved_for_later, out_of_stock, removed.
+  status String
+  
+  /// Whether inventory availability was verified for this item.
+  inventory_checked Boolean
+  
+  /// Timestamp when item was added to cart.
+  created_at DateTime
+  
+  /// Timestamp when item was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when item was removed from cart.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cart ecommerce_mall_carts @relation(fields: [ecommerce_mall_cart_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  customerSession ecommerce_mall_customer_sessions @relation(fields: [ecommerce_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_cart_item_options ecommerce_mall_cart_item_options[]
+  
+  @@index([ecommerce_mall_cart_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id, status], map: "ecommerce_mall_cart_items_ecommerce_mall_product_varia_3e68ac1c")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_session_id, created_at], map: "ecommerce_mall_cart_items_ecommerce_mall_customer_sess_3b8305db")
+  @@index([inventory_checked, updated_at])
+}
+
+/// Specific option selections for cart items with customizable products.
+///
+/// Stores customer-selected options for product variants that support
+/// customization. Each option represents a specific choice made by the
+/// customer, such as color selection, size choice, or additional features.
+/// Options link back to the available product variant options.
+///
+/// This table ensures that customized product selections are preserved
+/// throughout the shopping session and carried forward to the order if
+/// purchased.
+///
+/// Customers directly manage these options during the shopping process,
+/// requiring independent stance classification.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_item_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Cart item that this option applies to. {@link
+  /// ecommerce_mall_cart_items.id}
+  ecommerce_mall_cart_item_id String
+  
+  /// Product variant option that was selected. {@link
+  /// ecommerce_mall_product_variant_options.id}
+  ecommerce_mall_product_variant_option_id String
+  
+  /// Customer-selected value for this option.
+  option_value String
+  
+  /// Extra cost added by this option selection.
+  additional_price Float
+  
+  /// Timestamp when option was selected.
+  created_at DateTime
+  
+  /// Timestamp when option was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cartItem ecommerce_mall_cart_items @relation(fields: [ecommerce_mall_cart_item_id], references: [id], onDelete: Cascade)
+  productVariantOption ecommerce_mall_product_variant_options @relation(fields: [ecommerce_mall_product_variant_option_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_cart_item_id, ecommerce_mall_product_variant_option_id], map: "ecommerce_mall_cart_item_options_ecommerce_mall_cart_i_edd23cda")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_option_id], map: "ecommerce_mall_cart_item_options_ecommerce_mall_produc_2dff6e02")
+}
+
+/// Customer wishlists for saving products for future consideration.
+///
+/// Allows customers to create personalized collections of products they are
+/// interested in purchasing later. Each wishlist can have a custom name and
+/// description, supporting multiple wishlists per customer for different
+/// purposes (e.g., birthday list, home improvement projects).
+///
+/// Wishlists help customers track products they like and receive
+/// notifications when items go on sale or become available. They serve as
+/// personalized product discovery tools separate from active shopping carts.
+///
+/// Customer session tracking ensures audit trail for wishlist creation and
+/// modifications.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this wishlist. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Customer session when wishlist was created or modified. {@link
+  /// ecommerce_mall_customer_sessions.id}
+  ecommerce_mall_customer_session_id String
+  
+  /// Custom name for the wishlist given by customer.
+  name String
+  
+  /// Optional description of the wishlist purpose.
+  description String?
+  
+  /// Whether the wishlist is visible to other users.
+  is_public Boolean
+  
+  /// Total number of items in the wishlist.
+  item_count Int
+  
+  /// Timestamp when wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when wishlist was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when wishlist was deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession ecommerce_mall_customer_sessions @relation(fields: [ecommerce_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_wishlist_items ecommerce_mall_wishlist_items[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_wishlists_ecommerce_mall_customer_id_cr_3d3f738b")
+  @@index([is_public, updated_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_session_id, created_at], map: "ecommerce_mall_wishlists_ecommerce_mall_customer_sessi_c0b150c4")
+}
+
+/// Products saved in customer wishlists for future reference.
+///
+/// Represents individual product variants that customers have added to their
+/// wishlists for potential future purchase. Each wishlist item maintains a
+/// reference to the specific product variant and includes metadata about
+/// when it was added.
+///
+/// Customers can move items from wishlists to shopping carts when ready to
+/// purchase. The system tracks which products are most frequently wishlisted
+/// for popularity analysis.
+///
+/// Customer session tracking ensures audit trail for wishlist item
+/// operations and modifications.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Wishlist that contains this item. {@link ecommerce_mall_wishlists.id}
+  ecommerce_mall_wishlist_id String
+  
+  /// Product variant saved in wishlist. {@link
+  /// ecommerce_mall_product_variants.id}
+  ecommerce_mall_product_variant_id String
+  
+  /// Customer session when item was added or modified. {@link
+  /// ecommerce_mall_customer_sessions.id}
+  ecommerce_mall_customer_session_id String
+  
+  /// Optional customer notes about why this item was saved.
+  notes String?
+  
+  /// Customer-assigned priority level for purchase consideration.
+  priority Int
+  
+  /// Item status: active, purchased, unavailable, removed.
+  status String
+  
+  /// Timestamp when item was added to wishlist.
+  created_at DateTime
+  
+  /// Timestamp when item was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when item was removed from wishlist.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist ecommerce_mall_wishlists @relation(fields: [ecommerce_mall_wishlist_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  customerSession ecommerce_mall_customer_sessions @relation(fields: [ecommerce_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_wishlist_id, ecommerce_mall_product_variant_id], map: "ecommerce_mall_wishlist_items_ecommerce_mall_wishlist__c8d5dd86")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id, created_at], map: "ecommerce_mall_wishlist_items_ecommerce_mall_product_v_c83d8d24")
+  @@index([priority, updated_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_session_id, created_at], map: "ecommerce_mall_wishlist_items_ecommerce_mall_customer__edbe68bb")
+  @@index([status, updated_at])
+}

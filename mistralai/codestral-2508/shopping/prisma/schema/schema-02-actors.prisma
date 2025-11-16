@@ -1,0 +1,377 @@
+/// User accounts for the shopping mall platform. These accounts represent
+/// individual users who interact with the system, including customers,
+/// sellers, and administrators. Each user has a unique email address and
+/// password for authentication purposes. The user accounts are used to track
+/// user activity, manage permissions, and provide personalized experiences.
+/// The user accounts are also used to store user preferences and settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for authentication and communication. Must be unique
+  /// across all users.
+  email String
+  
+  /// Hashed password for user authentication. Never store plain text passwords.
+  password_hash String
+  
+  /// User's full name for identification purposes.
+  name String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_user_sessions shopping_mall_user_sessions[]
+  
+  @@unique([email])
+}
+
+/// Session tracking for user accounts. These sessions represent the active
+/// login sessions for users, including customers, sellers, and
+/// administrators. Each session is associated with a specific user account
+/// and includes details such as the IP address, connection URL, and referrer
+/// URL. The session tracking is used to monitor user activity, manage
+/// security, and provide personalized experiences. The session tracking is
+/// also used to enforce session timeouts and manage concurrent sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account associated with this session. {@link shopping_mall_users.id}
+  shopping_mall_user_id String
+  
+  /// IP address of the user's device during the session.
+  ip String
+  
+  /// Connection URL used during the session.
+  href String
+  
+  /// Referrer URL that led to the session.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was terminated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user shopping_mall_users @relation(fields: [shopping_mall_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_user_id, created_at], map: "shopping_mall_user_sessions_shopping_mall_user_id_crea_52fa3360")
+}
+
+/// Administrator accounts for the shopping mall platform. These accounts
+/// represent individuals with elevated privileges to manage the platform,
+/// including user accounts, product listings, and order processing. Each
+/// administrator has a unique email address and password for authentication
+/// purposes. The administrator accounts are used to track administrative
+/// activity, manage permissions, and provide access to administrative
+/// features. The administrator accounts are also used to store administrator
+/// preferences and settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's email address for authentication and communication. Must
+  /// be unique across all administrators.
+  email String
+  
+  /// Hashed password for administrator authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Administrator's full name for identification purposes.
+  name String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_administrator_sessions shopping_mall_administrator_sessions[]
+  
+  @@unique([email])
+}
+
+/// Session tracking for administrator accounts. These sessions represent the
+/// active login sessions for administrators, including the platform's super
+/// administrators and regular administrators. Each session is associated
+/// with a specific administrator account and includes details such as the IP
+/// address, connection URL, and referrer URL. The session tracking is used
+/// to monitor administrator activity, manage security, and provide access to
+/// administrative features. The session tracking is also used to enforce
+/// session timeouts and manage concurrent sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator account associated with this session. {@link
+  /// shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// IP address of the administrator's device during the session.
+  ip String
+  
+  /// Connection URL used during the session.
+  href String
+  
+  /// Referrer URL that led to the session.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was terminated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_administrator_sessions_shopping_mall_adm_2e7e19a2")
+}
+
+/// Customer accounts for the shopping mall platform. These accounts
+/// represent individuals who purchase products from the platform. Each
+/// customer has a unique email address and password for authentication
+/// purposes. The customer accounts are used to track customer activity,
+/// manage orders, and provide personalized experiences. The customer
+/// accounts are also used to store customer preferences and settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's email address for authentication and communication. Must be
+  /// unique across all customers.
+  email String
+  
+  /// Hashed password for customer authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Customer's full name for identification purposes.
+  name String
+  
+  /// Timestamp when the customer account was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the customer account was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_customer_sessions shopping_mall_customer_sessions[]
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
+  shopping_mall_coins shopping_mall_coins?
+  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
+  shopping_mall_inquiries shopping_mall_inquiries[]
+  shopping_mall_favorites shopping_mall_favorites[]
+  shopping_mall_articles shopping_mall_articles[]
+  shopping_mall_article_comments shopping_mall_article_comments[]
+  
+  @@unique([email])
+}
+
+/// Session tracking for customer accounts. These sessions represent the
+/// active login sessions for customers, including registered customers and
+/// guest customers. Each session is associated with a specific customer
+/// account and includes details such as the IP address, connection URL, and
+/// referrer URL. The session tracking is used to monitor customer activity,
+/// manage orders, and provide personalized experiences. The session tracking
+/// is also used to enforce session timeouts and manage concurrent sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer account associated with this session. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// IP address of the customer's device during the session.
+  ip String
+  
+  /// Connection URL used during the session.
+  href String
+  
+  /// Referrer URL that led to the session.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was terminated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_inquiries shopping_mall_inquiries[]
+  shopping_mall_articles shopping_mall_articles[]
+  shopping_mall_article_comments shopping_mall_article_comments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
+}
+
+/// Seller accounts for the shopping mall platform. These accounts represent
+/// individuals or businesses that sell products on the platform. Each seller
+/// has a unique email address and password for authentication purposes. The
+/// seller accounts are used to track seller activity, manage product
+/// listings, and process orders. The seller accounts are also used to store
+/// seller preferences and settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's email address for authentication and communication. Must be
+  /// unique across all sellers.
+  email String
+  
+  /// Hashed password for seller authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Seller's full name or business name for identification purposes.
+  name String
+  
+  /// Timestamp when the seller account was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the seller account was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_seller_sessions shopping_mall_seller_sessions[]
+  shopping_mall_sales shopping_mall_sales[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
+  shopping_mall_inquiry_responses shopping_mall_inquiry_responses[]
+  
+  @@unique([email])
+}
+
+/// Session tracking for seller accounts. These sessions represent the active
+/// login sessions for sellers, including individual sellers and business
+/// sellers. Each session is associated with a specific seller account and
+/// includes details such as the IP address, connection URL, and referrer
+/// URL. The session tracking is used to monitor seller activity, manage
+/// product listings, and process orders. The session tracking is also used
+/// to enforce session timeouts and manage concurrent sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller account associated with this session. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// IP address of the seller's device during the session.
+  ip String
+  
+  /// Connection URL used during the session.
+  href String
+  
+  /// Referrer URL that led to the session.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was terminated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inquiry_responses shopping_mall_inquiry_responses[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
+}

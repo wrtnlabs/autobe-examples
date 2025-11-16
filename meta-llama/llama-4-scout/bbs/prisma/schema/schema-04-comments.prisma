@@ -1,0 +1,80 @@
+/// Main entity for threaded comments on articles.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// FK to articles.id.
+  article_id String
+  
+  /// FK to users.id.
+  user_id String
+  
+  /// Comment text content.
+  content String
+  
+  /// Comment creation timestamp.
+  created_at DateTime
+  
+  /// Comment last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  replies replies[]
+  attachments attachments[]
+  
+  @@index([article_id])
+  @@index([user_id])
+}
+
+/// Subentity for threaded replies to comments.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model replies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// FK to comments.id.
+  comment_id String
+  
+  /// FK to users.id.
+  user_id String
+  
+  /// Reply text content.
+  content String
+  
+  /// Reply creation timestamp.
+  created_at DateTime
+  
+  /// Reply last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([comment_id])
+  @@index([user_id])
+}

@@ -9,10 +9,8 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPost";
 import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
+import { ICommunityPlatformUserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUserSession";
 import { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
-import { ICommunityPlatformPostTexts } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostTexts";
-import { ICommunityPlatformPostLinks } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostLinks";
-import { ICommunityPlatformPostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostImage";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function putCommunityPlatformUserPostsPostId(props: {
@@ -20,184 +18,93 @@ export async function putCommunityPlatformUserPostsPostId(props: {
   postId: string & tags.Format<"uuid">;
   body: ICommunityPlatformPost.IUpdate;
 }): Promise<ICommunityPlatformPost> {
-  const { user, postId, body } = props;
-  // Fetch post with related content to determine content type
   const post = await MyGlobal.prisma.community_platform_posts.findUnique({
-    where: { id: postId },
-    include: {
-      community_platform_post_texts: true,
-      community_platform_post_links: true,
-      community_platform_post_images: true,
-      user: true,
-      community: true,
+    where: {
+      id: props.postId,
+      deleted_at: null,
     },
   });
-  if (!post || post.deleted_at !== null) {
-    throw new HttpException("Post not found or deleted", 404);
-  }
-  // Only the creator can edit (future: allow mods/admins as per requirements)
-  if (post.community_platform_user_id !== user.id) {
-    throw new HttpException("Unauthorized: Only the post owner can edit", 403);
+  if (!post) {
+    throw new HttpException("Post not found", 404);
   }
 
-  const now = toISOStringSafe(new Date());
-  // --- Content type check and update ---
-  // Determine post type
-  const isText = Boolean(post.community_platform_post_texts);
-  const isLink = Boolean(post.community_platform_post_links);
-  const isImage =
-    Array.isArray(post.community_platform_post_images) &&
-    post.community_platform_post_images.length > 0;
-
-  // Disallow any attempt to change content type or update multiple content types
-  const fieldsProvided = [
-    body.body !== undefined ? 1 : 0,
-    body.url !== undefined ? 1 : 0,
-    body.images !== undefined ? 1 : 0,
-  ].reduce((sum, cur) => sum + cur, 0);
-  if (fieldsProvided > 1) {
+  if (post.user_id !== props.user.id) {
     throw new HttpException(
-      "Only one type of content field (body, url, or images) may be updated per post. Content type cannot change.",
-      400,
+      "You do not have permission to update this post.",
+      403,
     );
   }
 
-  if (
-    (isText && (body.url !== undefined || body.images !== undefined)) ||
-    (isLink && (body.body !== undefined || body.images !== undefined)) ||
-    (isImage && (body.body !== undefined || body.url !== undefined))
-  ) {
-    throw new HttpException(
-      "Attempt to change content type; only the current content field can be updated.",
-      400,
-    );
-  }
-
-  // Prepare snapshot from old
-  const snapshot_body =
-    isText && post.community_platform_post_texts
-      ? post.community_platform_post_texts.body
-      : null;
-  const snapshot_url =
-    isLink && post.community_platform_post_links
-      ? post.community_platform_post_links.url
-      : null;
-  const snapshot_image_uri =
-    isImage && post.community_platform_post_images.length > 0
-      ? post.community_platform_post_images[0].uri
-      : null;
-  const edit_type = isText ? "text" : isLink ? "link" : isImage ? "image" : "";
-
-  // Save edit history
-  await MyGlobal.prisma.community_platform_post_edit_histories.create({
-    data: {
-      id: v4(),
-      community_platform_post_id: postId,
-      community_platform_user_id: user.id,
-      edit_type,
-      snapshot_title: post.title,
-      snapshot_body,
-      snapshot_url,
-      snapshot_image_uri,
-      edit_reason:
-        body.edit_reason !== undefined ? body.edit_reason : undefined,
-      created_at: now,
-    },
-  });
-
-  // Update title always (required)
-  await MyGlobal.prisma.community_platform_posts.update({
-    where: { id: postId },
-    data: {
-      title: body.title,
-      updated_at: now,
-    },
-  });
-
-  // Update appropriate content table
-  if (isText && body.body !== undefined) {
-    await MyGlobal.prisma.community_platform_post_texts.update({
-      where: { community_platform_post_id: postId },
-      data: { body: body.body },
-    });
-  } else if (isLink && body.url !== undefined) {
-    await MyGlobal.prisma.community_platform_post_links.update({
-      where: { community_platform_post_id: postId },
-      data: {
-        url: body.url,
-        summary: undefined,
+  // If title or community changes (title is present), check for uniqueness within the community_id
+  if (typeof props.body.title === "string" && props.body.title !== post.title) {
+    const dupe = await MyGlobal.prisma.community_platform_posts.findFirst({
+      where: {
+        community_id: post.community_id,
+        title: props.body.title,
+        id: { not: props.postId },
+        deleted_at: null,
       },
     });
-  } else if (isImage && body.images !== undefined) {
-    // For simplicity: delete old, insert new images (could optimize diff in future)
-    await MyGlobal.prisma.community_platform_post_images.deleteMany({
-      where: { community_platform_post_id: postId },
-    });
-    for (const img of body.images) {
-      await MyGlobal.prisma.community_platform_post_images.create({
-        data: {
-          id: v4(),
-          community_platform_post_id: postId,
-          uri: img.uri,
-          file_type: img.file_type,
-          file_size_bytes: img.file_size_bytes,
-        },
-      });
+    if (dupe) {
+      throw new HttpException(
+        "Title must be unique within this community.",
+        409,
+      );
     }
   }
 
-  // Re-fetch post with latest content and references for return
-  const updated =
-    await MyGlobal.prisma.community_platform_posts.findUniqueOrThrow({
-      where: { id: postId },
-      include: {
-        community_platform_post_texts: true,
-        community_platform_post_links: true,
-        community_platform_post_images: true,
-        user: true,
-        community: true,
-      },
-    });
+  const updated = await MyGlobal.prisma.community_platform_posts.update({
+    where: { id: props.postId },
+    data: {
+      ...(props.body.type !== undefined ? { type: props.body.type } : {}),
+      ...(props.body.title !== undefined ? { title: props.body.title } : {}),
+      ...(props.body.body !== undefined ? { body: props.body.body } : {}),
+      ...(props.body.link_url !== undefined
+        ? { link_url: props.body.link_url }
+        : {}),
+      ...(props.body.image_url !== undefined
+        ? { image_url: props.body.image_url }
+        : {}),
+      ...(props.body.status !== undefined ? { status: props.body.status } : {}),
+      updated_at: toISOStringSafe(new Date()),
+    },
+    include: {
+      user: true,
+      userSession: true,
+      community: true,
+    },
+  });
 
-  // Build response DTO
   return {
     id: updated.id,
+    type: updated.type,
     title: updated.title,
+    body: updated.body === undefined ? undefined : updated.body,
+    link_url: updated.link_url === undefined ? undefined : updated.link_url,
+    image_url: updated.image_url === undefined ? undefined : updated.image_url,
     status: updated.status,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
     deleted_at:
-      updated.deleted_at !== null
+      updated.deleted_at !== null && updated.deleted_at !== undefined
         ? toISOStringSafe(updated.deleted_at)
         : undefined,
-    author: {
-      id: updated.user.id,
-      display_name: updated.user.display_name,
+    user: { id: updated.user.id },
+    userSession: {
+      id: updated.userSession.id,
+      created_at: toISOStringSafe(updated.userSession.created_at),
     },
     community: {
       id: updated.community.id,
       name: updated.community.name,
+      display_title: updated.community.display_title,
       description: updated.community.description,
+      visibility: updated.community.visibility,
+      image_url:
+        updated.community.image_url === undefined
+          ? undefined
+          : updated.community.image_url,
+      status: updated.community.status,
     },
-    text_content: updated.community_platform_post_texts
-      ? { body: updated.community_platform_post_texts.body }
-      : null,
-    link_content: updated.community_platform_post_links
-      ? {
-          url: updated.community_platform_post_links.url,
-          summary:
-            updated.community_platform_post_links.summary !== null &&
-            updated.community_platform_post_links.summary !== undefined
-              ? updated.community_platform_post_links.summary
-              : undefined,
-        }
-      : null,
-    image_contents: Array.isArray(updated.community_platform_post_images)
-      ? updated.community_platform_post_images.map((img) => ({
-          uri: img.uri,
-          file_type: img.file_type,
-          file_size_bytes: img.file_size_bytes,
-        }))
-      : [],
   };
 }

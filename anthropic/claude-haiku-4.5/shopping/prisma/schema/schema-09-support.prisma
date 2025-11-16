@@ -1,0 +1,441 @@
+/// Support ticket and knowledge base article categories for organizing
+/// support content.
+///
+/// Provides hierarchical categorization system for support tickets,
+/// knowledge base articles, and FAQ items. Enables customers and support
+/// agents to browse and filter support content by topic areas such as
+/// shipping, returns, product quality, payment issues, etc.
+///
+/// Categories can be nested (parent-child hierarchy) for detailed
+/// organization. Each category tracks creation timestamps and supports soft
+/// deletion for audit compliance. Categories remain available even after
+/// soft deletion to maintain historical integrity of categorized items.
+///
+/// @namespace Support
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_support_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for hierarchical organization. Allows self-referencing
+  /// for nested category structures. {@link
+  /// ecommerce_mall_support_categories.id}.
+  parent_id String?
+  
+  /// Category name displayed to customers and support staff. Examples:
+  /// 'Shipping & Delivery', 'Returns & Refunds', 'Product Quality', 'Payment
+  /// Issues'. Unique within each category level.
+  name String
+  
+  /// URL-friendly slug for category identification. Used in support portal
+  /// URLs. Examples: 'shipping-delivery', 'returns-refunds'. Lowercase with
+  /// hyphens.
+  slug String
+  
+  /// Detailed description of the support category explaining what types of
+  /// issues it covers. Displayed to customers when browsing support topics.
+  description String?
+  
+  /// Sort order for displaying categories to users. Lower numbers appear first
+  /// in category listings.
+  display_order Int
+  
+  /// Whether this category is active and visible to customers. Inactive
+  /// categories are hidden from support portals but historical associations
+  /// are preserved.
+  is_active Boolean
+  
+  /// Timestamp when the support category was created.
+  created_at DateTime
+  
+  /// Timestamp when the support category was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, category is marked as deleted but
+  /// retained in database for audit trail and historical reference.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent ecommerce_mall_support_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive ecommerce_mall_support_categories[] @relation("recursive")
+  ecommerce_mall_support_tickets ecommerce_mall_support_tickets[]
+  ecommerce_mall_knowledge_base_articles ecommerce_mall_knowledge_base_articles[]
+  ecommerce_mall_faq_items ecommerce_mall_faq_items[]
+  
+  @@unique([slug])
+  @@index([parent_id])
+  @@index([is_active])
+}
+
+/// Customer support tickets capturing inquiries, issues, and service requests.
+///
+/// Core entity for the support system. Customers create tickets when they
+/// need assistance with orders, products, shipping, returns, or general
+/// platform issues. Each ticket is assigned a unique ticket number for
+/// customer reference and tracking.
+///
+/// Tickets progress through status workflow: open → in_progress → resolved →
+/// closed. Support agents are assigned to tickets and can leave messages and
+/// internal notes. Tickets are categorized by support category and linked to
+/// relevant orders when applicable. System tracks priority level, allowing
+/// urgent issues to be addressed first.
+///
+/// Tickets support full soft deletion for compliance while maintaining
+/// historical records. Created and updated timestamps enable SLA tracking
+/// and support performance monitoring.
+///
+/// @namespace Support
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_support_tickets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who created this support ticket. {@link
+  /// ecommerce_mall_customers.id}.
+  ecommerce_mall_customer_id String
+  
+  /// Associated order if ticket is related to a specific order. May be null
+  /// for general inquiries. {@link ecommerce_mall_orders.id}.
+  ecommerce_mall_order_id String?
+  
+  /// Support category this ticket belongs to. Enables routing to appropriate
+  /// support team. {@link ecommerce_mall_support_categories.id}.
+  ecommerce_mall_support_category_id String
+  
+  /// Admin user assigned to handle this ticket. Null if unassigned. {@link
+  /// ecommerce_mall_admins.id}.
+  assigned_admin_id String?
+  
+  /// Unique human-readable ticket identifier for customer reference. Format:
+  /// TICKET-YYYYMMDD-NNNN. Example: TICKET-20240115-0042.
+  ticket_number String
+  
+  /// Brief subject line summarizing the customer's issue. Examples: 'Order not
+  /// received', 'Wrong item shipped', 'Quality concern with product'.
+  subject String
+  
+  /// Detailed description of the customer's issue or inquiry. May include
+  /// problem context, screenshots, or specific details needed for resolution.
+  description String
+  
+  /// Current ticket status. Values: open (new, unassigned), in_progress (being
+  /// handled), resolved (solution provided), closed (completed). Drives
+  /// workflow routing.
+  status String
+  
+  /// Priority level affecting response time. Values: low, normal, high,
+  /// urgent. Urgent issues get immediate attention. Supports SLA tracking.
+  priority String
+  
+  /// Flag indicating if this ticket contains internal notes/communication.
+  /// Internal tickets are not visible to customers in their support portal.
+  is_internal_note Boolean
+  
+  /// Notes from support agent describing how the ticket was resolved.
+  /// Populated when status changes to resolved or closed.
+  resolution_notes String?
+  
+  /// Timestamp when the support ticket was created by customer.
+  created_at DateTime
+  
+  /// Timestamp when the support ticket was last updated (message added, status
+  /// changed, reassigned).
+  updated_at DateTime
+  
+  /// Timestamp when ticket was marked as resolved. Used for SLA tracking and
+  /// response time metrics.
+  resolved_at DateTime?
+  
+  /// Timestamp when ticket was closed. After closure, no new messages can be
+  /// added unless ticket is reopened.
+  closed_at DateTime?
+  
+  /// Soft delete timestamp. When set, ticket is marked as deleted but retained
+  /// in database for historical reference and compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders? @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_support_categories @relation(fields: [ecommerce_mall_support_category_id], references: [id], onDelete: Cascade)
+  assignedAdmin ecommerce_mall_admins? @relation(fields: [assigned_admin_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_support_ticket_messages ecommerce_mall_support_ticket_messages[]
+  ecommerce_mall_security_events ecommerce_mall_security_events[]
+  
+  @@unique([ticket_number])
+  @@index([ecommerce_mall_customer_id])
+  @@index([ecommerce_mall_order_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_support_category_id], map: "ecommerce_mall_support_tickets_ecommerce_mall_support__a29ebceb")
+  @@index([assigned_admin_id])
+  @@index([status])
+  @@index([priority])
+  @@index([created_at])
+}
+
+/// Conversation messages within support tickets creating communication thread.
+///
+/// Captures all communication between customer and support agents on a
+/// specific ticket. Each message is timestamped and attributed to the
+/// creator (customer or admin). Messages form the conversation history and
+/// context for ticket resolution.
+///
+/// Supports both customer-visible messages and internal support team notes
+/// marked as internal. Messages cannot be edited after creation (immutable
+/// for audit compliance) but can be soft-deleted if inappropriate or
+/// accidental.
+///
+/// Messages are essential for maintaining complete audit trail of support
+/// interactions and providing customer with documented resolution process.
+///
+/// @namespace Support
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_support_ticket_messages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent support ticket this message belongs to. {@link
+  /// ecommerce_mall_support_tickets.id}.
+  ecommerce_mall_support_ticket_id String
+  
+  /// Customer who created this message (if message from customer). Null if
+  /// message from support agent. {@link ecommerce_mall_customers.id}.
+  created_by_customer_id String?
+  
+  /// Admin who created this message (if message from support agent). Null if
+  /// message from customer. {@link ecommerce_mall_admins.id}.
+  created_by_admin_id String?
+  
+  /// Content of the support message. Supports formatted text and basic
+  /// markdown for emphasis and links.
+  message_text String
+  
+  /// Flag indicating if this is an internal note visible only to support team,
+  /// not to customer. Allows private team discussion.
+  is_internal Boolean
+  
+  /// Timestamp when the message was created. Messages are immutable after
+  /// creation.
+  created_at DateTime
+  
+  /// Soft delete timestamp. When set, message is hidden but retained for audit
+  /// trail and historical reference.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  ticket ecommerce_mall_support_tickets @relation(fields: [ecommerce_mall_support_ticket_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers? @relation(fields: [created_by_customer_id], references: [id], onDelete: Cascade)
+  admin ecommerce_mall_admins? @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_support_ticket_id], map: "ecommerce_mall_support_ticket_messages_ecommerce_mall__414576d2")
+  // spellchecker: ignore-next-line
+  @@index([created_by_customer_id], map: "ecommerce_mall_support_ticket_messages_created_by_cust_4aa19065")
+  @@index([created_by_admin_id])
+  @@index([created_at])
+}
+
+/// Self-service support articles providing detailed help content and guides.
+///
+/// Comprehensive knowledge base for customer self-service support. Articles
+/// cover topics like how-to guides, troubleshooting steps, policy
+/// explanations, product specifications, and common solutions. Customers can
+/// search and browse articles to resolve issues independently without
+/// contacting support.
+///
+/// Articles are organized by support category and tagged for searchability.
+/// Each article tracks view counts, helpfulness ratings, and search engine
+/// optimization metadata (SEO). Articles support draft and published states,
+/// allowing content creators to prepare articles before making them public.
+///
+/// Articles include detailed content with formatted text support for better
+/// readability and understanding. Publishing metadata enables content
+/// freshness tracking and automatic archival of outdated articles.
+///
+/// @namespace Support
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_knowledge_base_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Support category this knowledge base article belongs to. Enables browsing
+  /// articles by topic. {@link ecommerce_mall_support_categories.id}.
+  ecommerce_mall_support_category_id String
+  
+  /// Article title as displayed to customers. Should be clear and descriptive
+  /// of article content. Examples: 'How to Track Your Order', 'Understanding
+  /// Our Return Policy'.
+  title String
+  
+  /// URL-friendly slug for article identification. Used in knowledge base
+  /// URLs. Lowercase with hyphens. Example: 'how-to-track-order'.
+  slug String
+  
+  /// Full article content with detailed explanation, steps, images, or
+  /// examples. Supports formatted text (bold, italic, lists, links) for rich
+  /// content presentation.
+  content String
+  
+  /// Brief summary of article content for search results and preview displays.
+  /// Maximum 200 characters.
+  summary String?
+  
+  /// SEO meta description for search engine result snippets. Helps with search
+  /// visibility and click-through rates.
+  meta_description String?
+  
+  /// Comma-separated keywords for article search engine optimization. Improves
+  /// article discoverability in searches.
+  meta_keywords String?
+  
+  /// Publication status: draft (not visible), published (visible to
+  /// customers), archived (hidden but preserved). Enables content versioning
+  /// and scheduling.
+  status String
+  
+  /// Number of times this article has been viewed by customers. Used for
+  /// popularity metrics and content effectiveness analysis.
+  view_count Int
+  
+  /// Number of times customers marked this article as helpful. Used to
+  /// identify high-quality, effective content.
+  helpful_count Int
+  
+  /// Number of times customers marked this article as not helpful. Indicates
+  /// articles needing review or updating.
+  unhelpful_count Int
+  
+  /// Timestamp when the knowledge base article was created.
+  created_at DateTime
+  
+  /// Timestamp when the knowledge base article was last updated with new
+  /// content or corrections.
+  updated_at DateTime
+  
+  /// Timestamp when article was published and made visible to customers. Null
+  /// if article is still in draft status.
+  published_at DateTime?
+  
+  /// Soft delete timestamp. When set, article is archived and removed from
+  /// search results but retained for historical reference.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category ecommerce_mall_support_categories @relation(fields: [ecommerce_mall_support_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([slug])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_support_category_id], map: "ecommerce_mall_knowledge_base_articles_ecommerce_mall__74a90c6c")
+  @@index([status])
+  @@index([published_at])
+  @@index([view_count])
+}
+
+/// Frequently asked questions providing quick answers to common customer
+/// inquiries.
+///
+/// Curated collection of frequently asked questions and their concise
+/// answers. FAQs provide quick reference for common issues, policies, and
+/// procedures. Customers can quickly search FAQs for answers before
+/// submitting support tickets.
+///
+/// Each FAQ item consists of a question and answer pair. FAQs are organized
+/// by support category for easy navigation. Items track view counts and
+/// helpful votes to identify most valuable content and guide content
+/// curation.
+///
+/// FAQs are simpler and more concise than full knowledge base articles,
+/// providing quick answers rather than detailed guides. Published FAQs are
+/// visible to customers; draft FAQs are used for preparation. Soft deletion
+/// enables content management while preserving historical records.
+///
+/// @namespace Support
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_faq_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Support category this FAQ item belongs to. Enables browsing FAQs by topic
+  /// area. {@link ecommerce_mall_support_categories.id}.
+  ecommerce_mall_support_category_id String
+  
+  /// The frequently asked question. Should be phrased as customer would ask
+  /// it. Examples: 'How long does shipping take?', 'What is your return
+  /// policy?'.
+  question String
+  
+  /// Concise answer to the question. Should be brief but complete, providing
+  /// the information needed without excessive detail. Supports formatted text.
+  answer String
+  
+  /// Publication status: draft (not visible), published (visible to
+  /// customers), archived (hidden). Enables content management and versioning.
+  status String
+  
+  /// Sort order for displaying FAQ items. Lower numbers appear first in
+  /// category FAQ lists.
+  display_order Int
+  
+  /// Number of times this FAQ has been viewed by customers. Used for
+  /// popularity and engagement metrics.
+  view_count Int
+  
+  /// Number of times customers marked this FAQ as helpful. Indicates
+  /// high-quality, useful FAQs.
+  helpful_count Int
+  
+  /// Number of times customers marked this FAQ as not helpful. Indicates FAQs
+  /// needing review or updating.
+  unhelpful_count Int
+  
+  /// Timestamp when the FAQ item was created.
+  created_at DateTime
+  
+  /// Timestamp when the FAQ item was last updated with new content or
+  /// corrections.
+  updated_at DateTime
+  
+  /// Timestamp when FAQ was published and made visible to customers. Null if
+  /// FAQ is still in draft status.
+  published_at DateTime?
+  
+  /// Soft delete timestamp. When set, FAQ is archived and removed from
+  /// listings but retained for historical reference.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category ecommerce_mall_support_categories @relation(fields: [ecommerce_mall_support_category_id], references: [id], onDelete: Cascade)
+  
+  @@index([ecommerce_mall_support_category_id])
+  @@index([status])
+  @@index([published_at])
+  @@index([display_order])
+  @@index([view_count])
+}

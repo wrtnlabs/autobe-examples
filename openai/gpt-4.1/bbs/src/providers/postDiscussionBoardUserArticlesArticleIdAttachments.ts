@@ -15,107 +15,71 @@ export async function postDiscussionBoardUserArticlesArticleIdAttachments(props:
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleAttachment.ICreate;
 }): Promise<IDiscussionBoardArticleAttachment> {
-  // Step 1: Fetch the article and validate authorization
+  // 1. Fetch the article
   const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: {
-      id: props.articleId,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      author_user_id: true,
-    },
+    where: { id: props.articleId },
   });
   if (!article) {
-    throw new HttpException("Article not found or has been deleted.", 404);
+    throw new HttpException("Article not found", 404);
   }
+
+  // 2. Check permission (must be author)
   if (article.author_user_id !== props.user.id) {
     throw new HttpException(
-      "You are not authorized to upload attachments to this article.",
+      "You are not authorized to upload attachments to this article",
       403,
     );
   }
 
-  // Step 2: Enforce attachment count limit (e.g., max 10 active attachments per article)
-  const currentCount =
+  // 3. Count current attachments for the article
+  const attachmentCount =
     await MyGlobal.prisma.discussion_board_article_attachments.count({
-      where: {
-        discussion_board_article_id: props.articleId,
-        deleted_at: null,
-      },
+      where: { article_id: props.articleId },
     });
-  if (currentCount >= 10) {
-    throw new HttpException(
-      "Maximum number of attachments for this article reached.",
-      409,
-    );
+  if (attachmentCount >= 10) {
+    throw new HttpException("Attachment limit reached (10 per article)", 400);
   }
 
-  // Step 3: Validate file extension, kind, mimetype, and size
-  const allowedKinds = ["image", "document", "archive"];
-  const allowedMimetypes = [
-    "image/jpeg",
+  // 4. Enforce file type
+  const allowedTypes = [
     "image/png",
-    "image/gif",
+    "image/jpeg",
     "application/pdf",
+    "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "text/plain",
-    "application/zip",
   ];
-  const allowedExtensionsByKind: Record<string, string[]> = {
-    image: [".jpg", ".jpeg", ".png", ".gif"],
-    document: [".pdf", ".docx", ".xlsx", ".txt"],
-    archive: [".zip"],
-  };
-
-  if (!allowedKinds.includes(props.body.kind)) {
-    throw new HttpException("Invalid attachment kind.", 400);
-  }
-  const filenameLower = props.body.filename.toLowerCase();
-  const expectedExtensions = allowedExtensionsByKind[props.body.kind] || [];
-  const hasValidExtension = expectedExtensions.some((ext) =>
-    filenameLower.endsWith(ext),
-  );
-  if (!hasValidExtension) {
-    throw new HttpException(
-      "File extension does not match allowed types for kind.",
-      400,
-    );
-  }
-  if (!allowedMimetypes.includes(props.body.mimetype)) {
-    throw new HttpException("Disallowed file mimetype.", 400);
-  }
-  if (props.body.filesize < 1 || props.body.filesize > 10485760) {
-    throw new HttpException("File size must be between 1 byte and 10MB.", 400);
+  if (!allowedTypes.includes(props.body.file_type)) {
+    throw new HttpException("Invalid file type", 400);
   }
 
-  // Step 4: Insert attachment, set virus_scanned to false (scan result is performed post-upload)
-  const id = v4();
-  const created_at = toISOStringSafe(new Date());
+  // 5. Enforce file size ≤ 10MB
+  if (props.body.file_size > 10485760) {
+    throw new HttpException("Attachment exceeds 10MB limit", 400);
+  }
+
+  // 6. Insert new attachment
+  const now = toISOStringSafe(new Date());
+  const newId = v4();
   const created =
     await MyGlobal.prisma.discussion_board_article_attachments.create({
       data: {
-        id: id,
-        discussion_board_article_id: props.articleId,
-        filename: props.body.filename,
-        kind: props.body.kind,
-        mimetype: props.body.mimetype,
-        filesize: props.body.filesize,
-        virus_scanned: false,
-        created_at: created_at,
+        id: newId,
+        article_id: props.articleId,
+        uri: props.body.uri,
+        file_name: props.body.file_name,
+        file_type: props.body.file_type,
+        file_size: props.body.file_size,
+        uploaded_at: now,
       },
     });
+
   return {
     id: created.id,
-    discussion_board_article_id: created.discussion_board_article_id,
-    filename: created.filename,
-    kind: created.kind,
-    mimetype: created.mimetype,
-    filesize: created.filesize,
-    virus_scanned: created.virus_scanned,
-    created_at: toISOStringSafe(created.created_at),
-    deleted_at:
-      created.deleted_at == null ? null : toISOStringSafe(created.deleted_at),
+    article_id: created.article_id,
+    uri: created.uri,
+    file_name: created.file_name,
+    file_type: created.file_type,
+    file_size: created.file_size,
+    uploaded_at: toISOStringSafe(created.uploaded_at),
   };
 }

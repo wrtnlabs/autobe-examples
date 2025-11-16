@@ -1,0 +1,104 @@
+/// Customer inquiries submitted for support and resolution.
+///
+/// This table records all inquiries raised by registered customers. Each
+/// inquiry is linked to the customer who created it and their active session
+/// at the time of submission. The inquiries represent independent support
+/// tickets requiring management, tracking, and resolution workflows.
+///
+/// The table supports soft deletion for audit trails and includes status
+/// fields to track inquiry lifecycle stages such as open, pending, resolved,
+/// and closed. Timestamps indicate creation and modification.
+///
+/// Status indexing allows efficient retrieval and filtering by inquiry state.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_inquiries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who created the inquiry. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Reference to customer's active session at inquiry submission. {@link
+  /// shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String
+  
+  /// Brief summary title of the inquiry for quick identification.
+  title String
+  
+  /// Detailed inquiry content submitted by the customer.
+  body String
+  
+  /// Current status of the inquiry, e.g., 'open', 'pending', 'resolved',
+  /// 'closed' to indicate lifecycle state.
+  status String
+  
+  /// Timestamp when the inquiry was created.
+  created_at DateTime
+  
+  /// Timestamp when the inquiry was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp to indicate logical deletion without data loss.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_customer_inquiries_shopping_mall_custome_6a4c6bdd")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, title], map: "shopping_mall_customer_inquiries_shopping_mall_custome_69706e89")
+  @@index([status, created_at])
+}
+
+/// Frequently Asked Questions for customer self-service support.
+///
+/// This table stores static FAQ entries to address common customer queries
+/// and reduce direct support load. Each FAQ entry contains a question title
+/// and an answer body with detailed explanations.
+///
+/// FAQs are independently searchable and manageable entities with no direct
+/// user ownership but serve as valuable reference articles.
+///
+/// Entries support soft deletion and auditing through timestamps.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_faqs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// FAQ question title succinctly summarizing the issue or topic.
+  question String
+  
+  /// Comprehensive answer providing solutions or instructions for the question.
+  answer String
+  
+  /// Timestamp when the FAQ entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the FAQ entry was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp to indicate logical removal without data loss.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([question])
+  @@index([created_at])
+}

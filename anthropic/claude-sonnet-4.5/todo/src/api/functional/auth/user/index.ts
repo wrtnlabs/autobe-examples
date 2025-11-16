@@ -4,50 +4,38 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { ITodoListUser } from "../../../structures/ITodoListUser";
+export * as email from "./email/index";
+export * as password from "./password/index";
 
 /**
- * Register a new user account with email and password authentication.
+ * Register a new user account and issue authentication tokens for the
+ * todo_list_users table.
  *
- * Enables new users to create an account in the Todo list application by
- * providing their email address and password. This public registration endpoint
- * validates that the email is properly formatted, ensures it's not already
- * registered in the system (checking against todo_list_users.email for
- * uniqueness), and enforces password security requirements including minimum
- * length of 8 characters with at least one letter and one number. Upon
- * successful validation, the system creates a new user record in the
- * todo_list_users table with a unique UUID identifier, stores the email,
- * generates a secure password hash using industry-standard algorithms (bcrypt,
- * argon2, or PBKDF2), sets created_at and updated_at to the current timestamp,
- * and leaves deleted_at as null to indicate an active account.
+ * Creates a new user account in the Todo List application and issues initial
+ * JWT authentication tokens.
  *
- * The registration process immediately authenticates the newly created user by
- * generating both a JWT access token (with 15-minute expiration) and a refresh
- * token (with 30-day expiration), allowing the user to start using the
- * application without requiring a separate login step. The JWT tokens contain
- * the user's ID, email, role ('user'), and appropriate expiration timestamps.
- * This streamlined registration-and-authentication flow provides an optimal
- * user experience by eliminating the need for users to log in immediately after
- * registration.
+ * This endpoint handles the complete user registration workflow. When a new
+ * user signs up, the system validates the provided credentials (email and
+ * password), creates a new record in the todo_list_users table, and generates a
+ * pair of JWT tokens (access token and refresh token) for immediate
+ * authentication.
  *
- * Security measures include validating email format to prevent malformed input,
- * checking email uniqueness to prevent duplicate accounts, enforcing password
- * strength requirements to ensure account security, and securely hashing
- * passwords before storage (never storing plain text passwords). The operation
- * returns the user's profile information (id, email, created_at) along with the
- * authentication tokens wrapped in the ITodoListUser.IAuthorized response
- * structure.
+ * The registration process ensures email uniqueness through database
+ * constraints defined in the Prisma schema. The password is securely hashed
+ * before storage. Upon successful registration, the user receives
+ * authentication tokens that can be used immediately to access protected
+ * endpoints without requiring a separate login step.
  *
- * This operation is essential for user onboarding and serves as the primary
- * entry point for new users to access the Todo list application. It establishes
- * the user's identity in the system and creates the foundation for all
- * subsequent todo management operations. The registration data populates the
- * todo_list_users table which maintains the one-to-many relationship with
- * todo_list_todos, enabling users to own and manage their personal todo items
- * after registration.
+ * Security considerations include password strength validation, email format
+ * verification, and protection against duplicate registrations. The operation
+ * returns standardized authentication credentials following the
+ * ITodoListUser.IAuthorized interface pattern.
+ *
+ * This is a public endpoint that does not require prior authentication, as it
+ * serves as the entry point for new users to join the application.
  *
  * @param props.connection
- * @param props.body User registration credentials including email address and
- *   password meeting security requirements
+ * @param props.body User registration credentials including email and password
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -82,13 +70,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /**
-     * User registration credentials including email address and password
-     * meeting security requirements
-     */
-    body: ITodoListUser.IRegister;
+    /** User registration credentials including email and password */
+    body: ITodoListUser.ICreate;
   };
-  export type Body = ITodoListUser.IRegister;
+  export type Body = ITodoListUser.ICreate;
   export type Response = ITodoListUser.IAuthorized;
 
   export const METADATA = {
@@ -133,53 +118,35 @@ export namespace join {
 }
 
 /**
- * Authenticate user with email and password to obtain access tokens.
+ * Authenticate user credentials and issue access tokens for the todo_list_users
+ * table.
  *
- * Authenticates existing users with their registered email and password
- * credentials to establish a secure session in the Todo list application. This
- * public login endpoint validates the provided email exists in the
- * todo_list_users table, verifies the password matches the stored password_hash
- * using secure comparison methods, and ensures the account is active by
- * checking that deleted_at is null. The system uses industry-standard password
- * hashing algorithms (bcrypt, argon2, or PBKDF2) with constant-time comparison
- * to prevent timing attacks.
+ * Authenticates an existing user and issues JWT tokens for accessing protected
+ * resources.
  *
- * Upon successful credential validation, the system generates a JWT access
- * token with 15-minute expiration and a refresh token with 30-day expiration.
- * The access token payload includes the user's ID (todo_list_users.id), email
- * (todo_list_users.email), role ('user'), issued-at timestamp, and expiration
- * timestamp. These tokens enable stateless authentication for subsequent API
- * requests. The system also creates a session record in the
- * todo_list_user_sessions table, capturing the user's IP address, connection
- * URL (href), referrer, and setting created_at to the current timestamp while
- * leaving expired_at null for the active session. This session tracking
- * supports security auditing and multi-device session management.
+ * This endpoint handles the user login workflow. When a registered user
+ * attempts to sign in, the system validates the provided credentials (email and
+ * password) against stored records in the todo_list_users table. Upon
+ * successful validation, the operation generates a new pair of JWT tokens
+ * (access token and refresh token) and creates a session record in the
+ * todo_list_user_sessions table for session tracking.
  *
- * Security features include generic error messages that don't reveal whether
- * the email or password was incorrect (preventing account enumeration attacks),
- * basic brute force protection through rate limiting on repeated failed
- * attempts, and the option to implement temporary account lockout after
- * excessive failures. The operation updates the user's last login metadata to
- * track account activity patterns.
+ * The authentication process verifies that the email exists in the system and
+ * that the provided password matches the stored hashed password. The operation
+ * implements secure password comparison using industry-standard hashing
+ * algorithms.
  *
- * The login operation returns the ITodoListUser.IAuthorized response containing
- * the user's profile information (id, email, created_at from todo_list_users)
- * along with both authentication tokens. This establishes the authenticated
- * session that authorizes the user to perform all todo management operations on
- * their personal todo items. The JWT tokens must be included in subsequent
- * requests to protected endpoints, where they are validated to ensure the user
- * can only access todo_list_todos records where todo_list_user_id matches their
- * authenticated user ID.
+ * Security considerations include protection against brute-force attacks,
+ * secure password verification, and session management. Failed login attempts
+ * should be logged for security monitoring. The operation returns standardized
+ * authentication credentials following the ITodoListUser.IAuthorized interface
+ * pattern.
  *
- * This operation is fundamental to the application's security model,
- * establishing user identity and enforcing the data isolation that ensures
- * users can only access their own todo items. Failed login attempts are logged
- * for security monitoring without exposing whether specific email addresses
- * exist in the system.
+ * This is a public endpoint that does not require prior authentication, as it
+ * serves as the entry point for existing users to access their accounts.
  *
  * @param props.connection
- * @param props.body User login credentials containing registered email address
- *   and password
+ * @param props.body User login credentials including email and password
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -214,10 +181,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /**
-     * User login credentials containing registered email address and
-     * password
-     */
+    /** User login credentials including email and password */
     body: ITodoListUser.ILogin;
   };
   export type Body = ITodoListUser.ILogin;
@@ -265,57 +229,36 @@ export namespace login {
 }
 
 /**
- * Refresh expired access token using a valid refresh token.
+ * Refresh authentication tokens using a valid refresh token for the
+ * todo_list_users table.
  *
- * Enables users to obtain a new access token using their valid refresh token
- * when the access token expires after 15 minutes. This public endpoint supports
- * seamless session continuation without forcing users to re-authenticate with
- * their email and password. The operation validates that the provided refresh
- * token is properly signed, not expired (refresh tokens have 30-day
- * expiration), not revoked, and belongs to an active user account by verifying
- * the associated user in todo_list_users has deleted_at set to null.
+ * Refreshes authentication tokens using a valid refresh token to maintain user
+ * session continuity.
  *
- * The token refresh process performs comprehensive validation including
- * signature verification using the JWT secret key, expiration timestamp
- * checking to ensure the token hasn't exceeded its 30-day lifespan, revocation
- * status verification against the system's revoked token list (tokens are
- * revoked on logout, password change, or 'logout from all devices' actions),
- * and user account status confirmation to prevent refresh for suspended or
- * deleted accounts. The system extracts the user identity from the refresh
- * token payload and verifies the corresponding record exists in
- * todo_list_users.
+ * This endpoint handles the token refresh workflow, allowing authenticated
+ * users to obtain new access tokens without requiring re-authentication. When a
+ * user's access token expires, they can use their refresh token to request a
+ * new access token, maintaining seamless application access.
  *
- * Upon successful validation, the system generates a new JWT access token with
- * 15-minute expiration containing the user's ID (todo_list_users.id), email
- * (todo_list_users.email), role ('user'), issued-at timestamp, and new
- * expiration timestamp. The operation may implement refresh token rotation as a
- * security enhancement, where using a refresh token invalidates it and issues
- * both a new access token and a new refresh token. This rotation limits the
- * lifespan of any individual refresh token and reduces the window of
- * vulnerability if a token is compromised.
+ * The refresh process validates the provided refresh token against active
+ * session records in the todo_list_user_sessions table. The system verifies
+ * token authenticity, expiration status, and session validity. Upon successful
+ * validation, a new access token is generated, and optionally a new refresh
+ * token may be issued as part of token rotation security practices.
  *
- * Security considerations include maintaining a revoked token list to prevent
- * reuse of invalidated refresh tokens, limiting the number of concurrent
- * refresh tokens per user to prevent token proliferation, and logging refresh
- * token usage for security monitoring and anomaly detection. The system denies
- * refresh attempts if the token has been revoked (user logged out or changed
- * password), if the token signature is invalid (potential tampering), if the
- * token has expired beyond the 30-day window, or if the associated user account
- * is suspended or deleted.
+ * Security considerations include refresh token revocation capabilities,
+ * session expiration enforcement, and protection against token theft. The
+ * operation ensures that only valid, non-expired refresh tokens associated with
+ * active user sessions can obtain new access tokens.
  *
- * The operation returns the ITodoListUser.IAuthorized response structure
- * containing the user's profile information from todo_list_users along with the
- * new access token and optionally a new refresh token. This enables the client
- * to seamlessly update their stored tokens and continue making authenticated
- * requests to protected endpoints. The refresh mechanism is essential for
- * maintaining continuous user sessions in the Todo list application while
- * keeping access tokens short-lived for security purposes. It supports the user
- * experience expectation that they remain logged in across multiple sessions
- * without frequent re-authentication, while maintaining security through
- * limited-lifetime access tokens and revocable refresh tokens.
+ * This endpoint requires a valid refresh token but does not require an active
+ * access token, making it suitable for scenarios where the access token has
+ * expired but the user session remains valid. The operation returns
+ * standardized authentication credentials following the
+ * ITodoListUser.IAuthorized interface pattern.
  *
  * @param props.connection
- * @param props.body Valid refresh token to exchange for a new access token
+ * @param props.body Refresh token credentials for obtaining new access tokens
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -350,7 +293,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Valid refresh token to exchange for a new access token */
+    /** Refresh token credentials for obtaining new access tokens */
     body: ITodoListUser.IRefresh;
   };
   export type Body = ITodoListUser.IRefresh;

@@ -1,0 +1,159 @@
+/// Product categories for organizing items in the shopping mall. Each
+/// category represents a classification group that products can belong to,
+/// supporting hierarchical organization with multilingual support.
+/// Categories help customers navigate products efficiently and enable
+/// targeted promotions. Derived from systematic component, this table serves
+/// as a reference for product listings across all sellers.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category name used for navigation and display.
+  name String
+  
+  /// Detailed category description explaining the types of products included.
+  description String?
+  
+  /// Display order priority for category listing, lower numbers appear first.
+  priority Int
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_products shopping_mall_products[]
+  
+  @@unique([name])
+  @@index([priority])
+  @@index([created_at])
+}
+
+/// Sales channels representing different methods of product distribution
+/// within the shopping mall platform. Channels allow sellers to offer
+/// products through various strategies like direct online sales,
+/// marketplace, or wholesale channels. Each channel maintains separate
+/// pricing and terms, supporting flexible business models.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel name identifier for display and reference.
+  name String
+  
+  /// Detailed description of the channel's business model and terms.
+  description String?
+  
+  /// Channel type classification (online, offline, wholesale, etc.).
+  type String
+  
+  /// Platform commission percentage applied to sales in this channel.
+  commission_rate Float
+  
+  /// Whether this channel is currently operational.
+  is_active Boolean
+  
+  /// Timestamp when the channel was created.
+  created_at DateTime
+  
+  /// Timestamp when the channel was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@index([type])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Platform sections defining different areas or departments within the
+/// shopping mall. Sections organize the platform into logical divisions,
+/// supporting hierarchical structures with parent-child relationships. This
+/// enables complex navigation patterns and specialized marketplace areas.
+///
+/// The hierarchical design allows for unlimited nesting levels, enabling
+/// complex organizational structures. Each section can contain sub-sections,
+/// creating a tree-like navigation system. Priority fields enable custom
+/// ordering within each level of the hierarchy.
+///
+/// Visibility controls determine which sections are publicly accessible,
+/// supporting phased rollouts or maintenance modes. Soft deletion preserves
+/// historical navigation patterns while removing outdated sections.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent section for hierarchical organization. References
+  /// shopping_mall_sections.id to create hierarchical relationships.
+  parent_section_id String?
+  
+  /// Section name for navigation and display. Must be unique within the same
+  /// parent level, but can repeat across different hierarchy branches.
+  name String
+  
+  /// Detailed explanation of the section's purpose and contents. Helps users
+  /// understand what to expect from this section.
+  description String?
+  
+  /// Display order within parent section, lower numbers appear first. Enables
+  /// custom ordering that respects hierarchical structure.
+  priority Int
+  
+  /// Whether this section is publicly visible in navigation. Allows hidden
+  /// sections for setup or maintenance.
+  is_visible Boolean
+  
+  /// Timestamp when the section was created. Tracks when navigation structure
+  /// was established.
+  created_at DateTime
+  
+  /// Timestamp when the section was last modified. Monitors changes to
+  /// navigation structure.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if not deleted. Preserves navigation history
+  /// while hiding outdated sections.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_sections? @relation("recursive", fields: [parent_section_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_sections[] @relation("recursive")
+  
+  @@index([priority])
+  @@index([is_visible])
+  @@index([created_at])
+  @@index([parent_section_id, name])
+}

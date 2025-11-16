@@ -4,234 +4,235 @@
 
 - [Systematic](#systematic)
 - [Actors](#actors)
-- [Todo](#todo)
+- [Tasks](#tasks)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"todo_configurations" {
+"todo_app_configurations" {
   String id PK
   String key UK
   String value
   String description "nullable"
-  String type
-  Boolean is_system
+  String category "nullable"
+  Boolean is_enabled
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 ```
 
-### `todo_configurations`
+### `todo_app_configurations`
 
-System-wide configuration settings that store application-wide settings
-and preferences. This table provides a flexible key-value store for
-various configuration parameters that can be adjusted without requiring
-code changes or deployments.
+System-wide application configuration settings.
+
+Stores key-value pairs for application-wide settings that control system
+behavior, features, and operational parameters. These configurations
+affect all users and are typically managed by system administrators
+rather than individual users.
+
+Configurations include settings like maximum task limits, session
+timeouts, feature flags, and other system-level parameters that maintain
+consistent application behavior across all user interactions. Each
+configuration entry maintains a unique key with flexible value storage
+for different data types.
 
 Properties as follows:
 
-- `id`: Primary Key.
+- `id`: Primary Key
 - `key`
-  > Unique configuration key identifier used to reference the setting in
-  > application code.
+  > Unique configuration key identifier used for lookups and type safety
+  > validation
 - `value`
-  > Configuration value stored as string. Can contain JSON data for complex
-  > configuration objects.
-- `description`: Human-readable description of what this configuration setting controls.
-- `type`
-  > Configuration type indicating if this is a string, number, boolean, or
-  > JSON configuration value.
-- `is_system`
-  > Whether this is a system-level configuration that cannot be modified by
-  > users. Defaults to true for critical settings.
-- `created_at`: Timestamp when the configuration was initially created.
-- `updated_at`: Timestamp when the configuration was last modified.
-- `deleted_at`
-  > Timestamp when the configuration was soft deleted. Null if the
-  > configuration is active.
+  > Configuration value stored as string with flexible parsing for different
+  > data types
+- `description`
+  > Human-readable description explaining the configuration's purpose and
+  > usage
+- `category`
+  > Configuration category grouping for organization and administrative
+  > management
+- `is_enabled`: Whether this configuration is currently active and enforced by the system
+- `created_at`: Timestamp when the configuration was initially created
+- `updated_at`: Timestamp when the configuration was last modified
+- `deleted_at`: Soft deletion timestamp for configuration history
 
 ## Actors
 
 ```mermaid
 erDiagram
-"todo_users" {
+"todo_app_users" {
   String id PK
   String email UK
   String password_hash
-  String reset_password_token UK "nullable"
-  DateTime reset_password_expires "nullable"
-  String mfa_secret "nullable"
-  Boolean mfa_enabled
-  Int failed_login_attempts
-  DateTime locked_until "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"todo_user_sessions" {
+"todo_app_user_sessions" {
   String id PK
-  String todo_user_id FK
+  String user_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"todo_guests" {
-  String id PK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"todo_guest_sessions" {
-  String id PK
-  String todo_guest_id FK
-  String ip
-  String href
-  String referrer
-  DateTime created_at
-  DateTime expired_at "nullable"
-}
-"todo_user_sessions" }o--|| "todo_users" : user
-"todo_guest_sessions" }o--|| "todo_guests" : guest
+"todo_app_user_sessions" }o--|| "todo_app_users" : user
 ```
 
-### `todo_users`
+### `todo_app_users`
 
-Registered users with comprehensive authentication fields supporting
-password reset, account security, and multi-factor authentication. Each
-user account is associated with a unique email address and encrypted
-password hash for secure authentication.
+User accounts for authentication and task ownership.
+
+Each user has their own private todo list and can only access tasks they
+created. The user entity serves as the primary actor for task management
+operations across the application.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > User's email address for authentication and communication. Must be unique
-  > across all registered users.
+  > User email address used for authentication. Must be unique across all
+  > users and follows RFC 5322 format.
 - `password_hash`
-  > Encrypted password hash for secure authentication using industry-standard
-  > hashing algorithms.
-- `reset_password_token`
-  > Security token for password reset requests. Generated when user requests
-  > password reset, valid for 30 minutes as specified in requirements.
-- `reset_password_expires`
-  > Timestamp when the password reset token expires. Used to enforce the
-  > 30-minute token validity requirement.
-- `mfa_secret`
-  > Security token for multi-factor authentication setup and verification.
-  > Enables 2FA functionality as mentioned in requirements analysis.
-- `mfa_enabled`
-  > Whether multi-factor authentication is enabled for this user account.
-  > Defaults to false for new accounts.
-- `failed_login_attempts`
-  > Number of consecutive failed login attempts. Used to implement account
-  > lockout after 5 failed attempts as specified in security requirements.
-- `locked_until`
-  > Timestamp when account lockout expires after failed login attempts.
-  > Implements time-based account recovery for security protection.
-- `created_at`
-  > Timestamp when the user account was created. Automatically set on
-  > registration.
-- `updated_at`
-  > Timestamp when the user account was last updated. Automatically updated
-  > on any account changes.
-- `deleted_at`
-  > Timestamp when the user account was soft deleted. Null if the account is
-  > active. Enables account recovery without data loss.
+  > Hashed password for secure authentication. Meets security requirements of
+  > minimum 8 characters with letters and numbers.
+- `created_at`: Timestamp when the user account was created.
+- `updated_at`: Timestamp when the user account was last modified.
 
-### `todo_user_sessions`
+### `todo_app_user_sessions`
 
-User session tracking for authentication and audit purposes. Each session
-represents a logged-in user's current session with connection metadata.
+User session management for authentication tracking.
+
+Sessions enable secure user authentication across multiple devices while
+maintaining audit trails of login activity.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_user_id`: The user's [todo_users.id](#todo_users) who owns this session.
-- `ip`: IP address of the user's connection.
-- `href`: Connection URL when the session was created.
-- `referrer`: Referrer URL when the session was created.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expires. Null if the session is still active.
-
-### `todo_guests`
-
-Guest users who can access basic functionality without registration.
-Guests provide temporary access to demonstrate the service's value
-proposition.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `created_at`: Timestamp when the guest access was created.
-- `updated_at`: Timestamp when the guest access was last updated.
-- `deleted_at`
-  > Timestamp when the guest access was soft deleted. Null if the guest
-  > access is active.
-
-### `todo_guest_sessions`
-
-Guest session tracking for temporary authentication. Each session
-represents a guest user's current session with connection metadata for
-audit purposes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `todo_guest_id`: The guest user's [todo_guests.id](#todo_guests) who owns this session.
-- `ip`: IP address of the guest's connection.
-- `href`: Connection URL when the session was created.
-- `referrer`: Referrer URL when the session was created.
+- `user_id`
+  > Reference to the user account this session belongs to. {@link
+  > todo_app_users.id}
+- `ip`: IP address of the user's connection for security tracking.
+- `href`: Connection URL where the session was established.
+- `referrer`: Referrer URL that directed to the session creation.
 - `created_at`: Timestamp when the session was created.
 - `expired_at`
-  > Timestamp when the guest session expires. Null if the session is still
+  > Timestamp when the session expires. Null if the session is currently
   > active.
 
-## Todo
+## Tasks
 
 ```mermaid
 erDiagram
-"todo_tasks" {
+"todo_app_tasks" {
   String id PK
-  String todo_user_id FK
-  String description
-  Boolean completed
-  String business_status
+  String todo_app_user_id FK
+  String title
+  String description "nullable"
+  String status
+  DateTime completed_at "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime completed_at "nullable"
+  DateTime deleted_at "nullable"
 }
+"todo_app_task_snapshots" {
+  String id PK
+  String todo_app_task_id FK
+  String todo_app_user_id FK
+  String title
+  String description "nullable"
+  String status
+  DateTime completed_at "nullable"
+  DateTime created_at
+}
+"todo_app_task_snapshots" }o--|| "todo_app_tasks" : task
 ```
 
-### `todo_tasks`
+### `todo_app_tasks`
 
-Individual todo tasks that users can create, complete, and manage. Each
-task represents a single unit of work that can be completed and tracked
-over time. Tasks are associated with users and support simple completion
-status tracking.
+Core todo task entity representing individual items in a user's personal
+task list.
+
+Tasks are the fundamental business entity of the todo application,
+enabling users to capture, track, and complete their daily
+responsibilities. Each task belongs exclusively to one user and maintains
+privacy through strict ownership rules.
+
+Tasks support a simple lifecycle: creation, modification, completion, and
+deletion. The completion status provides immediate visual feedback about
+progress, while creation timestamps enable chronological organization.
+
+Soft deletion allows users to remove tasks while preserving audit trails
+for data integrity. The task title captures the essential description of
+the responsibility, supporting up to 200 characters for detailed task
+descriptions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_user_id`: User who created and owns this task. References {\link todo_users.id}
+- `todo_app_user_id`
+  > Task owner's [todo_app_users.id](#todo_app_users). Each task belongs to exactly one
+  > authenticated user.
+- `title`
+  > Task title describing the responsibility or action needed. Limited to 200
+  > characters for concise descriptions.
 - `description`
-  > Task description content up to 500 characters. Users can edit this to
-  > modify what the task involves.
-- `completed`
-  > Completion status of the task. False indicates incomplete, true indicates
-  > completed.
-- `business_status`
-  > Business workflow status of the task. Values: pending, processing,
-  > completed. Required for workflow management as specified in requirements.
-- `created_at`
-  > Timestamp when the task was created. Automatically set when task is first
-  > added.
-- `updated_at`
-  > Timestamp when the task was last modified. Updated automatically on any
-  > change to the task.
+  > Optional detailed description providing additional context or notes about
+  > the task. Supports longer form content.
+- `status`
+  > Current task completion status. Values: 'pending' for incomplete tasks,
+  > 'complete' for finished tasks.
+- `completed_at`: Timestamp when the task was marked as complete. Null for pending tasks.
+- `created_at`: Task creation timestamp. Records when the user first created this task.
+- `updated_at`: Last modification timestamp. Updates whenever task properties change.
+- `deleted_at`
+  > Soft deletion timestamp. Records when task was deleted while preserving
+  > historical data.
+
+### `todo_app_task_snapshots`
+
+Historical snapshots of todo tasks capturing point-in-time states for
+audit trails and change tracking.
+
+Task snapshots preserve the complete state of tasks at specific moments,
+enabling users to track modification history and maintain audit trails
+for personal organization accountability. Each snapshot captures an
+immutable record of task properties including title, description, status,
+and completion details.
+
+The snapshot pattern is essential for maintaining data integrity when
+users modify existing tasks, providing historical context that might be
+needed for personal productivity analysis, accountability tracking, or
+recovering from accidental changes.
+
+Snapshots are created automatically when tasks are modified, forming an
+append-only historical record that supports long-term productivity
+insights and ensures users can understand how their task organization
+evolved over time.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_task_id`
+  > Reference to the original task's [todo_app_tasks.id](#todo_app_tasks). Links
+  > snapshot to source task.
+- `todo_app_user_id`
+  > Snapshot owner's [todo_app_users.id](#todo_app_users). Maintains ownership tracking
+  > for historical records.
+- `title`
+  > Task title at the time of snapshot. Preserves exact wording during this
+  > historical moment.
+- `description`
+  > Task description at the time of snapshot. Maintains additional context if
+  > present.
+- `status`
+  > Task status at snapshot time. Records completion state during this
+  > historical moment.
 - `completed_at`
-  > Timestamp when the task was marked as completed. Only set when task
-  > transitions to completed state.
+  > Completion timestamp at snapshot time. Records when task was completed if
+  > applicable.
+- `created_at`
+  > Snapshot creation timestamp. Records when this historical snapshot was
+  > captured.

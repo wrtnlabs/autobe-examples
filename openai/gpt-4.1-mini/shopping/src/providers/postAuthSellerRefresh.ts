@@ -8,8 +8,6 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
-import { IShoppingMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSession";
-import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
 
@@ -17,40 +15,43 @@ export async function postAuthSellerRefresh(props: {
   seller: SellerPayload;
   body: IShoppingMallSeller.IRefresh;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  // Step 1: Verify and decode the refresh token
-  let decodedRaw = jwt.verify(
-    props.body.refreshToken,
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      issuer: "autobe",
-    },
-  );
+  let decodedToken: {
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "seller";
+  };
 
-  // Narrow decodedRaw to JwtPayload
-  if (typeof decodedRaw !== "object" || decodedRaw === null) {
+  try {
+    const decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    );
+
+    if (
+      typeof decoded !== "object" ||
+      decoded === null ||
+      decoded.type !== "seller" ||
+      typeof decoded.id !== "string" ||
+      typeof decoded.session_id !== "string"
+    ) {
+      throw new HttpException("Invalid refresh token payload", 401);
+    }
+
+    decodedToken = {
+      id: decoded.id as string & tags.Format<"uuid">,
+      session_id: decoded.session_id as string & tags.Format<"uuid">,
+      type: "seller",
+    };
+  } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  const decoded = decodedRaw as {
-    type: string;
-    id: string & tags.Format<"uuid">;
-    session_id: string & tags.Format<"uuid">;
-  };
-
-  // Step 2: Validate token type
-  if (decoded.type !== "seller") {
-    throw new HttpException("Invalid token type", 403);
-  }
-
-  // Step 3: Validate session and seller
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.findFirst(
     {
       where: {
-        id: decoded.session_id,
-        shopping_mall_seller_id: decoded.id,
-      },
-      include: {
-        shoppingMallSeller: true,
+        id: decodedToken.session_id,
+        shopping_mall_seller_id: decodedToken.id,
       },
     },
   );
@@ -58,67 +59,78 @@ export async function postAuthSellerRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  if (session.shoppingMallSeller.deleted_at !== null) {
+
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUnique({
+    where: { id: decodedToken.id },
+  });
+
+  if (!seller) {
+    throw new HttpException("Seller not found", 401);
+  }
+
+  if (seller.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
 
-  // Step 4: Generate new access and refresh tokens
-  const now = toISOStringSafe(new Date());
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const nowTimestamp = Date.now();
+  const accessExpiresTimestamp = nowTimestamp + 60 * 60 * 1000;
+  const refreshExpiresTimestamp = nowTimestamp + 7 * 24 * 60 * 60 * 1000;
 
-  const access = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
+  const accessExpires = toISOStringSafe(new Date(accessExpiresTimestamp));
+  const refreshExpires = toISOStringSafe(new Date(refreshExpiresTimestamp));
+  const createdAt = toISOStringSafe(new Date(nowTimestamp));
 
-  const refresh = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: decodedToken.type,
+        id: decodedToken.id,
+        session_id: decodedToken.session_id,
+        created_at: createdAt,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decodedToken.type,
+        id: decodedToken.id,
+        session_id: decodedToken.session_id,
+        tokenType: "refresh",
+        created_at: createdAt,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
 
-  // Step 5: Update session expiration
   await MyGlobal.prisma.shopping_mall_seller_sessions.update({
-    where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
+    where: { id: decodedToken.session_id },
+    data: { expired_at: new Date(refreshExpiresTimestamp) },
   });
-
-  // Step 6: Compose returned authorized seller object
-  const seller = session.shoppingMallSeller;
 
   return {
     id: seller.id,
     email: seller.email,
-    password_hash: seller.password_hash,
-    store_name: seller.store_name,
+    name: seller.name,
+    status: typia.assert<"active" | "inactive" | "suspended">(seller.status),
+    business_status: typia.assert<"approved" | "pending" | "rejected">(
+      seller.business_status,
+    ),
     created_at: toISOStringSafe(seller.created_at),
     updated_at: toISOStringSafe(seller.updated_at),
     deleted_at:
       seller.deleted_at === null
         ? undefined
         : toISOStringSafe(seller.deleted_at),
-    shopping_mall_seller_sessions: undefined,
-    shopping_mall_seller_profiles: undefined,
-    token: {
-      access,
-      refresh,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
-    },
+    token,
   };
 }

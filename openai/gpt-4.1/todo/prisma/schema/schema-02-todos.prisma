@@ -1,12 +1,26 @@
-/// A todo business entity owned strictly by a single todoUser. Each record
-/// represents a personal todo item with title, optional description,
-/// completion status, timestamps, and ownership reference. Enforces all
-/// business constraints as required: only the owning user can create, view,
-/// update, complete, or delete the todo. No sharing, delegation, or
-/// multi-user relations exist. Business validation (title and description
-/// rules, unique id, timestamps, and state transitions) is handled at the
-/// field level. Tightly coupled to {@link todo_list_todousers} for ownership
-/// and permission enforcement.
+/// Core business entity representing a personal todo item owned by a
+/// registered user.
+///
+/// Stores all user-created tasks for the Todo List application. Every todo
+/// is linked to exactly one user through the todo_list_users table,
+/// guaranteeing strict per-user privacy and ownership boundaries. Fields
+/// include a unique identifier, a required textual title, and an optional
+/// description for expanded task notes. Only the owner may read, update, or
+/// delete their own todos; cross-user access is strictly prohibited by
+/// design.
+///
+/// Completion state is indicated by a boolean is_completed flag, enabling
+/// users to filter or display completed and active todos. Each todo records
+/// its creation and last modification timestamps to facilitate ordered
+/// listings and update tracking. Deletion occurs as an immediate,
+/// irreversible operation with no soft delete, recycling, or recovery
+/// feature—a requirement explicitly defined for privacy and simplicity in
+/// the MVP.
+///
+/// Indexes ensure fast lookup and retrieval by user and creation date, while
+/// all field validation rules and usage patterns conform to minimal,
+/// single-user, and privacy-centric business needs. No auxiliary or
+/// historical tables are present, as per requirements.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -17,41 +31,35 @@ model todo_list_todos {
   /// Primary Key.
   id String @id
   
-  /// Owner's {@link todo_list_todousers.id}. Enforces strict ownership; only
-  /// the referenced todoUser can manage this todo.
-  todo_list_todouser_id String
+  /// Foreign key referencing the owner user. Each todo belongs to exactly one
+  /// user; enforces strict per-user data boundaries. {@link
+  /// todo_list_users.id}.
+  todo_list_user_id String
   
-  /// Short, required title of the todo item. Cannot be empty or
-  /// whitespace-only; maximum 100 characters per business rule.
+  /// Required title of the todo. Must be 1 to 255 non-whitespace characters.
+  /// Serves as the main identifying label for the user's task.
   title String
   
-  /// Optional details or notes for the todo. May be empty or null; must not
-  /// exceed 500 characters if present.
+  /// Optional extended notes for the todo, up to 1024 characters. Provides
+  /// additional context or instructions for the user's private use.
   description String?
   
-  /// Indicates whether the todo is completed (true) or not (false). Only
-  /// boolean values are allowed per requirements. Business logic ensures
-  /// consistent state transitions.
+  /// True if the todo is marked completed by the user, false otherwise. Used
+  /// for workflow and list filtering.
   is_completed Boolean
   
-  /// Timestamp when the todo was created. System-assigned; required for
-  /// traceability.
+  /// Timestamp of when the todo was created. Used for ordering and audit
+  /// purposes.
   created_at DateTime
   
-  /// Timestamp for the last modification of the todo. System-assigned;
-  /// required for audit traceability.
+  /// Timestamp of the most recent update to the todo. Updated on modification
+  /// of title, description, or completion status.
   updated_at DateTime
-  
-  /// Timestamp when the todo was marked as completed. Required and set only
-  /// when is_completed is true; must be null or omitted when is_completed is
-  /// false. Used for audit/history. Nullable as per business rule.
-  completed_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todoListTodouser todo_list_todousers @relation(fields: [todo_list_todouser_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_list_todouser_id, created_at])
-  @@index([is_completed])
+  @@index([todo_list_user_id, created_at])
 }

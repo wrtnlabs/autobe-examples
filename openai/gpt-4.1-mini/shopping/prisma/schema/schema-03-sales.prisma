@@ -1,0 +1,421 @@
+/// Products available in the shopping mall marketplace.
+///
+/// Represents the main catalog entries created and managed by sellers. Each
+/// product belongs to one or more categories, supports multiple SKUs as
+/// variants, and can be tracked through sales snapshots.
+///
+/// Includes essential metadata for display, grouping, and status management.
+/// Products may be soft-deleted.
+///
+/// References seller entities and category relationship via foreign keys
+/// from other components.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller entity who owns the product. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique business code identifying the product, used in UI and backend
+  /// operations.
+  code String
+  
+  /// Product name displayed to customers.
+  name String
+  
+  /// Detailed product description.
+  description String?
+  
+  /// Indicates if the product is currently active and visible in the catalog.
+  is_active Boolean
+  
+  /// Timestamp when the product was created.
+  created_at DateTime
+  
+  /// Timestamp when the product was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking when the product was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_skus shopping_mall_product_skus[]
+  shopping_mall_sales_snapshots shopping_mall_sales_snapshots[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_favorite_products shopping_mall_favorite_products[]
+  
+  @@index([shopping_mall_seller_id])
+  
+  @@unique([code])
+  @@index([is_active, shopping_mall_seller_id])
+}
+
+/// Product categories used to organize and classify products in the shopping
+/// mall.
+///
+/// Supports hierarchical categorization for browsing and filtering.
+///
+/// Categories can have parent categories to form category trees.
+///
+/// Soft deletion is supported.
+///
+/// Primarily used to group products and facilitate search and navigation.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional reference to the parent category for hierarchical
+  /// categorization. {@link shopping_mall_product_categories.id}.
+  parent_id String?
+  
+  /// Category name displayed to users.
+  name String
+  
+  /// Unique category code used in business operations.
+  code String
+  
+  /// Detailed description of the category's purpose.
+  description String?
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking when the category was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parentCategory shopping_mall_product_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_channel_categories shopping_mall_channel_categories[]
+  recursive shopping_mall_product_categories[] @relation("recursive")
+  
+  @@index([parent_id])
+  
+  @@unique([code])
+  @@index([name])
+}
+
+/// Stock Keeping Units representing specific variants of products.
+///
+/// Each SKU uniquely identifies a variant defined by a combination of
+/// attribute values, price, and inventory quantity.
+///
+/// SKUs are directly linked to products and manage seller-specific pricing
+/// and stock levels.
+///
+/// Supports soft deletion and auditing timestamps.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_skus {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent product. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Unique SKU code used for inventory and order processing.
+  sku_code String
+  
+  /// Sales price of this SKU variant.
+  price Float
+  
+  /// Current inventory count for the SKU.
+  inventory Int
+  
+  /// Indicates if the SKU is currently active and available for sale.
+  is_active Boolean
+  
+  /// Timestamp when the SKU was created.
+  created_at DateTime
+  
+  /// Timestamp when the SKU was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking when the SKU was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sales_snapshots shopping_mall_sales_snapshots[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@index([shopping_mall_product_id])
+  
+  @@unique([sku_code])
+  // spellchecker: ignore-next-line
+  @@index([is_active, shopping_mall_product_id], map: "shopping_mall_product_skus_is_active_shopping_mall_pro_dedf11a1")
+}
+
+/// SKU attribute definitions representing types of variant attributes.
+///
+/// Defines attributes like color, size, material, etc., which can be used in
+/// SKU options and values.
+///
+/// Attributes support soft deletion and auditing timestamps.
+///
+/// This supports extensible variant attribute management for products.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_attributes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the attribute type, e.g., 'Color' or 'Size'.
+  name String
+  
+  /// Unique code of the attribute for system reference.
+  code String
+  
+  /// Detailed explanation of the attribute's use cases.
+  description String?
+  
+  /// Timestamp when the attribute was created.
+  created_at DateTime
+  
+  /// Timestamp when the attribute was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the attribute was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_sku_attribute_values shopping_mall_sku_attribute_values[]
+  
+  @@unique([code])
+  @@index([name])
+}
+
+/// Individual values for SKU attributes.
+///
+/// Represents the selectable values for attribute types such as 'Red',
+/// 'Blue' for 'Color' or 'S', 'M', 'L' for 'Size'.
+///
+/// Links each value to an attribute and supports soft deletion and audit
+/// timestamps.
+///
+/// Used to define variants in SKUs consistently.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_attribute_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the SKU attribute this value belongs to. {@link
+  /// shopping_mall_sku_attributes.id}.
+  shopping_mall_sku_attribute_id String
+  
+  /// The specific value of the attribute, e.g., "Red", "XL".
+  value String
+  
+  /// Unique code representing this attribute value.
+  code String
+  
+  /// Additional details about this attribute value.
+  description String?
+  
+  /// Timestamp when the value was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to this value.
+  updated_at DateTime
+  
+  /// Timestamp marking the soft deletion of this attribute value.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  attribute shopping_mall_sku_attributes @relation(fields: [shopping_mall_sku_attribute_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_sku_attribute_id, code], map: "shopping_mall_sku_attribute_values_shopping_mall_sku_a_fc4c7d0a")
+  @@index([value])
+}
+
+/// Groups of SKU options that allow multiple selections under a variant.
+///
+/// Used to organize SKU options for complex variants with grouped choices.
+///
+/// Supports soft deletion and auditing timestamps.
+///
+/// Facilitates variant customization and pricing differentiation.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_option_groups {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the option group, e.g., "Accessories", "Add-ons".
+  name String
+  
+  /// Unique code identifying the group.
+  code String
+  
+  /// Detailed explanation of the option group's purpose.
+  description String?
+  
+  /// Timestamp of the group's creation.
+  created_at DateTime
+  
+  /// Timestamp of the last update.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_sku_options shopping_mall_sku_options[]
+  
+  @@unique([code])
+  @@index([name])
+}
+
+/// Individual SKU options belonging to option groups.
+///
+/// Represents selectable options that can be chosen under an option group,
+/// affecting SKU variation.
+///
+/// Supports soft deletion, indexing, and auditing timestamps.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sku_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the SKU option group this option belongs to. {@link
+  /// shopping_mall_sku_option_groups.id}.
+  shopping_mall_sku_option_group_id String
+  
+  /// Name of the option, e.g., "Gift Wrap", "Extended Warranty".
+  name String
+  
+  /// Unique code for the SKU option.
+  code String
+  
+  /// Price adjustment amount applied when this option is selected; can be
+  /// positive or negative.
+  price_adjustment Float
+  
+  /// Timestamp when the option was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to the option.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  optionGroup shopping_mall_sku_option_groups @relation(fields: [shopping_mall_sku_option_group_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sku_option_group_id], map: "shopping_mall_sku_options_shopping_mall_sku_option_gro_b1a01f3d")
+  
+  @@unique([code])
+  @@index([name])
+}
+
+/// Historical snapshots capturing the state of products and sales at points
+/// in time.
+///
+/// Used for auditing, reporting, and trend analysis.
+///
+/// Denormalized to preserve exact historic state including product, SKU,
+/// pricing and inventory data at snapshot time.
+///
+/// Snapshot entities are append-only with created_at denoting the snapshot
+/// timestamp.
+///
+/// Do not modify snapshots after creation to ensure data integrity.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sales_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product at snapshot time. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Reference to the SKU at snapshot time. {@link
+  /// shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Sales price of the SKU at the snapshot time.
+  price_at_snapshot Float
+  
+  /// Inventory count of the SKU at the snapshot time.
+  inventory_at_snapshot Int
+  
+  /// Timestamp when the snapshot was taken.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_sku_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, shopping_mall_product_sku_id, created_at], map: "shopping_mall_sales_snapshots_shopping_mall_product_id_c9bd3808")
+}

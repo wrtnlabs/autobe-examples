@@ -13,9 +13,20 @@ export async function deleteRedditCommunityAdminCommunitiesCommunityName(props: 
   admin: AdminPayload;
   communityName: string;
 }): Promise<void> {
+  const community =
+    await MyGlobal.prisma.reddit_community_communities.findUnique({
+      where: { community_name: props.communityName } satisfies {
+        community_name: string;
+      } as any,
+    });
+
+  if (!community) {
+    throw new HttpException(`Community not found: ${props.communityName}`, 404);
+  }
+
   await MyGlobal.prisma.reddit_community_communities.delete({
-    where: {
-      name: props.communityName,
-    },
+    where: { community_name: props.communityName } satisfies {
+      community_name: string;
+    } as any,
   });
 }

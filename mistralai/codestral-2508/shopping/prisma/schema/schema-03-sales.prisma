@@ -1,0 +1,197 @@
+/// Main sales entity representing products available for purchase. Contains
+/// core product information and business attributes for sales transactions.
+/// {@link shopping_mall_sellers.id} for seller relationship. {@link
+/// shopping_mall_channels.id} for channel relationship. {@link
+/// shopping_mall_sections.id} for section relationship.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller who created this sale. {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Channel where this sale is available. {@link shopping_mall_channels.id}
+  shopping_mall_channel_id String
+  
+  /// Section where this sale is categorized. {@link shopping_mall_sections.id}
+  shopping_mall_section_id String
+  
+  /// Unique business identifier for the sale.
+  code String
+  
+  /// Display name of the sale.
+  name String
+  
+  /// Detailed description of the sale.
+  description String
+  
+  /// Current status of the sale (active, paused, sold_out).
+  status String
+  
+  /// When this sale was created.
+  created_at DateTime
+  
+  /// When this sale was last updated.
+  updated_at DateTime
+  
+  /// When this sale was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  section shopping_mall_sections @relation(fields: [shopping_mall_section_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sale_snapshots shopping_mall_sale_snapshots[]
+  shopping_mall_sale_units shopping_mall_sale_units[]
+  shopping_mall_orders shopping_mall_orders[]
+  
+  @@unique([code])
+  @@index([shopping_mall_seller_id, created_at])
+  @@index([shopping_mall_channel_id, created_at])
+  @@index([shopping_mall_section_id, created_at])
+}
+
+/// Historical snapshots of sales for audit trails and version tracking.
+/// Captures point-in-time states of sales entities for historical reference
+/// and change tracking. {@link shopping_mall_sales.id} for sale
+/// relationship.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Sale this snapshot belongs to. {@link shopping_mall_sales.id}
+  shopping_mall_sale_id String
+  
+  /// Unique business identifier for the sale at this snapshot.
+  code String
+  
+  /// Display name of the sale at this snapshot.
+  name String
+  
+  /// Detailed description of the sale at this snapshot.
+  description String
+  
+  /// Status of the sale at this snapshot.
+  status String
+  
+  /// When this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_id, created_at], map: "shopping_mall_sale_snapshots_shopping_mall_sale_id_cre_36e298a1")
+}
+
+/// Product variants for sales, representing different options or versions of
+/// a product. Contains variant-specific information and business attributes.
+/// {@link shopping_mall_sales.id} for sale relationship.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_units {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Sale this unit belongs to. {@link shopping_mall_sales.id}
+  shopping_mall_sale_id String
+  
+  /// Unique business identifier for the unit.
+  code String
+  
+  /// Display name of the unit.
+  name String
+  
+  /// Detailed description of the unit.
+  description String
+  
+  /// Current status of the unit (active, paused, sold_out).
+  status String
+  
+  /// When this unit was created.
+  created_at DateTime
+  
+  /// When this unit was last updated.
+  updated_at DateTime
+  
+  /// When this unit was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sale_unit_options shopping_mall_sale_unit_options[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_favorite_items shopping_mall_favorite_items[]
+  
+  @@unique([code])
+  @@index([shopping_mall_sale_id, created_at])
+}
+
+/// Options for sale units, representing additional choices or
+/// configurations. Contains option-specific information and business
+/// attributes. {@link shopping_mall_sale_units.id} for unit relationship.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_unit_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unit this option belongs to. {@link shopping_mall_sale_units.id}
+  shopping_mall_sale_unit_id String
+  
+  /// Unique business identifier for the option.
+  code String
+  
+  /// Display name of the option.
+  name String
+  
+  /// Detailed description of the option.
+  description String
+  
+  /// When this option was created.
+  created_at DateTime
+  
+  /// When this option was last updated.
+  updated_at DateTime
+  
+  /// When this option was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  unit shopping_mall_sale_units @relation(fields: [shopping_mall_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_unit_id, created_at], map: "shopping_mall_sale_unit_options_shopping_mall_sale_uni_ad2135a3")
+}

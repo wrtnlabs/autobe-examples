@@ -1,6 +1,11 @@
-/// Customer accounts for the shopping mall platform. Customers are retail
-/// users who browse products, make purchases, and manage their shopping
-/// experience.
+/// Customer accounts for the shopping mall platform including personal
+/// information, contact details, and account settings for buyers across the
+/// marketplace.
+///
+/// Customers can browse products, make purchases, manage addresses and
+/// payment methods, track orders, and interact with sellers. Each customer
+/// account is verified through email confirmation and maintains
+/// comprehensive profile information for personalized shopping experiences.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -11,59 +16,72 @@ model shopping_mall_customers {
   /// Primary Key.
   id String @id
   
-  /// Customer email address for account login and communications.
+  /// Customer email address used for login and communications. Must be unique
+  /// across all customer accounts.
   email String
   
-  /// Hashed password for secure authentication.
+  /// Encrypted password hash for secure authentication using bcrypt with
+  /// minimum security standards.
   password_hash String
   
-  /// Customer's full name for shipping and personalization.
-  full_name String
+  /// Customer's full name for account identification and shipping purposes.
+  name String
   
-  /// Customer phone number for order notifications and verification.
+  /// Customer's phone number with international format support for
+  /// verification and delivery coordination.
   phone_number String?
   
-  /// Whether the customer has verified their email address.
-  email_verified Boolean
+  /// Email verification status. Customers must verify email within 7 days of
+  /// registration.
+  is_verified Boolean
   
-  /// Customer's preferred language for communications and interface.
-  preferred_language String?
+  /// Account status (active|inactive|suspended) for security and business rule
+  /// enforcement.
+  status String
   
-  /// Customer's preferred currency for pricing and transactions.
-  preferred_currency String?
-  
-  /// Customer opt-in status for marketing communications.
-  marketing_opt_in Boolean
-  
-  /// Account creation timestamp.
+  /// Account creation timestamp for audit trail and time-based analytics.
   created_at DateTime
   
-  /// Last account modification timestamp.
+  /// Last account update timestamp for tracking account modifications and
+  /// maintenance.
   updated_at DateTime
   
-  /// Account soft deletion timestamp.
+  /// Soft delete timestamp for account deactivation and potential recovery.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   shopping_mall_customer_sessions shopping_mall_customer_sessions[]
-  shopping_mall_shopping_carts shopping_mall_shopping_carts[]
-  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_cart_of_customers shopping_mall_cart_of_customers[]
   shopping_mall_orders shopping_mall_orders[]
-  shopping_mall_shipping_details shopping_mall_shipping_details[]
-  shopping_mall_product_reviews shopping_mall_product_reviews[]
-  shopping_mall_review_helpfulness shopping_mall_review_helpfulness[]
-  shopping_mall_review_flags shopping_mall_review_flags[]
+  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
+  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
+  shopping_mall_mileages shopping_mall_mileages?
+  shopping_mall_coin_wallets_of_customers shopping_mall_coin_wallets_of_customers?
+  shopping_mall_inquiries shopping_mall_inquiries[]
+  shopping_mall_tickets shopping_mall_tickets[]
+  shopping_mall_favorites shopping_mall_favorites[]
+  shopping_mall_wishlists shopping_mall_wishlists[]
+  shopping_mall_bookmarks shopping_mall_bookmarks[]
+  shopping_mall_articles shopping_mall_articles[]
+  shopping_mall_bbs_posts shopping_mall_bbs_posts[]
+  shopping_mall_comments shopping_mall_comments[]
   
   @@unique([email])
-  @@index([email_verified, created_at])
-  @@index([preferred_language])
+  @@index([status, is_verified])
+  @@index([created_at])
 }
 
-/// Seller accounts who manage product listings, inventory, and order
-/// fulfillment within the marketplace platform. Sellers operate as business
-/// entities.
+/// Verified business sellers on the shopping mall platform including
+/// business information, tax details, and marketplace settings for vendors
+/// managing their stores.
+///
+/// Sellers undergo a comprehensive verification process including business
+/// registration validation, tax identification verification, and bank
+/// account confirmation. Once approved, sellers can manage product catalogs,
+/// process orders, track performance, and receive platform analytics to
+/// optimize their marketplace operations.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -74,151 +92,131 @@ model shopping_mall_sellers {
   /// Primary Key.
   id String @id
   
-  /// Seller business email for account access and communications.
+  /// Seller business email used for login and business communications.
   email String
   
-  /// Hashed password for secure authentication.
+  /// Encrypted password hash for secure authentication.
   password_hash String
   
-  /// Registered business name for legal identification.
+  /// Official registered business name as shown to customers and for tax
+  /// purposes.
   business_name String
   
-  /// Business tax identification number for regulatory compliance.
+  /// Tax identification number (TIN/EIN) verified against government databases.
   tax_id String
   
-  /// Registered business address for legal correspondence.
+  /// Business contact phone number for customer service and verification.
+  phone_number String
+  
+  /// Registered business address for verification and correspondence.
   business_address String
   
-  /// Business contact phone number for customer service.
-  contact_phone String
+  /// Bank account verification status for payment processing.
+  bank_account_verified Boolean
   
-  /// Business website URL for customer reference.
-  website String?
+  /// Business verification status approved by platform administrators.
+  is_verified Boolean
   
-  /// Type of business entity (LLC, Corporation, Sole Proprietorship).
-  business_type String
+  /// Account status (active|inactive|suspended|pending_review).
+  status String
   
-  /// Seller verification status for platform access control.
-  verification_status String
-  
-  /// Commission rate percentage applied to seller transactions.
-  commission_rate Float?
-  
-  /// Whether seller has verified their email address.
-  email_verified Boolean
-  
-  /// Account creation timestamp.
+  /// Verification and account creation timestamp.
   created_at DateTime
   
-  /// Last account modification timestamp.
+  /// Last account update for business information changes.
   updated_at DateTime
   
-  /// Account soft deletion timestamp.
+  /// Soft delete timestamp for account management.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   shopping_mall_seller_sessions shopping_mall_seller_sessions[]
-  shopping_mall_products shopping_mall_products[]
-  shopping_mall_orders shopping_mall_orders[]
-  shopping_mall_commissions shopping_mall_commissions[]
-  shopping_mall_seller_payouts shopping_mall_seller_payouts[]
-  shopping_mall_refunds shopping_mall_refunds[]
-  shopping_mall_financial_transactions shopping_mall_financial_transactions[]
-  shopping_mall_account_balances shopping_mall_account_balances[]
-  shopping_mall_review_flags shopping_mall_review_flags[]
-  shopping_mall_seller_responses shopping_mall_seller_responses[]
-  shopping_mall_inventory_alerts shopping_mall_inventory_alerts[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_fulfillments shopping_mall_order_fulfillments[]
+  shopping_mall_coupons shopping_mall_coupons[]
+  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
+  shopping_mall_promotions shopping_mall_promotions[]
+  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
+  shopping_mall_coin_wallets_of_sellers shopping_mall_coin_wallets_of_sellers?
   
   @@unique([email])
   @@unique([tax_id])
-  @@index([verification_status, created_at])
-  @@index([business_type])
+  @@index([status, is_verified])
+  @@index([created_at])
 }
 
-/// Authentication sessions for customer accounts. Tracks customer login
-/// sessions for security monitoring and audit trails.
+/// Delivery courier partners integrated with the shopping mall platform
+/// including business credentials and delivery management capabilities.
+///
+/// Couriers handle package pickup and delivery across the marketplace with
+/// real-time tracking coordination and performance monitoring. Each courier
+/// requires business registration, insurance verification, and vehicle
+/// registration validation before processing delivery orders.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_customer_sessions {
+model shopping_mall_couriers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to shopping_mall_customers.id
-  shopping_mall_customer_id String
+  /// Courier business email for authentication and communications.
+  email String
   
-  /// IP address of the customer connection.
-  ip String
+  /// Encrypted password hash for secure courier login.
+  password_hash String
   
-  /// Connection URL or page being accessed.
-  href String
+  /// Registered courier business name for customer communications.
+  business_name String
   
-  /// Referrer URL tracking the user source.
-  referrer String
+  /// Business tax identification number for verification and payouts.
+  tax_id String
   
-  /// Session creation timestamp.
+  /// Courier control center contact number for delivery coordination.
+  phone_number String
+  
+  /// Geographic region coverage areas for delivery assignment.
+  coverage_area String
+  
+  /// Business verification status approved by platform administrators.
+  is_verified Boolean
+  
+  /// Operational status (active|inactive|suspended|pending_review).
+  status String
+  
+  /// Courier partner registration timestamp.
   created_at DateTime
   
-  /// Optional session expiration time.
-  expired_at DateTime?
+  /// Last account update for business information.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for courier management.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  shopping_mall_courier_sessions shopping_mall_courier_sessions[]
+  shopping_mall_order_fulfillments shopping_mall_order_fulfillments[]
   
-  shopping_mall_stock_reservations shopping_mall_stock_reservations[]
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
+  @@unique([email])
+  @@unique([tax_id])
+  @@index([status, is_verified])
+  @@index([created_at])
 }
 
-/// Authentication sessions for seller accounts. Tracks seller login sessions
-/// for security monitoring and business operation auditing.
+/// Platform administrative accounts with comprehensive oversight
+/// capabilities for managing all platform operations including seller
+/// verification, dispute resolution, and system administration.
 ///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_seller_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to shopping_mall_sellers.id
-  shopping_mall_seller_id String
-  
-  /// IP address of the seller connection.
-  ip String
-  
-  /// Connection URL or page being accessed.
-  href String
-  
-  /// Referrer URL tracking the seller source.
-  referrer String
-  
-  /// Session creation timestamp.
-  created_at DateTime
-  
-  /// Optional session expiration time.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
-}
-
-/// Platform administrator accounts responsible for system oversight, user
-/// management, and policy enforcement across the shopping mall platform.
+/// Administrators have unrestricted access to platform-wide analytics, user
+/// management functions, policy enforcement, and operational oversight. Each
+/// administrator undergoes thorough background verification and
+/// role-specific training before platform access is granted.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -229,91 +227,54 @@ model shopping_mall_administrators {
   /// Primary Key.
   id String @id
   
-  /// Administrator email for secure account access.
+  /// Administrator email address for platform management and authentication.
   email String
   
-  /// Hashed password for secure authentication.
+  /// Encrypted password hash for secure administrator login.
   password_hash String
   
-  /// Administrator's full name for identification.
-  full_name String
+  /// Administrator's full name for identification and audit trail purposes.
+  name String
   
-  /// Administrator role level for permission control.
+  /// Admin contact number for two-factor authentication and emergency access.
+  phone_number String
+  
+  /// Administrative role (super_admin|support|content_moderator|financial)
   role String
   
-  /// Administrative department for organizational structure.
-  department String?
+  /// Administrative verification through two-factor authentication setup.
+  is_verified Boolean
   
-  /// Whether administrator account is active for system access.
-  active Boolean
+  /// Account status (active|inactive) with immediate effect on platform access.
+  status String
   
-  /// Whether administrator has verified their email address.
-  email_verified Boolean
-  
-  /// Security access level for administrative functions.
-  security_level Int
-  
-  /// Account creation timestamp.
+  /// Administrator account creation timestamp for audit purposes.
   created_at DateTime
   
-  /// Last account modification timestamp.
+  /// Last account update for role or access changes.
   updated_at DateTime
   
-  /// Account soft deletion timestamp.
+  /// Soft delete timestamp for administrative account management.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   shopping_mall_administrator_sessions shopping_mall_administrator_sessions[]
-  shopping_mall_order_status_history shopping_mall_order_status_history[]
+  shopping_mall_coin_wallets_of_administrators shopping_mall_coin_wallets_of_administrators?
   
   @@unique([email])
-  @@index([role, active])
-  @@index([security_level])
+  @@index([role, status])
+  @@index([created_at])
 }
 
-/// Authentication sessions for administrator accounts. Tracks admin login
-/// sessions for security monitoring and administrative audit tracking.
+/// Temporary guest accounts for non-authenticated visitors browsing the
+/// shopping mall platform without creating permanent accounts.
 ///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_administrator_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to shopping_mall_administrators.id
-  shopping_mall_administrator_id String
-  
-  /// IP address of the administrator connection.
-  ip String
-  
-  /// Connection URL or administrative page accessed.
-  href String
-  
-  /// Referrer URL tracking the admin source.
-  referrer String
-  
-  /// Session creation timestamp.
-  created_at DateTime
-  
-  /// Optional session expiration time.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_administrator_sessions_shopping_mall_adm_2e7e19a2")
-}
-
-/// Guest users who browse the platform without creating accounts. Provides
-/// limited functionality for anonymous shopping experience.
+/// Guests can browse products, add items to cart, and view seller
+/// information but cannot complete purchases or access full account
+/// features. Guest sessions are maintained through temporary identifiers and
+/// browser storage mechanisms.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -324,39 +285,225 @@ model shopping_mall_guests {
   /// Primary Key.
   id String @id
   
-  /// Anonymous session identifier for guest tracking.
+  /// Unique session identifier for temporary guest tracking across browser
+  /// sessions.
   session_id String
   
-  /// IP address for session management and analytics.
+  /// Visitor IP address for session management and temporary cart storage.
   ip_address String
   
-  /// Browser user agent for guest identification.
+  /// Browser user agent information for compatibility and tracking purposes.
   user_agent String
   
-  /// Approximate geographic location for content optimization.
-  geolocation String?
+  /// Timestamp of the most recent guest activity for session timeout
+  /// management.
+  last_activity_at DateTime
   
-  /// Detected language preference for interface display.
-  preferred_language String?
-  
-  /// Timestamp of first guest visit to the platform.
-  first_visit DateTime
-  
-  /// Timestamp of last guest activity for session management.
-  last_activity DateTime
-  
-  /// Guest record creation timestamp.
+  /// Guest session creation timestamp.
   created_at DateTime
   
-  /// Guest session expiration timestamp.
-  expired_at DateTime?
+  /// Session expiration timestamp - guest sessions auto-expire after 60
+  /// minutes.
+  expires_at DateTime
   
   //----
   // RELATIONS
   //----
-  shopping_mall_shopping_carts shopping_mall_shopping_carts[]
+  shopping_mall_carts shopping_mall_carts[]
+  shopping_mall_cart_of_guests shopping_mall_cart_of_guests[]
   
   @@unique([session_id])
-  @@index([ip_address, last_activity])
-  @@index([preferred_language])
+  @@index([expires_at])
+  @@index([last_activity_at])
+}
+
+/// Active customer login sessions providing secure authentication
+/// verification and activity tracking for customers accessing the shopping
+/// mall platform.
+///
+/// Sessions enable multi-device management, timeout control, and security
+/// monitoring while maintaining temporary access credentials for seamless
+/// customer experience across different login sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer IP address for session security and geographic information.
+  ip String
+  
+  /// Login URL or entry point for tracking session initiation context.
+  href String
+  
+  /// Referring site or source that initiated the session for analytics.
+  referrer String?
+  
+  /// Session expiration timestamp for automatic logout and security.
+  expired_at DateTime?
+  
+  /// Session creation timestamp for login duration tracking.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_cart_of_customers shopping_mall_cart_of_customers[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
+  @@index([ip])
+}
+
+/// Active seller login sessions providing secure authentication verification
+/// and business activity tracking for verified sellers managing their
+/// marketplace operations.
+///
+/// Sessions enable seller dashboard access, order management, product
+/// updates, and account management while maintaining security through
+/// timeout controls and multi-device awareness.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller's {@link shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller IP address for session security verification and activity
+  /// monitoring.
+  ip String
+  
+  /// Login URL or entry point for tracking seller session initiation context.
+  href String
+  
+  /// Referring site or source that initiated the seller session for analytics.
+  referrer String?
+  
+  /// Session expiration timestamp for automatic logout from seller dashboard.
+  expired_at DateTime?
+  
+  /// Seller session creation timestamp for login duration and activity
+  /// tracking.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
+  @@index([ip])
+}
+
+/// Active courier login sessions providing authentication verification and
+/// delivery activity tracking for courier partners managing shipments on the
+/// platform.
+///
+/// Sessions enable delivery route management, pickup scheduling, shipment
+/// tracking updates, and performance monitoring while maintaining security
+/// through session timeout controls.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_courier_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged courier's {@link shopping_mall_couriers.id}
+  shopping_mall_courier_id String
+  
+  /// Courier IP address for session security verification and dispatch
+  /// location tracking.
+  ip String
+  
+  /// Login URL or entry point for tracking courier session initiation context.
+  href String
+  
+  /// Referring site or source that initiated courier session for delivery
+  /// analytics.
+  referrer String?
+  
+  /// Session expiration timestamp for automatic logout from courier operations.
+  expired_at DateTime?
+  
+  /// Courier session creation timestamp for login duration and route tracking.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  courier shopping_mall_couriers @relation(fields: [shopping_mall_courier_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_courier_id, created_at], map: "shopping_mall_courier_sessions_shopping_mall_courier_i_745872b8")
+  @@index([ip])
+}
+
+/// Active administrator login sessions providing secure authentication
+/// verification and oversight activity tracking for platform administrators
+/// managing system operations.
+///
+/// Sessions enable comprehensive administrative functions including user
+/// management, seller verification, dispute resolution, platform analytics,
+/// and system configuration while maintaining high security through strict
+/// session controls.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged administrator's {@link shopping_mall_administrators.id}
+  shopping_mall_administrator_id String
+  
+  /// Administrator IP address for session security verification and access
+  /// control.
+  ip String
+  
+  /// Login URL or entry point for tracking administrator session initiation
+  /// context.
+  href String
+  
+  /// Referring site or source that initiated administrative session for
+  /// security logging.
+  referrer String?
+  
+  /// Session expiration timestamp for automatic logout from administrative
+  /// functions.
+  expired_at DateTime?
+  
+  /// Administrator session creation timestamp for access audit and tracking.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_administrator_sessions_shopping_mall_adm_2e7e19a2")
+  @@index([ip])
 }

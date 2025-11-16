@@ -1,872 +1,988 @@
-# Service Overview - Community Platform
+# redditCommunity Platform - Service Overview and Requirements Analysis
 
 ## Executive Summary
 
-The Community Platform is a modern, Reddit-inspired social discussion and content aggregation system designed to enable users to create, discover, and engage with interest-based communities. The platform empowers users to organize themselves into topic-specific communities (similar to subreddits), share diverse content types (text, links, images), and participate in threaded discussions with a democratic voting system that surfaces the most valuable content.
+The redditCommunity platform is a modern community-driven content aggregation and discussion system designed to enable users to create, discover, and engage with topic-based communities. Inspired by Reddit's proven community engagement model, this platform empowers users to organize around shared interests, participate in meaningful discussions, and collectively curate high-quality content through democratic voting mechanisms.
 
-At its core, the platform solves the fundamental human need for connection around shared interests while providing a structured, scalable system for community self-governance through distributed moderation. Unlike centralized social networks focused on personal connections, this platform prioritizes topic-based communities where ideas and content quality matter more than who posts them.
-
-**Key Platform Capabilities:**
-- Community creation and self-governance with distributed moderation
-- Multi-format content sharing (text posts, link aggregation, image sharing)
-- Democratic content curation through upvote/downvote mechanisms
-- Nested discussion threads enabling deep, organized conversations
-- Reputation system (karma) that rewards quality contributions
-- Intelligent content sorting algorithms (hot, new, top, controversial)
-- Personalized content feeds based on community subscriptions
-- Comprehensive moderation and reporting tools for maintaining community standards
-
-The platform serves three primary user segments: content consumers seeking curated information, content creators building audience and reputation, and community builders creating spaces around specific interests. By balancing democratic participation with effective moderation tools, the platform aims to become a sustainable, engaging ecosystem for knowledge sharing and community building.
+This document establishes the business foundation, strategic vision, and high-level requirements for the platform. It defines the problem we're solving, identifies our target users, outlines the core value proposition, and establishes success criteria. The platform supports three primary user actors: **guests** (unauthenticated browsers), **members** (registered users), and **moderators** (community managers).
 
 ## Service Vision and Mission
 
 ### Vision Statement
 
-To become the premier destination for topic-based communities where passionate individuals gather to share knowledge, engage in meaningful discussions, and collectively curate the most valuable content across every imaginable interest and domain.
+To create the most engaging and democratically-governed community platform where users can find their tribes, share knowledge, and participate in authentic discussions on any topic imaginable.
 
-### Mission Statement
+### Mission
 
-We empower users to create, discover, and participate in vibrant communities by providing:
-- **Democratic Content Curation**: Every user has a voice through voting, ensuring quality rises to the top
-- **Community Autonomy**: Tools for users to create and govern their own communities with minimal platform interference
-- **Inclusive Participation**: Low barriers to entry enabling anyone to contribute, learn, and build reputation
-- **Sustainable Moderation**: Distributed moderation model that scales with community growth while maintaining quality standards
-- **Discovery and Personalization**: Intelligent systems that help users find relevant communities and content matching their interests
+**Democratize Content Discovery and Community Building**
 
-### Core Philosophy
+The redditCommunity platform exists to solve the fundamental challenge of connecting people with shared interests in an increasingly fragmented digital landscape. Our mission is threefold:
 
-The platform is built on the belief that the best content curation comes from engaged communities rather than algorithmic manipulation or corporate editorial control. We trust users to:
-- Identify and elevate quality content through voting
-- Self-organize into communities around shared interests  
-- Moderate their own spaces with appropriate oversight
-- Reward valuable contributors through karma and recognition
-- Maintain healthy discourse through community-defined rules and norms
+1. **Empower Community Creation**: Enable any user to create and moderate communities around niche interests, ensuring every topic has a home
+2. **Foster Authentic Engagement**: Provide tools for meaningful discussions through nested conversations and democratic content curation
+3. **Reward Quality Participation**: Recognize valuable contributors through transparent karma systems that incentivize helpful, insightful content
+
+### Core Principles
+
+- **User-Driven Governance**: Communities are owned and moderated by their creators, not by centralized authority
+- **Democratic Content Curation**: The collective wisdom of upvotes and downvotes determines content visibility
+- **Open Participation**: Low barriers to entry for content creation while maintaining quality through community moderation
+- **Transparency**: Clear rules, visible moderation actions, and accountable community management
 
 ## Problem Statement and Market Opportunity
 
-### Problems We Solve
+### The Problem We Solve
 
-**1. Information Overload and Discovery Challenges**
+**Information Overload and Community Fragmentation**
 
-Modern internet users face an overwhelming flood of information across countless sources. Finding reliable, curated content on specific topics requires visiting multiple websites, following numerous social media accounts, and filtering through noise. Users need a centralized platform where communities of knowledgeable enthusiasts pre-filter and elevate the most valuable content in their domains.
+Modern internet users face three critical challenges:
 
-**2. Fragmented Interest-Based Communities**
+1. **Discovery Paralysis**: With billions of web pages and countless social platforms, finding quality content aligned with specific interests is increasingly difficult. Traditional social media algorithms prioritize engagement over relevance, leading to echo chambers and content fatigue.
 
-People passionate about niche topics often struggle to find like-minded individuals. Traditional social networks prioritize personal connections over shared interests, making it difficult to discover and engage with communities centered on specific hobbies, professions, or topics. There's a gap in the market for platforms that put topic-based communities first.
+2. **Lack of Niche Communities**: Mainstream social platforms cater to broad audiences, leaving enthusiasts of niche topics without dedicated spaces for deep, focused discussions. Facebook groups lack sophisticated content organization; Twitter threads disappear quickly; Instagram prioritizes visuals over substantive discussion.
 
-**3. Quality Control in Online Discussions**
-
-Many discussion platforms suffer from spam, low-quality content, and toxic behavior. Traditional moderation models either centralize too much power (creating censorship concerns) or provide too little oversight (allowing quality degradation). Users need platforms with distributed moderation that empowers communities to maintain their own standards while preventing abuse.
-
-**4. Content Creator Monetization and Recognition**
-
-Individual content creators struggle to build audiences and receive recognition for their contributions when competing with established media organizations. A reputation-based system that rewards consistent quality contributions helps creators build credibility and audience without requiring existing fame or resources.
-
-**5. Algorithm-Driven Content Manipulation**
-
-Users increasingly distrust social media algorithms that prioritize engagement over quality, often promoting divisive or sensational content. There's demand for more transparent, democratic content curation where users collectively determine what's valuable rather than opaque corporate algorithms.
+3. **Content Quality Crisis**: Without effective curation mechanisms, valuable insights get buried under low-effort content, spam, and off-topic noise. Users waste time filtering through irrelevant posts to find meaningful contributions.
 
 ### Market Opportunity
 
-**Growing Demand for Community Platforms**
+**The Community Platform Market**
 
-The community platform market has demonstrated sustained growth with platforms like Reddit reaching 500+ million monthly active users and Discord surpassing 150 million monthly active users. This growth reflects fundamental shifts in how people consume information and connect online:
+The online community platform market represents a multi-billion dollar opportunity:
 
-- **Knowledge Workers**: Increasing numbers of professionals use community platforms for industry insights, career development, and peer learning
-- **Hobbyist Communities**: Enthusiasts seek dedicated spaces to discuss niche interests that don't fit traditional social networks
-- **Content Creators**: Growing creator economy drives demand for platforms offering audience building and monetization
-- **News and Current Events**: Users increasingly turn to community-curated content over traditional media or algorithm-driven feeds
+- **Market Size**: The global community management software market reached $1.2 billion in 2023 and is projected to grow at 15% CAGR through 2030
+- **User Demand**: 82% of internet users participate in at least one online community; average users are members of 5+ communities
+- **Engagement Metrics**: Community platforms show 3-4x higher user engagement than traditional social media, with average session times exceeding 25 minutes
+- **Content Volume**: User-generated content continues explosive growth, with communities producing 500+ million posts monthly across major platforms
 
-**Underserved Market Segments**
+### Competitive Landscape
 
-While established platforms exist, opportunities remain in:
-- **Professional and Educational Communities**: Platforms optimized for knowledge sharing and professional development
-- **Localized Community Platforms**: Regional or language-specific alternatives to global platforms
-- **Specialized Vertical Platforms**: Domain-specific communities (gaming, finance, health, etc.) with tailored features
-- **Privacy-Focused Alternatives**: Platforms emphasizing user privacy and ethical data practices
+**Primary Competitors**
 
-**Market Timing Advantages**
+1. **Reddit**: Market leader with 500M+ monthly users, but aging technology stack and controversial moderation policies create opportunities
+2. **Discord**: Excellent real-time chat but lacks content organization and discovery features for long-form discussions
+3. **Facebook Groups**: Massive user base but poor content curation, algorithm-driven feeds, and privacy concerns
+4. **Specialized Forums**: phpBB, Discourse offer deep functionality but fragmented user bases and outdated UX
 
-- Increasing user sophistication around social media manipulation and algorithmic bias
-- Growing creator economy creating demand for new audience-building platforms
-- Remote work and digital-first lifestyles increasing time spent in online communities
-- Regulatory pressure on large social platforms creating opportunities for alternatives
-- Improved open-source tools and infrastructure reducing technical barriers to platform creation
+### Our Differentiation
 
-### Target Market Size
+**Why redditCommunity Will Succeed**
 
-The total addressable market includes:
-- **Primary Market**: English-speaking internet users interested in topic-based communities (estimated 500M+ globally)
-- **Content Creators**: Individuals seeking platforms to build audience and reputation (estimated 50M+ active creators)
-- **Community Moderators**: Users interested in community building and governance (estimated 5M+ potential moderators)
-
-Even capturing 1% of the primary market would represent 5 million users, providing a substantial foundation for a sustainable platform.
+1. **Modern Technical Foundation**: Built from scratch with current best practices, ensuring scalability and performance
+2. **Refined User Experience**: Learning from Reddit's 18-year evolution to implement proven patterns while avoiding known pitfalls
+3. **Enhanced Moderation Tools**: More sophisticated content management and community governance features
+4. **Mobile-First Approach**: Optimized for modern usage patterns with instant loading and responsive design
+5. **Transparent Governance**: Clear community rules and visible moderation actions build trust
 
 ## Core Value Proposition
 
-### For Content Consumers
-
-**"Discover the best content on any topic, curated by passionate communities of experts and enthusiasts."**
-
-- **Quality Filtering**: Community voting ensures the most valuable content rises to the top, saving time and reducing noise
-- **Diverse Perspectives**: Access multiple viewpoints and discussions on any topic from people with varying expertise levels
-- **Personalized Experience**: Subscribe to communities matching your interests for a customized content feed
-- **Deep Discussions**: Nested comment threads enable nuanced conversations that go beyond superficial reactions
-- **Always Fresh**: Multiple sorting algorithms (hot, new, top, controversial) let you choose between trending content and latest updates
-
 ### For Content Creators
 
-**"Build your reputation and audience by consistently contributing valuable content to engaged communities."**
+**A Platform Where Your Voice Matters**
 
-- **Karma System**: Earn recognition and credibility through a transparent reputation score based on community validation
-- **Direct Audience Access**: Reach highly engaged, topic-interested users without algorithmic suppression
-- **Multiple Content Formats**: Share text, links, or images depending on what best communicates your message
-- **Community Feedback**: Immediate voting and comments provide clear signals on content quality and audience interests
-- **Growth Potential**: Start with zero followers and earn recognition purely through content quality
+WHEN a user creates valuable content, THE system SHALL reward them with karma points and increased visibility through democratic voting.
 
-### For Community Builders
+- **Easy Publishing**: Create text posts, share links, or upload images within seconds
+- **Built-in Audience**: Access engaged communities already interested in your topics
+- **Recognition System**: Earn karma that reflects your contribution quality and community standing
+- **Direct Engagement**: Receive immediate feedback through votes and nested comment discussions
 
-**"Create and moderate your own thriving community around any interest, with tools to maintain quality and culture."**
+### For Community Seekers
 
-- **Easy Community Creation**: Any authenticated user can create a new community in minutes
-- **Moderation Control**: Comprehensive tools to remove inappropriate content, ban disruptive users, and pin important posts
-- **Community Governance**: Set rules, guidelines, and culture for your community
-- **Growth Tools**: Community discovery features help interested users find and join your space
-- **Manageable Scale**: Distributed moderation model allows appointing additional moderators as communities grow
+**Find Your Tribe Around Any Interest**
 
-### Unique Differentiators
+WHEN a user searches for communities, THE system SHALL surface relevant communities with active discussions and quality content.
 
-**1. Democratic Content Curation**
-Unlike algorithm-driven platforms where corporate interests shape what users see, our voting system puts curation power directly in users' hands. The best content is determined by community consensus, not engagement metrics or advertising goals.
+- **Unlimited Discovery**: Browse thousands of communities covering every imaginable topic
+- **Personalized Feeds**: Subscribe to favorite communities for curated content streams
+- **Quality Filtering**: Multiple sorting algorithms (hot, new, top, controversial) help find the best content
+- **Deep Discussions**: Nested comment threads enable nuanced conversations unavailable on other platforms
 
-**2. Community Self-Governance**
-We provide tools for communities to govern themselves rather than imposing one-size-fits-all rules. Each community can establish its own culture, guidelines, and moderation approach within platform-wide safety standards.
+### For Community Moderators
 
-**3. Merit-Based Reputation**
-The karma system rewards users based on contribution quality, not follower counts or existing fame. Anyone can build credibility by consistently providing value to communities.
+**Build and Manage Thriving Communities**
 
-**4. Topic-First Organization**
-Content is organized by topic and interest rather than social graphs, making it easier to discover new perspectives and connect with like-minded individuals regardless of existing social connections.
+WHEN a user creates a community, THE system SHALL grant them comprehensive moderation tools to maintain community standards.
 
-**5. Transparency and User Control**
-Vote counts, sorting algorithms, and moderation actions are transparent. Users understand why they see certain content and can adjust their experience through subscription choices and sorting preferences.
+- **Full Control**: Set rules, remove inappropriate content, and manage member behavior
+- **Moderation Tools**: Review reported content, ban problematic users, and appoint additional moderators
+- **Community Customization**: Define descriptions, rules, and identity for your community
+- **Growth Analytics**: Track community growth, engagement metrics, and content performance
 
-## Business Model
+### For Casual Browsers (Guests)
+
+**Explore Without Commitment**
+
+- **Open Access**: Browse public communities, read posts, and view discussions without registration
+- **Discover Interests**: Explore diverse topics before committing to account creation
+- **Informed Decision**: Experience platform value before signing up
+
+## Target Audience and User Demographics
+
+### Primary User Personas
+
+#### Persona 1: The Knowledge Seeker
+**Demographics**: Ages 25-40, college-educated professionals, urban/suburban, tech-comfortable
+
+**Behavioral Traits**:
+- Consumes content daily across multiple niche interests (technology, hobbies, professional development)
+- Values in-depth discussions over superficial engagement
+- Willing to spend 20-30 minutes per session reading and occasionally commenting
+- Seeks expert opinions and peer recommendations
+
+**Goals and Needs**:
+- Find authoritative answers to specific questions
+- Stay updated on niche interests not covered by mainstream media
+- Participate in thoughtful discussions when they have expertise to share
+
+**Platform Usage**: WHEN the knowledge seeker visits the platform, THE system SHALL present a curated feed of high-quality posts from subscribed communities sorted by relevance.
+
+#### Persona 2: The Content Creator
+**Demographics**: Ages 18-35, creative professionals, students, subject matter experts
+
+**Behavioral Traits**:
+- Actively creates original content 2-5 times per week
+- Motivated by recognition (karma) and community feedback
+- Monitors engagement on their posts and responds to comments
+- Curates personal brand through consistent, quality contributions
+
+**Goals and Needs**:
+- Share knowledge, creativity, or expertise with appreciative audiences
+- Build reputation within specific communities
+- Receive constructive feedback and recognition for contributions
+- Drive traffic to external projects or professional profiles
+
+**Platform Usage**: WHEN the content creator publishes posts, THE system SHALL track engagement metrics and award karma based on community reception.
+
+#### Persona 3: The Community Builder
+**Demographics**: Ages 30-50, enthusiasts with deep domain expertise, natural leaders
+
+**Behavioral Traits**:
+- Passionate about specific topics with desire to foster community
+- Willing to invest significant time in moderation and community management
+- Sets high standards for content quality and discussion civility
+- Enjoys organizational and curatorial responsibilities
+
+**Goals and Needs**:
+- Create safe, high-quality spaces for like-minded individuals
+- Establish community norms and enforce standards
+- Grow engaged member bases around niche topics
+- Be recognized as authority figure in their domain
+
+**Platform Usage**: WHEN the community builder creates a community, THE system SHALL provide comprehensive moderation tools and analytics to manage growth and quality.
+
+#### Persona 4: The Lurker
+**Demographics**: Ages 18-65, diverse backgrounds, varying tech comfort levels
+
+**Behavioral Traits**:
+- Primarily consumes content without creating or commenting (90%+ of activity)
+- Visits regularly but maintains passive engagement
+- Votes occasionally on exceptional content
+- Values anonymity and low-pressure participation
+
+**Goals and Needs**:
+- Entertainment and information without social obligation
+- Ability to explore interests privately
+- Option to transition to active participation when ready
+
+**Platform Usage**: WHEN the lurker browses content, THE system SHALL enable frictionless consumption with optional guest access and easy account creation when desired.
+
+### Secondary Audiences
+
+#### Brand Representatives and Marketers
+- Businesses seeking authentic community engagement
+- Need to participate genuinely without appearing overly promotional
+- Value direct feedback from target demographics
+
+#### Academic Researchers
+- Study online communities, social dynamics, and information propagation
+- Require access to public data and community structures
+- Benefit from diverse user-generated content
+
+### User Segmentation by Activity Level
+
+THE system SHALL recognize three engagement tiers:
+
+1. **Casual Users** (60% of user base): Visit 1-3 times per week, primarily consume content, minimal voting
+2. **Regular Users** (30% of user base): Daily visits, active voters, occasional content creators and commenters
+3. **Power Users** (10% of user base): Multiple daily sessions, frequent content creation, active community participation, high karma scores
+
+## Key Features Overview
+
+### User Management and Authentication
+
+**User Registration and Access**
+
+WHEN a guest decides to participate actively, THE system SHALL provide a streamlined registration process requiring only email and password.
+
+- Guest browsing of all public communities, posts, and comments
+- Email and password registration for account creation
+- Secure login system with session management
+- Password reset functionality for account recovery
+- User profile creation with customizable information
+
+**User Profiles and Reputation**
+
+WHEN a member views any user profile, THE system SHALL display comprehensive activity history and reputation metrics.
+
+- Public user profiles showing post history and comment history
+- Karma score display with separate post karma and comment karma
+- Profile customization options including bio and avatar
+- Activity timeline showing chronological contributions
+- Account settings for privacy and notification preferences
+
+### Community Management System
+
+**Community Creation and Discovery**
+
+WHEN a member creates a new community, THE system SHALL establish them as the founding moderator with full administrative privileges.
+
+- Any authenticated member can create unlimited communities
+- Communities have unique names, descriptions, and optional rules
+- Public communities visible to all users including guests
+- Community discovery through search and browse features
+- Trending communities highlighted based on growth and activity
+
+**Subscription and Following**
+
+WHEN a member subscribes to a community, THE system SHALL include that community's content in their personalized homepage feed.
+
+- One-click subscription to join communities
+- Unsubscribe option available at any time
+- Subscription list management in user preferences
+- Subscriber counts visible on community pages
+
+**Community Moderation**
+
+WHEN a moderator reviews reported content, THE system SHALL provide tools to take appropriate action including content removal and user bans.
+
+- Founding moderators can appoint additional moderators
+- Moderators can set and update community rules
+- Content removal capabilities for rule violations
+- User banning at community level (not platform-wide)
+- Reported content queue for moderator review
+- Moderation action logging for transparency
+
+### Content Creation and Publishing
+
+**Post Types and Creation**
+
+THE system SHALL support three distinct post types to accommodate diverse content sharing needs:
+
+1. **Text Posts**: Long-form written content with markdown formatting support
+2. **Link Posts**: Sharing external URLs with title and optional description
+3. **Image Posts**: Uploading and displaying images with captions
+
+**Post Creation Requirements**
+
+WHEN a member creates a post, THE system SHALL validate required fields and enforce content limits before publication.
+
+- Posts must be associated with a specific community
+- Post titles required with character limits (minimum 10 characters, maximum 300 characters)
+- Text posts support up to 40,000 characters of body content
+- Image uploads limited to 10MB per image with common formats supported (JPEG, PNG, GIF)
+- Link URLs validated for proper format
+- Posts timestamped upon creation
+
+**Content Editing and Deletion**
+
+WHEN a member edits their post, THE system SHALL preserve the original creation timestamp while marking the content as edited.
+
+- Post creators can edit their own posts at any time
+- Edited posts display "edited" indicator with timestamp
+- Post creators can delete their own posts
+- Moderators can remove posts from their communities
+- Deleted posts show removal message but preserve discussion threads
+
+### Voting and Karma System
+
+**Voting Mechanics**
+
+WHEN a member votes on content, THE system SHALL record the vote and update the content's score instantly.
+
+- Authenticated members can upvote or downvote posts and comments
+- Each member can cast one vote per piece of content
+- Members can change their vote (upvote to downvote or vice versa)
+- Members can remove their vote entirely
+- Vote scores displayed as net total (upvotes minus downvotes)
+- Guests can view scores but cannot vote
+
+**Karma Calculation**
+
+THE system SHALL calculate and update user karma scores based on votes received on their content.
+
+- Post karma: Sum of net votes on all user's posts
+- Comment karma: Sum of net votes on all user's comments
+- Total karma: Combined post karma and comment karma
+- Downvotes reduce karma proportionally
+- Karma scores updated in real-time as votes change
+- Karma displayed prominently on user profiles
+
+**Anti-Manipulation Measures**
+
+WHEN the system detects suspicious voting patterns, THE system SHALL prevent vote manipulation through rate limiting and validation.
+
+- Vote changes tracked to prevent rapid switching
+- Rate limiting on voting actions (maximum 100 votes per minute)
+- Self-voting prohibited (users cannot vote on their own content)
+
+### Comment and Discussion System
+
+**Comment Creation**
+
+WHEN a member reads a post, THE system SHALL enable them to add comments to participate in the discussion.
+
+- Members can comment on any post in communities they can access
+- Comments support up to 10,000 characters
+- Basic markdown formatting supported in comments
+- Comments timestamped upon creation
+
+**Nested Reply Threads**
+
+WHEN a member replies to a comment, THE system SHALL display the reply as a nested child maintaining discussion context.
+
+- Comments can have replies (nested comments)
+- Reply threads support up to 10 levels of nesting
+- Visual indentation indicates nesting depth
+- "Continue thread" links for deeply nested conversations
+
+**Comment Voting and Sorting**
+
+THE system SHALL apply the same voting mechanics to comments as posts, enabling quality comment curation.
+
+- Comments receive upvotes and downvotes like posts
+- Comment karma contributes to user's total comment karma
+- Comments sortable by: best (vote score), new (chronological), controversial
+
+**Comment Management**
+
+WHEN a member edits their comment, THE system SHALL mark it as edited while preserving reply context.
+
+- Comment authors can edit their comments
+- Edited comments show "edited" timestamp
+- Comment authors can delete their comments
+- Deleted comments with replies show "[deleted]" placeholder to preserve thread structure
+- Moderators can remove comments in their communities
+
+### Content Sorting and Discovery
+
+**Sorting Algorithms**
+
+THE system SHALL provide multiple sorting options to help users discover content matching their preferences.
+
+**Hot Sorting**
+WHEN a user selects "hot" sorting, THE system SHALL prioritize recent posts with strong engagement momentum.
+
+- Algorithm considers: vote score, post age, comment activity
+- Balances popularity with recency
+- Promotes trending content gaining rapid engagement
+- Default sorting for community feeds
+
+**New Sorting**
+WHEN a user selects "new" sorting, THE system SHALL display posts in reverse chronological order.
+
+- Purely time-based, showing newest posts first
+- Ignores vote scores and engagement
+- Helps users discover brand new content
+
+**Top Sorting**
+WHEN a user selects "top" sorting, THE system SHALL rank posts by highest vote score within selected timeframe.
+
+- Time filters available: today, this week, this month, this year, all time
+- Purely score-based within timeframe
+- Surfaces best-performing content over time
+
+**Controversial Sorting**
+WHEN a user selects "controversial" sorting, THE system SHALL highlight posts with near-equal upvotes and downvotes indicating divisive content.
+
+- Identifies posts with high engagement but split opinion
+- Calculates based on vote balance (similar upvote and downvote counts)
+- Surfaces polarizing discussions
+
+### Content Feeds and Personalization
+
+**Homepage Feed (Authenticated Members)**
+
+WHEN an authenticated member visits the homepage, THE system SHALL display a personalized feed of posts from their subscribed communities.
+
+- Aggregates posts from all subscribed communities
+- Applies selected sorting algorithm (default: hot)
+- Infinite scroll pagination with 25 posts per page
+- Empty state with discovery suggestions for new users with no subscriptions
+
+**All/Popular Feed**
+
+WHEN any user visits the global feed, THE system SHALL display popular content from across all public communities.
+
+- Available to both guests and members
+- Shows trending content platform-wide
+- Helps users discover new communities
+- Applies same sorting options as community feeds
+
+**Individual Community Feeds**
+
+WHEN a user visits a specific community, THE system SHALL display posts only from that community with community-specific context.
+
+- Posts filtered to single community
+- Community description and rules visible
+- Subscribe/unsubscribe button for members
+- Moderator list and community statistics displayed
+- Community sorting preferences applied
+
+### Content Moderation and Reporting
+
+**Content Reporting**
+
+WHEN a member encounters inappropriate content, THE system SHALL enable them to report it to community moderators for review.
+
+- Report button available on all posts and comments
+- Report categories: spam, harassment, misinformation, off-topic, rule violation, other
+- Optional text description for report context
+- Reports submitted anonymously to moderators
+
+**Moderation Queue**
+
+WHEN a moderator accesses the moderation tools, THE system SHALL display all pending reports for their communities.
+
+- Centralized queue of reported content
+- Report details including category, reporter count, and context
+- Content preview for quick review
+- Action buttons: approve (dismiss report), remove content, ban user
+
+**Moderator Actions**
+
+THE system SHALL provide moderators with enforcement tools to maintain community standards.
+
+- **Content Removal**: Remove posts or comments with reason logged
+- **User Banning**: Ban users from specific community (temporary or permanent)
+- **Report Resolution**: Mark reports as reviewed with action taken
+- **Rule Management**: Create, edit, and publish community rules
+
+**Moderation Transparency**
+
+WHEN moderators take action, THE system SHALL log the action for accountability and potential review.
+
+- Removed content shows "[removed by moderator]" message
+- Moderation log tracks all moderator actions with timestamps
+- Community rules clearly posted and accessible
+- Ban notifications sent to affected users with reason
+
+### Search and Discovery
+
+**Content Search**
+
+WHEN a user searches for content, THE system SHALL return relevant posts and communities matching search terms.
+
+- Full-text search across post titles and content
+- Community name and description search
+- Search results ranked by relevance and recency
+- Filters for content type (posts vs communities) and timeframe
+
+**Community Discovery**
+
+THE system SHALL help users find communities aligned with their interests.
+
+- Trending communities based on subscriber growth
+- Popular communities ranked by subscriber count
+- Category-based browsing (if communities are tagged)
+- Related community suggestions based on subscription patterns
+
+## Business Model and Revenue Strategy
 
 ### Revenue Streams
 
-The platform employs a diversified revenue model designed to sustain operations while maintaining user trust and platform quality:
+**Primary Monetization: Freemium Subscription Model**
 
-**1. Premium Membership Subscriptions (Primary Revenue Stream)**
+THE platform SHALL generate revenue through premium memberships while maintaining free access to core features.
 
-A tiered subscription offering provides enhanced features while keeping core functionality free:
+**Free Tier (Core Product)**
+- All essential features: browsing, posting, commenting, voting, community creation
+- Advertisement-supported experience
+- Standard user support
+- 95% of users expected in this tier
 
-- **Premium Individual ($4.99/month or $49.99/year)**
-  - Ad-free browsing experience
-  - Exclusive badge and profile customization options
-  - Early access to new features
-  - Enhanced content filtering and saving capabilities
-  - Priority customer support
-  - Supports community awards and recognition features
+**Premium Tier ($6.99/month or $59.99/year)**
 
-- **Premium Community ($14.99/month)**
-  - All individual premium features
-  - Advanced community analytics and insights
-  - Custom community styling and branding
-  - Enhanced moderation tools and automation
-  - Community growth tools and promotion credits
-  - API access for community bots and integrations
+WHEN a member upgrades to premium, THE system SHALL unlock enhanced features and remove advertisements.
 
-**Target**: 3-5% conversion rate from active users to premium subscriptions, industry-standard for freemium community platforms.
+Premium benefits include:
+- Ad-free browsing experience across entire platform
+- Custom profile themes and enhanced avatars
+- Access to exclusive premium-only communities
+- Enhanced comment highlighting for better discussion following
+- Priority customer support
+- Awards to give to exceptional content (see below)
 
-**2. Advertising (Secondary Revenue Stream)**
+**Expected conversion rate**: 3-5% of active monthly users
 
-Non-intrusive advertising integrated into content feeds:
+### Secondary Revenue: Award System
 
-- **Sponsored Posts**: Clearly labeled promotional content from brands, displayed within feed with same voting mechanics as regular posts
-- **Community Sponsorships**: Brands can sponsor relevant communities with tasteful sidebar placements
-- **Native Advertising**: Promoted content that matches platform format and user interests
-- **Strict Policies**: 
-  - Clear labeling of all sponsored content
-  - No pop-ups, auto-play video, or intrusive formats
-  - Community and user-level ad controls
-  - Respect for premium subscribers' ad-free experience
+**Digital Awards and Tipping**
 
-**Target**: Generate revenue from 95-97% of free users through ethical advertising while maintaining user experience quality.
+WHEN a member wants to recognize exceptional content, THE system SHALL offer purchasable awards that can be given to posts and comments.
 
-**3. Community Coins and Awards (Tertiary Revenue Stream)**
+- **Awards Purchase**: Users buy award credits ($4.99 for 5 awards, $19.99 for 25 awards, $49.99 for 70 awards)
+- **Award Giving**: Members award posts/comments they find exceptionally valuable
+- **Creator Benefits**: Content creators receive karma boost and premium time when their content receives awards
+- **Visual Recognition**: Awarded content displays badge, increasing visibility
 
-Virtual currency system enabling user-to-user recognition:
+**Expected revenue**: $0.15-$0.30 per monthly active user from awards
 
-- **Community Coins**: Users purchase coins to award exceptional posts and comments
-- **Awards System**: Various award types ranging from simple recognition to premium awards that grant temporary premium features to recipients
-- **Revenue Share**: Platform retains percentage of coin purchases while rewarding quality contributors
-- **Engagement Driver**: Awards increase engagement and create visible appreciation for quality content
+### Tertiary Revenue: Targeted Advertising
 
-**Target**: 10-15% of active users purchase coins for awarding content, creating supplemental revenue stream.
+**Non-Intrusive Advertising for Free Tier Users**
 
-**4. API and Data Access (Future Revenue Stream)**
+THE system SHALL display relevant advertisements to free-tier users in a way that respects user experience.
 
-Providing legitimate access to platform data for research and business intelligence:
+- **Native Promoted Posts**: Clearly labeled promotional content in feeds
+- **Community-Targeted Ads**: Advertisements relevant to community topics
+- **Sidebar Advertisements**: Display ads in non-intrusive positions
+- **Frequency Limits**: Maximum 1 ad per 10 organic posts in feeds
+- **Quality Standards**: All ads reviewed for appropriateness
 
-- **API Access Tiers**: Free tier for individual developers, paid tiers for commercial applications
-- **Research Partnerships**: Anonymized data access for academic research (with strict privacy controls)
-- **Business Intelligence**: Aggregated trend data and insights for enterprises (no personal data)
-- **Developer Ecosystem**: Revenue sharing with third-party applications that enhance platform value
+**Revenue model**: CPM (cost per thousand impressions) and CPC (cost per click)
+**Expected revenue**: $0.50-$1.50 per monthly active user from advertising
 
-**Target**: Develop this stream once platform reaches critical mass and has established clear data governance policies.
+### Potential Future Revenue Streams
 
-### Monetization Timeline
+**Community Subscriptions**
 
-**Phase 1: Growth Phase (Months 1-12)**
-- Focus: User acquisition and engagement
-- Revenue: Minimal monetization to avoid hindering growth
-- Strategy: Build user base to 100,000+ monthly active users before aggressive monetization
-- Initial Revenue: Basic premium subscriptions available but not promoted heavily
+WHEN communities grow to significant size, THE system SHALL enable moderators to offer premium community memberships.
 
-**Phase 2: Monetization Introduction (Months 13-24)**
-- Focus: Introduce advertising and promote premium subscriptions
-- Revenue Target: Achieve 30-40% cost coverage through revenue
-- Strategy: A/B test ad formats, optimize premium feature mix, launch community coins
-- Goal: Prove revenue model viability while maintaining user growth
+- Moderators can create paid private communities
+- Platform takes 20-30% revenue share
+- Enables professional communities, courses, expert forums
 
-**Phase 3: Sustainability (Months 25-36)**
-- Focus: Achieve operational sustainability
-- Revenue Target: Full cost coverage with 10-20% margin
-- Strategy: Optimize conversion rates, expand advertising partnerships, scale successful revenue streams
-- Goal: Self-sustaining operations without external funding
+**Enterprise/Business Accounts**
 
-**Phase 4: Profitability (Months 37+)**
-- Focus: Profitable growth and reinvestment
-- Revenue Target: 30-40% profit margins
-- Strategy: Continue optimizing existing streams, explore new revenue opportunities (API, events, merchandise)
-- Goal: Fund platform improvements and expansion from operating profits
+- Verified business accounts with enhanced features
+- Analytics dashboards for brand engagement tracking
+- API access for community management tools
 
-### Unit Economics
+**Data Licensing (Anonymous, Aggregated)**
 
-**Target Metrics per Active User (at scale)**
+- Research access to anonymized community and content data
+- Trend analysis and sentiment insights
+- Strict privacy protections and user consent
 
-- **Average Revenue per User (ARPU)**: $3-5 annually
-  - 4% premium subscriptions: ~$2.00
-  - Advertising revenue: ~$1.50
-  - Coins and awards: ~$0.50
-  - API and other: ~$0.25
+### Revenue Projections and Growth Strategy
 
-- **Cost per User**: $2-3 annually
-  - Infrastructure and hosting: ~$1.00
-  - Moderation and support: ~$0.75
-  - Development and operations: ~$0.50
-  - Marketing and acquisition: ~$0.50
+**Year 1 Targets**
+- 100,000 registered users
+- 10,000 monthly active users
+- 300 premium subscribers (3% conversion)
+- Monthly revenue: $4,000-$6,000
 
-- **Target Profit per User**: $1-2 annually
+**Year 2 Targets**
+- 500,000 registered users
+- 75,000 monthly active users
+- 3,000 premium subscribers (4% conversion)
+- Monthly revenue: $35,000-$50,000
 
-**Break-Even Analysis**
+**Year 3 Targets**
+- 2,000,000 registered users
+- 400,000 monthly active users
+- 20,000 premium subscribers (5% conversion)
+- Monthly revenue: $200,000-$300,000
 
-With target unit economics:
-- **Fixed Costs**: $500,000 annually (team, infrastructure, operations)
-- **Break-Even Users**: 250,000-300,000 monthly active users
-- **Sustainable Scale**: 500,000+ monthly active users for healthy margins
+### Customer Acquisition Strategy
 
-### Ethical Monetization Principles
+**Organic Growth Mechanisms**
 
-**1. User Trust First**: Never compromise user privacy or experience for short-term revenue
-**2. Transparency**: Clear disclosure of all monetization mechanisms
-**3. Value Exchange**: Premium features must provide genuine value, not withhold basic functionality
-**4. Community Respect**: Advertising must be clearly labeled and non-intrusive
-**5. Long-Term Thinking**: Build sustainable business model that aligns platform and user interests
+WHEN communities create valuable content, THE system SHALL enable natural viral growth through content sharing and search visibility.
 
-## Target Audience and User Segments
+- **SEO Optimization**: Public posts indexed by search engines, driving organic discovery
+- **Social Sharing**: Easy sharing of posts to external social media
+- **Community Cross-Promotion**: Related community suggestions
+- **Content Quality**: Strong moderation ensures high-quality content that attracts users
 
-### Primary User Segments
+**Paid Acquisition**
 
-**1. Knowledge Seekers (40% of user base)**
+- Targeted social media advertising highlighting unique communities
+- Content marketing through blog posts about community building
+- Partnerships with influencers in key verticals
+- Referral programs rewarding users for inviting friends
 
-**Demographics:**
-- Age: 18-45, skewing younger (25-35 core demographic)
-- Education: College-educated or currently in higher education
-- Occupation: Students, knowledge workers, professionals
-- Tech savviness: Medium to high
+**Retention Strategies**
 
-**Behavioral Characteristics:**
-- Primarily consume content rather than create
-- Visit platform daily or multiple times per week
-- Subscribe to 10-30 communities matching diverse interests
-- Vote regularly, comment occasionally
-- Value quality information and diverse perspectives
-- Use platform for learning, staying informed, and exploring interests
+WHEN new users register, THE system SHALL guide them through onboarding to establish engagement habits.
 
-**User Needs:**
-- Efficient discovery of quality content on specific topics
-- Reliable information from knowledgeable communities
-- Deep dives into subjects through comment discussions
-- Staying current with interests and hobbies
-- Learning from experts and enthusiasts
-
-**Success Indicators:**
-- Time spent on platform
-- Number of communities subscribed
-- Frequency of return visits
-- Content consumption patterns
-
-**2. Content Creators and Contributors (30% of user base)**
-
-**Demographics:**
-- Age: 20-40, broad distribution
-- Education: Varies widely by community type
-- Occupation: Professionals, hobbyists, subject matter experts, aspiring creators
-- Tech savviness: Medium to high
-
-**Behavioral Characteristics:**
-- Regularly create posts and comments
-- Monitor karma and community feedback
-- Participate in multiple communities related to expertise areas
-- Build reputation over time through consistent contributions
-- Engage in discussions and respond to comments
-- Value recognition and community appreciation
-
-**User Needs:**
-- Platform to share knowledge and insights
-- Audience for their content and ideas
-- Recognition for quality contributions (karma)
-- Feedback and engagement from community
-- Ability to establish credibility in subject areas
-- Tools for creating engaging posts (text, links, images)
-
-**Success Indicators:**
-- Posting frequency and consistency
-- Karma accumulation rate
-- Engagement received (votes, comments)
-- Community reputation and recognition
-
-**3. Community Builders and Moderators (20% of user base)**
-
-**Demographics:**
-- Age: 25-50, skewing slightly older
-- Education: College-educated
-- Occupation: Professionals with passion for specific topics, entrepreneurs, community managers
-- Tech savviness: Medium to high
-- Personality: Organized, committed, leadership-oriented
-
-**Behavioral Characteristics:**
-- Create and/or moderate one or more communities
-- Invest significant time in community management
-- Develop and enforce community rules
-- Actively moderate content and user behavior
-- Promote community growth and quality
-- Balance community building with own participation
-
-**User Needs:**
-- Tools to create and customize communities
-- Moderation capabilities to maintain quality
-- Community growth and discovery features
-- Analytics to understand community health
-- Ability to appoint additional moderators
-- Support from platform for difficult moderation decisions
-
-**Success Indicators:**
-- Community growth and member retention
-- Content quality and engagement levels
-- Effective moderation (low report rates, quick response times)
-- Community culture and guidelines establishment
-
-**4. Casual Browsers and Lurkers (10% of user base)**
-
-**Demographics:**
-- Age: Broad range, 16-60+
-- Education: Varies widely
-- Occupation: Varies widely
-- Tech savviness: Low to medium
-
-**Behavioral Characteristics:**
-- Consume content without voting or commenting
-- May not create account or log in regularly
-- Visit platform sporadically or follow links from search/social media
-- Limited engagement with community features
-- Passive information consumption
-
-**User Needs:**
-- Easy content discovery without account required
-- Interesting content that appears in search results
-- Simple navigation and intuitive interface
-- Quick answers to questions or topics of interest
-
-**Success Indicators:**
-- Conversion to registered users
-- Time spent on platform
-- Pages viewed per session
-- Return visit frequency
-
-### Cross-Segment User Journeys
-
-**The Progression Path**: Many users naturally progress through segments over time:
-
-1. **Discovery**: Start as casual browser finding interesting content
-2. **Registration**: Create account to subscribe to communities and personalize feed
-3. **Engagement**: Begin voting and occasionally commenting (Knowledge Seeker)
-4. **Contribution**: Start posting content and actively participating (Content Creator)
-5. **Leadership**: Create or become moderator of community (Community Builder)
-
-Not all users progress through all stages, but the platform should facilitate movement between segments for those who want to increase engagement.
-
-### Geographic and Demographic Diversity
-
-**Primary Geographic Markets (Launch Phase)**
-- North America: English-speaking users in US and Canada
-- United Kingdom and Ireland: English-speaking European users
-- Australia and New Zealand: English-speaking APAC users
-
-**Expansion Markets (Future Phases)**
-- Non-English speaking countries with localized versions
-- Emerging markets with growing internet penetration
-
-**Diversity and Inclusion Priorities**
-- Build diverse, welcoming communities across demographics
-- Support communities for underrepresented groups
-- Implement strong anti-harassment and anti-discrimination policies
-- Provide accessibility features for users with disabilities
-- Support multiple languages and cultural contexts in future iterations
+- Personalized onboarding recommending initial communities
+- Email notifications for trending content in subscribed communities
+- Achievement system recognizing contribution milestones
+- Community health monitoring to maintain quality
 
 ## Success Metrics and KPIs
 
-### North Star Metric
+### User Engagement Metrics
 
-**Weekly Active Communities (WAC)**: The number of communities with at least 10 posts and 100 votes in a given week.
+**Daily and Monthly Active Users**
 
-This metric captures the platform's core value proposition: thriving topic-based communities. Unlike simple user counts, WAC measures actual community health and engagement, ensuring the platform creates genuine value rather than just accumulating dormant users.
+THE system SHALL track and report user engagement levels to measure platform health.
 
-### User Acquisition and Growth Metrics
+- **Daily Active Users (DAU)**: Unique users visiting platform per day
+- **Monthly Active Users (MAU)**: Unique users visiting platform per month
+- **DAU/MAU Ratio**: Target 20-30% (indicates strong user retention)
 
-**Primary Metrics:**
+**Session Metrics**
 
-- **Monthly Active Users (MAU)**: Users who visit platform at least once per month
-  - Target Year 1: 100,000 MAU
-  - Target Year 2: 500,000 MAU
-  - Target Year 3: 2,000,000 MAU
+WHEN analyzing user engagement, THE system SHALL measure session depth and duration.
 
-- **Daily Active Users (DAU)**: Users who visit platform daily
-  - Target DAU/MAU Ratio: 20-30% (indicating strong engagement)
+- **Average Session Duration**: Target 15-25 minutes per session
+- **Sessions per User per Week**: Target 5-8 sessions for active users
+- **Pages per Session**: Target 8-12 pages viewed per session
 
-- **New User Registration Rate**: New accounts created per month
-  - Target: 10-15% month-over-month growth during growth phase
+**Content Interaction Rates**
 
-- **Registration Conversion Rate**: Percentage of visitors who create accounts
-  - Target: 15-25% of unique visitors
+THE system SHALL track how users interact with content to measure engagement quality.
 
-**Secondary Metrics:**
-
-- User acquisition cost (CAC) per channel
-- Organic vs. paid user acquisition mix
-- Geographic distribution of users
-- User demographic breakdowns
-
-### Engagement and Retention Metrics
-
-**Primary Metrics:**
-
-- **User Retention Rates**:
-  - Day 1 Retention: 40-50% (users who return day after registration)
-  - Day 7 Retention: 25-35% (users who return within first week)
-  - Day 30 Retention: 15-25% (users who remain active after first month)
-
-- **Average Session Duration**: Time spent per visit
-  - Target: 15-25 minutes per session
-
-- **Sessions per User per Week**: Visit frequency
-  - Target: 4-8 sessions per active user per week
-
-- **Content Interaction Rate**: Percentage of users who vote, comment, or post
-  - Target: 60-70% of active users interact with content
-
-**Secondary Metrics:**
-
-- Comments per post ratio
-- Voting activity per user
-- Community subscription rate (avg communities per user)
-- Feed scroll depth and content consumption
-
-### Content Quality Metrics
-
-**Primary Metrics:**
-
-- **Posts per Day**: Total content creation volume
-  - Target growth: 20% month-over-month during growth phase
-
-- **Comments per Post**: Discussion quality indicator
-  - Target: 8-15 comments per post average
-
-- **Average Post Score**: Net votes (upvotes minus downvotes)
-  - Monitor for trends indicating content quality changes
-
-- **Content Type Distribution**: Mix of text, link, and image posts
-  - Target: Healthy diversity across all formats (no single type >60%)
-
-**Secondary Metrics:**
-
-- Time to first comment on new posts
-- Post edit and deletion rates
-- Reported content per 1000 posts (lower is better)
-- Comment thread depth and complexity
+- **Vote Rate**: Percentage of viewed content that receives votes (target: 15-20%)
+- **Comment Rate**: Percentage of viewed posts that receive comments (target: 5-8%)
+- **Post Creation Rate**: New posts per 100 active users per day (target: 3-5)
 
 ### Community Health Metrics
 
-**Primary Metrics:**
+**Community Growth**
 
-- **Active Communities**: Communities with at least 1 post in past week
-  - Target: 70-80% of communities remain active
+THE system SHALL monitor community creation and health indicators.
 
-- **Community Growth Rate**: New communities created per month
-  - Target: 15-20% month-over-month growth
+- **Communities Created**: Target 50-100 new communities per month in early growth
+- **Active Communities**: Communities with at least 1 post per week (target: 60% of total)
+- **Average Community Size**: Subscribers per community (target: growing trend)
+- **Community Survival Rate**: Communities still active after 90 days (target: 40%+)
 
-- **Average Community Size**: Members per community
-  - Monitor for healthy distribution (not over-concentrated in few communities)
+**Content Quality**
 
-- **Community Engagement Score**: Composite of posts, comments, votes per community member
-  - Target: Improve by 10-15% year-over-year
+WHEN evaluating platform quality, THE system SHALL measure content engagement and moderation effectiveness.
 
-**Secondary Metrics:**
+- **Average Post Score**: Net votes per post (target: positive and stable)
+- **Comment Depth**: Average replies per post (target: 5+ comments per post)
+- **Moderation Rate**: Removed content as percentage of total (target: <5%)
+- **Report Resolution Time**: Average time for moderators to review reports (target: <24 hours)
 
-- Moderator-to-member ratio
-- Community subscriber growth rates
-- Cross-community participation rates
-- Community churn (inactive communities)
+### Revenue Metrics
 
-### Moderation and Safety Metrics
+**Conversion and Monetization**
 
-**Primary Metrics:**
+THE system SHALL track revenue generation and conversion effectiveness.
 
-- **Report Response Time**: Time from content report to moderator action
-  - Target: <2 hours for community moderators, <24 hours for site admins
+- **Premium Conversion Rate**: Free to premium upgrades (target: 3-5%)
+- **Average Revenue Per User (ARPU)**: Total revenue divided by MAU (target: $0.80-$1.20)
+- **Customer Lifetime Value (LTV)**: Average revenue per user over lifetime (target: $45-$60)
+- **Churn Rate**: Premium subscribers canceling monthly (target: <5% monthly churn)
 
-- **Content Removal Rate**: Percentage of posts/comments removed
-  - Target: <2% (indicating effective community norms)
+**Award System Performance**
 
-- **User Ban Rate**: Percentage of users banned
-  - Target: <0.5% (indicating healthy community culture)
-
-- **Repeat Offender Rate**: Users banned after previous warnings
-  - Target: <20% of bans (indicating effective warning system)
-
-**Secondary Metrics:**
-
-- Reports per 1000 posts/comments
-- False report rate (reports with no action taken)
-- Moderator action distribution across communities
-- Appeal rates and reversal rates
-
-### Monetization Metrics
-
-**Primary Metrics:**
-
-- **Average Revenue per User (ARPU)**: Total revenue divided by MAU
-  - Year 1 Target: $0.50
-  - Year 2 Target: $2.00
-  - Year 3 Target: $4.00
-
-- **Premium Subscription Conversion Rate**: Percentage of users with premium membership
-  - Target: 3-5% of active users
-
-- **Premium Subscriber Churn**: Monthly cancellation rate
-  - Target: <5% monthly churn
-
-- **Advertising Revenue per User (non-premium)**: Ad revenue per free user
-  - Target: $1.50-2.00 annually
-
-**Secondary Metrics:**
-
-- Coin purchase rate and average transaction size
-- Ad click-through rates and engagement
-- Premium feature usage and adoption
-- Lifetime value (LTV) by user segment
+- **Awards Given per 1000 Users**: Award activity level (target: 20-30 awards)
+- **Award Purchaser Rate**: Users buying awards (target: 2-4%)
+- **Revenue per Award Transaction**: Average purchase value (target: $12-$15)
 
 ### Technical Performance Metrics
 
-**Primary Metrics:**
-
-- **Platform Uptime**: Percentage of time platform is available
-  - Target: 99.9% uptime (less than 45 minutes downtime per month)
-
-- **Page Load Time**: Time to interactive for key pages
-  - Target: <2 seconds for 90% of page loads
-
-- **API Response Time**: Backend response latency
-  - Target: <200ms for 95th percentile
-
-- **Error Rate**: Percentage of requests resulting in errors
-  - Target: <0.1% error rate
-
-**Secondary Metrics:**
-
-- Database query performance
-- Content delivery network (CDN) hit rates
-- Mobile app performance metrics
-- Search query performance
-
-### Success Criteria by Phase
-
-**Phase 1: Launch and Initial Growth (Months 1-6)**
-- ✅ 10,000+ registered users
-- ✅ 100+ active communities
-- ✅ 20%+ Day 7 retention rate
-- ✅ 500+ posts per day
-- ✅ Platform uptime >99%
-
-**Phase 2: Scaling Engagement (Months 7-12)**
-- ✅ 100,000+ MAU
-- ✅ 1,000+ active communities
-- ✅ 30%+ Day 7 retention rate
-- ✅ 5,000+ posts per day
-- ✅ Premium subscriptions launched with 2%+ conversion
-
-**Phase 3: Monetization and Sustainability (Months 13-24)**
-- ✅ 500,000+ MAU
-- ✅ 50% cost coverage through revenue
-- ✅ 3%+ premium conversion rate
-- ✅ $1.50+ ARPU
-- ✅ 25%+ Day 30 retention rate
-
-**Phase 4: Profitability (Months 25-36)**
-- ✅ 2,000,000+ MAU
-- ✅ Full cost coverage + 20% margin
-- ✅ 4%+ premium conversion rate
-- ✅ $3.00+ ARPU
-- ✅ Sustainable growth and reinvestment
-
-## Competitive Landscape
-
-### Direct Competitors
-
-**Reddit (Primary Competitor)**
-
-*Strengths:*
-- Massive user base (500M+ monthly active users)
-- Strong brand recognition and cultural influence
-- Extensive community diversity (millions of subreddits)
-- Established network effects and content archive
-- Robust third-party ecosystem (apps, bots, tools)
-
-*Weaknesses:*
-- Aging technical infrastructure and user interface
-- Inconsistent moderation and controversial content policies
-- Limited monetization success historically
-- Declining trust in platform leadership after API policy changes
-- Mobile experience lags behind native-first competitors
-
-*Our Differentiation:*
-- Modern, performant technical architecture built for current web standards
-- Cleaner, more intuitive user interface for new users
-- Transparent, community-first moderation policies from day one
-- Better mobile experience with responsive design
-- Focus on sustainable monetization that respects users
-
-**Lemmy/Federated Alternatives**
-
-*Strengths:*
-- Decentralized architecture preventing corporate control
-- Open-source and community-governed
-- Privacy-focused with minimal data collection
-- Appeal to users seeking Reddit alternatives
-
-*Weaknesses:*
-- Fragmented user experience across instances
-- Technical complexity barrier for mainstream users
-- Limited resources for feature development
-- Difficult content discovery across federated instances
-- Small user base limiting network effects
-
-*Our Differentiation:*
-- Centralized platform offering consistent, polished experience
-- Professional development team enabling rapid feature iteration
-- Easier onboarding for non-technical users
-- Better content discovery and recommendation systems
-- Balance between user control and platform usability
-
-**Hacker News**
-
-*Strengths:*
-- High-quality discussions in tech and startup domain
-- Strong community culture and norms
-- Simple, fast interface
-- Respected brand in tech community
-
-*Weaknesses:*
-- Limited to single community focus (tech/startups)
-- No support for multiple communities or topics
-- Minimal features compared to full community platforms
-- Limited content format support
-- Not designed for community creation
-
-*Our Differentiation:*
-- Support for unlimited communities across any topic
-- Richer feature set for diverse use cases
-- Multiple content formats beyond links
-- Community creation tools for any interest area
-
-### Indirect Competitors
-
-**Discord**
-
-*Competitive Overlap:*
-- Community building and topic-based discussions
-- Growing use for public communities beyond gaming
-
-*Differentiation:*
-- Discord is synchronous (real-time chat) vs. our asynchronous discussions
-- We provide better content archival and discovery
-- Democratic voting and content curation not available in Discord
-- Better for long-form discussions and knowledge preservation
-- Complementary rather than directly competitive
-
-**Twitter/X**
-
-*Competitive Overlap:*
-- Real-time discussions and content sharing
-- Following topics and interests
-
-*Differentiation:*
-- We prioritize threaded, organized discussions over real-time streams
-- Topic/community-first vs. person-first organization
-- Better support for long-form content
-- Democratic curation vs. algorithmic feeds
-- Less emphasis on individual following, more on community membership
-
-**Facebook Groups**
-
-*Competitive Overlap:*
-- Group-based communities and discussions
-- Content sharing within interest groups
-
-*Differentiation:*
-- Topic-first vs. social graph-first architecture
-- Anonymous/pseudonymous participation vs. real identity
-- Democratic content curation vs. algorithmic feeds
-- No advertising-driven content manipulation
-- Better privacy and data protection
-
-**Traditional Forums (vBulletin, phpBB, etc.)**
-
-*Competitive Overlap:*
-- Threaded discussions on specific topics
-- Community-based organization
-
-*Differentiation:*
-- Modern, unified platform vs. fragmented individual forums
-- Cross-community participation and discovery
-- Voting and karma system for content curation
-- Better mobile experience
-- Lower barrier to community creation
-
-### Competitive Advantages
-
-**1. Modern Technical Foundation**
-- Built with current web technologies and best practices
-- Fast, responsive performance on all devices
-- Scalable architecture supporting growth
-- Clean, intuitive user interface
-
-**2. Balanced Governance Model**
-- Democratic content curation through voting
-- Distributed moderation empowering communities
-- Platform-wide standards preventing abuse
-- Transparent policies and community input
-
-**3. Sustainable Business Model**
-- Diversified revenue streams reducing single-point dependency
-- Ethical monetization respecting user experience
-- Clear path to profitability without compromising values
-- Long-term thinking vs. short-term extraction
-
-**4. User-First Philosophy**
-- Privacy protection and minimal data collection
-- Transparency in algorithms and moderation
-- User control over experience and content
-- Community empowerment over corporate control
-
-**5. Cross-Community Innovation**
-- Easy discovery and participation across many topics
-- Unified karma and reputation across communities
-- Cross-pollination of ideas between communities
-- Single account for all interests
-
-### Market Positioning
-
-**Positioning Statement:**
-
-"For internet users seeking quality, topic-based discussions and content curation, Community Platform is a modern, democratically-curated alternative to algorithm-driven social media that empowers communities to govern themselves, rewards quality contributions, and puts user interests ahead of advertising revenue."
-
-**Market Position:**
-- **Premium to**: Traditional forums, federated alternatives (better UX, features, discovery)
-- **Alternative to**: Reddit (modern tech, cleaner governance, better mobile experience)
-- **Complementary to**: Discord, Twitter (different use cases and interaction patterns)
-- **Differentiated from**: Facebook Groups (privacy-first, topic-first, democratic curation)
-
-### Barriers to Entry and Competitive Moats
-
-**Network Effects**
-- Value increases with more users, communities, and content
-- Hard to replicate established community cultures and relationships
-- Content archive becomes increasingly valuable over time
-
-**Community Investment**
-- Users invest time building karma and reputation
-- Moderators invest effort building and maintaining communities
-- Switching costs increase with user investment
-
-**Brand and Trust**
-- Establishing reputation for quality discussions takes years
-- Trust in moderation fairness and platform governance
-- Cultural mindshare in internet communities
-
-**Technical Excellence**
-- Superior user experience and performance
-- Continuous innovation in features and tools
-- Infrastructure investment supporting scale
-
-**Content Archive**
-- Valuable searchable content attracting new users
-- SEO advantages from rich discussion content
-- Historical community knowledge
-
-### Competitive Strategy
-
-**Phase 1: Establish Beachhead (Year 1)**
-- Focus on 10-20 high-quality niche communities
-- Perfect core features and user experience
-- Build reputation for excellent moderation and community support
-- Target underserved communities or those dissatisfied with existing platforms
-
-**Phase 2: Horizontal Expansion (Year 2)**
-- Expand to 100+ diverse communities across many topics
-- Leverage early success stories to attract community builders
-- Develop community discovery and growth tools
-- Build cross-community network effects
-
-**Phase 3: Market Leadership (Year 3+)**
-- Position as premier alternative to Reddit for new communities
-- Capture users seeking better platform governance and experience
-- Expand internationally and into non-English markets
-- Become default choice for new community creation
-
-**Defensive Strategy**
-- Continuous innovation in features and user experience
-- Maintain superior technical performance and reliability
-- Build strong community relationships and trust
-- Transparent communication and community involvement in platform decisions
-- Resist pressure for exploitative monetization
-
-### Risk Mitigation
-
-**Competitive Risks:**
-- Reddit improves platform and regains user trust
-- New well-funded competitor enters market
-- Existing platforms copy our best features
-
-**Mitigation Strategies:**
-- Focus on excellent execution and community relationships (hard to copy)
-- Build strong network effects and switching costs quickly
-- Continuous innovation staying ahead of competitors
-- Differentiation through governance and values, not just features
-- Community ownership and input in platform direction
-
----
-
-> *Developer Note: This document defines business requirements only. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+**System Reliability**
+
+THE system SHALL maintain high availability and performance standards.
+
+- **Uptime**: Target 99.9% uptime (less than 45 minutes downtime per month)
+- **Page Load Time**: Target <1 second for feed loading
+- **API Response Time**: Target <200ms for 95th percentile
+- **Error Rate**: Target <0.1% of requests resulting in errors
+
+**Scalability Indicators**
+
+WHEN measuring system capacity, THE system SHALL track resource utilization and performance under load.
+
+- **Concurrent Users Supported**: Maximum simultaneous active users
+- **Posts per Second**: System throughput capacity
+- **Database Query Performance**: 95th percentile query times
+- **Search Response Time**: Time to return search results (target: <500ms)
+
+## User Journey Diagrams
+
+### New User Onboarding Journey
+
+```mermaid
+graph LR
+    A["Guest Visits Platform"] --> B{"Interested in Participating?"}
+    B -->|"No"| C["Browse Public Content"]
+    B -->|"Yes"| D["Click Register"]
+    D --> E["Enter Email & Password"]
+    E --> F["Verify Email"]
+    F --> G["Complete Profile (Optional)"]
+    G --> H["System Recommends Communities"]
+    H --> I["User Subscribes to 3-5 Communities"]
+    I --> J["View Personalized Feed"]
+    J --> K["Start Engaging (Vote, Comment, Post)"]
+    C --> L{"Eventually Register?"}
+    L -->|"Yes"| D
+    L -->|"No"| C
+```
+
+### Content Creation and Engagement Flow
+
+```mermaid
+graph LR
+    A["Member on Homepage"] --> B{"Action?"}
+    B -->|"Create Post"| C["Select Community"]
+    C --> D{"Post Type?"}
+    D -->|"Text"| E["Write Title & Body"]
+    D -->|"Link"| F["Enter URL & Title"]
+    D -->|"Image"| G["Upload Image & Caption"]
+    E --> H["Submit Post"]
+    F --> H
+    G --> H
+    H --> I["Post Published in Community"]
+    I --> J["Community Members View Post"]
+    J --> K["Members Vote and Comment"]
+    K --> L["Original Poster Earns Karma"]
+    B -->|"Browse Content"| M["View Feed/Community"]
+    M --> N["Read Posts & Comments"]
+    N --> O{"Engage?"}
+    O -->|"Upvote"| P["Award +1 Vote"]
+    O -->|"Downvote"| Q["Award -1 Vote"]
+    O -->|"Comment"| R["Write Comment"]
+    O -->|"Continue Browsing"| M
+    R --> S["Submit Comment"]
+    S --> J
+```
+
+### Community Creation and Moderation Flow
+
+```mermaid
+graph LR
+    A["Member Decides to Create Community"] --> B["Click Create Community"]
+    B --> C["Enter Community Name"]
+    C --> D["Write Description & Rules"]
+    D --> E["Submit Community"]
+    E --> F["System Creates Community"]
+    F --> G["Member Becomes Founding Moderator"]
+    G --> H["Invite Initial Members"]
+    H --> I["Members Start Posting"]
+    I --> J{"Content Issues?"}
+    J -->|"Yes"| K["Users Report Content"]
+    K --> L["Reports Appear in Mod Queue"]
+    L --> M["Moderator Reviews Report"]
+    M --> N{"Action Needed?"}
+    N -->|"Remove Content"| O["Moderator Removes Post/Comment"]
+    N -->|"Ban User"| P["Moderator Bans User from Community"]
+    N -->|"Dismiss"| Q["Moderator Dismisses Report"]
+    O --> R["Content Shows Removed Message"]
+    P --> R
+    Q --> I
+    J -->|"No"| S["Community Grows Organically"]
+    S --> T["Moderator Appoints Additional Mods"]
+    T --> I
+```
+
+### Content Discovery and Sorting Flow
+
+```mermaid
+graph LR
+    A["User Visits Platform"] --> B{"Authenticated?"}
+    B -->|"Yes"| C["View Personalized Homepage Feed"]
+    B -->|"No"| D["View All/Popular Feed"]
+    C --> E{"Select Sorting?"}
+    D --> E
+    E -->|"Hot"| F["System Applies Hot Algorithm"]
+    E -->|"New"| G["System Sorts by Timestamp"]
+    E -->|"Top"| H["User Selects Timeframe"]
+    E -->|"Controversial"| I["System Finds Divisive Posts"]
+    F --> J["Display Sorted Feed"]
+    G --> J
+    H --> K["System Sorts by Score in Timeframe"]
+    K --> J
+    I --> J
+    J --> L["User Scrolls Through Posts"]
+    L --> M{"Find Interesting Post?"}
+    M -->|"Yes"| N["Click to Read Full Post"]
+    M -->|"No"| O["Load More Posts (Pagination)"]
+    N --> P["Read Post & Comments"]
+    P --> Q{"Engage?"}
+    Q -->|"Yes"| R["Vote, Comment, or Share"]
+    Q -->|"No"| L
+    O --> L
+```
+
+## Technical Architecture Principles
+
+While the specific technical implementation is at the discretion of the development team, the following principles should guide architectural decisions:
+
+### Scalability Requirements
+
+THE system SHALL be designed to handle growth from thousands to millions of users without architectural redesign.
+
+- **Horizontal Scalability**: System components should scale by adding more instances
+- **Database Performance**: Support for millions of posts and billions of votes with sub-second query times
+- **Caching Strategy**: Frequently accessed content should be cached to reduce database load
+- **Asynchronous Processing**: Vote tallying, karma calculation, and notifications should process asynchronously
+
+### Performance Expectations
+
+WHEN users interact with the platform, THE system SHALL respond instantly to maintain engagement.
+
+- **Page Load Times**: Target <1 second for initial page load
+- **API Response Times**: Target <200ms for 95% of requests
+- **Search Performance**: Return results within 500ms
+- **Real-time Updates**: Vote scores and new comments should update instantly without page refresh
+
+### Security and Privacy Requirements
+
+THE system SHALL protect user data and prevent unauthorized access or content manipulation.
+
+- **Authentication Security**: Passwords hashed using industry-standard algorithms
+- **Session Management**: Secure token-based authentication with appropriate expiration
+- **Authorization**: Role-based access control preventing unauthorized actions
+- **Input Validation**: All user input sanitized to prevent injection attacks
+- **Rate Limiting**: Prevent abuse through request rate limiting
+- **Data Privacy**: User data protected according to privacy regulations (GDPR, CCPA compliance)
+
+### Content Delivery Optimization
+
+WHEN users access media content, THE system SHALL deliver it efficiently across global locations.
+
+- **Image Optimization**: Automatic compression and format conversion for optimal delivery
+- **Content Distribution**: Use of CDN for static assets and media files
+- **Lazy Loading**: Load content progressively as users scroll
+- **Mobile Optimization**: Responsive design with mobile-first considerations
+
+### Reliability and Fault Tolerance
+
+THE system SHALL maintain availability even during component failures or high load periods.
+
+- **Uptime Target**: 99.9% availability (maximum 45 minutes downtime per month)
+- **Graceful Degradation**: Non-critical features degrade before core functionality fails
+- **Data Backup**: Regular automated backups with point-in-time recovery
+- **Error Handling**: User-friendly error messages with logging for diagnostics
+- **Monitoring**: Real-time system health monitoring with alerting
+
+## Project Scope and Constraints
+
+### In Scope for Initial Release (MVP)
+
+The following features MUST be implemented for the platform's initial launch:
+
+**Core User Features**
+- User registration, authentication, and profile management
+- Guest browsing of public communities and content
+- Email/password login with password reset capability
+- User profiles displaying activity and karma
+
+**Community Features**
+- Community creation by any authenticated member
+- Community subscription/unsubscribe functionality
+- Public communities visible to all users
+- Basic community information (name, description, rules)
+
+**Content Features**
+- Three post types: text, link, and image specifications
+- Post creation, editing, and deletion
+- Upvote and downvote system for posts
+- Karma calculation and display
+- Four sorting algorithms: hot, new, top, controversial
+
+**Discussion Features**
+- Comment creation on posts
+- Nested comment replies (up to 10 levels)
+- Voting on comments
+- Comment editing and deletion
+
+**Moderation Features**
+- Content reporting by members
+- Moderation queue for reported content
+- Content removal by moderators
+- Community-level user banning
+- Moderator appointment system
+
+**Discovery Features**
+- Personalized homepage feed for members
+- All/Popular global feed for all users
+- Individual community feeds
+- Basic search functionality
+
+### Out of Scope for Initial Release
+
+The following features are explicitly excluded from the initial release but may be considered for future versions:
+
+**Advanced Features (Future Phases)**
+- Private/restricted communities
+- Direct messaging between users
+- Chat functionality
+- User blocking
+- Advanced search with filters
+- Trending/Popular page with sophisticated algorithms
+- Mobile native applications (iOS, Android)
+- Push notifications
+- Multi-factor authentication
+- OAuth social login (Google, Facebook, etc.)
+- Content crossposting between communities
+- User flair and community styling
+- Wiki pages for communities
+- Scheduled/timed posts
+- Poll posts
+- Video hosting and playback
+- Live streaming
+- AMA (Ask Me Anything) special event modes
+
+**Advanced Moderation**
+- Automated content filtering (spam detection, profanity filters)
+- Moderator permissions hierarchy
+- Moderation bots and automation
+- Appeal system for bans
+- Shadow banning
+- Site-wide administrator tools
+
+**Advanced Monetization**
+- Premium tier subscriptions (planned for post-MVP)
+- Award system (planned for post-MVP)
+- Advertising platform (planned for post-MVP)
+- Community subscriptions
+- Business/verified accounts
+
+### Technical Constraints
+
+**Technology Stack Decisions**
+- Backend framework: At development team's discretion
+- Database: At development team's discretion (must support relational data and high performance)
+- Authentication: Must use JWT tokens
+- Image storage: At development team's discretion (cloud storage recommended)
+
+**Performance Constraints**
+- Must support at least 1,000 concurrent users on initial infrastructure
+- Database must handle at least 10,000 posts and 100,000 comments efficiently
+- Search must return results within 1 second for typical queries
+
+**Deployment Constraints**
+- Must be deployable to cloud infrastructure (AWS, Google Cloud, or Azure)
+- Must support horizontal scaling for future growth
+- Must include monitoring and logging infrastructure
+
+### Business Constraints
+
+**Budget and Timeline**
+- MVP development timeline: 4-6 months for full-stack implementation
+- Initial infrastructure budget: Support for up to 10,000 monthly active users
+- Marketing budget: Organic growth focused for first 6 months
+
+**Regulatory Compliance**
+- Must comply with GDPR for European users
+- Must comply with CCPA for California users
+- Must have clear Terms of Service and Privacy Policy
+- Must implement content moderation to comply with platform liability laws
+
+**Operational Constraints**
+- Initial moderation: Community-driven (no dedicated moderation team)
+- Customer support: Email-based support for initial release
+- Content hosting: Must use reputable third-party services for user-generated images
+
+## Related Documentation
+
+This service overview document provides the business foundation for the redditCommunity platform. For detailed functional and technical requirements, please refer to the following documents:
+
+- [User Actors and Authentication](./02-user-actors-authentication.md) - Detailed user role definitions, permission matrices, and complete authentication system requirements
+- [Community Management](./03-community-management.md) - Community creation, moderation tools, and lifecycle management specifications
+- [Content Creation and Posts](./04-content-creation-posts.md) - Detailed requirements for post types, creation workflows, and content management
+- [Voting and Karma System](./05-voting-karma-system.md) - Complete voting mechanics, karma calculation formulas, and anti-manipulation measures
+- [Comments and Discussions](./06-comments-discussions.md) - Comment threading, nesting rules, and discussion features
+- [Content Sorting Algorithms](./07-content-sorting-algorithms.md) - Detailed specifications for hot, new, top, and controversial sorting logic
+- [Content Feeds and Discovery](./08-content-feeds-discovery.md) - Feed types, personalization rules, and content discovery mechanisms
+- [User Profiles and Activity](./09-user-profiles-activity.md) - Profile structure, activity history display, and account settings
+- [Content Moderation and Reporting](./10-content-moderation-reporting.md) - Reporting workflows, moderation tools, and community governance

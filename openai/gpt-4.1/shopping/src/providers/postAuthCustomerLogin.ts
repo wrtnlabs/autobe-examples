@@ -7,103 +7,78 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IShoppingCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingCustomer";
-import { IShoppingAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAuthorizationToken";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthCustomerLogin(props: {
-  body: IShoppingCustomer.ILogin;
-}): Promise<IShoppingCustomer.IAuthorized> {
-  // STEP 1: Fetch customer by email and enforce not deleted
-  const customer = await MyGlobal.prisma.shopping_customers.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+  body: IShoppingMallCustomer.ILogin;
+}): Promise<IShoppingMallCustomer.IAuthorized> {
+  const input = props.body;
+  const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
+    where: { email: input.email },
   });
   if (!customer) {
-    throw new HttpException("Invalid email or password", 401);
+    throw new HttpException("Invalid credentials", 401);
   }
-  if (!customer.is_active) {
-    throw new HttpException("Account is not active", 403);
-  }
-
-  // STEP 2: Validate password using PasswordUtil
-  const valid = await PasswordUtil.verify(
-    props.body.password,
+  const verified = await PasswordUtil.verify(
+    input.password,
     customer.password_hash,
   );
-  if (!valid) {
-    throw new HttpException("Invalid email or password", 401);
+  if (!verified) {
+    throw new HttpException("Invalid credentials", 401);
   }
-
-  // STEP 3: Create a new session for this login
-  const now = toISOStringSafe(new Date());
-  const accessExpiresNum = Date.now() + 60 * 60 * 1000; // 1 hour
-  const refreshExpiresNum = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
-  const accessExpires = toISOStringSafe(new Date(accessExpiresNum));
-  const refreshExpires = toISOStringSafe(new Date(refreshExpiresNum));
-
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // Only include 'ip' if present and not null/undefined
   const sessionData: any = {
-    id: v4(),
-    shopping_customer_id: customer.id,
-    href: props.body.href,
-    referrer: props.body.referrer,
-    created_at: now,
-    expired_at: accessExpires,
+    id: v4() as string & tags.Format<"uuid">,
+    shopping_mall_customer_id: customer.id,
+    href: input.href,
+    referrer: input.referrer,
+    created_at: toISOStringSafe(now),
+    expired_at: toISOStringSafe(accessExpires),
   };
-  if (props.body.ip !== null && props.body.ip !== undefined) {
-    sessionData.ip = props.body.ip satisfies string as string;
+  if (input.ip !== null && input.ip !== undefined) {
+    sessionData.ip = input.ip satisfies string as string;
   }
-  const session = await MyGlobal.prisma.shopping_customer_sessions.create({
+  const session = await MyGlobal.prisma.shopping_mall_customer_sessions.create({
     data: sessionData,
   });
-
-  // STEP 4: Issue JWT access & refresh tokens for the actor
-  const token = {
-    access: jwt.sign(
-      {
-        type: "customer",
-        id: customer.id,
-        session_id: session.id,
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "customer",
-        id: customer.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
-  };
-
-  // STEP 5: Build the IShoppingCustomer.IAuthorized DTO for return
+  const access = jwt.sign(
+    {
+      type: "customer",
+      id: customer.id,
+      session_id: session.id,
+      created_at: toISOStringSafe(now),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refresh = jwt.sign(
+    {
+      type: "customer",
+      id: customer.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(now),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
   return {
     id: customer.id,
     email: customer.email,
     name: customer.name,
     phone: customer.phone,
-    is_active: customer.is_active,
-    deleted_at: customer.deleted_at
-      ? toISOStringSafe(customer.deleted_at)
-      : undefined,
+    is_email_verified: customer.is_email_verified,
     created_at: toISOStringSafe(customer.created_at),
     updated_at: toISOStringSafe(customer.updated_at),
-    token,
-    role: "customer",
+    token: {
+      access,
+      refresh,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
+    },
   };
 }

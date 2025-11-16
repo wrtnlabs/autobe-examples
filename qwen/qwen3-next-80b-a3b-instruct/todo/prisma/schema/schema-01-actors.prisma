@@ -1,0 +1,38 @@
+/// User account records for authentication.
+///
+/// Stores credentials for individual users who create and manage their own
+/// todo items. Each user has exclusive ownership of their todo list and
+/// cannot access others' data. Authentication is stateless using JWT tokens,
+/// so this table contains only the minimum required information to verify
+/// user identity: a unique email address and a bcrypt-hashed password. No
+/// other user metadata is stored to preserve privacy and simplicity.
+///
+/// Users are identified by a system-generated UUID primary key and
+/// authenticated by email/password combination. All todo items reference
+/// this table via user_id foreign key to enforce strict data isolation.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's unique email address used for authentication. Must be unique
+  /// across all users and match standard email format.
+  email String
+  
+  /// Bcrypt hash of the user's password. Never stored in plaintext. Required
+  /// for authentication and used to verify login credentials. Generated with
+  /// cost factor 12.
+  password_hash String
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_todos todo_list_todos[]
+  
+  @@unique([email])
+}

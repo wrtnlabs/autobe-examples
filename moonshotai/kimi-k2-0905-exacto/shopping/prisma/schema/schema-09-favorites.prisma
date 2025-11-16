@@ -1,0 +1,158 @@
+/// Customer favorite products across the marketplace, enabling users to save
+/// and track preferred items from multiple sellers.
+///
+/// This system allows customers to build personalized collections of
+/// favorite products, facilitating quick access to items they love and may
+/// wish to purchase later. Favorites are tracked per customer with timestamp
+/// data to enable "recently added" filtering and analytics.
+///
+/// Customers can favorite products from any seller, creating unified
+/// personal collections that span the entire marketplace while maintaining
+/// seller-specific data for business intelligence and product recommendation
+/// systems.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id} who favorited the product
+  shopping_customer_id String
+  
+  /// Favorited product's {@link shopping_mall_sales.id}
+  shopping_sale_id String
+  
+  /// Timestamp when the customer favorited this product
+  created_at DateTime
+  
+  /// Timestamp of last modification to this favorite record
+  updated_at DateTime
+  
+  /// Soft deletion timestamp - used for managing removed favorites
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  sale shopping_mall_sales @relation(fields: [shopping_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_customer_id, shopping_sale_id], map: "shopping_mall_favorites_shopping_customer_id_shopping__1eae05a8")
+  @@index([shopping_customer_id, created_at])
+  @@index([shopping_sale_id])
+}
+
+/// Customer wishlist collections enabling users to create themed groups of
+/// products they desire for future purchase.
+///
+/// Wishlists extend beyond simple favorites by allowing customers to
+/// organize products into themed collections such as "Birthday Gifts," "Home
+/// Decor Ideas," or "Summer Fashion." This enables more sophisticated
+/// product organization and sharing capabilities with friends and family.
+///
+/// The wishlist system supports collaborative shopping where customers can
+/// share curated lists with others while maintaining privacy controls. Each
+/// wishlist can contain products from multiple sellers, providing unified
+/// shopping inspiration across the entire marketplace ecosystem.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Wishlist owner's {@link shopping_mall_customers.id}
+  shopping_customer_id String
+  
+  /// Wishlist name chosen by customer (e.g., 'Birthday Gifts', 'My Style')
+  name String
+  
+  /// Optional description of the wishlist's theme or purpose
+  description String?
+  
+  /// Whether the wishlist can be shared with or viewed by others
+  is_public Boolean
+  
+  /// Timestamp when the wishlist was created
+  created_at DateTime
+  
+  /// Timestamp of last modification to this wishlist
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for removed wishlists
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_customer_id, name])
+  @@index([shopping_customer_id])
+}
+
+/// Customer bookmarked items for quick access to frequently purchased or
+/// interesting products.
+///
+/// Bookmarks serve as a quick-access tool for customers who regularly
+/// purchase certain products or want to maintain shortcuts to frequently
+/// browsed items. Unlike favorites which represent emotional preference,
+/// bookmarks are pragmatic tools for repeat purchases or ongoing product
+/// research.
+///
+/// The bookmark system enables rapid navigation to specific products,
+/// categories, or sellers while maintaining purchase history context.
+/// Customers can bookmark products for various purposes including
+/// reordering, price monitoring, or maintaining easy access during
+/// decision-making processes across the marketplace.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_bookmarks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id} who bookmarked the item
+  shopping_customer_id String
+  
+  /// Bookmarked product's {@link shopping_mall_sales.id}
+  shopping_sale_id String
+  
+  /// Type of bookmark: 'product', 'category', or 'seller' to indicate what was
+  /// bookmarked
+  bookmark_type String
+  
+  /// Optional customer notes about why this item was bookmarked
+  notes String?
+  
+  /// Timestamp when the customer bookmarked this item
+  created_at DateTime
+  
+  /// Timestamp of last modification to this bookmark
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for removed bookmarks
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  sale shopping_mall_sales @relation(fields: [shopping_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_customer_id, shopping_sale_id, bookmark_type], map: "shopping_mall_bookmarks_shopping_customer_id_shopping__48ec99c5")
+  @@index([shopping_customer_id, bookmark_type])
+  @@index([shopping_sale_id])
+}

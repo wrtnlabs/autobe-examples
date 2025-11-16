@@ -4,22 +4,24 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IConfigurationDataType } from "@ORGANIZATION/PROJECT-api/lib/structures/IConfigurationDataType";
 import type { ITodoAppConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppConfiguration";
 import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
  * Test that authenticated users can retrieve specific configuration settings by
- * their unique configuration key.
+ * their unique key identifier.
  *
- * This test validates the complete workflow of configuration retrieval:
+ * This test validates the complete workflow:
  *
- * 1. User registration and authentication establishment
- * 2. Configuration creation with realistic test data
- * 3. Configuration retrieval using the authenticated connection
- * 4. Validation of returned configuration data against created data
+ * 1. Create a new user account to establish authentication context
+ * 2. Authenticate the user to obtain valid authorization tokens
+ * 3. Retrieve a configuration setting using the authenticated connection
+ * 4. Validate the returned configuration data structure and properties
  *
- * The test ensures proper authorization flow and data integrity throughout the
- * process.
+ * The test ensures that configuration retrieval respects user authentication
+ * requirements and returns complete configuration details including value,
+ * description, data type, and metadata.
  */
 export async function test_api_configuration_retrieval_by_user(
   connection: api.IConnection,
@@ -32,84 +34,82 @@ export async function test_api_configuration_retrieval_by_user(
     body: {
       email: userEmail,
       password: userPassword,
+      password_hash: userPassword, // Let server handle hashing logic
+      status: "pending",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      deleted_at: undefined,
     } satisfies ITodoAppUser.ICreate,
   });
   typia.assert(user);
 
-  // 2. Create a configuration setting to retrieve for testing
-  const configDataTypes = ["string", "boolean", "number", "json"] as const;
-  const configDataType = RandomGenerator.pick(configDataTypes);
+  // 2. Authenticate the user to obtain valid authorization tokens
+  const authenticatedUser = await api.functional.auth.user.login(connection, {
+    body: {
+      email: userEmail,
+      password: userPassword,
+      href: "http://localhost:3000",
+      referrer: "http://localhost:3000/login",
+      ip: "127.0.0.1",
+    } satisfies ITodoAppUser.ICredentials,
+  });
+  typia.assert(authenticatedUser);
 
-  let configValue: string;
-  switch (configDataType) {
-    case "string":
-      configValue = RandomGenerator.paragraph({ sentences: 3 });
-      break;
-    case "boolean":
-      configValue = RandomGenerator.pick(["true", "false"] as const);
-      break;
-    case "number":
-      configValue = typia.random<number & tags.Type<"uint32">>().toString();
-      break;
-    case "json":
-      configValue = JSON.stringify({
-        key: RandomGenerator.paragraph({ sentences: 2 }),
-        value: typia.random<number & tags.Type<"uint32">>(),
-        enabled: RandomGenerator.pick([true, false] as const),
-      });
-      break;
-  }
-
-  const configuration = await api.functional.todoApp.configurations.create(
+  // 3. Retrieve a configuration setting using the authenticated connection
+  const configurationKey = RandomGenerator.alphaNumeric(10);
+  const configuration = await api.functional.todoApp.configurations.at(
     connection,
     {
-      body: {
-        config_key: `test.config.${RandomGenerator.alphaNumeric(8)}`,
-        config_value: configValue,
-        data_type: configDataType,
-        description: "Test configuration for E2E testing",
-        status: "active",
-      } satisfies ITodoAppConfiguration.ICreate,
+      configurationKey: configurationKey,
     },
   );
   typia.assert(configuration);
 
-  // 3. Retrieve the configuration using the authenticated user's connection
-  const retrievedConfiguration =
-    await api.functional.todoApp.user.configurations.at(connection, {
-      configKey: configuration.config_key,
-    });
-  typia.assert(retrievedConfiguration);
+  // 4. Validate the returned configuration data structure
+  await TestValidator.equals(
+    "configuration key matches request",
+    configuration.key,
+    configurationKey,
+  );
+  await TestValidator.equals(
+    "configuration has valid UUID id",
+    typeof configuration.id,
+    "string",
+  );
+  await TestValidator.equals(
+    "configuration value is present",
+    typeof configuration.value,
+    "string",
+  );
+  await TestValidator.equals(
+    "configuration data type is valid",
+    ["boolean", "number", "string", "json", "array"].includes(
+      configuration.data_type,
+    ),
+    true,
+  );
+  await TestValidator.equals(
+    "configuration category is present",
+    typeof configuration.category,
+    "string",
+  );
+  await TestValidator.equals(
+    "configuration created_at is valid date",
+    typeof configuration.created_at,
+    "string",
+  );
+  await TestValidator.equals(
+    "configuration updated_at is valid date",
+    typeof configuration.updated_at,
+    "string",
+  );
 
-  // 4. Validate that the retrieved configuration matches the created one
-  TestValidator.equals(
-    "configuration ID matches",
-    retrievedConfiguration.id,
-    configuration.id,
-  );
-  TestValidator.equals(
-    "configuration key matches",
-    retrievedConfiguration.config_key,
-    configuration.config_key,
-  );
-  TestValidator.equals(
-    "configuration value matches",
-    retrievedConfiguration.config_value,
-    configuration.config_value,
-  );
-  TestValidator.equals(
-    "data type matches",
-    retrievedConfiguration.data_type,
-    configuration.data_type,
-  );
-  TestValidator.equals(
-    "description matches",
-    retrievedConfiguration.description,
-    configuration.description,
-  );
-  TestValidator.equals(
-    "status matches",
-    retrievedConfiguration.status,
-    configuration.status,
-  );
+  // Validate optional description field if present
+  if (configuration.description !== undefined) {
+    await TestValidator.equals(
+      "description is string when present",
+      typeof configuration.description,
+      "string",
+    );
+  }
 }

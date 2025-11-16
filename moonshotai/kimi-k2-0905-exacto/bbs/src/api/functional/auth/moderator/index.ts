@@ -3,47 +3,34 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IPoliticsBbsModerator } from "../../../structures/IPoliticsBbsModerator";
-export * as me from "./me/index";
-export * as password from "./password/index";
+import { IEconomicDiscussionModerator } from "../../../structures/IEconomicDiscussionModerator";
 
 /**
- * Register new moderator account and issue JWT tokens.
+ * Register new moderator account.
  *
- * Create new moderator account with authentication token issuance.
+ * Enables creation of new community moderator accounts with elevated
+ * permissions for content management.
  *
- * This endpoint enables new moderators to register for the politicsBBS
- * discussion board system. The registration process includes comprehensive
- * validation to ensure security and uniqueness within the system.
+ * The registration process collects essential moderator information including
+ * username, email address, and secure password. All accounts require email
+ * verification before gaining full moderator access to prevent unauthorized
+ * administrative account creation.
  *
- * The registration flow validates that usernames contain only letters, numbers,
- * and hyphens with a length between 3-20 characters, following the requirements
- * defined in the politics_bbs_moderators schema. Email addresses must be unique
- * across the system, with proper format validation according to standard email
- * specifications. Passwords must meet security requirements including minimum 8
- * characters with at least one uppercase letter, one lowercase letter, and one
- * number.
+ * Moderator accounts receive special privileges including content editing
+ * permissions, user management capabilities, and access to administrative tools
+ * for community moderation. The account creation follows enhanced security
+ * protocols appropriate for administrative access.
  *
- * Upon successful validation, the system creates a new moderator record in the
- * politics_bbs_moderators table with a unique identifier and securely hashed
- * password using appropriate salting algorithms. The system generates both
- * access token (15-minute expiration) and refresh token (30-day expiration)
- * following JWT standards for immediate authentication.
+ * Email verification is mandatory for moderator accounts to ensure
+ * accountability and traceability for administrative actions. Unverified
+ * accounts maintain limited functionality until email verification is
+ * completed.
  *
- * The response includes complete moderator profile information, authentication
- * tokens with proper expiration settings, and role-specific permissions for
- * content moderation activities. This enables new moderators to immediately
- * begin accessing moderation functionality after successful registration.
- *
- * Error handling covers duplicate username scenarios, duplicate email
- * addresses, password format violations, and external registration
- * restrictions. All responses follow standard HTTP status codes with detailed
- * error messages that help users understand validation failures and take
- * corrective actions.
+ * This operation serves as the entry point for establishing legitimate
+ * moderator access to the Economic Discussion platform.
  *
  * @param props.connection
- * @param props.body Moderator registration information including username,
- *   email, and password
+ * @param props.body Moderator registration information
  * @setHeader token.access Authorization
  *
  * @path /auth/moderator/join
@@ -78,14 +65,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /**
-     * Moderator registration information including username, email, and
-     * password
-     */
-    body: IPoliticsBbsModerator.ICreate;
+    /** Moderator registration information */
+    body: IEconomicDiscussionModerator.ICreate;
   };
-  export type Body = IPoliticsBbsModerator.ICreate;
-  export type Response = IPoliticsBbsModerator.IAuthorized;
+  export type Body = IEconomicDiscussionModerator.ICreate;
+  export type Response = IEconomicDiscussionModerator.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -101,8 +85,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/moderator/join";
-  export const random = (): IPoliticsBbsModerator.IAuthorized =>
-    typia.random<IPoliticsBbsModerator.IAuthorized>();
+  export const random = (): IEconomicDiscussionModerator.IAuthorized =>
+    typia.random<IEconomicDiscussionModerator.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -129,43 +113,31 @@ export namespace join {
 }
 
 /**
- * Login moderator with JWT token generation.
+ * Authenticate moderator and issue tokens.
  *
- * Authenticate moderator credentials and issue access tokens.
+ * Validates moderator credentials for secure administrative access to the
+ * Economic Discussion platform.
  *
- * This endpoint handles moderator authentication by validating username/email
- * and password credentials against the politics_bbs_moderators table. The login
- * process implements comprehensive security measures to protect against
- * unauthorized access while providing reliable authentication for legitimate
- * moderator users.
+ * The login operation authenticates moderator accounts using email and
+ * password, issuing JWT-based access tokens for subsequent API requests. Tokens
+ * contain necessary permissions and role information for moderator-specific
+ * functionality access.
  *
- * The system accepts either username or email as the primary credential,
- * providing flexibility for moderator login preferences. Password validation
- * uses the securely stored password_hash from the moderator record,
- * implementing proper cryptographic verification with timing attack resistance.
- * Failed login attempts are tracked for security monitoring.
+ * Session management includes both access tokens for immediate authentication
+ * and refresh tokens for extended session maintenance without repeated
+ * credential entry. Token expiration follows security best practices for
+ * administrative access.
  *
- * Upon successful credential validation, the system generates a new session
- * record in the politics_bbs_moderator_sessions table with IP address tracking,
- * referrer information, and comprehensive audit details. This supports security
- * monitoring and administrative oversight of moderator account access
- * patterns.
+ * Failed authentication attempts are logged for security monitoring and account
+ * protection. The system implements rate limiting to prevent brute force
+ * attacks against moderator accounts.
  *
- * JWT token generation produces access tokens with 15-minute expiration for API
- * access and refresh tokens with 30-day expiration for session management.
- * Tokens include moderator identifier, username, role confirmation, and
- * comprehensive permission set for content moderation activities including
- * article review, comment moderation, and user management capabilities.
- *
- * The response provides complete profile information including moderator ID,
- * username, email address, creation timestamp, and account status. Token
- * information includes both access and refresh tokens with proper expiration
- * times, enabling immediate access to moderator-specific functionality across
- * the discussion board platform.
+ * Successful authentication provides access to moderator-specific endpoints
+ * including content management, user administration, and community moderation
+ * tools.
  *
  * @param props.connection
- * @param props.body Moderator login credentials including username/email and
- *   password
+ * @param props.body Moderator login credentials
  * @setHeader token.access Authorization
  *
  * @path /auth/moderator/login
@@ -200,11 +172,11 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Moderator login credentials including username/email and password */
-    body: IPoliticsBbsModerator.ILogin;
+    /** Moderator login credentials */
+    body: IEconomicDiscussionModerator.ILogin;
   };
-  export type Body = IPoliticsBbsModerator.ILogin;
-  export type Response = IPoliticsBbsModerator.IAuthorized;
+  export type Body = IEconomicDiscussionModerator.ILogin;
+  export type Response = IEconomicDiscussionModerator.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -220,8 +192,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/moderator/login";
-  export const random = (): IPoliticsBbsModerator.IAuthorized =>
-    typia.random<IPoliticsBbsModerator.IAuthorized>();
+  export const random = (): IEconomicDiscussionModerator.IAuthorized =>
+    typia.random<IEconomicDiscussionModerator.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -248,42 +220,31 @@ export namespace login {
 }
 
 /**
- * Refresh moderator access tokens using refresh tokens.
+ * Refresh moderator access tokens.
  *
- * Refresh moderator access tokens using valid refresh tokens.
+ * Extends moderator sessions by exchanging refresh tokens for new access tokens
+ * without requiring repeated credential entry.
  *
- * This endpoint extends moderator authentication sessions by validating
- * existing refresh tokens and issuing new access tokens without requiring users
- * to re-enter their credentials. The refresh process implements token rotation
- * security measures while maintaining continuous access to moderation
- * functionality.
+ * The refresh operation validates existing refresh tokens issued during initial
+ * login or previous refresh cycles, generating fresh access tokens with updated
+ * expiration timestamps. This maintains continuous authentication state for
+ * administrative sessions.
  *
- * The refresh token validation occurs against active session records in the
- * politics_bbs_moderator_sessions table, ensuring the token corresponds to a
- * valid, non-expired session. Invalid or expired refresh tokens result in
- * authentication failure, directing users to re-authenticate through the login
- * process.
+ * Token refresh preserves authorization context including moderator role
+ * permissions and administrative access rights. New tokens maintain the same
+ * access levels as the original authentication session.
  *
- * Upon successful validation, the system generates a fresh access token with
- * 15-minute expiration for immediate API access while maintaining the existing
- * refresh token validity. This approach balances security with convenience,
- * preventing token reuse while extending session duration for ongoing moderator
- * activities.
+ * The operation implements security controls to prevent token abuse including
+ * refresh token rotation and secure token lifecycle management. Invalid or
+ * expired refresh tokens result in authentication failure requiring fresh
+ * login.
  *
- * Token generation creates access tokens containing moderator identifier,
- * username confirmation, role verification, and comprehensive permission set
- * including article approval workflows, comment moderation, content review,
- * user warning systems, and community management tools. Token metadata includes
- * creation timestamp, expiration time, and session identification for audit
- * tracking.
- *
- * The response maintains compatibility with the original login response format,
- * providing updated access tokens, refreshed expiration times, moderated
- * profile information, and complete permission sets for seamless continuation
- * of content management activities across the politicsBBS platform.
+ * Refresh tokens have extended validity periods compared to access tokens,
+ * allowing for seamless administrative workflow continuity while maintaining
+ * security boundaries.
  *
  * @param props.connection
- * @param props.body Token refresh request containing valid refresh token
+ * @param props.body Refresh token for session renewal
  * @setHeader token.access Authorization
  *
  * @path /auth/moderator/refresh
@@ -318,11 +279,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Token refresh request containing valid refresh token */
-    body: IPoliticsBbsModerator.IRefresh;
+    /** Refresh token for session renewal */
+    body: IEconomicDiscussionModerator.IRefresh;
   };
-  export type Body = IPoliticsBbsModerator.IRefresh;
-  export type Response = IPoliticsBbsModerator.IAuthorized;
+  export type Body = IEconomicDiscussionModerator.IRefresh;
+  export type Response = IEconomicDiscussionModerator.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -338,8 +299,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/moderator/refresh";
-  export const random = (): IPoliticsBbsModerator.IAuthorized =>
-    typia.random<IPoliticsBbsModerator.IAuthorized>();
+  export const random = (): IEconomicDiscussionModerator.IAuthorized =>
+    typia.random<IEconomicDiscussionModerator.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

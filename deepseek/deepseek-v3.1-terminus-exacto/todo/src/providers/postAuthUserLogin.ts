@@ -11,14 +11,9 @@ import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppU
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserLogin(props: {
-  body: ITodoAppUser.ILogin;
+  body: ITodoAppUser.ICredentials;
 }): Promise<ITodoAppUser.IAuthorized> {
-  // Validate JWT secret exists
-  if (!MyGlobal.env.JWT_SECRET_KEY) {
-    throw new HttpException("Authentication service unavailable", 500);
-  }
-
-  // Phase 1: Validate user credentials
+  // Step 1: Find user by email
   const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: { email: props.body.email },
   });
@@ -27,7 +22,15 @@ export async function postAuthUserLogin(props: {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Phase 2: Verify password
+  // Step 2: Check account status before password verification for security
+  if (user.status === "suspended") {
+    throw new HttpException("Account is suspended", 403);
+  }
+  if (user.status === "pending") {
+    throw new HttpException("Account pending verification", 403);
+  }
+
+  // Step 3: Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
@@ -37,69 +40,58 @@ export async function postAuthUserLogin(props: {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Phase 3: Check user status
-  if (user.status !== "active") {
-    throw new HttpException("Account is not active", 403);
-  }
-
-  // Phase 4: Create session
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const now = toISOStringSafe(new Date());
+  // Step 4: Create session record using string timestamps
+  const currentTime = new Date().toISOString();
+  const accessExpiresMs = Date.now() + 60 * 60 * 1000;
+  const refreshExpiresMs = Date.now() + 7 * 24 * 60 * 60 * 1000;
 
   const session = await MyGlobal.prisma.todo_app_user_sessions.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: v4(),
       todo_app_user_id: user.id,
-      ip: props.body.ip ?? "",
+      ip: props.body.ip ?? "", // Schema shows ip is required string, so use empty string as fallback
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: now,
-      expired_at: toISOStringSafe(accessExpires),
+      created_at: currentTime,
+      expired_at: new Date(accessExpiresMs).toISOString(),
     },
   });
 
-  // Phase 5: Generate tokens with correct payload structure
-  const token = {
-    access: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: session.id,
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  } satisfies IAuthorizationToken;
+  // Step 5: Generate JWT tokens with proper payload structure
+  const tokenPayload = {
+    type: "user" as const,
+    id: user.id,
+    session_id: session.id,
+    created_at: currentTime,
+  };
 
-  // Phase 6: Return response with proper type compliance
+  const refreshPayload = {
+    ...tokenPayload,
+    tokenType: "refresh" as const,
+  };
+
+  const token = {
+    access: jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+      expiresIn: "1h",
+      issuer: "autobe",
+    }),
+    refresh: jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
+      expiresIn: "7d",
+      issuer: "autobe",
+    }),
+    expired_at: new Date(accessExpiresMs).toISOString(),
+    refreshable_until: new Date(refreshExpiresMs).toISOString(),
+  };
+
+  // Step 6: Return authorized user information with proper type conversions
   return {
-    id: user.id as string & tags.Format<"uuid">,
-    email: user.email as string & tags.Format<"email">,
-    status: user.status,
+    id: user.id,
+    email: user.email,
+    password_hash: user.password_hash,
+    status: typia.assert<"pending" | "active" | "suspended">(user.status),
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
     deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
-    token: token,
-  } satisfies ITodoAppUser.IAuthorized;
+    token,
+  };
 }

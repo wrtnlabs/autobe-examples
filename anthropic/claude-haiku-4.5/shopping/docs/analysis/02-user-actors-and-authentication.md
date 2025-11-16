@@ -1,1062 +1,910 @@
-# User Actors and Authentication
+# User Actors and Authentication System
 
-## Executive Summary
+## User Actor Overview and System Architecture
 
-The e-commerce shopping mall platform supports three distinct user actor types: **Customers**, **Sellers**, and **Admins**. Each actor has clearly defined authentication requirements, permission boundaries, and access control mechanisms. The system implements JWT-based authentication with secure token management, email verification requirements, and role-based access control to ensure platform security and appropriate data isolation.
+The e-commerce shopping mall platform implements a role-based access control system with four distinct user actor types. Each actor has specific capabilities, permission levels, and authentication requirements that govern their interaction with the platform's APIs and features. This document defines the complete authentication architecture, permission structure, and security protocols that backend developers must implement.
 
-Authentication is the foundation of user identity verification and access control. All users must authenticate through email and password credentials, with email verification requirements for customers and sellers. The system maintains secure sessions using JWT tokens with automatic expiration and refresh capabilities.
+### Actor Hierarchy and Authentication Model
+
+The platform supports a hierarchical permission model where different actors have different levels of access:
+
+- **Guest (Unauthenticated)**: Public access to read-only catalog features
+- **Customer**: Authenticated user with shopping and order management capabilities
+- **Seller**: Authenticated merchant with product and order fulfillment capabilities
+- **Admin**: System administrator with full platform management and oversight
+
+Each actor requires unique authentication credentials and receives a JWT token with role-specific claims that control API access.
+
+### System Security Principles
+
+THE system SHALL implement comprehensive authentication and authorization controls that verify user identity before allowing access to protected resources and enforce permission restrictions based on user role at every API endpoint.
+
+WHEN any unauthenticated request is received for a protected endpoint, THE system SHALL return HTTP 401 (Unauthorized) with appropriate error messaging.
+
+WHEN an authenticated request contains insufficient permissions for the requested action, THE system SHALL return HTTP 403 (Forbidden) with clear indication of required permissions.
 
 ---
 
-## Authentication Overview
+## Guest User (Unauthenticated)
 
-### Authentication Framework
+### Guest User Definition
 
-THE platform SHALL use JSON Web Tokens (JWT) as the primary authentication mechanism for all user interactions.
+Guest users are unauthenticated visitors who can access the platform's public-facing catalog and search features without creating an account. They represent the widest possible audience for product discovery and browsing.
 
-THE authentication system SHALL support the following core operations:
-- User registration with email and password
-- Email address verification
-- User login with credential validation
-- Session token generation and refresh
-- Secure password reset and account recovery
-- Session termination and logout
+### Guest User Capabilities
 
-### Security Principles
+WHEN a guest user accesses the platform, THE system SHALL allow browsing of the complete product catalog without authentication.
 
-THE system SHALL enforce the following security principles:
-- All passwords SHALL be securely hashed before storage using bcrypt with minimum 10 salt rounds
-- Sensitive operations SHALL require re-authentication
-- Account lockout SHALL occur after 5 failed login attempts with 15-minute lockout duration
-- Email addresses SHALL be verified before account activation
-- Sessions SHALL automatically expire after inactivity (30 days for customers/sellers, 8 hours for admins)
-- Token refresh tokens SHALL be issued for extended sessions
-- All tokens SHALL be transmitted exclusively over HTTPS encryption
+THE guest user SHALL be able to view product details including descriptions, images, pricing, and specifications without logging in.
 
-### Authentication Scope
+THE guest user SHALL be able to search for products by keyword and filter products by category, price range, and ratings.
 
-THE system SHALL differentiate authentication and authorization:
-- **Authentication**: Verifying user identity through credentials (email + password)
-- **Authorization**: Determining what authenticated users can do based on their role and permissions
+THE guest user SHALL be able to view product reviews and ratings left by other customers without authentication.
+
+THE guest user SHALL be able to view seller profiles and merchant information in read-only mode.
+
+### Guest User Limitations
+
+THE guest user SHALL NOT be able to create shopping carts or wishlists without registration and authentication.
+
+THE guest user SHALL NOT be able to place orders or access any payment processing functionality.
+
+THE guest user SHALL NOT be able to view order history or track existing orders.
+
+THE guest user SHALL NOT be able to leave product reviews or ratings.
+
+THE guest user SHALL NOT be able to save personal information such as addresses or payment methods.
+
+THE guest user SHALL NOT be able to access seller dashboard or admin features under any circumstance.
+
+### Guest to Customer Conversion
+
+WHEN a guest user attempts to create a cart or proceed to checkout, THE system SHALL redirect them to the registration page with a clear message that account creation is required.
+
+WHEN a guest completes registration on the platform, THE system SHALL automatically convert their session from guest to authenticated customer and assign appropriate customer permissions.
+
+---
+
+## Customer Actor
+
+### Customer Definition
+
+Customers are authenticated individual users who register on the platform with valid email addresses and passwords. They can manage personal accounts, browse products, create and manage shopping carts, place orders, make payments, track shipments, and interact with products through reviews and wishlists. Customers represent the core user base for e-commerce transactions.
+
+### Customer Authentication Requirements
+
+#### Registration Process
+
+WHEN a prospective customer submits a registration form with email, password, and basic profile information, THE system SHALL validate the input data according to specified rules.
+
+THE system SHALL require a unique email address that is not already associated with another customer or seller account.
+
+THE system SHALL require a password with minimum 8 characters including at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*).
+
+THE system SHALL require customers to provide a first name and last name for their profile.
+
+THE system SHALL require an email verification step where customers must click a verification link sent to their registered email address before their account becomes fully active.
+
+WHEN email verification is completed successfully, THE system SHALL send a welcome email confirming account activation.
+
+IF a customer does not verify their email within 24 hours of registration, THE system SHALL send a reminder email with a new verification link.
+
+#### Login Process
+
+WHEN a customer submits login credentials (email and password), THE system SHALL validate credentials against stored encrypted password hashes using bcrypt or equivalent.
+
+IF credentials are invalid, THE system SHALL return HTTP 401 with error code "AUTH_INVALID_CREDENTIALS" and NOT reveal whether the email exists in the system (prevent email enumeration).
+
+IF the customer's account is suspended or deactivated by an admin, THE system SHALL return HTTP 403 with error code "AUTH_ACCOUNT_SUSPENDED" and include contact information for account recovery.
+
+IF the customer account does not have a verified email, THE system SHALL return HTTP 403 with error code "AUTH_EMAIL_NOT_VERIFIED" and offer option to resend verification email.
+
+WHEN credentials are valid and account is active, THE system SHALL generate a JWT access token and refresh token.
+
+#### Password Management
+
+THE customer SHALL be able to change their password at any time from their account settings.
+
+WHEN a customer requests a password change, THE system SHALL require them to authenticate with their current password to prevent unauthorized account access.
+
+THE system SHALL require new passwords to meet the same complexity requirements as during registration.
+
+WHEN a customer submits a forgotten password request, THE system SHALL send a password reset link to their registered email address.
+
+THE password reset link SHALL expire after 1 hour to prevent unauthorized access to the account.
+
+WHEN a customer clicks the reset link and provides a new password, THE system SHALL invalidate all existing access tokens and refresh tokens for that customer, forcing them to log in again.
+
+### Customer Account Management Permissions
+
+THE customer SHALL be able to view and update their profile information including first name, last name, phone number, and profile picture.
+
+THE customer SHALL be able to add, edit, and delete multiple delivery addresses associated with their account.
+
+THE customer SHALL be able to mark one address as their default shipping address.
+
+THE customer SHALL be able to view their registered email address and change it (subject to verification of new email).
+
+THE customer SHALL be able to manage payment methods by adding credit cards, debit cards, or digital wallets and selecting a default payment method.
+
+THE customer SHALL be able to view their complete account history including login activity and password change events.
+
+### Customer Shopping Permissions
+
+THE customer SHALL be able to create and manage shopping carts by adding products and variants.
+
+THE customer SHALL be able to view cart contents, update quantities, and remove items from cart at any time before checkout.
+
+THE customer SHALL be able to create a wishlist and add products to their wishlist for future purchase.
+
+THE customer SHALL be able to share their wishlist with other users via link or email.
+
+THE customer SHALL be able to move items from wishlist directly to shopping cart.
+
+THE customer SHALL be able to proceed to checkout only if they have a verified email address and at least one saved delivery address.
+
+### Customer Order Permissions
+
+THE customer SHALL be able to place orders for items in their shopping cart with available inventory.
+
+THE customer SHALL be able to proceed through a multi-step checkout process: review cart, select shipping address, select shipping method, review order total, and confirm payment.
+
+THE customer SHALL be able to view all their orders in order history with details including order number, order date, items, total amount, and current status.
+
+THE customer SHALL be able to track real-time shipping status and estimated delivery date for active orders.
+
+THE customer SHALL be able to receive push notifications and email updates when order status changes.
+
+THE customer SHALL be able to request order cancellation if the order has not yet been dispatched by the seller.
+
+WHEN a customer requests order cancellation for an order in "pending confirmation" or "order confirmed" status, THE system SHALL process the cancellation immediately and restore inventory.
+
+WHEN a customer requests order cancellation for an order already in "preparing shipment" or later status, THE system SHALL deny the request and provide explanation that order has already been prepared for shipment.
+
+### Customer Review Permissions
+
+THE customer SHALL be able to leave product reviews and ratings for products they have purchased and received.
+
+THE customer SHALL be able to edit or delete their own reviews at any time before an admin removes the review.
+
+THE customer SHALL be able to mark reviews as helpful or unhelpful to aid other customers.
+
+THE customer SHALL NOT be able to leave reviews for products they have not purchased.
+
+### Customer Refund and Complaint Permissions
+
+THE customer SHALL be able to submit refund or return requests for orders within a specified return window (typically 30 days from delivery).
+
+THE customer SHALL be able to provide reason and supporting information (photos, description) when submitting return requests.
+
+THE customer SHALL be able to track the status of return requests and refunds through their order history.
+
+THE customer SHALL be able to view refund amount and refund timeline for approved returns.
+
+### Customer Data Access
+
+THE customer SHALL only be able to access their own account data, orders, and personal information. They SHALL NOT access other customers' data.
+
+THE customer's JWT token SHALL include their unique customer ID as the "sub" claim to enforce this restriction.
+
+---
+
+## Seller Actor
+
+### Seller Definition
+
+Sellers are authenticated merchants who register seller accounts to manage product catalogs, set inventory levels, process orders from their products, manage shipping, and track sales performance. Sellers represent the supply side of the marketplace. A single individual may operate as both a customer and a seller with separate authentication sessions if needed.
+
+### Seller Authentication Requirements
+
+#### Seller Registration Process
+
+WHEN a prospective seller applies to register a store account, THE system SHALL require the submission of business information including business name, business registration number, and business email.
+
+THE system SHALL require contact information including name, phone number, and business address.
+
+THE system SHALL require banking information for commission payments including account holder name, bank details, and tax identification.
+
+WHEN a seller submits registration, THE system SHALL verify the provided business registration information (if available in jurisdiction).
+
+THE system SHALL send a verification email to the business email address with a confirmation link.
+
+THE system SHALL require admin approval before a new seller account becomes active and can list products.
+
+IF the seller application is rejected, THE system SHALL send a notification explaining the reason for rejection and options for reapplication.
+
+WHEN a seller's registration is approved by an admin, THE system SHALL activate the seller account and send a welcome notification with store dashboard access credentials.
+
+#### Seller Login Process
+
+WHEN a seller submits login credentials using their business email and password, THE system SHALL validate the credentials against stored password hashes.
+
+IF credentials are invalid, THE system SHALL return HTTP 401 with error code "AUTH_INVALID_CREDENTIALS".
+
+IF the seller account has not been approved by an admin, THE system SHALL return HTTP 403 with error code "AUTH_SELLER_NOT_APPROVED" and provide status of the application.
+
+IF the seller account has been suspended by an admin for policy violations, THE system SHALL return HTTP 403 with error code "AUTH_SELLER_SUSPENDED" and include reason for suspension.
+
+WHEN credentials are valid and account is approved, THE system SHALL generate a JWT access token and refresh token specific to the seller.
+
+### Seller Account Management Permissions
+
+THE seller SHALL be able to view and update store profile information including store name, description, logo, and banner image.
+
+THE seller SHALL be able to update contact information including phone, email, and business address.
+
+THE seller SHALL be able to update banking and tax information for commission payments.
+
+THE seller SHALL be able to view their seller ratings and performance metrics.
+
+THE seller SHALL be able to access their seller dashboard showing key metrics, recent orders, and sales performance.
+
+THE seller SHALL be able to generate and download sales reports for accounting and business analysis.
+
+### Seller Product Management Permissions
+
+THE seller SHALL be able to create new products in their store with complete product information including name, description, images, category, and pricing.
+
+THE seller SHALL be able to edit product information at any time including product details, images, and basic pricing.
+
+THE seller SHALL be able to delete products that have no orders in the system.
+
+THE seller SHALL NOT be able to delete products that have existing orders.
+
+THE seller SHALL be able to manage product variants (SKUs) including different colors, sizes, and options.
+
+THE seller SHALL be able to set pricing for each product variant independently.
+
+THE seller SHALL be able to upload product images with a minimum of 3 images per product and maximum of 20 images per product.
+
+THE seller SHALL be able to assign products to categories and subcategories.
+
+THE seller SHALL be able to manage product visibility by publishing or unpublishing products without deleting them.
+
+THE seller SHALL be able to view product performance metrics including views, clicks, and conversion rates.
+
+### Seller Inventory Management Permissions
+
+THE seller SHALL be able to set initial inventory levels for each product variant (SKU) when creating or editing products.
+
+THE seller SHALL be able to update inventory quantities in real-time based on sales and adjustments.
+
+WHEN a customer places an order containing a seller's product, THE system SHALL automatically deduct the quantity from the seller's inventory.
+
+WHEN a customer cancels an order, THE system SHALL automatically restore the inventory quantity.
+
+THE seller SHALL be able to view current inventory levels for all products and variants.
+
+THE seller SHALL be able to set low inventory thresholds and receive alerts when stock falls below specified levels.
+
+THE seller SHALL be able to adjust inventory levels manually (e.g., to account for damage, loss, or correction of initial counts).
+
+THE seller SHALL NOT be able to create inventory for products owned by other sellers.
+
+### Seller Order Management Permissions
+
+THE seller SHALL be able to view all orders that contain their products with complete order details including customer information, items, and total amount.
+
+THE seller SHALL be able to see order status and transition orders through the fulfillment workflow.
+
+WHEN an order containing seller's products is placed, THE system SHALL notify the seller immediately.
+
+THE seller SHALL be able to confirm order receipt and approve the order for fulfillment.
+
+THE seller SHALL be able to prepare items for shipment and update order status to "preparing shipment".
+
+THE seller SHALL be able to generate and download shipping labels for orders.
+
+THE seller SHALL be able to update tracking information and shipping status for orders.
+
+THE seller SHALL be able to mark orders as shipped with carrier information and tracking number.
+
+THE seller SHALL be able to view delivery confirmation when orders are delivered.
+
+THE seller SHALL be able to view refund requests for their orders and approve or reject refund requests.
+
+THE seller SHALL be able to process partial refunds or full refunds for approved returns.
+
+### Seller Communication Permissions
+
+THE seller SHALL be able to send messages to customers regarding their orders.
+
+THE seller SHALL be able to respond to customer inquiries and support requests.
+
+THE seller SHALL NOT be able to send unsolicited promotional messages to customers without their opt-in consent.
+
+### Seller Data Access
+
+THE seller SHALL only be able to access their own store data, products, and orders containing their products. They SHALL NOT access other sellers' data or products.
+
+THE seller's JWT token SHALL include their unique seller ID as the "sub" claim to enforce this restriction.
+
+THE seller SHALL NOT be able to view other sellers' inventory, pricing, or sales metrics.
+
+---
+
+## Admin Actor
+
+### Admin Definition
+
+System administrators have elevated permissions to manage the entire platform. Admins can manage users (customers and sellers), monitor orders, manage product catalog across all sellers, configure system settings, view analytics and reports, handle disputes and refunds, and manage account suspensions. Admin accounts are created internally and not through public registration.
+
+### Admin Authentication Requirements
+
+#### Admin Account Creation
+
+Admin accounts SHALL be created directly by the system owner or existing admins through a secure internal process, NOT through public registration.
+
+WHEN an admin account is created, THE system SHALL assign a strong temporary password (minimum 16 characters with mixed case, numbers, and special characters) to the admin.
+
+THE system SHALL require the new admin to change their temporary password on first login.
+
+THE system SHALL log all admin account creation events with details of who created the account and timestamp.
+
+#### Admin Login Process
+
+WHEN an admin submits login credentials, THE system SHALL validate credentials against stored password hashes.
+
+WHEN an admin account has not been used in 90 days, THE system SHALL require password reset on the next login attempt for security purposes.
+
+IF login credentials are invalid, THE system SHALL return HTTP 401 with error code "AUTH_INVALID_CREDENTIALS" and log the failed attempt.
+
+IF an admin account is deactivated, THE system SHALL return HTTP 403 with error code "AUTH_ADMIN_DEACTIVATED".
+
+IF an admin logs in from an unusual geographic location, THE system SHALL log the unusual access for review.
+
+WHEN credentials are valid, THE system SHALL generate a JWT access token with admin-specific claims.
+
+### Admin User Management Permissions
+
+THE admin SHALL be able to view a list of all customers with filtering and search capabilities.
+
+THE admin SHALL be able to view detailed customer profile information including email, phone, addresses, and account status.
+
+THE admin SHALL be able to view customer account creation date, last login date, and account activity history.
+
+THE admin SHALL be able to temporarily suspend a customer account if the customer violates platform policies or terms of service.
+
+THE admin SHALL be able to permanently deactivate a customer account with full audit logging of the reason.
+
+THE admin SHALL be able to reset a customer's password if requested by the customer for account recovery.
+
+THE admin SHALL be able to view a list of all sellers with filtering and search capabilities.
+
+THE admin SHALL be able to view detailed seller profile information including business name, registration, contact information, and seller ratings.
+
+THE admin SHALL be able to review pending seller applications and approve or reject applications.
+
+THE admin SHALL be able to suspend a seller account if the seller violates platform policies or quality standards.
+
+THE admin SHALL be able to view seller performance metrics including sales volume, ratings, return rates, and complaint history.
+
+### Admin Product Management Permissions
+
+THE admin SHALL be able to view the complete product catalog across all sellers.
+
+THE admin SHALL be able to search and filter products by seller, category, status, and other criteria.
+
+THE admin SHALL be able to view detailed product information and variants for any product on the platform.
+
+THE admin SHALL be able to flag products for review if they appear to violate policies (e.g., counterfeit, inappropriate content).
+
+THE admin SHALL be able to temporarily hide (soft delete) a product from the catalog if it violates policies.
+
+THE admin SHALL be able to permanently delete a product if it is prohibited content (e.g., illegal goods).
+
+THE admin SHALL be able to manage product categories and taxonomy.
+
+THE admin SHALL be able to view product performance metrics including total sales, rating trends, and review patterns.
+
+### Admin Order Management Permissions
+
+THE admin SHALL be able to view all orders in the system with filtering and search capabilities.
+
+THE admin SHALL be able to view complete order details for any order including items, prices, customer info, and fulfillment status.
+
+THE admin SHALL be able to view order timeline and history of status changes.
+
+THE admin SHALL be able to access customer messages and communication history for orders.
+
+THE admin SHALL be able to review and approve refund requests submitted by customers.
+
+THE admin SHALL be able to process refunds directly if needed for dispute resolution.
+
+THE admin SHALL be able to view payment transaction details and settlement information.
+
+### Admin Dispute and Complaint Management
+
+THE admin SHALL be able to view complaints filed by customers about orders, products, or sellers.
+
+THE admin SHALL be able to view seller responses to customer complaints.
+
+THE admin SHALL be able to investigate disputes by reviewing order details, messages, and evidence provided by both parties.
+
+THE admin SHALL be able to make binding decisions on disputes including ordering refunds, directing product returns, or suspending sellers.
+
+THE admin SHALL be able to add notes and attach evidence to dispute records.
+
+### Admin Analytics and Reporting
+
+THE admin SHALL be able to generate reports on platform-wide metrics including total orders, total revenue, and daily active users.
+
+THE admin SHALL be able to generate reports on seller performance including sales metrics, rating trends, and complaint rates.
+
+THE admin SHALL be able to generate reports on customer acquisition, retention, and lifetime value.
+
+THE admin SHALL be able to generate reports on product performance by category, seller, and rating.
+
+THE admin SHALL be able to view trends and patterns in platform data for business intelligence.
+
+THE admin SHALL be able to export reports in standard formats (CSV, PDF) for further analysis.
+
+### Admin System Configuration
+
+THE admin SHALL be able to configure platform settings including commission rates, return windows, and shipping policies.
+
+THE admin SHALL be able to manage promotional campaigns and discounts at the platform level.
+
+THE admin SHALL be able to configure category structures and product taxonomy.
+
+THE admin SHALL be able to view and configure payment processors and payment methods accepted by the platform.
+
+THE admin SHALL be able to view and manage email templates for notifications.
+
+THE admin SHALL be able to configure system features and feature flags for gradual rollouts.
+
+### Admin Data Access
+
+THE admin SHALL have access to all data in the system including customer accounts, seller accounts, products, orders, and transactions.
+
+THE admin's JWT token SHALL include admin-specific claim "role: admin" and a list of assigned permissions.
+
+ALL admin actions SHALL be logged with admin ID, action type, target resource, and timestamp for audit purposes.
+
+THE admin SHALL NOT be able to modify their own role or permission level.
+
+---
+
+## Authentication System Architecture
+
+### Complete Authentication Flow
+
+The authentication system implements a standard OAuth 2.0 and JWT-based approach with the following flow:
 
 ```mermaid
 graph LR
-    A["User Provides Email & Password"] --> B{\"Credentials Valid?\"}
-    B -->|\"No\"| C["Authentication Failed"]
-    B -->|\"Yes\"| D["Generate JWT Token"]
-    D --> E["Create User Session"]
-    E --> F["User Authenticated"]
-    F --> G{\"Has Permission?\"}
-    G -->|\"Yes\"| H["Allow Operation"]
-    G -->|\"No\"| I["Access Denied"]
+    A["User Submits Credentials"] --> B{\"Valid?\"}
+    B -->|"No"| C["Return HTTP 401"]
+    B -->|"Yes"| D{\"Account Active?\"}
+    D -->|"No"| E["Return HTTP 403"]
+    D -->|"Yes"| F["Verify Email Status"]
+    F -->|"Not Verified"| G["Return Email Verification Required"]
+    F -->|"Verified"| H["Generate JWT Tokens"]
+    H --> I["Access Token"]
+    H --> J["Refresh Token"]
+    I --> K["Return Success + Tokens"]
+    J --> K
+    K --> L["Client Stores Tokens"]
+```
+
+### Registration Authentication Flow
+
+```mermaid
+graph LR
+    A["User Enters Registration Data"] --> B["Validate Input Data"]
+    B --> C{\"Valid?\"}
+    C -->|"No"| D["Return Validation Errors"]
+    C -->|"Yes"| E["Check Email Uniqueness"]
+    E --> F{\"Email Exists?\"}
+    F -->|"Yes"| G["Return Email Already Registered"]
+    F -->|"No"| H["Hash Password"]
+    H --> I["Create Account"]
+    I --> J["Send Verification Email"]
+    J --> K["Return Success + Verification Required"]
+    K --> L["User Clicks Verification Link"]
+    L --> M["Verify Email Token"]
+    M --> N{\"Valid?\"}
+    N -->|"No"| O["Return Invalid/Expired Token"]
+    N -->|"Yes"| P["Activate Account"]
+    P --> Q["Send Welcome Email"]
+    Q --> R["Account Ready for Login"]
 ```
 
 ---
 
-## User Actor Definitions
+## JWT Token Management and Structure
 
-### Customer Actor
+### Access Token Specification
 
-**Description**: End-user customers who browse products, manage shopping carts, place orders, make payments, track shipments, and leave product reviews. Customers can manage their profiles, addresses, and order history.
+THE system SHALL generate JWT access tokens using the HS256 (HMAC SHA-256) signing algorithm with a secure secret key of minimum 256 bits.
 
-**Primary Capabilities**:
-- Browse and search the product catalog
-- Create and manage personal profile information
-- Manage multiple delivery addresses (maximum 10 addresses per customer)
-- Create and manage shopping carts
-- Add products to wishlists
-- Place orders and make payments
-- Track order status and shipping updates in real-time
-- Leave product reviews and ratings
-- Cancel orders within eligible timeframes
-- Request returns and refunds
-- View order history and past purchases
-- Manage account preferences and notifications
+THE access token SHALL have an expiration time of 15 minutes (900 seconds) from issuance.
 
-**Authentication Requirements**:
-- Must register with valid email address in RFC 5322 format
-- Must verify email address before full account activation
-- Must create secure password during registration (minimum 8 characters, containing uppercase, lowercase, number, special character)
-- Can reset password via email verification with 2-hour token expiration
-- Can log in from multiple devices simultaneously (maximum 5 concurrent sessions)
-- Sessions expire after 30 days of inactivity
+THE access token SHALL include the following required claims:
 
-**Data Access**:
-- Can only view and modify their own profile data
-- Can only view and modify their own addresses
-- Can only view and manage their own orders
-- Can only view and manage their own shopping cart
-- Can only view reviews they have authored
-- Cannot access other customer data under any circumstances
-
----
-
-### Seller Actor
-
-**Description**: Business owners who register as sellers to list and manage their own products, monitor inventory, view orders from their store, process shipments, and manage product variants and pricing.
-
-**Primary Capabilities**:
-- Create and maintain seller profile and business information
-- Register and verify seller account through admin approval
-- Upload and manage product listings
-- Create and manage product variants (colors, sizes, options)
-- Set and update product pricing at the variant (SKU) level
-- Manage inventory levels per SKU with real-time updates
-- View orders containing their products
-- Manage order fulfillment and shipping
-- Update order and shipment status with tracking information
-- Respond to customer inquiries about products
-- View seller analytics and sales metrics
-- Manage seller account settings and store customization
-- Configure product categories and attributes
-
-**Authentication Requirements**:
-- Must register with business email address in valid format
-- Must verify email address before account activation
-- Must complete seller verification process (documentation/approval by admin)
-- Account remains inactive until verified by admin through documentation review
-- Must create secure password during registration (minimum 8 characters)
-- Can reset password via email verification with 2-hour token expiration
-- Can log in from multiple devices simultaneously (maximum 5 concurrent sessions)
-- Sessions expire after 30 days of inactivity
-
-**Data Access**:
-- Can view only their own seller profile
-- Can view and manage only products they have listed
-- Can view only orders containing their products
-- Can view only shipments for their orders
-- Can view analytics for only their products and sales
-- Cannot access other seller data or modify products from other sellers
-- Cannot view order details not related to their products
-
----
-
-### Admin Actor
-
-**Description**: Platform administrators with full system access to manage all users, products, orders, sellers, payments, inventory, disputes, refunds, and overall platform settings and policies.
-
-**Primary Capabilities**:
-- Manage all user accounts (customers, sellers, admins)
-- Approve or reject seller verification requests
-- Suspend or deactivate seller accounts with audit logging
-- Moderate and manage product listings
-- Remove inappropriate products from catalog
-- Manage all orders across the platform
-- Process refunds and handle disputes
-- View all payment transactions with complete details
-- Monitor system analytics and metrics
-- Manage platform-wide settings and configurations
-- Create and manage promotional campaigns
-- View and analyze customer behavior patterns
-- Handle escalated customer complaints
-- Manage system users and admin accounts
-- Access audit logs and system activity records
-
-**Authentication Requirements**:
-- Admin accounts created by system or existing admins only
-- Must use strong password meeting security standards during account creation
-- Can reset password via secure admin portal with 2-hour token expiration
-- Multi-factor authentication (MFA) required for security (email OTP or authenticator app)
-- Sessions expire after 8 hours of inactivity (shorter than customer/seller for security)
-- Can be restricted to specific admin permissions as needed for role-based access
-- All admin actions logged with timestamp and reason for audit purposes
-
-**Data Access**:
-- Full access to all user data (customers and sellers)
-- Full access to all product and inventory data
-- Full access to all orders and transactions
-- Full access to all payments and financial data
-- Full access to all system logs and audit trails
-- Can view and modify any order, seller, or customer record
-- Can access real-time analytics and reporting
-
----
-
-## Permission Hierarchy and Matrix
-
-### Permission Categories
-
-The system defines permissions across the following functional categories:
-
-1. **Profile Management**: View and update user profile information
-2. **Product Management**: Create, update, and manage product listings
-3. **Inventory Management**: View and manage stock levels
-4. **Order Management**: View and manage orders
-5. **Payment Management**: View and process payments
-6. **Review Management**: Create and view reviews
-7. **Seller Management**: Verify and manage seller accounts
-8. **Admin Operations**: System-wide administrative functions
-
-### Complete Permission Matrix
-
-| Permission | Customer | Seller | Admin |
-|---|:---:|:---:|:---:|
-| **Profile & Account** | | | |
-| View own profile | ✅ | ✅ | ✅ |
-| Update own profile | ✅ | ✅ | ✅ |
-| Change own password | ✅ | ✅ | ✅ |
-| View other profiles | ❌ | ❌ | ✅ |
-| Modify other profiles | ❌ | ❌ | ✅ |
-| Create user accounts | ❌ | ❌ | ✅ |
-| Suspend/deactivate accounts | ❌ | ❌ | ✅ |
-| **Address Management** | | | |
-| Create delivery addresses | ✅ | ✅ | ❌ |
-| View own addresses | ✅ | ✅ | ❌ |
-| Update own addresses | ✅ | ✅ | ❌ |
-| Delete own addresses | ✅ | ✅ | ❌ |
-| View customer addresses | ❌ | ❌ | ✅ |
-| **Product Management** | | | |
-| Browse public products | ✅ | ✅ | ✅ |
-| Create product listings | ❌ | ✅ | ❌ |
-| Update own products | ❌ | ✅ | ❌ |
-| Delete own products | ❌ | ✅ | ❌ |
-| Manage product variants (SKU) | ❌ | ✅ | ❌ |
-| Set product pricing | ❌ | ✅ | ❌ |
-| View all products | ❌ | ❌ | ✅ |
-| Moderate product content | ❌ | ❌ | ✅ |
-| Remove inappropriate products | ❌ | ❌ | ✅ |
-| **Inventory Management** | | | |
-| View own inventory | ❌ | ✅ | ❌ |
-| Update inventory levels | ❌ | ✅ | ❌ |
-| View all inventory | ❌ | ❌ | ✅ |
-| Adjust inventory manually | ❌ | ❌ | ✅ |
-| **Shopping & Orders** | | | |
-| Create shopping cart | ✅ | ❌ | ❌ |
-| Manage shopping cart | ✅ | ❌ | ❌ |
-| Create wishlist | ✅ | ❌ | ❌ |
-| Manage wishlist | ✅ | ❌ | ❌ |
-| Place orders | ✅ | ❌ | ❌ |
-| View own orders | ✅ | ✅ (own products only) | ✅ |
-| Cancel own orders | ✅ | ❌ | ✅ |
-| View all orders | ❌ | ✅ (own store only) | ✅ |
-| Update order status | ❌ | ✅ (own orders) | ✅ |
-| **Payments** | | | |
-| Process payment | ✅ | ❌ | ❌ |
-| View own transactions | ✅ | ✅ | ✅ |
-| View all transactions | ❌ | ❌ | ✅ |
-| Process refunds | ❌ | ❌ | ✅ |
-| **Reviews & Ratings** | | | |
-| Create reviews | ✅ | ❌ | ❌ |
-| View reviews | ✅ | ✅ | ✅ |
-| Delete own reviews | ✅ | ❌ | ✅ |
-| Moderate reviews | ❌ | ❌ | ✅ |
-| **Seller Management** | | | |
-| Apply for seller account | ✅ | ❌ | ❌ |
-| Access seller dashboard | ❌ | ✅ | ❌ |
-| Verify seller account | ❌ | ❌ | ✅ |
-| Suspend seller account | ❌ | ❌ | ✅ |
-| View seller metrics | ❌ | ✅ (own only) | ✅ |
-| **Admin Operations** | | | |
-| Access admin dashboard | ❌ | ❌ | ✅ |
-| View system analytics | ❌ | ❌ | ✅ |
-| Manage disputes | ❌ | ❌ | ✅ |
-| View audit logs | ❌ | ❌ | ✅ |
-| Configure system settings | ❌ | ❌ | ✅ |
-
----
-
-## Customer Authentication and Access Control
-
-### Customer Registration
-
-WHEN a customer submits a registration request with email, password, and optional name information, THE system SHALL:
-1. Validate email format (RFC 5322 standard) and ensure it is not already registered
-2. Validate password meets security requirements (minimum 8 characters, contains uppercase, lowercase, number, special character)
-3. Hash the password using bcrypt algorithm with minimum 10 salt rounds
-4. Create a customer account with \"email-unverified\" status
-5. Send a verification email with a unique verification link
-6. Return success confirmation to the customer
-
-THE customer account SHALL remain in \"email-unverified\" status until email verification is complete. THE customer SHALL NOT be able to place orders while in unverified status.
-
-### Email Verification
-
-WHEN a customer clicks the email verification link, THE system SHALL:
-1. Validate the verification link has not expired (valid for 24 hours)
-2. Validate the verification link matches the associated email address
-3. Update customer account status to \"active\"
-4. Confirm email verification success to the customer
-5. Allow customer to proceed with login and shopping
-
-IF the verification link has expired, THE system SHALL provide a mechanism to request a new verification email.
-
-THE verification token SHALL be cryptographically secure and unique for each verification attempt.
-
-### Customer Login
-
-WHEN a customer submits login credentials (email and password), THE system SHALL:
-1. Check if an account exists with the provided email address
-2. IF account does not exist, THEN return \"invalid credentials\" error without indicating whether email exists
-3. IF account status is not \"active\", THEN return \"account not activated\" error
-4. Verify the provided password matches the stored password hash
-5. IF password does not match, THEN increment failed login counter
-6. IF failed login attempts exceed 5 within 30 minutes, THEN lock account for 15 minutes
-7. Upon successful authentication, generate JWT access token and refresh token
-8. Create user session in system
-9. Return tokens to customer with expiration times
-
-### JWT Token Structure for Customers
-
-THE access token for customers SHALL contain the following payload:
 ```json
 {
-  "userId": "<unique-customer-id>",
-  "email": "<customer-email>",
-  "role": "customer",
-  "permissions": ["browse-products", "manage-cart", "place-orders", "manage-profile"],
-  "iat": <issued-at-unix-timestamp>,
-  "exp": <expiration-unix-timestamp>,
-  "iss": "shopping-mall-platform"
+  "sub": "customer_id_or_seller_id_or_admin_id",
+  "role": "customer|seller|admin",
+  "iat": 1699999999,
+  "exp": 1700000899,
+  "type": "access"
 }
 ```
 
-THE access token expiration SHALL be 15 minutes.
+THE access token's "sub" (subject) claim SHALL contain the unique identifier of the authenticated user.
 
-THE refresh token expiration SHALL be 30 days.
+THE access token's "role" claim SHALL identify the user's role for permission checking at API endpoints.
 
-THE refresh token SHALL NOT contain sensitive user data, only a secure reference identifier.
+THE access token SHALL include standard JWT claims "iat" (issued at) and "exp" (expiration time) as Unix timestamps.
 
-### Password Reset
+FOR customer tokens, THE system MAY include an optional "email_verified" claim with boolean value indicating email verification status.
 
-WHEN a customer requests a password reset, THE system SHALL:
-1. Accept the customer's email address
-2. Verify email exists in the system
-3. Generate a secure password reset token (valid for 2 hours)
-4. Send password reset email with reset link
-5. Return confirmation message without revealing whether email exists in system
+FOR seller tokens, THE system MAY include an optional "seller_status" claim indicating "approved", "pending", or "suspended".
 
-WHEN a customer submits a new password via the reset link, THE system SHALL:
-1. Validate the reset link has not expired (2-hour expiration)
-2. Validate the new password meets security requirements
-3. Hash and store the new password using bcrypt with minimum 10 salt rounds
-4. Invalidate the reset token (single-use only)
-5. Return success confirmation
-6. Optionally send confirmation email
+FOR admin tokens, THE system MAY include an optional "permissions" claim with array of specific admin permissions.
 
-THE password reset token SHALL be cryptographically secure and unique for each reset request.
+WHEN an access token expires, THE client SHALL use the refresh token to request a new access token WITHOUT requiring the user to log in again.
 
-### Customer Profile Management
+### Refresh Token Specification
 
-WHEN a customer requests to view their profile, THE system SHALL return:
-- Email address
-- Full name
-- Phone number
-- Profile creation date
-- Last login date
-- Account status
-- Notification preferences
+THE system SHALL generate JWT refresh tokens with the same signing algorithm as access tokens.
 
-WHEN a customer updates their profile information, THE system SHALL:
-1. Validate all input data
-2. Update only the fields the customer specified
-3. Return updated profile information
-4. Log the profile update action with timestamp and changes made
+THE refresh token SHALL have an expiration time of 30 days (2,592,000 seconds) from issuance.
 
-THE customer SHALL NOT be able to change their email address through profile update (must use account recovery process).
+THE refresh token SHALL include the following required claims:
 
-### Customer Address Management
-
-WHEN a customer adds a new delivery address, THE system SHALL:
-1. Validate all address fields (street, city, postal code, country)
-2. Allow up to 10 saved addresses per customer
-3. Store address with optional label (home, work, etc.)
-4. Return the saved address with unique address ID
-5. Allow customer to mark one address as default
-
-WHEN a customer updates an existing address, THE system SHALL only allow modification if no active orders are using that address.
-
-WHEN a customer deletes an address, THE system SHALL:
-1. Check if address is currently in use by any active orders
-2. IF address is in use, THEN prevent deletion and show error message
-3. IF address is not in use, THEN delete the address
-4. IF deleted address was default, THEN set another address as default
-
-THE customer SHALL be able to view all their saved addresses at any time.
-
-### Session Management for Customers
-
-THE customer session SHALL expire after 30 days of inactivity.
-
-WHEN a customer's session expires, THE system SHALL:
-1. Invalidate the access token
-2. Require the customer to refresh the token or re-login
-3. Return 401 Unauthorized error with clear message
-
-THE customer SHALL be able to maintain active sessions on maximum 5 devices simultaneously.
-
----
-
-## Seller Authentication and Access Control
-
-### Seller Registration
-
-WHEN a user applies to become a seller, THE system SHALL:
-1. Accept seller profile information: business name, business email, business type, business registration number
-2. Validate email format and ensure it is not already registered
-3. Validate password meets security requirements (minimum 8 characters)
-4. Create a seller account with \"pending-verification\" status
-5. Send verification email to the provided business email
-6. Return confirmation message that seller application is under review
-
-THE seller account SHALL remain in \"pending-verification\" status until admin approval completes.
-
-### Seller Email Verification
-
-WHEN a seller clicks the email verification link, THE system SHALL:
-1. Validate the verification link has not expired (24-hour expiration)
-2. Validate the verification link matches the associated seller email
-3. Update seller verification email status to \"verified\"
-4. Send notification to seller that email is verified and awaiting admin approval
-5. Notify admin that a new seller has completed email verification
-
-### Seller Verification and Approval
-
-WHEN an admin reviews a seller application, THE admin can:
-1. Approve the seller - change status to \"active\", notify seller via email within 2 hours
-2. Request additional documents - change status to \"pending-documents\", notify seller with specific requests
-3. Reject the seller - change status to \"rejected\", notify seller with detailed reasons
-
-WHEN seller account status is changed to \"active\", THE system SHALL:
-1. Send welcome email to seller with onboarding information
-2. Enable all seller dashboard features immediately
-3. Allow seller to begin uploading products
-4. Generate seller dashboard access credentials
-
-### Seller Login
-
-WHEN a seller submits login credentials, THE system SHALL:
-1. Check if an account exists with the provided email address
-2. Verify the provided password matches the stored password hash
-3. IF account status is not \"active\", THEN return error message explaining account status
-4. IF account is \"pending-verification\", THEN return message that email verification is pending
-5. IF account is \"pending-documents\", THEN return message that seller verification is pending
-6. Upon successful authentication, generate JWT access token and refresh token
-7. Create seller session with seller-specific dashboard access
-8. Return tokens to seller
-
-### JWT Token Structure for Sellers
-
-THE access token for sellers SHALL contain the following payload:
 ```json
 {
-  "userId": "<unique-seller-id>",
-  "email": "<seller-email>",
-  "role": "seller",
-  "sellerId": "<seller-store-id>",
-  "storeName": "<business-name>",
-  "permissions": ["manage-products", "manage-inventory", "view-orders", "manage-fulfillment"],
-  "iat": <issued-at-unix-timestamp>,
-  "exp": <expiration-unix-timestamp>,
-  "iss": "shopping-mall-platform"
+  "sub": "user_id",
+  "role": "customer|seller|admin",
+  "iat": 1699999999,
+  "exp": 1702591999,
+  "type": "refresh"
 }
 ```
 
-THE access token expiration for sellers SHALL be 15 minutes.
+THE refresh token SHALL include a "type" claim with value "refresh" to prevent accidental use of refresh tokens as access tokens.
 
-THE refresh token expiration for sellers SHALL be 30 days.
+THE refresh token SHALL be stored securely by the client (typically in an httpOnly cookie or secure storage).
 
-### Seller Profile Management
+THE refresh token SHALL only be used at the dedicated token refresh endpoint and SHALL NOT be accepted for regular API requests.
 
-WHEN a seller views their profile, THE system SHALL display:
-- Business name and business email
-- Business registration information
-- Account creation date
-- Verification status
-- Business category
-- Store metrics (product count, average rating, customer count)
+WHEN a refresh token is used to obtain a new access token, THE system SHALL issue a new refresh token with a new expiration time.
 
-WHEN a seller updates their profile, THE system SHALL allow updates to:
-- Business name
-- Business contact information
-- Store description
-- Store logo and banner images
-- Business hours and policies
+### Token Refresh Endpoint
 
-THE seller SHALL NOT be able to change their business registration number (admin must handle corrections).
+WHEN a client submits a valid refresh token to the token refresh endpoint, THE system SHALL validate the token signature and expiration time.
 
-### Seller Account Status Changes
+IF the refresh token is valid and not expired, THE system SHALL generate and return new access and refresh tokens.
 
-IF a seller account is suspended by admin, THE system SHALL:
-1. Immediately revoke all active seller sessions
-2. Prevent seller from logging in
-3. Disable all seller operations (product uploads, order management)
-4. Send notification email to seller explaining suspension reason
-5. Provide appeal process information
+IF the refresh token is invalid or expired, THE system SHALL return HTTP 401 with error code "AUTH_REFRESH_TOKEN_INVALID" and require the user to log in again.
 
-THE seller SHALL be able to request account reinstatement by submitting an appeal and supporting documentation.
+IF the user's account has been suspended or deleted since the refresh token was issued, THE system SHALL return HTTP 403 with error code "AUTH_ACCOUNT_INVALID" even if the token is technically valid.
 
-### Session Management for Sellers
+### Token Storage and Security
 
-THE seller session SHALL expire after 30 days of inactivity.
+THE client application SHALL store the access token in memory or a temporary location that is cleared when the application closes.
 
-WHEN a seller's session is about to expire, THE system MAY send a warning notification after 29 days.
+THE client application SHALL store the refresh token in a secure, httpOnly cookie that is not accessible to JavaScript (preferred) OR in secure local storage with encryption.
 
-THE seller SHALL be able to manually log out from all active sessions from the seller dashboard.
+THE client application SHALL include the access token in the "Authorization" header of all API requests using the format "Bearer <token>".
+
+THE client application SHALL NOT transmit the refresh token in regular API requests, only in the dedicated refresh endpoint.
+
+THE system SHALL implement token rotation where new tokens are issued on each refresh to limit exposure of long-lived credentials.
 
 ---
 
-## Admin Authentication and Access Control
+## Complete Permission Matrix
 
-### Admin Account Creation
+This matrix defines what actions each user actor can perform across the major feature areas of the platform:
 
-ONLY existing system admins or automated system processes can create new admin accounts.
+| Feature/Action | Guest | Customer | Seller | Admin |
+|---|---|---|---|---|
+| **Authentication** |||
+| Register as customer | ✅ | - | - | - |
+| Register as seller | ✅ | ✅ | - | - |
+| Login | ❌ | ✅ | ✅ | ✅ |
+| Change password | ❌ | ✅ | ✅ | ✅ |
+| Reset forgotten password | ✅ | ✅ | ✅ | ✅ |
+| View profile | ❌ | ✅ | ✅ | ✅ |
+| Edit profile | ❌ | ✅ | ✅ | ✅ |
+| **Product Catalog** |||
+| Browse products | ✅ | ✅ | ✅ | ✅ |
+| View product details | ✅ | ✅ | ✅ | ✅ |
+| Search products | ✅ | ✅ | ✅ | ✅ |
+| Filter by category | ✅ | ✅ | ✅ | ✅ |
+| Create products | ❌ | ❌ | ✅ | ❌ |
+| Edit own products | ❌ | ❌ | ✅ | ❌ |
+| Edit other sellers' products | ❌ | ❌ | ❌ | ✅ |
+| Delete products | ❌ | ❌ | ✅* | ✅ |
+| Manage product variants | ❌ | ❌ | ✅ | ❌ |
+| View all products as admin | ❌ | ❌ | ❌ | ✅ |
+| **Shopping Cart & Wishlist** |||
+| Create cart | ❌ | ✅ | ❌ | ❌ |
+| Add to cart | ❌ | ✅ | ❌ | ❌ |
+| View cart | ❌ | ✅ | ❌ | ❌ |
+| Update cart quantities | ❌ | ✅ | ❌ | ❌ |
+| Remove from cart | ❌ | ✅ | ❌ | ❌ |
+| Create wishlist | ❌ | ✅ | ❌ | ❌ |
+| Add to wishlist | ❌ | ✅ | ❌ | ❌ |
+| View wishlist | ❌ | ✅ | ❌ | ❌ |
+| **Orders** |||
+| Place orders | ❌ | ✅ | ❌ | ❌ |
+| View own orders | ❌ | ✅ | ❌ | ❌ |
+| Track orders | ❌ | ✅ | ❌ | ❌ |
+| Cancel orders | ❌ | ✅* | ❌ | ✅ |
+| View seller's orders | ❌ | ❌ | ✅ | ❌ |
+| View all orders as admin | ❌ | ❌ | ❌ | ✅ |
+| Confirm order receipt | ❌ | ❌ | ✅ | ❌ |
+| Update fulfillment status | ❌ | ❌ | ✅ | ❌ |
+| **Inventory** |||
+| Set inventory | ❌ | ❌ | ✅ | ❌ |
+| Update inventory | ❌ | ❌ | ✅ | ❌ |
+| View own inventory | ❌ | ❌ | ✅ | ❌ |
+| View all inventory | ❌ | ❌ | ❌ | ✅ |
+| **Reviews & Ratings** |||
+| View reviews | ✅ | ✅ | ✅ | ✅ |
+| Leave reviews | ❌ | ✅* | ❌ | ❌ |
+| Edit own reviews | ❌ | ✅ | ❌ | ❌ |
+| Delete own reviews | ❌ | ✅ | ❌ | ❌ |
+| Moderate reviews | ❌ | ❌ | ❌ | ✅ |
+| **Refunds & Returns** |||
+| Submit refund request | ❌ | ✅ | ❌ | ❌ |
+| View refund status | ❌ | ✅ | ❌ | ❌ |
+| Approve refund requests | ❌ | ❌ | ✅ | ✅ |
+| Process refunds | ❌ | ❌ | ❌ | ✅ |
+| **User Management** |||
+| View own address book | ❌ | ✅ | ✅ | ❌ |
+| Manage addresses | ❌ | ✅ | ✅ | ❌ |
+| View all customers | ❌ | ❌ | ❌ | ✅ |
+| Suspend customers | ❌ | ❌ | ❌ | ✅ |
+| View all sellers | ❌ | ❌ | ❌ | ✅ |
+| Approve seller applications | ❌ | ❌ | ❌ | ✅ |
+| Suspend sellers | ❌ | ❌ | ❌ | ✅ |
+| **System Administration** |||
+| View analytics | ❌ | ❌ | ❌ | ✅ |
+| Generate reports | ❌ | ❌ | ❌ | ✅ |
+| Configure settings | ❌ | ❌ | ❌ | ✅ |
+| Manage categories | ❌ | ❌ | ❌ | ✅ |
+| View audit logs | ❌ | ❌ | ❌ | ✅ |
 
-WHEN creating an admin account, THE system SHALL:
-1. Accept admin email, temporary password, and permission level
-2. Create admin account with \"active\" status
-3. Send admin notification email with temporary credentials
-4. Require admin to change password on first login
-5. Optionally enable multi-factor authentication (MFA) requirement
-
-### Admin Login and Multi-Factor Authentication
-
-WHEN an admin submits login credentials, THE system SHALL:
-1. Verify email and password match stored credentials
-2. IF MFA is enabled for admin, THEN send MFA code to registered device/email
-3. Require admin to provide valid MFA code (6-digit OTP or authenticator app code)
-4. Upon successful authentication, generate JWT access token with extended scopes
-5. Create admin session with full administrative capabilities
-6. Log admin login attempt with timestamp and IP address
-
-### JWT Token Structure for Admins
-
-THE access token for admins SHALL contain the following payload:
-```json
-{
-  "userId": "<unique-admin-id>",
-  "email": "<admin-email>",
-  "role": "admin",
-  "adminLevel": "full" or "restricted",
-  "permissions": ["manage-users", "manage-sellers", "manage-products", "manage-orders", "view-analytics", "manage-disputes", "system-config"],
-  "restrictedTo": "<optional-department-or-feature>",
-  "iat": <issued-at-unix-timestamp>,
-  "exp": <expiration-unix-timestamp>,
-  "iss": "shopping-mall-platform"
-}
-```
-
-THE access token expiration for admins SHALL be 8 hours (shorter than customer/seller for security).
-
-THE refresh token expiration for admins SHALL be 7 days (shorter than customer/seller for security).
-
-### Admin Permissions Hierarchy
-
-ADMINS can have different permission levels:
-
-**Full Admin**: Complete access to all system functions and data.
-
-**Restricted Admin**: Access limited to specific functions:
-- Content Moderation Admin: Can moderate products and reviews only
-- Dispute Resolution Admin: Can manage disputes and refunds only
-- Seller Management Admin: Can manage seller accounts and verification only
-- Analytics Admin: Can view analytics and reports only (read-only access)
-
-### Admin Actions and Audit Logging
-
-EVERY admin action SHALL be logged with:
-- Admin user ID who performed the action
-- Action type and detailed description
-- Timestamp of the action (with timezone)
-- Affected user/entity ID
-- Previous and new values (for modifications)
-- Admin IP address and device information
-- Reason or notes provided by admin
-
-THE system SHALL retain admin audit logs for a minimum of 2 years for compliance purposes.
-
-ADMINS SHALL be able to view audit logs for actions they have permission to access (based on their admin level).
-
-### Admin Session Management
-
-THE admin session SHALL expire after 8 hours of inactivity (shorter than customer/seller).
-
-WHEN an admin's session is about to expire, THE system SHALL send a warning notification after 7 hours of inactivity.
-
-THE admin SHALL be able to manually extend their session from the admin dashboard for an additional 8 hours.
-
-WHEN an admin logs out, THE system SHALL:
-1. Invalidate all active tokens for that admin
-2. End the admin session
-3. Log the logout action with timestamp
+**Legend:**
+- ✅ = Permitted
+- ❌ = Not permitted
+- ✅* = Permitted with conditions (see detailed requirements above)
+- — = Not applicable
 
 ---
 
-## Authentication Workflows and Flows
-
-### Complete Customer Registration Flow
-
-```mermaid
-graph LR
-    A["Customer Accesses Registration"] --> B["Enters Email, Password, Name"]
-    B --> C{\"Email Format Valid?\"}
-    C -->|\"No\"| D["Show Email Error"]
-    D --> B
-    C -->|\"Yes\"| E{\"Email Already Registered?\"}
-    E -->|\"Yes\"| F["Show Email Exists Error"]
-    F --> B
-    E -->|\"No\"| G{\"Password Meets Requirements?\"}
-    G -->|\"No\"| H["Show Password Error"]
-    H --> B
-    G -->|\"Yes\"| I["Hash Password"]
-    I --> J["Create Account - Unverified Status"]
-    J --> K["Send Verification Email"]
-    K --> L["Show Success Message"]
-    L --> M["Customer Clicks Email Link"]
-    M --> N{\"Link Valid & Not Expired?\"}
-    N -->|\"No\"| O["Show Expired Link Error"]
-    O --> P["Offer Resend Email"]
-    N -->|\"Yes\"| Q["Update Account to Active"]
-    Q --> R["Show Verification Success"]
-    R --> S["Customer Can Now Login"]
-```
-
-### Complete Customer Login Flow
-
-```mermaid
-graph LR
-    A["Customer Submits Email & Password"] --> B{\"Account Exists?\"}
-    B -->|\"No\"| C["Return Invalid Credentials"]
-    B -->|\"Yes\"| D{\"Account Status Active?\"}
-    D -->|\"No\"| E["Return Account Not Active Error"]
-    D -->|\"Yes\"| F["Check Failed Login Attempts"]
-    F --> G{\"Account Locked?\"}
-    G -->|\"Yes\"| H["Return Account Locked Error"]
-    G -->|\"No\"| I{\"Password Matches?\"}
-    I -->|\"No\"| J["Increment Failed Attempts"]
-    J --> K["Return Invalid Credentials"]
-    I -->|\"Yes\"| L["Reset Failed Attempts"]
-    L --> M["Generate Access Token"]
-    M --> N["Generate Refresh Token"]
-    N --> O["Create Session"]
-    O --> P["Return Tokens to Customer"]
-    P --> Q["Customer Logged In Successfully"]
-```
-
-### Seller Verification Process
-
-```mermaid
-graph LR
-    A["Seller Submits Registration"] --> B["Create Account - Pending Verification"]
-    B --> C["Send Email Verification Link"]
-    C --> D["Seller Verifies Email"]
-    D --> E["Account Ready for Admin Review"]
-    E --> F["Admin Reviews Application"]
-    F --> G{\"Approve?\"}
-    G -->|\"Approve\"| H["Set Status to Active"]
-    G -->|\"Request Docs\"| I["Set Status to Pending Documents"]
-    G -->|\"Reject\"| J["Set Status to Rejected"]
-    H --> K["Send Approval Email"]
-    I --> L["Send Request Email"]
-    J --> M["Send Rejection Email"]
-```
-
-### Token Refresh Flow
-
-```mermaid
-graph LR
-    A["Access Token Approaching Expiration"] --> B["Client Submits Refresh Token"]
-    B --> C{\"Refresh Token Valid?\"}
-    C -->|\"No\"| D["Return Invalid Token Error"]
-    D --> E["Require Re-login"]
-    C -->|\"Yes\"| F{\"Refresh Token Expired?\"}
-    F -->|\"Yes\"| G["Return Token Expired Error"]
-    G --> E
-    F -->|\"No\"| H["Generate New Access Token"]
-    H --> I["Optionally Generate New Refresh Token"]
-    I --> J["Return New Tokens"]
-```
-
-### Password Reset Flow
-
-```mermaid
-graph LR
-    A["User Requests Password Reset"] --> B["Enter Email Address"]
-    B --> C{\"Email Exists?\"}
-    C -->|\"No\"| D["Return Email Not Found"]
-    C -->|\"Yes\"| E["Generate Reset Token"]
-    E --> F["Send Reset Email with Link"]
-    F --> G["Show Confirmation Message"]
-    G --> H["User Clicks Reset Link"]
-    H --> I{\"Link Valid & Not Expired?\"}
-    I -->|\"No\"| J["Show Link Expired Error"]
-    I -->|\"Yes\"| K["Show New Password Form"]
-    K --> L["User Enters New Password"]
-    L --> M{\"Password Valid?\"}
-    M -->|\"No\"| N["Show Password Error"]
-    M -->|\"Yes\"| O["Hash New Password"]
-    O --> P["Update Account Password"]
-    P --> Q["Invalidate Reset Token"]
-    Q --> R["Show Success Message"]
-```
-
----
-
-## Token Management (JWT)
-
-### JWT Overview and Structure
-
-JSON Web Tokens (JWT) are the authentication mechanism for all API requests after initial login.
-
-A JWT consists of three parts separated by dots:
-```
-header.payload.signature
-```
-
-**Header**: Contains token type and hashing algorithm
-**Payload**: Contains claims and user information (encrypted but not secure)
-**Signature**: Ensures token has not been tampered with
-
-### Access Token Specifications
-
-THE access token SHALL be issued upon successful login and SHALL:
-- Contain the user's ID, email, role, and applicable permissions
-- Have an expiration time of 15 minutes for customers and sellers, 8 hours for admins
-- Be signed with the server's secret key using HS256 algorithm
-- Be included in the Authorization header of all API requests (format: \"Bearer <token>\")
-- Be invalidated upon logout
-- NOT contain sensitive data like password or payment information
-
-THE access token payload structure for all users SHALL include:
-```json
-{
-  "userId": "<unique-user-id>",
-  "email": "<user-email>",
-  "role": "<customer|seller|admin>",
-  "iat": <issued-at-unix-timestamp>,
-  "exp": <expiration-unix-timestamp>,
-  "iss": "shopping-mall-platform"
-}
-```
-
-### Refresh Token Specifications
-
-THE refresh token SHALL be issued along with the access token and SHALL:
-- Have an expiration time of 30 days for customers and sellers, 7 days for admins
-- Be used exclusively to obtain a new access token
-- NOT contain sensitive user data beyond necessary identifier
-- Be stored securely (httpOnly cookie recommended, never in localStorage)
-- Never be included in API request body or standard headers (kept server-side)
-- Be single-use or revoke-on-use (issue new refresh token with each refresh)
-
-WHEN a client requests a new access token using the refresh token, THE system SHALL:
-1. Validate the refresh token signature
-2. Check if the refresh token has expired
-3. Check if the refresh token has been revoked
-4. IF validation passes, THEN generate a new access token
-5. Optionally generate a new refresh token (sliding expiration recommended)
-6. Return new tokens to client
-
-### Token Storage Strategy
-
-THE recommended token storage for client applications:
-- **Access Token**: Store in memory or secure session storage (not localStorage for production)
-- **Refresh Token**: MUST be stored in httpOnly secure cookie with Secure and SameSite flags
-
-ALTERNATIVELY, for enhanced security:
-- **Access Token**: Store in memory only (cleared on page refresh, requires re-login)
-- **Refresh Token**: Store in httpOnly cookie with Secure=true and SameSite=Strict flags
-
-### Token Validation on API Requests
-
-WHEN an API request is received, THE system SHALL:
-1. Extract the access token from the Authorization header (format: \"Bearer <token>\")
-2. Validate the token signature using the secret key
-3. Check if the token has expired
-4. Extract the user ID and role from the token payload
-5. Verify the user still has the required permissions for the requested operation
-6. IF token is invalid or expired, THEN return 401 Unauthorized error
-7. IF user lacks permissions, THEN return 403 Forbidden error
-
-### Token Revocation and Blacklisting
-
-THE system SHALL maintain a token revocation list (blacklist) for:
-- Tokens associated with logged-out users
-- Tokens associated with suspended/deactivated accounts
-- Tokens associated with expired sessions
-- Tokens issued to admin accounts that were later suspended
-
-WHEN a user logs out, THE system SHALL:
-1. Add the user's current refresh token to the revocation list
-2. Optionally add the access token to the revocation list
-3. Invalidate the user's session
-4. Return success confirmation to user
-
-WHEN validating a token, THE system SHALL check if the token appears in the revocation list.
-
-THE revocation list entries SHALL expire automatically after the token's natural expiration time to prevent unbounded growth.
-
-### Token Security Best Practices
-
-THE system SHALL enforce the following security practices:
-- Tokens SHALL never be logged or stored in plain text anywhere
-- Tokens SHALL use strong cryptographic signing (RS256 or HS256 minimum)
-- Secret keys SHALL be stored in secure environment variables or key management service
-- Secret keys SHALL be rotated annually and upon security incident
-- Tokens SHALL be transmitted exclusively over HTTPS connections (never HTTP)
-- Cookies storing tokens SHALL have secure, httpOnly, and SameSite flags set
-- Token payload SHALL NOT contain passwords, credit card numbers, or other sensitive data
-- Tokens SHALL include \"iss\" (issuer) and \"aud\" (audience) claims for validation
-
----
-
-## Session Management
+## Session Management and Security
 
 ### Session Lifecycle
 
-A session represents an authenticated user's interaction with the platform.
+WHEN a user successfully authenticates, THE system SHALL create a new session with a unique session ID (separate from JWT token) for tracking login sessions.
 
-WHEN a user successfully authenticates, THE system SHALL:
-1. Create a session record with unique session ID (UUID format)
-2. Store session information: user ID, login timestamp, IP address, user agent, device fingerprint
-3. Issue JWT tokens for API authentication
-4. Return session information to client (tokens and session ID)
+THE system SHALL record the session creation timestamp, user agent, IP address, and geographic location for security monitoring.
 
-WHEN a user makes API requests, THE system SHALL:
-1. Validate the JWT token
-2. Verify the session is still active
-3. Allow the operation if both token and session are valid
-4. Update session last-activity timestamp
+THE session SHALL remain active as long as the JWT access token is valid.
 
-WHEN a user logs out OR session expires, THE system SHALL:
-1. Invalidate the session
-2. Revoke the associated tokens
-3. Clear any server-side session data
-4. Close all related connections
+WHEN a user logs out, THE system SHALL invalidate the session and any remaining tokens associated with that session.
 
-### Session Timeout and Auto-logout
+WHEN a user's access token expires but their refresh token is valid, THE system SHALL maintain the session and issue a new access token without requiring re-authentication.
 
-THE following session timeout rules SHALL apply:
+WHEN a user's refresh token expires, THE system SHALL terminate the session and require full re-authentication.
 
-**Customer Sessions**: Automatically expire after 30 days of inactivity
-**Seller Sessions**: Automatically expire after 30 days of inactivity
-**Admin Sessions**: Automatically expire after 8 hours of inactivity
+### Multi-Device Sessions
 
-WHEN a session is about to timeout, THE client application MAY send a keep-alive ping to extend the session.
+THE system SHALL allow a customer or seller to maintain multiple concurrent sessions across different devices (phone, tablet, computer).
 
-WHEN a session times out, THE system SHALL:
-1. Invalidate the session
-2. Return 401 Unauthorized on the next API request
-3. Require user to re-login
+WHEN a user logs in on a new device, THE system SHALL create a separate session for that device without affecting existing sessions.
 
-### Concurrent Session Handling
+THE user SHALL be able to view all active sessions from their account settings.
 
-THE platform SHALL support multiple concurrent sessions per user.
+THE user SHALL be able to remotely log out from any device, which SHALL terminate only that device's session.
 
-WHEN a customer logs in from a new device, THE system SHALL:
-1. Create a new session for the new device
-2. Allow the customer to maintain their previous sessions
-3. Display all active sessions in the account security settings
+WHEN a user resets their password, THE system SHALL terminate ALL sessions except the current one to prevent unauthorized access from compromised devices.
 
-WHEN a customer explicitly logs out from one device, THE system SHALL:
-1. Invalidate only that specific session
-2. Maintain other active sessions on different devices
+### Session Security Monitoring
 
-THE maximum number of concurrent sessions per user:
-- **Customers**: Maximum 5 concurrent sessions
-- **Sellers**: Maximum 5 concurrent sessions
-- **Admins**: Maximum 3 concurrent sessions (stricter for security)
+THE system SHALL monitor for suspicious session activity such as:
+- Multiple failed login attempts in succession
+- Login from impossible geographic locations (e.g., two countries within minutes)
+- Logins at unusual times
+- Multiple logins from different IP addresses
 
-IF a user attempts to create more sessions than allowed, THE system SHALL log them out from their oldest session and create the new one.
+WHEN suspicious session activity is detected, THE system MAY require additional verification or temporarily lock the account.
 
-### Admin Session Termination
+THE admin SHALL be able to view session logs including IP address, device, login time, and activity for user investigation.
 
-WHEN an admin account is suspended, THE system SHALL:
-1. Invalidate all active sessions for that admin
-2. Revoke all outstanding tokens
-3. Prevent the admin from logging in
-4. Log all session terminations with reason
+### Token Revocation
 
-WHEN an admin's permissions are changed, THE system SHALL:
-1. Revoke current access token
-2. Allow existing refresh token to continue working with new permissions
-3. Issue new access token with updated permissions on next refresh
-4. Log permission change with timestamp and admin who made the change
+THE system SHALL implement a token blacklist mechanism to revoke tokens when accounts are suspended or compromised.
+
+WHEN an account is suspended by an admin, THE system SHALL immediately revoke all existing tokens for that account.
+
+WHEN a user initiates a full logout, THE system SHALL add their current access token to the revocation list to prevent reuse.
+
+WHEN a security incident is detected, THE system MAY immediately revoke all tokens for an account.
 
 ---
 
-## Access Control Enforcement
+## Security Requirements and Best Practices
 
-### Permission Validation Framework
+### Password Security
 
-EVERY API request SHALL be validated against the following framework:
-1. **Authentication**: Verify the user is authenticated via valid JWT token
-2. **Authorization**: Verify the user's role has permission for the requested operation
-3. **Data Access**: Verify the user has access to the requested data
-4. **Business Logic**: Verify the operation is allowed by business rules
+THE system SHALL hash all passwords using bcrypt with a work factor of minimum 12.
 
-### Role-Based Access Control (RBAC)
+THE system SHALL NEVER store passwords in plain text or using reversible encryption.
 
-THE system SHALL enforce access control based on user role (customer, seller, admin).
+THE system SHALL enforce password requirements at registration:
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+- At least one special character
 
-WHEN a user attempts an operation, THE system SHALL:
-1. Check the operation's required role(s)
-2. Verify the user's role matches one of the required roles
-3. IF role doesn't match, THEN return 403 Forbidden error
-4. Verify the user's account status allows the operation (not suspended)
+THE system SHALL NOT allow passwords that contain the user's email or username.
 
-### Data-Level Access Restrictions
+THE system SHALL NOT allow passwords from known breach databases (e.g., HaveIBeenPwned).
 
-CUSTOMERS SHALL only access:
-- Their own profile data
-- Their own addresses
-- Their own orders and order history
-- Public product information
-- Reviews they have written
+THE system SHALL NOT allow password reuse - users cannot reset their password to a previous password.
 
-WHEN a customer requests data, THE system SHALL:
-1. Verify the requested data belongs to that customer
-2. IF data doesn't belong to customer, THEN return 404 Not Found (do not indicate access denied for security)
-3. Return the data only if the customer is authorized
+### API Security
 
-SELLERS SHALL only access:
-- Their own seller profile
-- Products they have listed
-- Orders containing their products
-- Inventory for their products
-- Analytics for their sales
+WHEN a request arrives without an Authorization header, THE system SHALL return HTTP 401.
 
-WHEN a seller requests data, THE system SHALL:
-1. Verify the requested data is associated with that seller's store
-2. IF data is not associated with seller, THEN return 404 Not Found
-3. Return the data only if the seller is authorized
+WHEN a request arrives with an invalid or malformed JWT token, THE system SHALL return HTTP 401 with error code "AUTH_INVALID_TOKEN".
 
-### Feature-Level Access Control
+WHEN a request arrives with an expired JWT token, THE system SHALL return HTTP 401 with error code "AUTH_TOKEN_EXPIRED".
 
-THE system SHALL use permission flags to control feature access.
+WHEN a request arrives with a valid token but insufficient permissions for the endpoint, THE system SHALL return HTTP 403.
 
-WHEN a user attempts to access a feature, THE system SHALL:
-1. Check if the feature is enabled for the user's role
-2. Check if the user's specific account has access to the feature
-3. IF feature is not enabled, THEN return appropriate error message
-4. Allow access only if both checks pass
+THE system SHALL validate JWT token signature using the same secret key used to sign the token.
 
-### Error Handling for Access Violations
+THE system SHALL reject any tokens that have been tampered with.
 
-WHEN a user attempts an unauthorized operation, THE system SHALL return appropriate error responses:
+THE system SHALL implement CORS (Cross-Origin Resource Sharing) restrictions to prevent unauthorized cross-site requests.
 
-**401 Unauthorized**: User's token is invalid, expired, or missing
-**403 Forbidden**: User is authenticated but lacks permission for the operation
-**404 Not Found**: Requested resource not found (used when user lacks access to verify resource existence)
+THE system SHALL use HTTPS/TLS for all API communications to prevent token interception.
 
-THE error messages SHALL NOT reveal whether a resource exists if the user lacks access to it.
+### Account Security
 
-### Admin Override and Audit Logging
+THE system SHALL implement rate limiting on authentication endpoints to prevent brute force attacks (e.g., maximum 5 failed login attempts per 15 minutes).
 
-WHEN an admin performs an operation on behalf of another user, THE system SHALL:
-1. Verify the admin has explicit permission for the operation
-2. Log the operation with the admin's user ID
-3. Record the original user ID being affected
-4. Indicate in the audit log that this was an admin override
-5. Store the reason or notes provided by the admin
+WHEN rate limiting is triggered, THE system SHALL temporarily lock the account and send notification email to the account owner.
 
-ALL admin operations SHALL be logged and auditable.
+THE system SHALL require email verification before account activation to prevent fake account registration.
+
+THE system SHALL log all authentication events including successful logins, failed login attempts, and password changes.
+
+THE system SHALL implement account lockout after a configurable number of failed login attempts (typically 5).
+
+THE system SHALL send notification emails when:
+- Account is created
+- Password is changed
+- Email address is changed
+- Unusual login is detected
+- Account is suspended
+
+THE system SHALL allow users to view their login history and active sessions.
+
+### Admin Security
+
+Admin accounts SHALL be subject to the same password security requirements as regular accounts.
+
+THE system SHALL require multi-factor authentication (MFA) for all admin accounts using TOTP or similar method.
+
+WHEN an admin logs in, THE system SHALL require both password AND MFA code before access is granted.
+
+THE system SHALL log ALL admin actions including view, create, update, and delete operations with full details.
+
+THE system SHALL implement a timeout for admin sessions (e.g., 30 minutes of inactivity) after which re-authentication is required.
+
+THE system SHALL restrict admin account creation and modification to existing admins or system owners.
+
+### Compliance and Data Protection
+
+THE system SHALL comply with GDPR requirements including:
+- Data minimization (collect only necessary data)
+- Encryption of sensitive data in transit and at rest
+- Right to be forgotten (ability to delete customer accounts)
+- Data breach notification within 72 hours
+
+THE system SHALL comply with PCI DSS (Payment Card Industry Data Security Standard):
+- NEVER store full credit card numbers
+- NEVER log passwords or authentication credentials
+- Encrypt payment data in transit
+- Use tokenization for stored payment methods
+
+THE system SHALL allow users to export their personal data in machine-readable format.
+
+THE system SHALL allow users to delete their accounts and associated data (with exceptions for order history needed for compliance).
+
+THE system SHALL maintain detailed audit logs of all access to sensitive data.
+
+### Token Refresh Security
+
+WHEN a refresh token is used to obtain a new access token, THE system SHALL:
+1. Validate the refresh token signature
+2. Verify the token has not expired
+3. Verify the associated account is still active
+4. Issue new access token with updated expiration
+5. Issue new refresh token with updated expiration
+6. Optionally revoke the old refresh token to prevent token reuse
+
+THE system SHALL ensure that refresh tokens can only be used once (one-time use) to detect and prevent token replay attacks.
+
+WHEN an old refresh token is reused after a new one has been issued, THE system SHALL treat this as a potential security incident and revoke all tokens for that user.
 
 ---
 
-## Security Requirements
+## Authentication Implementation Guidance for Developers
 
-### Password Security Standards
+### Protected Endpoint Pattern
 
-THE system SHALL enforce the following password requirements:
-- Minimum length: 8 characters
-- Must contain at least one uppercase letter (A-Z)
-- Must contain at least one lowercase letter (a-z)
-- Must contain at least one number (0-9)
-- Must contain at least one special character (!@#$%^&*)
-- Maximum length: 128 characters (reasonable upper bound)
+Every protected API endpoint MUST implement the following authentication check:
 
-PASSWORDS SHALL be hashed using bcrypt algorithm with minimum 10 salt rounds before storage.
-
-THE system SHALL NOT store passwords in plain text under any circumstances.
-
-THE system SHALL never display passwords to admins, users, or logs.
-
-### Account Lockout Policy
-
-AFTER 5 failed login attempts within 30 minutes, THE system SHALL:
-1. Temporarily lock the account for 15 minutes
-2. Send notification email to the account owner
-3. Require the account owner to reset their password or wait for the lockout period to expire
-
-ADMINS SHALL be able to manually unlock accounts immediately in case of legitimate lockout.
-
-THE system SHALL track failed login attempts per account and per IP address to prevent distributed attacks.
-
-### Sensitive Operation Authentication
-
-FOR sensitive operations such as:
-- Changing email address
-- Changing password
-- Modifying payment information
-- Initiating large refunds (> 500 currency units)
-- Suspending seller accounts
-- Deleting products
-
-THE system SHALL require re-authentication:
-1. Prompt user to enter their password again
-2. Verify the password matches the stored hash
-3. Allow the operation only after successful re-authentication
-4. Log the sensitive operation with timestamp and reason
-
-### API Authentication Requirements
-
-ALL API endpoints except the following SHALL require a valid JWT access token:
-- User registration endpoint
-- User login endpoint
-- Password reset request endpoint
-- Password reset confirmation endpoint
-- Email verification endpoint
-- Public product browse endpoints (may be restricted by business rules)
-- Public review view endpoints
-- System health check endpoint
-
-THE JWT token SHALL be included in the Authorization header of all other API requests:
 ```
-Authorization: Bearer <access-token>
+1. Extract Authorization header from request
+2. Validate header format: "Bearer <token>"
+3. Extract JWT token from header
+4. Verify JWT signature using system secret key
+5. Check token expiration time
+6. Check token "type" claim (should be "access", not "refresh")
+7. If any validation fails, return HTTP 401
+8. Extract user ID from "sub" claim
+9. Extract role from "role" claim
+10. Proceed with request if validation passes
 ```
 
-IF the token is missing or invalid, THE system SHALL return 401 Unauthorized with descriptive error message.
+### Permission Check Pattern
 
-### HTTPS and Secure Communication
+For endpoints with role-specific permissions, implement permission checking:
 
-THE system SHALL enforce HTTPS for all authentication and session-related endpoints.
+```
+1. Verify user is authenticated (JWT validation above)
+2. Check user's role from JWT "role" claim
+3. Check if role has permission for this action
+4. If permission matrix shows ✅ or ✅* (with conditions met), allow request
+5. If permission matrix shows ❌ or ✅* (conditions not met), return HTTP 403
+6. Include clear error message indicating required permission
+```
 
-ALL tokens, passwords, and sensitive data SHALL be transmitted exclusively over encrypted HTTPS connections (minimum TLS 1.2).
+### Error Response Format
 
-THE platform SHALL NOT accept HTTP requests for authentication endpoints or any sensitive operations.
+All authentication and authorization error responses MUST follow this format:
 
-### Email Verification Security
+```json
+{
+  "error": "error_code",
+  "message": "Human readable error message",
+  "timestamp": "ISO8601_timestamp"
+}
+```
 
-THE system SHALL use cryptographically secure random tokens for email verification links.
-
-VERIFICATION tokens SHALL:
-- Have a 24-hour expiration time (86,400 seconds)
-- Be valid for only a single use
-- Be invalidated after use
-- NOT be reusable if resent
-
-WHEN a verification email is resent, THE system SHALL:
-1. Generate a new verification token
-2. Invalidate the previous token
-3. Send the new link to the email address
-4. Prevent brute-force attacks by limiting resend attempts to 3 per hour
-
----
-
-## Summary of Key Authentication Flows
-
-The platform implements a comprehensive authentication and authorization system with three distinct user actors:
-
-1. **Customers**: Register with email verification, manage profiles and multiple addresses, access shopping and order functionality
-
-2. **Sellers**: Register and undergo admin verification before account activation, manage products and inventory, fulfill orders
-
-3. **Admins**: Created by existing admins, possess full system access with restricted variants possible, all actions audited and logged
-
-JWT tokens provide stateless, secure authentication with automatic expiration and manual refresh capabilities. Sessions are managed per user with appropriate timeout periods based on actor type. Role-based and data-level access control ensures users can only access their own data and perform authorized operations.
-
-The system prioritizes security through password hashing, account lockout policies, email verification, token revocation, and comprehensive audit logging of all sensitive operations and access attempts.
+Example error codes:
+- `AUTH_INVALID_CREDENTIALS` - Invalid email or password
+- `AUTH_EMAIL_NOT_VERIFIED` - Account not verified
+- `AUTH_ACCOUNT_SUSPENDED` - Account suspended by admin
+- `AUTH_INVALID_TOKEN` - Token format invalid or tampered
+- `AUTH_TOKEN_EXPIRED` - Token has expired
+- `AUTH_REFRESH_TOKEN_INVALID` - Refresh token invalid or expired
+- `AUTH_INSUFFICIENT_PERMISSIONS` - User lacks required permissions
+- `AUTH_SELLER_NOT_APPROVED` - Seller account not approved
+- `AUTH_SELLER_SUSPENDED` - Seller account suspended
 
 ---
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+## Summary of Actor Capabilities
+
+**Guest Users** can view the product catalog and search products, but cannot create accounts, place orders, or access user-specific features without authentication.
+
+**Customers** can register, log in, manage their profile and addresses, create shopping carts and wishlists, place orders, pay for purchases, track shipments, and leave reviews on products they purchased.
+
+**Sellers** can register their store, manage product listings with variants and pricing, manage inventory at the SKU level, view and fulfill orders from their products, update shipping status, and track sales performance.
+
+**Admins** have full platform access to manage users, view all orders, manage the product catalog, handle disputes, generate reports, and configure system settings.
+
+The JWT-based authentication system with short-lived access tokens and long-lived refresh tokens provides secure, scalable authentication across all user types while the permission matrix ensures each actor can only perform their intended actions within the platform.

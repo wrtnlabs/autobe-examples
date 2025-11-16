@@ -1,153 +1,120 @@
-# redditCommunity Requirements Analysis Report
+# Requirements Analysis Report for a Reddit-like Community Platform
 
-## 1. Introduction
-redditCommunity is a Reddit-like community platform designed to enable users to create and engage in topic-specific communities, share content, and interact through voting and comments. The platform's goal is to provide a robust, scalable, and user-friendly backend system supporting rich user interactions and community autonomy.
+## Introduction
+This document sets forth the comprehensive business and functional requirements for the backend implementation of a Reddit-like community platform. It outlines the service vision, involved user actors, core functional requirements, business rules, error handling, and performance expectations. This report is intended to guide backend developers in building a production-ready system that fulfills the needs and expectations of its users.
 
-## 2. Business Model
+## 1. Service Vision
+The Reddit-like community platform is designed to offer a dynamic, scalable environment where users explore, create, and participate in communities organized around topics of interest. The platform encourages content sharing in various media formats with democratic evaluation through voting, commentary, and moderation. It aims to foster community engagement, content discoverability, and participatory governance.
 
-### 2.1 Purpose
-The platform exists to provide users with a decentralized space to form communities based on shared interests, facilitating content sharing and discussions in a moderated environment.
+## 2. User Actors
 
-### 2.2 Revenue Strategy
-Monetization will be achieved via targeted advertising, premium subscription services offering enhanced moderation capabilities, and brand partnerships within popular communities.
+### 2.1 Guest
+Guests are unauthenticated users with minimal access; they can browse public communities and read existing posts and comments but cannot create content or participate in voting or commenting.
 
-### 2.3 Growth Plan
-Focus will be on organic growth driven by ease of community creation, viral sharing of engaging posts, and gamification elements like karma to incentivize participation.
+### 2.2 Registered User
+These authenticated users can register, log in, create communities, post text, links, or images, upvote/downvote, comment with nested replies, subscribe to communities, view profiles, and report inappropriate content.
 
-### 2.4 Success Metrics
-Key indicators include monthly active users, number of active communities, daily posts and comments volume, average karma per user, and moderation resolution times.
+### 2.3 Community Moderator
+Moderators are registered users with jurisdiction over specific communities. They can moderate posts and comments, manage community settings, enforce posting rules, and handle reports.
 
-## 3. User Actors and Permissions
+### 2.4 Admin
+Admins maintain the overall platform, having full access to manage all communities, users, content moderation, resolve reports, and enforce bans or restrictions system-wide.
 
-The system defines four primary user roles:
+## 3. Functional Requirements
 
-- **Guest**: Can browse public communities and view posts but cannot interact or create content.
-- **User**: Authenticated user capable of creating communities, posting content, voting, commenting, subscribing, and reporting.
-- **Moderator**: Users with elevated permissions to moderate content within assigned communities, including removing posts and managing reports.
-- **Admin**: System-wide administrators managing users, communities, and platform-wide settings.
+### 3.1 User Registration and Login
+- WHEN a user attempts to register, THE system SHALL validate the registration data, ensure uniqueness of email, securely store credentials, and send verification instructions.
+- WHEN a registered user submits login credentials, THE system SHALL authenticate the user and create a session.
+- IF authentication fails, THEN THE system SHALL respond with a clear error message indicating invalid credentials.
+- THE system SHALL allow users to log out and terminate their sessions.
 
-### 3.1 Permissions Matrix
+### 3.2 Community Management
+- WHEN a registered user creates a community, THE system SHALL require a unique community name and optional description.
+- THE system SHALL store community metadata including creation date and creator ID.
+- THE system SHALL allow moderators to update community settings and remove or approve content.
+- THE system SHALL allow users to subscribe to existing communities.
 
-| Action                        | Guest | User | Moderator | Admin |
-|-------------------------------|-------|------|-----------|-------|
-| Browse content                | ✅    | ✅   | ✅        | ✅    |
-| Register and login            | ❌    | ✅   | ✅        | ✅    |
-| Create communities           | ❌    | ✅   | ✅        | ✅    |
-| Post content (text/link/image) | ❌    | ✅   | ✅        | ✅    |
-| Comment with nested replies   | ❌    | ✅   | ✅        | ✅    |
-| Upvote/downvote content       | ❌    | ✅   | ✅        | ✅    |
-| Subscribe/unsubscribe to communities | ❌    | ✅   | ✅        | ✅    |
-| Report content                | ❌    | ✅   | ✅        | ✅    |
-| Moderate content              | ❌    | ❌   | ✅        | ✅    |
-| Manage users and communities  | ❌    | ❌   | ❌        | ✅    |
+### 3.3 Content Posting
+- WHEN a registered user submits a post with text, link, or image, THE system SHALL validate content and associate it with the target community.
+- THE system SHALL restrict image uploads to accepted formats (JPEG, PNG) and a maximum size of 5MB.
+- THE system SHALL allow post editing by the post author within 24 hours.
 
-## 4. Functional Requirements
+### 3.4 Voting System
+- WHEN a user votes (upvote or downvote) a post or comment, THE system SHALL record the vote and update totals.
+- THE system SHALL prevent multiple votes by the same user on the same content.
 
-### 4.1 User Registration and Login
-WHEN a guest submits registration details, THE system SHALL validate the email and password, send a verification email, and create a user account after confirmation.
-WHEN a user attempts to log in, THE system SHALL authenticate the credentials and establish a secure session using JWT tokens.
-Login failures due to invalid credentials SHALL result in immediate error responses.
+### 3.5 Commenting System
+- WHEN a user submits a comment on a post, THE system SHALL associate the comment correctly and support nesting for replies.
+- THE system SHALL limit comment nesting depth to 5 levels.
+- THE system SHALL limit comment text to 1000 characters.
 
-### 4.2 Community Creation and Management
-Authenticated users SHALL be able to create communities with unique names following naming conventions. Moderators and admins SHALL have management permissions including content approval and removal.
+### 3.6 User Karma System
+- THE system SHALL calculate user karma based on votes received on posts and comments.
+- WHEN a vote is cast, THE system SHALL update the karma scores of the content author.
+- THE system SHALL handle karma increases and decreases appropriately.
 
-### 4.3 Content Posting
-Users SHALL post text, links, or images within communities. Posts SHALL be validated for type, size, and community compliance. Images are restricted to common formats (JPEG, PNG) and size limits.
+### 3.7 Post Sorting
+- THE system SHALL provide post listings sortable by "hot", "new", "top", and "controversial" metrics.
+- THE system SHALL refresh sorting data in real-time or near real-time based on voting and posting activity.
 
-### 4.4 Voting System
-Users SHALL upvote or downvote posts and comments once per item. Vote changes SHALL be allowed but duplicates SHALL be prevented.
+### 3.8 Subscription Management
+- WHEN a user subscribes or unsubscribes to a community, THE system SHALL update their subscription list.
+- THE system SHALL allow retrieval of all subscribed communities for a user.
 
-### 4.5 Commenting System
-Comments SHALL support nested replies up to a depth of 5 levels to balance readability and user interaction.
+### 3.9 User Profiles
+- WHEN a user profile is requested, THE system SHALL return user posts, comments, karma, and subscription summaries.
 
-### 4.6 User Karma System
-Karma SHALL be calculated from votes on user posts and comments and updated in near real-time.
+### 3.10 Reporting Inappropriate Content
+- WHEN a user reports content, THE system SHALL record the report and notify moderators and admins.
+- THE system SHALL provide status tracking of report handling.
 
-### 4.7 Post Sorting
-Posts SHALL be sortable by hot, new, top, and controversial leveraging vote counts and timestamps.
+## 4. Business Rules
+- Posts and comments must pass moderation checks before visibility when flagged.
+- Users may be restricted or banned based on moderation outcomes.
+- Karma thresholds may unlock privileges (e.g., creating communities).
+- Limit post and comment rates to prevent spam.
 
-### 4.8 Subscription System
-Users SHALL subscribe or unsubscribe from communities to customize their content feed.
+## 5. Error Handling and Validation
+- IF user input during registration is invalid (e.g., invalid email, weak password), THEN THE system SHALL return descriptive validation errors.
+- IF users attempt actions without appropriate permissions, THEN THE system SHALL deny the action with an authorization error.
+- IF content violates size or format constraints, THEN THE system SHALL reject the content upload.
 
-### 4.9 User Profiles
-Profiles SHALL display user posts, comments, and cumulative karma.
+## 6. Performance Requirements
+- THE system SHALL respond to user login attempts within 2 seconds.
+- THE system SHALL load post listings in pages of 20 items, responding within 1 second.
+- THE system SHALL update vote counts and karma scores within 5 seconds of voting.
 
-### 4.10 Content Reporting
-Users SHALL report inappropriate content. Reports SHALL be logged with detailed metadata and routed to moderators/admins for review.
+## 7. Summary
+This document details the comprehensive business and functional requirements for the Reddit-like community platform. All requirements are stated clearly with measurable and actionable criteria ensuring backend developers have precise guidance to implement the system. Business models, actor roles, workflows, and validation are described to maintain clarity and completeness.
 
-## 5. Business Rules
+---
 
-- Community names SHALL be unique and adhere to allowed character sets.
-- Posts and comments SHALL comply with content guidelines and size limits.
-- Voting SHALL be limited to one per user per content item with vote change allowed once.
-- Moderators SHALL have content removal authority within their communities.
-- Reports SHALL be traceable with status updates for resolution tracking.
+## Appendix: Mermaid Diagram Examples
 
-## 6. Error Handling and Recovery
-
-Authentication failures SHALL return precise error messages.
-Content violations SHALL prevent submission with detailed feedback.
-Duplicate voting SHALL be rejected gracefully.
-Unauthorized actions SHALL be denied with clear authorization errors.
-
-## 7. Performance and Scalability
-
-System SHALL respond to user requests such as posting, voting, and commenting within 2 seconds under standard loads.
-Pagination SHALL be used for content listings, returning results within 3 seconds.
-System SHALL be designed to scale horizontally with consistent data integrity.
-
-## 8. Security and Compliance
-
-User passwords SHALL be stored securely with best practices.
-JWT SHALL manage user authentication with timely token expiration and refresh.
-Access controls SHALL enforce role-based permissions consistently.
-User data SHALL be protected in compliance with privacy laws.
-
-## 9. External Integrations
-
-Image uploads MAY utilize third-party hosting with validation for format and size.
-Spam and abuse detection integrations SHALL flag suspicious content for moderator review.
-Notification systems SHALL alert users and moderators about relevant events.
-
-## 10. Data Lifecycle and Event Processing
-
-Data related to posts, votes, comments, and reports SHALL be captured accurately.
-Event-driven mechanisms SHALL handle asynchronous notifications and updates.
-Data retention policies SHALL comply with legal and operational requirements.
-
-## 11. Appendices
-
-### Glossary
-- Karma: User reputation score based on votes received.
-- Community: User-created thematic group.
-- Moderator: User with content governance privileges.
-
-### References
-All referenced documents are part of the project documentation suite.
-
-## 12. Mermaid Diagrams
-
+### User Registration and Login Flow
 ```mermaid
 graph LR
-  A["Guest Accesses Registration"] --> B["Submits Registration Details"]
-  B --> C{"Valid Input?"}
-  C -->|"Yes"| D["Account Created & Email Sent"]
-  C -->|"No"| E["Show Validation Error"]
-
-  F["User Attempts Login"] --> G{"Credentials Valid?"}
-  G -->|"Yes"| H["Session Established"]
-  G -->|"No"| I["Show Authentication Error"]
-
-  J["User Creates Community"] --> K{"Community Name Unique?"}
-  K -->|"Yes"| L["Community Created"]
-  K -->|"No"| M["Show Error"]
-
-  N["User Posts Content"] --> O["Validate Content"]
-  O --> P["Content Saved"]
-
-  Q["User Votes"] --> R["Check Previous Vote"]
-  R -->|"Allowed"| S["Vote Recorded"]
-  R -->|"Duplicate"| T["Reject Vote"]
-
-  U["User Reports Content"] --> V["Log Report & Notify Moderators"]
+  A["User Registration Start"] --> B["Submit Registration Data"]
+  B --> C{"Is data valid?"}
+  C -->|"Yes"| D["Create Account"]
+  C -->|"No"| E["Return Validation Errors"]
+  D --> F["Send Verification Email"]
+  F --> G["Registration Complete"]
 ```
+
+### Posting and Voting Flow
+```mermaid
+graph LR
+  A["Create Post"] --> B["Validate Content"]
+  B --> C{"Content Valid?"}
+  C -->|"Yes"| D["Save Post"]
+  C -->|"No"| E["Return Error"]
+  D --> F["Display Post in Community"]
+  F --> G["User Votes"]
+  G --> H["Update Vote Counts"]
+  H --> I["Update Karma"]
+```
+
+## Business Requirements Only
+
+This document provides business and functional requirements only. All technical decisions including architecture, APIs, and database schema design are at the developers' discretion. The goal is to describe WHAT the system must do, not HOW it should be implemented.

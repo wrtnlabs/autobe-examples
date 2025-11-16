@@ -1,0 +1,110 @@
+/// Customer inquiries submitted through the platform for product information
+/// or support. Inquiries enable customers to ask questions about products,
+/// sellers, or platform services, supporting the marketplace's communication
+/// needs. Each inquiry is created by a logged-in customer and may be
+/// associated with specific sellers or products. Inquiries remain accessible
+/// even after responses are provided, maintaining a complete conversation
+/// history.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inquiries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who submitted the inquiry. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Customer's active session when submitting the inquiry. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Short descriptive title for the inquiry. Provides quick context for the
+  /// question.
+  title String
+  
+  /// Detailed content of the customer's inquiry. Contains the full question
+  /// and any supporting details.
+  body String
+  
+  /// Whether this inquiry should be kept private between customer and seller.
+  /// Private inquiries are not visible to other users.
+  secret Boolean
+  
+  /// Timestamp when the inquiry was first submitted.
+  created_at DateTime
+  
+  /// Timestamp when the inquiry was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  session shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inquiry_responses shopping_mall_inquiry_responses[]
+  
+  @@index([shopping_mall_customer_session_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_inquiries_shopping_mall_customer_id_crea_28c75a10")
+  @@index([secret])
+}
+
+/// Seller responses to customer inquiries submitted on the platform. Each
+/// response addresses a specific inquiry, providing seller support and
+/// information to customers. Responses are created by sellers and linked to
+/// the corresponding inquiry, maintaining conversation threads. Multiple
+/// responses per inquiry are supported for comprehensive support
+/// interactions.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inquiry_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The inquiry that this response addresses. {@link
+  /// shopping_mall_inquiries.id}
+  shopping_mall_inquiry_id String
+  
+  /// Seller providing the response to the inquiry. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String
+  
+  /// Seller's active session when submitting the response. {@link
+  /// shopping_mall_seller_sessions.id}
+  shopping_mall_seller_session_id String
+  
+  /// Detailed content of the seller's response. Provides comprehensive answer
+  /// to the customer's inquiry.
+  body String
+  
+  /// Timestamp when the response was first submitted.
+  created_at DateTime
+  
+  /// Timestamp when the response was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  inquiry shopping_mall_inquiries @relation(fields: [shopping_mall_inquiry_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  session shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_inquiry_responses_shopping_mall_seller_s_fb5f3741")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_inquiry_id, created_at], map: "shopping_mall_inquiry_responses_shopping_mall_inquiry__c18d4a78")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_inquiry_responses_shopping_mall_seller_i_cc5db05e")
+}

@@ -7,45 +7,25 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function deleteTodoListUserTodosTodoId(props: {
   user: UserPayload;
   todoId: string & tags.Format<"uuid">;
-}): Promise<ITodoListTodo> {
-  const { user, todoId } = props;
-
-  const todo = await MyGlobal.prisma.todo_list_todos.findUniqueOrThrow({
-    where: { id: todoId },
+}): Promise<void> {
+  const existing = await MyGlobal.prisma.todo_list_todos.findUnique({
+    where: { id: props.todoId },
   });
 
-  if (todo.todo_list_user_id !== user.id) {
-    throw new HttpException(
-      "Unauthorized: You can only delete your own todo items",
-      403,
-    );
+  if (!existing) {
+    throw new HttpException("Todo not found", 404);
   }
 
-  const now = new Date();
-  const deleted_at = toISOStringSafe(now);
+  if (existing.todo_list_user_id !== props.user.id) {
+    throw new HttpException("Forbidden", 403);
+  }
 
-  const updated = await MyGlobal.prisma.todo_list_todos.update({
-    where: { id: todoId },
-    data: {
-      deleted_at: now,
-    },
+  await MyGlobal.prisma.todo_list_todos.delete({
+    where: { id: props.todoId },
   });
-
-  return {
-    id: updated.id as string & tags.Format<"uuid">,
-    todo_list_user_id: updated.todo_list_user_id as string &
-      tags.Format<"uuid">,
-    title: updated.title,
-    description: updated.description ?? undefined,
-    status: updated.status as "complete" | "incomplete",
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: deleted_at,
-  };
 }

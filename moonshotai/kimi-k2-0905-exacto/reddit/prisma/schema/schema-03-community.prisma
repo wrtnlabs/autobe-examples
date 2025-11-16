@@ -1,0 +1,328 @@
+/// Core community entities representing thematic forums where users share
+/// content and engage in discussions.
+///
+/// Communities function as independent forums dedicated to specific topics,
+/// interests, or purposes while maintaining seamless integration with
+/// platform-wide features including posting, voting, and commenting
+/// functionality. Each community has unique identity, rules, and membership
+/// management systems to foster focused discussions around shared interests.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated category's {@link reddit_community_community_categories.id}
+  reddit_community_community_category_id String?
+  
+  /// Unique community identifier used in URLs (3-21 characters, alphanumeric
+  /// and underscores only)
+  name String
+  
+  /// Community display title shown to users (up to 100 characters)
+  title String
+  
+  /// Community overview explaining purpose and focus (up to 500 characters)
+  description String
+  
+  /// Community access type: public, restricted, or private
+  type String
+  
+  /// Current number of community subscribers
+  subscriber_count Int
+  
+  /// Minimum account age in days required for posting (community-specific)
+  post_requirement_min_age Int?
+  
+  /// Minimum karma required for posting in this community
+  post_requirement_min_karma Int?
+  
+  /// Whether crossposting from other communities is allowed
+  allow_crosspost Boolean
+  
+  /// Community creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for removed communities
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  communityCategory reddit_community_community_categories? @relation(fields: [reddit_community_community_category_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_community_subscriptions reddit_community_community_subscriptions[]
+  reddit_community_community_rules reddit_community_community_rules[]
+  reddit_community_community_invitations reddit_community_community_invitations[]
+  reddit_community_community_memberships reddit_community_community_memberships[]
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_content_rankings reddit_community_content_rankings[]
+  reddit_community_report_reasons reddit_community_report_reasons[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  
+  @@unique([name])
+  @@unique([title])
+  @@index([type, subscriber_count])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_category_id], map: "reddit_community_communities_reddit_community_communit_73899fb4")
+}
+
+/// Community categories for organizing thematic forums into logical groupings.
+///
+/// Categories provide a hierarchical organization system that helps users
+/// discover communities with similar themes and enables platform-level
+/// content organization. Categories are managed by platform administrators
+/// and assigned to communities during creation or editing.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category name displayed to users (e.g., Technology, Sports, Entertainment)
+  name String
+  
+  /// Category description explaining the types of communities included
+  description String
+  
+  /// Display order for category sorting (lower numbers appear first)
+  sort_order Int
+  
+  /// Whether the category is active and available for assignment
+  is_active Boolean
+  
+  /// Category creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_communities reddit_community_communities[]
+  
+  @@unique([name])
+  @@index([is_active, sort_order])
+}
+
+/// User subscription relationships to communities for personalized feed
+/// customization.
+///
+/// Community subscriptions enable users to customize their main feed by
+/// joining communities of interest. The subscription system manages user
+/// preferences, notification settings, and provides comprehensive
+/// subscription management capabilities for personalized content discovery.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscribing member's {@link reddit_community_members.id}
+  reddit_community_member_id String
+  
+  /// Subscribed community's {@link reddit_community_communities.id}
+  reddit_community_community_id String
+  
+  /// Notification level: none, popular, hot, all, or keywords
+  notification_preference String
+  
+  /// Subscription creation timestamp
+  subscribed_at DateTime
+  
+  /// Last notification sent to user about community activity
+  last_notification_sent DateTime?
+  
+  /// Whether the subscription is currently active
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id], map: "reddit_community_community_subscriptions_reddit_commun_4cc12f93")
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_member_id, reddit_community_community_id], map: "reddit_community_community_subscriptions_reddit_commun_acf3a97e")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, subscribed_at], map: "reddit_community_community_subscriptions_reddit_commun_2d03bce7")
+  // spellchecker: ignore-next-line
+  @@index([is_active, notification_preference], map: "reddit_community_community_subscriptions_is_active_not_da5714a9")
+}
+
+/// Community-specific rules and guidelines that govern acceptable content
+/// and behavior.
+///
+/// Community rules define the behavioral expectations and content standards
+/// for each community, allowing moderators to maintain quality discussions
+/// and enforce community guidelines. Rules are customized per community
+/// while adhering to platform-wide policies.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community these rules belong to {@link reddit_community_communities.id}
+  reddit_community_community_id String
+  
+  /// Sequential rule number for display ordering (1-15)
+  rule_number Int
+  
+  /// Brief rule title (up to 100 characters)
+  title String
+  
+  /// Detailed rule explanation and examples (up to 1000 characters)
+  description String
+  
+  /// Consequence for violating this rule (warning, removal, ban)
+  violation_consequence String?
+  
+  /// Rule creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_community_id, rule_number], map: "reddit_community_community_rules_reddit_community_comm_6dc60849")
+  @@index([rule_number])
+}
+
+/// Community invitation management for private or restricted community
+/// access control.
+///
+/// Invitation system enables community moderators to grant access to
+/// specific users for private communities or to manage membership in
+/// restricted communities. Invitations can be sent via email links or
+/// through generated invitation codes.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_invitations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community being invited to {@link reddit_community_communities.id}
+  reddit_community_community_id String
+  
+  /// Member who sent the invitation {@link reddit_community_members.id}
+  invited_by_reddit_community_member_id String
+  
+  /// Unique invitation code for redeeming access
+  invitation_code String
+  
+  /// Email address for invitation delivery (optional)
+  email_address String?
+  
+  /// Invitation status: pending, accepted, declined, expired
+  status String
+  
+  /// Invitation type: email_link, generated_code, direct_invite
+  invitation_type String
+  
+  /// Invitation expiration timestamp
+  expires_at DateTime
+  
+  /// Timestamp when invitation was accepted
+  accepted_at DateTime?
+  
+  /// Invitation creation timestamp
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  invitedByMember reddit_community_members @relation(fields: [invited_by_reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([invited_by_reddit_community_member_id], map: "reddit_community_community_invitations_invited_by_redd_94fcfda8")
+  
+  @@unique([invitation_code])
+  @@index([status, expires_at])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id, status], map: "reddit_community_community_invitations_reddit_communit_92425ace")
+}
+
+/// Community membership tracking for participation and role management.
+///
+/// Membership records track user participation within communities including
+/// join dates, roles, and activity levels. Essential for community
+/// governance, membership analytics, and participation-based feature access
+/// control.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_memberships {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community member's {@link reddit_community_members.id}
+  reddit_community_member_id String
+  
+  /// Community membership {@link reddit_community_communities.id}
+  reddit_community_community_id String
+  
+  /// Member role: member, moderator, banned, or suspended
+  role String
+  
+  /// When the user joined the community
+  joined_at DateTime
+  
+  /// Last recorded activity in this community
+  last_activity_at DateTime?
+  
+  /// Moderator notes about membership (for bans, warnings, etc.)
+  membership_notes String?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id], map: "reddit_community_community_memberships_reddit_communit_5785a09b")
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_member_id, reddit_community_community_id], map: "reddit_community_community_memberships_reddit_communit_5176b802")
+  // spellchecker: ignore-next-line
+  @@index([role, last_activity_at], map: "reddit_community_community_memberships_role_last_activ_0ecfbb7d")
+  @@index([joined_at])
+}

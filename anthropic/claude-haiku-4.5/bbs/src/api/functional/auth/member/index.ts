@@ -6,35 +6,47 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardMember } from "../../../structures/IDiscussionBoardMember";
 
 /**
- * Register a new member account with email and password to create authenticated
- * user access to the discussion board platform.
+ * Register a new member account for the discussion board.
  *
- * Member registration creates a new authenticated member account. The system
- * validates that the provided email address is unique (not already registered
- * in discussion_board_members table), validates password meets strength
- * requirements (minimum 8 characters with uppercase, lowercase, and numeric
- * characters), creates a new discussion_board_members record with hashed
- * password in password_hash field and account_status set to 'active',
- * initializes created_at and updated_at to current UTC timestamp, sets
- * deleted_at to NULL, and generates JWT tokens for immediate authenticated
- * access. A session record is simultaneously created in
- * discussion_board_member_sessions table linked to the new member with ip
- * address, page URL (href), referrer URL, created_at timestamp, and expired_at
- * set to 7 days from registration. The access token is issued with 30-minute
- * expiration containing member id, email, account_status, and role information.
- * The refresh token is issued with 7-day expiration for session renewal. After
- * successful registration, the member is immediately in 'active' status and can
- * create articles (via discussion_board_articles table with
- * discussion_board_member_id reference), post comments (via
- * discussion_board_comments table with discussion_board_member_id reference),
- * and upload attachments (via discussion_board_attachments table with
- * discussion_board_member_id reference) without further email verification in
- * this simplified implementation.
+ * This endpoint creates a new member account in the discussion_board_members
+ * table with complete authentication setup. The operation accepts member
+ * registration details including email, username, password, and display name.
+ * These credentials are validated against business rules: email must be valid
+ * format (max 254 characters) and globally unique, username must be 3-30
+ * characters of alphanumeric characters plus hyphens/underscores and globally
+ * unique, password must meet complexity requirements, and display name must be
+ * 1-50 characters.
+ *
+ * The password is immediately hashed using bcrypt with minimum 12 rounds before
+ * storage, never storing plain text. The newly created member record is
+ * initialized with email_verified=false, account_status='active', and
+ * created_at timestamp set to current UTC time. A verification email is
+ * generated and sent to the provided email address containing a verification
+ * link that member must click to enable article creation and comment posting
+ * capabilities.
+ *
+ * Upon successful account creation, the operation generates JWT tokens
+ * including an access token (short-lived, used for immediate API requests) and
+ * a refresh token (long-lived, used to obtain new access tokens). These tokens
+ * are issued immediately allowing the newly registered member to interact with
+ * the platform, though posting restrictions remain until email verification is
+ * completed.
+ *
+ * The email field is stored exactly as provided and must not already exist in
+ * the discussion_board_members table (unique constraint). The username field is
+ * enforced case-insensitive and must not already exist. The display_name field
+ * is stored as provided and is displayed publicly as author attribution on
+ * articles and comments. The password_hash field stores the bcrypt-hashed
+ * result and is never returned to the client.
+ *
+ * This operation should be called before any authenticated member operations.
+ * Related operations include login for existing members, refresh for token
+ * renewal, and email verification endpoints for activating posting privileges
+ * after registration.
  *
  * @param props.connection
- * @param props.body Member registration credentials including email address and
- *   password that meet security requirements (email format validation, password
- *   minimum 8 characters with mixed case and numbers).
+ * @param props.body Member registration credentials including email, username,
+ *   password, and display name
  * @setHeader token.access Authorization
  *
  * @path /auth/member/join
@@ -70,13 +82,12 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Member registration credentials including email address and password
-     * that meet security requirements (email format validation, password
-     * minimum 8 characters with mixed case and numbers).
+     * Member registration credentials including email, username, password,
+     * and display name
      */
-    body: IDiscussionBoardMember.IRegisterRequest;
+    body: IDiscussionBoardMember.ICreate;
   };
-  export type Body = IDiscussionBoardMember.IRegisterRequest;
+  export type Body = IDiscussionBoardMember.ICreate;
   export type Response = IDiscussionBoardMember.IAuthorized;
 
   export const METADATA = {
@@ -121,44 +132,47 @@ export namespace join {
 }
 
 /**
- * Authenticate a registered member using email and password to establish an
- * authenticated session with JWT tokens.
+ * Authenticate a member and establish a new session.
  *
- * Member login authenticates registered users by email and password. The system
- * queries discussion_board_members table using the provided email address to
- * find the member record. If no record exists with the provided email, login
- * fails with generic message 'Email or password incorrect' (without revealing
- * whether email exists). If member record is found, the system verifies the
- * password_hash field by comparing the provided password against the stored
- * hash using cryptographic comparison (bcrypt verify, scrypt verify, or
- * equivalent). If password does not match the hash, login fails with same
- * generic error message and increments failed attempt counter for that email
- * address. If password matches, system checks the account_status field: if
- * 'suspended', login is denied and user is informed 'Your account is currently
- * suspended' with instructions to contact support; if 'banned', login is denied
- * and user is informed 'Your account has been permanently banned'; if 'active',
- * authentication proceeds. System also verifies deleted_at field is NULL - if
- * populated (indicating soft-deleted account), login is denied. For successful
- * authentication, system checks failed login attempt counter for the email
- * address: if 5 or more failed attempts within 15 minutes, account is locked
- * and login denied regardless of correct credentials. Failed attempt counter
- * automatically resets to zero after successful login and is used for temporary
- * account lockout enforcement (15-minute lockout period). Upon successful all
- * validations, new session record is created in
- * discussion_board_member_sessions table with member's
- * discussion_board_member_id, ip address extracted from request headers, href
- * and referrer URLs captured from request. Session created_at is set to current
- * UTC timestamp, expired_at is set to 7 days from now. JWT access token is
- * generated with 30-minute expiration containing claims: member id, email,
- * account_status ('active'), role ('member'), permissions array. Refresh token
- * with 7-day expiration is issued and linked to session. Member transitions to
- * authenticated state with all permissions for content creation and
- * participation.
+ * This endpoint authenticates an existing member by validating credentials and
+ * establishing an authenticated session. The operation accepts either email or
+ * username as the login identifier, along with the member's password. The
+ * identifier is matched case-insensitively against the discussion_board_members
+ * table to locate the member account.
+ *
+ * Password validation compares the provided plain text password against the
+ * stored password_hash field using bcrypt verification. Passwords must match
+ * exactly to authentication to succeed. The account_status field is checked to
+ * ensure the member account is in 'active' state; accounts with status
+ * 'suspended', 'terminated', or 'deleted' are rejected with appropriate error
+ * responses.
+ *
+ * Upon successful credential validation, a new session record is created in the
+ * discussion_board_member_sessions table capturing connection metadata: the ip
+ * field records the IPv4 or IPv6 address of the login request, the href field
+ * captures the full URL where login occurred, and the referrer field captures
+ * the HTTP Referrer header (may be empty string if unavailable). The session
+ * created_at timestamp is set to current UTC time, and expired_at remains null
+ * for active sessions. Sessions automatically expire after 7 days.
+ *
+ * The email_verified field of the member is checked to determine posting
+ * privileges. Members with email_verified=false can access the platform but
+ * have restrictions on creating articles and posting comments until
+ * verification is completed. The last_login_at field is updated to the current
+ * timestamp for activity tracking.
+ *
+ * JWT tokens are issued upon successful login: an access token (short-lived,
+ * typically valid for 15 minutes) used for authenticating subsequent API
+ * requests, and a refresh token (long-lived, valid for 7 days) used to obtain
+ * new access tokens without re-entering credentials. Both tokens are issued to
+ * the client for secure token-based authentication.
+ *
+ * This operation should be called by members with existing accounts. Related
+ * operations include join for new member registration, refresh for obtaining
+ * new access tokens, and logout for terminating the current session.
  *
  * @param props.connection
- * @param props.body Member login credentials containing email address and
- *   password for authentication verification against discussion_board_members
- *   table records.
+ * @param props.body Member login credentials (email or username with password)
  * @setHeader token.access Authorization
  *
  * @path /auth/member/login
@@ -193,14 +207,10 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /**
-     * Member login credentials containing email address and password for
-     * authentication verification against discussion_board_members table
-     * records.
-     */
-    body: IDiscussionBoardMember.ILoginRequest;
+    /** Member login credentials (email or username with password) */
+    body: IDiscussionBoardMember.ILogin;
   };
-  export type Body = IDiscussionBoardMember.ILoginRequest;
+  export type Body = IDiscussionBoardMember.ILogin;
   export type Response = IDiscussionBoardMember.IAuthorized;
 
   export const METADATA = {
@@ -245,44 +255,43 @@ export namespace login {
 }
 
 /**
- * Refresh an expired member access token using a valid refresh token to
- * maintain authenticated session continuity.
+ * Refresh member access token using a valid refresh token.
  *
- * Member token refresh renews an expired access token using a valid refresh
- * token linked to a session in discussion_board_member_sessions table. The
- * system receives a refresh token, extracts the session identifier from token
- * claims, and queries discussion_board_member_sessions table to retrieve the
- * session record including discussion_board_member_id and expired_at timestamp.
- * If session record not found, refresh fails with 'Invalid refresh token'
- * message. System checks if session's expired_at timestamp is before current
- * UTC time - if so, session is expired and refresh fails with 'Your session has
- * expired. Please log in again' message. System then queries
- * discussion_board_members table using the member id to verify account status
- * and deletion state. Checks account_status field: if 'suspended', refresh
- * fails with message 'Your account is temporarily suspended'; if 'banned',
- * refresh fails with message 'Your account has been permanently banned'; if
- * 'active', continues. Checks deleted_at field: if not NULL (account is
- * soft-deleted), refresh fails with message 'Your account has been deleted'. If
- * member account validation fails at any point, refresh is completely rejected.
- * Upon successful validations of session and member account, system updates
- * discussion_board_member_sessions record setting expired_at to 7 days from
- * current time (rolling expiration window). System issues new 30-minute access
- * token containing member id, email, account_status='active', role='member',
- * and relevant permissions. Access token expiration timestamp is set to 30
- * minutes from now. Refresh token with 7-day expiration is issued or renewed
- * and linked to the same session record in discussion_board_member_sessions.
- * Successful refresh extends the session duration and provides new short-lived
- * access token. Member remains authenticated and can continue accessing all
- * member-level endpoints. Refresh can be repeated multiple times as long as
- * account stays active and refresh cycles occur within the 7-day token window.
- * Each successful refresh extends the session by another 7 days, enabling
- * indefinite session continuation without password re-entry as long as member
- * stays active and completes at least one refresh operation per 7-day cycle.
+ * This endpoint renews a member's access token when the current access token
+ * has expired or is about to expire. The operation accepts a refresh token
+ * issued during login or previous refresh operations, validates its signature
+ * and claims, and confirms the associated session is still active.
+ *
+ * The refresh token is verified to belong to a valid session record in the
+ * discussion_board_member_sessions table. The session's expired_at field is
+ * checked to ensure the session has not been manually terminated (expired_at
+ * must be null for active sessions). Sessions that have expired_at set to a
+ * non-null timestamp are rejected as the session has been explicitly ended.
+ *
+ * The associated member's discussion_board_member_id is retrieved from the
+ * session, and the member record is validated to ensure account_status is
+ * 'active'. Members with status 'suspended', 'terminated', or 'deleted' cannot
+ * refresh tokens. The last_login_at field of the member is NOT updated on
+ * refresh operations, only on actual login.
+ *
+ * The refresh token itself has a 7-day validity window from creation. If the
+ * refresh token has expired (created_at + 7 days has passed), the operation is
+ * rejected and the member must log in again. The token validity is tied to the
+ * session's created_at timestamp.
+ *
+ * Upon successful validation, a new access token is issued with the same or
+ * extended validity period (typically 15 minutes). The refresh token remains
+ * valid and can be used multiple times until it expires naturally after 7 days
+ * or the associated session is explicitly terminated by logout.
+ *
+ * This operation enables seamless member experience by allowing token renewal
+ * without requiring re-authentication. It should be called automatically by
+ * client applications when access tokens approach expiration. Related
+ * operations include login for initial authentication, logout for terminating
+ * the session, and other member operations that require valid access tokens.
  *
  * @param props.connection
- * @param props.body Refresh token from previous authentication to request a new
- *   access token and extended session duration, validated against
- *   discussion_board_member_sessions table.
+ * @param props.body Refresh token for obtaining a new access token
  * @setHeader token.access Authorization
  *
  * @path /auth/member/refresh
@@ -317,14 +326,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /**
-     * Refresh token from previous authentication to request a new access
-     * token and extended session duration, validated against
-     * discussion_board_member_sessions table.
-     */
-    body: IDiscussionBoardMember.IRefreshRequest;
+    /** Refresh token for obtaining a new access token */
+    body: IDiscussionBoardMember.IRefresh;
   };
-  export type Body = IDiscussionBoardMember.IRefreshRequest;
+  export type Body = IDiscussionBoardMember.IRefresh;
   export type Response = IDiscussionBoardMember.IAuthorized;
 
   export const METADATA = {

@@ -15,194 +15,134 @@ export async function patchDiscussionBoardArticlesArticleIdImages(props: {
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleImage.IRequest;
 }): Promise<IPageIDiscussionBoardArticleImage.ISummary> {
-  const { articleId, body } = props;
+  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: { id: props.articleId },
+  });
 
-  const page = (body.page ?? 1) as number &
-    tags.Type<"int32"> &
-    tags.Minimum<1> as number;
-  const limit = (body.limit ?? 20) as number &
-    tags.Type<"int32"> &
-    tags.Minimum<1> &
-    tags.Maximum<100> as number;
+  if (!article) {
+    throw new HttpException("Article not found", 404);
+  }
 
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
 
-  const sortBy = body.sort_by ?? "created_at";
-  const sortOrder = body.sort_order ?? "desc";
+  const buildWhereCondition = () => {
+    const conditions: Record<string, unknown> = {
+      article_id: props.articleId,
+    };
 
-  const [images, total] = await Promise.all([
+    if (!props.body.include_deleted) {
+      conditions.deleted_at = null;
+    }
+
+    if (props.body.search) {
+      conditions.original_filename = { contains: props.body.search };
+    }
+
+    if (props.body.original_filename) {
+      conditions.original_filename = { contains: props.body.original_filename };
+    }
+
+    if (props.body.content_type) {
+      conditions.content_type = props.body.content_type;
+    }
+
+    if (
+      props.body.min_file_size !== null &&
+      props.body.min_file_size !== undefined
+    ) {
+      const existing = conditions.file_size ? conditions.file_size : {};
+      conditions.file_size = { ...existing, gte: props.body.min_file_size };
+    }
+
+    if (
+      props.body.max_file_size !== null &&
+      props.body.max_file_size !== undefined
+    ) {
+      const existing = conditions.file_size ? conditions.file_size : {};
+      conditions.file_size = { ...existing, lte: props.body.max_file_size };
+    }
+
+    if (props.body.min_width !== null && props.body.min_width !== undefined) {
+      const existing = conditions.width ? conditions.width : {};
+      conditions.width = { ...existing, gte: props.body.min_width };
+    }
+
+    if (props.body.max_width !== null && props.body.max_width !== undefined) {
+      const existing = conditions.width ? conditions.width : {};
+      conditions.width = { ...existing, lte: props.body.max_width };
+    }
+
+    if (props.body.min_height !== null && props.body.min_height !== undefined) {
+      const existing = conditions.height ? conditions.height : {};
+      conditions.height = { ...existing, gte: props.body.min_height };
+    }
+
+    if (props.body.max_height !== null && props.body.max_height !== undefined) {
+      const existing = conditions.height ? conditions.height : {};
+      conditions.height = { ...existing, lte: props.body.max_height };
+    }
+
+    if (props.body.uploaded_after) {
+      const existing = conditions.created_at ? conditions.created_at : {};
+      conditions.created_at = { ...existing, gte: props.body.uploaded_after };
+    }
+
+    if (props.body.uploaded_before) {
+      const existing = conditions.created_at ? conditions.created_at : {};
+      conditions.created_at = { ...existing, lte: props.body.uploaded_before };
+    }
+
+    return conditions;
+  };
+
+  const whereCondition = buildWhereCondition();
+
+  const sortBy = props.body.sort_by ?? "created_at";
+  const sortOrder = props.body.sort_order ?? "desc";
+
+  const [data, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_article_images.findMany({
-      where: {
-        discussion_board_article_id: articleId,
-        ...(body.include_deleted !== true && { deleted_at: null }),
-        ...(body.mime_type !== undefined &&
-          body.mime_type !== null && {
-            mime_type: body.mime_type,
-          }),
-        ...(body.search !== undefined &&
-          body.search !== null && {
-            original_name: {
-              contains: body.search,
-            },
-          }),
-        ...((body.min_width !== undefined && body.min_width !== null) ||
-        (body.max_width !== undefined && body.max_width !== null)
-          ? {
-              width: {
-                ...(body.min_width !== undefined &&
-                  body.min_width !== null && { gte: body.min_width }),
-                ...(body.max_width !== undefined &&
-                  body.max_width !== null && { lte: body.max_width }),
-              },
-            }
-          : {}),
-        ...((body.min_height !== undefined && body.min_height !== null) ||
-        (body.max_height !== undefined && body.max_height !== null)
-          ? {
-              height: {
-                ...(body.min_height !== undefined &&
-                  body.min_height !== null && { gte: body.min_height }),
-                ...(body.max_height !== undefined &&
-                  body.max_height !== null && { lte: body.max_height }),
-              },
-            }
-          : {}),
-        ...((body.min_size_bytes !== undefined &&
-          body.min_size_bytes !== null) ||
-        (body.max_size_bytes !== undefined && body.max_size_bytes !== null)
-          ? {
-              size_bytes: {
-                ...(body.min_size_bytes !== undefined &&
-                  body.min_size_bytes !== null && { gte: body.min_size_bytes }),
-                ...(body.max_size_bytes !== undefined &&
-                  body.max_size_bytes !== null && { lte: body.max_size_bytes }),
-              },
-            }
-          : {}),
-        ...((body.uploaded_after !== undefined &&
-          body.uploaded_after !== null) ||
-        (body.uploaded_before !== undefined && body.uploaded_before !== null)
-          ? {
-              created_at: {
-                ...(body.uploaded_after !== undefined &&
-                  body.uploaded_after !== null && { gte: body.uploaded_after }),
-                ...(body.uploaded_before !== undefined &&
-                  body.uploaded_before !== null && {
-                    lte: body.uploaded_before,
-                  }),
-              },
-            }
-          : {}),
-      },
-      orderBy:
-        sortBy === "created_at"
-          ? { created_at: sortOrder === "asc" ? "asc" : "desc" }
-          : sortBy === "size_bytes"
-            ? { size_bytes: sortOrder === "asc" ? "asc" : "desc" }
-            : sortBy === "width"
-              ? { width: sortOrder === "asc" ? "asc" : "desc" }
-              : sortBy === "height"
-                ? { height: sortOrder === "asc" ? "asc" : "desc" }
-                : { created_at: "desc" },
+      where: whereCondition,
       skip,
       take: limit,
+      orderBy: { [sortBy]: sortOrder },
     }),
     MyGlobal.prisma.discussion_board_article_images.count({
-      where: {
-        discussion_board_article_id: articleId,
-        ...(body.include_deleted !== true && { deleted_at: null }),
-        ...(body.mime_type !== undefined &&
-          body.mime_type !== null && {
-            mime_type: body.mime_type,
-          }),
-        ...(body.search !== undefined &&
-          body.search !== null && {
-            original_name: {
-              contains: body.search,
-            },
-          }),
-        ...((body.min_width !== undefined && body.min_width !== null) ||
-        (body.max_width !== undefined && body.max_width !== null)
-          ? {
-              width: {
-                ...(body.min_width !== undefined &&
-                  body.min_width !== null && { gte: body.min_width }),
-                ...(body.max_width !== undefined &&
-                  body.max_width !== null && { lte: body.max_width }),
-              },
-            }
-          : {}),
-        ...((body.min_height !== undefined && body.min_height !== null) ||
-        (body.max_height !== undefined && body.max_height !== null)
-          ? {
-              height: {
-                ...(body.min_height !== undefined &&
-                  body.min_height !== null && { gte: body.min_height }),
-                ...(body.max_height !== undefined &&
-                  body.max_height !== null && { lte: body.max_height }),
-              },
-            }
-          : {}),
-        ...((body.min_size_bytes !== undefined &&
-          body.min_size_bytes !== null) ||
-        (body.max_size_bytes !== undefined && body.max_size_bytes !== null)
-          ? {
-              size_bytes: {
-                ...(body.min_size_bytes !== undefined &&
-                  body.min_size_bytes !== null && { gte: body.min_size_bytes }),
-                ...(body.max_size_bytes !== undefined &&
-                  body.max_size_bytes !== null && { lte: body.max_size_bytes }),
-              },
-            }
-          : {}),
-        ...((body.uploaded_after !== undefined &&
-          body.uploaded_after !== null) ||
-        (body.uploaded_before !== undefined && body.uploaded_before !== null)
-          ? {
-              created_at: {
-                ...(body.uploaded_after !== undefined &&
-                  body.uploaded_after !== null && { gte: body.uploaded_after }),
-                ...(body.uploaded_before !== undefined &&
-                  body.uploaded_before !== null && {
-                    lte: body.uploaded_before,
-                  }),
-              },
-            }
-          : {}),
-      },
+      where: whereCondition,
     }),
   ]);
 
-  const baseUrl = "/storage";
-
-  const data = images.map((image) => {
-    const url = `${baseUrl}/article-images/${image.stored_name}` as string &
-      tags.Format<"uri">;
-
-    return {
-      id: image.id as string & tags.Format<"uuid">,
-      url,
-      original_name: image.original_name,
-      mime_type: image.mime_type,
-      size_bytes: image.size_bytes,
-      width: image.width,
-      height: image.height,
-      created_at: toISOStringSafe(image.created_at),
-      deleted_at: image.deleted_at
-        ? toISOStringSafe(image.deleted_at)
-        : undefined,
-    } satisfies IDiscussionBoardArticleImage.ISummary;
-  });
-
-  const pages = Math.ceil(total / limit);
-
   return {
     pagination: {
-      current: Number(page),
-      limit: Number(limit),
+      current: page,
+      limit,
       records: total,
-      pages,
+      pages: Math.ceil(total / limit),
     },
-    data,
+    data: data.map((image) => {
+      const lastDotIndex = image.original_filename.lastIndexOf(".");
+      const name =
+        lastDotIndex > 0
+          ? image.original_filename.substring(0, lastDotIndex)
+          : image.original_filename;
+      const extension =
+        lastDotIndex > 0
+          ? image.original_filename.substring(lastDotIndex + 1)
+          : "";
+
+      return {
+        id: image.id,
+        name,
+        extension,
+        url: image.storage_url,
+        file_size: image.file_size,
+        content_type: image.content_type,
+        width: image.width ?? undefined,
+        height: image.height ?? undefined,
+        created_at: toISOStringSafe(image.created_at),
+      };
+    }),
   };
 }

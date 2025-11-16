@@ -1,0 +1,55 @@
+/// User personal todo items managed independently.
+///
+/// Each todo item belongs to one authenticated user and contains essential
+/// task information including title, optional description, status, and
+/// optional due date. The status field tracks task progression with values
+/// for pending, completed, and deleted states.
+///
+/// Timestamps created_at and updated_at support auditability and record
+/// changes over time. Permanent deletion is enforced without soft delete
+/// fields.
+///
+/// The user_id foreign key ensures ownership linkage to the users in the
+/// Actors component.
+///
+/// This table is the primary entity for the todo management domain,
+/// supporting all CRUD operations for personal todo items.
+///
+/// @namespace TodoManagement
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifier for each todo item.
+  id String @id
+  
+  /// Reference to the owning user. {@link todo_list_users.id}.
+  user_id String
+  
+  /// Short description or title of the todo item limited to 255 characters.
+  title String
+  
+  /// Optional detailed description of the todo item limited to 1000 characters.
+  description String?
+  
+  /// Task status indicating progress phase: 'pending', 'completed', or
+  /// 'deleted'.
+  status String
+  
+  /// Optional due date and time for the task, must be in the future when set.
+  due_date DateTime?
+  
+  /// Timestamp when the todo item was created.
+  created_at DateTime
+  
+  /// Timestamp when the todo item was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+}

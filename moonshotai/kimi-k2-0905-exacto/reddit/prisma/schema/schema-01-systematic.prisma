@@ -1,328 +1,213 @@
-/// Core platform configuration and settings for the Reddit-like community
-/// platform. This represents the highest level of the system configuration
-/// including platform-wide settings, branding, operational parameters, and
-/// authentication configuration.
+/// Core system configuration parameters that control platform-wide
+/// functionality and operational settings. Stores system-wide configuration
+/// values including feature flags, operational parameters, and
+/// infrastructure settings that affect the entire platform operation.
+///
+/// This table serves as the central repository for system-level
+/// configuration data that administrators can modify to adjust platform
+/// behavior, enable/disable features, and manage operational parameters
+/// across all communities and user interactions.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_platforms {
+model reddit_community_system_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Platform name displayed to users. Must be unique across the platform.
-  name String
+  /// Unique configuration key identifier used for system lookups and API
+  /// access. Must be unique across the platform.
+  config_key String
   
-  /// Platform description or tagline explaining the platform's purpose.
-  description String?
+  /// Configuration value stored as string for flexibility across different
+  /// data types. Can contain JSON, numbers, or text values.
+  config_value String
   
-  /// Primary domain for the platform. Used for URLs and branding. Must be
-  /// unique.
-  domain String
+  /// Data type classification for the configuration value (string, number,
+  /// boolean, json) to enable proper parsing and validation.
+  config_type String
   
-  /// Platform operational status: active, maintenance, closed, or suspended.
-  business_status String
+  /// Human-readable description explaining the purpose, impact, and usage of
+  /// this configuration parameter for documentation.
+  description String
   
-  /// Whether the platform is active and accessible to users.
-  is_active Boolean
+  /// Configuration category for grouping related settings (features,
+  /// performance, security, integrations).
+  category String
   
-  /// Timestamp when the platform was created.
+  /// Whether this configuration value can be modified through the admin
+  /// interface or requires system-level access.
+  is_editable Boolean
+  
+  /// JSON string containing validation rules, constraints, and acceptable
+  /// value ranges for configuration values.
+  validation_rules String?
+  
+  /// Timestamp when this configuration parameter was first created and added
+  /// to the system.
   created_at DateTime
   
-  /// Timestamp when the platform was last updated.
+  /// Timestamp when this configuration parameter was last modified or updated.
   updated_at DateTime
   
-  /// Timestamp when the platform was soft deleted for permanent removal
-  /// capability.
-  deleted_at DateTime?
+  /// UUID reference to the user or system process that last updated this
+  /// configuration parameter.
+  updated_by String?
   
   //----
   // RELATIONS
   //----
-  reddit_like_community_communities reddit_like_community_communities[]
-  
-  @@unique([name])
-  @@unique([domain])
-  @@index([business_status])
-  @@index([is_active])
-  @@index([created_at])
+  @@unique([config_key])
+  @@index([category])
+  @@index([is_editable])
 }
 
-/// Community categorization system for organizing communities into logical
-/// hierarchical groupings. Categories help users discover communities of
-/// interest and provide structure for community discovery while maintaining
-/// platform-wide organization.
+/// Platform-wide operational settings that govern user experience, community
+/// behavior, and system-wide features. Contains settings that affect how the
+/// platform operates across all communities and user interactions.
+///
+/// This table stores operational parameters such as user limits, posting
+/// rules, feature enablement, and platform-wide behaviors that can be
+/// configured by administrators to adjust the overall user experience and
+/// platform policies.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_categories {
+model reddit_community_platform_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Category name for organizing communities. Must be unique platform-wide.
-  name String
+  /// Unique setting key identifier for platform-wide configuration options
+  /// affecting user experience and community behavior.
+  setting_key String
   
-  /// Category description explaining its purpose and the types of communities
-  /// it contains.
-  description String?
+  /// Platform setting value that controls operational behavior, user limits,
+  /// or feature configurations across the entire platform.
+  setting_value String
   
-  /// Display order for categories when showing multiple categories to users.
-  /// Higher numbers appear first.
-  display_order Int
+  /// Data type of the platform setting (numeric, boolean, text, json) for
+  /// proper validation and processing.
+  setting_type String
   
-  /// Category operational status: active, archived, or deprecated.
-  business_status String
+  /// Description explaining the platform setting's purpose, expected impact,
+  /// and usage guidelines for administrators.
+  description String
   
-  /// Whether the category is active, visible, and discoverable by users.
-  is_active Boolean
+  /// Application scope of the setting (user, community, platform) indicating
+  /// what level of the system it affects.
+  scope String
   
-  /// Timestamp when the category was created.
+  /// Estimated number of users affected by this platform setting change, used
+  /// for impact assessment.
+  affects_user_count Int?
+  
+  /// Whether this setting controls feature enablement/disablement that can be
+  /// toggled on/off during runtime.
+  is_feature_toggle Boolean
+  
+  /// Whether changing this setting requires platform restart or system-level
+  /// configuration updates.
+  requires_restart Boolean
+  
+  /// When this platform setting was first created and added to the system
+  /// configuration.
   created_at DateTime
   
-  /// Timestamp when the category was last updated.
+  /// When this platform setting was last modified or updated by system
+  /// administrators.
   updated_at DateTime
-  
-  /// Timestamp when the category was soft deleted for audit trail purposes.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  reddit_like_community_communities reddit_like_community_communities[]
-  
-  @@unique([name])
-  @@index([display_order])
-  @@index([business_status])
-  @@index([is_active])
-  @@index([created_at])
+  @@unique([setting_key])
+  @@index([scope])
+  @@index([is_feature_toggle])
+  @@index([requires_restart])
 }
 
-/// Individual community entities where users can share content, engage in
-/// discussions, and build communities around shared interests. Communities
-/// are the foundation of the platform's content organization and support
-/// various content types, membership models, and governance structures.
+/// System maintenance schedules and downtime planning that coordinate
+/// platform updates, system maintenance, and scheduled outages. Manages
+/// operational maintenance tasks that require system downtime or impact user
+/// access.
+///
+/// This table tracks planned maintenance windows, system updates, emergency
+/// responses, and operational activities that require coordination across
+/// the platform infrastructure while minimizing impact on community
+/// activities and user engagement.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_communities {
+model reddit_community_maintenance_schedules {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Platform that owns this community. References
-  /// reddit_like_community_platforms.id for multi-tenant support.
-  reddit_like_community_platform_id String
+  /// Descriptive title for the maintenance activity that clearly identifies
+  /// the purpose and scope of planned work.
+  maintenance_title String
   
-  /// Category that this community belongs to for organization and discovery.
-  /// References reddit_like_community_categories.id.
-  reddit_like_community_category_id String?
+  /// Type of maintenance activity (scheduled_update, emergency_fix,
+  /// routine_maintenance, security_patch) for categorization and planning.
+  maintenance_type String
   
-  /// Community name displayed to users and used for internal identification.
-  /// Must be unique within its platform.
-  name String
+  /// Planned start time for the maintenance activity, coordinated across time
+  /// zones to minimize user impact.
+  scheduled_start_time DateTime
   
-  /// URL-friendly version of the community name used in URLs and routing. Must
-  /// be unique within the platform.
-  slug String
+  /// Planned end time for the maintenance activity with buffer time for
+  /// completion and testing.
+  scheduled_end_time DateTime
   
-  /// Community description explaining its purpose, topics, and culture.
-  /// Maximum 1000 characters.
-  description String?
+  /// Actual timestamp when maintenance work began, recorded for audit and
+  /// duration tracking.
+  actual_start_time DateTime?
   
-  /// Community lifecycle status: draft, active, restricted, archived, or
-  /// suspended.
-  business_status String
+  /// Actual timestamp when maintenance work was completed and systems returned
+  /// to full operation.
+  actual_end_time DateTime?
   
-  /// Whether the community is currently active and accessible to users.
-  is_active Boolean
+  /// Current status of the maintenance activity (scheduled, in_progress,
+  /// completed, cancelled, postponed) for tracking and display.
+  status String
   
-  /// Whether the community is publicly discoverable and joinable without
-  /// approval.
-  is_public Boolean
+  /// Detailed description of maintenance work including scope, expected
+  /// impact, affected systems, and user communication details.
+  description String
   
-  /// Current number of approved members in the community. Updated via
-  /// membership events.
-  member_count Int
+  /// JSON array listing platform systems and services that will be affected or
+  /// unavailable during maintenance window.
+  affected_systems String?
   
-  /// Timestamp when the community was created by its founder.
+  /// Maintenance priority level (low, medium, high, critical) determining
+  /// scheduling precedence and resource allocation.
+  priority String
+  
+  /// Estimated maintenance duration in minutes used for scheduling
+  /// coordination and user notification planning.
+  estimated_duration_minutes Int
+  
+  /// When this maintenance schedule was created and added to the operational
+  /// planning system.
   created_at DateTime
   
-  /// Timestamp when the community's metadata or status was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the community was soft deleted for policy compliance and
-  /// audit trails.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  platform reddit_like_community_platforms @relation(fields: [reddit_like_community_platform_id], references: [id], onDelete: Cascade)
-  category reddit_like_community_categories? @relation(fields: [reddit_like_community_category_id], references: [id], onDelete: Cascade)
-  
-  reddit_like_community_community_settings reddit_like_community_community_settings?
-  reddit_like_community_community_rules reddit_like_community_community_rules[]
-  reddit_like_community_posts reddit_like_community_posts[]
-  reddit_like_community_vote_behavior_analysis reddit_like_community_vote_behavior_analysis[]
-  reddit_like_community_memberships reddit_like_community_memberships[]
-  reddit_like_community_moderator_assignments reddit_like_community_moderator_assignments[]
-  reddit_like_community_reports reddit_like_community_reports[]
-  reddit_like_community_moderation_queues reddit_like_community_moderation_queues[]
-  reddit_like_community_karma_events reddit_like_community_karma_events[]
-  reddit_like_community_user_karma_totals reddit_like_community_user_karma_totals[]
-  reddit_like_community_karma_milestones reddit_like_community_karma_milestones[]
-  reddit_like_community_karma_leaderboards reddit_like_community_karma_leaderboards[]
-  
-  // spellchecker: ignore-next-line
-  @@index([reddit_like_community_category_id], map: "reddit_like_community_communities_reddit_like_communit_1bd9513e")
-  
-  // spellchecker: ignore-next-line
-  @@unique([slug, reddit_like_community_platform_id], map: "reddit_like_community_communities_slug_reddit_like_com_3b0aa81b")
-  @@index([business_status])
-  @@index([is_active])
-  @@index([is_public])
-  @@index([member_count])
-  @@index([created_at])
-  // spellchecker: ignore-next-line
-  @@index([reddit_like_community_platform_id, created_at], map: "reddit_like_community_communities_reddit_like_communit_34f5cf4d")
-}
-
-/// Community-specific configuration and behavior settings that customize the
-/// community experience. This subsidiary table stores individual community
-/// preferences including posting rules, visual themes, moderation settings,
-/// and content restrictions that allow each community to maintain its unique
-/// culture while operating within platform guidelines.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_community_settings {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Community that these settings belong to. References
-  /// reddit_like_community_communities.id.
-  reddit_like_community_community_id String
-  
-  /// Visual theme name for community customization and branding. Null for
-  /// default platform theme.
-  theme_name String?
-  
-  /// Whether users are allowed to crosspost content from this community to
-  /// other communities.
-  allow_crossposts Boolean
-  
-  /// Whether image uploads are allowed in posts for this community.
-  allow_images Boolean
-  
-  /// Whether video uploads are allowed in posts for this community.
-  allow_videos Boolean
-  
-  /// Minimum karma score required for users to post in this community. Null
-  /// for no restriction.
-  minimum_karma_required Int?
-  
-  /// Whether poll-style posts are enabled in this community.
-  allow_polls Boolean
-  
-  /// Whether community events and AMA sessions are enabled for this community.
-  allow_events Boolean
-  
-  /// Whether Not Safe For Work content is permitted in this community.
-  nsfw_allowed Boolean
-  
-  /// Whether moderators must provide detailed reasons when removing content
-  /// from this community.
-  moderator_removal_reasons_required Boolean
-  
-  /// When this community's settings configuration was created.
-  created_at DateTime
-  
-  /// When these settings were last modified by a moderator.
+  /// When this maintenance schedule was last updated with status changes or
+  /// modified timing.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
-  
+  @@index([maintenance_type])
+  @@index([status])
+  @@index([priority])
   // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_community_id], map: "reddit_like_community_community_settings_reddit_like_c_ef4d1890")
-  
-  @@index([allow_crossposts])
-  @@index([allow_images])
-  // spellchecker: ignore-next-line
-  @@index([minimum_karma_required], map: "reddit_like_community_community_settings_minimum_karma_8c5d1dfe")
-}
-
-/// Community rules and guidelines that define acceptable behavior, content
-/// standards, and enforcement policies. Rules provide clear community
-/// governance by establishing expectations for member behavior and
-/// consequences for violations while supporting platform-wide safety
-/// standards.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_community_rules {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Community that these rules apply to. References
-  /// reddit_like_community_communities.id.
-  reddit_like_community_community_id String
-  
-  /// Short, clear title for the community rule displayed to members. Maximum
-  /// 200 characters.
-  title String
-  
-  /// Detailed description explaining the rule, its rationale, and specific
-  /// behaviors it governs.
-  rule_description String
-  
-  /// Enforcement action taken when rule is violated: warn, remove, ban, or
-  /// escalate.
-  violation_action String
-  
-  /// Rule severity classification: low, moderate, high, severe affecting
-  /// enforcement priority.
-  severity_level String
-  
-  /// Display order for rules when shown to community members. Lower numbers
-  /// appear first.
-  display_order Int
-  
-  /// Whether this rule is currently enforced and visible to community members.
-  is_active Boolean
-  
-  /// Timestamp when the rule was created by a community moderator.
-  created_at DateTime
-  
-  /// Timestamp when the rule description or severity was last modified.
-  updated_at DateTime
-  
-  /// Timestamp when the rule was deprecated or removed by community leadership.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([reddit_like_community_community_id, display_order], map: "reddit_like_community_community_rules_reddit_like_comm_0fb9396c")
-  @@index([is_active])
-  @@index([severity_level])
-  @@index([violation_action])
+  @@index([scheduled_start_time, scheduled_end_time], map: "reddit_community_maintenance_schedules_scheduled_start_01232c87")
 }

@@ -1,258 +1,176 @@
-/// Core customer entity representing end-user shoppers. Stores essential
-/// customer account information including authentication credentials, email
-/// verification status, and account lifecycle management. Customers can
-/// browse products, manage shopping carts, place orders, and leave product
-/// reviews.
+/// Registered customer accounts for the e-commerce platform. Customers are
+/// authenticated users who can browse products, manage shopping carts, place
+/// orders, and interact with the marketplace through reviews and wishlists.
+///
+/// Each customer account is created through self-registration with email
+/// verification. The account stores authentication credentials (hashed
+/// password), profile information, and account status tracking. Customer
+/// accounts are linked to multiple addresses, payment methods, orders, and
+/// sessions for multi-device support.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// account recovery. Account status transitions from pending_verification →
+/// active → suspended/deactivated as needed.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_customers {
+model ecommerce_mall_customers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Customer's unique email address used for account login and communication.
-  /// RFC 5322 format validated. Serves as the primary authentication
-  /// identifier.
+  /// Customer's email address used for authentication and communication. Must
+  /// be unique across all customers. Email verification required before
+  /// account activation.
   email String
   
-  /// Securely hashed customer password using bcrypt with minimum 10 salt
-  /// rounds. Never stored in plain text. Used for login authentication.
+  /// Hashed password using bcrypt (work factor 12). Never stores plain text
+  /// passwords. Used for login authentication and password reset
+  /// functionality.
   password_hash String
   
-  /// Customer's first name (1-100 characters). Used for personalization in
-  /// communications and order confirmations.
+  /// Customer's first name. Minimum 2 characters, maximum 50 characters. Used
+  /// for personalization and order communication.
   first_name String
   
-  /// Customer's last name (1-100 characters). Used for personalization in
-  /// communications and order confirmations.
+  /// Customer's last name. Minimum 2 characters, maximum 50 characters. Used
+  /// for personalization and order communication.
   last_name String
   
-  /// Customer's phone number in international or local format. Optional
-  /// contact method for delivery and customer service purposes.
+  /// Customer's phone number for order coordination and customer support.
+  /// Optional field, customer can add/update during account setup or checkout.
   phone_number String?
   
-  /// Flag indicating whether the customer's email address has been verified.
-  /// Required to be true before customer can place orders. Email verification
-  /// prevents unauthorized account creation.
+  /// Whether the customer's email address has been verified. Customers must
+  /// verify email before placing orders. Set to true only after clicking
+  /// verification link.
   email_verified Boolean
   
-  /// Current customer account status: 'active', 'email_unverified',
-  /// 'suspended', or 'deactivated'. Determines account access level and order
-  /// placement eligibility.
+  /// Current account status. Valid values: pending_verification (awaiting
+  /// email verification), active (verified and able to purchase), suspended
+  /// (temporarily disabled by admin), deactivated (voluntarily paused by
+  /// customer). Defaults to pending_verification.
   account_status String
   
-  /// Count of consecutive failed login attempts. Used for security lockout
-  /// mechanism. Resets to 0 on successful login. Triggers 15-minute lockout
-  /// after 5 failures.
-  failed_login_attempts Int
-  
-  /// Timestamp indicating when account lockout expires after excessive failed
-  /// login attempts. Null if account is not currently locked. Used to enforce
-  /// 15-minute security lockout period.
-  locked_until DateTime?
-  
-  /// Account creation timestamp in UTC timezone. Records when the customer
-  /// registered on the platform.
+  /// Timestamp of account creation. Set when customer completes initial
+  /// registration form.
   created_at DateTime
   
-  /// Timestamp of last account modification (profile update, password change,
-  /// etc.). Updated whenever customer information is modified.
+  /// Timestamp of last account modification. Updated whenever customer
+  /// profile, password, or settings are changed.
   updated_at DateTime
   
-  /// Soft deletion timestamp. When set, indicates customer account has been
-  /// deactivated. Null for active accounts. Enables account recovery and audit
-  /// trail maintenance.
+  /// Soft delete timestamp. Set when customer requests account deletion. NULL
+  /// means account is active. Allows account recovery and maintains audit
+  /// trail.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_customer_sessions shopping_mall_customer_sessions[]
-  shopping_mall_customer_addresses shopping_mall_customer_addresses[]
-  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
-  shopping_mall_shopping_carts shopping_mall_shopping_carts?
-  shopping_mall_wishlists shopping_mall_wishlists?
-  shopping_mall_cart_recovery_emails shopping_mall_cart_recovery_emails[]
-  shopping_mall_orders shopping_mall_orders[]
-  shopping_mall_customer_order_preferences shopping_mall_customer_order_preferences?
-  shopping_mall_payments shopping_mall_payments[]
-  shopping_mall_payment_methods shopping_mall_payment_methods[]
-  shopping_mall_delivery_notifications shopping_mall_delivery_notifications[]
-  shopping_mall_product_reviews shopping_mall_product_reviews[]
-  shopping_mall_review_moderation_queue shopping_mall_review_moderation_queue[]
-  shopping_mall_review_helpful_votes shopping_mall_review_helpful_votes[]
-  shopping_mall_review_flags shopping_mall_review_flags[]
-  shopping_mall_return_requests shopping_mall_return_requests[]
-  shopping_mall_return_shipments shopping_mall_return_shipments[]
-  shopping_mall_refund_processing shopping_mall_refund_processing[]
-  shopping_mall_disputes shopping_mall_disputes[]
+  ecommerce_mall_customer_sessions ecommerce_mall_customer_sessions[]
+  ecommerce_mall_customer_addresses ecommerce_mall_customer_addresses[]
+  ecommerce_mall_payment_methods ecommerce_mall_payment_methods[]
+  ecommerce_mall_shopping_carts ecommerce_mall_shopping_carts?
+  ecommerce_mall_wishlists ecommerce_mall_wishlists[]
+  ecommerce_mall_orders ecommerce_mall_orders[]
+  ecommerce_mall_payment_transactions ecommerce_mall_payment_transactions[]
+  ecommerce_mall_refund_requests ecommerce_mall_refund_requests[]
+  ecommerce_mall_product_reviews ecommerce_mall_product_reviews[]
+  ecommerce_mall_support_tickets ecommerce_mall_support_tickets[]
+  ecommerce_mall_support_ticket_messages ecommerce_mall_support_ticket_messages[]
+  ecommerce_mall_event_log ecommerce_mall_event_log[]
+  ecommerce_mall_customer_segments ecommerce_mall_customer_segments[]
+  ecommerce_mall_payment_audit_log ecommerce_mall_payment_audit_log[]
   
   @@unique([email])
   @@index([account_status])
   @@index([created_at])
-  @@index([deleted_at])
 }
 
-/// Authentication sessions for customers. One session per active
-/// device/browser. Records connection context (IP, URL, referrer) for
-/// security tracking and fraud detection. Session expires after 30 days of
-/// inactivity. Enables stateless authentication via JWT tokens while
-/// maintaining optional server-side session records.
+/// Authentication sessions for customer users. Each session represents a
+/// login instance on a specific device/browser. Sessions store connection
+/// context (IP, URL, referrer) and track session lifecycle from creation to
+/// expiration.
+///
+/// Customers can maintain multiple concurrent sessions across different
+/// devices. Each session is identified by a unique ID and tracks the
+/// authenticated customer. Sessions expire after extended inactivity,
+/// forcing re-authentication. Session creation automatically occurs on
+/// successful login. Session expiration can be triggered by logout, browser
+/// close, or inactivity timeout.
+///
+/// Session data is used for security monitoring (detect unusual access
+/// patterns), audit logging (track user actions per session), and device
+/// management (customers can view and revoke sessions from specific
+/// devices).
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_customer_sessions {
+model ecommerce_mall_customer_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Foreign key reference to customer's {@link shopping_mall_customers.id}.
-  /// Links session to the authenticated customer.
-  shopping_mall_customer_id String
+  /// Foreign key referencing the authenticated customer. Each session belongs
+  /// to exactly one customer. Relationship is many-to-one (customer can have
+  /// multiple sessions). {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
   
-  /// IP address from which the session was initiated. Used for security
-  /// tracking, anomaly detection, and fraud prevention.
+  /// IP address of the device/network creating this session. Used for security
+  /// monitoring (detect suspicious geographic changes, multiple simultaneous
+  /// logins from different IPs).
   ip String
   
-  /// Connection URL (HTTP referrer) indicating the page or service from which
-  /// authentication occurred. Stored for security audit and access pattern
-  /// analysis.
+  /// URL/href where the session was created. Captures the entry point to the
+  /// application (homepage, product page, checkout, etc.).
   href String
   
-  /// HTTP referrer header value indicating the source page that initiated the
-  /// session. Used for tracking where customers came from during
-  /// authentication.
+  /// HTTP referrer URL indicating how customer arrived at the platform
+  /// (direct, search engine, social media, email link, etc.). Used for
+  /// marketing attribution and traffic analysis.
   referrer String
   
-  /// Session creation timestamp in UTC timezone. Records when authentication
-  /// session was established.
+  /// Session creation timestamp (when customer logged in). UTC timezone. Used
+  /// for session age tracking and SLA monitoring.
   created_at DateTime
   
-  /// Session expiration timestamp indicating when the session ended (either
-  /// due to timeout, logout, or explicit termination). Null for active
-  /// sessions. Sessions default to 30-day expiration.
+  /// Session expiration timestamp (when customer logged out or session was
+  /// terminated). NULL means session is still active. Set to current timestamp
+  /// when session expires due to inactivity or explicit logout.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_customer_sessions_ecommerce_mall_custom_bdec9f40")
 }
 
-/// Customer delivery and billing addresses. Customers can save multiple
-/// addresses (maximum 10) for convenient checkout. Each address includes
-/// recipient name, complete address details, and delivery/billing
-/// designation. Addresses are profile-related data essential for order
-/// fulfillment and customer convenience.
+/// Registered seller/merchant accounts on the marketplace. Sellers are
+/// independent business entities that create stores, manage product
+/// catalogs, process orders, and track sales performance.
+///
+/// Each seller account is created through business registration requiring
+/// business information (name, registration number), contact details, and
+/// banking information for commission settlements. Sellers must complete
+/// verification (typically 5 business days) before they can list products.
+///
+/// Seller accounts track account status (pending_verification, active,
+/// suspended, deactivated, rejected) and support soft deletion. Sellers have
+/// their own authentication sessions, separate store profiles, and linked
+/// payment settlement records. Seller ratings are calculated from customer
+/// feedback across all their orders.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_customer_addresses {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Foreign key reference to customer's {@link shopping_mall_customers.id}.
-  /// Associates address with the customer account.
-  shopping_mall_customer_id String
-  
-  /// User-friendly address label (e.g., 'Home', 'Work', 'Apartment'). Max 50
-  /// characters. Helps customer identify which address to use during checkout.
-  label String
-  
-  /// Full name of the person to receive the delivery. 2-100 characters. Used
-  /// on shipping labels and delivery confirmation.
-  recipient_name String
-  
-  /// Primary street address line. 5-200 characters. Includes street number,
-  /// name, and building/unit details as needed.
-  street_address_line_1 String
-  
-  /// Secondary address line for apartment, suite, or additional location
-  /// details. Optional. Max 200 characters.
-  street_address_line_2 String?
-  
-  /// City or municipality name. 2-100 characters. Validated against known
-  /// cities in the selected country.
-  city String
-  
-  /// State, province, or regional subdivision code/name. 2-50 characters.
-  /// Format validated per country requirements.
-  state_province String
-  
-  /// Postal/ZIP code. Format varies by country (5-20 characters). Validated
-  /// against country's postal system requirements for accurate delivery.
-  postal_code String
-  
-  /// ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB', 'JP'). Determines tax
-  /// jurisdiction, shipping options, and address format validation rules.
-  country_code String
-  
-  /// Contact phone number for delivery. Validated international or local
-  /// format. Used by carrier for delivery coordination and customer contact.
-  phone_number String
-  
-  /// Flag indicating this is the customer's default shipping address. Used to
-  /// pre-populate checkout shipping field. Only one address per customer can
-  /// have this set to true.
-  is_default_shipping Boolean
-  
-  /// Flag indicating this is the customer's default billing address. Used to
-  /// pre-populate checkout billing field. Only one address per customer can
-  /// have this set to true.
-  is_default_billing Boolean
-  
-  /// Address type classification: 'shipping', 'billing', or 'both'. Determines
-  /// whether address is used for delivery, payment, or both purposes.
-  address_type String
-  
-  /// Flag indicating address has been validated against address verification
-  /// service. Verified addresses are more reliable for delivery success.
-  is_verified Boolean
-  
-  /// Address creation timestamp in UTC timezone. Records when customer saved
-  /// this address.
-  created_at DateTime
-  
-  /// Timestamp of last address modification. Updated when customer edits
-  /// address details or changes default designation.
-  updated_at DateTime
-  
-  /// Soft deletion timestamp. When set, indicates address has been deleted by
-  /// customer. Null for active addresses. Preserves historical order
-  /// references.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_id, is_default_shipping], map: "shopping_mall_customer_addresses_shopping_mall_custome_de24a1d1")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_id, is_default_billing], map: "shopping_mall_customer_addresses_shopping_mall_custome_9f89273b")
-}
-
-/// Core seller entity representing merchants/vendors operating on the
-/// platform. Stores seller business identity, authentication credentials,
-/// verification status, and account lifecycle. Sellers list products, manage
-/// inventory, fulfill orders, and receive payments. Must complete
-/// verification before selling.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sellers {
+model ecommerce_mall_sellers {
   //----
   // COLUMNS
   //----
@@ -260,601 +178,582 @@ model shopping_mall_sellers {
   id String @id
   
   /// Seller's business email address used for authentication and official
-  /// communications. RFC 5322 format validated. Unique across all seller
-  /// accounts.
+  /// communication. Must be unique across all sellers. Email verification
+  /// required during registration process.
   email String
   
-  /// Securely hashed seller password using bcrypt with minimum 10 salt rounds.
-  /// Never stored in plain text. Used for seller dashboard login
-  /// authentication.
+  /// Hashed password using bcrypt (work factor 12). Used for seller dashboard
+  /// login. Never stored in plain text.
   password_hash String
   
-  /// Seller's legal business name (2-200 characters). Used for business
-  /// identification and displayed to customers on seller profile and product
-  /// listings.
+  /// Official business name for the seller. Used for store branding and legal
+  /// identification. Displayed prominently on seller's storefront.
   business_name String
   
-  /// Official business registration/license number from relevant government
-  /// authority. Used for seller verification and compliance purposes. Format
-  /// varies by jurisdiction.
+  /// Business registration or tax identification number from business
+  /// registration authority. Verified during seller application. Used for
+  /// legal compliance and commission calculations.
   business_registration_number String
   
-  /// Tax ID, VAT number, or equivalent tax identifier. Required for commission
-  /// calculation and regulatory compliance. Format varies by country.
-  tax_identification_number String
+  /// Official business email address (may differ from login email). Used for
+  /// formal communications, notifications, and official documents.
+  business_email String
   
-  /// Name of primary contact person for the seller business. Used for
-  /// verification and communication purposes.
-  primary_contact_name String
+  /// Business phone number for platform communication and order coordination.
+  /// Required for contacting seller regarding account, operations, or
+  /// disputes.
+  business_phone String
   
-  /// Primary contact phone number in valid international or local format. Used
-  /// for seller verification and urgent business communications.
-  primary_contact_phone String
-  
-  /// Complete business address matching registration documents. 5-200
-  /// characters. Used for seller verification and official correspondence.
+  /// Physical business address (street, city, postal code, country). Used for
+  /// verification, compliance, and legal identification.
   business_address String
   
-  /// Official correspondence address for legal communications. May differ from
-  /// business address. Used for formal notices and regulatory correspondence.
-  correspondence_address String
+  /// Name on bank account for commission payments. Must match bank records
+  /// exactly for settlement transfers to succeed.
+  bank_account_holder_name String
   
-  /// Description of seller's business and products (50-500 characters).
-  /// Displayed on seller profile to help customers understand the business.
-  business_description String
+  /// Name of the bank where seller's account is held. Used for identifying
+  /// bank for international transfers and verification.
+  bank_name String
   
-  /// Store/brand name for display (2-100 characters). Shown to customers on
-  /// product listings and seller profile. May differ from legal business name.
-  store_name String
+  /// Routing number for bank transfers (US format) or equivalent for other
+  /// countries. Required for direct deposit settlement payments.
+  bank_routing_number String?
   
-  /// Seller verification lifecycle state: 'pending_email_verification',
-  /// 'pending_approval', 'active', 'verification_rejected',
-  /// 'permanently_banned'. Controls seller dashboard access and product
-  /// listing ability.
-  verification_status String
+  /// Bank account number for receiving commission payments. Encrypted before
+  /// storage. Used for automated settlement transfers.
+  bank_account_number String
   
-  /// Current account status: 'active', 'suspended', 'deactivated',
-  /// 'terminated'. Determines if seller can list products and fulfill orders.
+  /// Tax identification number for the seller's jurisdiction. Used for
+  /// compliance, tax reporting, and 1099 form generation.
+  tax_id String
+  
+  /// Current seller account status. Valid values: pending_verification
+  /// (awaiting business verification), active (verified and can list
+  /// products), suspended (temporarily disabled by admin, no new listings or
+  /// orders), deactivated (voluntarily paused by seller), rejected
+  /// (application rejected). Defaults to pending_verification.
   account_status String
   
-  /// Count of consecutive failed login attempts. Resets to 0 on successful
-  /// login. Triggers 15-minute lockout after 5 failures for security.
-  failed_login_attempts Int
+  /// Whether the seller's email has been verified. Required before seller can
+  /// list products. Set to true after email verification link is clicked.
+  email_verified Boolean
   
-  /// Timestamp when login lockout expires after excessive failures. Null if
-  /// account not locked. Used to enforce 15-minute security lockout.
-  locked_until DateTime?
-  
-  /// Account creation timestamp in UTC timezone. Records when seller applied
-  /// to the platform.
+  /// Timestamp when seller application was submitted. Marks the start of
+  /// verification process.
   created_at DateTime
   
-  /// Timestamp of last account modification (profile update, status change,
-  /// verification, etc.).
+  /// Timestamp of last account modification (status changes, banking info
+  /// updates, profile changes).
   updated_at DateTime
   
-  /// Soft deletion timestamp. When set, indicates seller account has been
-  /// deactivated or terminated. Null for active accounts. Preserves seller
-  /// history and order records.
+  /// Soft delete timestamp. Set when seller requests account closure. NULL
+  /// means account is active. Allows account recovery and maintains
+  /// order/transaction history.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_seller_sessions shopping_mall_seller_sessions[]
-  shopping_mall_seller_profiles shopping_mall_seller_profiles?
-  shopping_mall_seller_verification_documents shopping_mall_seller_verification_documents[]
-  shopping_mall_products shopping_mall_products[]
-  shopping_mall_inventory_skus shopping_mall_inventory_skus[]
-  shopping_mall_inventory_movements shopping_mall_inventory_movements[]
-  shopping_mall_stock_levels_by_location shopping_mall_stock_levels_by_location[]
-  shopping_mall_inventory_alerts shopping_mall_inventory_alerts[]
-  shopping_mall_order_line_items shopping_mall_order_line_items[]
-  shopping_mall_seller_payouts shopping_mall_seller_payouts[]
-  shopping_mall_seller_account_balances shopping_mall_seller_account_balances?
-  shopping_mall_shipments shopping_mall_shipments[]
-  shopping_mall_product_reviews shopping_mall_product_reviews[]
-  shopping_mall_review_moderation_queue shopping_mall_review_moderation_queue[]
-  shopping_mall_seller_ratings_summary shopping_mall_seller_ratings_summary?
-  shopping_mall_return_authorizations shopping_mall_return_authorizations[]
-  shopping_mall_return_inspections shopping_mall_return_inspections[]
-  shopping_mall_return_decisions shopping_mall_return_decisions[]
-  shopping_mall_refund_processing shopping_mall_refund_processing[]
-  shopping_mall_restocking_inventory shopping_mall_restocking_inventory[]
-  shopping_mall_disputes shopping_mall_disputes[]
+  ecommerce_mall_seller_sessions ecommerce_mall_seller_sessions[]
+  ecommerce_mall_seller_profiles ecommerce_mall_seller_profiles?
+  ecommerce_mall_products ecommerce_mall_products[]
+  ecommerce_mall_stock_levels ecommerce_mall_stock_levels[]
+  ecommerce_mall_stock_reservations ecommerce_mall_stock_reservations[]
+  ecommerce_mall_stock_adjustments ecommerce_mall_stock_adjustments[]
+  ecommerce_mall_stock_history ecommerce_mall_stock_history[]
+  ecommerce_mall_low_stock_alerts ecommerce_mall_low_stock_alerts[]
+  ecommerce_mall_cart_items ecommerce_mall_cart_items[]
+  ecommerce_mall_wishlist_items ecommerce_mall_wishlist_items[]
+  ecommerce_mall_order_items ecommerce_mall_order_items[]
+  ecommerce_mall_order_fulfillments ecommerce_mall_order_fulfillments[]
+  ecommerce_mall_seller_settlements ecommerce_mall_seller_settlements[]
+  ecommerce_mall_review_responses ecommerce_mall_review_responses[]
+  ecommerce_mall_seller_ratings ecommerce_mall_seller_ratings?
+  ecommerce_mall_seller_rating_metrics ecommerce_mall_seller_rating_metrics[]
+  ecommerce_mall_event_log ecommerce_mall_event_log[]
+  ecommerce_mall_product_metrics ecommerce_mall_product_metrics[]
+  ecommerce_mall_seller_metrics ecommerce_mall_seller_metrics[]
   
   @@unique([email])
   @@unique([business_registration_number])
-  @@index([verification_status])
   @@index([account_status])
   @@index([created_at])
-  @@index([deleted_at])
 }
 
-/// Authentication sessions for sellers. One session per active
-/// device/browser. Records connection context (IP, URL, referrer) for
-/// security monitoring. Sessions expire after 30 days of inactivity. Enables
-/// secure seller dashboard access while maintaining audit trail of login
-/// activity.
+/// Authentication sessions for seller users. Each session represents a login
+/// instance from a seller on a specific device/browser. Sessions store
+/// connection context (IP address, URL, referrer) and track session state.
+///
+/// Sellers can maintain multiple concurrent sessions across different
+/// devices and browsers. Each session tracks the authenticated seller and
+/// records connection metadata for security monitoring and audit purposes.
+///
+/// Session data enables: security monitoring (detect unusual access patterns
+/// from unexpected locations), device management (sellers can view active
+/// sessions and revoke access from specific devices), and audit logging
+/// (track seller actions per session for compliance).
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_seller_sessions {
+model ecommerce_mall_seller_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Foreign key reference to seller's {@link shopping_mall_sellers.id}. Links
-  /// session to the authenticated seller.
-  shopping_mall_seller_id String
+  /// Foreign key referencing the authenticated seller. Each session belongs to
+  /// exactly one seller. Relationship is many-to-one (seller can have multiple
+  /// concurrent sessions). {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
   
-  /// IP address from which the session was initiated. Used for seller security
-  /// tracking and suspicious activity detection.
+  /// IP address of the device/network initiating this session. Used for
+  /// security monitoring (detect logins from unusual locations or multiple
+  /// concurrent locations).
   ip String
   
-  /// Connection URL indicating the seller dashboard or service endpoint where
-  /// authentication occurred. Stored for security audit.
+  /// URL/href where the session was created. Captures the entry point
+  /// (dashboard, product management, orders, analytics, etc.).
   href String
   
-  /// HTTP referrer header value indicating source page for the session. Used
-  /// for tracking seller access patterns.
+  /// HTTP referrer URL showing how seller arrived at the platform (direct
+  /// access, email link, bookmark, etc.).
   referrer String
   
-  /// Session creation timestamp in UTC timezone. Records when seller
-  /// authenticated and session was established.
+  /// Session creation timestamp (when seller logged in). UTC timezone. Used
+  /// for session age tracking and SLA monitoring.
   created_at DateTime
   
-  /// Session expiration timestamp. When set, indicates session has ended
-  /// (logout or timeout). Null for active sessions. Default 30-day expiration.
+  /// Session expiration timestamp (when seller logged out or session was
+  /// terminated). NULL means session is still active. Set to current timestamp
+  /// when session expires.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_seller_sessions_ecommerce_mall_seller_i_5996fc52")
 }
 
-/// Extended seller profile information including store branding, policies,
-/// and business metadata. Stores seller customization options like logo,
-/// banner images, return policy, shipping policy, and business hours.
-/// Enables sellers to personalize their storefront and communicate their
-/// policies to customers.
+/// System administrator accounts with elevated permissions for platform
+/// oversight and management. Admins have full access to user management,
+/// order management, product oversight, dispute resolution, analytics, and
+/// system configuration.
+///
+/// Unlike customer and seller accounts which are created through public
+/// registration, admin accounts are created internally by system owners or
+/// existing admins. Admin accounts require multi-factor authentication (MFA)
+/// for enhanced security due to elevated privileges.
+///
+/// Admin authentication uses separate admin-only sessions. Admins cannot
+/// simultaneously operate as customers or sellers (separate account types).
+/// All admin actions are fully logged in audit trails for compliance and
+/// security purposes.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_seller_profiles {
+model ecommerce_mall_admins {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Foreign key reference to seller's {@link shopping_mall_sellers.id}.
-  /// Associates profile with the seller account. 1:1 relationship.
-  shopping_mall_seller_id String
-  
-  /// URL-friendly identifier for seller's store (alphanumeric with hyphens,
-  /// max 50 characters). Used to create seller storefront URL:
-  /// store.com/seller/{slug}. Must be unique.
-  store_url_slug String
-  
-  /// URL to seller's store logo image for display on storefront. Image should
-  /// be 2MB max, JPEG or PNG format with minimum 200x200 pixels resolution.
-  store_logo_url String?
-  
-  /// URL to seller's store banner image displayed at top of storefront. Image
-  /// should be 5MB max, JPEG or PNG format, recommended dimensions 1200x300
-  /// pixels.
-  store_banner_url String?
-  
-  /// Seller's store description for public display (max 500 characters). Shown
-  /// on seller profile to help customers understand the business.
-  store_description String?
-  
-  /// Seller's return and refund policy text (max 2000 characters). Displayed
-  /// to customers during checkout and on seller profile. Communicates return
-  /// window and conditions.
-  return_policy String?
-  
-  /// Seller's shipping policy and carrier information (max 2000 characters).
-  /// Displayed to customers explaining shipping methods, costs, and delivery
-  /// timeframes.
-  shipping_policy String?
-  
-  /// Seller's order cancellation policy (max 2000 characters). Explains
-  /// conditions under which orders can be cancelled and any associated fees or
-  /// restrictions.
-  cancellation_policy String?
-  
-  /// Seller's public contact email for customer inquiries. May differ from
-  /// account email. Used for customer communications through the platform.
-  contact_email String?
-  
-  /// Seller's public contact phone number for customer support. Used when
-  /// customers need to reach seller directly for urgent issues.
-  contact_phone String?
-  
-  /// Seller's customer service business hours (formatted text, max 500
-  /// characters). Helps customers understand when seller is available for
-  /// support.
-  business_hours String?
-  
-  /// Link to seller's external business website if they have one. Provides
-  /// additional information about the seller's operations.
-  website_url String?
-  
-  /// JSON-formatted social media profile links (e.g., Facebook, Instagram,
-  /// Twitter). Enables customers to follow and verify seller's presence.
-  social_media_links String?
-  
-  /// Profile creation timestamp in UTC timezone. Records when seller profile
-  /// was first created.
-  created_at DateTime
-  
-  /// Timestamp of last profile modification. Updated whenever seller updates
-  /// policies, images, or business information.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
-  
-  @@unique([shopping_mall_seller_id])
-  
-  @@unique([store_url_slug])
-}
-
-/// Documents submitted by sellers for identity and business verification
-/// during onboarding. Stores references to uploaded documentation (business
-/// license, tax certificates, ID proofs, address verification). Enables
-/// platform to verify seller legitimacy and comply with regulatory
-/// requirements.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_seller_verification_documents {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Foreign key reference to seller's {@link shopping_mall_sellers.id}.
-  /// Associates verification documents with the seller account.
-  shopping_mall_seller_id String
-  
-  /// Type of verification document submitted: 'business_license',
-  /// 'tax_certificate', 'identity_proof', 'address_verification',
-  /// 'bank_verification'. Determines what the document proves.
-  document_type String
-  
-  /// URL to the uploaded document file. Image or PDF format (JPEG, PNG, PDF).
-  /// Maximum 10MB. Stored in secure cloud storage with access control.
-  document_url String
-  
-  /// Original filename or descriptive name of the document (max 200
-  /// characters). Helps identify which specific document this is.
-  document_name String
-  
-  /// ISO 3166-1 alpha-2 country code indicating where the document was issued.
-  /// Used for validation rules and compliance checking.
-  issuing_country String
-  
-  /// Official document number (e.g., business registration number, license
-  /// number, passport number, tax ID). Used for verification and
-  /// cross-checking.
-  document_number String?
-  
-  /// Date when the document was issued. Used to verify document is not expired
-  /// or suspiciously recent.
-  issue_date DateTime?
-  
-  /// Document expiration date if applicable. Null if document has no
-  /// expiration. Used to verify document is still valid.
-  expiration_date DateTime?
-  
-  /// Verification status of this document: 'pending_review', 'approved',
-  /// 'rejected'. Indicates whether admin has reviewed and validated the
-  /// document.
-  verification_status String
-  
-  /// Admin notes regarding verification (max 1000 characters). Explains reason
-  /// for approval/rejection or requests for specific clarifications.
-  verification_notes String?
-  
-  /// Admin user ID who reviewed and verified the document. Null if not yet
-  /// verified. Used for audit trail of verification decisions.
-  verified_by_admin_id String?
-  
-  /// Timestamp when document was verified by admin. Null if pending
-  /// verification. Used to track verification workflow timing.
-  verified_at DateTime?
-  
-  /// Document upload timestamp in UTC timezone. Records when seller submitted
-  /// the document.
-  created_at DateTime
-  
-  /// Timestamp of last modification (status change, notes update, etc.).
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_seller_id, document_type], map: "shopping_mall_seller_verification_documents_shopping_m_a08be9e7")
-  // spellchecker: ignore-next-line
-  @@index([verification_status], map: "shopping_mall_seller_verification_documents_verificati_378248d1")
-}
-
-/// Platform administrator accounts with system-wide access and control
-/// capabilities. Administrators manage users, moderate content, handle
-/// disputes, process refunds, and oversee platform operations. Require
-/// strong authentication with multi-factor authentication support and
-/// comprehensive audit logging.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_admins {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Admin's unique email address used for authentication and administrative
-  /// notifications. RFC 5322 format validated. Must be unique across all admin
-  /// accounts.
+  /// Admin's email address used for authentication and official communication.
+  /// Must be unique across all admins. Verified during admin account creation.
   email String
   
-  /// Securely hashed admin password using bcrypt with minimum 10 salt rounds.
-  /// Never stored in plain text. Used for admin dashboard login
-  /// authentication.
+  /// Hashed password using bcrypt (work factor 12). Admin passwords must meet
+  /// high complexity requirements (minimum 16 characters with mixed case,
+  /// numbers, special characters). Never stored in plain text.
   password_hash String
   
-  /// Admin's full name (2-100 characters). Used for identification in audit
-  /// logs and admin interface.
+  /// Admin's full name. Used for admin action logging and audit trails to
+  /// identify who performed each action.
   full_name String
   
-  /// Admin permission level: 'super_admin', 'operations_admin',
-  /// 'content_admin', 'financial_admin', 'support_admin'. Determines feature
-  /// access and operational scope.
-  admin_level String
+  /// Admin role designation. Valid values: super_admin (full platform access),
+  /// operations_admin (order/customer management), product_admin (product
+  /// catalog oversight), seller_admin (seller account management),
+  /// analytics_admin (reporting only). Defines permission scope.
+  role String
   
-  /// Admin's department or team assignment (max 100 characters). Used for
-  /// organizational tracking and access control scoping.
-  department String?
+  /// Whether multi-factor authentication is enabled for this admin account.
+  /// Required for all admin accounts. Admin must provide MFA code (TOTP) in
+  /// addition to password during login.
+  mfa_enabled Boolean
   
-  /// Flag indicating whether multi-factor authentication is enabled for this
-  /// admin. Required for enhanced security. Super admins must have MFA
-  /// enabled.
-  is_mfa_enabled Boolean
-  
-  /// MFA method preference: 'email_otp', 'authenticator_app', or null if MFA
-  /// not enabled. Admin can authenticate via selected method.
-  mfa_method String?
-  
-  /// Encrypted MFA secret key for TOTP authenticator app (if using
-  /// authenticator). Never displayed to admin. Used for OTP code generation.
+  /// Encrypted TOTP secret for multi-factor authentication. Used to generate
+  /// time-based one-time passwords for login. Encrypted before storage for
+  /// security.
   mfa_secret String?
   
-  /// Current account status: 'active', 'inactive', 'suspended', 'deactivated'.
-  /// Determines if admin can access the platform.
+  /// Current account status. Valid values: active (can login), deactivated
+  /// (disabled by system owner). Admins cannot suspend their own accounts
+  /// (prevents accidental lockout).
   account_status String
   
-  /// Count of consecutive failed login attempts. Resets to 0 on successful
-  /// login. Triggers 15-minute lockout after 5 failures for security.
-  failed_login_attempts Int
-  
-  /// Timestamp when login lockout expires. Null if account not locked. Used to
-  /// enforce 15-minute security lockout for excessive failures.
-  locked_until DateTime?
-  
-  /// Timestamp of most recent successful admin login. Used for security
-  /// monitoring and activity tracking. Null if admin never logged in.
-  last_login_at DateTime?
-  
-  /// IP address from the most recent login. Used for suspicious activity
-  /// detection and security investigations.
-  last_login_ip String?
-  
-  /// Admin account creation timestamp in UTC timezone. Records when the admin
-  /// account was first created by existing admin.
+  /// Timestamp when admin account was created. Set by system owner or existing
+  /// admin during account creation.
   created_at DateTime
   
-  /// Timestamp of last account modification (role change, MFA setup, status
-  /// update, etc.).
+  /// Timestamp of last account modification (password changes, role changes,
+  /// MFA updates).
   updated_at DateTime
   
-  /// Soft deletion timestamp. When set, indicates admin account has been
-  /// deactivated. Null for active accounts. Preserves admin action audit
-  /// trail.
+  /// Soft delete timestamp. Set when admin account is deactivated. NULL means
+  /// account is active. Allows account recovery.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_admin_sessions shopping_mall_admin_sessions[]
-  shopping_mall_review_moderation_history shopping_mall_review_moderation_history[]
+  ecommerce_mall_admin_sessions ecommerce_mall_admin_sessions[]
+  ecommerce_mall_stock_adjustments ecommerce_mall_stock_adjustments[]
+  ecommerce_mall_review_moderation ecommerce_mall_review_moderation[]
+  ecommerce_mall_support_tickets ecommerce_mall_support_tickets[]
+  ecommerce_mall_support_ticket_messages ecommerce_mall_support_ticket_messages[]
+  ecommerce_mall_admin_actions_of_admin_id ecommerce_mall_admin_actions[] @relation("ecommerce_mall_admin_actions_of_admin_id")
+  ecommerce_mall_admin_actions_of_approved_by_id ecommerce_mall_admin_actions[] @relation("ecommerce_mall_admin_actions_of_approved_by_id")
+  ecommerce_mall_inventory_adjustments_audit ecommerce_mall_inventory_adjustments_audit[]
   
   @@unique([email])
-  @@index([admin_level])
   @@index([account_status])
   @@index([created_at])
-  @@index([deleted_at])
 }
 
-/// Authentication sessions for administrators. Records admin login sessions
-/// with connection context for security monitoring. Sessions expire after 8
-/// hours (shorter than customer/seller for security). Multi-factor
-/// authentication required. Complete audit trail of all admin access.
+/// Authentication sessions for admin users. Each session represents an
+/// authenticated admin login on a specific device/browser. Sessions store
+/// connection context (IP, URL, referrer) and track session lifecycle.
+///
+/// Admin sessions are monitored more strictly than regular user sessions for
+/// security. Unusual access patterns (logins from unexpected locations,
+/// multiple simultaneous logins from different countries, unusual times)
+/// trigger security alerts and may require additional verification.
+///
+/// Each admin session is tied to a specific admin user and records
+/// connection metadata for comprehensive audit logging of all admin
+/// activities on the platform.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_admin_sessions {
+model ecommerce_mall_admin_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Foreign key reference to admin's {@link shopping_mall_admins.id}. Links
-  /// session to the authenticated administrator.
-  shopping_mall_admin_id String
+  /// Foreign key referencing the authenticated admin. Each session belongs to
+  /// exactly one admin. Relationship is many-to-one (admin can have multiple
+  /// concurrent sessions). {@link ecommerce_mall_admins.id}
+  ecommerce_mall_admin_id String
   
-  /// IP address from which the session was initiated. Critical for admin
-  /// security monitoring and unusual access detection.
+  /// IP address of the device/network accessing the admin panel. Used for
+  /// security monitoring (detect unusual geographic locations, rate limiting,
+  /// suspicious access patterns).
   ip String
   
-  /// Connection URL indicating the admin dashboard endpoint where
-  /// authentication occurred. Used for access pattern audit.
+  /// URL/href where the admin panel session was initiated. Captures entry
+  /// point to admin system.
   href String
   
-  /// HTTP referrer header value indicating source of authentication request.
-  /// Used for security tracking and anomaly detection.
+  /// HTTP referrer URL showing how admin accessed the platform (direct link,
+  /// bookmark, email notification, etc.).
   referrer String
   
-  /// Flag indicating whether MFA was successfully completed for this session.
-  /// Must be true for session to be valid. Required security measure for
-  /// admins.
-  mfa_verified Boolean
-  
-  /// Session creation timestamp in UTC timezone. Records when admin
-  /// authenticated and session was established.
+  /// Session creation timestamp (when admin logged into admin panel). UTC
+  /// timezone. Used for session age tracking and security monitoring.
   created_at DateTime
   
-  /// Session expiration timestamp. When set, indicates session has ended
-  /// (logout, timeout, or forced termination). Null for active sessions.
-  /// Default 8-hour expiration.
+  /// Session expiration timestamp (when admin logged out or session was
+  /// terminated). NULL means session is still active. Admin sessions have
+  /// shorter timeout (30 minutes) than customer sessions.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  admin ecommerce_mall_admins @relation(fields: [ecommerce_mall_admin_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_admin_id, created_at], map: "shopping_mall_admin_sessions_shopping_mall_admin_id_cr_39834090")
+  @@index([ecommerce_mall_admin_id, created_at], map: "ecommerce_mall_admin_sessions_ecommerce_mall_admin_id__94785be0")
 }
 
-/// Role definitions for admin access control and permission management.
-/// Defines available roles (Super Admin, Operations Admin, Content Admin,
-/// Financial Admin, Support Admin) with descriptions. Enables role-based
-/// access control for fine-grained permission management and organizational
-/// structure.
+/// Delivery addresses associated with customer accounts. Customers can save
+/// multiple addresses and select one during checkout for order delivery.
+///
+/// Each address is linked to a specific customer and includes complete
+/// delivery information (street, city, postal code, country) plus contact
+/// details (phone number). Addresses are not independently managed - they
+/// are managed through the customer's account address management interface.
+///
+/// One address can be marked as the customer's default address for faster
+/// checkout. Addresses cannot be deleted if currently associated with active
+/// orders (awaiting fulfillment or delivery). Soft deletion preserves
+/// address history after completion of all associated orders.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_admin_roles {
+model ecommerce_mall_customer_addresses {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique role identifier (max 50 characters, lowercase with underscores).
-  /// Examples: 'super_admin', 'operations_admin', 'content_admin',
-  /// 'financial_admin', 'support_admin'.
-  role_name String
+  /// Foreign key referencing the customer who owns this address. Each address
+  /// belongs to exactly one customer. Relationship is many-to-one (customer
+  /// can have multiple addresses). {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
   
-  /// Human-friendly role display name (max 100 characters). Shown in admin
-  /// interface for easy identification. Example: 'Super Administrator',
-  /// 'Operations Manager'.
-  display_name String
+  /// Name of the person receiving the delivery at this address. Used on
+  /// shipping labels and delivery instructions.
+  recipient_name String
   
-  /// Role description explaining responsibilities and scope (max 1000
-  /// characters). Helps administrators understand what each role can do.
-  description String
+  /// Primary street address (house number and street name). Required for all
+  /// addresses.
+  street_address_line_1 String
   
-  /// Comma-separated list of permission scopes this role has access to.
-  /// Examples: 'users,sellers,products,orders,payments,disputes,system'. Used
-  /// for authorization checks.
-  permission_scope String
+  /// Secondary street address information (apartment number, suite, building
+  /// name, etc.). Optional for addresses that don't have additional location
+  /// information.
+  street_address_line_2 String?
   
-  /// Flag indicating if this role can create, modify, or delete other admin
-  /// accounts. Only super admin should have this enabled.
-  can_manage_admins Boolean
+  /// City or municipality name where the address is located.
+  city String
   
-  /// Flag indicating if this role can modify platform-wide settings and
-  /// policies. Typically only super admin.
-  can_modify_settings Boolean
+  /// State, province, or region name. Used for tax calculation and shipping
+  /// routing.
+  state_or_province String
   
-  /// Flag indicating if this role can override system decisions (force refund,
-  /// suspend accounts, etc.). Only higher-level admins should have this.
-  can_override_decisions Boolean
+  /// Postal code or ZIP code. Format varies by country. Validated for correct
+  /// format based on selected country.
+  postal_code String
   
-  /// Role definition creation timestamp in UTC timezone.
+  /// Country name or country code. Determines tax rules, shipping options, and
+  /// currency. Validates that seller ships to this country.
+  country String
+  
+  /// Contact phone number for the delivery address. Used by shipping carrier
+  /// for delivery coordination if needed (e.g., to confirm door access).
+  phone_number String
+  
+  /// Whether this is the customer's default address for checkout. Only one
+  /// address per customer can be marked as default. When customer places
+  /// order, default address is pre-selected for speed.
+  is_default Boolean
+  
+  /// Customer-defined label for this address (e.g., 'Home', 'Work', 'Parent's
+  /// House'). Helps customer identify addresses quickly when managing multiple
+  /// saved addresses.
+  address_label String?
+  
+  /// Timestamp when address was added to customer's account.
   created_at DateTime
   
-  /// Timestamp of last role modification (description update, permission scope
-  /// change, etc.).
+  /// Timestamp of last address modification (correcting typo, updating
+  /// apartment number, etc.).
   updated_at DateTime
+  
+  /// Soft delete timestamp. Set when customer deletes address from their
+  /// account. NULL means address is active. Allows recovery if customer needs
+  /// address back.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([role_name])
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_orders ecommerce_mall_orders[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, is_default], map: "ecommerce_mall_customer_addresses_ecommerce_mall_custo_ec95f4bb")
 }
 
-/// Individual permission definitions for granular access control. Maps
-/// specific actions (e.g., 'approve_sellers', 'process_refunds') to
-/// permission names. Enables flexible role-based access control by assigning
-/// permissions to roles.
+/// Store profile information for sellers. Each seller has exactly one
+/// profile storing their storefront branding, description, and
+/// store-specific policies.
+///
+/// The seller profile contains the public-facing information displayed to
+/// customers visiting the seller's store page, including store name,
+/// description, logo/banner images, and contact information. Store policies
+/// (return policy, refund policy, shipping policy) are stored here and
+/// displayed to customers before purchase.
+///
+/// Profile information is managed by the seller through their dashboard and
+/// updated immediately (within 2 minutes) for customer visibility.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_admin_permissions {
+model ecommerce_mall_seller_profiles {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique permission identifier (max 50 characters, lowercase with
-  /// underscores). Examples: 'approve_sellers', 'manage_products',
-  /// 'process_refunds', 'view_analytics', 'manage_admins'.
-  permission_name String
+  /// Foreign key referencing the seller who owns this profile. Each seller has
+  /// exactly one profile. One-to-one relationship with ecommerce_mall_sellers.
+  /// {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
   
-  /// Human-friendly permission display name (max 100 characters). Shown in
-  /// permission management interface.
-  display_name String
+  /// Public display name for the seller's store. Used on storefront, in search
+  /// results, and in product listings. Can differ from business legal name for
+  /// branding purposes.
+  store_name String
   
-  /// Permission description explaining what action/resource it controls (max
-  /// 500 characters). Helps admins understand the scope of the permission.
-  description String
+  /// Detailed description of the store, products, and seller's business.
+  /// Displayed on store homepage. 500-2000 characters. Optional field allowing
+  /// seller to tell their story.
+  store_description String?
   
-  /// Permission category for organization: 'users', 'sellers', 'products',
-  /// 'orders', 'payments', 'disputes', 'reporting', 'system'. Used for
-  /// grouping related permissions.
-  category String
+  /// URL to store logo image (200x200px recommended, max 2MB). Displayed in
+  /// store header and in product listings. Optional - store can operate
+  /// without logo.
+  logo_image_url String?
   
-  /// Risk level of this permission: 'low', 'medium', 'high', 'critical'.
-  /// Critical permissions (system config, financial) require higher admin
-  /// level.
-  risk_level String
+  /// URL to store banner/header image (1200x300px recommended, max 5MB).
+  /// Displayed at top of store page for branding. Optional field.
+  banner_image_url String?
   
-  /// Minimum admin level required for this permission. Examples:
-  /// 'support_admin', 'operations_admin', 'super_admin'. Limits who can
-  /// perform the action.
-  required_admin_level String
+  /// Public phone number for customers to contact the seller. Optional -
+  /// seller may prefer email/messaging only.
+  contact_phone String?
   
-  /// Permission definition creation timestamp in UTC timezone.
+  /// Public email address for customer inquiries. Can differ from business
+  /// email for customer-facing communications.
+  contact_email String?
+  
+  /// Seller's return and refund policy displayed to customers. Specifies
+  /// return window (days), restocking fees if any, condition requirements, and
+  /// exclusions. 500-2000 characters.
+  return_policy String?
+  
+  /// Seller's shipping policy including processing time, available shipping
+  /// methods, and any regional restrictions. Displayed during checkout.
+  /// 500-2000 characters.
+  shipping_policy String?
+  
+  /// Seller's operating hours (e.g., 'Mon-Fri 9am-5pm EST'). Displayed on
+  /// store page and helps set customer expectations for response times.
+  business_hours String?
+  
+  /// Timestamp when seller profile was created (typically when seller account
+  /// was created).
   created_at DateTime
   
-  /// Timestamp of last permission modification.
+  /// Timestamp of last profile update (when seller edited store information).
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@unique([permission_name])
-  @@index([category])
-  @@index([risk_level])
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_mall_seller_id])
+  
+  @@index([ecommerce_mall_seller_id])
+}
+
+/// Saved payment methods (credit cards, debit cards, digital wallets) for
+/// customer accounts. Customers can save multiple payment methods and select
+/// one during checkout for transaction processing.
+///
+/// Payment method information is tokenized - the system never stores full
+/// credit card numbers, CVV codes, or complete payment card data. Instead,
+/// tokenized references are stored for compliance with PCI DSS requirements.
+/// Customers can manage their saved payment methods, set a default method
+/// for faster checkout, and delete methods they no longer use.
+///
+/// Payment methods are primary entities requiring independent CRUD
+/// operations since customers directly manage them from their account
+/// settings.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing the customer who owns this payment method. Each
+  /// payment method belongs to exactly one customer. Relationship is
+  /// many-to-one (customer can have multiple payment methods). {@link
+  /// ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Type of payment method. Valid values: credit_card, debit_card,
+  /// digital_wallet (Apple Pay, Google Pay), bank_transfer. Determines how
+  /// payment is processed and displayed to customer.
+  payment_type String
+  
+  /// Tokenized reference to the actual payment method from payment processor.
+  /// This is a unique, non-reversible token representing the saved payment
+  /// method. Never exposes actual card/account numbers.
+  payment_token String
+  
+  /// Last four digits of credit/debit card number (e.g., '4242'). Displayed to
+  /// customer for identification. Only these digits are stored; full card
+  /// number is never stored.
+  card_last_four String?
+  
+  /// Brand/issuer of the card. Valid values: visa, mastercard, amex, discover,
+  /// diners. Displayed in payment method list. NULL for non-card payment
+  /// types.
+  card_brand String?
+  
+  /// Card expiration month (1-12). Used for determining if card is expired.
+  /// NULL for non-card payment types.
+  expiration_month Int?
+  
+  /// Card expiration year (4-digit format, e.g., 2025). Used for determining
+  /// if card is expired. NULL for non-card payment types.
+  expiration_year Int?
+  
+  /// Name printed on the payment card. Used for verification during checkout.
+  /// NULL for non-card payment types.
+  cardholder_name String?
+  
+  /// Street address associated with this payment method for fraud
+  /// verification. Optional - some payment processors don't require this.
+  billing_address String?
+  
+  /// Whether this is the customer's default payment method. When customer
+  /// checks out without explicitly selecting a payment method, the default is
+  /// pre-selected. Only one payment method per customer can be default.
+  is_default Boolean
+  
+  /// Customer-defined label for this payment method (e.g., 'My Visa', 'Work
+  /// Card'). Helps customer identify methods when multiple are saved.
+  payment_method_label String?
+  
+  /// Timestamp when payment method was added to customer's saved methods.
+  created_at DateTime
+  
+  /// Timestamp of last modification (label change, default status change,
+  /// etc.).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Set when customer removes payment method from
+  /// their account. NULL means payment method is active and available for
+  /// checkout.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_payment_transactions ecommerce_mall_payment_transactions[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, is_default], map: "ecommerce_mall_payment_methods_ecommerce_mall_customer_aee7a8f3")
 }

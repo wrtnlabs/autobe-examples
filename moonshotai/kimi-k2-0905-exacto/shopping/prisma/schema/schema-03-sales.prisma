@@ -1,435 +1,245 @@
-/// Core product catalog entity representing sellable items with seller
-/// ownership. Products contain basic information and belong to sellers and
-/// categories, with support for variants, images, and specifications as
-/// separate entities.
+/// Core product catalog entries in the marketplace enabling sellers to list
+/// items for sale with comprehensive product information and multi-seller
+/// support.
+///
+/// Products represent individual SKUs with detailed specifications, pricing,
+/// and catalog information. Each sale entry can be managed by different
+/// types of actors (customers, sellers) through a polymorphic ownership
+/// pattern.
+///
+/// The system tracks product lifecycle from drafting through approval and
+/// sale, maintaining comprehensive history through snapshot functionality
+/// for analytics and compliance.
 ///
 /// @namespace Sales
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_products {
+model shopping_mall_sales {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Product owner's {@link shopping_mall_sellers.id}.
-  shopping_seller_id String
+  /// The sales channel's {@link shopping_channels.id} where this product is
+  /// listed.
+  shopping_channel_id String
   
-  /// Product category's {@link shopping_mall_product_categories.id}.
-  shopping_mall_product_category_id String
+  /// The section's {@link shopping_sections.id} organizing this product.
+  shopping_section_id String
   
-  /// Product brand's {@link shopping_mall_brands.id}.
-  shopping_mall_brand_id String?
-  
-  /// Product title between 10-200 characters with primary product name,
-  /// avoiding excessive capitalization.
-  title String
-  
-  /// Comprehensive product description between 100-5000 characters including
-  /// features, specifications, materials, dimensions, and usage instructions.
-  description String
-  
-  /// Product price greater than zero, not exceeding 999,999.99 in platform
-  /// currency with proper decimal formatting.
-  price Float
-  
-  /// Product status including draft, pending_review, published, out_of_stock,
-  /// or archived to manage product lifecycle.
-  status String
-  
-  /// Availability status defaulting to out_of_stock when inventory count is
-  /// zero, preventing overselling.
-  availability_status String
-  
-  /// Whether the product is currently active and available for sale.
-  is_active Boolean
-  
-  /// SEO-optimized title for search engine visibility and category
-  /// optimization.
-  seo_title String?
-  
-  /// SEO-optimized description for improved product discoverability in search
-  /// results.
-  seo_description String?
-  
-  /// Product creation timestamp.
-  created_at DateTime
-  
-  /// Product last update timestamp.
-  updated_at DateTime
-  
-  /// Soft delete timestamp for product archival.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
-  category shopping_mall_product_categories @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
-  brand shopping_mall_brands? @relation(fields: [shopping_mall_brand_id], references: [id], onDelete: Cascade)
-  
-  shopping_mall_product_variants shopping_mall_product_variants[]
-  shopping_mall_product_images shopping_mall_product_images[]
-  shopping_mall_product_specifications shopping_mall_product_specifications[]
-  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
-  shopping_mall_product_reviews shopping_mall_product_reviews[]
-  shopping_mall_review_ratings shopping_mall_review_ratings?
-  
-  @@index([shopping_mall_brand_id])
-  
-  @@unique([title, shopping_seller_id])
-  @@index([status, is_active])
-  @@index([shopping_seller_id, created_at])
-  @@index([shopping_mall_product_category_id])
-  @@index([price])
-}
-
-/// Product variant/SKU entity representing specific configurations of
-/// products. Variants represent inventory-level entities like color-size
-/// combinations that customers actually purchase, with individual pricing
-/// and stock tracking.
-///
-/// @namespace Sales
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_variants {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Parent product's {@link shopping_mall_products.id}.
-  shopping_mall_product_id String
-  
-  /// Unique Stock Keeping Unit identifier for this specific product variant
-  /// configuration.
-  sku String
-  
-  /// Variant title showing specific configuration like 'Large Blue' or '32GB
-  /// Black'.
-  title String
-  
-  /// Variant-specific price if different from base product price, otherwise
-  /// inherits from parent product.
-  price Float?
-  
-  /// Available inventory quantity for this specific variant configuration.
-  quantity Int
-  
-  /// Color variant attribute when applicable for the product category.
-  color String?
-  
-  /// Size variant attribute when applicable for the product category.
-  size String?
-  
-  /// Material variant attribute when applicable for the product category.
-  material String?
-  
-  /// General configuration attribute for custom variants not covered by
-  /// standard attributes.
-  configuration String?
-  
-  /// Shipping weight in kilograms for accurate shipping cost calculations.
-  weight Float?
-  
-  /// Shipping dimensions in format 'LxWxH' in centimeters for accurate
-  /// shipping calculations.
-  dimensions String?
-  
-  /// Product barcode or UPC code for inventory scanning and retail integration.
-  barcode String?
-  
-  /// Whether this variant is currently active and available for sale.
-  is_active Boolean
-  
-  /// Variant creation timestamp.
-  created_at DateTime
-  
-  /// Variant last update timestamp.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  
-  shopping_mall_cart_items shopping_mall_cart_items[]
-  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
-  shopping_mall_order_items shopping_mall_order_items[]
-  shopping_mall_inventory_levels shopping_mall_inventory_levels[]
-  
-  @@unique([sku])
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, color, size, material, configuration], map: "shopping_mall_product_variants_shopping_mall_product_i_0934d234")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, is_active], map: "shopping_mall_product_variants_shopping_mall_product_i_7ec56022")
-  @@index([quantity, is_active])
-  @@index([color])
-  @@index([size])
-  @@index([price])
-}
-
-/// Product image assets supporting the product catalog. Images provide
-/// visual representation for products with quality standards and multiple
-/// viewing angles to enhance customer shopping experience.
-///
-/// @namespace Sales
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_images {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Product's {@link shopping_mall_products.id}.
-  shopping_mall_product_id String
-  
-  /// Image URL with minimum 500x500 pixel resolution requirement for web
-  /// display quality.
-  url String
-  
-  /// Alternative text description for accessibility and SEO optimization.
-  alt_text String?
-  
-  /// Optional image caption providing additional product context or feature
-  /// description.
-  caption String?
-  
-  /// Display order for multiple images with primary image having sort order 0.
-  sort_order Int
-  
-  /// Whether this is the primary product image displayed first in catalog
-  /// listings.
-  is_primary Boolean
-  
-  /// Image type such as product, lifestyle, detail, or packaging to categorize
-  /// usage.
-  image_type String
-  
-  /// Image upload timestamp.
-  created_at DateTime
-  
-  /// Image last update timestamp.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, sort_order], map: "shopping_mall_product_images_shopping_mall_product_id__8f9c6f54")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, is_primary], map: "shopping_mall_product_images_shopping_mall_product_id__36ad223d")
-  @@index([image_type])
-}
-
-/// Technical specifications and detailed attributes for products.
-/// Specifications provide purchase-critical information such as technical
-/// specs, materials, dimensions, and usage guidelines to enable informed
-/// purchasing decisions.
-///
-/// @namespace Sales
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_specifications {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Product's {@link shopping_mall_products.id}.
-  shopping_mall_product_id String
-  
-  /// Specification name such as 'Material', 'Dimensions', 'Weight', 'Power
-  /// Requirements', etc.
-  specification_name String
-  
-  /// Specification value providing the actual measurement or detail
-  /// information.
-  specification_value String
-  
-  /// Type of specification: technical, material, dimension, safety, or usage
-  /// to categorize information.
-  specification_type String
-  
-  /// Whether this specification is required for the product category and must
-  /// be completed.
-  is_required Boolean
-  
-  /// Display order for multiple specifications with most important information
-  /// shown first.
-  display_order Int
-  
-  /// Whether this specification should be prominently displayed for customer
-  /// visibility.
-  is_highlighted Boolean
-  
-  /// Specification creation timestamp.
-  created_at DateTime
-  
-  /// Specification last update timestamp.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, specification_name], map: "shopping_mall_product_specifications_shopping_mall_pro_4f307f80")
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, specification_type], map: "shopping_mall_product_specifications_shopping_mall_pro_c49f6497")
-  // spellchecker: ignore-next-line
-  @@index([is_required, is_highlighted], map: "shopping_mall_product_specifications_is_required_is_hi_5636614f")
-}
-
-/// Brand management entity for product categorization and brand-based
-/// product organization. Brands enable customers to browse products by
-/// manufacturer or brand affiliation while supporting SEO and marketing
-/// capabilities.
-///
-/// @namespace Sales
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_brands {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Brand name for product categorization and customer browsing by
-  /// manufacturer.
-  name String
-  
-  /// URL-friendly brand identifier for SEO optimization and direct navigation.
-  slug String
-  
-  /// Brand description providing company background and product focus
-  /// information.
-  description String?
-  
-  /// Brand logo image URL for visual identification and marketing display.
-  logo_url String?
-  
-  /// Official brand website URL for customer reference and verification.
-  website_url String?
-  
-  /// Country where the brand is headquartered or primarily operates.
-  country_of_origin String?
-  
-  /// Whether the brand is currently active and available for product
-  /// assignment.
-  is_active Boolean
-  
-  /// Whether the brand is featured for promotional display and customer
-  /// discovery.
-  is_featured Boolean
-  
-  /// Brand creation timestamp.
-  created_at DateTime
-  
-  /// Brand last update timestamp.
-  updated_at DateTime
-  
-  /// Soft delete timestamp for brand archival.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_products shopping_mall_products[]
-  
-  @@unique([name])
-  @@unique([slug])
-  @@index([slug, is_active])
-  @@index([is_featured, is_active])
-}
-
-/// Hierarchical product categorization system enabling customers to browse
-/// products by category and subcategory. Categories support unlimited
-/// nesting with SEO optimization and business rule configuration per
-/// category.
-///
-/// @namespace Sales
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_product_categories {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Parent category's {@link shopping_mall_product_categories.id} for
-  /// hierarchical structure.
-  parent_id String?
-  
-  /// Category name for customer navigation and product organization.
-  name String
-  
-  /// URL-friendly category identifier for SEO optimization and direct
-  /// navigation.
-  slug String
-  
-  /// Unique category code for system integration and API reference consistency.
+  /// Unique product code used for catalog organization and search.
   code String
   
-  /// Category description providing context for product classification and
-  /// customer guidance.
-  description String?
+  /// Product display name for customer browsing and search results.
+  name String
   
-  /// Display order for category navigation with lower numbers appearing first.
-  display_order Int
+  /// Creator type: customer, seller, administrator indicating who can manage
+  /// this product.
+  actor_type String
   
-  /// Whether the category is currently active and available for product
-  /// assignment.
-  is_active Boolean
+  /// Detailed product description with specifications and features.
+  content String
   
-  /// Whether the category is featured for promotional display and customer
-  /// discovery.
-  is_featured Boolean
+  /// Base price of the product excluding taxes and discounts.
+  nominal_price Float
   
-  /// Hierarchy level (0 for root categories, 1 for subcategories, etc.) for
-  /// navigation depth.
-  level Int
+  /// Whether this product is visible to customers in search and categories.
+  visible Boolean
   
-  /// Category-specific commission rate percentage for seller calculations
-  /// (electronics: 8%, fashion: 15%).
-  commission_rate Float?
+  /// When this product was first made available for sale.
+  opened_at DateTime?
   
-  /// Whether products in this category require seller verification before
-  /// publication.
-  is_seller_verification_required Boolean
+  /// When this product was closed or discontinued from sale.
+  closed_at DateTime?
   
-  /// Minimum seller rating required to list products in this category, null
-  /// for no restriction.
-  minimum_seller_rating Float?
-  
-  /// Category creation timestamp.
+  /// Creation timestamp.
   created_at DateTime
   
-  /// Category last update timestamp.
+  /// Last modification timestamp.
   updated_at DateTime
   
-  /// Soft delete timestamp for category archival.
+  /// Soft deletion timestamp for historical preservation.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  parent shopping_mall_product_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  channel shopping_mall_channels @relation(fields: [shopping_channel_id], references: [id], onDelete: Cascade)
+  section shopping_mall_sections @relation(fields: [shopping_section_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_channel_categories shopping_mall_channel_categories[]
-  shopping_mall_products shopping_mall_products[]
-  recursive shopping_mall_product_categories[] @relation("recursive")
-  shopping_mall_commissions shopping_mall_commissions[]
-  shopping_mall_commission_rates shopping_mall_commission_rates[]
+  shopping_mall_sale_snapshots shopping_mall_sale_snapshots[]
+  shopping_mall_sale_units shopping_mall_sale_units[]
+  shopping_mall_orders shopping_mall_orders[]
+  shopping_mall_favorites shopping_mall_favorites[]
+  shopping_mall_bookmarks shopping_mall_bookmarks[]
   
   @@unique([code])
-  @@unique([name, parent_id])
-  @@index([parent_id, is_active])
-  @@index([slug, is_active])
-  @@index([level, display_order])
-  @@index([is_featured, is_active])
+  @@index([shopping_channel_id, visible])
+  @@index([shopping_section_id, visible])
+  @@index([actor_type])
+  @@index([opened_at])
+}
+
+/// Historical snapshots capturing product state at specific moments for
+/// audit trails and business analytics.
+///
+/// Sale snapshots record complete product information including pricing,
+/// availability, and content state enabling comprehensive analysis of
+/// product lifecycle changes. This supports seller performance analysis,
+/// price tracking, and compliance auditing across the marketplace.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced product sale's {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Snapshot version of the product code at moment of capture.
+  code String
+  
+  /// Snapshot version of the product name at moment of capture.
+  name String
+  
+  /// Snapshot version of the product content at moment of capture.
+  content String
+  
+  /// Snapshot version of the product price at moment of capture.
+  nominal_price Float
+  
+  /// Snapshot version of the product visibility at moment of capture.
+  visible Boolean
+  
+  /// Snapshot creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_id, created_at], map: "shopping_mall_sale_snapshots_shopping_mall_sale_id_cre_36e298a1")
+}
+
+/// Product variant management providing inventory tracking for different
+/// product options on the marketplace.
+///
+/// Sale units represent specific SKU-level products with individual
+/// inventory counting, pricing, and management. Each unit belongs to a
+/// parent sale product but maintains independent tracking for variants
+/// (size, color, material).
+///
+/// The system enables precise inventory management, variant-specific
+/// pricing, and comprehensive stock level monitoring across the multi-seller
+/// catalog.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_units {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product sale's {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Stock keeping unit identifier unique across the platform.
+  sku String
+  
+  /// Variant-specific name for this particular product unit.
+  name String
+  
+  /// Variant-specific description for this product unit.
+  contents String
+  
+  /// Selling price including any variant-specific pricing adjustments.
+  price Float
+  
+  /// Available inventory quantity for this specific unit.
+  quantity Int
+  
+  /// Minimum stock level before restocking alerts.
+  safety_stock Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_sale_unit_options shopping_mall_sale_unit_options[]
+  shopping_mall_cart_items shopping_mall_cart_items[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  
+  @@unique([sku])
+  @@index([shopping_mall_sale_id, sku])
+  @@index([price])
+  @@index([quantity])
+}
+
+/// Configurable options for product units enabling variant-specific features.
+///
+/// Sale unit options provide detailed configurability for product variants
+/// including size, color, material, or other distinguishing characteristics.
+/// These options enable precise inventory management and customer selection
+/// for complex product configurations.
+///
+/// The system supports multiple option types per unit with value-based
+/// configuration enabling sophisticated product matrix management across the
+/// multi-seller catalog.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_unit_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent sale unit's {@link shopping_mall_sale_units.id}.
+  shopping_mall_sale_unit_id String
+  
+  /// Option name for customer selection (Size, Color, Material).
+  name String
+  
+  /// Option type category (select, checkbox, radio, text).
+  type String
+  
+  /// Available option values for customer selection.
+  values String
+  
+  /// Display order for option selection in customer interface.
+  ordering Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  saleUnit shopping_mall_sale_units @relation(fields: [shopping_mall_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_unit_id, ordering], map: "shopping_mall_sale_unit_options_shopping_mall_sale_uni_22ddb995")
+  @@index([name])
 }

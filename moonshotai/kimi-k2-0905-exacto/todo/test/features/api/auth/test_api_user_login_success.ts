@@ -4,131 +4,193 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
- * Test successful user login workflow for Todo application.
+ * Test successful user authentication with valid email and password
+ * credentials. Validates that existing users can properly authenticate, receive
+ * valid JWT access and refresh tokens with appropriate expiration times, and
+ * that login attempts are properly tracked in user sessions. Verify that
+ * successful authentication returns complete user profile information along
+ * with token details.
  *
- * This test validates that existing users can authenticate with correct email
- * and password credentials, ensuring proper JWT access and refresh token
- * generation. The test verifies login attempts are properly tracked for
- * security monitoring including failed login attempt counting and account
- * lockout protection.
+ * This test follows the complete authentication flow:
  *
- * The authentication flow is tested by:
- *
- * 1. Creating a new user account for login testing
- * 2. Authenticating with valid email and password
- * 3. Validating JWT token response structure and expiration
- * 4. Verifying user authorization information is returned
- * 5. Checking security metrics are properly tracked
- * 6. Confirming authenticated session is established
- *
- * This ensures users can securely access their personal task lists and perform
- * protected todo operations with industry-standard authentication mechanisms
- * and token-based session management.
+ * 1. Create a new user account with valid registration data
+ * 2. Use those credentials to authenticate via login API
+ * 3. Validate the response contains proper authentication details
+ * 4. Verify token structure and expiration times
+ * 5. Confirm user profile information is returned correctly
  */
 export async function test_api_user_login_success(connection: api.IConnection) {
-  // Generate random user credentials for testing
-  const testEmail = typia.random<string & tags.Format<"email">>();
-  const testPassword = RandomGenerator.alphaNumeric(10);
+  // Step 1: Create a user account to have valid credentials
+  const email = typia.random<string & tags.Format<"email">>();
+  const password = "SecurePassword123!";
 
-  // Step 1: Create user account first to have valid credentials
-  const joinRequest = {
-    email: testEmail,
-    password: testPassword,
-  } satisfies ITodoUser.IJoin;
+  const userCredentials = {
+    email,
+    password,
+    href: "https://example.com/login",
+    referrer: "https://example.com/join",
+  } satisfies ITodoAppUser.IJoin;
 
-  const user = await api.functional.auth.user.join(connection, {
-    body: joinRequest,
+  const registeredUser = await api.functional.auth.user.join(connection, {
+    body: userCredentials,
   });
-  typia.assert(user);
 
-  // Step 2: Authenticate with valid credentials
+  // Validate user registration was successful
+  typia.assert(registeredUser);
+  TestValidator.equals(
+    "registered user email matches",
+    registeredUser.email,
+    email,
+  );
+  TestValidator.predicate("registered user has valid ID", () =>
+    typia.is<string & tags.Format<"uuid">>(registeredUser.id),
+  );
+  TestValidator.predicate("registered user has creation timestamp", () =>
+    typia.is<string & tags.Format<"date-time">>(registeredUser.created_at),
+  );
+
+  // Step 2: Test login with the created credentials
   const loginCredentials = {
-    email: testEmail,
-    password: testPassword,
-    href: "https://todo.app/login",
-    referrer: "https://todo.app/",
-  } satisfies ITodoUser.ILogin;
+    email,
+    password,
+    href: "https://example.com/dashboard",
+    referrer: "https://example.com/login",
+  } satisfies ITodoAppUser.ILogin;
 
-  const authorizedUser = await api.functional.auth.user.login(connection, {
+  const authenticatedUser = await api.functional.auth.user.login(connection, {
     body: loginCredentials,
   });
-  typia.assert(authorizedUser);
 
-  // Step 3: Validate login response data accuracy
-  TestValidator.equals("same user ID on login", authorizedUser.id, user.id);
-  TestValidator.equals("same email on login", authorizedUser.email, testEmail);
+  // Step 3: Validate authentication response
+  typia.assert(authenticatedUser);
+
+  // Verify the authenticated user data matches the registered user
   TestValidator.equals(
-    "failed attempts remain 0",
-    authorizedUser.failed_login_attempts,
-    0,
-  );
-  TestValidator.equals("MFA still disabled", authorizedUser.mfa_enabled, false);
-
-  // Step 4: Validate JWT token structure
-  TestValidator.predicate(
-    "access token is non-empty string",
-    authorizedUser.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token is non-empty string",
-    authorizedUser.token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "token expiration is future date",
-    new Date(authorizedUser.token.expired_at) > new Date(),
-  );
-  TestValidator.predicate(
-    "refresh token valid longer than access",
-    new Date(authorizedUser.token.refreshable_until) >
-      new Date(authorizedUser.token.expired_at),
-  );
-
-  // Step 5: Validate timestamps are properly formatted
-  TestValidator.predicate(
-    "created_at is valid date string",
-    typia.is<string & tags.Format<"date-time">>(authorizedUser.created_at),
-  );
-  TestValidator.predicate(
-    "updated_at is valid date string",
-    typia.is<string & tags.Format<"date-time">>(authorizedUser.updated_at),
-  );
-  TestValidator.predicate(
-    "expired_at is valid date string",
-    typia.is<string & tags.Format<"date-time">>(
-      authorizedUser.token.expired_at,
-    ),
-  );
-  TestValidator.predicate(
-    "refreshable_until is valid date string",
-    typia.is<string & tags.Format<"date-time">>(
-      authorizedUser.token.refreshable_until,
-    ),
-  );
-
-  // Step 6: Validate user task count and account status
-  TestValidator.predicate(
-    "tasks count is non-negative integer",
-    authorizedUser.tasks_count >= 0 &&
-      Number.isInteger(authorizedUser.tasks_count),
-  );
-  TestValidator.predicate(
-    "no account lockout on successful login",
-    authorizedUser.locked_until === null ||
-      authorizedUser.locked_until === undefined,
-  );
-
-  // Step 7: Verify same user data integrity
-  TestValidator.equals(
-    "same created timestamp",
-    authorizedUser.created_at,
-    user.created_at,
+    "authenticated user ID matches",
+    authenticatedUser.id,
+    registeredUser.id,
   );
   TestValidator.equals(
-    "same updated timestamp",
-    authorizedUser.updated_at,
-    user.updated_at,
+    "authenticated user email matches",
+    authenticatedUser.email,
+    email,
   );
+  TestValidator.equals(
+    "authenticated user timestamps match",
+    authenticatedUser.created_at,
+    registeredUser.created_at,
+  );
+  TestValidator.equals(
+    "authenticated user updated_at matches",
+    authenticatedUser.updated_at,
+    registeredUser.updated_at,
+  );
+
+  // Validate token structure and types
+  typia.assert<IAuthorizationToken>(authenticatedUser.token);
+  TestValidator.predicate(
+    "access token exists",
+    () => authenticatedUser.token.access.length > 0,
+  );
+  TestValidator.predicate(
+    "refresh token exists",
+    () => authenticatedUser.token.refresh.length > 0,
+  );
+  TestValidator.predicate(
+    "token has valid expiration format",
+    () =>
+      typia.is<string & tags.Format<"date-time">>(
+        authenticatedUser.token.expired_at,
+      ) &&
+      typia.is<string & tags.Format<"date-time">>(
+        authenticatedUser.token.refreshable_until,
+      ),
+  );
+
+  // Step 4: Verify token expiration times follow documented requirements
+  const now = new Date();
+  const accessExpiresAt = new Date(authenticatedUser.token.expired_at);
+  const refreshExpiresAt = new Date(authenticatedUser.token.refreshable_until);
+
+  // Verify access token expires within reasonable time (30 minutes as documented)
+  const accessTokenLifetime =
+    (accessExpiresAt.getTime() - now.getTime()) / (1000 * 60);
+  TestValidator.predicate(
+    "access token expires within 30-60 minutes",
+    () => accessTokenLifetime >= 29.9 && accessTokenLifetime <= 61,
+  );
+
+  // Verify refresh token expires within reasonable time (7 days as documented)
+  const refreshTokenLifetime =
+    (refreshExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+  TestValidator.predicate(
+    "refresh token expires within 7-10 days",
+    () => refreshTokenLifetime >= 6.9 && refreshTokenLifetime <= 10.5,
+  );
+
+  // Step 5: Validate Authorization header is set after successful login
+  // The SDK automatically handles this, but we verify the connection was updated
+  TestValidator.predicate(
+    "authorization header should contain access token",
+    () => connection.headers?.Authorization === authenticatedUser.token.access,
+  );
+
+  // Verify user profile information is included
+  if (authenticatedUser.user) {
+    TestValidator.equals(
+      "user profile ID matches",
+      authenticatedUser.user.id,
+      registeredUser.id,
+    );
+    TestValidator.equals(
+      "user profile email matches",
+      authenticatedUser.user.email,
+      registeredUser.email,
+    );
+    TestValidator.equals(
+      "user profile creation timestamp matches",
+      authenticatedUser.user.created_at,
+      registeredUser.created_at,
+    );
+    TestValidator.equals(
+      "user profile updated timestamp matches",
+      authenticatedUser.user.updated_at,
+      registeredUser.updated_at,
+    );
+  }
+
+  // Additional validation: Ensure login with same credentials succeeds multiple times
+  const secondLogin = await api.functional.auth.user.login(connection, {
+    body: loginCredentials,
+  });
+
+  typia.assert(secondLogin);
+  TestValidator.equals(
+    "second login returns same user ID",
+    secondLogin.id,
+    authenticatedUser.id,
+  );
+  TestValidator.equals(
+    "second login returns same email",
+    secondLogin.email,
+    authenticatedUser.email,
+  );
+
+  // Verify tokens are different between login attempts (security best practice)
+  TestValidator.notEquals(
+    "access tokens should be unique per login",
+    secondLogin.token.access,
+    authenticatedUser.token.access,
+  );
+  TestValidator.notEquals(
+    "refresh tokens should be unique per login",
+    secondLogin.token.refresh,
+    authenticatedUser.token.refresh,
+  );
+
+  // Reset authorization header for clean connection state
+  delete connection.headers?.Authorization;
 }

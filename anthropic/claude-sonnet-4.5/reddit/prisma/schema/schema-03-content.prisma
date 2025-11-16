@@ -1,0 +1,290 @@
+/// User-generated posts within communities supporting text, link, and image
+/// content types.
+///
+/// Posts are the primary content type driving community engagement and
+/// discussions. Each post belongs to a single community and is created by an
+/// authenticated member. Posts can be one of three types: text (long-form
+/// written content), link (external URL sharing), or image (uploaded visual
+/// content).
+///
+/// Posts accumulate votes that determine visibility and contribute to author
+/// karma. Members can edit their posts after creation, with edit history
+/// tracked through snapshots. Moderators can remove posts that violate
+/// community rules. Comments are attached to posts creating discussion
+/// threads.
+///
+/// The post lifecycle supports creation, editing (with snapshot tracking),
+/// voting, commenting, reporting, and deletion (soft delete preserving
+/// discussion context).
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where this post is published. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// Member who created this post. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Type of post content. Valid values: 'text' (long-form written content),
+  /// 'link' (external URL), 'image' (uploaded visual content). Determines
+  /// which content fields are populated.
+  post_type String
+  
+  /// Post title or headline. Required for all post types. Minimum 3
+  /// characters, maximum 300 characters. Indexed for search functionality.
+  title String
+  
+  /// Text content for text posts. Maximum 40,000 characters. Null for link and
+  /// image posts. Supports plain text with preserved formatting.
+  body String?
+  
+  /// External URL for link posts. Maximum 2,000 characters. Must start with
+  /// http:// or https://. Null for text and image posts. Stored exactly as
+  /// provided without normalization.
+  url String?
+  
+  /// Permanent URL for uploaded image in image posts. Generated after
+  /// successful image upload. Null for text and link posts. Images stored
+  /// server-side with unique identifiers.
+  image_url String?
+  
+  /// Indicates whether this post has been edited after creation. Set to true
+  /// when post is modified after initial publication. Used to display edited
+  /// indicator to users.
+  edited Boolean
+  
+  /// Timestamp when the post was originally created. Immutable. Used for
+  /// chronological sorting and age calculations.
+  created_at DateTime
+  
+  /// Timestamp of the most recent edit. Updated automatically when post
+  /// content is modified. Equals created_at if never edited.
+  updated_at DateTime
+  
+  /// Timestamp when the post was deleted (soft delete). Null for active posts.
+  /// Deleted posts are hidden from feeds but preserved for discussion context
+  /// and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_post_snapshots reddit_community_post_snapshots[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_post_votes reddit_community_post_votes[]
+  reddit_community_report_of_posts reddit_community_report_of_posts[]
+  reddit_community_notifications reddit_community_notifications[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id, created_at], map: "reddit_community_posts_reddit_community_community_id_c_ede20472")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_posts_reddit_community_member_id_crea_b4877c90")
+  @@index([created_at])
+}
+
+/// Historical point-in-time states of posts for edit history tracking and
+/// audit trails.
+///
+/// Post snapshots capture the complete state of a post at specific moments
+/// in time, primarily when edits occur. Each snapshot preserves the post's
+/// content, metadata, and context as it existed at that instant, enabling
+/// audit trails and potential content recovery.
+///
+/// Snapshots are created automatically when posts are edited after the
+/// initial 15-minute grace period. They store denormalized data to maintain
+/// historical accuracy even if the original post or related entities are
+/// modified or deleted.
+///
+/// Snapshots support moderation review, user transparency (showing edit
+/// history), and platform integrity by maintaining immutable records of
+/// content changes.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original post being tracked. {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// Type of post content at snapshot time. Denormalized from post for
+  /// historical accuracy. Valid values: 'text', 'link', 'image'.
+  post_type String
+  
+  /// Post title as it existed at snapshot time. Denormalized for historical
+  /// preservation.
+  title String
+  
+  /// Text content as it existed at snapshot time for text posts. Denormalized
+  /// for historical preservation. Null for non-text posts.
+  body String?
+  
+  /// External URL as it existed at snapshot time for link posts. Denormalized
+  /// for historical preservation. Null for non-link posts.
+  url String?
+  
+  /// Image URL as it existed at snapshot time for image posts. Denormalized
+  /// for historical preservation. Null for non-image posts.
+  image_url String?
+  
+  /// Timestamp when this snapshot was created. Represents the moment the post
+  /// was edited, triggering snapshot creation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_post_snapshots_reddit_community_post__d8065680")
+  @@index([created_at])
+}
+
+/// User comments on posts supporting nested threading with unlimited depth
+/// for rich discussions.
+///
+/// Comments enable members to respond to posts and other comments, creating
+/// hierarchical discussion threads. Each comment belongs to a specific post
+/// and optionally references a parent comment for nested replies, supporting
+/// conversation threading to any depth.
+///
+/// Comments accumulate votes contributing to author karma and can be edited
+/// or deleted by their authors. Moderators can remove comments violating
+/// community rules. The nested structure is preserved even when comments are
+/// deleted to maintain discussion context.
+///
+/// Comments support the same lifecycle as posts: creation, editing (with
+/// history tracking via snapshots if needed), voting, reporting, and soft
+/// deletion. Vote scores and engagement metrics help surface quality
+/// contributions.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post this comment belongs to. {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// Member who created this comment. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Parent comment for nested replies. {@link reddit_community_comments.id}.
+  /// Null for top-level comments directly on the post. Self-referential
+  /// foreign key enabling unlimited nesting depth.
+  parent_comment_id String?
+  
+  /// Comment text content. Required field. Maximum 10,000 characters. Supports
+  /// plain text with preserved formatting and basic markdown.
+  body String
+  
+  /// Nesting depth level of this comment. Top-level comments (direct replies
+  /// to post) have depth 0. Each nested reply increments depth by 1. Used for
+  /// display indentation and threading visualization.
+  depth Int
+  
+  /// Indicates whether this comment has been edited after creation. Set to
+  /// true when comment is modified. Displays edited indicator with timestamp
+  /// to users.
+  edited Boolean
+  
+  /// Timestamp when the comment was originally created. Immutable. Used for
+  /// chronological sorting and determining comment age.
+  created_at DateTime
+  
+  /// Timestamp of the most recent edit. Updated automatically when comment
+  /// content is modified. Equals created_at if never edited.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was deleted (soft delete). Null for active
+  /// comments. Deleted comments show placeholder text but preserve thread
+  /// structure for context.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  parentComment reddit_community_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_community_comments[] @relation("recursive")
+  reddit_community_comment_snapshots reddit_community_comment_snapshots[]
+  reddit_community_comment_votes reddit_community_comment_votes[]
+  reddit_community_report_of_comments reddit_community_report_of_comments[]
+  reddit_community_notifications reddit_community_notifications[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_comments_reddit_community_post_id_cre_7ea47a9e")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_comments_reddit_community_member_id_c_8bfb2de5")
+  @@index([parent_comment_id, created_at])
+  @@index([created_at])
+}
+
+/// Historical point-in-time states of comments for edit history tracking and
+/// audit trails.
+///
+/// Comment snapshots capture the complete state of a comment at specific
+/// moments in time when edits occur. Each snapshot preserves the comment's
+/// content and metadata as it existed at that instant, enabling audit
+/// trails, content recovery, and edit history transparency.
+///
+/// Snapshots are created automatically when comments are edited after the
+/// initial grace period. They store denormalized data to maintain historical
+/// accuracy even if the original comment or related entities are modified or
+/// deleted.
+///
+/// Snapshots support moderation review, user transparency for showing edit
+/// history, and platform integrity by maintaining immutable records of
+/// comment modifications.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original comment being tracked. {@link reddit_community_comments.id}.
+  reddit_community_comment_id String
+  
+  /// Comment text content as it existed at snapshot time. Denormalized for
+  /// historical preservation. Maximum 10,000 characters.
+  body String
+  
+  /// Timestamp when this snapshot was created. Represents the moment the
+  /// comment was edited, triggering snapshot creation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment reddit_community_comments @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_comment_id, created_at], map: "reddit_community_comment_snapshots_reddit_community_co_0e42edfd")
+  @@index([created_at])
+}

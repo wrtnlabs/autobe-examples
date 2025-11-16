@@ -1,0 +1,706 @@
+/// Raw event tracking for user behavior and system activities. Captures
+/// granular, time-series events including page views, purchases, reviews,
+/// errors, and platform actions. This table serves as the authoritative
+/// source for all business activity analytics and user behavior patterns.
+///
+/// Each event record contains a timestamp, event type classification, actor
+/// information (customer or seller), and flexible event data stored as JSON
+/// to accommodate diverse event types without schema modifications. This
+/// append-only, immutable log enables comprehensive historical analysis and
+/// reconstructing user journeys.
+///
+/// The event_log is optimized for high-volume ingestion and time-range
+/// queries, with indexes supporting efficient filtering by timestamp, event
+/// type, and actor. Events are retained for 12 months with older events
+/// archived to cold storage for compliance and historical analysis.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_event_log {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to customer who triggered the event. Nullable for guest events
+  /// or seller-initiated events. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String?
+  
+  /// Reference to seller who triggered the event. Nullable for customer or
+  /// guest events. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String?
+  
+  /// Reference to product involved in the event. Nullable for non-product
+  /// events. {@link ecommerce_mall_products.id}
+  ecommerce_mall_product_id String?
+  
+  /// Reference to order involved in the event. Nullable for non-order events.
+  /// {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String?
+  
+  /// Classification of the event. Examples: product_view, product_add_to_cart,
+  /// checkout_initiated, order_placed, payment_processed, shipment_created,
+  /// delivery_confirmed, review_submitted, seller_product_created,
+  /// seller_order_fulfilled. Used for event filtering and categorization.
+  event_type String
+  
+  /// Higher-level grouping of event types. Values: customer_activity,
+  /// seller_activity, product_activity, order_activity, payment_activity,
+  /// shipping_activity, review_activity, system_activity, error_activity.
+  /// Enables broad event filtering and dashboard segmentation.
+  event_category String
+  
+  /// Type of actor triggering the event. Values: guest, customer, seller,
+  /// admin, system. Determines which IDs are populated and how event is
+  /// attributed.
+  actor_type String
+  
+  /// IP address from which event originated. Used for geographic analysis,
+  /// fraud detection, and user behavior tracking. Stored for compliance with
+  /// up to 12 months retention.
+  ip_address String?
+  
+  /// HTTP User-Agent header identifying browser, device, and operating system.
+  /// Enables device-type segmentation and OS analysis for platform
+  /// optimization.
+  user_agent String?
+  
+  /// Flexible JSON object containing event-specific data. Structure varies by
+  /// event_type. Examples: {product_id, quantity, price} for purchase events;
+  /// {review_rating, review_length} for review events. Enables extensibility
+  /// without schema changes.
+  event_data String?
+  
+  /// Session identifier for grouping related events from same user session.
+  /// Enables session-based analytics and user journey reconstruction.
+  session_id String?
+  
+  /// Timestamp when event occurred, in UTC. Critical for time-series analysis
+  /// and temporal queries. Events are immutable after creation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers? @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers? @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products? @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders? @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([ecommerce_mall_product_id])
+  @@index([ecommerce_mall_order_id])
+  
+  @@index([created_at])
+  @@index([event_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_event_log_ecommerce_mall_customer_id_cr_2a88ffe3")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_event_log_ecommerce_mall_seller_id_crea_28092165")
+  @@index([event_category, created_at])
+  @@index([actor_type, created_at])
+}
+
+/// Daily aggregated performance metrics calculated from event_log. Provides
+/// pre-calculated key metrics by date for efficient dashboard and report
+/// generation. Each record represents a single day's aggregated data across
+/// the entire platform.
+///
+/// Metrics captured include total orders, revenue, active users (customers
+/// and sellers), page views, search queries, product views, cart additions,
+/// conversion rates, payment success rate, and order cancellation rate.
+/// These daily snapshots enable trend analysis and performance monitoring
+/// without requiring real-time aggregation of millions of events.
+///
+/// Daily metrics are recalculated each day at off-peak hours (2 AM UTC) and
+/// immutable once calculated. Historical daily metrics enable week-over-week
+/// and year-over-year comparisons for business intelligence.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_daily_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Date for which metrics are calculated (UTC midnight). One record per day.
+  /// Format: YYYY-MM-DD 00:00:00 UTC. Used as identifier for daily metrics.
+  metric_date DateTime
+  
+  /// Total number of orders placed on this date. Includes all order types
+  /// (single seller, multi-seller). Orders only counted if payment was
+  /// successfully authorized.
+  total_orders Int
+  
+  /// Total gross revenue from all orders placed on this date. Includes product
+  /// prices, shipping, taxes. Does not deduct refunds (captured separately).
+  /// In primary currency (USD equivalent).
+  total_revenue Float
+  
+  /// Total refund amount issued on this date (when refund was processed, not
+  /// when requested). Enables net revenue calculation.
+  total_refunds Float
+  
+  /// Number of unique customers who generated at least one event on this date.
+  /// Includes page views, clicks, purchases, reviews, etc.
+  active_customers Int
+  
+  /// Number of unique sellers who generated at least one event on this date.
+  /// Includes product uploads, order fulfillments, etc.
+  active_sellers Int
+  
+  /// Number of new customer accounts created on this date. Tracks customer
+  /// acquisition rate.
+  new_customer_registrations Int
+  
+  /// Number of new seller accounts created on this date. Tracks seller
+  /// acquisition rate.
+  new_seller_registrations Int
+  
+  /// Total number of page views across the platform on this date. Includes
+  /// product pages, category pages, seller stores, etc.
+  page_views Int
+  
+  /// Number of product detail page views on this date. Indicates product
+  /// discovery activity.
+  product_views Int
+  
+  /// Number of search queries executed on this date. Tracks search volume and
+  /// product discovery patterns.
+  search_queries Int
+  
+  /// Number of items added to shopping carts on this date. Indicates purchase
+  /// intent.
+  cart_additions Int
+  
+  /// Number of checkouts started on this date. Excludes completions (see
+  /// total_orders). Enables cart abandonment analysis.
+  checkout_initiations Int
+  
+  /// Percentage of payment attempts that succeeded on this date. Range: 0.0 to
+  /// 100.0. Calculated as (successful_payments / total_payment_attempts) *
+  /// 100.
+  payment_success_rate Float
+  
+  /// Percentage of orders that were cancelled on this date. Range: 0.0 to
+  /// 100.0. Calculated as (cancelled_orders / total_orders) * 100.
+  order_cancellation_rate Float
+  
+  /// Number of product reviews submitted on this date. Tracks customer
+  /// engagement and feedback volume.
+  reviews_submitted Int
+  
+  /// Average revenue per order on this date. Calculated as total_revenue /
+  /// total_orders. Indicates customer spending patterns.
+  average_order_value Float
+  
+  /// Timestamp when daily metrics were calculated. Typically 2 AM UTC on the
+  /// day following metric_date.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([metric_date])
+}
+
+/// Monthly aggregated performance metrics calculated from daily_metrics or
+/// event_log. Provides high-level monthly summaries for executive reporting
+/// and year-over-year comparisons. Each record represents all aggregated
+/// activity for a calendar month.
+///
+/// Monthly metrics include total orders, revenue, customer acquisition,
+/// seller acquisition, average metrics, and trend indicators. These monthly
+/// rollups enable executive dashboards to track business growth, seasonal
+/// patterns, and performance trends without needing to aggregate raw events.
+///
+/// Monthly metrics are immutable once calculated (first day of following
+/// month). Historical monthly data supports strategic planning and business
+/// intelligence for growth analysis.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_monthly_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Calendar year for which metrics are calculated. Examples: 2024, 2025.
+  /// Used with month to identify metric period.
+  year Int
+  
+  /// Calendar month (1-12) for which metrics are calculated. Combined with
+  /// year to identify month. Range: 1 (January) to 12 (December).
+  month Int
+  
+  /// Total number of orders placed during the month. Sum of
+  /// daily_metrics.total_orders for the month.
+  total_orders Int
+  
+  /// Total gross revenue from all orders in the month. Sum of
+  /// daily_metrics.total_revenue for the month. In USD equivalent.
+  total_revenue Float
+  
+  /// Total refunds issued in the month. Sum of daily_metrics.total_refunds for
+  /// the month.
+  total_refunds Float
+  
+  /// Net revenue after refunds. Calculated as total_revenue - total_refunds.
+  /// True economic value in the month.
+  net_revenue Float
+  
+  /// Total number of unique customers who had at least one event during the
+  /// month. Distinct count from daily active_customers.
+  unique_customers Int
+  
+  /// Total number of unique sellers who had at least one event during the
+  /// month. Distinct count from daily active_sellers.
+  unique_sellers Int
+  
+  /// Number of new customer accounts created during the month. Sum of daily
+  /// new_customer_registrations.
+  new_customer_registrations Int
+  
+  /// Number of new seller accounts created during the month. Sum of daily
+  /// new_seller_registrations.
+  new_seller_registrations Int
+  
+  /// Total page views across platform during the month. Sum of daily
+  /// page_views.
+  total_page_views Int
+  
+  /// Total product detail page views during the month. Sum of daily
+  /// product_views.
+  total_product_views Int
+  
+  /// Total search queries executed during the month. Sum of daily
+  /// search_queries.
+  total_search_queries Int
+  
+  /// Total product reviews submitted during the month. Sum of daily
+  /// reviews_submitted.
+  total_reviews_submitted Int
+  
+  /// Average order value for the month. Calculated as total_revenue /
+  /// total_orders. Indicates customer spending level.
+  average_order_value Float
+  
+  /// Average daily payment success rate for the month. Calculated as average
+  /// of daily_metrics.payment_success_rate for the month.
+  average_payment_success_rate Float
+  
+  /// Average daily order cancellation rate for the month. Calculated as
+  /// average of daily_metrics.order_cancellation_rate for the month.
+  average_order_cancellation_rate Float
+  
+  /// Percentage of customers from previous month who made a purchase in this
+  /// month. Indicates customer retention. Range: 0.0 to 100.0.
+  customer_retention_rate Float
+  
+  /// Timestamp when monthly metrics were calculated. Typically first day of
+  /// following month.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([year, month])
+}
+
+/// Product-level performance metrics tracking individual product sales,
+/// popularity, and customer satisfaction. Aggregated daily from event_log
+/// capturing product-specific activity. Each record represents performance
+/// metrics for a specific product on a specific date.
+///
+/// Metrics include units sold, revenue, page views, click-through rate,
+/// conversion rate, customer rating, and review count. These product metrics
+/// enable sellers to understand which products perform well, which
+/// underperform, and identify optimization opportunities.
+///
+/// Daily product metrics are calculated each day at off-peak hours and
+/// support seller dashboards, product search ranking optimization, and
+/// inventory management decision-making.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product being tracked. {@link ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Reference to the seller who owns the product. Enables seller-level
+  /// product analytics. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Date for which product metrics are calculated (UTC midnight). One record
+  /// per product per day. Format: YYYY-MM-DD 00:00:00 UTC.
+  metric_date DateTime
+  
+  /// Number of units of this product sold on this date. Aggregated from order
+  /// items.
+  units_sold Int
+  
+  /// Total revenue from this product on this date. Calculated as sum of
+  /// (unit_price × quantity) for all orders containing this product.
+  revenue Float
+  
+  /// Number of times the product detail page was viewed on this date.
+  /// Indicates product visibility and interest.
+  page_views Int
+  
+  /// Number of times this product was added to shopping carts on this date.
+  /// Indicates purchase intent.
+  add_to_cart_count Int
+  
+  /// Percentage of product page views that resulted in purchase on this date.
+  /// Calculated as (units_sold / page_views) * 100. Range: 0.0 to 100.0+.
+  conversion_rate Float
+  
+  /// Current average rating for this product (as of this date). Captured daily
+  /// to track rating changes over time. Range: 1.0 to 5.0.
+  average_rating Float
+  
+  /// Total number of reviews/ratings for this product (as of this date).
+  /// Tracked daily to monitor review accumulation.
+  review_count Int
+  
+  /// Number of new reviews submitted for this product on this date. Indicates
+  /// feedback velocity.
+  new_reviews Int
+  
+  /// Number of orders containing this product that were refunded on this date.
+  /// Indicates product quality or satisfaction issues.
+  refund_count Int
+  
+  /// Current available inventory level for this product (as of end of this
+  /// date). Tracked daily to monitor stock depletion.
+  stock_level Int
+  
+  /// Timestamp when product metrics were calculated. Typically 2 AM UTC on the
+  /// day following metric_date.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, metric_date], map: "ecommerce_mall_product_metrics_ecommerce_mall_product__3c7fb85c")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, metric_date], map: "ecommerce_mall_product_metrics_ecommerce_mall_seller_i_bbcc584b")
+  @@index([metric_date])
+}
+
+/// Seller-level performance metrics aggregated daily from order and review
+/// data. Tracks individual seller sales performance, customer satisfaction,
+/// fulfillment quality, and operational efficiency. Each record represents
+/// aggregated metrics for a specific seller on a specific date.
+///
+/// Metrics include total orders, revenue, average order value, shipping
+/// speed, refund rate, customer satisfaction ratings, and fulfillment
+/// performance. Sellers use these metrics to monitor their store performance
+/// and understand customer satisfaction.
+///
+/// Daily seller metrics support seller dashboards, performance badges,
+/// search ranking optimization, and business intelligence. Metrics are
+/// recalculated daily at off-peak hours.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller being tracked. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Date for which seller metrics are calculated (UTC midnight). One record
+  /// per seller per day. Format: YYYY-MM-DD 00:00:00 UTC.
+  metric_date DateTime
+  
+  /// Number of orders placed from this seller on this date. Includes
+  /// completed, pending, and cancelled orders.
+  total_orders Int
+  
+  /// Total gross revenue from orders placed with this seller on this date.
+  /// Does not deduct refunds.
+  total_revenue Float
+  
+  /// Average order value for orders from this seller on this date. Calculated
+  /// as total_revenue / total_orders.
+  average_order_value Float
+  
+  /// Number of unique customers who purchased from this seller on this date.
+  customer_count Int
+  
+  /// Number of first-time customers of this seller on this date. Indicates new
+  /// customer acquisition.
+  new_customers Int
+  
+  /// Number of returning customers who purchased again from this seller on
+  /// this date. Indicates customer loyalty.
+  repeat_customers Int
+  
+  /// Percentage of orders from this seller that were fulfilled (shipped) on
+  /// time during this date range. Range: 0.0 to 100.0.
+  fulfillment_rate Float
+  
+  /// Average hours from order confirmation to shipment dispatch for this
+  /// seller on this date. Lower is better. Indicates fulfillment speed.
+  average_shipping_speed_hours Float
+  
+  /// Number of refunds issued for orders from this seller on this date.
+  refund_count Int
+  
+  /// Percentage of this seller's orders that were refunded. Calculated as
+  /// (refund_count / total_orders) * 100. Range: 0.0 to 100.0. High rates
+  /// indicate quality issues.
+  refund_rate Float
+  
+  /// Current average rating for this seller (as of this date). Calculated from
+  /// all customer reviews. Range: 1.0 to 5.0.
+  average_rating Float
+  
+  /// Number of new reviews/ratings for this seller on this date.
+  new_reviews Int
+  
+  /// Overall customer satisfaction metric for this seller on this date.
+  /// Calculated from average rating and review sentiment. Range: 0.0 to 100.0.
+  customer_satisfaction_score Float
+  
+  /// Number of orders from this seller that were cancelled on this date.
+  cancellation_count Int
+  
+  /// Percentage of this seller's orders that were cancelled on this date.
+  /// Calculated as (cancellation_count / total_orders) * 100. Range: 0.0 to
+  /// 100.0.
+  cancellation_rate Float
+  
+  /// Timestamp when seller metrics were calculated. Typically 2 AM UTC on the
+  /// day following metric_date.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_seller_id, metric_date], map: "ecommerce_mall_seller_metrics_ecommerce_mall_seller_id_c1e3dcb3")
+  @@index([metric_date])
+}
+
+/// Customer cohort analysis and segmentation data for targeted marketing and
+/// business intelligence. Captures customer groupings by acquisition date
+/// (cohorts), spending patterns, and engagement levels. Enables cohort-based
+/// retention analysis and customer lifetime value (CLV) calculations.
+///
+/// Segmentation includes customer cohorts (grouped by registration month),
+/// customer value segments (high/medium/low value based on lifetime spend),
+/// engagement segments (active/moderate/inactive based on purchase
+/// frequency), and acquisition channel segments (organic/paid/referral).
+///
+/// Customer segments are recalculated monthly to reflect changing customer
+/// status and value. Segments enable targeted retention campaigns and help
+/// identify at-risk customers for proactive engagement.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_segments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer being segmented. {@link
+  /// ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Registration month (1-12) of the customer's cohort. Customers registered
+  /// in same month are grouped into same cohort.
+  cohort_month Int
+  
+  /// Registration year of the customer's cohort. Combined with cohort_month to
+  /// identify the cohort period.
+  cohort_year Int
+  
+  /// Customer value classification based on lifetime spend and purchase
+  /// frequency. Values: high_value (>90th percentile spending), medium_value
+  /// (40-90th percentile), low_value (<40th percentile). Enables targeted
+  /// retention strategies.
+  value_segment String
+  
+  /// Customer engagement level based on purchase frequency and recent
+  /// activity. Values: active (purchased in last 30 days), moderate (purchased
+  /// in last 90 days), inactive (no purchases in 90+ days). Identifies at-risk
+  /// customers.
+  engagement_segment String
+  
+  /// How customer was acquired to the platform. Values: organic
+  /// (direct/search), paid (advertising), referral (referred by existing
+  /// customer), affiliate (partner program). Enables marketing ROI analysis.
+  acquisition_channel String?
+  
+  /// Total lifetime spending by this customer across all orders. Enables CLV
+  /// analysis and value segmentation.
+  lifetime_spend Float
+  
+  /// Total number of orders placed by this customer. Indicates purchase
+  /// frequency and engagement.
+  lifetime_orders Int
+  
+  /// Percentage of customers in this cohort who made repeat purchases (2+
+  /// orders). Calculated as (repeat_customers / cohort_size) * 100. Range: 0.0
+  /// to 100.0. Indicates cohort retention.
+  repeat_purchase_rate Float
+  
+  /// Average order value for this customer. Calculated as lifetime_spend /
+  /// lifetime_orders. Indicates customer spending capacity.
+  average_order_value Float
+  
+  /// Date of this customer's most recent order. Used to identify at-risk
+  /// customers (no recent purchases).
+  last_purchase_date DateTime?
+  
+  /// Number of days since this customer's last purchase. Calculated daily.
+  /// Used to determine engagement_segment.
+  days_since_last_purchase Int?
+  
+  /// Assessment of likelihood customer will churn (stop purchasing). Values:
+  /// high (inactive 90+ days), medium (inactive 30-90 days), low (active
+  /// purchase within 30 days). Identifies customers for retention campaigns.
+  churn_risk String
+  
+  /// Timestamp when customer segment was last calculated or updated. Typically
+  /// monthly recalculation.
+  segment_updated_at DateTime
+  
+  /// Timestamp when customer segment record was created (when customer segment
+  /// analysis started).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_mall_customer_id])
+  @@index([value_segment])
+  @@index([engagement_segment])
+  @@index([churn_risk])
+}
+
+/// System and platform performance tracking metrics capturing infrastructure
+/// health, API performance, and operational status. Metrics include server
+/// response times, database performance, error rates, payment processor
+/// performance, and external service integrations. Enables operational
+/// monitoring and SLA (Service Level Agreement) compliance tracking.
+///
+/// Performance metrics are collected and aggregated hourly from multiple
+/// monitoring sources (application logs, infrastructure monitoring,
+/// third-party integrations). These metrics feed into operational dashboards
+/// and trigger alerts when performance falls below targets.
+///
+/// Metrics support incident response (understanding performance during
+/// issues), performance optimization (identifying bottlenecks), and capacity
+/// planning (understanding growth trends). Performance data is retained for
+/// 1 year.
+///
+/// @namespace Analytics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_performance_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Hour for which performance metrics are collected (UTC rounded to hour
+  /// boundary). Format: YYYY-MM-DD HH:00:00 UTC. One record per hour.
+  metric_hour DateTime
+  
+  /// 95th percentile API response time in milliseconds for this hour.
+  /// Indicates response time for most (95%) of API requests. Target: <500ms.
+  api_response_time_p95 Float
+  
+  /// 99th percentile API response time in milliseconds for this hour.
+  /// Indicates slowest acceptable response times. Target: <2000ms.
+  api_response_time_p99 Float
+  
+  /// 95th percentile search API response time in milliseconds. Target: <1000ms.
+  search_response_time_p95 Float
+  
+  /// 95th percentile database query execution time in milliseconds. Target:
+  /// <100ms.
+  database_query_time_p95 Float
+  
+  /// Percentage of API requests that resulted in error (5xx response codes)
+  /// during this hour. Range: 0.0 to 100.0. Target: <0.1%.
+  error_rate Float
+  
+  /// Percentage of time payment processor API was available during this hour.
+  /// Range: 0.0 to 100.0. Target: >99.9%.
+  payment_processor_availability Float
+  
+  /// Percentage of time shipping provider APIs were available during this
+  /// hour. Range: 0.0 to 100.0. Target: >99%.
+  shipping_provider_availability Float
+  
+  /// Average CPU usage percentage across all application servers during this
+  /// hour. Range: 0.0 to 100.0. Alert threshold: >80%.
+  server_cpu_usage_percent Float
+  
+  /// Average memory usage percentage across all application servers during
+  /// this hour. Range: 0.0 to 100.0. Alert threshold: >85%.
+  server_memory_usage_percent Float
+  
+  /// Database server CPU usage during this hour. Range: 0.0 to 100.0. Alert
+  /// threshold: >80%.
+  database_cpu_usage_percent Float
+  
+  /// Average number of active database connections during this hour. Alert
+  /// threshold: >80% of pool size.
+  database_connection_count Int
+  
+  /// Average number of API requests per second handled during this hour.
+  /// Indicates traffic volume.
+  requests_per_second Float
+  
+  /// Peak number of concurrent users on the platform during this hour.
+  concurrent_users Int
+  
+  /// Percentage of time platform was available during this hour. Range: 0.0 to
+  /// 100.0. Target: >99.9%.
+  uptime_percent Float
+  
+  /// Percentage of cache requests that hit cache (vs going to database) during
+  /// this hour. Range: 0.0 to 100.0. Higher is better (less DB load).
+  cache_hit_rate Float
+  
+  /// Percentage of payment attempts that succeeded during this hour. Range:
+  /// 0.0 to 100.0. Target: >99.5%.
+  payment_success_rate Float
+  
+  /// Timestamp when performance metrics were collected/calculated.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([metric_hour])
+}

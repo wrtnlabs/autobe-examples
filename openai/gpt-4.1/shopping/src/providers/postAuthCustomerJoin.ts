@@ -7,102 +7,102 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IShoppingCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingCustomer";
-import { IShoppingAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAuthorizationToken";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthCustomerJoin(props: {
-  body: IShoppingCustomer.ICreate;
-}): Promise<IShoppingCustomer.IAuthorized> {
-  // Step 1: Check for duplicate email or phone
-  const dup = await MyGlobal.prisma.shopping_customers.findFirst({
-    where: {
-      OR: [{ email: props.body.email }, { phone: props.body.phone }],
-    },
-    select: { email: true, phone: true },
+  body: IShoppingMallCustomer.ICreate;
+}): Promise<IShoppingMallCustomer.IAuthorized> {
+  // Step 1: Validate unique email
+  const existing = await MyGlobal.prisma.shopping_mall_customers.findFirst({
+    where: { email: props.body.email },
   });
-  if (dup?.email === props.body.email)
-    throw new HttpException("Email already registered.", 409);
-  if (dup?.phone === props.body.phone)
-    throw new HttpException("Phone already registered.", 409);
+  if (existing) {
+    throw new HttpException("Email already registered", 409);
+  }
 
   // Step 2: Hash password
   const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // Step 3: Create customer
+  // Generate IDs and timestamps
   const now = toISOStringSafe(new Date());
   const customerId = v4();
-  const customer = await MyGlobal.prisma.shopping_customers.create({
-    data: {
-      id: customerId,
-      email: props.body.email,
-      password_hash: hashedPassword,
-      name: props.body.name,
-      phone: props.body.phone,
-      is_active: true,
-      created_at: now,
-      updated_at: now,
-    },
-  });
-
-  // Step 4: Create session
   const sessionId = v4();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const session = await MyGlobal.prisma.shopping_customer_sessions.create({
-    data: {
-      id: sessionId,
-      shopping_customer_id: customerId,
-      ip:
-        props.body.ip === undefined || props.body.ip === null
-          ? ""
-          : props.body.ip,
-      href: props.body.href,
-      referrer: props.body.referrer,
-      created_at: now,
-      expired_at: toISOStringSafe(accessExpires),
-    },
-  });
+  // 1h access token expiry, 7d refresh window
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
-  // Step 5: Generate JWT tokens
+  // Step 3 & 4: Transactional creation
+  const [customer, session] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_mall_customers.create({
+      data: {
+        id: customerId,
+        email: props.body.email,
+        password_hash: hashedPassword,
+        name: props.body.name,
+        phone: props.body.phone,
+        is_email_verified: false,
+        created_at: now,
+        updated_at: now,
+      },
+    }),
+    MyGlobal.prisma.shopping_mall_customer_sessions.create({
+      data: {
+        id: sessionId,
+        shopping_mall_customer_id: customerId,
+        ip: "", // Not provided, empty string
+        href: "", // Not provided, empty string
+        referrer: "", // Not provided, empty string
+        created_at: now,
+        expired_at: accessExpires,
+      },
+    }),
+  ]);
+
+  // Step 5: JWT tokens
   const token = {
     access: jwt.sign(
       {
         type: "customer",
-        id: customerId,
-        session_id: sessionId,
+        id: customer.id,
+        session_id: session.id,
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
     ),
     refresh: jwt.sign(
       {
         type: "customer",
-        id: customerId,
-        session_id: sessionId,
+        id: customer.id,
+        session_id: session.id,
         tokenType: "refresh",
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
 
-  // Step 6: Return authorized customer object
+  // Step 6: Response
   return {
     id: customer.id,
     email: customer.email,
     name: customer.name,
     phone: customer.phone,
-    is_active: customer.is_active,
-    deleted_at: customer.deleted_at
-      ? toISOStringSafe(customer.deleted_at)
-      : null,
+    is_email_verified: customer.is_email_verified,
     created_at: toISOStringSafe(customer.created_at),
     updated_at: toISOStringSafe(customer.updated_at),
     token,
-    role: "customer",
   };
 }

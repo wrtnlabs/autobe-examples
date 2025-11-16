@@ -1,393 +1,383 @@
-/// Guest users who can browse public content without registration. Guests
-/// represent the entry point of the user journey, allowing content discovery
-/// before requiring commitment to register.
+/// Unauthenticated guest users who can browse public communities and content
+/// without creating accounts. Visitors have limited access to basic platform
+/// features while maintaining full browsing capabilities across public areas
+/// of the platform.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_guests {
+model reddit_community_visitors {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique guest identifier used for tracking guest sessions and browsing
-  /// behavior.
-  code String
+  /// Display name for the visitor. Must be unique across all visitor accounts.
+  nickname String
   
-  /// IP address for session management and basic analytics tracking.
-  ip_address String
+  /// Email address for visitor account. Required for potential account upgrade
+  /// and communication.
+  email String
   
-  /// Browser user agent string for analytics and compatibility tracking.
-  user_agent String
+  /// Hashed password for visitor account authentication. Required for account
+  /// security and login functionality.
+  password_hash String
   
-  /// Timestamp of the last activity from this guest for session management.
-  last_activity_at DateTime
-  
-  /// Optional email address for notifications when provided by guest users.
-  email String?
-  
-  /// Whether the guest email has been verified when provided.
-  is_email_verified Boolean
-  
-  /// Timestamp when the guest session was created.
+  /// Timestamp when the visitor account was created.
   created_at DateTime
   
-  /// Timestamp when the guest session was soft deleted.
+  /// Timestamp when the visitor account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the visitor account was soft deleted. Used for account
+  /// recovery and audit trails.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  reddit_like_community_guest_sessions reddit_like_community_guest_sessions[]
-  
-  @@unique([code])
-  @@index([last_activity_at])
-  @@index([ip_address])
-  @@index([is_email_verified])
-  @@index([deleted_at])
-}
-
-/// Guest session tracking for anonymous user activity monitoring. Manages
-/// guest authentication sessions through secure cookie-based tracking.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_guest_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Guest user's {@link reddit_like_community_guests.id}
-  guest_id String
-  
-  /// IP address for session management and security tracking.
-  ip String
-  
-  /// Connection URL for session tracking and auditing.
-  href String
-  
-  /// Referrer URL for tracking user navigation patterns.
-  referrer String
-  
-  /// Session creation timestamp for session management.
-  created_at DateTime
-  
-  /// Session expiration timestamp for security and cleanup.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  guest reddit_like_community_guests @relation(fields: [guest_id], references: [id], onDelete: Cascade)
-  
-  @@index([guest_id, created_at])
-}
-
-/// Community members who actively participate in communities through
-/// posting, commenting, and voting. Members form the core user base of the
-/// platform.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_members {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Member's email address used for authentication and notifications.
-  email String
-  
-  /// Member's unique public username for community participation.
-  username String
-  
-  /// Hashed password for authentication security.
-  password_hash String
-  
-  /// Member's display name for community interactions.
-  nickname String
-  
-  /// Member's biography for community profile.
-  bio String?
-  
-  /// URL to member's profile avatar image.
-  avatar_url String?
-  
-  /// Whether the member's email address has been verified.
-  is_verified Boolean
-  
-  /// Whether the member is currently banned from the platform.
-  is_banned Boolean
-  
-  /// Timestamp when the member was banned, if applicable.
-  banned_at DateTime?
-  
-  /// Member's total karma score from posts and comments.
-  total_karma Int
-  
-  /// Timestamp when the member registered.
-  created_at DateTime
-  
-  /// Timestamp of the last profile update.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  reddit_like_community_member_sessions reddit_like_community_member_sessions[]
-  reddit_like_community_posts reddit_like_community_posts[]
-  reddit_like_community_post_snapshots reddit_like_community_post_snapshots[]
-  reddit_like_community_comments reddit_like_community_comments[]
-  reddit_like_community_comment_snapshots reddit_like_community_comment_snapshots[]
-  reddit_like_community_votes reddit_like_community_votes[]
-  reddit_like_community_vote_fraud_alerts reddit_like_community_vote_fraud_alerts[]
-  reddit_like_community_vote_patterns reddit_like_community_vote_patterns[]
-  reddit_like_community_vote_behavior_analysis reddit_like_community_vote_behavior_analysis[]
-  reddit_like_community_memberships reddit_like_community_memberships[]
-  reddit_like_community_user_feeds reddit_like_community_user_feeds[]
-  reddit_like_community_reports_of_reddit_like_community_a5b61283 reddit_like_community_reports[] @relation("reddit_like_community_reports_of_reddit_like_community_a5b61283")
-  reddit_like_community_reports_of_content_author_id reddit_like_community_reports[] @relation("reddit_like_community_reports_of_content_author_id")
-  reddit_like_community_enforcement_actions reddit_like_community_enforcement_actions[]
-  reddit_like_community_appeals_of_reddit_like_community_8913a5c7 reddit_like_community_appeals[] @relation("reddit_like_community_appeals_of_reddit_like_community_8913a5c7")
-  reddit_like_community_appeals_of_reviewer_id reddit_like_community_appeals[] @relation("reddit_like_community_appeals_of_reviewer_id")
-  reddit_like_community_moderation_decisions reddit_like_community_moderation_decisions[]
-  reddit_like_community_karma_events_of_user_id reddit_like_community_karma_events[] @relation("reddit_like_community_karma_events_of_user_id")
-  reddit_like_community_karma_events_of_initiator_id reddit_like_community_karma_events[] @relation("reddit_like_community_karma_events_of_initiator_id")
-  reddit_like_community_user_karma_totals reddit_like_community_user_karma_totals?
-  reddit_like_community_karma_leaderboards reddit_like_community_karma_leaderboards[]
+  reddit_community_visitor_sessions reddit_community_visitor_sessions[]
   
   @@unique([email])
-  @@unique([username])
-  @@index([is_verified])
-  @@index([is_banned])
-  @@index([created_at])
-  @@index([total_karma])
+  @@unique([nickname])
 }
 
-/// Member authentication sessions for tracking user login activity and
-/// maintaining secure access to the platform.
+/// Authenticated users with full platform privileges including community
+/// participation, content creation, voting, and commenting. Members form the
+/// core user base with comprehensive access to all community features and
+/// engagement tools.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_member_sessions {
+model reddit_community_members {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Member's {@link reddit_like_community_members.id}
-  member_id String
-  
-  /// IP address for session management and security monitoring.
-  ip String
-  
-  /// Connection URL for session tracking and auditing.
-  href String
-  
-  /// Referrer URL for tracking user navigation patterns.
-  referrer String
-  
-  /// Session creation timestamp for session management.
-  created_at DateTime
-  
-  /// Session expiration timestamp for security.
-  expired_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  member reddit_like_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  
-  reddit_like_community_posts reddit_like_community_posts[]
-  
-  @@index([member_id, created_at])
-}
-
-/// Community moderators who manage and moderate individual communities.
-/// Moderators have elevated permissions for content management and user
-/// oversight within their assigned communities.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_moderators {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Moderator's email address used for authentication.
-  email String
-  
-  /// Moderator's unique public username for platform visibility.
-  username String
-  
-  /// Hashed password for authentication security.
-  password_hash String
-  
-  /// Moderator's display name for community interactions.
+  /// Unique display name for the member across the platform.
   nickname String
   
-  /// Moderator's total karma score from platform activities.
-  total_karma Int
+  /// Verified email address for member authentication and notifications.
+  email String
   
-  /// Whether the moderator's email has been verified.
-  is_verified Boolean
+  /// Securely hashed password for member login authentication.
+  password_hash String
   
-  /// Whether the moderator is currently active and authorized.
-  is_active Boolean
-  
-  /// Timestamp when the moderator registered.
+  /// Timestamp when the member account was created.
   created_at DateTime
   
-  /// Timestamp of the last profile update.
+  /// Timestamp when the member account was last updated.
   updated_at DateTime
+  
+  /// Soft deletion timestamp for account management and auditing.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  reddit_like_community_moderator_sessions reddit_like_community_moderator_sessions[]
-  reddit_like_community_moderator_assignments reddit_like_community_moderator_assignments[]
+  reddit_community_member_sessions reddit_community_member_sessions[]
+  reddit_community_community_subscriptions reddit_community_community_subscriptions[]
+  reddit_community_community_invitations reddit_community_community_invitations[]
+  reddit_community_community_memberships reddit_community_community_memberships[]
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_post_snapshots reddit_community_post_snapshots[]
+  reddit_community_comments reddit_community_comments[]
+  reddit_community_comment_snapshots reddit_community_comment_snapshots[]
+  reddit_community_media_files reddit_community_media_files[]
+  reddit_community_content_reports_of_reddit_reporter_id reddit_community_content_reports[] @relation("reddit_community_content_reports_of_reddit_reporter_id")
+  reddit_community_content_reports_of_reddit_reported_member_id reddit_community_content_reports[] @relation("reddit_community_content_reports_of_reddit_reported_member_id")
+  reddit_community_votes reddit_community_votes[]
+  reddit_community_karma_calculations reddit_community_karma_calculations?
+  reddit_community_karma_history reddit_community_karma_history[]
+  reddit_community_appeals reddit_community_appeals[]
+  reddit_community_user_profiles reddit_community_user_profiles?
+  reddit_community_help_desk reddit_community_help_desk[]
+  reddit_community_support_tickets reddit_community_support_tickets[]
   
   @@unique([email])
-  @@unique([username])
-  @@index([is_verified])
-  @@index([is_active])
-  @@index([created_at])
-  @@index([total_karma])
+  @@unique([nickname])
 }
 
-/// Moderator authentication sessions for tracking admin-level access and
-/// maintaining security for elevated privileges.
+/// Community-level administrators with elevated privileges for managing
+/// specific communities. Community moderators have authority to enforce
+/// rules, remove content, manage memberships, and maintain community
+/// standards within their assigned communities.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_moderator_sessions {
+model reddit_community_community_moderators {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Moderator's {@link reddit_like_community_moderators.id}
-  moderator_id String
+  /// Unique display name for the community moderator.
+  nickname String
   
-  /// IP address for session management and security monitoring.
-  ip String
+  /// Verified email address for moderator communications and authentication.
+  email String
   
-  /// Connection URL for session tracking and auditing.
-  href String
+  /// Hashed password for secure moderator account authentication.
+  password_hash String
   
-  /// Referrer URL for tracking user navigation patterns.
-  referrer String
-  
-  /// Session creation timestamp for session management.
+  /// Timestamp when the community moderator account was created.
   created_at DateTime
   
-  /// Session expiration timestamp for security.
+  /// Timestamp when the community moderator account was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for account recovery and audit tracking.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_community_moderator_sessions reddit_community_community_moderator_sessions[]
+  reddit_community_moderation_queue reddit_community_moderation_queue[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  
+  @@unique([email])
+  @@unique([nickname])
+}
+
+/// System-wide administrators with comprehensive platform management
+/// authority. Platform moderators oversee community health, enforce
+/// platform-wide policies, handle escalated issues, and maintain overall
+/// platform integrity across all communities.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_platform_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique display name for the platform moderator across the entire platform.
+  nickname String
+  
+  /// Verified email address for platform moderator communications and secure
+  /// authentication.
+  email String
+  
+  /// Securely hashed password for platform moderator account authentication.
+  password_hash String
+  
+  /// Timestamp when the platform moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the platform moderator account was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for account management and administrative
+  /// auditing.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_community_platform_moderator_sessions reddit_community_platform_moderator_sessions[]
+  reddit_community_report_reasons reddit_community_report_reasons[]
+  reddit_community_moderation_queue reddit_community_moderation_queue[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  reddit_community_help_desk reddit_community_help_desk[]
+  reddit_community_faqs_of_created_by_reddit_community_p_5dca0b3c reddit_community_faqs[] @relation("reddit_community_faqs_of_created_by_reddit_community_p_5dca0b3c")
+  reddit_community_faqs_of_updated_by_reddit_community_p_b78d3e53 reddit_community_faqs[] @relation("reddit_community_faqs_of_updated_by_reddit_community_p_b78d3e53")
+  reddit_community_support_tickets reddit_community_support_tickets[]
+  reddit_community_knowledge_base_of_created_by_reddit_c_d37e1bd6 reddit_community_knowledge_base[] @relation("reddit_community_knowledge_base_of_created_by_reddit_c_d37e1bd6")
+  reddit_community_knowledge_base_of_updated_by_reddit_c_bccdb83b reddit_community_knowledge_base[] @relation("reddit_community_knowledge_base_of_updated_by_reddit_c_bccdb83b")
+  
+  @@unique([email])
+  @@unique([nickname])
+}
+
+/// User session records for visitor accounts tracking authentication state
+/// and connection details. Session data enables secure, persistent access
+/// for visitor users while maintaining audit trails for security and
+/// administrative purposes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_visitor_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged visitor's {@link reddit_community_visitors.id}
+  reddit_community_visitor_id String
+  
+  /// IP address of the visitor session for connection tracking and security
+  /// monitoring.
+  ip String
+  
+  /// Connection URL for the visitor session to track navigation and access
+  /// sources.
+  href String
+  
+  /// Referrer URL for the visitor session to understand traffic sources and
+  /// user journeys.
+  referrer String
+  
+  /// Timestamp when the visitor session was created.
+  created_at DateTime
+  
+  /// Timestamp when the visitor session expires. Used for session lifecycle
+  /// management.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  moderator reddit_like_community_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  visitor reddit_community_visitors @relation(fields: [reddit_community_visitor_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([moderator_id, created_at], map: "reddit_like_community_moderator_sessions_moderator_id__de2ccf45")
+  @@index([reddit_community_visitor_id, created_at], map: "reddit_community_visitor_sessions_reddit_community_vis_3303ff91")
 }
 
-/// Platform administrators who have system-wide permissions for managing the
-/// entire platform. Admins oversee community operations, user management,
-/// and platform policies.
+/// User session records for member accounts tracking authentication state
+/// and connection details. Session data enables secure, persistent access
+/// for member users while maintaining audit trails for security and
+/// administrative oversight.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_admins {
+model reddit_community_member_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Admin's email address used for authentication and notifications.
-  email String
+  /// Belonged member's {@link reddit_community_members.id}
+  reddit_community_member_id String
   
-  /// Admin's unique public username for platform administration.
-  username String
-  
-  /// Hashed password for authentication security.
-  password_hash String
-  
-  /// Admin's display name for platform interactions.
-  nickname String
-  
-  /// Admin role level determining permissions (super_admin, admin, support).
-  role String
-  
-  /// Whether the admin's email has been verified.
-  is_verified Boolean
-  
-  /// Whether the admin is currently active and authorized.
-  is_active Boolean
-  
-  /// Timestamp when the admin was added to the system.
-  created_at DateTime
-  
-  /// Timestamp of the last profile update.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  reddit_like_community_admin_sessions reddit_like_community_admin_sessions[]
-  
-  @@unique([email])
-  @@unique([username])
-  @@index([role])
-  @@index([is_verified])
-  @@index([is_active])
-  @@index([created_at])
-}
-
-/// Administrator authentication sessions for high-privilege access tracking
-/// and maintaining security oversight for platform management operations.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_like_community_admin_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Administrator's {@link reddit_like_community_admins.id}
-  admin_id String
-  
-  /// IP address for session management and security monitoring.
+  /// IP address of the member session for security monitoring and access
+  /// tracking.
   ip String
   
-  /// Connection URL for session tracking and auditing.
+  /// Connection URL for the member session to track navigation patterns and
+  /// access sources.
   href String
   
-  /// Referrer URL for tracking user navigation patterns.
+  /// Referrer URL for the member session to understand traffic sources and
+  /// user behavior.
   referrer String
   
-  /// Session creation timestamp for session management.
+  /// Timestamp when the member session was created.
   created_at DateTime
   
-  /// Session expiration timestamp for security.
+  /// Timestamp when the member session expires for lifecycle management and
+  /// security purposes.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  admin reddit_like_community_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
   
-  @@index([admin_id, created_at])
+  reddit_community_votes reddit_community_votes[]
+  reddit_community_karma_history reddit_community_karma_history[]
+  reddit_community_help_desk reddit_community_help_desk[]
+  reddit_community_support_tickets reddit_community_support_tickets[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_member_sessions_reddit_community_memb_ebf18d50")
+}
+
+/// User session records for community moderator accounts tracking
+/// authentication state and connection details. Session data enables secure,
+/// persistent access for community moderator users while maintaining audit
+/// trails for security and administrative oversight.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged community moderator's {@link
+  /// reddit_community_community_moderators.id}
+  reddit_community_community_moderator_id String
+  
+  /// IP address of the community moderator session for security tracking and
+  /// access monitoring.
+  ip String
+  
+  /// Connection URL for the community moderator session to track navigation
+  /// and access patterns.
+  href String
+  
+  /// Referrer URL for the community moderator session to understand traffic
+  /// sources and user journeys.
+  referrer String
+  
+  /// Timestamp when the community moderator session was created.
+  created_at DateTime
+  
+  /// Timestamp when the community moderator session expires for lifecycle
+  /// management.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  communityModerator reddit_community_community_moderators @relation(fields: [reddit_community_community_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_moderator_id, created_at], map: "reddit_community_community_moderator_sessions_reddit_c_ea5cda94")
+}
+
+/// User session records for platform moderator accounts tracking
+/// authentication state and connection details. Session data enables secure,
+/// persistent access for platform moderator users while maintaining
+/// comprehensive audit trails for security and administrative oversight.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_platform_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged platform moderator's {@link
+  /// reddit_community_platform_moderators.id}
+  reddit_community_platform_moderator_id String
+  
+  /// IP address of the platform moderator session for security monitoring and
+  /// access tracking.
+  ip String
+  
+  /// Connection URL for the platform moderator session to track navigation and
+  /// access sources.
+  href String
+  
+  /// Referrer URL for the platform moderator session to understand traffic
+  /// sources and user behavior patterns.
+  referrer String
+  
+  /// Timestamp when the platform moderator session was created.
+  created_at DateTime
+  
+  /// Timestamp when the platform moderator session expires for security and
+  /// lifecycle management.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  platformModerator reddit_community_platform_moderators @relation(fields: [reddit_community_platform_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_platform_moderator_id, created_at], map: "reddit_community_platform_moderator_sessions_reddit_co_576bdd28")
 }

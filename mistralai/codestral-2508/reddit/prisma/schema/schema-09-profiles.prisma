@@ -1,0 +1,52 @@
+/// User profile information for community platform users.
+///
+/// Stores user profile details including display name, bio, avatar URL, and
+/// profile creation metadata. Each profile is associated with a specific user
+/// account and contains information that users can share with the community.
+///
+/// Profiles support soft deletion to allow users to temporarily remove their
+/// profile while maintaining audit trails. The profile data is used for user
+/// identification and personalization across the platform.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user account associated with this profile. {@link
+  /// reddit_like_community_users.id}
+  reddit_like_community_user_id String
+  
+  /// The name displayed publicly for the user.
+  display_name String
+  
+  /// A brief description of the user's interests or background.
+  bio String?
+  
+  /// URL to the user's profile image.
+  avatar_url String?
+  
+  /// When the profile was created.
+  created_at DateTime
+  
+  /// When the profile was last updated.
+  updated_at DateTime
+  
+  /// When the profile was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_community_users @relation(fields: [reddit_like_community_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_user_id], map: "reddit_like_community_profiles_reddit_like_community_u_9a0f8111")
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id], map: "reddit_like_community_profiles_reddit_like_community_u_71942782")
+}

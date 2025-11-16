@@ -15,51 +15,60 @@ export async function putTodoListUserTodosTodoId(props: {
   todoId: string & tags.Format<"uuid">;
   body: ITodoListTodo.IUpdate;
 }): Promise<ITodoListTodo> {
-  const { user, todoId, body } = props;
-
-  // Fetch existing todo with ownership and soft-delete verification
-  const existing = await MyGlobal.prisma.todo_list_todos.findFirst({
-    where: {
-      id: todoId,
-      deleted_at: null,
-    },
+  const existing = await MyGlobal.prisma.todo_list_todos.findUnique({
+    where: { id: props.todoId },
   });
 
   if (!existing) {
     throw new HttpException("Todo not found", 404);
   }
 
-  // MANDATORY ownership verification
-  if (existing.todo_list_user_id !== user.id) {
-    throw new HttpException(
-      "Unauthorized: You can only update your own todo items",
-      403,
-    );
+  if (existing.todo_list_user_id !== props.user.id) {
+    throw new HttpException("Forbidden", 403);
   }
 
-  // Execute update with inline data definition for clear type errors
   const updated = await MyGlobal.prisma.todo_list_todos.update({
-    where: { id: todoId },
+    where: { id: props.todoId },
     data: {
-      title: body.title ?? undefined,
-      description: body.description ?? undefined,
-      status: body.status ?? undefined,
-      updated_at: toISOStringSafe(new Date()),
+      ...(props.body.title !== undefined && { title: props.body.title }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      ...(props.body.status !== undefined && { status: props.body.status }),
+      ...(props.body.priority !== undefined && {
+        priority: props.body.priority,
+      }),
+      ...(props.body.due_date !== undefined && {
+        due_date: props.body.due_date,
+      }),
+      ...(props.body.completed !== undefined && {
+        completed: props.body.completed,
+      }),
+      ...(props.body.completed_at !== undefined && {
+        completed_at: props.body.completed_at,
+      }),
+      updated_at: new Date(),
     },
   });
 
-  // Convert DateTime fields to ISO strings for API response
   return {
-    id: updated.id as string & tags.Format<"uuid">,
-    todo_list_user_id: updated.todo_list_user_id as string &
-      tags.Format<"uuid">,
+    id: updated.id,
     title: updated.title,
-    description: updated.description !== null ? updated.description : undefined,
-    status: updated.status as "complete" | "incomplete",
+    description: updated.description ?? null,
+    status: typia.assert<"completed" | "pending" | "in_progress" | "cancelled">(
+      updated.status,
+    ),
+    priority:
+      updated.priority !== null
+        ? typia.assert<"low" | "medium" | "high">(updated.priority)
+        : null,
+    due_date: updated.due_date ? toISOStringSafe(updated.due_date) : null,
+    completed: updated.completed,
+    completed_at: updated.completed_at
+      ? toISOStringSafe(updated.completed_at)
+      : null,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at
-      ? toISOStringSafe(updated.deleted_at)
-      : undefined,
+    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
   };
 }

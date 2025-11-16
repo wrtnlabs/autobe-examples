@@ -1,274 +1,45 @@
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
+import { TypedRoute, TypedParam } from "@nestia/core";
 import typia, { tags } from "typia";
-import { postDiscussionBoardAdminArticlesArticleIdAttachments } from "../../../../../providers/postDiscussionBoardAdminArticlesArticleIdAttachments";
+import { deleteDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId } from "../../../../../providers/deleteDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
-import { patchDiscussionBoardAdminArticlesArticleIdAttachments } from "../../../../../providers/patchDiscussionBoardAdminArticlesArticleIdAttachments";
-import { getDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId } from "../../../../../providers/getDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId";
-import { putDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId } from "../../../../../providers/putDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId";
-import { deleteDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId } from "../../../../../providers/deleteDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId";
 
-import { IDiscussionBoardArticleAttachment } from "../../../../../api/structures/IDiscussionBoardArticleAttachment";
-import { IPageIDiscussionBoardArticleAttachment } from "../../../../../api/structures/IPageIDiscussionBoardArticleAttachment";
-
-@Controller("/discussionBoard/admin/articles/:articleId/attachments")
+@Controller(
+  "/discussionBoard/admin/articles/:articleId/attachments/:attachmentId",
+)
 export class DiscussionboardAdminArticlesAttachmentsController {
   /**
-   * Upload and attach a new file or image to a specific discussion board
-   * article (discussion_board_article_attachments).
+   * Delete a specific article attachment by its ID in
+   * discussion_board_article_attachments.
    *
-   * Upload and associate a new attachment with an existing article in the
-   * discussion board service. The request body contains all file metadata and
-   * access information provided by the uploading client, subject to
-   * comprehensive business rules for allowed file extensions (JPEG, PNG, GIF,
-   * PDF, DOCX, XLSX, TXT, ZIP), size limits, and virus/malware scan status.
-   * Each attachment is stored and linked to the target article as identified by
-   * articleId, with constraints that prevent adding more than the allowed
-   * number or exceeding quota for the article.
+   * Delete an attachment from a specific discussion board article using the
+   * attachment's unique identifier.
    *
-   * Authorization and security are enforced to ensure only the article's author
-   * (user) or administrators may upload attachments. File metadata is validated
-   * against the schema, ensuring kind, MIME type, and file properties are
-   * correct. The attachment is immediately associated with the article, and the
-   * response returns the complete details of the newly created attachment.
-   * Audit logging is performed for compliance and business traceability.
+   * Only the owner of the article or an admin can invoke this operation. The
+   * system first validates the existence of both the specified article and
+   * attachment, followed by verifying that the attachment is correctly related
+   * to the target article. Permission checks ensure that ordinary users cannot
+   * delete attachments from articles they do not own, while admins have
+   * override privileges to manage content.
    *
-   * If validation fails (e.g., improper file type or over limit), the operation
-   * returns clear error messages per error handling best practices. Only
-   * attachments successfully passing validation and security scans are created
-   * and returned.
+   * On successful invocation, the attachment is permanently deleted from both
+   * the database and backend file storage. All file access rights are
+   * immediately revoked. Errors are returned if either entity does not exist,
+   * the user lacks permission, or deletion fails due to storage constraints.
+   * This operation leverages the discussion_board_article_attachments table and
+   * is representative of granular, user-facing content management workflows.
+   * Related operations include article deletion (which will cascade to all
+   * attachments) and attachment upload (for file creation).
    *
    * @param connection
-   * @param articleId Unique identifier of the parent article to which the new
-   *   attachment is being added (global scope).
-   * @param body Attachment file and all file metadata required for upload, as
-   *   defined in business rules, including filename, kind, MIME type, size, and
-   *   scan result.
+   * @param articleId Unique identifier of the article to which this attachment
+   *   belongs.
+   * @param attachmentId Unique identifier of the attachment to be deleted from
+   *   the article.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post()
-  public async create(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("articleId")
-    articleId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IDiscussionBoardArticleAttachment.ICreate,
-  ): Promise<IDiscussionBoardArticleAttachment> {
-    try {
-      return await postDiscussionBoardAdminArticlesArticleIdAttachments({
-        admin,
-        articleId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Search and retrieve the paginated list of non-deleted attachments for a
-   * specific article in the discussion_board_article_attachments table.
-   *
-   * This endpoint provides an advanced query and index operation for retrieving
-   * all file and image attachments belonging to a particular article on the
-   * discussion board. Attachments are filtered by the parent articleId (passed
-   * as a path parameter), and by default, only non-deleted attachments (i.e.,
-   * those with a null deleted_at) are returned, conforming to the soft deletion
-   * logic described in the Prisma schema.
-   *
-   * The request body supports filtering on attachment kind (such as 'image',
-   * 'document', or custom values per business logic), filename search
-   * (case-insensitive substring or trigram match), minimum and maximum file
-   * size, and attachment creation date/time ranges. Attachment previews and
-   * necessary metadata (such as filename, mimetype, file size, and whether the
-   * file passed virus scanning) are included in the summary response DTO for
-   * efficient presentation.
-   *
-   * The returned list is paginated, with parameters for page size and cursor
-   * passed in the request body. Authorization is required: only the original
-   * article's author and administrators may list all attachments (other actors
-   * are refused with clear error messaging). This allows robust attachment
-   * management in article editing and review flows while maintaining strict
-   * permission controls.
-   *
-   * @param connection
-   * @param articleId Unique identifier of the parent article whose attachments
-   *   are being queried.
-   * @param body Query and pagination parameters for filtering attachments (such
-   *   as kind, filename, file size range, created_at range) under the specified
-   *   article.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("articleId")
-    articleId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IDiscussionBoardArticleAttachment.IRequest,
-  ): Promise<IPageIDiscussionBoardArticleAttachment.ISummary> {
-    try {
-      return await patchDiscussionBoardAdminArticlesArticleIdAttachments({
-        admin,
-        articleId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve metadata and access details for a specific article attachment in
-   * discussion board articles (discussion_board_article_attachments).
-   *
-   * Retrieve details for an individual attachment (file or image) associated
-   * with a particular article in the discussion board system. This endpoint
-   * enables clients to display or offer download of a specific file, showing
-   * attributes such as original filename, type (e.g., image or document), MIME
-   * type, filesize, and virus scan status. Access to the attachment is allowed
-   * only if the referencing article is not deleted or the attachment itself is
-   * not soft-deleted; otherwise, the endpoint will reject the request per
-   * business rules around hidden or deleted content.
-   *
-   * Security and privacy are enforced according to system and user roles: a
-   * regular user may retrieve attachments they own, while administrators can
-   * access any attachment for moderation or compliance. The operation audits
-   * access for traceability, referencing permissions and the business
-   * validation logic described in the discussion_board_article_attachments
-   * schema.
-   *
-   * This endpoint does not expose the file contents directly but instead
-   * provides securely generated download URIs with short-term validity as per
-   * the backend's file handling rules, ensuring files cannot be accessed after
-   * deletion or without appropriate authentication.
-   *
-   * @param connection
-   * @param articleId Unique identifier of the parent article this attachment is
-   *   associated with (global scope).
-   * @param attachmentId Unique identifier of the attachment to retrieve within
-   *   the parent article (scoped to article).
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":attachmentId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("articleId")
-    articleId: string & tags.Format<"uuid">,
-    @TypedParam("attachmentId")
-    attachmentId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardArticleAttachment> {
-    try {
-      return await getDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId(
-        {
-          admin,
-          articleId,
-          attachmentId,
-        },
-      );
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update an attachment for a specific article
-   * (discussion_board_article_attachments).
-   *
-   * This endpoint allows an authenticated author or an administrator to update
-   * an existing attachment to an article, such as replacing the file, updating
-   * its display name/metadata, or revising the kind for proper categorization
-   * (image/document/archive).
-   *
-   * The operation enforces business rules restricting allowed file types (jpeg,
-   * png, gif, pdf, docx, xlsx, txt, zip) and maximum permitted file/total
-   * sizes. Virus/malware scanning is performed before files become active for
-   * download. Attempts to update a deleted (soft-deleted) attachment are
-   * blocked, and all actions are logged for compliance.
-   *
-   * Security restrictions apply: users can only update attachments on articles
-   * they authored; admins may update any attachment for moderation or
-   * compliance purposes. Business logic ensures attachment counts and
-   * per-article limits remain in effect.
-   *
-   * This operation integrates with the discussion_board_article_attachments
-   * table, referencing the parent article by articleId and the target
-   * attachment by attachmentId.
-   *
-   * @param connection
-   * @param articleId Unique identifier of the target article containing the
-   *   attachment
-   * @param attachmentId Unique identifier of the attachment to be updated
-   *   within the article
-   * @param body Updated attachment information, such as new filename, kind,
-   *   file metadata, and/or file URI for replacement
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":attachmentId")
-  public async update(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("articleId")
-    articleId: string & tags.Format<"uuid">,
-    @TypedParam("attachmentId")
-    attachmentId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IDiscussionBoardArticleAttachment.IUpdate,
-  ): Promise<IDiscussionBoardArticleAttachment> {
-    try {
-      return await putDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId(
-        {
-          admin,
-          articleId,
-          attachmentId,
-          body,
-        },
-      );
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Delete (soft-delete) an article attachment
-   * (discussion_board_article_attachments).
-   *
-   * This endpoint allows an authenticated article author or administrator to
-   * delete an attached image or document from an existing article. The
-   * operation sets the deleted_at column in the
-   * discussion_board_article_attachments table, marking the attachment as
-   * removed (soft-delete), so it is no longer accessible or downloadable by
-   * normal users, but retained for possible audit or administrative review.
-   *
-   * Business logic will ensure that storage backends are informed to mark the
-   * underlying file for deletion according to system retention policies, and
-   * the attachment listing for the article is updated to reflect removal.
-   *
-   * Only the article's author or an admin may delete attachments. Soft-deleted
-   * attachments cannot be removed again, and attempts to access deleted files
-   * are denied. All operations are logged for compliance, and responses conform
-   * to file privacy/security policy.
-   *
-   * The operation references the discussion_board_article_attachments table,
-   * targeting a specific attachment by its attachmentId within its parent
-   * article.
-   *
-   * @param connection
-   * @param articleId Unique identifier of the target article containing the
-   *   attachment
-   * @param attachmentId Unique identifier of the attachment to be deleted
-   *   within the article
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":attachmentId")
+  @TypedRoute.Delete()
   public async erase(
     @AdminAuth()
     admin: AdminPayload,
@@ -276,7 +47,7 @@ export class DiscussionboardAdminArticlesAttachmentsController {
     articleId: string & tags.Format<"uuid">,
     @TypedParam("attachmentId")
     attachmentId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardArticleAttachment> {
+  ): Promise<void> {
     try {
       return await deleteDiscussionBoardAdminArticlesArticleIdAttachmentsAttachmentId(
         {

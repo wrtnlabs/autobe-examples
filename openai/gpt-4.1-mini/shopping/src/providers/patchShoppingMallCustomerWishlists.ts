@@ -10,96 +10,71 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { IShoppingMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallWishlist";
 import { IPageIShoppingMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallWishlist";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IShoppingMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallWishlistItem";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 
 export async function patchShoppingMallCustomerWishlists(props: {
   customer: CustomerPayload;
   body: IShoppingMallWishlist.IRequest;
 }): Promise<IPageIShoppingMallWishlist.ISummary> {
-  const { customer, body } = props;
-
-  const page = body.page;
-  const limit = body.limit;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
 
-  const createdAtFilter: {
-    gte?: string & tags.Format<"date-time">;
-    lte?: string & tags.Format<"date-time">;
-  } = {};
-  if (body.created_at_from !== undefined && body.created_at_from !== null) {
-    createdAtFilter.gte = body.created_at_from;
-  }
-  if (body.created_at_to !== undefined && body.created_at_to !== null) {
-    createdAtFilter.lte = body.created_at_to;
-  }
-
-  const updatedAtFilter: {
-    gte?: string & tags.Format<"date-time">;
-    lte?: string & tags.Format<"date-time">;
-  } = {};
-  if (body.updated_at_from !== undefined && body.updated_at_from !== null) {
-    updatedAtFilter.gte = body.updated_at_from;
-  }
-  if (body.updated_at_to !== undefined && body.updated_at_to !== null) {
-    updatedAtFilter.lte = body.updated_at_to;
-  }
-
-  const where = {
-    shopping_mall_customer_id: customer.id,
-    ...(body.shopping_mall_customer_session_id !== undefined &&
-      body.shopping_mall_customer_session_id !== null && {
-        shopping_mall_customer_session_id:
-          body.shopping_mall_customer_session_id,
-      }),
-    ...(Object.keys(createdAtFilter).length > 0 && {
-      created_at: createdAtFilter,
-    }),
-    ...(Object.keys(updatedAtFilter).length > 0 && {
-      updated_at: updatedAtFilter,
-    }),
-    ...(body.include_deleted === true ? {} : { deleted_at: null }),
+  const whereCondition = {
+    customer_id: props.customer.id,
+    deleted_at: null as null | undefined,
+    ...(props.body.status ? { status: props.body.status } : {}),
+    ...(props.body.search
+      ? {
+          OR: [
+            { name: { contains: props.body.search } },
+            { description: { contains: props.body.search } },
+          ],
+        }
+      : {}),
   };
 
   const [wishlists, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_wishlists.findMany({
-      where,
-      orderBy: { created_at: "desc" },
+      where: whereCondition,
       skip,
       take: limit,
-      include: { shopping_mall_wishlist_items: true },
+      orderBy: {
+        [props.body.sort_by ?? "created_at"]: props.body.order ?? "desc",
+      },
+      include: {
+        customer: true,
+      },
     }),
-    MyGlobal.prisma.shopping_mall_wishlists.count({ where }),
+    MyGlobal.prisma.shopping_mall_wishlists.count({
+      where: whereCondition,
+    }),
   ]);
 
   return {
     pagination: {
       current: page satisfies number as number,
       limit: limit satisfies number as number,
-      records: total,
-      pages: Math.ceil(total / limit),
+      records: total satisfies number as number,
+      pages: Math.ceil(total / limit) satisfies number as number,
     },
     data: wishlists.map((wishlist) => ({
       id: wishlist.id,
-      shopping_mall_customer_id: wishlist.shopping_mall_customer_id,
-      shopping_mall_customer_session_id:
-        wishlist.shopping_mall_customer_session_id,
+      name: wishlist.name,
+      items_count: 0 satisfies number as number,
+      is_public: false satisfies boolean as boolean,
+      customer: {
+        id: wishlist.customer.id,
+        email: wishlist.customer.email,
+        name: wishlist.customer.name,
+        status: "" satisfies string as string,
+        created_at: toISOStringSafe(wishlist.customer.created_at),
+        updated_at: wishlist.customer.updated_at
+          ? toISOStringSafe(wishlist.customer.updated_at)
+          : undefined,
+      },
       created_at: toISOStringSafe(wishlist.created_at),
-      updated_at: toISOStringSafe(wishlist.updated_at),
-      deleted_at: wishlist.deleted_at
-        ? toISOStringSafe(wishlist.deleted_at)
-        : null,
-      shopping_mall_wishlist_items: wishlist.shopping_mall_wishlist_items.map(
-        (item) => ({
-          id: item.id,
-          shopping_mall_wishlist_id: item.shopping_mall_wishlist_id,
-          shopping_mall_product_sku_id: item.shopping_mall_product_sku_id,
-          quantity: item.quantity,
-          created_at: toISOStringSafe(item.created_at),
-          updated_at: toISOStringSafe(item.updated_at),
-          deleted_at: item.deleted_at ? toISOStringSafe(item.deleted_at) : null,
-        }),
-      ),
     })),
   };
 }

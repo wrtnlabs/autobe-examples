@@ -1,0 +1,324 @@
+/// Help desk system for managing user inquiries and support requests across
+/// the platform.
+///
+/// Provides structured support request management with categorization,
+/// priority levels, and resolution tracking. Users can file help requests
+/// for various issues including technical problems, community concerns,
+/// account issues, and general platform usage questions. The system enables
+/// support teams to manage inquiry workflows while maintaining complete
+/// audit trails.
+///
+/// Help desk inquiries support independent user operations including
+/// requesting assistance, tracking resolution progress, providing additional
+/// information, and receiving status updates. Users can search historical
+/// help requests, file new inquiries, and access self-service options before
+/// escalating to direct support.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_help_desk {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Submitting member's {@link reddit_community_members.id}
+  reddit_community_member_id String
+  
+  /// Session when inquiry was submitted. Member's {@link
+  /// reddit_community_member_sessions.id}
+  reddit_community_member_session_id String
+  
+  /// Assigned platform moderator handling the inquiry. {@link
+  /// reddit_community_platform_moderators.id}
+  assigned_reddit_community_platform_moderator_id String?
+  
+  /// Brief summary of the help request
+  title String
+  
+  /// Detailed explanation of the issue or question
+  description String
+  
+  /// Support category: technical, community, account, privacy, general
+  category String
+  
+  /// Support priority level: low, medium, high, urgent
+  priority String
+  
+  /// Current inquiry status: submitted, assigned, in_progress, resolved, closed
+  status String
+  
+  /// Summary of how the issue was resolved
+  resolution String?
+  
+  /// When the help request was submitted
+  created_at DateTime
+  
+  /// When inquiry details were last modified
+  updated_at DateTime
+  
+  /// When the inquiry was marked as resolved
+  resolved_at DateTime?
+  
+  /// For soft deletion and audit trail
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  memberSession reddit_community_member_sessions @relation(fields: [reddit_community_member_session_id], references: [id], onDelete: Cascade)
+  assignedModerator reddit_community_platform_moderators? @relation(fields: [assigned_reddit_community_platform_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_session_id], map: "reddit_community_help_desk_reddit_community_member_ses_42070e4e")
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_help_desk_reddit_community_member_id__2c271b03")
+  @@index([status, priority])
+  // spellchecker: ignore-next-line
+  @@index([assigned_reddit_community_platform_moderator_id, status], map: "reddit_community_help_desk_assigned_reddit_community_p_7eb87e95")
+}
+
+/// Frequently asked questions database providing self-service support and
+/// common issue solutions.
+///
+/// Serves as the primary self-help resource for users seeking quick answers
+/// to common questions. FAQs are organized by categories and tags to improve
+/// discoverability. The system enables users to find solutions independently
+/// while reducing support ticket volume. Content is searchable, taggable,
+/// and includes usage statistics.
+///
+/// Users can browse FAQ categories, search for specific topics, and access
+/// answers without requiring support team intervention. The system supports
+/// community-driven FAQ improvement through usage tracking and feedback
+/// mechanisms.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_faqs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Platform moderator who created the FAQ. {@link
+  /// reddit_community_platform_moderators.id}
+  created_by_reddit_community_platform_moderator_id String
+  
+  /// Platform moderator who last updated the FAQ. {@link
+  /// reddit_community_platform_moderators.id}
+  updated_by_reddit_community_platform_moderator_id String?
+  
+  /// The frequently asked question being addressed
+  question String
+  
+  /// Comprehensive answer and solution to the question
+  answer String
+  
+  /// FAQ category: account, posting, community, technical, privacy
+  category String
+  
+  /// Number of times this FAQ has been viewed
+  view_count Int
+  
+  /// Whether the FAQ is publicly visible
+  is_published Boolean
+  
+  /// When the FAQ was created
+  created_at DateTime
+  
+  /// When the FAQ was last modified
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  creator reddit_community_platform_moderators @relation("reddit_community_faqs_of_created_by_reddit_community_p_5dca0b3c", fields: [created_by_reddit_community_platform_moderator_id], references: [id], onDelete: Cascade)
+  updater reddit_community_platform_moderators? @relation("reddit_community_faqs_of_updated_by_reddit_community_p_b78d3e53", fields: [updated_by_reddit_community_platform_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([created_by_reddit_community_platform_moderator_id], map: "reddit_community_faqs_created_by_reddit_community_plat_fa99b596")
+  // spellchecker: ignore-next-line
+  @@index([updated_by_reddit_community_platform_moderator_id], map: "reddit_community_faqs_updated_by_reddit_community_plat_d7ebdf81")
+  
+  @@unique([question])
+  @@index([category, view_count])
+  @@index([is_published, created_at])
+}
+
+/// Support ticket system for detailed issue tracking and problem resolution
+/// workflows.
+///
+/// Provides comprehensive ticket management incorporating priority ranking,
+/// assignment workflows, escalation procedures, and resolution tracking.
+/// Each ticket represents a specific user issue requiring platform support
+/// intervention. The system accommodates various inquiry types from simple
+/// questions to complex technical issues while maintaining complete
+/// historical records.
+///
+/// Support tickets require independent user management including creation,
+/// status tracking, communication updates, documentation uploads, and
+/// resolution confirmation. The system integrates with help desk requests
+/// while providing more detailed case management capabilities than general
+/// inquiries.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_support_tickets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who created the support ticket. Member's {@link
+  /// reddit_community_members.id}
+  reddit_community_member_id String
+  
+  /// Creation session for audit tracking. Member's {@link
+  /// reddit_community_member_sessions.id}
+  reddit_community_member_session_id String
+  
+  /// Platform moderator handling this ticket. {@link
+  /// reddit_community_platform_moderators.id
+  assigned_reddit_community_platform_moderator_id String?
+  
+  /// Brief summary of the support issue
+  title String
+  
+  /// Detailed problem description with relevant information
+  description String
+  
+  /// Issue category: technical, content, account, community, billing, legal
+  category String
+  
+  /// Ticket priority: low, medium, high, critical
+  priority String
+  
+  /// Current status: open, assigned, in_progress, needs_info, resolved, closed
+  status String
+  
+  /// Internal notes for support team communication
+  internal_notes String?
+  
+  /// Detailed steps taken to resolve the issue
+  resolution_steps String?
+  
+  /// Escalation level: 1(first-level), 2(specialist), 3(engineering), 4(legal)
+  escalation_level Int
+  
+  /// When the ticket was created
+  created_at DateTime
+  
+  /// When the ticket was last updated
+  updated_at DateTime
+  
+  /// When the ticket was resolved
+  resolved_at DateTime?
+  
+  /// When the ticket was closed
+  closed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  memberSession reddit_community_member_sessions @relation(fields: [reddit_community_member_session_id], references: [id], onDelete: Cascade)
+  assignedModerator reddit_community_platform_moderators? @relation(fields: [assigned_reddit_community_platform_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_session_id], map: "reddit_community_support_tickets_reddit_community_memb_8dd367de")
+  
+  @@index([status, priority])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_support_tickets_reddit_community_memb_c44ca57d")
+  @@index([category, status])
+  // spellchecker: ignore-next-line
+  @@index([assigned_reddit_community_platform_moderator_id, status], map: "reddit_community_support_tickets_assigned_reddit_commu_037df225")
+}
+
+/// Comprehensive knowledge base containing detailed articles, guides, and
+/// technical documentation.
+///
+/// Functions as the platform's primary technical documentation and
+/// self-service education resource. Knowledge base articles provide in-depth
+/// coverage of platform features, advanced functionality, troubleshooting
+/// procedures, and best practices. The system supports structured
+/// documentation with proper categorization, tagging, and search
+/// capabilities.
+///
+/// Users can search knowledge base content independently, browse by
+/// categories, and access detailed guides without support intervention. The
+/// system maintains version history for documentation accuracy while
+/// providing flexible search functionality including full-text search,
+/// category filtering, and tag-based discovery.
+///
+/// @namespace Inquiries
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_knowledge_base {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Platform moderator who authored the article. {@link
+  /// reddit_community_platform_moderators.id}
+  created_by_reddit_community_platform_moderator_id String
+  
+  /// Platform moderator who updated the article. {@link
+  /// reddit_community_platform_moderators.id}
+  updated_by_reddit_community_platform_moderator_id String?
+  
+  /// Knowledge article title and summary
+  title String
+  
+  /// Main article content with formatting support
+  content String
+  
+  /// Article category: platform_guide, community_management,
+  /// technical_reference, troubleshooting
+  category String
+  
+  /// Comma-separated list of searchable tags
+  tags String
+  
+  /// Content complexity: beginner, intermediate, advanced, expert
+  difficulty_level String
+  
+  /// Estimated reading time in minutes
+  estimated_reading_time Int
+  
+  /// Number of times article has been accessed
+  view_count Int
+  
+  /// Whether article is publicly accessible
+  is_published Boolean
+  
+  /// Version number for tracking updates
+  article_version Int
+  
+  /// When article was created
+  created_at DateTime
+  
+  /// When article was last updated
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  creator reddit_community_platform_moderators @relation("reddit_community_knowledge_base_of_created_by_reddit_c_d37e1bd6", fields: [created_by_reddit_community_platform_moderator_id], references: [id], onDelete: Cascade)
+  updater reddit_community_platform_moderators? @relation("reddit_community_knowledge_base_of_updated_by_reddit_c_bccdb83b", fields: [updated_by_reddit_community_platform_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([created_by_reddit_community_platform_moderator_id], map: "reddit_community_knowledge_base_created_by_reddit_comm_42c629e3")
+  // spellchecker: ignore-next-line
+  @@index([updated_by_reddit_community_platform_moderator_id], map: "reddit_community_knowledge_base_updated_by_reddit_comm_e3c0f968")
+  
+  @@index([category, difficulty_level])
+  @@index([is_published, created_at])
+  @@index([tags, category])
+}

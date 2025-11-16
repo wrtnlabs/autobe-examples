@@ -3,26 +3,35 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { ITodoAppUser } from "../../../structures/ITodoAppUser";
+import { ITodoListUser } from "../../../structures/ITodoListUser";
 
 /**
- * Register a new user account using email and password.
+ * Create a new member user account.
  *
- * This endpoint registers a new user account for the member actor. The
- * operation creates a record in the todo_app_users table using the provided
- * email and password. The schema confirms the existence of email (unique
- * string), hashed_password (string), and is_active (boolean) fields. Since no
- * other fields like name, phone_number, or created_at exist in the schema,
- * these cannot be included in the request. The user is initialized with
- * is_active: true, reflecting the business rule that all registered members are
- * active by default. No email verification or account confirmation flow is
- * supported, as no verification_token or email_verified_at fields exist in the
- * schema. This operation cannot be used for guest users, as the actor kind is
- * member and the schema has no guest-specific fields.
+ * This operation handles user registration by creating a new record in the
+ * todo_list_users table. The incoming request includes email and plain-text
+ * password, which are transformed server-side: the password is hashed using
+ * bcrypt before storage, and a unique UUID is generated for the id field. The
+ * createdAt timestamp is automatically set to the current date and time in the
+ * Asia/Seoul timezone. The email field is validated for unique existence before
+ * insertion (as defined by the unique index on todo_list_users.email). The
+ * isActive flag is explicitly set to true during creation, as all new users are
+ * active by default. The role field defaults to 'member', as defined in the
+ * Prisma schema. No additional fields are included in the request body because
+ * the todo_list_users schema does not have any other required or nullable
+ * fields for registration beyond email and password.
+ *
+ * This operation is publicly accessible and does not require authentication
+ * since it's for new user account creation. It is the first step in the
+ * authentication workflow for member users.
+ *
+ * Associated Prisma schema field: todo_list_users.email (String, unique),
+ * todo_list_users.hashedPassword (String), todo_list_users.createdAt
+ * (DateTime), todo_list_users.isActive (Boolean), todo_list_users.role (String,
+ * enum).
  *
  * @param props.connection
- * @param props.body Request body for user registration containing email and
- *   password.
+ * @param props.body Request payload for user registration
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -57,11 +66,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Request body for user registration containing email and password. */
-    body: ITodoAppUser.ICreate;
+    /** Request payload for user registration */
+    body: ITodoListUser.ICreate;
   };
-  export type Body = ITodoAppUser.ICreate;
-  export type Response = ITodoAppUser.IAuthorized;
+  export type Body = ITodoListUser.ICreate;
+  export type Response = ITodoListUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -77,8 +86,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/user/join";
-  export const random = (): ITodoAppUser.IAuthorized =>
-    typia.random<ITodoAppUser.IAuthorized>();
+  export const random = (): ITodoListUser.IAuthorized =>
+    typia.random<ITodoListUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -105,23 +114,37 @@ export namespace join {
 }
 
 /**
- * Authenticate a user and issue access tokens.
+ * Authenticate a member user and issue access & refresh tokens.
  *
- * This endpoint authenticates a user by validating their email and password
- * against the todo_app_users table. The system checks for a matching record
- * with the provided email and confirms the hashed_password matches the input.
- * The schema contains email, hashed_password, and is_active fields; login will
- * fail if the email is not found, the password does not match, or if is_active
- * is false. No password reset, failed login tracking, or MFA fields exist in
- * the schema (e.g., no mfa_enabled, mfa_secret, or auth_attempts), so these
- * features are not supported. This operation produces a session token that
- * enables all subsequent authenticated requests. The operation is designed to
- * support only password-based authentication as specified by the available
- * schema structure.
+ * This operation authenticates an existing member user by validating their
+ * email and plain-text password against the records stored in the
+ * todo_list_users table. The server looks up the user by email (which is
+ * indexed and unique) and compares the provided password against the stored
+ * bcrypt hash using a cryptographic comparison function.
+ *
+ * If authentication succeeds, the system generates two tokens: a short-lived
+ * access token (valid for 15 minutes) and a long-lived refresh token (valid for
+ * 7 days). The access token contains the user's id, email, and role in the
+ * payload. The refresh token is stored as a hashed value in the
+ * todo_list_users.refreshTokenHash field (and expiresAt timestamp is updated)
+ * during this operation, as these fields are part of the user model and
+ * explicitly designed for token management.
+ *
+ * The operation responds with a success status and the token payload if
+ * authentication passes. If the email doesn't exist or the password hash
+ * doesn't match, it returns a 401 Unauthorized error.
+ *
+ * This is the core authentication operation for member users, following the
+ * principle of stateless authentication with JWT. It is publicly accessible and
+ * does not require prior authentication.
+ *
+ * Associated Prisma schema field: todo_list_users.email (String, unique),
+ * todo_list_users.hashedPassword (String), todo_list_users.refreshTokenHash
+ * (String, nullable), todo_list_users.refreshTokenExpiresAt (DateTime,
+ * nullable).
  *
  * @param props.connection
- * @param props.body Request body containing email and password for
- *   authentication.
+ * @param props.body Login credentials for user authentication
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -156,11 +179,11 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Request body containing email and password for authentication. */
-    body: ITodoAppUser.ILogin;
+    /** Login credentials for user authentication */
+    body: ITodoListUser.ILogin;
   };
-  export type Body = ITodoAppUser.ILogin;
-  export type Response = ITodoAppUser.IAuthorized;
+  export type Body = ITodoListUser.ILogin;
+  export type Response = ITodoListUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -176,8 +199,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/user/login";
-  export const random = (): ITodoAppUser.IAuthorized =>
-    typia.random<ITodoAppUser.IAuthorized>();
+  export const random = (): ITodoListUser.IAuthorized =>
+    typia.random<ITodoListUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -204,24 +227,37 @@ export namespace login {
 }
 
 /**
- * Renew access token using a valid refresh token.
+ * Refresh access token using a valid refresh token.
  *
- * This endpoint refreshes an expired access token using a refresh token issued
- * during login or registration. While the todo_app_users table does not contain
- * refresh_token, refresh_expires_at, or similar fields, the refresh mechanism
- * is implemented using stateless JWT signature validation. The server validates
- * the freshness and validity of the refresh token’s signature and claims (such
- * as exp and sub). If valid, a new access token is issued without
- * re-authenticating credentials. This operation reflects a standard JWT session
- * renewal flow, compatible with the absence of server-side refresh token
- * storage in the schema. The system does not implement token blacklist,
- * rotation history, or revocation tracking because the schema lacks support for
- * these fields, and thus refresh token reuse or compromise cannot be detected
- * server-side.
+ * This operation allows a client to obtain a new access token after the current
+ * one expires, using a previously issued refresh token. The client submits the
+ * refresh token (which is stored as a hashed value in the
+ * todo_list_users.refreshTokenHash field) to this endpoint.
+ *
+ * The server verifies the refresh token by hashing the submitted value and
+ * comparing it to the stored refreshTokenHash in the todo_list_users table. It
+ * also checks that the corresponding refreshTokenExpiresAt timestamp has not
+ * yet passed.
+ *
+ * If valid, a new access token is generated (valid for 15 minutes), and a new
+ * refresh token is created, with its hash stored back to
+ * todo_list_users.refreshTokenHash and its expiration time set in
+ * todo_list_users.refreshTokenExpiresAt. The old refresh token is effectively
+ * invalidated by replacing it.
+ *
+ * This operation is crucial for maintaining a persistent authentication session
+ * without requiring the user to re-enter credentials. The client must securely
+ * store and submit the refresh token with each refresh request.
+ *
+ * This endpoint remains accessible to authenticated users as long as they
+ * possess a valid refresh token. It is a stateful operation because it updates
+ * the user's record in the database.
+ *
+ * Associated Prisma schema field: todo_list_users.refreshTokenHash (String,
+ * nullable), todo_list_users.refreshTokenExpiresAt (DateTime, nullable).
  *
  * @param props.connection
- * @param props.body Request body containing the refresh token for token
- *   renewal.
+ * @param props.body Refresh token to extend the authenticated session
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -256,11 +292,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Request body containing the refresh token for token renewal. */
-    body: ITodoAppUser.IRefresh;
+    /** Refresh token to extend the authenticated session */
+    body: ITodoListUser.IRefresh;
   };
-  export type Body = ITodoAppUser.IRefresh;
-  export type Response = ITodoAppUser.IAuthorized;
+  export type Body = ITodoListUser.IRefresh;
+  export type Response = ITodoListUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -276,8 +312,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/user/refresh";
-  export const random = (): ITodoAppUser.IAuthorized =>
-    typia.random<ITodoAppUser.IAuthorized>();
+  export const random = (): ITodoListUser.IAuthorized =>
+    typia.random<ITodoListUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

@@ -1,0 +1,148 @@
+/// Image attachments enriching articles with visual supporting content.
+///
+/// Stores uploaded images (JPEG, PNG, GIF, WebP formats) that members attach
+/// to articles to provide visual evidence, charts, graphs, infographics, or
+/// illustrative content. Each image is associated with exactly one parent
+/// article and is managed through article creation and editing workflows.
+///
+/// The system enforces a maximum of 10 images per article with individual
+/// file size limit of 10 MB. Images are validated for format and integrity
+/// before storage. When articles are deleted, all associated images are
+/// removed from storage.
+///
+/// Image metadata includes original filename for user reference, file size
+/// for storage tracking, content type for proper browser rendering, and
+/// storage URL for retrieval. Creation timestamp tracks when images were
+/// uploaded.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article that this image attachment belongs to. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Original filename of the uploaded image as provided by the user.
+  /// Preserved for user reference and download purposes. May contain file
+  /// extension indicating image format.
+  original_filename String
+  
+  /// Size of the image file in bytes. Used for storage tracking and enforcing
+  /// the 10 MB maximum file size limit. Must be positive integer value.
+  file_size Int
+  
+  /// MIME type of the image file for proper browser rendering. Valid values
+  /// include image/jpeg, image/png, image/gif, image/webp corresponding to
+  /// supported formats.
+  content_type String
+  
+  /// URL or storage path where the image file is stored. Used by the system to
+  /// retrieve and serve the image to users viewing the article. May be CDN URL
+  /// or internal storage path.
+  storage_url String
+  
+  /// Width of the image in pixels. Captured during upload for display
+  /// optimization and layout calculations. Null if dimensions could not be
+  /// determined.
+  width Int?
+  
+  /// Height of the image in pixels. Captured during upload for display
+  /// optimization and layout calculations. Null if dimensions could not be
+  /// determined.
+  height Int?
+  
+  /// Timestamp when the image was uploaded to the system. Tracks upload time
+  /// for audit trail and chronological ordering of attachments.
+  created_at DateTime
+  
+  /// Timestamp when the image was soft deleted. Null if the image is currently
+  /// active. Enables recovery and audit trail before permanent removal from
+  /// storage.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_images_discussion_board_artic_cbcc380c")
+}
+
+/// Document file attachments providing supporting evidence and reference
+/// materials for articles.
+///
+/// Stores uploaded document files (PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, ZIP
+/// formats) that members attach to articles to provide supporting data,
+/// research papers, spreadsheets, policy documents, or other reference
+/// materials. Each file is associated with exactly one parent article and is
+/// managed through article creation and editing workflows.
+///
+/// The system enforces a maximum of 5 files per article with individual file
+/// size limit of 25 MB. Files are validated for format and scanned for
+/// integrity before storage. When articles are deleted, all associated files
+/// are removed from storage.
+///
+/// File metadata includes original filename for user reference and download,
+/// file size for storage tracking and limit enforcement, content type for
+/// proper browser handling and download behavior, and storage URL for
+/// retrieval. Creation timestamp tracks when files were uploaded for audit
+/// purposes.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article that this file attachment belongs to. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Original filename of the uploaded document as provided by the user.
+  /// Preserved for user reference and used as download filename. Includes file
+  /// extension indicating document type.
+  original_filename String
+  
+  /// Size of the document file in bytes. Used for storage tracking and
+  /// enforcing the 25 MB maximum file size limit. Must be positive integer
+  /// value.
+  file_size Int
+  
+  /// MIME type of the document file for proper browser handling and download
+  /// behavior. Examples include application/pdf, application/msword,
+  /// application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+  /// text/plain, text/csv, application/zip corresponding to supported formats.
+  content_type String
+  
+  /// URL or storage path where the document file is stored. Used by the system
+  /// to retrieve and serve the file for download to users. May be CDN URL or
+  /// internal storage path.
+  storage_url String
+  
+  /// Timestamp when the file was uploaded to the system. Tracks upload time
+  /// for audit trail and chronological ordering of attachments.
+  created_at DateTime
+  
+  /// Timestamp when the file was soft deleted. Null if the file is currently
+  /// active. Enables recovery and audit trail before permanent removal from
+  /// storage.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_files_discussion_board_articl_29eaf080")
+}

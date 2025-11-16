@@ -1,17 +1,14 @@
-import { ForbiddenException } from "@nestjs/common";
-
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { SellerPayload } from "../../decorators/payload/SellerPayload";
 
 /**
- * JWT-based authentication provider for seller actors.
+ * Authenticates and authorizes a seller based on JWT token and seller account status.
  *
- * - Verifies JWT and role type
- * - Checks seller existence and status in DB
- *
- * @param request HTTP request object (with headers)
- * @returns Authenticated seller payload
+ * @param request HTTP request containing the Authorization header
+ * @returns Validated SellerPayload upon success
+ * @throws ForbiddenException or UnauthorizedException for invalid/unauthorized actors
  */
 export async function sellerAuthorize(request: {
   headers: {
@@ -19,23 +16,18 @@ export async function sellerAuthorize(request: {
   };
 }): Promise<SellerPayload> {
   const payload: SellerPayload = jwtAuthorize({ request }) as SellerPayload;
-
   if (payload.type !== "seller") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
-
-  // payload.id is the top-level seller table ID
-  const seller = await MyGlobal.prisma.shopping_sellers.findFirst({
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
-      status: "active",
-    },
+      status: "approved",
+      is_email_verified: true
+    }
   });
-
   if (seller === null) {
-    throw new ForbiddenException("You're not enrolled or seller is not active.");
+    throw new ForbiddenException("You're not enrolled or your seller account is not approved/verified.");
   }
-
   return payload;
 }

@@ -1,0 +1,86 @@
+/// Stores moderation actions taken by moderators on the discussion board
+/// content.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for the moderation action.
+  id String @id
+  
+  /// The moderator who took the moderation action.
+  moderator_id String
+  
+  /// The article on which the moderation action was taken, if applicable.
+  article_id String?
+  
+  /// The comment on which the moderation action was taken, if applicable.
+  comment_id String?
+  
+  /// The type of moderation action taken (e.g., approve, reject, edit).
+  action String
+  
+  /// The reason for the moderation action.
+  reason String?
+  
+  /// The status of the moderation action (e.g., pending, resolved).
+  status String
+  
+  /// Timestamp when the moderation action was taken.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles? @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id])
+  @@index([article_id])
+  @@index([comment_id])
+}
+
+/// Stores reports made by users on content that violates the discussion
+/// board policies.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for the content report.
+  id String @id
+  
+  /// The user who made the report.
+  user_id String
+  
+  /// The article being reported, if applicable.
+  article_id String?
+  
+  /// The comment being reported, if applicable.
+  comment_id String?
+  
+  /// The reason for reporting the content.
+  reason String
+  
+  /// The status of the content report (e.g., pending, resolved).
+  status String
+  
+  /// Timestamp when the report was made.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles? @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([article_id])
+  @@index([comment_id])
+}

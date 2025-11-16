@@ -1,0 +1,108 @@
+/// User votes on posts and comments.
+///
+/// Stores user voting actions on content within communities. Each vote is
+/// associated with a specific user, session, and content item (post or
+/// comment). Votes can be either upvotes or downvotes, and the system tracks
+/// the type of vote through a reference to the vote types table. The vote
+/// entity captures the temporal context of when the vote was cast and
+/// maintains a soft delete capability for audit purposes.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_like_community_users.id}
+  reddit_like_community_user_id String
+  
+  /// Session during which the vote was cast. {@link
+  /// reddit_like_community_user_sessions.id}
+  reddit_like_community_user_session_id String
+  
+  /// Post being voted on. {@link reddit_like_community_posts.id}
+  reddit_like_community_post_id String?
+  
+  /// Comment being voted on. {@link reddit_like_community_comments.id}
+  reddit_like_community_comment_id String?
+  
+  /// Type of vote (upvote/downvote). {@link
+  /// reddit_like_community_vote_types.id}
+  reddit_like_community_vote_type_id String
+  
+  /// When the vote was cast.
+  created_at DateTime
+  
+  /// When the vote was last updated.
+  updated_at DateTime
+  
+  /// When the vote was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_community_users @relation(fields: [reddit_like_community_user_id], references: [id], onDelete: Cascade)
+  session reddit_like_community_user_sessions @relation(fields: [reddit_like_community_user_session_id], references: [id], onDelete: Cascade)
+  post reddit_like_community_posts? @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  comment reddit_like_community_comments? @relation(fields: [reddit_like_community_comment_id], references: [id], onDelete: Cascade)
+  voteType reddit_like_community_vote_types @relation(fields: [reddit_like_community_vote_type_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_session_id], map: "reddit_like_community_votes_reddit_like_community_user_1d10f957")
+  @@index([reddit_like_community_post_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_comment_id], map: "reddit_like_community_votes_reddit_like_community_comm_7398d26c")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_vote_type_id], map: "reddit_like_community_votes_reddit_like_community_vote_28de13b6")
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id, reddit_like_community_post_id], map: "reddit_like_community_votes_reddit_like_community_user_8bf2d99b")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id, reddit_like_community_comment_id], map: "reddit_like_community_votes_reddit_like_community_user_0e10d5f3")
+}
+
+/// Types of votes available in the system.
+///
+/// Defines the different types of votes that users can cast on content. Each
+/// vote type has a unique code and name, and the system tracks whether the
+/// vote type is active or not. Vote types are used to categorize and manage
+/// different voting behaviors within the platform.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_vote_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code identifying the vote type.
+  code String
+  
+  /// Display name of the vote type.
+  name String
+  
+  /// Whether the vote type is currently active and available for use.
+  is_active Boolean
+  
+  /// When the vote type was created.
+  created_at DateTime
+  
+  /// When the vote type was last updated.
+  updated_at DateTime
+  
+  /// When the vote type was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_votes reddit_like_community_votes[]
+  
+  @@unique([code])
+}

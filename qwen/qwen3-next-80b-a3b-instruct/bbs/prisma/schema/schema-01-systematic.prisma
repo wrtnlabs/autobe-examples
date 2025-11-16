@@ -1,0 +1,218 @@
+/// System-defined categories for tagging and filtering discussion posts.
+///
+/// Contains the predefined set of topics used to classify and search content
+/// on the economic and political discussion board. These categories are
+/// immutable core system values that enable consistent tagging and filtering
+/// across the platform. Citizens can filter posts by these categories, and
+/// moderators use them to organize content.
+///
+/// Each category has a human-readable name and a unique code used in API
+/// calls and search queries. Change to this list requires
+/// administrator-level deployment and is not editable by users or moderators
+/// through the UI.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable name of the category (e.g., "economy", "politics"). Must
+  /// be unique within the system.
+  name String
+  
+  /// Machine-readable code identifier for the category (e.g., "economy",
+  /// "politics"). Must be unique and used in search and filtering APIs.
+  code String
+  
+  /// Detailed description of the category's scope and usage guidelines. Used
+  /// for internal documentation and moderator reference.
+  description String?
+  
+  /// Timestamp when this category was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this category was last updated. System field maintained
+  /// automatically.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  economic_board_posts economic_board_posts[]
+  economic_board_search_tags economic_board_search_tags[]
+  
+  @@unique([name])
+  @@unique([code])
+}
+
+/// Global configuration settings for the economic board platform.
+///
+/// Stores critical system-wide parameters that control the behavior, limits,
+/// and features of the discussion board. These are configuration values that
+/// determine how the system operates, such as character limits, time
+/// windows, and feature toggles.
+///
+/// This table serves as the single source of truth for all system
+/// configuration parameters. Modifications require administrative access and
+/// should be made with extreme caution as they affect all users. Values are
+/// read by the application during runtime to enforce business rules and
+/// behavioral constraints.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_system_config {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Configuration key name (e.g., "comment_max_length", "edit_window_hours").
+  /// Must be unique.
+  key String
+  
+  /// JSON-serialized value of the configuration setting (e.g., "500", "24",
+  /// "true"). Can be string, number, boolean, or complex JSON object.
+  value String
+  
+  /// Human-readable description of what this configuration controls and its
+  /// business purpose.
+  description String?
+  
+  /// Timestamp when this configuration entry was added to the system.
+  created_at DateTime
+  
+  /// Timestamp when this configuration entry was last modified. System field
+  /// maintained automatically.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+}
+
+/// Timezone configuration for user-facing timestamp display.
+///
+/// Contains supported timezone identifiers that the system uses to convert
+/// UTC timestamps to local time for display to users. The system stores all
+/// timestamps internally in UTC, but presents them in the user's local
+/// timezone.
+///
+/// This table ensures consistency in time representation across the
+/// platform. The system endpoint for user timezone registration uses values
+/// from this table to validate user selections. Only timezones listed here
+/// can be selected by users.
+///
+/// The primary timezone ("Asia/Seoul") is pre-configured and required for
+/// the system to function correctly in the target market.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_timezone_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Full timezone name from the IANA timezone database (e.g., "Asia/Seoul",
+  /// "America/New_York"). Must be a valid timezone identifier.
+  name String
+  
+  /// Short identifier for the timezone (e.g., "KST", "EST"). Used for display
+  /// in the UI where space is limited.
+  code String
+  
+  /// UTC offset in format +09:00 or -05:00 representing the timezone
+  /// difference from UTC.
+  offset String
+  
+  /// Indicates whether this timezone is the system default (true) or an
+  /// optional selection (false). Exactly one record should have
+  /// is_default=true.
+  is_default Boolean
+  
+  /// Timestamp when this timezone setting was added to the system.
+  created_at DateTime
+  
+  /// Timestamp when this timezone setting was last modified. System field
+  /// maintained automatically.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@unique([code])
+  @@unique([is_default])
+}
+
+/// System-defined content flag categories for automated and manual moderation.
+///
+/// Contains categories of content violations that trigger automated
+/// detection or manual moderation actions. These flags are used to identify
+/// potentially problematic posts such as hate speech, threats, doxxing, or
+/// false information.
+///
+/// When a post is flagged by automated systems or user reports, a matching
+/// flag from this table is applied to trigger moderation workflows. Each
+/// flag defines the violation type, severity level, and automated handling
+/// rules.
+///
+/// This table serves as the authoritative reference for moderation systems
+/// and must be maintained with care by administrators.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_content_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable name of the content flag category (e.g., "hate_speech",
+  /// "doxxing"). Must be unique.
+  name String
+  
+  /// Machine-readable code identifier for the flag (e.g., "hate_speech",
+  /// "doxxing"). Used by detection systems and moderation APIs.
+  code String
+  
+  /// Severity level of the violation: "low", "medium", or "high". Determines
+  /// automated response and moderator priority.
+  severity String
+  
+  /// Detailed explanation of what types of content this flag identifies and
+  /// examples of violations.
+  description String?
+  
+  /// Whether this flag type is actively monitored by automated detection
+  /// systems.
+  auto_flag_enabled Boolean
+  
+  /// Whether posts flagged with this type should be automatically rejected
+  /// (instead of just flagged for review).
+  auto_reject_enabled Boolean
+  
+  /// Timestamp when this flag type was added to the system.
+  created_at DateTime
+  
+  /// Timestamp when this flag type was last modified. System field maintained
+  /// automatically.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@unique([code])
+  @@index([severity])
+  @@index([auto_flag_enabled])
+  @@index([auto_reject_enabled])
+}

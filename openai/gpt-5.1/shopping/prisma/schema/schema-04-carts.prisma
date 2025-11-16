@@ -1,0 +1,375 @@
+/// Temporary shopping carts owned by unauthenticated guest users.
+///
+/// Represents a transient cart created when a guestUser first adds an item
+/// before registration or login. Each guest cart is bound to an anonymous
+/// token and basic context such as originating URL, allowing later
+/// association with a customer account during registration or login.
+///
+/// Guest carts are persisted for a configurable retention window for
+/// continuity and analytics. They do not carry any payment or order state;
+/// once checkout completes and an order is created, the cart can be cleared
+/// or soft-deleted without affecting historical orders.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guest_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the guest cart. Uniquely identifies a temporary cart
+  /// instance for a guestUser.
+  id String @id
+  
+  /// Optional reference to a guest user record if the platform maintains guest
+  /// identities. {@link shopping_mall_guestuser.id}.
+  shopping_mall_guestuser_id String?
+  
+  /// Opaque anonymous token that identifies the guest cart within a
+  /// browser/session context. Used to retrieve the cart for an unauthenticated
+  /// visitor.
+  guest_token String
+  
+  /// IP address captured when the guest cart was created or last significantly
+  /// modified. Used for security analysis and geo-based business rules.
+  ip String?
+  
+  /// Optional user agent string or a truncated representation, used for
+  /// analytics and troubleshooting guest cart behavior.
+  user_agent String?
+  
+  /// Initial referrer URL when the cart was first created, if available. Helps
+  /// understand acquisition and funnel behavior.
+  referrer String?
+  
+  /// Timestamp when the guest cart was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest cart was last updated (for example, item added
+  /// or removed).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, indicates that the guest cart has been
+  /// logically removed or expired but kept for audit or analytics.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  guestUser shopping_mall_guestuser? @relation(fields: [shopping_mall_guestuser_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_guest_cart_items shopping_mall_guest_cart_items[]
+  
+  @@unique([guest_token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_guestuser_id, created_at], map: "shopping_mall_guest_carts_shopping_mall_guestuser_id_c_a17127a2")
+  @@index([created_at, updated_at])
+}
+
+/// Line items belonging to a guest cart, representing SKU selections and
+/// quantities.
+///
+/// Each record corresponds to a single SKU that a guestUser intends to
+/// purchase. Items depend entirely on their parent guest cart and are
+/// removed or updated when the guest modifies the cart or when the cart
+/// expires.
+///
+/// This table does not store prices or discounts, as cart pricing is derived
+/// at read time and firmly recorded only when orders are created.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guest_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the guest cart item. Uniquely identifies a specific SKU
+  /// entry within a guest cart.
+  id String @id
+  
+  /// Reference to the parent guest cart that owns this item. {@link
+  /// shopping_mall_guest_carts.id}.
+  shopping_mall_guest_cart_id String
+  
+  /// Reference to the base catalog product for this item. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Reference to the specific SKU variant (for example, size and color) that
+  /// the guest selected. {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Requested quantity of the SKU in the guest cart. Must be a positive
+  /// integer constrained by inventory and business limits at application
+  /// level.
+  quantity Int
+  
+  /// Timestamp when the item was first added to the guest cart.
+  created_at DateTime
+  
+  /// Timestamp when the cart item was last updated, such as quantity changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, indicates that the item has been
+  /// logically removed from the cart but optionally retained for audit or
+  /// analytics.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  guestCart shopping_mall_guest_carts @relation(fields: [shopping_mall_guest_cart_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id], map: "shopping_mall_guest_cart_items_shopping_mall_product_s_6ed55273")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_guest_cart_id, shopping_mall_product_sku_id], map: "shopping_mall_guest_cart_items_shopping_mall_guest_car_0dd451e4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_guest_cart_id, created_at], map: "shopping_mall_guest_cart_items_shopping_mall_guest_car_9c5ba5c5")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, shopping_mall_product_sku_id], map: "shopping_mall_guest_cart_items_shopping_mall_product_i_ee719b97")
+}
+
+/// Persistent shopping carts owned by authenticated customers.
+///
+/// Represents the main cart that a customer maintains across sessions and
+/// devices. Each customer normally has at most one active persistent cart,
+/// which can be merged with guest carts during registration or login.
+///
+/// Customer carts hold no payment or order state. When checkout completes
+/// and an order is created, application logic may clear the cart, update
+/// timestamps, or soft-delete the cart while preserving audit history.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the customer cart. Uniquely identifies a persistent cart
+  /// instance associated with a customer.
+  id String @id
+  
+  /// Reference to the authenticated customer who owns this cart. {@link
+  /// shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// Flag indicating whether this cart is currently considered active for the
+  /// customer. Used to support scenarios with archived or historical carts.
+  is_active Boolean
+  
+  /// Optional anonymous token from a source guest cart that was merged into
+  /// this customer cart. Useful for tracing guest-to-customer conversions.
+  source_guest_token String?
+  
+  /// Timestamp when the customer cart was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer cart was last updated, such as when items or
+  /// quantities changed.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, indicates that the cart has been
+  /// logically removed or archived but kept for audit or analytics.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_customer_cart_items shopping_mall_customer_cart_items[]
+  shopping_mall_orders shopping_mall_orders[]
+  
+  @@unique([shopping_mall_customer_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_carts_shopping_mall_customer_id_dc4e4b8e")
+  @@index([is_active, created_at])
+}
+
+/// Line items belonging to a customer’s persistent cart, representing SKU
+/// selections and quantities.
+///
+/// Each record corresponds to a specific SKU that an authenticated customer
+/// has added to their cart. Items are tightly coupled to their parent
+/// customer cart and are updated or removed when the customer changes
+/// quantities, removes items, or clears the cart.
+///
+/// The table only captures structural details (product, SKU, quantity).
+/// Pricing and promotions are evaluated dynamically during cart retrieval
+/// and checkout and are recorded in the order domain instead of this table.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the customer cart item. Uniquely identifies a SKU entry
+  /// within a customer’s cart.
+  id String @id
+  
+  /// Reference to the parent customer cart that owns this item. {@link
+  /// shopping_mall_customer_carts.id}.
+  shopping_mall_customer_cart_id String
+  
+  /// Reference to the base catalog product for this cart item. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Reference to the specific SKU variant chosen by the customer for this
+  /// cart item. {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String
+  
+  /// Requested quantity of the SKU in the customer cart. Must be a positive
+  /// integer enforced by stock and policy validations at application level.
+  quantity Int
+  
+  /// Timestamp when the item was first added to the customer cart.
+  created_at DateTime
+  
+  /// Timestamp when the cart item was last updated, such as quantity
+  /// adjustments.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, indicates that the item has been
+  /// logically removed from the cart but retained for audit or analytics.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customerCart shopping_mall_customer_carts @relation(fields: [shopping_mall_customer_cart_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_product_skus @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_sku_id], map: "shopping_mall_customer_cart_items_shopping_mall_produc_d200b962")
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_cart_id, shopping_mall_product_sku_id], map: "shopping_mall_customer_cart_items_shopping_mall_custom_8819c3c3")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_cart_id, created_at], map: "shopping_mall_customer_cart_items_shopping_mall_custom_3ca5f98f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, shopping_mall_product_sku_id], map: "shopping_mall_customer_cart_items_shopping_mall_produc_0dbac39c")
+}
+
+/// Customer-owned wishlists that group products or SKUs for future
+/// consideration.
+///
+/// Each wishlist belongs to a single authenticated customer and may be the
+/// default wishlist that is created at registration. Customers can
+/// optionally create additional wishlists, rename them, and manage their
+/// contents while their account is active.
+///
+/// Wishlists are used only for planning and discovery and have no direct
+/// payment or fulfillment state. They are independent primary entities that
+/// can be listed, filtered, and moderated as needed.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the wishlist. Uniquely identifies a single wishlist
+  /// instance owned by a customer.
+  id String @id
+  
+  /// Reference to the customer who owns this wishlist. {@link
+  /// shopping_mall_customer.id}.
+  shopping_mall_customer_id String
+  
+  /// Human-readable name of the wishlist as chosen by the customer, such as
+  /// "Default", "Birthday Gifts", or "Ideas".
+  name String
+  
+  /// Flag indicating whether this wishlist is the default wishlist for the
+  /// owning customer. Business logic ensures at most one default per customer.
+  is_default Boolean
+  
+  /// Timestamp when the wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist metadata or items were last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, indicates that the wishlist has been
+  /// logically removed but retained for audit or potential recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  
+  @@unique([shopping_mall_customer_id, name])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, is_default, created_at], map: "shopping_mall_wishlists_shopping_mall_customer_id_is_d_08c1c3da")
+}
+
+/// Entries within a customer wishlist, referencing either products or
+/// specific SKUs.
+///
+/// Each wishlist item associates a wishlist with a target in the catalog.
+/// Depending on platform configuration, the target may be the whole product
+/// or a particular SKU. To accommodate both modes without separate tables,
+/// the record carries foreign keys for product and SKU, with application
+/// logic enforcing which field is used for a given entry.
+///
+/// Wishlist items have no independent lifecycle apart from their parent
+/// wishlist. They support soft deletion for audit, and they help avoid
+/// duplicate entries for the same target within the same wishlist.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the wishlist item. Uniquely identifies a single entry
+  /// within a wishlist.
+  id String @id
+  
+  /// Reference to the parent wishlist that owns this entry. {@link
+  /// shopping_mall_wishlists.id}.
+  shopping_mall_wishlist_id String
+  
+  /// Optional reference to a product being wished. Used when platform operates
+  /// with product-level wishlists. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String?
+  
+  /// Optional reference to a specific SKU being wished. Used when platform
+  /// supports SKU-level wishlists. {@link shopping_mall_product_skus.id}.
+  shopping_mall_product_sku_id String?
+  
+  /// Timestamp when the wishlist item was created.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist item was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, indicates that the wishlist entry has
+  /// been logically removed but may still be retained for audit or analytics.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_product_skus? @relation(fields: [shopping_mall_product_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_product_sku_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_wishlist_id, shopping_mall_product_id, shopping_mall_product_sku_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_9f30ff33")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_wishlist_id, created_at], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_57e5e679")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, shopping_mall_product_sku_id], map: "shopping_mall_wishlist_items_shopping_mall_product_id__2a6a1ee2")
+}

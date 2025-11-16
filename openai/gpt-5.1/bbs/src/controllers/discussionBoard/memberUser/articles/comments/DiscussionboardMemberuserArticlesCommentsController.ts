@@ -1,0 +1,262 @@
+import { Controller } from "@nestjs/common";
+import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
+import typia, { tags } from "typia";
+import { postDiscussionBoardMemberUserArticlesArticleIdComments } from "../../../../../providers/postDiscussionBoardMemberUserArticlesArticleIdComments";
+import { MemberuserAuth } from "../../../../../decorators/MemberuserAuth";
+import { MemberuserPayload } from "../../../../../decorators/payload/MemberuserPayload";
+import { putDiscussionBoardMemberUserArticlesArticleIdCommentsCommentId } from "../../../../../providers/putDiscussionBoardMemberUserArticlesArticleIdCommentsCommentId";
+import { deleteDiscussionBoardMemberUserArticlesArticleIdCommentsCommentId } from "../../../../../providers/deleteDiscussionBoardMemberUserArticlesArticleIdCommentsCommentId";
+
+import { IDiscussionBoardComment } from "../../../../../api/structures/IDiscussionBoardComment";
+
+@Controller("/discussionBoard/memberUser/articles/:articleId/comments")
+export class DiscussionboardMemberuserArticlesCommentsController {
+  /**
+   * Create a new discussion_board_comments record attached to a specific
+   * article.
+   *
+   * Create a new comment on a specific discussion board article identified by
+   * its article ID.
+   *
+   * This operation allows an authenticated user—either a registered member or
+   * an administrator—to post a new text comment attached directly to a target
+   * article in the economic and political discussion board. The article is
+   * identified using the `articleId` path parameter, which maps to the primary
+   * key of the `discussion_board_articles` Prisma model. Before inserting the
+   * comment, the system must verify that the referenced article exists and that
+   * its current status permits additional comments, following any business
+   * rules and Prisma schema comments associated with the article entity, such
+   * as flags for comment locking or archival.
+   *
+   * Internally, the core comment data is stored in the
+   * `discussion_board_comments` table, which contains fields such as the
+   * textual content, timestamps created by the database or application layer,
+   * and any structural relationships like parent comment references if nested
+   * discussions are supported. The request body is represented by the
+   * `IDiscussionBoardComment.ICreate` DTO, which encapsulates only the fields
+   * that clients are allowed to set, such as comment content and, when
+   * supported, a parent comment identifier for replies. Fields that are
+   * system-managed—such as primary keys, creation timestamps, and foreign keys
+   * to the article and author—are populated by the service based on the path
+   * parameter and the authenticated user context rather than being supplied
+   * directly by the caller.
+   *
+   * In addition to the base comment entity, the system uses ownership subtype
+   * tables such as `discussion_board_comment_of_memberusers` and
+   * `discussion_board_comment_of_adminusers` to capture which actor wrote the
+   * comment and, if modeled in the schema, which login session was used at
+   * creation time. The service inspects the authenticated principal to
+   * determine whether the comment should be linked through the member or admin
+   * subtype and creates the corresponding row accordingly, respecting any
+   * unique or foreign key constraints defined in those Prisma models.
+   *
+   * Security-wise, this endpoint is restricted to authenticated actors, modeled
+   * here through the `authorizationActors` array indicating that both member
+   * and admin roles are valid. Authorization logic in the provider ensures that
+   * blocked or restricted accounts, as defined by the
+   * `discussion_board_memberuser_restrictions` model, cannot create new
+   * comments even if they are nominally authenticated. The operation also
+   * validates comment content against business rules from the requirements and
+   * schema comments—such as maximum length, disallowed HTML, or prohibited
+   * language—to help maintain civility and adherence to the discussion board’s
+   * content guidelines.
+   *
+   * On success, the API returns a fully populated `IDiscussionBoardComment` DTO
+   * representing the newly created comment, including core fields like
+   * identifier, content, creation timestamp, and any lightweight projections of
+   * related entities that the DTO defines (for example, minimal article and
+   * author information). Clients typically call this operation after retrieving
+   * article details via an article retrieval endpoint and then refresh the
+   * article’s comment list—via a separate comment listing or article detail
+   * API—to display the new comment in context. Errors include 404 when the
+   * article does not exist, 403 when the user is restricted from commenting,
+   * and 400-level responses when validation of the request body fails.
+   *
+   * @param connection
+   * @param articleId Unique identifier of the target article in the
+   *   discussion_board_articles table for which the comment is being created.
+   * @param body Comment creation payload containing user-provided content and
+   *   optional reply threading information, mapped to the
+   *   discussion_board_comments model’s creatable fields.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @MemberuserAuth()
+    memberUser: MemberuserPayload,
+    @TypedParam("articleId")
+    articleId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardComment.ICreate,
+  ): Promise<IDiscussionBoardComment> {
+    try {
+      return await postDiscussionBoardMemberUserArticlesArticleIdComments({
+        memberUser,
+        articleId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing discussion_board_comments record for a given article and
+   * comment pair.
+   *
+   * Update an existing comment that belongs to a specific discussion board
+   * article.
+   *
+   * This operation enables an authenticated user—either the original member
+   * author or a privileged administrator—to modify the content of a comment
+   * that has previously been created on a discussion board article. The target
+   * comment is located using the `articleId` and `commentId` path parameters,
+   * which map respectively to the primary key of the
+   * `discussion_board_articles` model and the primary key of the
+   * `discussion_board_comments` model. By requiring both identifiers, the API
+   * ensures that the comment being updated is indeed associated with the
+   * specified article, protecting against accidental or malicious updates
+   * across article boundaries.
+   *
+   * The request body is represented by the `IDiscussionBoardComment.IUpdate`
+   * DTO, which corresponds to the subset of `discussion_board_comments` fields
+   * that are allowed to change after creation. In most cases this will include
+   * the textual content of the comment and potentially an `edited` flag or
+   * similar metadata, while immutable fields like the comment’s identifier,
+   * original creation timestamp, and foreign keys to the article and author
+   * remain untouched. The service maps only these permitted fields to the
+   * underlying Prisma update on the `discussion_board_comments` table, thereby
+   * honoring the schema’s non-null and length constraints as described in its
+   * comments.
+   *
+   * Ownership and permission checks are enforced using the ownership subtype
+   * tables `discussion_board_comment_of_memberusers` and
+   * `discussion_board_comment_of_adminusers`, along with any restriction
+   * information from `discussion_board_memberuser_restrictions`. For
+   * member-authored comments, the service verifies that the current
+   * authenticated member user matches the owner recorded in the corresponding
+   * subtype row and that the account is not currently restricted from editing
+   * content. For administrator-authored comments, or when admins are allowed to
+   * edit member comments for moderation purposes, the service ensures that the
+   * authenticated admin user has appropriate privileges according to the
+   * moderation rules defined in the requirements and schema documentation.
+   *
+   * The endpoint is secured for authenticated actors only, with
+   * `authorizationActors` indicating that both member and admin roles may
+   * access it, though their effective permissions differ according to business
+   * rules. On success, the API returns the updated `IDiscussionBoardComment`
+   * DTO reflecting the latest persisted state, allowing clients to update the
+   * displayed comment in place. Error responses include 404 when either the
+   * article or comment cannot be found, 403 for insufficient permissions or
+   * restrictions, and 400-level responses for invalid update payloads—such as
+   * content that violates length limits or other validation rules derived from
+   * the Prisma schema comments.
+   *
+   * @param connection
+   * @param articleId Unique identifier of the article in
+   *   discussion_board_articles to which the target comment belongs.
+   * @param commentId Unique identifier of the comment in
+   *   discussion_board_comments that is to be updated.
+   * @param body Comment update payload containing only the fields of
+   *   discussion_board_comments that are allowed to be modified after creation,
+   *   such as the content body.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":commentId")
+  public async update(
+    @MemberuserAuth()
+    memberUser: MemberuserPayload,
+    @TypedParam("articleId")
+    articleId: string & tags.Format<"uuid">,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardComment.IUpdate,
+  ): Promise<IDiscussionBoardComment> {
+    try {
+      return await putDiscussionBoardMemberUserArticlesArticleIdCommentsCommentId(
+        {
+          memberUser,
+          articleId,
+          commentId,
+          body,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a specific comment from the discussion_board_comments table for a
+   * given article.
+   *
+   * Delete a specific comment associated with a discussion board article by its
+   * comment identifier within the context of its parent article.
+   *
+   * This operation targets the `discussion_board_comments` Prisma model, which
+   * represents top-level text comments directly attached to discussion board
+   * articles. Each comment belongs to one article and is linked through a
+   * foreign key relationship to the `discussion_board_articles` table. The
+   * `articleId` path parameter identifies the parent article record, while the
+   * `commentId` path parameter identifies the specific comment row to be
+   * removed.
+   *
+   * Authorization and ownership are determined by related subtype entities such
+   * as `discussion_board_comment_of_memberusers` and
+   * `discussion_board_comment_of_adminusers`, which link a comment to its
+   * authoring user and creation session. The provider logic must enforce that
+   * only the author of the comment or an administrator with appropriate
+   * privileges can invoke this deletion successfully. Attempts by other users
+   * should result in an authorization error response, and the implementation
+   * should avoid leaking information about comments the caller is not allowed
+   * to see.
+   *
+   * The deletion behavior is a hard delete of the comment record and any
+   * dependent subtype records. Once deleted, the comment will no longer appear
+   * in article comment lists, and attempts to access it by `commentId` should
+   * result in a not-found response. Any associated reports, moderation records,
+   * or audit trails are expected to be handled by related tables and logic, but
+   * they are not directly manipulated by this endpoint.
+   *
+   * This endpoint relies on the existence of the article and comment; if either
+   * the `articleId` does not correspond to a current article, or the
+   * `commentId` does not represent a comment attached to that article, the
+   * implementation should respond with a not-found error. Clients typically
+   * call this endpoint after retrieving or listing comments via companion
+   * operations such as listing comments for an article or viewing comment
+   * details.
+   *
+   * @param connection
+   * @param articleId Unique identifier of the parent article in the
+   *   discussion_board_articles table to which the comment belongs.
+   * @param commentId Unique identifier of the target comment in the
+   *   discussion_board_comments table that will be permanently deleted, scoped
+   *   to the parent article.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":commentId")
+  public async erase(
+    @MemberuserAuth()
+    memberUser: MemberuserPayload,
+    @TypedParam("articleId")
+    articleId: string & tags.Format<"uuid">,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteDiscussionBoardMemberUserArticlesArticleIdCommentsCommentId(
+        {
+          memberUser,
+          articleId,
+          commentId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

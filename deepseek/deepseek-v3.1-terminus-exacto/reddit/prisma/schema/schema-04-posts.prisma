@@ -1,0 +1,350 @@
+/// Core entity representing user-generated posts in communities.
+///
+/// Stores the main content created by community members across different
+/// content types (text, link, image). Each post belongs to a specific
+/// community and is created by an authenticated member through their active
+/// session.
+///
+/// Posts support various content formats and include metadata for voting,
+/// engagement tracking, and moderation. The status field manages post
+/// lifecycle from creation through potential removal or archiving.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// content moderation and user self-management. This version removes
+/// denormalized count fields and adds essential platform features.
+///
+/// Key improvements:
+/// - Removed denormalized counts (calculated via materialized views)
+/// - Added NSFW flag for content filtering
+/// - Added locking mechanism for moderation
+/// - Added pinning for community highlighting
+/// - Added archiving for content lifecycle
+/// - Added language and flair support
+/// - Enhanced status management
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target community where the post is published. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Member who created the post. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Session context for post creation. {@link
+  /// community_platform_member_sessions.id}
+  community_platform_member_session_id String
+  
+  /// Post title displayed to users. Required field with character limits for
+  /// proper content presentation.
+  title String
+  
+  /// Post content body supporting different formats based on content type. May
+  /// contain text, markdown, or structured data.
+  content String?
+  
+  /// Type of post content: 'text', 'link', or 'image'. Determines how content
+  /// is processed and displayed.
+  content_type String
+  
+  /// External URL for link posts. Validated as proper URI format when
+  /// content_type is 'link'.
+  url String?
+  
+  /// Image URL for image posts. Points to stored image asset when content_type
+  /// is 'image'.
+  image_url String?
+  
+  /// Current post status: 'draft', 'published', 'archived', 'removed',
+  /// 'locked', 'pinned', 'featured'. Manages post lifecycle and visibility.
+  status String
+  
+  /// Flag indicating Not Safe For Work content. Used for content filtering and
+  /// user preferences.
+  is_nsfw Boolean
+  
+  /// Flag indicating post is locked from further comments. Used for moderation
+  /// and dispute resolution.
+  is_locked Boolean
+  
+  /// Flag indicating post is pinned to the top of the community. Used for
+  /// important announcements.
+  is_pinned Boolean
+  
+  /// Flag indicating post is archived and read-only. Used for historical
+  /// content preservation.
+  is_archived Boolean
+  
+  /// Language code of the post content (e.g., 'en', 'es', 'fr'). Used for
+  /// content filtering and localization.
+  language String?
+  
+  /// Community-specific flair text for post categorization and customization.
+  flair String?
+  
+  /// Timestamp when the post was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft deleted. Null indicates active post.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  session community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_snapshots community_platform_post_snapshots[]
+  community_platform_post_reports community_platform_post_reports[]
+  community_platform_post_votes community_platform_post_votes[]
+  community_platform_comments community_platform_comments[]
+  community_platform_karma_breakdowns community_platform_karma_breakdowns[]
+  community_platform_content_reports community_platform_content_reports[]
+  community_platform_engagement_metrics community_platform_engagement_metrics[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_posts_community_platform_member_ses_a4f48444")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, status, created_at], map: "community_platform_posts_community_platform_community__435a9de9")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, status, created_at], map: "community_platform_posts_community_platform_member_id__513789ca")
+  @@index([status, created_at])
+  @@index([content_type, created_at])
+  @@index([is_nsfw, created_at])
+  @@index([is_pinned, created_at])
+}
+
+/// Historical snapshots of post content for audit trails and version control.
+///
+/// Captures point-in-time states of posts whenever significant changes
+/// occur, such as content edits, status changes, or moderation actions. Each
+/// snapshot preserves the complete post state at the time of capture.
+///
+/// Used for content moderation review, user dispute resolution, and platform
+/// transparency. Snapshots maintain referential integrity with the original
+/// post while providing immutable historical records.
+///
+/// Enhanced with actor tracking and detailed change reasons for better audit
+/// trails.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original post being snapshotted. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Member who triggered the snapshot creation. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String?
+  
+  /// Post title at the time of snapshot capture.
+  title String
+  
+  /// Post content body at the time of snapshot capture.
+  content String?
+  
+  /// Content type at snapshot time: 'text', 'link', or 'image'.
+  content_type String
+  
+  /// External URL for link posts at snapshot time.
+  url String?
+  
+  /// Image URL for image posts at snapshot time.
+  image_url String?
+  
+  /// Post status at the time of snapshot capture.
+  status String
+  
+  /// NSFW flag state at snapshot time.
+  is_nsfw Boolean
+  
+  /// Locked flag state at snapshot time.
+  is_locked Boolean
+  
+  /// Pinned flag state at snapshot time.
+  is_pinned Boolean
+  
+  /// Archived flag state at snapshot time.
+  is_archived Boolean
+  
+  /// Language code at snapshot time.
+  language String?
+  
+  /// Flair text at snapshot time.
+  flair String?
+  
+  /// Reason for creating this snapshot: 'edit', 'moderation', 'archive',
+  /// 'status_change', 'user_request'.
+  snapshot_reason String
+  
+  /// Detailed description of what changed in this snapshot.
+  change_description String?
+  
+  /// Timestamp when the snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  actor community_platform_members? @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_snapshots_community_platform_p_fff76d8e")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_reason, created_at], map: "community_platform_post_snapshots_snapshot_reason_crea_814d0909")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_post_snapshots_community_platform_m_875a929c")
+}
+
+/// User reports of inappropriate or rule-violating posts for moderation review.
+///
+/// Stores reports submitted by community members when they encounter content
+/// that violates platform rules or community guidelines. Each report
+/// includes categorization, context, and reporter information.
+///
+/// Reports are processed through moderation workflows with status tracking
+/// and resolution documentation. The system maintains audit trails for
+/// transparency and quality assurance.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post being reported. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Member submitting the report. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Session context for report submission. {@link
+  /// community_platform_member_sessions.id}
+  community_platform_member_session_id String
+  
+  /// Category of violation: 'spam', 'harassment', 'illegal', 'misinformation',
+  /// 'rule_violation'.
+  report_category String
+  
+  /// Detailed explanation of the violation with specific context and examples.
+  report_reason String?
+  
+  /// Report processing status: 'pending', 'under_review', 'resolved',
+  /// 'dismissed'.
+  status String
+  
+  /// Processing priority: 'critical', 'high', 'medium', 'low'. Based on
+  /// violation severity.
+  priority String
+  
+  /// Timestamp when the report was resolved by moderators.
+  resolved_at DateTime?
+  
+  /// Explanation of the moderation decision and action taken.
+  resolution_reason String?
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  reporter community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  session community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_post_reports_community_platform_mem_aa97f116")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, status], map: "community_platform_post_reports_community_platform_pos_def59a0e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_post_reports_community_platform_mem_1a641c81")
+  @@index([status, priority, created_at])
+}
+
+/// Individual vote records for post engagement tracking and karma calculation.
+///
+/// Stores each upvote and downvote cast by community members on posts. Each
+/// vote record includes voter information, vote direction, and timestamp for
+/// accurate engagement metrics.
+///
+/// Used for calculating post scores, user karma contributions, and
+/// generating personalized content recommendations. The system prevents
+/// duplicate voting and maintains vote integrity.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post being voted on. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Member casting the vote. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Session context for vote action. {@link
+  /// community_platform_member_sessions.id}
+  community_platform_member_session_id String
+  
+  /// Direction of the vote: 'upvote' or 'downvote'. Determines karma impact
+  /// and post scoring.
+  vote_type String
+  
+  /// Weight of the vote for karma calculation. Defaults to 1, may vary based
+  /// on user reputation.
+  vote_weight Int
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated (if changed).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  voter community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  session community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_post_votes_community_platform_membe_f6d96bfe")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id, community_platform_member_id], map: "community_platform_post_votes_community_platform_post__67424e40")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, vote_type, created_at], map: "community_platform_post_votes_community_platform_post__0310a58a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_post_votes_community_platform_membe_59eaad49")
+}

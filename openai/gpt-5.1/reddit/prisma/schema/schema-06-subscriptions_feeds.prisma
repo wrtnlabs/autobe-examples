@@ -1,0 +1,155 @@
+/// Subscription relationships between member users and communities.
+///
+/// Represents the M:N topology of which communities each authenticated
+/// member user follows and which members are subscribed to each community.
+/// Stores only the current subscription state and simple status, while
+/// detailed audit and moderation data live in other components.
+///
+/// Each row links exactly one member user to one community.
+/// It also records when the subscription was created and last updated, and
+/// whether the subscription is pending, active, or rejected, supporting
+/// communities that require membership approval.
+///
+/// @namespace SubscriptionsFeeds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the community subscription record.
+  id String @id
+  
+  /// Member user who owns this subscription. {@link
+  /// community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Community that the member user is subscribed to. {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Current subscription status as a business string value. Typical values
+  /// include pending, active, and rejected based on community membership
+  /// rules.
+  status String
+  
+  /// Timestamp when this subscription relationship was first created.
+  created_at DateTime
+  
+  /// Timestamp when this subscription record was last updated, such as when
+  /// status changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_memberuser_id, community_platform_community_id], map: "community_platform_community_subscriptions_community_p_feec9fdf")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, status], map: "community_platform_community_subscriptions_community_p_e8621ff7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_memberuser_id, created_at], map: "community_platform_community_subscriptions_community_p_0c18566b")
+}
+
+/// Per-user preferences controlling how feeds are constructed and displayed.
+///
+/// Stores one row per member user describing their default sorting mode,
+/// NSFW or sensitive content visibility behavior, and whether to include
+/// recommended or default feeds when the user has few or no subscriptions.
+///
+/// These preferences influence Home Feed construction and community listing
+/// behavior for the owning user and are updated independently of
+/// subscriptions.
+///
+/// @namespace SubscriptionsFeeds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_feed_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the user feed preferences record.
+  id String @id
+  
+  /// Member user who owns these feed preferences. Exactly one preference row
+  /// per user is allowed. {@link community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Preferred default sorting mode for posts in feeds. Typical values: hot,
+  /// new, top, controversial.
+  default_post_sort_mode String
+  
+  /// Flag indicating whether the user chooses to see sensitive or NSFW content
+  /// in feeds according to safety policy.
+  show_sensitive_content Boolean
+  
+  /// Flag indicating whether the user allows recommended or non-subscribed
+  /// community posts to appear in their Home Feed when appropriate.
+  include_recommended_feeds Boolean
+  
+  /// Timestamp when this preference record was created.
+  created_at DateTime
+  
+  /// Timestamp when this preference record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_memberuser_id], map: "community_platform_user_feed_preferences_community_pla_c2b3060e")
+}
+
+/// System-defined default feed configurations used when constructing feeds
+/// without sufficient user subscriptions.
+///
+/// Represents platform or business-configured default feed sources such as
+/// popular posts, recommended communities, or onboarding feeds.
+/// Each row describes a feed type and includes flags indicating whether the
+/// configuration is currently active and whether it is the platform default.
+///
+/// These records are managed primarily by administrators and are referenced
+/// by feed construction logic to decide which global feeds to use for new or
+/// unsubscribed users.
+///
+/// @namespace SubscriptionsFeeds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_default_feeds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the default feed configuration record.
+  id String @id
+  
+  /// Business identifier for this default feed configuration, unique within
+  /// the table. Used by feed construction logic to reference a specific
+  /// default feed type.
+  feed_code String
+  
+  /// Type of default feed this configuration represents, such as popular,
+  /// recommended, onboarding, or curated category names.
+  feed_type String
+  
+  /// Indicates whether this default feed configuration is currently active and
+  /// should be considered during feed construction.
+  is_active Boolean
+  
+  /// Indicates whether this configuration is used as the main platform default
+  /// feed when a user has no subscriptions or no other applicable feeds.
+  is_platform_default Boolean
+  
+  /// Timestamp when this default feed configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this default feed configuration was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([feed_code])
+  @@index([is_active, feed_type])
+}

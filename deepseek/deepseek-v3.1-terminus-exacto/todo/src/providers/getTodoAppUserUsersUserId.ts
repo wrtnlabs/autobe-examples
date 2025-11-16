@@ -14,35 +14,27 @@ export async function getTodoAppUserUsersUserId(props: {
   user: UserPayload;
   userId: string & tags.Format<"uuid">;
 }): Promise<ITodoAppUser> {
-  // Authorization check: users can only access their own account
-  if (props.user.id !== props.userId) {
-    throw new HttpException(
-      "Unauthorized: You can only access your own user account",
-      403,
-    );
-  }
-
-  // Query the user from database - only non-deleted users
-  const user = await MyGlobal.prisma.todo_app_users.findUnique({
-    where: {
-      id: props.userId,
-      deleted_at: null,
-    },
+  const userRecord = await MyGlobal.prisma.todo_app_users.findUnique({
+    where: { id: props.userId },
   });
 
-  if (!user) {
+  if (!userRecord) {
     throw new HttpException("User not found", 404);
   }
 
-  // Construct response object matching ITodoAppUser interface
-  // All fields are properly typed based on the interface definition
+  if (userRecord.deleted_at !== null) {
+    throw new HttpException("User account has been deleted", 404);
+  }
+
   return {
-    id: user.id,
-    email: user.email,
-    password_hash: user.password_hash ?? undefined, // Optional field in API
-    status: user.status,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
+    id: userRecord.id,
+    email: userRecord.email,
+    password_hash: userRecord.password_hash,
+    status: typia.assert<"pending" | "active" | "suspended">(userRecord.status),
+    created_at: toISOStringSafe(userRecord.created_at),
+    updated_at: toISOStringSafe(userRecord.updated_at),
+    deleted_at: userRecord.deleted_at
+      ? toISOStringSafe(userRecord.deleted_at)
+      : undefined,
   };
 }

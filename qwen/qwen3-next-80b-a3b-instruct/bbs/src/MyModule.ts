@@ -1,54 +1,50 @@
 import { Module } from "@nestjs/common";
 
 import { AuthCitizenController } from "./controllers/auth/citizen/AuthCitizenController";
-import { AuthModeratorController } from "./controllers/auth/moderator/AuthModeratorController";
-import { PoliticalforumPostsController } from "./controllers/politicalForum/posts/PoliticalforumPostsController";
-import { PoliticalforumCitizenPostsController } from "./controllers/politicalForum/citizen/posts/PoliticalforumCitizenPostsController";
-import { PoliticalforumModeratorPostsController } from "./controllers/politicalForum/moderator/posts/PoliticalforumModeratorPostsController";
-import { PoliticalforumPostsCommentsController } from "./controllers/politicalForum/posts/comments/PoliticalforumPostsCommentsController";
-import { PoliticalforumCitizenPostsCommentsController } from "./controllers/politicalForum/citizen/posts/comments/PoliticalforumCitizenPostsCommentsController";
-import { PoliticalforumModeratorPostsCommentsController } from "./controllers/politicalForum/moderator/posts/comments/PoliticalforumModeratorPostsCommentsController";
-import { PoliticalforumCitizenPostsReportsController } from "./controllers/politicalForum/citizen/posts/reports/PoliticalforumCitizenPostsReportsController";
-import { PoliticalforumCitizenCommentsReportsController } from "./controllers/politicalForum/citizen/comments/reports/PoliticalforumCitizenCommentsReportsController";
-import { PoliticalforumCitizenPostsAttachmentfilesController } from "./controllers/politicalForum/citizen/posts/attachmentFiles/PoliticalforumCitizenPostsAttachmentfilesController";
-import { PoliticalforumPostsAttachmentfilesController } from "./controllers/politicalForum/posts/attachmentFiles/PoliticalforumPostsAttachmentfilesController";
-import { PoliticalforumCitizenReportsController } from "./controllers/politicalForum/citizen/reports/PoliticalforumCitizenReportsController";
-import { PoliticalforumModeratorReportsController } from "./controllers/politicalForum/moderator/reports/PoliticalforumModeratorReportsController";
-import { PoliticalforumReportsPostController } from "./controllers/politicalForum/reports/post/PoliticalforumReportsPostController";
-import { PoliticalforumReportsCommentController } from "./controllers/politicalForum/reports/comment/PoliticalforumReportsCommentController";
-import { PoliticalforumCommentsController } from "./controllers/politicalForum/comments/PoliticalforumCommentsController";
-import { PoliticalforumModeratorUsersController } from "./controllers/politicalForum/moderator/users/PoliticalforumModeratorUsersController";
-import { PoliticalforumCitizenUsersController } from "./controllers/politicalForum/citizen/users/PoliticalforumCitizenUsersController";
-import { PoliticalforumModeratorDashboardsPlatform_activityController } from "./controllers/politicalForum/moderator/dashboards/platform-activity/PoliticalforumModeratorDashboardsPlatform_activityController";
-import { PoliticalforumModeratorDashboardsModeration_efficiencyController } from "./controllers/politicalForum/moderator/dashboards/moderation-efficiency/PoliticalforumModeratorDashboardsModeration_efficiencyController";
-import { PoliticalforumModeratorReportsWeekly_activityController } from "./controllers/politicalForum/moderator/reports/weekly-activity/PoliticalforumModeratorReportsWeekly_activityController";
-import { PoliticalforumModeratorReportsUser_engagementController } from "./controllers/politicalForum/moderator/reports/user-engagement/PoliticalforumModeratorReportsUser_engagementController";
+import { AuthModeratorController } from "./controllers/auth/moderator/refresh/AuthModeratorController";
+import { EconomicboardCategoriesController } from "./controllers/economicBoard/categories/EconomicboardCategoriesController";
+import { EconomicboardModeratorCategoriesController } from "./controllers/economicBoard/moderator/categories/EconomicboardModeratorCategoriesController";
+import { EconomicboardCitizensController } from "./controllers/economicBoard/citizens/EconomicboardCitizensController";
+import { EconomicboardCitizenCitizensController } from "./controllers/economicBoard/citizen/citizens/EconomicboardCitizenCitizensController";
+import { Economic_boardCitizensController } from "./controllers/economic-board/citizens/Economic_boardCitizensController";
+import { EconomicboardModeratorCitizensController } from "./controllers/economicBoard/moderator/citizens/EconomicboardModeratorCitizensController";
+import { EconomicboardModeratorModeratorsController } from "./controllers/economicBoard/moderator/moderators/EconomicboardModeratorModeratorsController";
+import { EconomicboardCitizenPostsController } from "./controllers/economicBoard/citizen/posts/EconomicboardCitizenPostsController";
+import { EconomicboardModeratorPostsController } from "./controllers/economicBoard/moderator/posts/EconomicboardModeratorPostsController";
+import { EconomicboardPostsController } from "./controllers/economicBoard/posts/EconomicboardPostsController";
+import { EconomicboardCitizenPostsCommentsController } from "./controllers/economicBoard/citizen/posts/comments/EconomicboardCitizenPostsCommentsController";
+import { EconomicboardPostsCommentsController } from "./controllers/economicBoard/posts/comments/EconomicboardPostsCommentsController";
+import { EconomicboardModeratorPostsCommentsController } from "./controllers/economicBoard/moderator/posts/comments/EconomicboardModeratorPostsCommentsController";
+import { EconomicboardCitizenAttachmentfilesController } from "./controllers/economicBoard/citizen/attachmentFiles/EconomicboardCitizenAttachmentfilesController";
+import { EconomicboardAttachmentfilesController } from "./controllers/economicBoard/attachmentFiles/EconomicboardAttachmentfilesController";
+import { EconomicboardModeratorAttachmentfilesController } from "./controllers/economicBoard/moderator/attachmentFiles/EconomicboardModeratorAttachmentfilesController";
+import { EconomicboardModeratorModerationActionsController } from "./controllers/economicBoard/moderator/moderation/actions/EconomicboardModeratorModerationActionsController";
+import { EconomicboardController } from "./controllers/economicBoard/search/EconomicboardController";
+import { Economicboard_searchCategoriesController } from "./controllers/economicBoard/search/categories/Economicboard_searchCategoriesController";
 
 @Module({
   controllers: [
     AuthCitizenController,
     AuthModeratorController,
-    PoliticalforumPostsController,
-    PoliticalforumCitizenPostsController,
-    PoliticalforumModeratorPostsController,
-    PoliticalforumPostsCommentsController,
-    PoliticalforumCitizenPostsCommentsController,
-    PoliticalforumModeratorPostsCommentsController,
-    PoliticalforumCitizenPostsReportsController,
-    PoliticalforumCitizenCommentsReportsController,
-    PoliticalforumCitizenPostsAttachmentfilesController,
-    PoliticalforumPostsAttachmentfilesController,
-    PoliticalforumCitizenReportsController,
-    PoliticalforumModeratorReportsController,
-    PoliticalforumReportsPostController,
-    PoliticalforumReportsCommentController,
-    PoliticalforumCommentsController,
-    PoliticalforumModeratorUsersController,
-    PoliticalforumCitizenUsersController,
-    PoliticalforumModeratorDashboardsPlatform_activityController,
-    PoliticalforumModeratorDashboardsModeration_efficiencyController,
-    PoliticalforumModeratorReportsWeekly_activityController,
-    PoliticalforumModeratorReportsUser_engagementController,
+    EconomicboardCategoriesController,
+    EconomicboardModeratorCategoriesController,
+    EconomicboardCitizensController,
+    EconomicboardCitizenCitizensController,
+    Economic_boardCitizensController,
+    EconomicboardModeratorCitizensController,
+    EconomicboardModeratorModeratorsController,
+    EconomicboardCitizenPostsController,
+    EconomicboardModeratorPostsController,
+    EconomicboardPostsController,
+    EconomicboardCitizenPostsCommentsController,
+    EconomicboardPostsCommentsController,
+    EconomicboardModeratorPostsCommentsController,
+    EconomicboardCitizenAttachmentfilesController,
+    EconomicboardAttachmentfilesController,
+    EconomicboardModeratorAttachmentfilesController,
+    EconomicboardModeratorModerationActionsController,
+    EconomicboardController,
+    Economicboard_searchCategoriesController,
   ],
 })
 export class MyModule {}

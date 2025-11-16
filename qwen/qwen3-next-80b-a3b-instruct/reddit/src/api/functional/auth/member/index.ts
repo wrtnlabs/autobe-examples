@@ -3,48 +3,289 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
+import { IMember } from "../../../structures/IMember";
 import { ICommunityPlatformMember } from "../../../structures/ICommunityPlatformMember";
 
 /**
- * Refresh a member user's access token using a valid refresh token.
+ * Register a new member account with email and password.
  *
- * This endpoint allows member users to renew their access JWT tokens using a
- * previously issued refresh token. The operation accepts a refresh token from
- * the Authorization header and validates it against the
- * community_platform_member_sessions table. The system checks that the refresh
- * token is active, not expired, and corresponds to a valid member account with
- * verified status.
+ * This endpoint handles the registration of new member users for the
+ * CommunityPlatform. The member actor type represents authenticated users who
+ * can create content, vote, and subscribe to communities. To register, users
+ * must provide a valid email address and a password that meets the platform's
+ * security requirements. The system creates a new record in the 'member' Prisma
+ * entity with fields including email, password hash (never stored in plain
+ * text), and initial status flags for email verification. A temporary access
+ * token and refresh token are generated and returned to the client. The member
+ * record is marked as unverified until the user confirms their email address.
+ * This aligns with the user journey specified in 04-user-journey.md where
+ * registration is a separate step from login. Security considerations include
+ * password hashing using bcrypt and protection against brute force attacks
+ * through rate limiting. The operation must not allow duplicate email
+ * registrations, as the 'member' table has a unique constraint on email. This
+ * operation integrates with the member_sessions table to establish user
+ * sessions after successful registration. The operation is the first step in
+ * the member user journey and must be completed before using any other
+ * authenticated features of the platform.
  *
- * Upon successful validation, the system issues a new access token (15-minute
- * expiration) while still maintaining the same refresh token (7-day
- * expiration). The refresh token's last used timestamp is updated in the
- * database, and the session record is marked as active to prevent token reuse
- * after disconnection. This implementation prevents the need for users to
- * re-enter credentials frequently while maintaining security through
- * short-lived access tokens.
+ * For security, the password must be at least 12 characters long and include
+ * uppercase, lowercase, number, and special character requirements as defined
+ * in 05-business-rules.md. The email must be validated against RFC 5322
+ * standards before use. This operation should trigger an email confirmation
+ * message, as described in 07-error-handling.md.
  *
- * The system implements refresh token rotation with strict revocation policies.
- * Each refresh token can only be used once, and any attempt to reuse a
- * previously used refresh token will result in immediate account suspension for
- * security reasons. The operation ensures that only one active session per
- * member exists at any time. If a member logs in from a new device, the
- * previous session's refresh token is automatically revoked and invalidated.
- *
- * The refresh operation is the critical connector between user sessions and
- * authentication resilience. It enables seamless experience for members who may
- * have multiple tabs open or long-duration sessions without requiring them to
- * re-authenticate. The refresh token must be stored securely on the client
- * side, as it represents long-term access to the account.
- *
- * This operation depends on successful login (POST /auth/member/login), which
- * must be performed first to obtain the initial refresh token. The refresh
- * operation cannot be called without a valid refresh token obtained from a
- * successful login. The refresh token is not returned in the response; it is
- * only used from the request header for validation.
+ * Related operations include 'login' for authentication after registration and
+ * 'verifyEmail' to complete account activation. If registration fails due to
+ * duplicate email, an error response with code 409 Conflict should be returned,
+ * as specified in 07-error-handling.md.
  *
  * @param props.connection
- * @param props.body Request payload containing the refresh token and no
- *   additional parameters
+ * @param props.body Contains the email and password for creating a new member
+ *   account. The candidate must have an email address field that matches the
+ *   'email' field in the Prisma schema and a password field that conforms to
+ *   the specified password policy.
+ * @setHeader token.access Authorization
+ *
+ * @path /auth/member/join
+ * @accessor api.functional.auth.member.join
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function join(
+  connection: IConnection,
+  props: join.Props,
+): Promise<join.Response> {
+  const output: join.Response =
+    true === connection.simulate
+      ? join.simulate(connection, props)
+      : await PlainFetcher.fetch(
+          {
+            ...connection,
+            headers: {
+              ...connection.headers,
+              "Content-Type": "application/json",
+            },
+          },
+          {
+            ...join.METADATA,
+            path: join.path(),
+            status: null,
+          },
+          props.body,
+        );
+  connection.headers ??= {};
+  connection.headers.Authorization = output.token.access;
+  return output;
+}
+export namespace join {
+  export type Props = {
+    /**
+     * Contains the email and password for creating a new member account.
+     * The candidate must have an email address field that matches the
+     * 'email' field in the Prisma schema and a password field that conforms
+     * to the specified password policy.
+     */
+    body: IMember.ICreate;
+  };
+  export type Body = IMember.ICreate;
+  export type Response = ICommunityPlatformMember.IAuthorized;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/auth/member/join",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/auth/member/join";
+  export const random = (): ICommunityPlatformMember.IAuthorized =>
+    typia.random<ICommunityPlatformMember.IAuthorized>();
+  export const simulate = (
+    connection: IConnection,
+    props: join.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: join.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Authenticate a member user and obtain access and refresh tokens.
+ *
+ * This endpoint authenticates member users by validating their email and
+ * password against the credentials stored in the 'member' database table. The
+ * member actor type represents authenticated users who can create content,
+ * vote, and subscribe to communities. The operation checks the email field
+ * against the unique constraint in the member table and verifies the password
+ * using bcrypt hash comparison. Upon successful authentication, the system
+ * generates a new JWT access token with a 15-minute expiration and a refresh
+ * token with a 7-day expiration, both signed with a secure secret key. The
+ * access token is returned to the client and must be included in the
+ * Authorization header for subsequent protected requests. The refresh token is
+ * stored securely in an HTTP-only cookie as per security best practices
+ * outlined in 05-business-rules.md.
+ *
+ * This operation requires the user to provide both email and password fields.
+ * The password field is hashed on the server side before comparison, ensuring
+ * no plaintext passwords are ever processed. This aligns with the login journey
+ * in 04-user-journey.md and the authentication flow in 02-user-actors.md.
+ * Security considerations include rate limiting to prevent brute force attacks,
+ * as specified in 07-error-handling.md, and protection against timing attacks.
+ *
+ * Related operations include 'join' for account creation and 'refresh' for
+ * token renewal. If authentication fails due to invalid credentials, the system
+ * returns a 401 Unauthorized status as required by 07-error-handling.md. The
+ * 'member' user model must contain both 'email' and 'passwordHash' fields as
+ * verified in the Prisma schema.
+ *
+ * @param props.connection
+ * @param props.body Contains the login credentials (email and password) for
+ *   authenticating a member user. The email must match an existing member
+ *   record's email field, and the password must be the plaintext value that
+ *   will be hashed and compared against the stored passwordHash in the member
+ *   table.
+ * @setHeader token.access Authorization
+ *
+ * @path /auth/member/login
+ * @accessor api.functional.auth.member.login
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function login(
+  connection: IConnection,
+  props: login.Props,
+): Promise<login.Response> {
+  const output: login.Response =
+    true === connection.simulate
+      ? login.simulate(connection, props)
+      : await PlainFetcher.fetch(
+          {
+            ...connection,
+            headers: {
+              ...connection.headers,
+              "Content-Type": "application/json",
+            },
+          },
+          {
+            ...login.METADATA,
+            path: login.path(),
+            status: null,
+          },
+          props.body,
+        );
+  connection.headers ??= {};
+  connection.headers.Authorization = output.token.access;
+  return output;
+}
+export namespace login {
+  export type Props = {
+    /**
+     * Contains the login credentials (email and password) for
+     * authenticating a member user. The email must match an existing member
+     * record's email field, and the password must be the plaintext value
+     * that will be hashed and compared against the stored passwordHash in
+     * the member table.
+     */
+    body: IMember.ILogin;
+  };
+  export type Body = IMember.ILogin;
+  export type Response = ICommunityPlatformMember.IAuthorized;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/auth/member/login",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/auth/member/login";
+  export const random = (): ICommunityPlatformMember.IAuthorized =>
+    typia.random<ICommunityPlatformMember.IAuthorized>();
+  export const simulate = (
+    connection: IConnection,
+    props: login.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: login.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Refresh the member's access token using a valid refresh token.
+ *
+ * This endpoint allows member users to refresh their access token when it
+ * expires, maintaining their authenticated session without requiring re-login.
+ * The operation receives a valid refresh token (typically stored in an
+ * HTTP-only cookie) and validates it against the corresponding refresh token
+ * stored in the member_sessions table. Upon validation, a new access token is
+ * generated with a 15-minute expiration period and returned in the response
+ * body. The refresh token itself remains unchanged unless it has been revoked,
+ * compromised, or has expired. This session management approach follows the
+ * security patterns outlined in the authentication requirements and prevents
+ * frequent credential entry while maintaining security.
+ *
+ * The operation requires a refresh token to be provided in the authorization
+ * header. The refresh token must have been issued by this system and not be
+ * revoked, expired, or reused. This aligns with the refresh flow in
+ * 04-user-journey.md and ensures the system can handle long-term user sessions
+ * without security risks. This operation is protected by the refresh token
+ * mechanism and does not require user credentials to be sent with each request,
+ * meeting requirements in 05-business-rules.md for secure token reuse.
+ *
+ * This operation integrates with the 'member_sessions' table, which tracks
+ * valid refresh tokens per member. If the refresh token is invalid, expired, or
+ * revoked, the system returns a 401 Unauthorized response per
+ * 07-error-handling.md. The 'member' entity must contain the relationship with
+ * member_sessions as verified in the Prisma schema.
+ *
+ * @param props.connection
+ * @param props.body Contains the refresh token used to obtain a new access
+ *   token. The token is typically submitted in the cookie header and is matched
+ *   against the stored token in the member_sessions table. The request body
+ *   includes the refresh token as a single string property to clearly indicate
+ *   its purpose and compliance with the refresh workflow
  * @setHeader token.access Authorization
  *
  * @path /auth/member/refresh
@@ -80,12 +321,16 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Request payload containing the refresh token and no additional
-     * parameters
+     * Contains the refresh token used to obtain a new access token. The
+     * token is typically submitted in the cookie header and is matched
+     * against the stored token in the member_sessions table. The request
+     * body includes the refresh token as a single string property to
+     * clearly indicate its purpose and compliance with the refresh
+     * workflow
      */
-    body: ICommunityPlatformMember.IRefresh;
+    body: IMember.IRefresh;
   };
-  export type Body = ICommunityPlatformMember.IRefresh;
+  export type Body = IMember.IRefresh;
   export type Response = ICommunityPlatformMember.IAuthorized;
 
   export const METADATA = {

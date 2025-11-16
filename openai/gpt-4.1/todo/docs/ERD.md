@@ -9,75 +9,94 @@
 
 ```mermaid
 erDiagram
-"todo_list_todousers" {
+"todo_list_users" {
   String id PK
   String email UK
   String password_hash
-  DateTime created_at
-  DateTime updated_at
 }
-"todo_list_todouser_sessions" {
+"todo_list_user_sessions" {
   String id PK
-  String todo_list_todouser_id FK
+  String user_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"todo_list_todouser_sessions" }o--|| "todo_list_todousers" : todoListTodouser
+"todo_list_user_sessions" }o--|| "todo_list_users" : user
 ```
 
-### `todo_list_todousers`
+### `todo_list_users`
 
-Represents a single authenticated todo user ("todoUser" actor) who can
-sign up, log in, and manage their own todo items. Each user is uniquely
-identified by their email, which must be unique and not null. Stores
-credential and minimal profile information (email, password hash) and
-audit fields for registration and account changes. Used as the reference
-owner for all related todos via foreign key from the business domain.
-Passwords are stored as secure hashes only.
+User accounts for the Todo List application.
+
+Stores core authentication data for each registered user, supporting
+secure, unique identification and credential management. Each user is
+uniquely identified by their email address, which is validated for
+uniqueness and required at registration.
+
+Password hashes are stored using industry-standard secure
+algorithms—never in plaintext—to enforce privacy and security policies.
+The table enforces hard deletion to comply with irreversible data removal
+business rules. No personal information beyond email and password hash is
+retained, following strict data minimization.
+
+This table supports user registration, authentication, and password
+management workflows. All todos created in the system are strictly owned
+by a single user, and access is limited to each user's personal data
+only. No profiles, roles, or external identities are used. No soft delete
+or audit trail is maintained for user accounts.
 
 Properties as follows:
 
-- `id`: Primary Key.
+- `id`: Primary key uniquely identifying each user account.
 - `email`
-  > Unique email address of the user. Must be a valid email and unique across
-  > all users. Used for authentication and login.
+  > User's unique email address used for registration and authentication.
+  > Must be unique. Required at account creation. Used for login,
+  > notifications, and password reset workflows. Max length 254 characters
+  > per business validation rules.
 - `password_hash`
-  > Bcrypt or secure hash of the user's authentication password. Never stores
-  > plaintext. Used for verifying login credentials.
-- `created_at`: Timestamp of account creation. Used for audit and registration history.
-- `updated_at`
-  > Timestamp of last update to user account. Updated automatically when
-  > profile or credentials change.
+  > Bcrypt (or similarly secure) password hash for authentication.
+  > Never stores plaintext passwords. Only secure cryptographic hashes. Used
+  > exclusively for login verification and password reset workflows.
 
-### `todo_list_todouser_sessions`
+### `todo_list_user_sessions`
 
-Session records for each login/authentication event of a todo user. Each
-session is directly owned by a single todo user and represents a
-persistent login/token session (for JWT, refresh, etc). Audit fields
-include IP, connection context, creation and optional expiry timestamps.
-Sessions are referenced by session tokens and provide a complete
-login/session audit log for each user. Managed through the
-identity/authentication system. Sessions are not exposed for independent
-CRUD and are always subsidiary to the owning user.
+User session tracking for the Todo List application.
+
+Records the authenticated session state for each user, allowing secure,
+multi-device login, accurate audit of session creation and expiration,
+and mandatory session termination scenarios (such as password reset or
+logout everywhere).
+
+Each session is associated with a user and contains contextual metadata
+(IP, URL, referrer), along with creation and optional expiration time.
+
+Sessions are never independently managed or visible to users except via
+authentication flows—they are subsidiary entities for security and
+traceability only. There is no soft or hard delete after logout—sessions
+are purged per standard clean-up policies. Only one session table is
+maintained for the sole actor type (user).
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `todo_list_todouser_id`: Belonged user's [todo_list_todousers.id](#todo_list_todousers)
+- `id`: Primary key uniquely identifying each session record.
+- `user_id`
+  > Foreign key referencing the owning user account. {@link
+  > todo_list_users.id}.
 - `ip`
-  > IP address of the client at session creation time. Used for audit and
-  > session context.
+  > The IP address from which the session was established. Used for security
+  > and audit tracing.
 - `href`
-  > Connection URL (entry point or referer) for traceability. Used for
-  > session context in audits.
+  > The full URL of the client connection at session start. Captured to
+  > provide context for the session's origin.
 - `referrer`
-  > HTTP referrer or origin URL when session was established. Used for
-  > session traceability.
-- `created_at`: Session creation timestamp. Used for session audit and ordering.
-- `expired_at`: Session expiry or logout time. Nullable; if null, session is still valid.
+  > Referrer URL indicating the previous location before authentication or
+  > session establishment. Used for session context and debugging.
+- `created_at`: Timestamp when the session was created.
+- `expired_at`
+  > Optional timestamp marking when the session expired or was terminated.
+  > Nullable. Used for session lifecycle enforcement.
 
 ## Todos
 
@@ -85,51 +104,60 @@ Properties as follows:
 erDiagram
 "todo_list_todos" {
   String id PK
-  String todo_list_todouser_id FK
+  String todo_list_user_id FK
   String title
   String description "nullable"
   Boolean is_completed
   DateTime created_at
   DateTime updated_at
-  DateTime completed_at "nullable"
 }
 ```
 
 ### `todo_list_todos`
 
-A todo business entity owned strictly by a single todoUser. Each record
-represents a personal todo item with title, optional description,
-completion status, timestamps, and ownership reference. Enforces all
-business constraints as required: only the owning user can create, view,
-update, complete, or delete the todo. No sharing, delegation, or
-multi-user relations exist. Business validation (title and description
-rules, unique id, timestamps, and state transitions) is handled at the
-field level. Tightly coupled to [todo_list_todousers](#todo_list_todousers) for ownership
-and permission enforcement.
+Core business entity representing a personal todo item owned by a
+registered user.
+
+Stores all user-created tasks for the Todo List application. Every todo
+is linked to exactly one user through the todo_list_users table,
+guaranteeing strict per-user privacy and ownership boundaries. Fields
+include a unique identifier, a required textual title, and an optional
+description for expanded task notes. Only the owner may read, update, or
+delete their own todos; cross-user access is strictly prohibited by
+design.
+
+Completion state is indicated by a boolean is_completed flag, enabling
+users to filter or display completed and active todos. Each todo records
+its creation and last modification timestamps to facilitate ordered
+listings and update tracking. Deletion occurs as an immediate,
+irreversible operation with no soft delete, recycling, or recovery
+feature—a requirement explicitly defined for privacy and simplicity in
+the MVP.
+
+Indexes ensure fast lookup and retrieval by user and creation date, while
+all field validation rules and usage patterns conform to minimal,
+single-user, and privacy-centric business needs. No auxiliary or
+historical tables are present, as per requirements.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_list_todouser_id`
-  > Owner's [todo_list_todousers.id](#todo_list_todousers). Enforces strict ownership; only
-  > the referenced todoUser can manage this todo.
+- `todo_list_user_id`
+  > Foreign key referencing the owner user. Each todo belongs to exactly one
+  > user; enforces strict per-user data boundaries. {@link
+  > todo_list_users.id}.
 - `title`
-  > Short, required title of the todo item. Cannot be empty or
-  > whitespace-only; maximum 100 characters per business rule.
+  > Required title of the todo. Must be 1 to 255 non-whitespace characters.
+  > Serves as the main identifying label for the user's task.
 - `description`
-  > Optional details or notes for the todo. May be empty or null; must not
-  > exceed 500 characters if present.
+  > Optional extended notes for the todo, up to 1024 characters. Provides
+  > additional context or instructions for the user's private use.
 - `is_completed`
-  > Indicates whether the todo is completed (true) or not (false). Only
-  > boolean values are allowed per requirements. Business logic ensures
-  > consistent state transitions.
+  > True if the todo is marked completed by the user, false otherwise. Used
+  > for workflow and list filtering.
 - `created_at`
-  > Timestamp when the todo was created. System-assigned; required for
-  > traceability.
+  > Timestamp of when the todo was created. Used for ordering and audit
+  > purposes.
 - `updated_at`
-  > Timestamp for the last modification of the todo. System-assigned;
-  > required for audit traceability.
-- `completed_at`
-  > Timestamp when the todo was marked as completed. Required and set only
-  > when is_completed is true; must be null or omitted when is_completed is
-  > false. Used for audit/history. Nullable as per business rule.
+  > Timestamp of the most recent update to the todo. Updated on modification
+  > of title, description, or completion status.

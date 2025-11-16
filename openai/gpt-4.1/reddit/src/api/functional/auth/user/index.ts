@@ -4,43 +4,37 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { ICommunityPlatformUser } from "../../../structures/ICommunityPlatformUser";
-export * as password from "./password/index";
 
 /**
- * Register a new user (member) in 'community_platform_users' with email
- * verification and pending authentication.
+ * Registers a new user in the community_platform_users table and issues
+ * authentication tokens.
  *
- * This API endpoint enables new users to register an account by providing a
- * unique email, password, and display name, as defined in the
- * 'community_platform_users' schema. Upon receiving valid registration data, a
- * new user is created, and a verification token is sent via email, utilizing
- * fields from 'community_platform_users' and
- * 'community_platform_user_verification_tokens'.
- *
- * The operation requires that the email be unique and the password securely
- * stored as a bcrypt hash, referencing comments for these fields in the schema.
- * The display name is also stored for public user identity. Creation and update
- * timestamps are automatically recorded based on the schema specification.
- *
- * Email verification is coordinated through a one-time token managed by the
- * 'community_platform_user_verification_tokens' model, which must be validated
- * within its expiration window. Failure to verify in time will result in
- * expiration and scheduled deletion of the unverified account, as described in
- * the schema relationships and comments.
- *
- * This registration/join operation does not grant authentication or tokens
- * until verification is complete; it's the initial user onboarding entrypoint
- * and serves as a prerequisite for all member actions. Public security is
- * enforced at this step by rigorous validation and never exposing sensitive
- * data such as the password hash.
- *
- * Related operations: login, refresh (token), verification (email), and
- * password reset are tightly coupled to this registration endpoint; successful
- * completion enables access to those flows.
+ * This endpoint enables new user creation by accepting an email and password,
+ * which are validated and stored in the community_platform_users table as a new
+ * record. Email uniqueness is strictly enforced at the database level.
+ * Successful registration assigns the user an initial lifecycle status (such as
+ * 'pending' or 'active'), and the account creation and update timestamps are
+ * recorded. Security best practices are followed: the input password is
+ * securely hashed and never stored in plaintext, with email validated for
+ * correct format and uniqueness. Lifecycle fields created_at and updated_at are
+ * initialized. If registration is successful, JWT tokens are generated and
+ * returned, enabling immediate authenticated access. The endpoint integrates
+ * directly with the underlying schema's password_hash, email, and status
+ * fields, mapping request data to these core attributes. The operation supports
+ * soft deletion, allowing users to deactivate themselves at a later date
+ * without immediate erasure from the database. Registration triggers minimal
+ * user creation only; extended user profile information, user settings, or
+ * email verification are addressed by follow-up endpoints and not by this
+ * operation. Related endpoints include login (for credential authentication)
+ * and refresh (for acquiring new tokens after session expiry). Validation
+ * errors are returned for input malformation, duplicate accounts, or constraint
+ * violations. This onboarding flow is the foundation of all personalized
+ * activity, content interaction, and platform participation.
  *
  * @param props.connection
- * @param props.body Information required to register a new member (user):
- *   unique email, password, and display name.
+ * @param props.body Email and password for user registration. Both fields are
+ *   required. Email is validated and must be unique. Password must conform to
+ *   platform strength policy. Example: { email: string, password: string }
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -76,8 +70,10 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Information required to register a new member (user): unique email,
-     * password, and display name.
+     * Email and password for user registration. Both fields are required.
+     * Email is validated and must be unique. Password must conform to
+     * platform strength policy. Example: { email: string, password: string
+     * }
      */
     body: ICommunityPlatformUser.IJoin;
   };
@@ -126,43 +122,26 @@ export namespace join {
 }
 
 /**
- * Authenticate a verified user (member) in 'community_platform_users' using
- * email/password, issuing JWT and session.
+ * Authenticates a user with email and password using the
+ * community_platform_users table and issues tokens.
  *
- * This API endpoint allows an existing and verified user (member) to log into
- * the community platform using their registered email and password. It performs
- * credential checking by comparing the submitted password to the bcrypt
- * 'password_hash' stored in the 'community_platform_users' schema, ensuring
- * secure authentication and compatibility with modern security practices.
- *
- * If the submitted email has not been previously registered or the account is
- * deleted, this operation denies access, referencing the schema comments for
- * uniqueness and soft delete logic (deleted_at). The operation checks for
- * pending/unverified accounts using the
- * 'community_platform_user_verification_tokens' table and explicitly denies
- * login until email verification is completed, in accordance with onboarding
- * policies.
- *
- * Login attempts are tracked via the 'community_platform_user_login_attempts'
- * table, capturing timestamps, origin IP, and the binary success/failure result
- * per Prisma schema instructions, supporting lockout after consecutive failed
- * attempts within a specified duration.
- *
- * A successful login creates a session entry in
- * 'community_platform_user_sessions', records context information, and issues
- * JWT access and refresh tokens with durations as required by platform
- * security. These tokens are required for subsequent authenticated API access.
- * Clear business error messages (not exposing user existence) are returned for
- * failed attempts.
- *
- * Security considerations include never returning direct credential validation
- * results and logging all events for audit. Related endpoints: registration
- * (join), password reset (triggered after lockout), refresh (to obtain new
- * tokens). This operation is a critical part of authenticated workflows for
- * users.
+ * This operation validates a user's submitted email and password against the
+ * records in the community_platform_users table. If credentials match, account
+ * is active, and not soft deleted, a JWT authentication token pair is generated
+ * and returned. Input credentials are checked: email is used as the unique
+ * identifier, and the password is compared after hashing. Security is ensured
+ * by not revealing whether the email exists upon failure and enforcing session
+ * limits. Lifecycle status and deleted_at fields are checked to ensure the user
+ * is permitted to log in. An error response is issued for wrong credentials,
+ * deactivated/banned/deleted users, or database constraint issues. This
+ * endpoint does not alter user profile or settings. Related flows: Registration
+ * ('join') must occur before login, and token renewal ('refresh') is used for
+ * authenticated session continuation. Proper error handling for rate limits,
+ * malformed credentials, and account state is implemented.
  *
  * @param props.connection
- * @param props.body Credentials for user (member) login: email and password.
+ * @param props.body User credentials (email and password) for login. Example: {
+ *   email: string, password: string }
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -197,7 +176,10 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Credentials for user (member) login: email and password. */
+    /**
+     * User credentials (email and password) for login. Example: { email:
+     * string, password: string }
+     */
     body: ICommunityPlatformUser.ILogin;
   };
   export type Body = ICommunityPlatformUser.ILogin;
@@ -245,37 +227,24 @@ export namespace login {
 }
 
 /**
- * Refresh JWT access/refresh tokens for user 'community_platform_users'
- * session, validating persisted session/token state.
+ * Refreshes authentication tokens for user accounts in the
+ * community_platform_users table upon valid refresh token submission.
  *
- * This API endpoint allows a currently authenticated user (member) to obtain
- * new JWT access and refresh tokens by submitting a valid refresh token. The
- * operation is based on the 'community_platform_user_sessions' Prisma schema,
- * where each login session associates tokens to user ID, IP, and
- * creation/expiry timestamps.
- *
- * The refresh action validates that the provided token is not expired or
- * already revoked, then issues new tokens and updates the session as per token
- * rotation policy. All token operations are securely audited, referencing both
- * 'community_platform_user_sessions' and
- * 'community_platform_user_login_attempts' for suspicious activity and
- * automatic lockout after repeated misuse.
- *
- * Security is enforced through strict validation of session state, token
- * expiry, and lockout status, never refreshing or re-issuing tokens if security
- * criteria are not met. Token rotation is implemented in accordance with
- * non-functional requirements, providing resilient user authentication while
- * preventing reuse of invalidated tokens.
- *
- * Errors are reported in a secure, non-revealing manner, providing only
- * actionable messages. The operation is required for uninterrupted, long-lived
- * user sessions and is invoked by clients automatically before token expiry.
- * Related endpoints include login, join (registration), and password reset
- * (revokes all sessions/tokens).
+ * Upon valid refresh token submission, this operation generates new JWT tokens
+ * that extend the user's authenticated session without asking for password
+ * again. The endpoint consults the community_platform_users table to check
+ * account state, confirming 'active' or otherwise permitted status and ensuring
+ * the deleted_at field is null. If successful, a new authorized session is
+ * established, and updated tokens are returned. If the refresh token is
+ * invalid, expired, or the account is not in an allowed state (deleted, banned,
+ * or deactivated), the operation fails. This does not affect the user's profile
+ * or account settings—only manages session persistence. Related endpoints
+ * include 'login' for initial sign-in and 'join' for onboarding new users.
+ * Failures due to lifecycle state or token integrity result in error messages.
  *
  * @param props.connection
- * @param props.body Refresh token payload for session renewal for an
- *   authenticated member.
+ * @param props.body A valid refresh token for renewing the user's JWT session.
+ *   Example: { refreshToken: string }
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -311,8 +280,8 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Refresh token payload for session renewal for an authenticated
-     * member.
+     * A valid refresh token for renewing the user's JWT session. Example: {
+     * refreshToken: string }
      */
     body: ICommunityPlatformUser.IRefresh;
   };

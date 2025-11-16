@@ -1,260 +1,304 @@
-/// Core community entities representing subreddit-like communities where
-/// users can post content and engage in discussions. Each community has
-/// unique settings, rules, and categorization. Communities are created by
-/// members and managed by moderators.
+/// Core community entities representing subreddit-like communities on the
+/// platform.
+///
+/// Each community serves as a container for user-generated content,
+/// discussions, and member interactions. Communities can be created by
+/// authenticated members and have configurable settings for privacy, content
+/// rules, and moderation policies.
+///
+/// Communities support various states including active, restricted, and
+/// private modes to accommodate different community needs. The platform
+/// tracks community activity through separate materialized views rather than
+/// denormalized fields.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// community removal when necessary.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_communities {
+model community_platform_communities {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Community creator's member identifier. {@link reddit_clone_members.id}
-  created_by_member_id String
+  /// Community creator's member reference. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
   
-  /// Primary moderator responsible for community management. {@link
-  /// reddit_clone_moderators.id}
-  moderated_by_moderator_id String
-  
-  /// Primary category classification for the community. {@link
-  /// reddit_clone_community_categories.id}
-  category_id String?
-  
-  /// Unique community name displayed to users (e.g., 'programming', 'gaming').
+  /// Unique community name used for identification and URL generation. Must be
+  /// 3-21 characters containing only letters, numbers, and hyphens.
   name String
   
-  /// Human-readable display name for the community.
+  /// Human-readable community display name shown to users. Supports up to 100
+  /// characters with special characters and spaces.
   display_name String
   
-  /// Detailed description explaining the community's purpose and focus.
-  description String
+  /// Community description explaining purpose, rules, and focus area. Maximum
+  /// 500 characters with markdown support.
+  description String?
   
-  /// URL-friendly identifier used in community URLs (e.g., 'r/programming').
-  url_slug String
+  /// Current community status: active, restricted, private, or archived.
+  /// Controls visibility and participation rules.
+  status String
   
-  /// Community icon image URL for visual representation.
-  icon_url String?
-  
-  /// Community banner image URL for header display.
-  banner_url String?
-  
-  /// Whether the community is publicly visible or requires approval to join.
-  is_public Boolean
-  
-  /// Whether the community contains Not Safe For Work content.
-  is_nsfw Boolean
-  
-  /// Current number of subscribers to the community.
-  subscriber_count Int
-  
-  /// Current number of posts in the community.
-  post_count Int
-  
-  /// Timestamp when the community was created.
+  /// Timestamp when the community was created. Used for sorting and community
+  /// age calculations.
   created_at DateTime
   
-  /// Timestamp when the community was last updated.
+  /// Timestamp of last community update. Tracks settings changes and metadata
+  /// modifications.
   updated_at DateTime
   
-  /// Timestamp when the community was soft-deleted.
+  /// Timestamp when community was soft deleted. Null indicates active
+  /// community.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  createdByMember reddit_clone_members @relation(fields: [created_by_member_id], references: [id], onDelete: Cascade)
-  primaryModerator reddit_clone_moderators @relation(fields: [moderated_by_moderator_id], references: [id], onDelete: Cascade)
-  primaryCategory reddit_clone_community_categories? @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  creator community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
-  reddit_clone_community_settings reddit_clone_community_settings?
-  reddit_clone_community_rules reddit_clone_community_rules[]
-  reddit_clone_posts reddit_clone_posts[]
-  reddit_clone_subscriptions reddit_clone_subscriptions[]
-  reddit_clone_user_bans reddit_clone_user_bans[]
-  reddit_clone_user_activity reddit_clone_user_activity[]
-  reddit_clone_platform_analytics reddit_clone_platform_analytics[]
+  community_platform_community_rules community_platform_community_rules[]
+  community_platform_community_categories community_platform_community_categories[]
+  community_platform_community_moderators community_platform_community_moderators[]
+  community_platform_posts community_platform_posts[]
+  community_platform_automated_filters community_platform_automated_filters[]
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_community_discovery community_platform_community_discovery[]
+  community_platform_subscription_analytics community_platform_subscription_analytics[]
+  community_platform_user_activities community_platform_user_activities[]
+  community_platform_engagement_metrics community_platform_engagement_metrics[]
+  community_platform_activity_heatmaps community_platform_activity_heatmaps[]
+  community_platform_behavioral_patterns community_platform_behavioral_patterns[]
   
   @@unique([name])
-  @@unique([url_slug])
-  @@unique([display_name])
-  @@index([created_by_member_id, created_at])
+  @@index([status, created_at])
   // spellchecker: ignore-next-line
-  @@index([moderated_by_moderator_id, created_at], map: "reddit_clone_communities_moderated_by_moderator_id_cre_cb02e8a6")
-  @@index([category_id, created_at])
-  @@index([is_public, created_at])
-  @@index([is_nsfw, created_at])
-  @@index([subscriber_count, created_at])
+  @@index([community_platform_member_id, created_at], map: "community_platform_communities_community_platform_memb_4d63df64")
 }
 
-/// Community-specific settings and configurations that control community
-/// behavior, moderation rules, and display preferences. Each community has
-/// exactly one settings record.
+/// Community-specific rules and guidelines that govern member behavior and
+/// content standards.
+///
+/// Each community can define multiple rules to establish clear expectations
+/// for participation. Rules support hierarchical organization with ordering
+/// and categorization for better user comprehension.
+///
+/// Rule violations are tracked through the moderation system and can result
+/// in content removal or member restrictions. Rules are versioned to
+/// maintain historical context for moderation decisions.
+///
+/// Community moderators can create, update, and reorder rules to adapt to
+/// changing community needs while maintaining consistent enforcement
+/// standards.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_community_settings {
+model community_platform_community_rules {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Community that these settings belong to. {@link
-  /// reddit_clone_communities.id}
-  community_id String
+  /// Community that owns this rule. {@link community_platform_communities.id}
+  community_platform_community_id String
   
-  /// Whether text posts are allowed in this community.
-  allow_text_posts Boolean
+  /// Member who created or last updated this rule. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
   
-  /// Whether link posts are allowed in this community.
-  allow_link_posts Boolean
-  
-  /// Whether image posts are allowed in this community.
-  allow_image_posts Boolean
-  
-  /// Whether posts must have flair assigned.
-  require_post_flair Boolean
-  
-  /// Whether comments must have flair assigned.
-  require_comment_flair Boolean
-  
-  /// Whether crossposting from other communities is allowed.
-  allow_crossposting Boolean
-  
-  /// Whether voting is anonymous in this community.
-  allow_anonymous_voting Boolean
-  
-  /// Whether spoiler tags are enabled for content.
-  enable_spoiler_tags Boolean
-  
-  /// Whether NSFW content filtering is enabled.
-  enable_nsfw_filtering Boolean
-  
-  /// Community moderation strictness level (relaxed, standard, strict).
-  moderation_level String
-  
-  /// Whether posts require moderator approval before publication.
-  approval_required Boolean
-  
-  /// Timestamp when the settings were created.
-  created_at DateTime
-  
-  /// Timestamp when the settings were last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  
-  @@unique([community_id])
-  // spellchecker: ignore-next-line
-  @@index([moderation_level, approval_required], map: "reddit_clone_community_settings_moderation_level_appro_4e6bd231")
-  @@index([approval_required])
-}
-
-/// Community-specific rules and guidelines that members must follow. Each
-/// community can have multiple rules with specific enforcement levels.
-///
-/// @namespace Communities
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_community_rules {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Community that this rule belongs to. {@link reddit_clone_communities.id}
-  community_id String
-  
-  /// Sequential rule number for ordering and reference.
-  rule_number Int
-  
-  /// Short title summarizing the rule.
+  /// Short, descriptive title for the rule. Maximum 100 characters for clear
+  /// identification.
   title String
   
-  /// Detailed description explaining the rule and its purpose.
+  /// Detailed rule explanation with examples and context. Maximum 1000
+  /// characters with markdown support.
   description String
   
-  /// Rule enforcement strictness (warning, removal, ban).
-  enforcement_level String
+  /// Rule category for organizational grouping: content, behavior, posting, or
+  /// moderation.
+  category String?
   
-  /// Whether this rule applies to posts.
-  applies_to_posts Boolean
+  /// Display priority for rule ordering. Lower numbers appear first in rule
+  /// lists.
+  priority Int
   
-  /// Whether this rule applies to comments.
-  applies_to_comments Boolean
+  /// Whether this rule is currently active and being enforced by moderators.
+  enabled Boolean
   
-  /// Whether this rule is currently active and enforced.
-  is_active Boolean
-  
-  /// Timestamp when the rule was created.
+  /// Timestamp when the rule was originally created.
   created_at DateTime
   
-  /// Timestamp when the rule was last updated.
+  /// Timestamp of last rule modification. Tracks changes for moderation
+  /// consistency.
   updated_at DateTime
   
-  /// Timestamp when the rule was soft-deleted.
+  /// Timestamp when rule was soft deleted. Maintains historical context for
+  /// past moderation.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  creator community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
-  @@unique([community_id, rule_number])
-  @@index([community_id, is_active])
-  @@index([enforcement_level, is_active])
   // spellchecker: ignore-next-line
-  @@index([applies_to_posts, applies_to_comments], map: "reddit_clone_community_rules_applies_to_posts_applies__568fa7e9")
+  @@index([community_platform_member_id], map: "community_platform_community_rules_community_platform__707c6bac")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, title], map: "community_platform_community_rules_community_platform__9b8609e1")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, priority], map: "community_platform_community_rules_community_platform__b29be8a8")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, category], map: "community_platform_community_rules_community_platform__70c10c6a")
+  @@index([enabled, created_at])
 }
 
-/// Category classification system for organizing communities by topic or
-/// theme. Categories help users discover relevant communities.
+/// Categorization system for organizing communities by topic, interest, or
+/// theme.
+///
+/// Categories help users discover relevant communities and provide
+/// organizational structure for the platform. Categories can be hierarchical
+/// with parent-child relationships for detailed topic classification.
+///
+/// Each community can belong to multiple categories to support cross-topic
+/// discovery. Category assignments are managed by community moderators with
+/// platform-level oversight for consistency.
+///
+/// Category popularity metrics are tracked through separate materialized
+/// views to maintain normalization while supporting discovery features.
 ///
 /// @namespace Communities
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_community_categories {
+model community_platform_community_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique category name (e.g., 'Technology', 'Gaming', 'Sports').
+  /// Community being categorized. {@link community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Category name for display and filtering. Examples: Technology, Sports,
+  /// Arts, Gaming, Science.
   name String
   
-  /// Description explaining the category's focus and scope.
-  description String
+  /// Category description explaining scope and typical content. Helps users
+  /// understand category purpose.
+  description String?
   
-  /// Category icon image URL for visual representation.
-  icon_url String?
+  /// Optional parent category reference for hierarchical organization. Enables
+  /// detailed topic classification. {@link
+  /// community_platform_community_categories.id}
+  parent_category_id String?
   
-  /// Whether this category is active and available for use.
-  is_active Boolean
+  /// Display priority for category ordering in discovery interfaces. Lower
+  /// numbers appear first.
+  priority Int
   
-  /// Display order for category listing (lower numbers appear first).
-  sort_order Int
-  
-  /// Timestamp when the category was created.
+  /// Timestamp when category was created. Used for tracking category lifecycle.
   created_at DateTime
   
-  /// Timestamp when the category was last updated.
+  /// Timestamp of last category update. Tracks changes to category
+  /// organization.
   updated_at DateTime
   
-  /// Timestamp when the category was soft-deleted.
+  /// Timestamp when category was soft deleted. Maintains historical
+  /// relationships.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  reddit_clone_communities reddit_clone_communities[]
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
   
-  @@unique([name])
-  @@index([is_active, sort_order])
-  @@index([sort_order])
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, name], map: "community_platform_community_categories_community_plat_19e4d384")
+  @@index([name, priority])
+  // spellchecker: ignore-next-line
+  @@index([parent_category_id, priority], map: "community_platform_community_categories_parent_categor_f7103ef7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, priority], map: "community_platform_community_categories_community_plat_658e9621")
+}
+
+/// Moderator assignments linking users to communities they moderate.
+///
+/// This table establishes the many-to-many relationship between moderators
+/// and communities, tracking appointment dates, permission levels, and
+/// moderation activity. Each assignment includes specific moderation
+/// permissions granted to the user for that community.
+///
+/// Moderator appointments can have different permission levels (full,
+/// content, limited) to support distributed moderation teams. Activity
+/// tracking helps identify active moderators and supports community health
+/// monitoring.
+///
+/// Moderator assignments support temporary appointments with expiration
+/// dates and can be revoked by community owners or platform administrators
+/// when necessary.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community being moderated. {@link community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Member assigned as moderator. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Moderator permission level: full (all permissions), content (post/comment
+  /// moderation), or limited (specific tasks).
+  permission_level String
+  
+  /// Entity that appointed this moderator: community_creator,
+  /// existing_moderator, or platform_admin.
+  appointed_by String
+  
+  /// Timestamp when moderator was appointed to the community.
+  appointed_at DateTime
+  
+  /// Optional expiration date for temporary moderator appointments. Null
+  /// indicates permanent assignment.
+  expires_at DateTime?
+  
+  /// Timestamp of last moderation activity. Used for identifying inactive
+  /// moderators.
+  last_active_at DateTime?
+  
+  /// Timestamp when moderator assignment was created.
+  created_at DateTime
+  
+  /// Timestamp of last assignment update. Tracks permission changes and
+  /// activity updates.
+  updated_at DateTime
+  
+  /// Timestamp when moderator assignment was revoked. Maintains historical
+  /// record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  moderator community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, community_platform_member_id], map: "community_platform_community_moderators_community_plat_b8c7ad75")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, appointed_at], map: "community_platform_community_moderators_community_plat_10e85b79")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, permission_level], map: "community_platform_community_moderators_community_plat_9a8dcb27")
+  // spellchecker: ignore-next-line
+  @@index([expires_at, last_active_at], map: "community_platform_community_moderators_expires_at_las_3a82a2fd")
 }

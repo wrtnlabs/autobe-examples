@@ -1,0 +1,251 @@
+/// Aggregated karma balance for each member, tracking the sum of post and
+/// comment karma.
+///
+/// This table serves as the primary source for a member's total karma
+/// displayed on their profile. It is updated in real-time whenever a user's
+/// post or comment karma changes. The tracker does not store individual
+/// post/comment karma events; it maintains a calculated sum. This design
+/// ensures fast profile loading while maintaining referential integrity with
+/// the detailed post_karma and comment_karma tables. It is updated by a
+/// background service that processes changes from the detail tables.
+///
+/// This is a primary entity because users directly view and rely on this
+/// value for their reputation status, and the system requires it for core
+/// features like ranking and moderation thresholds.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_tracker {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member whose karma is being tracked. {@link
+  /// community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// The sum of all karma earned from posts. This value is updated
+  /// incrementally by the background service based on post_karma and
+  /// comment_karma records.
+  total_post_karma Int
+  
+  /// The sum of all karma earned from comments. This value is updated
+  /// incrementally by the background service based on post_karma and
+  /// comment_karma records.
+  total_comment_karma Int
+  
+  /// Timestamp when this karma tracker record was created for the member.
+  created_at DateTime
+  
+  /// Timestamp of the last time the total_post_karma or total_comment_karma
+  /// was updated.
+  updated_at DateTime
+  
+  /// Timestamp when this tracker was logically deleted (soft delete). If null,
+  /// the tracker is active. Used to preserve history for suspended users.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id], map: "community_platform_karma_tracker_community_platform_me_68eb0ddf")
+}
+
+/// Tracks the individual karma changes attributable to a specific post
+/// created by a member.
+///
+/// Each recording represents the net karma gained or lost from a single post
+/// (sum of all upvotes and downvotes received). This table is immutable
+/// after creation; updates are not allowed. It is referenced by the
+/// karma_tracker to calculate the post_karma portion of a member's total.
+/// When a user deletes a post, its associated post_karma record is logically
+/// deleted (deleted_at is set) but preserved in the audit trail.
+///
+/// This is a primary entity because users need to be able to see which
+/// specific posts contributed to their karma, and moderators need to debug
+/// karma discrepancies by looking up individual post contributions. It
+/// supports independent querying for reporting.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who created the post. {@link community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// The post this karma entry is associated with. {@link
+  /// community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// The net karma gained (positive) or lost (negative) from this post.
+  /// Calculated as (upvotes - downvotes). Positive if post was upvoted more,
+  /// negative if downvoted more.
+  karma_change Int
+  
+  /// Timestamp when the post received its first karma. This is the timestamp
+  /// of the last vote that finalized the karma change.
+  created_at DateTime
+  
+  /// Timestamp when the post_karma record was last updated. For posts like
+  /// images or links, this could be when the post was modified after creation.
+  updated_at DateTime
+  
+  /// Timestamp when this post_karma entry was logically deleted (soft delete).
+  /// If null, the entry is active. Set when the associated post is deleted by
+  /// its author.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_post_id])
+  @@index([community_platform_member_id])
+  @@index([created_at])
+}
+
+/// Tracks the individual karma changes attributable to a specific comment
+/// created by a member.
+///
+/// Each recording represents the net karma gained or lost from a single
+/// comment (sum of all upvotes and downvotes received). This table is
+/// immutable after creation; updates are not allowed. It is referenced by
+/// the karma_tracker to calculate the comment_karma portion of a member's
+/// total. When a user deletes a comment, its associated comment_karma record
+/// is logically deleted (deleted_at is set) but preserved in the audit
+/// trail.
+///
+/// This is a primary entity because users need to be able to see which
+/// specific comments contributed to their karma, and moderators need to
+/// debug karma discrepancies by looking up individual comment contributions.
+/// It supports independent querying for reporting.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who created the comment. {@link community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// The comment this karma entry is associated with. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// The net karma gained (positive) or lost (negative) from this comment.
+  /// Calculated as (upvotes - downvotes). Positive if comment was upvoted
+  /// more, negative if downvoted more.
+  karma_change Int
+  
+  /// Timestamp when the comment received its first karma. This is the
+  /// timestamp of the last vote that finalized the karma change.
+  created_at DateTime
+  
+  /// Timestamp when the comment_karma record was last updated. For comments,
+  /// this is rarely changed but retains the timestamp of the last vote.
+  updated_at DateTime
+  
+  /// Timestamp when this comment_karma entry was logically deleted (soft
+  /// delete). If null, the entry is active. Set when the associated comment is
+  /// deleted by its author.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_karma_community_platform_co_9c76cba9")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_comment_karma_community_platform_me_6caec893")
+  @@index([created_at])
+}
+
+/// Logs historical events where a member's karma was reduced due to decay,
+/// system adjustments, or administrative actions.
+///
+/// This table tracks scheduled or manual reductions in a member's total
+/// karma. Common reasons include: automatic decay of old karma points after
+/// 12 months of inactivity, manual karma reset by an admin, or correction of
+/// erroneous karma calculations.
+///
+/// This is a subsidiary entity because the logs are not directly managed by
+/// users. They are written by system processes and accessed by admins for
+/// auditing purposes. Users do not interact with this table directly, but
+/// they receive notifications of significant changes.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_decay_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member whose karma was adjusted. {@link community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// The member's total karma (post_karma + comment_karma) before the decay
+  /// adjustment was applied.
+  old_total_karma Int
+  
+  /// The member's total karma (post_karma + comment_karma) after the decay
+  /// adjustment was applied.
+  new_total_karma Int
+  
+  /// The amount of karma subtracted (negative value) or added (positive value)
+  /// by this adjustment. For decay events, this is negative.
+  karma_change Int
+  
+  /// The reason for the decay or adjustment. Examples:
+  /// 'automatic_decay_12_months', 'admin_override',
+  /// 'post_deletion_correction', 'system_audit'. Descriptive explanation of
+  /// why the karma was modified.
+  reason String
+  
+  /// Optional JSON string containing additional details about the decay event,
+  /// such as the specific post or comment IDs involved, the decay algorithm
+  /// settings, or the admin who performed the action.
+  metadata String?
+  
+  /// Timestamp when the decay adjustment was applied and logged.
+  created_at DateTime
+  
+  /// Timestamp when this log entry was last updated (e.g., if metadata was
+  /// added later).
+  updated_at DateTime
+  
+  /// Timestamp when this log entry was logically deleted (soft delete). Unlike
+  /// content, decay logs are preserved indefinitely for audit purposes. This
+  /// field is only used in extreme cases (e.g., legal compliance request to
+  /// delete data).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_karma_decay_logs_community_platform_0ba3d50a")
+  @@index([created_at])
+}

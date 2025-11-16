@@ -5,83 +5,52 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IDiscussionBoardArticle } from "../../../../structures/IDiscussionBoardArticle";
 export * as images from "./images/index";
-export * as documents from "./documents/index";
+export * as files from "./files/index";
 export * as comments from "./comments/index";
 
 /**
- * Create and publish a new discussion board article as a moderator.
+ * Update an existing discussion board article.
  *
- * Create a new article in the discussion board system for sharing economic and
- * political analysis, commentary, and discussions. This operation allows
- * authenticated moderators to publish content with rich text formatting,
- * categorization, tagging, and multimedia attachments including images and
- * documents.
+ * Update the content and metadata of an existing article in the discussion
+ * board system.
  *
- * The article creation process validates all required fields according to
- * business rules defined in the requirements. The title must be between 5 and
- * 200 characters, providing enough space for descriptive headlines while
- * preventing excessive length. The body content must be between 20 and 50,000
- * characters, ensuring substantive content while preventing abuse. The system
- * requires selection of at least one category from predefined economic and
- * political topic categories (stored in discussion_board_categories), and
- * supports up to 5 optional tags (from discussion_board_tags) for enhanced
- * discoverability.
+ * This operation allows article authors to modify their published or draft
+ * articles. Updateable fields include the article title, content body,
+ * publication status, and associated metadata. The operation preserves the
+ * original creation timestamp while updating the modification timestamp to
+ * reflect the edit time.
  *
- * Attachment support enables evidence-based discussions by allowing moderators
- * to upload supporting materials. Articles can include up to 10 image
- * attachments (JPEG, PNG, GIF, WebP formats, maximum 5MB each) for charts,
- * graphs, infographics, and visual evidence, as well as up to 5 document
- * attachments (PDF, DOCX, DOC, TXT, RTF, ODT formats, maximum 10MB each) for
- * research papers, policy documents, and supplementary materials. The total
- * attachment size across all files is limited to 50MB per article to balance
- * functionality with storage and performance considerations.
+ * Authorization is enforced to ensure only the article author or authorized
+ * moderators can perform updates. The system validates that the article exists
+ * and that the requesting user has appropriate permissions. Changes to
+ * publication status (e.g., from draft to published) are tracked and may
+ * trigger additional workflows.
  *
- * Upon successful creation, the system sets the article status to 'published',
- * initializes view_count and comment_count to 0, records the creation
- * timestamp, and handles moderator authorship according to the schema design.
- * The moderator's identity is tracked for accountability and moderation audit
- * purposes. The operation returns the complete article entity including the
- * system-generated article ID, allowing the client to navigate to the newly
- * published article.
+ * Security and business rules: Members can only update their own articles
+ * unless they have moderator privileges. Moderators can update any article for
+ * content moderation purposes. The operation maintains data integrity by
+ * validating all input fields according to the schema constraints. Audit trails
+ * may be maintained for significant changes.
  *
- * Security and data integrity measures include authentication verification to
- * ensure only logged-in moderators can access this endpoint, input sanitization
- * to prevent XSS attacks while preserving formatting, validation of category
- * and tag references against the discussion_board_categories and
- * discussion_board_tags tables, file upload validation including type checking,
- * size limits, and malware scanning, and comprehensive audit logging of
- * moderator content creation for transparency and accountability.
- *
- * This operation integrates with multiple system components including the user
- * authentication system to verify moderator identity, the file storage system
- * to handle image and document uploads (discussion_board_article_images and
- * discussion_board_article_documents tables), the category and tag systems for
- * content organization (discussion_board_article_categories and
- * discussion_board_article_tags junction tables), the snapshot system which
- * creates an initial version record in discussion_board_article_snapshots for
- * audit trail purposes, and the moderation system which may log this action in
- * discussion_board_moderation_actions for oversight.
- *
- * Related operations include the article search endpoint (PATCH /articles) for
- * discovering existing content, the article detail endpoint (GET
- * /articles/{articleId}) for viewing the newly published article, the article
- * update endpoint (PUT /articles/{articleId}) for editing the article after
- * publication, and member article creation (POST /member/articles) which
- * provides similar functionality for regular members.
+ * This operation integrates with the discussion_board_articles table as defined
+ * in the Prisma schema. The response returns the updated article with all
+ * current field values, allowing the client to refresh its view with the latest
+ * data.
  *
  * @param props.connection
- * @param props.body Article creation data including title, body content,
- *   category, optional tags, optional summary, and attachment references
- * @path /discussionBoard/moderator/articles
- * @accessor api.functional.discussionBoard.moderator.articles.create
+ * @param props.articleId Unique identifier of the target article to update
+ * @param props.body Updated article data including modified title, content,
+ *   status, and other editable fields
+ * @path /discussionBoard/moderator/articles/:articleId
+ * @accessor api.functional.discussionBoard.moderator.articles.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function create(
+export async function update(
   connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
+  props: update.Props,
+): Promise<update.Response> {
   return true === connection.simulate
-    ? create.simulate(connection, props)
+    ? update.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -91,27 +60,30 @@ export async function create(
           },
         },
         {
-          ...create.METADATA,
-          path: create.path(),
+          ...update.METADATA,
+          path: update.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace create {
+export namespace update {
   export type Props = {
+    /** Unique identifier of the target article to update */
+    articleId: string & tags.Format<"uuid">;
+
     /**
-     * Article creation data including title, body content, category,
-     * optional tags, optional summary, and attachment references
+     * Updated article data including modified title, content, status, and
+     * other editable fields
      */
-    body: IDiscussionBoardArticle.ICreate;
+    body: IDiscussionBoardArticle.IUpdate;
   };
-  export type Body = IDiscussionBoardArticle.ICreate;
+  export type Body = IDiscussionBoardArticle.IUpdate;
   export type Response = IDiscussionBoardArticle;
 
   export const METADATA = {
-    method: "POST",
-    path: "/discussionBoard/moderator/articles",
+    method: "PUT",
+    path: "/discussionBoard/moderator/articles/:articleId",
     request: {
       type: "application/json",
       encrypted: false,
@@ -122,20 +94,22 @@ export namespace create {
     },
   } as const;
 
-  export const path = () => "/discussionBoard/moderator/articles";
+  export const path = (props: Omit<Props, "body">) =>
+    `/discussionBoard/moderator/articles/${encodeURIComponent(props.articleId ?? "null")}`;
   export const random = (): IDiscussionBoardArticle =>
     typia.random<IDiscussionBoardArticle>();
   export const simulate = (
     connection: IConnection,
-    props: create.Props,
+    props: update.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: create.path(),
+      path: update.path(props),
       contentType: "application/json",
     });
     try {
+      assert.param("articleId")(() => typia.assert(props.articleId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -151,64 +125,40 @@ export namespace create {
 }
 
 /**
- * Mark an article as deleted while preserving it for audit and potential
- * recovery.
+ * Soft delete an article from the discussion board.
  *
- * This operation marks an article as deleted in the discussion board system by
- * setting the deleted_at timestamp, while preserving all article data and
- * relationships in the database for audit trail purposes and potential
- * recovery. This follows the soft delete pattern defined in the Prisma schema
- * for the discussion_board_articles table.
+ * Mark an article as deleted in the discussion board system by setting its
+ * deleted_at timestamp.
  *
- * When an article is soft deleted, the system sets the deleted_at field to the
- * current timestamp. This timestamp acts as a marker that the article has been
- * deleted, causing it to be filtered out from public article listings, search
- * results, and normal browsing interfaces. However, the complete article record
- * remains in the database with all its content, metadata, and relationships
- * intact. This preservation is essential for maintaining discussion context,
- * enabling content recovery if deletion was accidental or incorrect, supporting
- * moderation audit trails, and complying with data retention requirements.
+ * This operation performs a soft deletion of the article record, setting the
+ * deleted_at field to the current timestamp. The article is not physically
+ * removed from the database but is hidden from public view. This soft-delete
+ * pattern preserves the article data to maintain referential integrity with
+ * related entities including comments (discussion_board_comments), attached
+ * images (discussion_board_article_images), and file attachments
+ * (discussion_board_article_files).
  *
- * The soft deletion process affects related data in a coordinated manner.
- * Comments posted on the article (discussion_board_comments) are typically also
- * soft deleted by setting their deleted_at timestamps, hiding the entire
- * discussion thread from public view while preserving it for audit purposes.
- * Historical article snapshots (discussion_board_article_snapshots) are
- * retained unchanged since they represent historical versions and serve as
- * permanent audit records. Category associations
- * (discussion_board_article_categories) and tag associations
- * (discussion_board_article_tags) may be removed or retained based on
- * implementation strategy. Image attachments (discussion_board_article_images)
- * and document attachments (discussion_board_article_documents) are typically
- * soft deleted by setting their deleted_at fields, hiding them from public
- * access while preserving file metadata and enabling potential restoration.
+ * Security: This operation requires appropriate authorization. Typically, only
+ * the article's original author or moderators with content management
+ * permissions can delete articles. The authorization logic ensures users cannot
+ * delete articles created by others unless they have elevated moderator
+ * privileges.
  *
- * From a security and permissions perspective, this operation can be performed
- * by two types of users. The original article author (identified by
- * discussion_board_member_id in the article record) has the right to delete
- * their own articles at any time after publication. Additionally, any moderator
- * has the authority to delete any article regardless of authorship as part of
- * content moderation responsibilities. The system enforces these permissions by
- * verifying either ownership match or moderator role before allowing the
- * deletion to proceed. When a moderator deletes another user's article, the
- * action should be logged in the discussion_board_moderation_actions table with
- * action_type set to delete_content, creating a complete audit trail of the
- * moderation intervention.
+ * Data preservation: The soft-delete approach preserves discussion continuity
+ * and audit trails. Comments referencing the deleted article remain intact, and
+ * the article can potentially be restored by clearing the deleted_at timestamp.
+ * The deleted_at field is indexed for efficient filtering of active versus
+ * deleted content.
  *
- * This operation supports content recovery and audit capabilities. Because soft
- * deleted articles remain in the database with all their data intact,
- * moderators or the original author can potentially restore the article by
- * clearing or nullifying the deleted_at timestamp. The article and all its
- * associated content can be brought back to public visibility if the deletion
- * was performed in error or if review determines the content does not violate
- * guidelines. This recovery capability is a key advantage of soft deletion over
- * hard deletion. Users should still be prompted for confirmation before
- * deletion is executed to prevent accidental deletions, even though soft
- * deletion is reversible.
+ * This operation is part of the content lifecycle management workflow. Related
+ * operations include creating articles (POST /articles), updating articles (PUT
+ * /articles/{articleId}), and retrieving article details (GET
+ * /articles/{articleId}). List operations should filter out articles where
+ * deleted_at is not null to show only active content.
  *
  * @param props.connection
- * @param props.articleId Unique identifier of the target article to be marked
- *   as deleted
+ * @param props.articleId Unique identifier of the target article to be soft
+ *   deleted
  * @path /discussionBoard/moderator/articles/:articleId
  * @accessor api.functional.discussionBoard.moderator.articles.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -216,7 +166,7 @@ export namespace create {
 export async function erase(
   connection: IConnection,
   props: erase.Props,
-): Promise<void> {
+): Promise<erase.Response> {
   return true === connection.simulate
     ? erase.simulate(connection, props)
     : await PlainFetcher.fetch(
@@ -236,9 +186,10 @@ export async function erase(
 }
 export namespace erase {
   export type Props = {
-    /** Unique identifier of the target article to be marked as deleted */
+    /** Unique identifier of the target article to be soft deleted */
     articleId: string & tags.Format<"uuid">;
   };
+  export type Response = IDiscussionBoardArticle;
 
   export const METADATA = {
     method: "DELETE",
@@ -252,11 +203,12 @@ export namespace erase {
 
   export const path = (props: Props) =>
     `/discussionBoard/moderator/articles/${encodeURIComponent(props.articleId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
+  export const random = (): IDiscussionBoardArticle =>
+    typia.random<IDiscussionBoardArticle>();
   export const simulate = (
     connection: IConnection,
     props: erase.Props,
-  ): void => {
+  ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,

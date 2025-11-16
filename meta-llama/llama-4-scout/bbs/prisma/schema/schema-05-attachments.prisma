@@ -1,0 +1,41 @@
+/// Stores information about file attachments for articles and comments.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing the articles table.
+  article_id String
+  
+  /// Foreign key referencing the comments table.
+  comment_id String?
+  
+  /// Name of the attached file.
+  file_name String
+  
+  /// Type of the attached file (e.g., image/jpeg, application/pdf).
+  file_type String
+  
+  /// Size of the attached file in bytes.
+  file_size Int
+  
+  /// Timestamp when the file was uploaded.
+  uploaded_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  comment comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  article_attachments article_attachments[]
+  
+  @@index([comment_id])
+  
+  @@index([article_id, file_name])
+}

@@ -13,50 +13,29 @@ export async function deleteCommunityPlatformUserCommentsCommentId(props: {
   user: UserPayload;
   commentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Fetch the comment
+  // 1. Fetch the target comment to verify existence and ownership
   const comment = await MyGlobal.prisma.community_platform_comments.findUnique({
     where: { id: props.commentId },
+    select: { id: true, user_id: true, deleted_at: true },
   });
+
   if (!comment) {
-    throw new HttpException("Comment not found", 404);
+    throw new HttpException("Comment not found.", 404);
   }
-  // Only the author can delete
+  if (comment.deleted_at !== null) {
+    throw new HttpException("Comment has already been deleted.", 404);
+  }
   if (comment.user_id !== props.user.id) {
-    throw new HttpException("You are not the author of this comment", 403);
-  }
-  // If already removed, treat as idempotent
-  if (comment.is_removed) {
-    return;
-  }
-  // Check for child replies
-  const childCount = await MyGlobal.prisma.community_platform_comments.count({
-    where: { parent_comment_id: props.commentId },
-  });
-  if (childCount > 0) {
-    // Soft-delete: mark as removed and insert placeholder
-    await MyGlobal.prisma.community_platform_comments.update({
-      where: { id: props.commentId },
-      data: {
-        is_removed: true,
-        updated_at: toISOStringSafe(new Date()),
-      },
-    });
-    await MyGlobal.prisma.community_platform_deleted_comment_placeholders.create(
-      {
-        data: {
-          id: v4(),
-          original_comment_id: props.commentId,
-          placeholder_type: "deleted_by_user",
-          masked_by_user_id: props.user.id,
-          masked_reason: "Deleted by comment author",
-          created_at: toISOStringSafe(new Date()),
-        },
-      },
+    throw new HttpException(
+      "You are not authorized to delete this comment.",
+      403,
     );
-    return;
   }
-  // No children: hard delete
+
+  // 2. Permanently DELETE (hard delete) the comment record
   await MyGlobal.prisma.community_platform_comments.delete({
     where: { id: props.commentId },
   });
+
+  // 3. All subsidiary data handling is performed by DB referential integrity (cascade/on delete)
 }

@@ -13,29 +13,18 @@ export async function deleteCommunityPlatformUserPostsPostId(props: {
   user: UserPayload;
   postId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const { user, postId } = props;
-  // 1. Fetch post and check existence (must not be soft deleted)
+  // Locate the post by id and ensure it is not already deleted
   const post = await MyGlobal.prisma.community_platform_posts.findUnique({
-    where: { id: postId },
-    select: {
-      id: true,
-      community_platform_user_id: true,
-      deleted_at: true,
-    },
+    where: { id: props.postId },
   });
   if (!post || post.deleted_at !== null) {
-    throw new HttpException("Post not found or already deleted", 404);
+    throw new HttpException("Post not found or already deleted.", 404);
   }
-  // 2. Authorization: Only post author may delete via this endpoint
-  if (post.community_platform_user_id !== user.id) {
-    throw new HttpException(
-      "Forbidden: Only the post author can delete this post",
-      403,
-    );
+  if (post.user_id !== props.user.id) {
+    throw new HttpException("You are not authorized to delete this post.", 403);
   }
-  // 3. Hard delete: triggers cascading deletes for all linked records
-  await MyGlobal.prisma.community_platform_posts.delete({
-    where: { id: postId },
+  await MyGlobal.prisma.community_platform_posts.update({
+    where: { id: props.postId },
+    data: { deleted_at: toISOStringSafe(new Date()) },
   });
-  return;
 }

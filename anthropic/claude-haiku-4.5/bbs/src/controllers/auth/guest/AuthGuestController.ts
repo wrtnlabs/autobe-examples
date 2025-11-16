@@ -1,5 +1,5 @@
 import { Controller } from "@nestjs/common";
-import { TypedRoute, TypedBody } from "@nestia/core";
+import { TypedRoute } from "@nestia/core";
 import typia from "typia";
 
 import { IDiscussionBoardMember } from "../../../api/structures/IDiscussionBoardMember";
@@ -7,39 +7,36 @@ import { IDiscussionBoardMember } from "../../../api/structures/IDiscussionBoard
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Create temporary guest account and issue initial JWT tokens for
-   * unauthenticated visitors.
+   * Register an unauthenticated guest visitor for temporary read-only access
+   * to the discussion board.
    *
-   * Guest user registration endpoint enabling temporary account creation for
-   * unauthenticated visitors. Guest accounts are designed for quick,
-   * anonymous-style access without requiring email verification or password
-   * setup. When a guest initiates registration, the system creates a
-   * temporary guest account session, generates JWT tokens (access token: 15
-   * minutes, refresh token: 7 days), and returns both tokens for immediate
-   * authenticated access.
+   * The guest registration endpoint creates a temporary guest account that
+   * provides immediate read-only access to the discussion board platform.
+   * Guest users can view published articles and comments but cannot create
+   * content, post comments, upload attachments, or perform any write
+   * operations on the platform. This operation is designed to allow
+   * unauthenticated visitors to explore the discussion board without
+   * requiring account credentials.
    *
-   * Guest registration operates differently from member registration: guests
-   * do not provide email addresses or passwords, do not receive verification
-   * emails, and create sessions that may be temporary and device-specific.
-   * The guest session is tracked by IP address and referrer URL for basic
-   * analytics and security monitoring. Guest accounts exist in the database
-   * but are marked as guest-type sessions rather than permanent member
-   * accounts.
+   * Guest accounts are created with a temporary access token and refresh
+   * token that allow the user to maintain their session while browsing
+   * content. The system generates a unique identifier for each guest session,
+   * enabling the platform to track anonymous visitors while respecting their
+   * privacy and read-only access restrictions.
    *
-   * Upon successful registration, the system returns a guest access token
-   * that grants read-only permissions (view articles, read comments, search
-   * discussions) while denying write operations (create articles, post
-   * comments, upload files). The guest JWT token contains minimized claims
-   * compared to member tokens, including only session ID and guest role
-   * indicator.
+   * Guest users have restricted permissions that prevent them from accessing
+   * authenticated-only features. The discussion_board_guests table supports
+   * storing basic guest session information including created timestamp for
+   * session tracking and temporary token management.
    *
-   * Guest registration is a public endpoint requiring no pre-authentication
-   * and intentionally designed for low friction and immediate access. This
-   * supports the platform's objective of allowing anyone to browse
-   * discussions without signup barriers while maintaining basic session
-   * tracking for moderation and analytics purposes. Failed registration
-   * attempts (such as system errors during token generation) return
-   * appropriate error responses with guidance for retry.
+   * The registration process is public and requires no authentication, making
+   * it accessible to any unauthenticated visitor. Guest accounts may have
+   * configurable session durations and can be managed through moderation
+   * tools if necessary.
+   *
+   * Related operations include guest token refresh (GET /auth/guest/refresh)
+   * for maintaining active sessions and article retrieval endpoints (GET
+   * /articles) that respect guest user read-only permissions.
    *
    * @param connection
    * @setHeader token.access Authorization
@@ -52,50 +49,45 @@ export class AuthGuestController {
   }
 
   /**
-   * Refresh expired guest access token using valid refresh token.
+   * Refresh temporary access tokens for an active guest session.
    *
-   * Guest token refresh endpoint enabling guest users to extend their session
-   * by obtaining new JWT access tokens using valid refresh tokens. Guest
-   * refresh tokens expire after 7 days, after which guests must complete
-   * registration again via the join endpoint to regain access.
+   * The guest token refresh endpoint enables guest users to renew their
+   * temporary access tokens without requiring re-registration. When a guest's
+   * access token expires, they can use their valid refresh token to obtain a
+   * new access token, allowing them to continue browsing published articles
+   * and comments on the discussion board.
    *
-   * When a guest user's 15-minute access token expires during active
-   * browsing, the guest uses the refresh endpoint to obtain a new access
-   * token without disrupting their current activity. The system validates the
-   * submitted refresh token against stored session records, verifies the
-   * token has not expired and has not been revoked, and generates a
-   * replacement access token with 15-minute expiration.
+   * Guest refresh tokens are short-lived credentials that authenticate the
+   * guest's existing session. The refresh operation validates the provided
+   * refresh token and, if valid, generates a new access token while
+   * potentially extending or rotating the refresh token itself. This
+   * mechanism allows guests to maintain continuous read-only access while
+   * providing security through token expiration.
    *
-   * Guest refresh tokens are rotated for security: when a refresh token is
-   * used successfully, the system issues both a new access token and a new
-   * refresh token. The original refresh token may be invalidated to prevent
-   * unauthorized token reuse if the token were compromised. This rotation
-   * pattern provides security while maintaining guest session continuity.
+   * The guest session information stored in the discussion_board_guests table
+   * is updated with new token information when refresh operations occur. The
+   * system tracks session lifecycle through timestamps, ensuring that
+   * abandoned guest sessions can be identified and cleaned up appropriately.
    *
-   * Refresh token expiration is set to 7 days from issue. If a guest's
-   * refresh token has been unused for 7 days, it automatically expires and
-   * the guest must register a new guest account via the join endpoint. This
-   * time limit ensures that guest sessions do not persist indefinitely and
-   * prevents accumulation of inactive guest sessions.
+   * Guest refresh tokens are subject to configurable expiration windows and
+   * may be invalidated if suspicious activity is detected. The refresh
+   * operation maintains the same read-only access restrictions as the
+   * original guest registration, preventing any privilege escalation or write
+   * access.
    *
-   * Failed refresh attempts (invalid token, expired token, revoked token)
-   * return specific error responses indicating the failure reason and
-   * prompting the guest to re-register. Successful refresh operations return
-   * new tokens immediately, allowing guest users to continue browsing without
-   * re-entering the registration flow.
+   * This operation is a critical component of the guest user authentication
+   * flow, working in conjunction with the guest join operation (POST
+   * /auth/guest/join) to provide seamless temporary access management. Guest
+   * sessions refreshed through this endpoint retain their original created
+   * timestamp for session duration tracking.
    *
    * @param connection
-   * @param body Refresh token from guest's current session
    * @setHeader token.access Authorization
    *
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post("refresh")
-  public async refresh(
-    @TypedBody()
-    body: IDiscussionBoardMember.IRefreshRequest,
-  ): Promise<IDiscussionBoardMember.IAuthorized> {
-    body;
+  public async refresh(): Promise<IDiscussionBoardMember.IAuthorized> {
     return typia.random<IDiscussionBoardMember.IAuthorized>();
   }
 }

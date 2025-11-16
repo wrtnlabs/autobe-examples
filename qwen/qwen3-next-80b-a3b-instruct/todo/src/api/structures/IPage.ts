@@ -1,41 +1,31 @@
 import { tags } from "typia";
 
 export namespace IPage {
-  /**
-   * Pagination metadata response object. Contains complete information about
-   * the current pagination state including the current page number, records
-   * per page, total records in the dataset, and total pages available. This
-   * structure is used in all paginated responses across the system to provide
-   * consistent pagination information to clients. It enables efficient
-   * navigation through large result sets by providing all necessary metadata
-   * for pagination controls.
-   */
+  /** Page information. */
   export type IPagination = {
-    /**
-     * Current page number in the pagination sequence. Must be 0 or greater.
-     * Typically used by clients to navigate through paginated results.
-     */
+    /** Current page number. */
     current: number & tags.Type<"int32"> & tags.Minimum<0>;
 
-    /**
-     * Number of records returned per page. Must be 0 or greater. Specifies
-     * the size of each pagination window. Values of 0 may indicate no limit
-     * or default limit based on system configuration.
-     */
+    /** Limitation of records per a page. */
     limit: number & tags.Type<"int32"> & tags.Minimum<0>;
 
-    /**
-     * Total number of records available in the database for this query.
-     * Used to calculate total pages and inform users of result set size.
-     */
+    /** Total records in the database. */
     records: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
-     * Total number of pages available based on the total records and limit
-     * value. Calculated as ceiling(records / limit). This helps clients
-     * understand the full scope of available data and navigate between
-     * pages.
+     * Total pages.
+     *
+     * Equal to {@link records} / {@link limit} with ceiling.
      */
     pages: number & tags.Type<"int32"> & tags.Minimum<0>;
+  };
+
+  /** Page request data */
+  export type IRequest = {
+    /** Page number. */
+    page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
+
+    /** Limitation of records per a page. */
+    limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
 }

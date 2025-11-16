@@ -5,21 +5,21 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
 
 export async function adminAuthorize(request: { headers: { authorization?: string } }): Promise<AdminPayload> {
-  const payload = jwtAuthorize({ request }) as AdminPayload;
+  const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
 
   if (payload.type !== "admin") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const admin = await MyGlobal.prisma.discussion_board_admins.findFirst({
+  const admin = await MyGlobal.prisma.econ_pol_discussion_board_admins.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
+      deleted_at: null
     },
   });
 
   if (admin === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("You're not enrolled or account is deleted");
   }
 
   return payload;

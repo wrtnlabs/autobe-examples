@@ -9,7 +9,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
-import { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 
 export async function postDiscussionBoardMemberArticlesArticleIdComments(props: {
@@ -17,86 +17,72 @@ export async function postDiscussionBoardMemberArticlesArticleIdComments(props: 
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardComment.ICreate;
 }): Promise<IDiscussionBoardComment> {
-  const { member, articleId, body } = props;
-
-  // Validate article exists and is published
-  const article = await MyGlobal.prisma.discussion_board_articles.findFirst({
-    where: {
-      id: articleId,
-      status: "published",
-      deleted_at: null,
+  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: { id: props.articleId },
+    include: {
+      member: true,
     },
   });
 
   if (!article) {
-    throw new HttpException("Article not found or not published", 404);
+    throw new HttpException("Article not found", 404);
   }
 
-  // Validate parent comment if provided (single-level threading)
-  if (
-    body.discussion_board_parent_comment_id !== undefined &&
-    body.discussion_board_parent_comment_id !== null
-  ) {
-    const parentComment =
-      await MyGlobal.prisma.discussion_board_comments.findFirst({
-        where: {
-          id: body.discussion_board_parent_comment_id,
-          discussion_board_article_id: articleId,
-          discussion_board_parent_comment_id: null,
-          deleted_at: null,
-        },
-      });
+  const commentId = v4() satisfies string as string;
+  const now = new Date();
 
-    if (!parentComment) {
-      throw new HttpException(
-        "Parent comment not found or is not a top-level comment",
-        404,
-      );
-    }
-  }
-
-  const now = toISOStringSafe(new Date());
-  const commentId = v4();
-
-  await MyGlobal.prisma.discussion_board_comments.create({
+  const created = await MyGlobal.prisma.discussion_board_comments.create({
     data: {
       id: commentId,
-      discussion_board_article_id: articleId,
-      discussion_board_parent_comment_id:
-        body.discussion_board_parent_comment_id ?? null,
-      discussion_board_member_id: member.id,
-      discussion_board_moderator_id: null,
-      author_type: "member",
-      content: body.content,
+      discussion_board_article_id: props.articleId,
+      discussion_board_member_id: props.member.id,
+      content: props.body.content,
       created_at: now,
       updated_at: now,
       deleted_at: null,
     },
   });
 
-  const memberAuthor =
-    await MyGlobal.prisma.discussion_board_members.findUniqueOrThrow({
-      where: { id: member.id },
-    });
+  const member = await MyGlobal.prisma.discussion_board_members.findUnique({
+    where: { id: props.member.id },
+  });
+
+  if (!member) {
+    throw new HttpException("Member not found", 404);
+  }
 
   return {
-    id: commentId,
-    discussion_board_article_id: articleId,
-    discussion_board_parent_comment_id:
-      body.discussion_board_parent_comment_id ?? null,
-    discussion_board_member_id: member.id,
-    discussion_board_moderator_id: null,
-    author_type: "member",
-    content: body.content,
-    created_at: now,
-    updated_at: now,
-    deleted_at: null,
-    memberAuthor: {
-      id: memberAuthor.id,
-      username: memberAuthor.username,
-      display_name: memberAuthor.display_name ?? null,
-      profile_picture_url: memberAuthor.profile_picture_url ?? null,
+    id: created.id,
+    discussion_board_article_id: created.discussion_board_article_id,
+    member_id: created.discussion_board_member_id,
+    content: created.content,
+    created_at: toISOStringSafe(created.created_at),
+    updated_at: toISOStringSafe(created.updated_at),
+    deleted_at: created.deleted_at
+      ? toISOStringSafe(created.deleted_at)
+      : undefined,
+    member: {
+      id: member.id,
+      username: member.username,
+      email: member.email,
+      status: member.status,
+      email_verified: member.email_verified,
+      created_at: toISOStringSafe(member.created_at),
     },
-    moderatorAuthor: null,
+    article: {
+      id: article.id,
+      title: article.title,
+      view_count: article.view_count,
+      created_at: toISOStringSafe(article.created_at),
+      updated_at: toISOStringSafe(article.updated_at),
+      author: {
+        id: article.member.id,
+        username: article.member.username,
+        email: article.member.email,
+        status: article.member.status,
+        email_verified: article.member.email_verified,
+        created_at: toISOStringSafe(article.member.created_at),
+      },
+    },
   };
 }

@@ -1,79 +1,146 @@
 ## Admin Dashboard Requirements
 
+The admin dashboard provides centralized, high-privilege control over the entire shopping mall platform. Admins are responsible for maintaining platform integrity, enforcing policies, approving sellers, monitoring transactions, and ensuring system-wide performance. This document defines all administrative workflows in business terms, with explicit permissions and operational constraints.
+
 ### User Management
 
-THE admin SHALL be able to suspend, deactivate, or ban any user account on the platform.
-WHEN an admin suspends a user, THE system SHALL immediately revoke all active sessions and prevent re-login.
-WHEN an admin deactivates a seller account, THE system SHALL preserve all existing product listings and order history but prevent new listings, edits, or order fulfillment.
-WHEN an admin bans a user, THE system SHALL permanently block access and mark the account as "banned" in the database with a timestamp and admin ID.
-THROUGHOUT the user management process, THE system SHALL maintain an audit log recording: the admin performing the action, the target user ID, the action type (suspend/deactivate/ban), the timestamp, and any provided reason.
-IF a user has pending order disputes, THEN THE system SHALL NOT permit account deletion but SHALL allow suspension or deactivation.
+Admins have complete authority over all user accounts, including customers and sellers.
 
-### Product Moderation
+- THE admin SHALL be able to view a detailed list of all registered users, including their registration date, last login, account status, and associated roles.
+- WHEN an admin selects a user account, THE system SHALL display full profile details, including all shipping addresses, order history, wishlist contents, and review history.
+- THE admin SHALL be able to suspend any user account immediately, preventing the user from logging in or performing any actions on the platform.
+- THE admin SHALL be able to permanently delete any user account, which shall archive all associated data while ensuring compliance with data retention policies.
+- THE admin SHALL be able to manually reset a user’s password, initiating a forced password change on next login.
+- IF a user account displays suspicious activity patterns (e.g., rapid account creation from same IP, bulk order placement), THEN THE system SHALL flag the account for admin review.
+- WHERE an account is flagged by the system, THE admin SHALL be notified via dashboard alert and email.
+- WHILE a user account is suspended, THE system SHALL reject all login attempts and prevent access to any features or data.
+- WHERE an account is deleted, THE system SHALL anonymize all personally identifiable information (name, email, phone) while preserving transactional data for accounting and reporting purposes.
 
-WHEN a product is reported for violations (fraud, prohibited content, counterfeit goods), THE system SHALL submit it to admin review queue.
-THE admin SHALL be able to edit any product's title, description, images, price, or category—even if the seller is inactive or suspended.
-THE admin SHALL be able to unpublish or archive products without deleting them.
-IF a product is found to violate platform policies, THEN THE system SHALL forcibly remove it from all search results, category listings, and user shops.
-WHERE a product has been edited by an admin, THE system SHALL append a "Last Modified by Admin" note visible to the seller and customers.
-WHILE a product is under admin review, THE system SHALL display "Under Review" status to customers and prevent purchases.
+### Seller Approval Workflow
 
-### Order Oversight
+Sellers must be approved by an admin before they can list products or access seller tools.
 
-THE admin SHALL be able to override any order status, including cancellation, refund, or fulfillment.
-WHEN an admin cancels an order, THE system SHALL initiate a full refund using the original payment method and notify the customer and seller.
-WHEN an admin fulfills an order, THE system SHALL mark it as shipped and generate a tracking number—even if the seller has not taken action.
-IF an order shows signs of fraud (multiple failed payments, mismatched addresses, high-risk payment method), THEN THE system SHALL suspend the order and trigger a manual review workflow.
-THE admin SHALL be able to view all orders by status, date, seller, customer, or payment method.
-WHILE an order is in "pending" or "processing" status, THE system SHALL allow admin override of shipping address and payment method.
+- WHEN a new seller registers, THE system SHALL assign their account status to "Pending Approval" and notify the admin team via dashboard alert and email.
+- THE admin SHALL be able to view the seller’s provided business information, including legal name, business registration number, contact details, and identification documents if uploaded.
+- THE admin SHALL be able to approve a seller application, which shall transition the seller’s account status to "Active" and grant access to product upload and inventory management features.
+- THE admin SHALL be able to reject a seller application, which shall send a notification to the seller explaining the reason for rejection and preventing further attempts for 30 days.
+- IF a seller application is rejected twice, THEN THE system SHALL permanently block the associated email and phone number from registering as a seller.
+- WHILE a seller’s application is pending, THE system SHALL prevent them from uploading products, viewing analytics, or receiving customer orders.
+- WHERE a seller’s account is approved, THE system SHALL automatically generate a unique seller ID and display it on their dashboard.
+- THE admin SHALL be able to revoke seller status at any time, which shall immediately remove all product listings and disable seller dashboard access.
+- THE admin SHALL be able to view a log of all seller approval events, including who approved/rejected, when, and the reasons if provided.
 
-### Inventory Monitoring
+### Product and Category Management
 
-THE admin SHALL be able to view real-time inventory levels across all sellers, aggregated by SKU and product category.
-WHEN any SKU's inventory drops below 5 units total across all sellers, THE system SHALL generate a platform-wide low-stock alert.
-THE admin SHALL be able to export inventory reports by category, seller, or region.
-WHILE inventory levels are being synced across sellers, THE system SHALL display the most recent verified stock count with a timestamp.
-IF a seller's inventory is found to be inconsistently reported (e.g., shows stock when orders indicate depletion), THEN THE system SHALL flag the seller for inventory fraud review.
+Admins maintain the integrity and structure of the entire product catalog.
 
-### Sales Analytics
+- THE admin SHALL be able to create, edit, or delete product categories at any level of the category hierarchy.
+- THE admin SHALL be able to assign any product to any category, overriding seller-defined categorization.
+- THE admin SHALL be able to edit any product’s name, description, images, metadata, and attributes regardless of the original seller.
+- WHEN a product is edited by an admin, THE system SHALL lock the product from seller edits until the admin saves changes or reopens editing rights.
+- THE admin SHALL be able to remove any product from the platform entirely, making it invisible to all users and cancels any pending orders for that product.
+- IF a product violates platform policies (e.g., counterfeit, prohibited content), THEN THE admin SHALL be able to flag it for removal and initiate an automated notification to the seller.
+- THE admin SHALL be able to override or reset any product’s price, even if it was set by the seller.
+- THE admin SHALL be able to enforce minimum or maximum pricing rules for product categories.
+- WHILE a product is flagged for review, THE system SHALL hide it from public search and category views.
+- WHERE a product is deleted, THE system SHALL preserve its historical data for compliance and reporting but remove it from all active inventories and catalog searches.
+- THE admin SHALL be able to batch-export all product data in CSV or JSON format for external reporting.
+- THE admin SHALL be able to import product data in bulk using a standardized template.
 
-THE system SHALL display a real-time sales dashboard with the following metrics:
-- Total gross merchandise value (GMV) for the last 24 hours, 7 days, 30 days
-- Number of orders completed per day
-- Top 10 best-selling products by revenue
-- Top 5-selling product categories
-- Customer acquisition rate by channel
-- Seller growth rate (new sellers per week)
-- Average order value
-- Cancellation and return rate
-- Payment method distribution
+### Order Management
 
-WHEN the admin selects a date range, THE system SHALL recalculate all metrics based on order fulfillment dates, not creation dates.
-WHERE an admin exports any report, THE system SHALL include metadata: export timestamp, admin ID, report name, and date range.
+Admins monitor and manage the entire order lifecycle across all sellers and customers.
 
-### Dispute Resolution
+- THE admin SHALL be able to view a real-time dashboard of all orders, filtered by date, status, seller, customer, or product.
+- WHEN an order is viewed by an admin, THE system SHALL display the full order history with product details, pricing, taxes, shipping information, payment method, and timestamps for all status changes.
+- THE admin SHALL be able to manually change an order’s status at any stage (e.g., from Processing to Cancelled, or Shipped to Delivered).
+- THE admin SHALL be able to override the shipping address on any order before it transitions to "Shipped" status.
+- THE admin SHALL be able to cancel any order, for any reason, and initiate a full refund to the customer’s original payment method.
+- WHERE an order contains items from multiple sellers, THE admin SHALL be able to view each seller’s portion of the order independently.
+- IF an order exhibits signs of fraud (e.g., mismatched billing/shipping address, multiple failed payments, uncharacteristic purchasing pattern), THEN THE system SHALL notify the admin and quarantine the order for manual review.
+- THE admin SHALL be able to view a customer’s entire order history, regardless of seller, and identify patterns of abuse or behavior.
+- THE admin SHALL be able to generate custom reports on order volume, success rate, average order value, and cancellation rate by seller, category, or region.
+- THE admin SHALL be able to force a re-sync of inventory counts for any product or seller if inconsistencies are suspected.
 
-WHEN a customer requests a dispute resolution (refusal to receive, damaged item, wrong item), THE system SHALL notify the admin via dashboard alert.
-THE admin SHALL be able to review documentation: order details, product images, shipping logs, customer and seller communication history.
-IF a dispute is ruled in favor of the customer, THEN THE system SHALL automatically issue a refund and generate a return shipping label.
-IF a dispute is ruled in favor of the seller, THEN THE system SHALL close the case and notify the customer that no refund will be issued.
-WHERE a dispute involves high-value items (> $500), THEN THE system SHALL require two admin approvals before resolving.
-WHEN a seller is found to have caused repeated valid disputes, THEN THE system SHALL automatically downgrade their seller tier or suspend their account.
+### Refund and Cancellation Approvals
 
-### Payment Gateway Management
+All customer-initiated refund and cancellation requests require explicit admin approval.
 
-THE admin SHALL be able to enable, disable, or reconfigure all integrated payment gateways (credit/debit, digital wallets, bank transfer).
-WHEN a payment gateway fails to process transactions for more than 30 minutes, THE system SHALL send an alert to the admin and automatically switch to backup gateway if configured.
-THE admin SHALL be able to view transaction success rate per gateway, average processing time, and error codes.
-IF a billing error occurs consistently with a specific payment provider, THEN THE system SHALL mark that gateway as "unreliable" and require admin approval to re-enable.
-WHILE a payment gateway is disabled, THE system SHALL prevent new orders from using it but continue processing existing payments.
+- WHEN a customer submits a refund or cancellation request, THE system SHALL place the request in "Pending Review" status and notify the admin dashboard.
+- THE admin SHALL be able to view the reason provided by the customer, the order details, and any supporting information (e.g., photos of damaged goods).
+- THE admin SHALL be able to approve a refund request, which shall initiate payment reversal and update the order status to "Refunded."
+- THE admin SHALL be able to deny a refund request, which shall notify the customer with a reason and leave the order as completed.
+- WHERE a refund is approved, THE system SHALL automatically notify the seller and adjust their settlement amount accordingly.
+- THE admin SHALL be able to split a refund amount (e.g., refund only shipping or partial product value).
+- IF a refund is approved for a product that has already been delivered, THEN THE system SHALL require the customer to return the item before the refund is processed, and THE admin SHALL be able to track the return.
+- THE admin SHALL be able to void a cancellation request if the order has already been shipped or delivered.
+- WHERE a repetitive customer submits refund requests with no valid reason, THEN THE system SHALL flag them for further supervisory review.
+- THE admin SHALL be able to set global refund policies (e.g., "Refunds must be requested within 14 days of delivery") and enforce them system-wide.
 
-### Audit Logs and Reports
+### Content Moderation
 
-THE system SHALL log every admin action with the following data: timestamp (ISO 8601), admin user ID, target entity type (user/product/order/inventory), target entity ID, action performed, old value (if applicable), new value, reason provided (if any), and IP address.
-THE admin SHALL be able to search audit logs by date range, actor, action type, or entity type.
-WHEN generating any report (sales, inventory, audit), THE system SHALL provide it in CSV and PDF formats.
-THE audit log SHALL be read-only for all users, including other admins.
-IF a sensitive action is performed (user ban, deletion, payment gateway change), THEN THE system SHALL require a second admin to confirm the action before execution.
+Admins monitor all user-generated content to ensure quality, safety, and compliance.
+
+- THE admin SHALL be able to view all submitted product reviews, including unapproved pending reviews.
+- WHEN a review is flagged by the system (e.g., contains profanity, spam, or incomplete content), THE system SHALL notify the admin.
+- THE admin SHALL be able to edit, hide, or delete any review.
+- THE admin SHALL be able to unflag a review and approve it for public display.
+- WHERE a seller replies to a review, THE admin SHALL be able to view all reply history and delete any abusive responses.
+- IF a seller repeatedly posts inappropriate replies or attempts to manipulate reviews, THEN THE system SHALL notify the admin and recommend suspension.
+- THE admin SHALL be able to remove a customer’s ability to leave reviews if they have submitted fraudulent or abusive reviews.
+- THE admin SHALL be able to view all review moderation actions in an audit log, including who approved or deleted each review and when.
+- THE admin SHALL be able to bulk-edit review visibility (e.g., hide all reviews for a product under investigation).
+- WHERE a review contains factual inaccuracies about product features, THE admin SHALL be able to correct the review’s metadata (e.g., status, tags) without deleting its content.
+
+### System Analytics
+
+Admins rely on comprehensive data reporting to make strategic decisions.
+
+- THE admin SHALL be able to view platform-wide metrics including: total users, active users (DAU/MAU), total orders, GMV (Gross Merchandise Value), refund rate, cancellation rate, and average delivery time.
+- THE admin SHALL be able to segment analytics by date range (daily, weekly, monthly), region, seller, product category, or payment method.
+- THE admin SHALL be able to export any analytics dashboard as PDF, CSV, or PNG image.
+- THE admin SHALL be able to compare performance between sellers (e.g., who has the highest and lowest order fulfillment rate).
+- THE admin SHALL be able to view real-time alerts for critical anomalies (e.g., 50% spike in failed payments, sudden drop in order volume).
+- THE admin SHALL be able to view heatmaps of purchasing activity by geographic region.
+- WHERE a seller’s performance falls below thresholds (e.g., order cancellation > 15%, late shipping > 10%), THEN THE system SHALL notify the admin.
+- THE admin SHALL be able to generate custom reports on user acquisition cost, retention rate, and lifetime value.
+- THE admin SHALL be able to integrate external analytics tools, such as Google Analytics or Mixpanel, via API.
+
+### Platform Configuration
+
+Admins configure platform-wide settings that affect all users and systems.
+
+- THE admin SHALL be able to configure payment gateway settings, including which payment methods are accepted and their processing fees.
+- THE admin SHALL be able to configure tax rates based on region and product category.
+- THE admin SHALL be able to configure default shipping options and carriers.
+- THE admin SHALL be able to set and enforce platform-wide content policies (e.g., prohibited items, review guidelines).
+- THE admin SHALL be able to configure notification templates (email and SMS) for all system-triggered events.
+- THE admin SHALL be able to enable or disable platform-wide features (e.g., wishlist functionality, product reviews, seller accounts).
+- THE admin SHALL be able to configure automated maintenance windows for system upgrades.
+- THE admin SHALL be able to configure data retention policies for logs, sessions, and backups.
+- THE admin SHALL be able to set global limits: maximum shipping addresses per user, maximum wishlist items, maximum product images per listing.
+- THE admin SHALL be able to manage API keys and third-party integrations.
+- THE admin SHALL be able to initiate system backups and restore from previous points.
+- THE admin SHALL be able to view and manage all system logs: user actions, API calls, payment events, and system errors.
+- THE admin SHALL be able to purge test data or create sandbox environments for internal testing.
+- THE admin SHALL be able to manage server health indicators and resource utilization alerts.
+
+### Audit Logging
+
+All administrative actions are permanently logged for security, compliance, and accountability.
+
+- THE system SHALL maintain a comprehensive audit log of every admin action performed on the dashboard.
+- WHEN an admin performs any action (user suspend, product delete, order status change, config update), THE system SHALL record: timestamp, admin ID, IP address, action type, object affected, and old/new values if applicable.
+- THE admin SHALL be able to search the audit log by date range, admin name, action type, or affected entity.
+- THE admin SHALL be able to export the audit log in encrypted format for external compliance audits.
+- IF an admin attempts to delete or modify audit logs, THEN THE system SHALL block the action and trigger a security alert.
+- WHERE audit logs exceed storage limits, THE system SHALL archive older logs to secure offline storage while keeping recent entries accessible.
+
+### Summary
+
+The admin dashboard is the central nervous system of the shopping mall platform. It empowers administrators to manage every facet of the business—from user trust and seller compliance to financial integrity and platform safety. All functions described above must be available, reliable, and auditable. Admins must be able to act quickly and confidently, with the full power of the system at their fingertips, while the system retains complete transparency of their actions. Failure to implement any of the above requirements will compromise the security, fairness, and scalability of the entire platform.
+
+
+
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

@@ -1,0 +1,132 @@
+/// Core todo task entity representing individual items in a user's personal
+/// task list.
+///
+/// Tasks are the fundamental business entity of the todo application,
+/// enabling users to capture, track, and complete their daily
+/// responsibilities. Each task belongs exclusively to one user and maintains
+/// privacy through strict ownership rules.
+///
+/// Tasks support a simple lifecycle: creation, modification, completion, and
+/// deletion. The completion status provides immediate visual feedback about
+/// progress, while creation timestamps enable chronological organization.
+///
+/// Soft deletion allows users to remove tasks while preserving audit trails
+/// for data integrity. The task title captures the essential description of
+/// the responsibility, supporting up to 200 characters for detailed task
+/// descriptions.
+///
+/// @namespace Tasks
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Task owner's {@link todo_app_users.id}. Each task belongs to exactly one
+  /// authenticated user.
+  todo_app_user_id String
+  
+  /// Task title describing the responsibility or action needed. Limited to 200
+  /// characters for concise descriptions.
+  title String
+  
+  /// Optional detailed description providing additional context or notes about
+  /// the task. Supports longer form content.
+  description String?
+  
+  /// Current task completion status. Values: 'pending' for incomplete tasks,
+  /// 'complete' for finished tasks.
+  status String
+  
+  /// Timestamp when the task was marked as complete. Null for pending tasks.
+  completed_at DateTime?
+  
+  /// Task creation timestamp. Records when the user first created this task.
+  created_at DateTime
+  
+  /// Last modification timestamp. Updates whenever task properties change.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Records when task was deleted while preserving
+  /// historical data.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  todo_app_task_snapshots todo_app_task_snapshots[]
+  
+  @@index([todo_app_user_id, created_at])
+  @@index([todo_app_user_id, status])
+  @@index([status, created_at])
+}
+
+/// Historical snapshots of todo tasks capturing point-in-time states for
+/// audit trails and change tracking.
+///
+/// Task snapshots preserve the complete state of tasks at specific moments,
+/// enabling users to track modification history and maintain audit trails
+/// for personal organization accountability. Each snapshot captures an
+/// immutable record of task properties including title, description, status,
+/// and completion details.
+///
+/// The snapshot pattern is essential for maintaining data integrity when
+/// users modify existing tasks, providing historical context that might be
+/// needed for personal productivity analysis, accountability tracking, or
+/// recovering from accidental changes.
+///
+/// Snapshots are created automatically when tasks are modified, forming an
+/// append-only historical record that supports long-term productivity
+/// insights and ensures users can understand how their task organization
+/// evolved over time.
+///
+/// @namespace Tasks
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_task_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original task's {@link todo_app_tasks.id}. Links
+  /// snapshot to source task.
+  todo_app_task_id String
+  
+  /// Snapshot owner's {@link todo_app_users.id}. Maintains ownership tracking
+  /// for historical records.
+  todo_app_user_id String
+  
+  /// Task title at the time of snapshot. Preserves exact wording during this
+  /// historical moment.
+  title String
+  
+  /// Task description at the time of snapshot. Maintains additional context if
+  /// present.
+  description String?
+  
+  /// Task status at snapshot time. Records completion state during this
+  /// historical moment.
+  status String
+  
+  /// Completion timestamp at snapshot time. Records when task was completed if
+  /// applicable.
+  completed_at DateTime?
+  
+  /// Snapshot creation timestamp. Records when this historical snapshot was
+  /// captured.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  task todo_app_tasks @relation(fields: [todo_app_task_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_task_id, created_at])
+  @@index([todo_app_user_id, created_at])
+}

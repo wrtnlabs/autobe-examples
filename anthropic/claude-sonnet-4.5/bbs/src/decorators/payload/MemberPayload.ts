@@ -1,10 +1,10 @@
 import { tags } from "typia";
 
 export interface MemberPayload {
-  /** Top-level user table ID (the fundamental user identifier in the system). */
+  /** Member ID (primary identifier for the member in the discussion board). */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID associated with the member user. */
+  /** Session ID associated with the authenticated member. */
   session_id: string & tags.Format<"uuid">;
 
   /** Discriminator for the discriminated union type. */

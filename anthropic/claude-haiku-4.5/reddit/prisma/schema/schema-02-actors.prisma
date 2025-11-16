@@ -1,0 +1,368 @@
+/// Authenticated user accounts with member role. Members can create posts,
+/// comments, vote on content, build reputation through karma, and subscribe
+/// to communities. This is the primary user account type for regular
+/// platform participants.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's email address used for authentication, password recovery, and
+  /// notifications. Must be unique across all members to prevent duplicate
+  /// accounts. Valid RFC 5322 format required.
+  email String
+  
+  /// Unique display name for the member (3-50 characters). Used in URLs,
+  /// mentions, and public attribution. Immutable after account creation to
+  /// maintain URL permanence and community references.
+  username String
+  
+  /// Bcrypt-hashed password (cost factor 12). Never stores plaintext password.
+  /// Hash includes salt for security. Updated when member changes password.
+  password_hash String
+  
+  /// Flag indicating whether email address has been verified. Members must
+  /// verify email before posting, commenting, or voting. Defaults to false at
+  /// registration.
+  email_verified Boolean
+  
+  /// Current account state. Valid values: 'active' (normal operation),
+  /// 'suspended' (temporarily disabled), 'pending_deletion' (awaiting final
+  /// deletion after 48-hour cancellation window), 'deleted' (permanently
+  /// deleted, soft-delete). Defaults to 'active'.
+  account_status String
+  
+  /// Member's reputation score earned from post and comment votes. Cumulative
+  /// value across entire account lifetime. Minimum value is 0 (cannot go
+  /// negative). Updated in real-time as votes are cast or removed.
+  karma_score Int
+  
+  /// Account creation timestamp (ISO 8601 UTC). Immutable. Used to calculate
+  /// account age for privilege restrictions and rate limiting.
+  created_at DateTime
+  
+  /// Last time member's account was modified (email, password, profile, status
+  /// changes). Updated automatically on any account change. Used for audit
+  /// trails.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp when member requests account deletion. Null if
+  /// account is active. Enables 7-day recovery window before permanent purge.
+  /// Set during deletion process, cleared if deletion cancelled.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_member_sessions community_platform_member_sessions[]
+  community_platform_communities community_platform_communities[]
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_community_bans community_platform_community_bans[]
+  community_platform_community_moderators community_platform_community_moderators[]
+  community_platform_posts community_platform_posts[]
+  community_platform_comments community_platform_comments[]
+  community_platform_votes community_platform_votes[]
+  community_platform_karma_scores community_platform_karma_scores?
+  community_platform_karma_history community_platform_karma_history[]
+  community_platform_reports_of_community_platform_member_id community_platform_reports[] @relation("community_platform_reports_of_community_platform_member_id")
+  community_platform_reports_of_reported_member_id community_platform_reports[] @relation("community_platform_reports_of_reported_member_id")
+  community_platform_member_warnings community_platform_member_warnings[]
+  community_platform_member_suspensions community_platform_member_suspensions[]
+  community_platform_member_bans community_platform_member_bans[]
+  community_platform_moderation_appeals community_platform_moderation_appeals[]
+  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  community_platform_member_profiles community_platform_member_profiles?
+  community_platform_member_preferences community_platform_member_preferences?
+  community_platform_member_activity community_platform_member_activity[]
+  community_platform_member_followers_of_follower_member_id community_platform_member_followers[] @relation("community_platform_member_followers_of_follower_member_id")
+  community_platform_member_followers_of_following_member_id community_platform_member_followers[] @relation("community_platform_member_followers_of_following_member_id")
+  community_platform_saved_content community_platform_saved_content[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+  @@index([account_status])
+  @@index([email_verified])
+}
+
+/// Multi-device session tracking for authenticated members. Enables member
+/// authentication across multiple devices simultaneously while maintaining
+/// security and session revocation capabilities. Each session maintains
+/// connection context (IP, referrer) for fraud detection and device
+/// identification.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to member's {@link community_platform_members.id}. Non-nullable
+  /// to ensure every session belongs to a member. Foreign key constraint
+  /// enforces referential integrity.
+  community_platform_member_id String
+  
+  /// IP address of the login connection. Used for device identification, fraud
+  /// detection, and geographic location tracking. Can be IPv4 or IPv6 format.
+  ip String
+  
+  /// Connection URL where login occurred. Captured for security context and
+  /// helps identify login source (web, mobile, API client). Full URL string.
+  href String
+  
+  /// HTTP Referrer header from login request. Identifies referring page/app.
+  /// May be empty string if referrer header omitted by client or privacy
+  /// settings enabled.
+  referrer String
+  
+  /// Session creation timestamp (ISO 8601 UTC). Records exactly when member
+  /// logged in and session was established. Immutable.
+  created_at DateTime
+  
+  /// Session expiration/termination timestamp. Null while session is active.
+  /// Set when session ends (logout, suspension, password change, or refresh
+  /// token expiration). Enables identifying when session terminated.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_sessions_community_platform__9260a62c")
+}
+
+/// Moderator user accounts with community management capabilities.
+/// Moderators are appointed by community creators or administrators to
+/// enforce community rules, remove problematic content, and manage community
+/// membership. This table tracks moderator account credentials and status
+/// separately from members.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator's email address for authentication and administrative
+  /// notifications. Must be unique to prevent duplicate accounts. Used for
+  /// password reset and account recovery.
+  email String
+  
+  /// Unique display name (3-50 characters). Immutable after account creation.
+  /// Identifies moderator in moderation logs and audit trails.
+  username String
+  
+  /// Bcrypt-hashed password (cost factor 12). Includes salt. Secures moderator
+  /// account with strong cryptographic protection.
+  password_hash String
+  
+  /// Flag indicating email verification status. Moderators must verify email
+  /// before accessing moderation tools. Defaults to false at account creation.
+  email_verified Boolean
+  
+  /// Account state. Valid values: 'active' (operational), 'suspended'
+  /// (temporary disable), 'pending_deletion' (awaiting final deletion),
+  /// 'deleted' (soft-deleted). Determines if moderator can login and take
+  /// actions.
+  account_status String
+  
+  /// Account creation timestamp. Immutable record of when moderator account
+  /// was established.
+  created_at DateTime
+  
+  /// Last modification timestamp. Updated when email, password, or status
+  /// changes. Audited for compliance.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null if account active. Set during deletion
+  /// request, enables 7-day recovery window. Non-null means account is in
+  /// deleted state.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_moderator_sessions community_platform_moderator_sessions[]
+  community_platform_community_bans community_platform_community_bans[]
+  community_platform_report_decisions community_platform_report_decisions[]
+  community_platform_moderation_appeals community_platform_moderation_appeals[]
+  community_platform_moderation_audit_logs community_platform_moderation_audit_logs[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+  @@index([account_status])
+  @@index([email_verified])
+}
+
+/// Session management for moderators across multiple devices. Tracks
+/// moderator login sessions for security, device identification, and session
+/// revocation. Enables multi-device login while maintaining audit trail of
+/// moderator access.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to moderator's {@link community_platform_moderators.id}.
+  /// Non-nullable to ensure session belongs to moderator. Enforces referential
+  /// integrity.
+  community_platform_moderator_id String
+  
+  /// IP address of moderator login. Used for security tracking, fraud
+  /// detection, and identifying device locations. Can be IPv4 or IPv6.
+  ip String
+  
+  /// URL where login occurred. Captures connection source for security context
+  /// and audit purposes.
+  href String
+  
+  /// HTTP Referrer from login request. Identifies referring page/application.
+  /// May be empty if omitted by client.
+  referrer String
+  
+  /// Session creation timestamp (UTC ISO 8601). Records when moderator logged
+  /// in. Immutable.
+  created_at DateTime
+  
+  /// Session termination timestamp. Null while active. Set when session ends
+  /// (logout, password change, account suspension, or token expiration).
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, created_at], map: "community_platform_moderator_sessions_community_platfo_a04f067a")
+}
+
+/// Platform administrator accounts with system-wide management capabilities.
+/// Administrators have highest privilege level with access to all
+/// communities, user accounts, and platform configuration. Separate table
+/// maintains administrative account credentials distinct from other user
+/// types.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's email address for authentication and critical
+  /// notifications. Must be unique to ensure single admin per email. Used for
+  /// password recovery and emergency communications.
+  email String
+  
+  /// Unique administrator identifier (3-50 characters). Immutable. Appears in
+  /// audit logs and administrative actions for accountability.
+  username String
+  
+  /// Bcrypt-hashed password (cost factor 12) with salt. Protects privileged
+  /// admin account with strong cryptographic security.
+  password_hash String
+  
+  /// Email verification status. Administrators must verify email before
+  /// accessing admin dashboard. Prevents unauthorized admin account creation.
+  email_verified Boolean
+  
+  /// Account state: 'active' (operational), 'suspended' (temporary disable),
+  /// 'pending_deletion' (awaiting final deletion), 'deleted' (soft-deleted).
+  /// Controls admin access to system.
+  account_status String
+  
+  /// Account creation timestamp. Immutable record of when admin account was
+  /// provisioned.
+  created_at DateTime
+  
+  /// Last account modification timestamp. Updated when email, password, or
+  /// status changes. Maintained for audit compliance.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Null if active. Set during deletion request,
+  /// enabling 7-day recovery window for admin accounts. Prevents accidental
+  /// admin removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_administrator_sessions community_platform_administrator_sessions[]
+  
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+  @@index([account_status])
+  @@index([email_verified])
+}
+
+/// Session tracking for platform administrators. Manages admin login
+/// sessions across multiple devices while maintaining security auditing.
+/// Enables multi-device admin access with complete session revocation and
+/// monitoring capabilities for security compliance.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to administrator's {@link
+  /// community_platform_administrators.id}. Non-nullable to ensure session
+  /// belongs to administrator. Enforces referential integrity.
+  community_platform_administrator_id String
+  
+  /// IP address of admin login. Tracks where privileged access occurs for
+  /// security auditing. Can be IPv4 or IPv6 format.
+  ip String
+  
+  /// URL where admin login occurred. Captures admin dashboard or control panel
+  /// URL for connection context.
+  href String
+  
+  /// HTTP Referrer from admin login request. Identifies referring source for
+  /// administrative access. May be empty if not provided.
+  referrer String
+  
+  /// Session creation timestamp (UTC ISO 8601). Records when admin logged in.
+  /// Immutable for audit trail.
+  created_at DateTime
+  
+  /// Session termination timestamp. Null while active. Set when session ends
+  /// (logout, password change, account suspension, or token expiration).
+  /// Audited for security.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator community_platform_administrators @relation(fields: [community_platform_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_administrator_id, created_at], map: "community_platform_administrator_sessions_community_pl_de9ebfb6")
+}

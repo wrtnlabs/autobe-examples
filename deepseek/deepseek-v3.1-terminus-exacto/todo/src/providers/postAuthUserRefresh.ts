@@ -11,15 +11,14 @@ import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppU
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserRefresh(props: {
-  body: ITodoAppUser.IRefresh;
+  body: ITodoAppUser.IRefreshToken;
 }): Promise<ITodoAppUser.IAuthorized> {
-  // Step 1: Verify and decode refresh token
+  // Verify and decode the refresh token
   let decoded: {
     id: string;
     session_id: string;
     type: "user";
   };
-
   try {
     decoded = jwt.verify(
       props.body.refresh_token,
@@ -34,16 +33,17 @@ export async function postAuthUserRefresh(props: {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  // Step 2: Validate type matches expected actor type
+  // Validate token type matches expected actor type
   if (decoded.type !== "user") {
     throw new HttpException("Invalid token type", 403);
   }
 
-  // Step 3: Validate session exists and is active
+  // Validate session exists and is active
   const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
     where: {
       id: decoded.session_id,
       todo_app_user_id: decoded.id,
+      expired_at: null,
     },
     include: {
       user: true,
@@ -54,15 +54,19 @@ export async function postAuthUserRefresh(props: {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  // Step 4: Validate user account is active
+  // Validate user account is active
+  if (session.user.status !== "active") {
+    throw new HttpException("User account is not active", 403);
+  }
+
   if (session.user.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
 
-  // Step 5: Generate new access token (SAME session_id)
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // Calculate expiration times without Date objects
+  const now = Date.now();
+  const accessExpiresMs = now + 60 * 60 * 1000;
+  const refreshExpiresMs = now + 7 * 24 * 60 * 60 * 1000;
 
   const token = {
     access: jwt.sign(
@@ -70,7 +74,7 @@ export async function postAuthUserRefresh(props: {
         type: decoded.type,
         id: decoded.id,
         session_id: decoded.session_id,
-        created_at: toISOStringSafe(now),
+        created_at: new Date(now).toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -84,7 +88,7 @@ export async function postAuthUserRefresh(props: {
         id: decoded.id,
         session_id: decoded.session_id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(now),
+        created_at: new Date(now).toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -92,30 +96,39 @@ export async function postAuthUserRefresh(props: {
         issuer: "autobe",
       },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: toISOStringSafe(new Date(accessExpiresMs)),
+    refreshable_until: toISOStringSafe(new Date(refreshExpiresMs)),
   };
 
-  // Step 6: Update session expiration time
+  // Update session expiration time and context in single operation
   await MyGlobal.prisma.todo_app_user_sessions.update({
     where: {
       id: decoded.session_id,
     },
     data: {
-      expired_at: refreshExpires,
+      expired_at: new Date(refreshExpiresMs),
+      ip: props.body.ip ?? session.ip,
+      href: props.body.href,
+      referrer: props.body.referrer,
     },
   });
 
-  // Step 7: Return user info with new tokens
+  // Return authorized user information with new tokens
   return {
-    id: session.user.id,
-    email: session.user.email,
-    status: session.user.status,
+    id: session.user.id as string & tags.Format<"uuid">,
+    email: session.user.email as string & tags.Format<"email">,
+    password_hash: session.user.password_hash,
+    status: session.user.status as "pending" | "active" | "suspended",
     created_at: toISOStringSafe(session.user.created_at),
     updated_at: toISOStringSafe(session.user.updated_at),
     deleted_at: session.user.deleted_at
       ? toISOStringSafe(session.user.deleted_at)
       : undefined,
-    token,
+    token: {
+      access: token.access,
+      refresh: token.refresh,
+      expired_at: token.expired_at,
+      refreshable_until: token.refreshable_until,
+    },
   };
 }

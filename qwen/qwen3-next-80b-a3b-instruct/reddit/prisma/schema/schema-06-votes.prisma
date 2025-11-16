@@ -1,0 +1,528 @@
+/// Main entity for post votes that captures shared attributes across all
+/// actor types. Tracks user upvotes and downvotes for posts.
+///
+/// Contains only shared field data for post votes regardless of who cast
+/// them. This is the main entity in a polymorphic ownership pattern where
+/// each actor type (member, moderator, admin) is represented by a separate
+/// subtype table. This design enforces referential integrity and prevents
+/// invalid states where zero or multiple actors could have cast the same
+/// vote.
+///
+/// The vote_type field indicates the current state (up/down/null) and can be
+/// toggled. All temporal fields are maintained for audit and user operation
+/// history. This table is primary because users directly interact with post
+/// votes through upvote/downvote interface, requiring independent
+/// management, cross-post search, and filtering regardless of the voting
+/// actor type.
+///
+/// Actors are tracked through the actor_type field and their separate
+/// subtype table relations, which contain actor-specific session information
+/// and temporal data.
+///
+/// This design replaces the previous model that used multiple nullable
+/// foreign keys, which violated normalization principles and allowed invalid
+/// data states.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this vote is associated with. {@link
+  /// community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Type of actor who created this vote. Values: 'member', 'moderator',
+  /// 'admin'. This field determines which subtype table contains the
+  /// actor-specific session data.
+  actor_type String
+  
+  /// The type of vote: 'up', 'down', or null if vote is removed. This field
+  /// tracks the current vote state (not history).
+  vote_type String
+  
+  /// When the vote was initially cast. UTC timestamp. Required field that
+  /// cannot be null.
+  created_at DateTime
+  
+  /// When the vote was last updated (e.g., toggled from up to down). UTC
+  /// timestamp. Required field that cannot be null.
+  updated_at DateTime
+  
+  /// When the vote was soft-deleted (user removed their vote). If null, the
+  /// vote is active. Required field that can be null.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_vote_of_members community_platform_post_vote_of_members?
+  community_platform_post_vote_of_moderators community_platform_post_vote_of_moderators?
+  community_platform_post_vote_of_admins community_platform_post_vote_of_admins?
+  
+  @@unique([community_platform_post_id])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_votes_community_platform_post__80871491")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, vote_type], map: "community_platform_post_votes_community_platform_post__6071049b")
+  @@index([actor_type])
+  @@index([deleted_at])
+}
+
+/// Main entity for comment votes that captures shared attributes across all
+/// actor types. Tracks user upvotes and downvotes for comments.
+///
+/// Contains only shared field data for comment votes regardless of who cast
+/// them. This is the main entity in a polymorphic ownership pattern where
+/// each actor type (member, moderator, admin) is represented by a separate
+/// subtype table. This design enforces referential integrity and prevents
+/// invalid states where zero or multiple actors could have cast the same
+/// vote.
+///
+/// The vote_type field indicates the current state (up/down/null) and can be
+/// toggled. All temporal fields are maintained for audit and user operation
+/// history. This table is primary because users directly interact with
+/// comment votes through upvote/downvote interface, requiring independent
+/// management, cross-comment search, and filtering regardless of the voting
+/// actor type.
+///
+/// Actors are tracked through the actor_type field and their separate
+/// subtype table relations, which contain actor-specific session information
+/// and temporal data.
+///
+/// This design replaces the previous model that used multiple nullable
+/// foreign keys, which violated normalization principles and allowed invalid
+/// data states.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment this vote is associated with. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Type of actor who created this vote. Values: 'member', 'moderator',
+  /// 'admin'. This field determines which subtype table contains the
+  /// actor-specific session data.
+  actor_type String
+  
+  /// The type of vote: 'up', 'down', or null if vote is removed. This field
+  /// tracks the current vote state (not history).
+  vote_type String
+  
+  /// When the vote was initially cast. UTC timestamp. Required field that
+  /// cannot be null.
+  created_at DateTime
+  
+  /// When the vote was last updated (e.g., toggled from up to down). UTC
+  /// timestamp. Required field that cannot be null.
+  updated_at DateTime
+  
+  /// When the vote was soft-deleted (user removed their vote). If null, the
+  /// vote is active. Required field that can be null.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  community_platform_comment_vote_of_members community_platform_comment_vote_of_members?
+  community_platform_comment_vote_of_moderators community_platform_comment_vote_of_moderators?
+  community_platform_comment_vote_of_admins community_platform_comment_vote_of_admins?
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_votes_community_platform_co_63602312")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_votes_community_platform_co_68a9b5f7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, vote_type], map: "community_platform_comment_votes_community_platform_co_61fbd00c")
+  @@index([actor_type])
+  @@index([deleted_at])
+}
+
+/// Subtype table for post votes created by regular members. Stores the
+/// member-specific session information for votes cast by authenticated
+/// members.
+///
+/// This table implements the "subsidiary" pattern for polymorphic ownership.
+/// When a member votes on a post, their vote is stored in the main
+/// community_platform_post_votes table with actor_type = 'member', and the
+/// specific member session details (member_id and member_session_id) are
+/// stored in this subtype table.
+///
+/// The relationship with the main vote entity is 1:1, enforced by a unique
+/// constraint on post_vote_id. This design ensures referential integrity -
+/// votes can only be created through a specific actor's session, and the
+/// system prevents invalid states where a vote has no actor or multiple
+/// actors.
+///
+/// This table supports independent querying for member-only vote patterns
+/// while maintaining the core vote data in the primary entity. Only members
+/// can create records in this table.
+///
+/// The created_at field captures when this vote was initially cast by the
+/// member, separate from the main vote's creation time.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_vote_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main post vote entity this subvote belongs to. {@link
+  /// community_platform_post_votes.id}.
+  community_platform_post_vote_id String
+  
+  /// The member who created this vote. {@link community_platform_member.id}.
+  community_platform_member_id String
+  
+  /// The member session that cast this vote. {@link
+  /// community_platform_member_sessions.id}.
+  community_platform_member_session_id String
+  
+  /// When the vote was initially cast by this member. UTC timestamp. Required
+  /// field that cannot be null.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  postVote community_platform_post_votes @relation(fields: [community_platform_post_vote_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  memberSession community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_vote_id], map: "community_platform_post_vote_of_members_community_plat_2bc52e23")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_post_vote_of_members_community_plat_ee369b65")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id, created_at], map: "community_platform_post_vote_of_members_community_plat_be1935c0")
+}
+
+/// Subtype table for post votes created by moderators. Stores the
+/// moderator-specific session information for votes cast by community
+/// moderators.
+///
+/// This table implements the "subsidiary" pattern for polymorphic ownership.
+/// When a moderator votes on a post, their vote is stored in the main
+/// community_platform_post_votes table with actor_type = 'moderator', and
+/// the specific moderator session details (moderator_id and
+/// moderator_session_id) are stored in this subtype table.
+///
+/// The relationship with the main vote entity is 1:1, enforced by a unique
+/// constraint on post_vote_id. This design ensures referential integrity -
+/// votes can only be created through a specific actor's session, and the
+/// system prevents invalid states where a vote has no actor or multiple
+/// actors.
+///
+/// This table supports independent querying for moderator-only vote patterns
+/// while maintaining the core vote data in the primary entity. Only
+/// moderators can create records in this table.
+///
+/// The created_at field captures when this vote was initially cast by the
+/// moderator, separate from the main vote's creation time.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_vote_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main post vote entity this subvote belongs to. {@link
+  /// community_platform_post_votes.id}.
+  community_platform_post_vote_id String
+  
+  /// The moderator who created this vote. {@link
+  /// community_platform_moderators.id}.
+  community_platform_moderator_id String
+  
+  /// The moderator session that cast this vote. {@link
+  /// community_platform_moderator_sessions.id}.
+  community_platform_moderator_session_id String
+  
+  /// When the vote was initially cast by this moderator. UTC timestamp.
+  /// Required field that cannot be null.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  postVote community_platform_post_votes @relation(fields: [community_platform_post_vote_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderator @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  moderatorSession community_platform_moderator_sessions @relation(fields: [community_platform_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_vote_id], map: "community_platform_post_vote_of_moderators_community_p_94c4bcf5")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, created_at], map: "community_platform_post_vote_of_moderators_community_p_7b3f9ddd")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_session_id, created_at], map: "community_platform_post_vote_of_moderators_community_p_df57c504")
+}
+
+/// Subtype table for post votes created by system administrators. Stores the
+/// admin-specific session information for votes cast by system
+/// administrators.
+///
+/// This table implements the "subsidiary" pattern for polymorphic ownership.
+/// When an admin votes on a post, their vote is stored in the main
+/// community_platform_post_votes table with actor_type = 'admin', and the
+/// specific admin session details (admin_id and admin_session_id) are stored
+/// in this subtype table.
+///
+/// The relationship with the main vote entity is 1:1, enforced by a unique
+/// constraint on post_vote_id. This design ensures referential integrity -
+/// votes can only be created through a specific actor's session, and the
+/// system prevents invalid states where a vote has no actor or multiple
+/// actors.
+///
+/// This table supports independent querying for admin-only vote patterns
+/// while maintaining the core vote data in the primary entity. Only admins
+/// can create records in this table.
+///
+/// The created_at field captures when this vote was initially cast by the
+/// admin, separate from the main vote's creation time.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_vote_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main post vote entity this subvote belongs to. {@link
+  /// community_platform_post_votes.id}.
+  community_platform_post_vote_id String
+  
+  /// The admin who created this vote. {@link community_platform_admins.id}.
+  community_platform_admin_id String
+  
+  /// The admin session that cast this vote. {@link
+  /// community_platform_admin_sessions.id}.
+  community_platform_admin_session_id String
+  
+  /// When the vote was initially cast by this admin. UTC timestamp. Required
+  /// field that cannot be null.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  postVote community_platform_post_votes @relation(fields: [community_platform_post_vote_id], references: [id], onDelete: Cascade)
+  admin community_platform_admin @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  adminSession community_platform_admin_sessions @relation(fields: [community_platform_admin_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_vote_id], map: "community_platform_post_vote_of_admins_community_platf_5f305996")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_post_vote_of_admins_community_platf_bd94240b")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_session_id, created_at], map: "community_platform_post_vote_of_admins_community_platf_eb6a5a25")
+}
+
+/// Subtype table for comment votes created by regular members. Stores the
+/// member-specific session information for votes cast by authenticated
+/// members.
+///
+/// This table implements the "subsidiary" pattern for polymorphic ownership.
+/// When a member votes on a comment, their vote is stored in the main
+/// community_platform_comment_votes table with actor_type = 'member', and
+/// the specific member session details (member_id and member_session_id) are
+/// stored in this subtype table.
+///
+/// The relationship with the main vote entity is 1:1, enforced by a unique
+/// constraint on comment_vote_id. This design ensures referential integrity
+/// - votes can only be created through a specific actor's session, and the
+/// system prevents invalid states where a vote has no actor or multiple
+/// actors.
+///
+/// This table supports independent querying for member-only vote patterns
+/// while maintaining the core vote data in the primary entity. Only members
+/// can create records in this table.
+///
+/// The created_at field captures when this vote was initially cast by the
+/// member, separate from the main vote's creation time.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_vote_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main comment vote entity this subvote belongs to. {@link
+  /// community_platform_comment_votes.id}.
+  community_platform_comment_vote_id String
+  
+  /// The member who created this vote. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// The member session that cast this vote. {@link
+  /// community_platform_member_sessions.id}.
+  community_platform_member_session_id String
+  
+  /// When the vote was initially cast by this member. UTC timestamp. Required
+  /// field that cannot be null.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  commentVote community_platform_comment_votes @relation(fields: [community_platform_comment_vote_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  memberSession community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_vote_id], map: "community_platform_comment_vote_of_members_community_p_f64c704d")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_vote_of_members_community_p_9a1c5721")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id, created_at], map: "community_platform_comment_vote_of_members_community_p_8b33657e")
+}
+
+/// Subtype table for comment votes created by moderators. Stores the
+/// moderator-specific session information for votes cast by community
+/// moderators.
+///
+/// This table implements the "subsidiary" pattern for polymorphic ownership.
+/// When a moderator votes on a comment, their vote is stored in the main
+/// community_platform_comment_votes table with actor_type = 'moderator', and
+/// the specific moderator session details (moderator_id and
+/// moderator_session_id) are stored in this subtype table.
+///
+/// The relationship with the main vote entity is 1:1, enforced by a unique
+/// constraint on comment_vote_id. This design ensures referential integrity
+/// - votes can only be created through a specific actor's session, and the
+/// system prevents invalid states where a vote has no actor or multiple
+/// actors.
+///
+/// This table supports independent querying for moderator-only vote patterns
+/// while maintaining the core vote data in the primary entity. Only
+/// moderators can create records in this table.
+///
+/// The created_at field captures when this vote was initially cast by the
+/// moderator, separate from the main vote's creation time.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_vote_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main comment vote entity this subvote belongs to. {@link
+  /// community_platform_comment_votes.id}.
+  community_platform_comment_vote_id String
+  
+  /// The moderator who created this vote. {@link
+  /// community_platform_moderators.id}.
+  community_platform_moderator_id String
+  
+  /// The moderator session that cast this vote. {@link
+  /// community_platform_moderator_sessions.id}.
+  community_platform_moderator_session_id String
+  
+  /// When the vote was initially cast by this moderator. UTC timestamp.
+  /// Required field that cannot be null.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  commentVote community_platform_comment_votes @relation(fields: [community_platform_comment_vote_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderator @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  moderatorSession community_platform_moderator_sessions @relation(fields: [community_platform_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_vote_id], map: "community_platform_comment_vote_of_moderators_communit_8493846f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, created_at], map: "community_platform_comment_vote_of_moderators_communit_7ca5da2f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_session_id, created_at], map: "community_platform_comment_vote_of_moderators_communit_e015ecf1")
+}
+
+/// Subtype table for comment votes created by system administrators. Stores
+/// the admin-specific session information for votes cast by system
+/// administrators.
+///
+/// This table implements the "subsidiary" pattern for polymorphic ownership.
+/// When an admin votes on a comment, their vote is stored in the main
+/// community_platform_comment_votes table with actor_type = 'admin', and the
+/// specific admin session details (admin_id and admin_session_id) are stored
+/// in this subtype table.
+///
+/// The relationship with the main vote entity is 1:1, enforced by a unique
+/// constraint on comment_vote_id. This design ensures referential integrity
+/// - votes can only be created through a specific actor's session, and the
+/// system prevents invalid states where a vote has no actor or multiple
+/// actors.
+///
+/// This table supports independent querying for admin-only vote patterns
+/// while maintaining the core vote data in the primary entity. Only admins
+/// can create records in this table.
+///
+/// The created_at field captures when this vote was initially cast by the
+/// admin, separate from the main vote's creation time.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_vote_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main comment vote entity this subvote belongs to. {@link
+  /// community_platform_comment_votes.id}.
+  community_platform_comment_vote_id String
+  
+  /// The admin who created this vote. {@link community_platform_admins.id}.
+  community_platform_admin_id String
+  
+  /// The admin session that cast this vote. {@link
+  /// community_platform_admin_sessions.id}.
+  community_platform_admin_session_id String
+  
+  /// When the vote was initially cast by this admin. UTC timestamp. Required
+  /// field that cannot be null.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  commentVote community_platform_comment_votes @relation(fields: [community_platform_comment_vote_id], references: [id], onDelete: Cascade)
+  admin community_platform_admin @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  adminSession community_platform_admin_sessions @relation(fields: [community_platform_admin_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_vote_id], map: "community_platform_comment_vote_of_admins_community_pl_19a3fd5e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_comment_vote_of_admins_community_pl_26a4d303")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_session_id, created_at], map: "community_platform_comment_vote_of_admins_community_pl_e16d5179")
+}

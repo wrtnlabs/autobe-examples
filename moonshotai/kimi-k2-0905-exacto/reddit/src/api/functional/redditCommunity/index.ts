@@ -1,0 +1,17 @@
+export * as platformModerator from "./platformModerator/index";
+export * as platform from "./platform/index";
+export * as members from "./members/index";
+export * as member from "./member/index";
+export * as platformModerators from "./platformModerators/index";
+export * as communities from "./communities/index";
+export * as communityModerator from "./communityModerator/index";
+export * as visitor from "./visitor/index";
+export * as posts from "./posts/index";
+export * as postTypes from "./postTypes/index";
+export * as voteTypes from "./voteTypes/index";
+export * as contentRankings from "./contentRankings/index";
+export * as search from "./search/index";
+export * as userProfiles from "./userProfiles/index";
+export * as helpDesk from "./helpDesk/index";
+export * as faqs from "./faqs/index";
+export * as knowledgeBase from "./knowledgeBase/index";

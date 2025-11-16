@@ -1,0 +1,361 @@
+/// Comprehensive logging of all user activities across the platform with
+/// improved polymorphic relationship handling.
+///
+/// Tracks individual user actions including content creation, voting,
+/// commenting, and engagement activities. Each record captures detailed
+/// metadata about the specific action performed, including target content,
+/// community context, and interaction details.
+///
+/// Uses a polymorphic relationship pattern with content_type discriminator
+/// to ensure clear relationship semantics. Activities are categorized by
+/// type (post creation, comment voting, community subscription, etc.) and
+/// include timestamps for temporal analysis.
+///
+/// Records are preserved indefinitely for historical trend analysis and user
+/// activity auditing. This table forms the foundation for user engagement
+/// analytics and behavior pattern detection.
+///
+/// @namespace Activity
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_activities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the activity. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Community where activity occurred. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String?
+  
+  /// Type of content targeted by the activity. Valid values: post, comment,
+  /// community, user_profile. Determines which content foreign key is
+  /// relevant.
+  content_type String
+  
+  /// Target post for post-related activities. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String?
+  
+  /// Target comment for comment-related activities. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String?
+  
+  /// Type of activity performed. Valid values: post_creation,
+  /// comment_creation, post_vote, comment_vote, community_subscription,
+  /// content_report, moderation_action.
+  activity_type String
+  
+  /// Specific subtype of activity for detailed categorization.
+  activity_subtype String?
+  
+  /// JSON string containing detailed metadata about the specific action
+  /// performed.
+  action_details String?
+  
+  /// Quantitative value associated with the activity (e.g., vote direction,
+  /// karma change).
+  engagement_value Int?
+  
+  /// Session identifier and context information for tracking user sessions.
+  session_context String?
+  
+  /// Information about the device used for the activity.
+  device_info String?
+  
+  /// Geographic location information if available.
+  location_data String?
+  
+  /// Timestamp when the activity was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the activity record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the activity record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_user_activities_community_platform__bdfa84e4")
+  @@index([activity_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_user_activities_community_platform__eeb005cb")
+  @@index([content_type, created_at])
+  @@index([created_at])
+}
+
+/// Aggregated engagement metrics for users, communities, and content with
+/// improved data integrity constraints.
+///
+/// Pre-calculated metrics that summarize user engagement patterns over time
+/// periods. These metrics support performance analysis, trend
+/// identification, and user behavior insights without requiring real-time
+/// aggregation.
+///
+/// Metrics include engagement rates, activity frequency, content performance
+/// indicators, and community health scores. The table supports both
+/// user-level and community-level analytics with temporal breakdowns.
+///
+/// Data is updated periodically through batch processing to maintain
+/// performance while providing comprehensive analytics capabilities.
+/// Includes validation constraints to ensure metric consistency.
+///
+/// @namespace Activity
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_engagement_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User for whom metrics are calculated. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String?
+  
+  /// Community for which metrics are calculated. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String?
+  
+  /// Post for which metrics are calculated. {@link community_platform_posts.id}
+  community_platform_post_id String?
+  
+  /// Type of engagement metric being recorded. Valid values: daily_engagement,
+  /// weekly_activity, monthly_trends, content_performance, community_health.
+  metric_type String
+  
+  /// Time period covered by the metric (e.g., 2024-01, 2024-W01, 2024-01-15).
+  time_period String
+  
+  /// JSON string containing the calculated metric values and breakdowns.
+  metric_values String
+  
+  /// Comparison data against previous periods or platform averages.
+  baseline_comparison String?
+  
+  /// Statistical confidence in the metric calculation. Range: 0.0 to 1.0.
+  confidence_score Float?
+  
+  /// Methodology used to calculate the metric.
+  calculation_method String?
+  
+  /// Quality assessment score for the underlying data used in calculations.
+  /// Range: 0.0 to 1.0.
+  data_quality_score Float?
+  
+  /// Timestamp when the metric was calculated.
+  created_at DateTime
+  
+  /// Timestamp when the metric was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the metric record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members? @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id], map: "community_platform_engagement_metrics_community_platfo_96d517c1")
+  
+  // spellchecker: ignore-next-line
+  @@unique([metric_type, time_period, community_platform_member_id, community_platform_community_id, community_platform_post_id], map: "community_platform_engagement_metrics_metric_type_time_a32f7906")
+  // spellchecker: ignore-next-line
+  @@index([metric_type, time_period], map: "community_platform_engagement_metrics_metric_type_time_3de6cce3")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, time_period], map: "community_platform_engagement_metrics_community_platfo_76a01170")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, time_period], map: "community_platform_engagement_metrics_community_platfo_0223bd74")
+  @@index([created_at])
+  @@index([confidence_score])
+}
+
+/// Temporal and spatial activity patterns visualized as heatmap data with
+/// standardized coordinate system.
+///
+/// Stores pre-calculated heatmap data showing activity concentration across
+/// time periods and community distributions. Supports visual analytics for
+/// identifying peak activity times, community engagement patterns, and user
+/// behavior trends.
+///
+/// Heatmap data is aggregated at various granularities (hourly, daily,
+/// weekly) to support different analytical views. Uses standardized
+/// coordinate system for consistent cross-period comparisons. The data
+/// enables identification of engagement patterns and optimization of content
+/// delivery timing.
+///
+/// Used for platform optimization, community growth strategies, and user
+/// experience improvements. Includes data quality validation for reliable
+/// analytics.
+///
+/// @namespace Activity
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_activity_heatmaps {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community for which heatmap data is calculated. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String?
+  
+  /// Type of heatmap data. Valid values: temporal_distribution,
+  /// community_concentration, user_activity_patterns, content_engagement.
+  heatmap_type String
+  
+  /// Granularity of the time data (hourly, daily, weekly, monthly).
+  time_granularity String
+  
+  /// Specific time period covered by the heatmap data.
+  time_period String
+  
+  /// JSON string containing the heatmap values and coordinate data using
+  /// standardized coordinate system.
+  heatmap_data String
+  
+  /// Factor used to normalize the heatmap data for consistent scaling.
+  normalization_factor Float?
+  
+  /// Quality assessment score for the heatmap data. Range: 0.0 to 1.0.
+  data_quality_score Float?
+  
+  /// Parameters for rendering the heatmap visualization.
+  visualization_parameters String?
+  
+  /// Standardized coordinate system used for the heatmap data.
+  coordinate_system String
+  
+  /// Timestamp when the heatmap data was generated.
+  created_at DateTime
+  
+  /// Timestamp when the heatmap data was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the heatmap record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([heatmap_type, time_granularity, time_period, community_platform_community_id], map: "community_platform_activity_heatmaps_heatmap_type_time_8fd0be4f")
+  // spellchecker: ignore-next-line
+  @@index([heatmap_type, time_period], map: "community_platform_activity_heatmaps_heatmap_type_time_efab254a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, time_period], map: "community_platform_activity_heatmaps_community_platfor_32f40b39")
+  // spellchecker: ignore-next-line
+  @@index([time_granularity, created_at], map: "community_platform_activity_heatmaps_time_granularity__b3423382")
+  @@index([data_quality_score])
+}
+
+/// Identified behavioral patterns and user segmentation data with improved
+/// validation constraints.
+///
+/// Advanced analytics table that stores identified behavior patterns, user
+/// segments, and predictive models. Supports personalized experiences,
+/// targeted content delivery, and user behavior prediction.
+///
+/// Patterns include user engagement styles, content preferences, activity
+/// rhythms, and community interaction patterns. Includes minimum confidence
+/// thresholds and validation rules to ensure pattern quality. The data
+/// enables sophisticated user segmentation and behavior prediction for
+/// platform optimization.
+///
+/// Used by recommendation systems, content personalization algorithms, and
+/// community growth strategies. Patterns are regularly validated and updated
+/// based on new data.
+///
+/// @namespace Activity
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_behavioral_patterns {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User for whom behavioral pattern is identified. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String?
+  
+  /// Community context for the behavioral pattern. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String?
+  
+  /// Type of behavioral pattern identified. Valid values: engagement_style,
+  /// content_preference, activity_rhythm, social_behavior, moderation_pattern.
+  pattern_type String
+  
+  /// Specific identifier for the pattern within the type category.
+  pattern_identifier String
+  
+  /// JSON string containing the detailed pattern parameters and
+  /// characteristics.
+  pattern_data String
+  
+  /// Statistical confidence in the pattern identification. Range: 0.0 to 1.0.
+  /// Minimum threshold: 0.7 for reliable patterns.
+  confidence_score Float
+  
+  /// Strength or intensity of the identified pattern. Range: 0.0 to 1.0.
+  pattern_strength Float?
+  
+  /// Date when the pattern was first identified.
+  discovery_date DateTime
+  
+  /// Date when the pattern is considered expired or outdated.
+  expiration_date DateTime?
+  
+  /// Version identifier for the pattern analysis methodology.
+  pattern_version String?
+  
+  /// Current validation status of the pattern. Valid values: pending,
+  /// validated, rejected, expired.
+  validation_status String
+  
+  /// Timestamp when the pattern record was created.
+  created_at DateTime
+  
+  /// Timestamp when the pattern record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the pattern record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members? @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id], map: "community_platform_behavioral_patterns_community_platf_2ab7c20f")
+  
+  // spellchecker: ignore-next-line
+  @@unique([pattern_type, pattern_identifier, community_platform_member_id, community_platform_community_id], map: "community_platform_behavioral_patterns_pattern_type_pa_cc9266be")
+  // spellchecker: ignore-next-line
+  @@index([pattern_type, discovery_date], map: "community_platform_behavioral_patterns_pattern_type_di_b7e6b718")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, pattern_type], map: "community_platform_behavioral_patterns_community_platf_ac3e5b99")
+  // spellchecker: ignore-next-line
+  @@index([confidence_score, created_at], map: "community_platform_behavioral_patterns_confidence_scor_e43c9cb6")
+  @@index([expiration_date])
+  @@index([validation_status])
+}

@@ -8,8 +8,6 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
-import { IShoppingMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSession";
-import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
 
@@ -17,69 +15,62 @@ export async function postAuthSellerJoin(props: {
   seller: SellerPayload;
   body: IShoppingMallSeller.ICreate;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  // Check existing seller by email
-  const existingSeller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+  const existing = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
+    where: { email: props.body.email },
   });
-
-  if (existingSeller !== null) {
+  if (existing) {
     throw new HttpException("Email already registered", 409);
   }
 
-  // Hash password
   const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // Current timestamp string
-  const currentTimestamp = toISOStringSafe(new Date());
+  const nowISOString = toISOStringSafe(new Date());
+  const newSellerId = v4();
 
-  // Create seller
   const seller = await MyGlobal.prisma.shopping_mall_sellers.create({
     data: {
-      id: v4(),
+      id: newSellerId,
       email: props.body.email,
       password_hash: hashedPassword,
-      store_name: props.body.store_name,
-      created_at: currentTimestamp,
-      updated_at: currentTimestamp,
+      name: props.body.name,
+      status: "active",
+      business_status: "pending",
+      created_at: nowISOString,
+      updated_at: nowISOString,
     },
   });
 
-  // Compute expiration timestamps as ISO strings
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  // Create session for seller
+  const accessExpiresISOString = toISOStringSafe(accessExpires);
+  const refreshExpiresISOString = toISOStringSafe(refreshExpires);
+
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
       id: v4(),
       shopping_mall_seller_id: seller.id,
-      created_at: currentTimestamp,
-      expired_at: accessExpires,
+      created_at: nowISOString,
+      expired_at: accessExpiresISOString,
       ip: "",
       href: "",
       referrer: "",
     },
   });
 
-  // Generate now ISO string
-  const nowISO = toISOStringSafe(new Date());
-
-  // Generate JWT tokens
   const token = {
     access: jwt.sign(
       {
         type: "seller",
         id: seller.id,
         session_id: session.id,
-        created_at: nowISO,
+        created_at: nowISOString,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
     ),
     refresh: jwt.sign(
       {
@@ -87,24 +78,32 @@ export async function postAuthSellerJoin(props: {
         id: seller.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: nowISO,
+        created_at: nowISOString,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
     ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
+    expired_at: accessExpiresISOString,
+    refreshable_until: refreshExpiresISOString,
   };
 
-  // Return authorized seller with token
   return {
     id: seller.id,
     email: seller.email,
-    password_hash: seller.password_hash,
-    store_name: seller.store_name,
+    name: seller.name,
+    status: typia.assert<"active" | "inactive" | "suspended">(seller.status),
+    business_status: typia.assert<"approved" | "pending" | "rejected">(
+      seller.business_status,
+    ),
     created_at: toISOStringSafe(seller.created_at),
     updated_at: toISOStringSafe(seller.updated_at),
-    deleted_at: null,
+    deleted_at:
+      seller.deleted_at !== null && seller.deleted_at !== undefined
+        ? toISOStringSafe(seller.deleted_at)
+        : undefined,
     token,
   };
 }

@@ -1,419 +1,381 @@
-
-# Table of Contents - Community Platform Requirements Analysis
+# Reddit-Like Community Platform - Requirements Documentation
 
 ## Introduction
 
-This requirements analysis documentation package provides comprehensive business requirements for building a Reddit-like community platform. The platform enables users to create and participate in topic-based communities, share content, engage in discussions, and build reputation through community voting.
+This comprehensive documentation set provides complete business requirements for building a Reddit-like community platform. The platform enables users to create topic-based communities, share content (text, links, images), engage through voting and commenting, and build reputation through a karma system.
 
-### Purpose of This Documentation
+This documentation is designed for backend developers, business stakeholders, and project managers who need to understand what the system should accomplish from a business and user perspective. All technical implementation decisions—including architecture, API design, database structure, and technology stack—are at the discretion of the development team.
 
-This documentation suite serves as the complete business requirements specification for the community platform project. It defines:
+## How to Use This Documentation
 
-- **What the system should do** from a business and user perspective
-- **User workflows and interactions** throughout the platform
-- **Business rules and validation requirements** for all features
-- **User actors and their permissions** in business terms
-- **Functional requirements** for all major features and capabilities
+Each document in this set focuses on a specific aspect of the platform's business requirements. Documents are written in natural language with structured requirements using the EARS (Easy Approach to Requirements Syntax) format where applicable.
 
-### Scope and Coverage
+**For developers starting the project:** Read documents in the recommended sequence to build a complete understanding of the system.
 
-The documentation covers all major aspects of the community platform:
+**For stakeholders reviewing specific features:** Use the quick reference guide to jump directly to relevant sections.
 
-- User authentication and authorization
-- Community creation and management
-- Content creation (posts and comments)
-- Voting and reputation systems
-- Content sorting and discovery
-- Moderation and safety features
-- User profiles and personalized experiences
-- Search and discovery capabilities
+**For project managers:** The service overview and business model sections provide high-level context, while detailed requirements documents support sprint planning and task breakdown.
 
-### Target Audience
+## Documentation Structure
 
-This documentation is written primarily for:
+### Business Foundation Documents
 
-- **Backend developers** who will implement the business logic and system functionality
-- **Product managers** who need to understand the complete feature set
-- **QA teams** who will validate business requirements
-- **Business stakeholders** who need to understand system capabilities
+#### [Service Overview](./01-service-overview.md)
+**Purpose:** Establishes the business vision, market opportunity, value proposition, and success metrics for the community platform.
 
-## Document Organization and Reading Guide
-
-### Recommended Reading Order
-
-The documents are organized to build understanding progressively, from business context to detailed functional requirements:
-
-#### Phase 1: Foundation and Context (Start Here)
-1. **Service Overview** - Understand the business model, value proposition, and strategic goals
-2. **User Actors and Authentication** - Learn about who uses the system and how they authenticate
-
-#### Phase 2: Core Features (Essential Functionality)
-3. **Community Management** - Understand how communities work as the platform's organizational structure
-4. **Content Creation (Posts)** - Learn how users create and share content
-5. **Commenting System** - Understand discussion and engagement mechanics
-6. **Voting and Karma System** - Learn the reputation and ranking foundations
-
-#### Phase 3: User Experience Features (Enhanced Functionality)
-7. **Content Sorting Algorithms** - Understand how content is ranked and displayed
-8. **User Profiles and Feeds** - Learn about personalized user experiences
-9. **Search and Discovery** - Understand how users find content and communities
-
-#### Phase 4: Safety and Governance (Platform Health)
-10. **Moderation and Reporting** - Learn about content safety and community management
-
-### Document Categories
-
-The documentation is organized into these logical categories:
-
-**Business Foundation**
-- Documents that establish business context, objectives, and strategic direction
-
-**User Management**
-- Documents covering user authentication, actors, and permissions
-
-**Content Management**
-- Documents defining how content is created, organized, and managed
-
-**Engagement Systems**
-- Documents covering voting, karma, sorting, and user interaction
-
-**Platform Governance**
-- Documents addressing moderation, safety, and community health
-
-**Discovery and Navigation**
-- Documents covering search, feeds, and content discovery
-
-### How Documents Relate
-
-The documents build upon each other in a logical hierarchy:
-
-```mermaid
-graph LR
-    A["Service Overview"] --> B["User Actors & Authentication"]
-    B --> C["Community Management"]
-    C --> D["Content Creation"]
-    D --> E["Commenting System"]
-    D --> F["Voting & Karma"]
-    F --> G["Content Sorting"]
-    C --> H["User Profiles & Feeds"]
-    G --> H
-    B --> I["Moderation & Reporting"]
-    C --> I
-    C --> J["Search & Discovery"]
-    D --> J
-```
-
-## Complete Document Index
-
-### 01. Service Overview
-**Filename:** [Service Overview Document](./01-service-overview.md)
-
-**Purpose:** Establishes the business foundation by defining what the community platform is, why it exists, and what core value it delivers to users and stakeholders.
-
-**Key Topics:**
-- Executive summary and service vision
-- Problem statement and market opportunity
-- Core value proposition and competitive differentiation
+**Key Content:**
+- Why this platform exists and what problems it solves
+- Target audience and user demographics
 - Business model and revenue strategy
-- Target audience and user segments
-- Success metrics and KPIs
+- Key differentiators in the market
+- Success criteria and KPIs
 
-**Read this first to understand:** The business context, strategic goals, and market positioning of the platform.
-
----
-
-### 02. User Actors and Authentication
-**Filename:** [User Actors and Authentication Document](./02-user-actors-authentication.md)
-
-**Purpose:** Defines all user types, their roles and permissions in business terms, and the complete authentication requirements for accessing the platform.
-
-**Key Topics:**
-- Member, Moderator, and Site Administrator actor definitions
-- User registration and login workflows
-- Session management and token-based authentication
-- Password requirements and security expectations
-- Permission hierarchy and access control in business terms
-- Actor permission matrix showing what each user type can do
-
-**Read this to understand:** Who uses the system, how they authenticate, and what permissions each user type has.
+**Recommended for:** All team members, business stakeholders, project managers
 
 ---
 
-### 03. Community Management
-**Filename:** [Community Management Document](./03-community-management.md)
+### User & Access Control Documents
 
-**Purpose:** Details how communities function as the core organizational structure of the platform, including creation, configuration, moderation, and membership management.
+#### [User Actors and Authentication](./02-user-actors-authentication.md)
+**Purpose:** Defines all user types (Guest, Member, Moderator), their permissions, and complete authentication system requirements.
 
-**Key Topics:**
-- Community creation by members
-- Community settings and configuration options
-- Public vs private community visibility
-- Subscription and membership workflows
-- Community moderation capabilities
-- Community rules and guidelines
-- Community discovery features
+**Key Content:**
+- Complete user actor definitions with permission hierarchies
+- JWT-based authentication system requirements
+- Session management and security specifications
+- Permission matrix showing what each actor can do
+- Actor transition rules (Guest → Member → Moderator)
 
-**Read this to understand:** How communities are created, configured, and managed by users and moderators.
+**Recommended for:** Backend developers, security engineers, QA teams
 
 ---
 
-### 04. Content Creation - Posts
-**Filename:** [Content Creation - Posts Document](./04-content-creation-posts.md)
+### Community Management Documents
 
-**Purpose:** Specifies complete functionality for creating, editing, and managing posts across different content types (text, link, image).
+#### [Community Management](./03-community-management.md)
+**Purpose:** Specifies how communities are created, configured, moderated, and discovered within the platform.
 
-**Key Topics:**
-- Three post types: text, link, and image posts
-- Post creation workflows for each type
-- Post editing and deletion capabilities
-- Post metadata and attributes
+**Key Content:**
+- Community creation and setup process
+- Moderator appointment and hierarchy
+- Community rules and customization options
+- Subscription system mechanics
+- Community discovery and search
+- Community lifecycle management
+
+**Recommended for:** Backend developers, product managers, UX designers
+
+---
+
+### Content Creation Documents
+
+#### [Content Creation and Posts](./04-content-creation-posts.md)
+**Purpose:** Details all requirements for creating, editing, and managing posts including text, links, and images.
+
+**Key Content:**
+- Three post types: text, link, and image specifications
 - Content validation rules and character limits
-- Image upload and link validation requirements
+- Image upload and storage requirements
+- Post editing and deletion permissions
+- Post metadata and ownership rules
 
-**Read this to understand:** How users create and manage different types of posts within communities.
-
----
-
-### 05. Commenting System
-**Filename:** [Commenting System Document](./05-commenting-system.md)
-
-**Purpose:** Defines the nested commenting system that enables threaded discussions and community engagement on posts.
-
-**Key Topics:**
-- Comment creation and reply workflows
-- Nested reply threading up to 10 levels deep
-- Comment editing and deletion
-- Comment sorting and display options
-- Comment validation rules
-- Thread navigation and collapse features
-
-**Read this to understand:** How users engage in discussions through comments and nested replies.
+**Recommended for:** Backend developers, content architects, QA teams
 
 ---
 
-### 06. Voting and Karma System
-**Filename:** [Voting and Karma System Document](./06-voting-karma-system.md)
+### Engagement & Reputation Documents
 
-**Purpose:** Details the voting mechanism and karma calculation system that drives content ranking and user reputation.
+#### [Voting and Karma System](./05-voting-karma-system.md)
+**Purpose:** Defines the voting mechanics and karma calculation that drive content ranking and user reputation.
 
-**Key Topics:**
-- Upvote and downvote mechanics on posts and comments
-- Vote changing and removal capabilities
-- Karma calculation formulas
-- Post karma vs comment karma tracking
-- User total karma display
-- Vote count display rules
-- Voting restrictions and validation
+**Key Content:**
+- Upvote and downvote mechanics
+- Vote changing and removal rules
+- Karma calculation formulas for posts and comments
+- Vote score display requirements
+- Anti-gaming and fraud prevention measures
 
-**Read this to understand:** How the voting system works and how user reputation (karma) is calculated.
+**Recommended for:** Backend developers, data engineers, product managers
 
----
+#### [Comments and Discussions](./06-comments-discussions.md)
+**Purpose:** Specifies the nested comment system that enables rich threaded discussions.
 
-### 07. Content Sorting Algorithms
-**Filename:** [Content Sorting Algorithms Document](./07-content-sorting-algorithms.md)
+**Key Content:**
+- Comment creation and nested reply structure
+- Threading depth limits and display rules
+- Comment voting mechanics
+- Comment editing and deletion permissions
+- Comment sorting options
+- Reply notification requirements
 
-**Purpose:** Specifies the algorithms for sorting posts by hot, new, top, and controversial, which determines content visibility and user experience.
-
-**Key Topics:**
-- Hot sorting (trending content based on recent votes)
-- New sorting (chronological by creation time)
-- Top sorting with time filters (today, week, month, year, all-time)
-- Controversial sorting (balanced upvotes and downvotes)
-- Default sorting behaviors
-- User sorting preferences
-- Feed generation based on sorting
-
-**Read this to understand:** How content is ranked and displayed to users across different sorting methods.
+**Recommended for:** Backend developers, UX designers, QA teams
 
 ---
 
-### 08. User Profiles and Feeds
-**Filename:** [User Profiles and Feeds Document](./08-user-profiles-feeds.md)
+### Content Discovery Documents
 
-**Purpose:** Defines user profile functionality and personalized feed generation based on community subscriptions.
+#### [Content Sorting Algorithms](./07-content-sorting-algorithms.md)
+**Purpose:** Defines algorithms for sorting posts by Hot, New, Top, and Controversial to enable content discovery.
 
-**Key Topics:**
-- User profile structure and displayed information
+**Key Content:**
+- Hot sorting algorithm specification
+- Chronological (New) sorting rules
+- Top sorting with time filters (hour, day, week, month, year, all-time)
+- Controversial sorting logic
+- Performance expectations and optimization requirements
+
+**Recommended for:** Backend developers, algorithm engineers, performance engineers
+
+#### [Content Feeds and Discovery](./08-content-feeds-discovery.md)
+**Purpose:** Specifies how users discover content through personalized feeds, community feeds, and global discovery.
+
+**Key Content:**
+- Homepage feed (subscribed communities)
+- All/Popular global feed
+- Individual community feeds
+- Feed pagination and infinite scroll
+- Community discovery mechanisms
+- Search functionality requirements
+
+**Recommended for:** Backend developers, search engineers, UX designers
+
+---
+
+### User Experience Documents
+
+#### [User Profiles and Activity](./09-user-profiles-activity.md)
+**Purpose:** Defines user profile functionality, activity history, and personal content management.
+
+**Key Content:**
+- User profile structure and information display
+- Posts and comments history organization
+- Karma display on profiles
 - Profile customization options (avatar, bio)
-- User activity history display
-- Post and comment history on profiles
-- Personalized home feed from subscribed communities
-- All communities feed for discovery
-- Feed refresh and update workflows
+- Account settings and preferences
+- Profile privacy considerations
 
-**Read this to understand:** How user profiles work and how personalized feeds are generated.
+**Recommended for:** Backend developers, UX designers, product managers
 
 ---
 
-### 09. Moderation and Reporting
-**Filename:** [Moderation and Reporting Document](./09-moderation-reporting.md)
+### Moderation & Safety Documents
 
-**Purpose:** Specifies the content moderation and reporting system that maintains platform quality and safety.
+#### [Content Moderation and Reporting](./10-content-moderation-reporting.md)
+**Purpose:** Specifies the content reporting system, moderation workflows, and community safety tools.
 
-**Key Topics:**
-- Content reporting workflows for users
-- Report categories and types
-- Report review processes for moderators
-- Community moderator actions (remove posts, ban users from community)
-- Site admin capabilities (platform-wide moderation)
-- Content removal procedures
-- User banning at community and platform levels
-- Post pinning for moderators
-- Moderation queue management
+**Key Content:**
+- Content reporting system for posts and comments
+- Report categories (spam, harassment, misinformation, etc.)
+- Report review workflow for moderators
+- Moderator actions: content removal and user banning
+- Report queue management
+- Community-level ban rules
+- Moderation audit logging
 
-**Read this to understand:** How content safety is maintained through user reporting and moderator actions.
+**Recommended for:** Backend developers, community managers, safety teams
 
 ---
 
-### 10. Search and Discovery
-**Filename:** [Search and Discovery Document](./10-search-discovery.md)
+## Recommended Reading Sequence
 
-**Purpose:** Defines search and discovery features that help users find communities, posts, and other users.
+### For Complete System Understanding (Full Team)
+1. [Service Overview](./01-service-overview.md) - Understand the business context
+2. [User Actors and Authentication](./02-user-actors-authentication.md) - Learn who uses the system
+3. [Community Management](./03-community-management.md) - Understand the core organizing principle
+4. [Content Creation and Posts](./04-content-creation-posts.md) - Learn about primary content
+5. [Voting and Karma System](./05-voting-karma-system.md) - Understand engagement mechanics
+6. [Comments and Discussions](./06-comments-discussions.md) - Learn about discussions
+7. [Content Sorting Algorithms](./07-content-sorting-algorithms.md) - Understand content ranking
+8. [Content Feeds and Discovery](./08-content-feeds-discovery.md) - Learn about content delivery
+9. [User Profiles and Activity](./09-user-profiles-activity.md) - Understand user identity
+10. [Content Moderation and Reporting](./10-content-moderation-reporting.md) - Learn about safety
 
-**Key Topics:**
-- Community search functionality
-- Post search across the platform
-- User search and profile discovery
-- Search query processing and result ranking
-- Search filters and refinement options
-- Trending communities and posts
-- Discovery recommendations
-- Search performance expectations
+### For Backend Developers (Sprint Planning)
+**Sprint 1 - Foundation:**
+- [User Actors and Authentication](./02-user-actors-authentication.md)
+- [User Profiles and Activity](./09-user-profiles-activity.md)
 
-**Read this to understand:** How users discover and search for content, communities, and other users.
+**Sprint 2 - Communities:**
+- [Community Management](./03-community-management.md)
+- [Content Creation and Posts](./04-content-creation-posts.md)
 
----
+**Sprint 3 - Engagement:**
+- [Voting and Karma System](./05-voting-karma-system.md)
+- [Comments and Discussions](./06-comments-discussions.md)
 
-## Navigation Guidelines
+**Sprint 4 - Discovery:**
+- [Content Sorting Algorithms](./07-content-sorting-algorithms.md)
+- [Content Feeds and Discovery](./08-content-feeds-discovery.md)
 
-### For Backend Developers
-
-**Start with these documents in order:**
-1. Service Overview (business context)
-2. User Actors and Authentication (security foundation)
-3. Then proceed through documents 03-10 based on development priorities
-
-**When implementing specific features, refer to:**
-- The primary document for that feature
-- User Actors and Authentication for permission requirements
-- Related documents linked within each specification
+**Sprint 5 - Safety:**
+- [Content Moderation and Reporting](./10-content-moderation-reporting.md)
 
 ### For Business Stakeholders
+1. [Service Overview](./01-service-overview.md) - Business model and strategy
+2. [User Actors and Authentication](./02-user-actors-authentication.md) - User types and permissions
+3. [Community Management](./03-community-management.md) - Core platform mechanics
+4. [Content Moderation and Reporting](./10-content-moderation-reporting.md) - Safety and trust
 
-**Focus on these documents:**
-1. Service Overview (strategic direction)
-2. User Actors and Authentication (user types)
-3. Community Management (core platform structure)
-4. Content Sorting Algorithms (user experience)
-5. Moderation and Reporting (platform safety)
+### For UX/Product Designers
+1. [User Actors and Authentication](./02-user-actors-authentication.md) - User capabilities
+2. [Content Feeds and Discovery](./08-content-feeds-discovery.md) - Information architecture
+3. [Comments and Discussions](./06-comments-discussions.md) - Discussion patterns
+4. [User Profiles and Activity](./09-user-profiles-activity.md) - User identity presentation
 
-### For Project Managers
+---
 
-**Review all documents with emphasis on:**
-- Service Overview (scope and objectives)
-- Each functional area document (03-10) for feature understanding
-- Cross-document dependencies for sequencing development work
+## Quick Reference: Key Business Requirements
 
-### Quick Topic Reference
+### User Types
+- **Guest:** Can browse and view content (no account required)
+- **Member:** Can post, comment, vote, subscribe, and earn karma
+- **Moderator:** Can manage communities, remove content, and ban users
 
-**Looking for information about...**
-- **Authentication and login?** → Document 02
-- **Creating communities?** → Document 03
-- **Making posts?** → Document 04
-- **Comments and replies?** → Document 05
-- **Upvotes and karma?** → Document 06
-- **Content ranking?** → Document 07
-- **User profiles?** → Document 08
-- **Moderation tools?** → Document 09
-- **Search features?** → Document 10
+### Core Features
+- **Communities:** Topic-based groups with customizable rules and moderation
+- **Posts:** Text, link, and image content shared within communities
+- **Voting:** Upvote/downvote system driving content ranking
+- **Comments:** Nested threaded discussions with unlimited depth
+- **Karma:** Reputation score based on community engagement
+- **Sorting:** Hot, New, Top (with time filters), Controversial algorithms
+- **Feeds:** Personalized homepage, global discovery, community-specific
+- **Moderation:** Content reporting, review queues, removal tools, user bans
+
+### Authentication
+- JWT-based token authentication
+- Access token (15-minute expiration)
+- Refresh token (30-day expiration)
+- Role-based permission system
+
+### Content Limits
+- Post title: 300 characters maximum
+- Post text body: 40,000 characters maximum
+- Comment: 10,000 characters maximum
+- Image uploads: 10MB maximum per image
+- Community name: 3-21 characters, alphanumeric and underscores only
+
+---
+
+## Document Conventions
+
+### Requirement Format (EARS)
+All functional requirements follow the EARS (Easy Approach to Requirements Syntax) format for clarity:
+
+- **WHEN** [trigger], **THE** system **SHALL** [action] - Event-driven requirements
+- **WHILE** [state], **THE** system **SHALL** [action] - State-driven requirements
+- **THE** system **SHALL** [action] - Ubiquitous requirements (always true)
+- **IF** [condition], **THEN THE** system **SHALL** [action] - Error handling
+- **WHERE** [feature], **THE** system **SHALL** [action] - Optional features
+
+### Diagrams
+Documents use Mermaid diagrams to visualize:
+- User flows and workflows
+- System processes and decision trees
+- State transitions
+- Relationship hierarchies
 
 ### Cross-References
+Internal links use descriptive text (not filenames) for clarity. All links are relative paths within the documentation set.
 
-Documents frequently reference each other. When you see links to other documents:
-- Follow them to understand related functionality
-- Use them to trace dependencies between features
-- Return to the original document to maintain context
-
-## Documentation Conventions
-
-### Business Requirements Focus
-
-All documents focus on business requirements and user needs rather than technical implementation. You will find:
-
-- **User workflows** described in natural language
-- **Business rules** for validation and processing
-- **Functional capabilities** users can perform
-- **Performance expectations** from the user's perspective
-- **Error scenarios** and user-facing recovery processes
-
-### What You Won't Find
-
-These documents intentionally do not include:
-- API endpoint specifications
-- Database schemas or table structures
-- Technical architecture decisions
-- Frontend UI/UX designs
-- Infrastructure specifications
-
-### EARS Format Requirements
-
-Throughout the documentation, functional requirements use EARS (Easy Approach to Requirements Syntax) format for clarity and precision:
-
-- **WHEN** [trigger], THE system SHALL [action] - Event-driven requirements
-- **WHILE** [state], THE system SHALL [action] - State-driven requirements
-- **IF** [condition], THEN THE system SHALL [action] - Error handling
-- **WHERE** [feature], THE system SHALL [action] - Optional features
-- **THE** system SHALL [action] - Always-active requirements
-
-This format ensures requirements are specific, measurable, and testable.
-
-### Visual Diagrams
-
-Documents include Mermaid diagrams to illustrate:
-- User workflows and journeys
-- Process flows
-- State transitions
-- System interactions
-
-Diagrams complement the written requirements and provide visual clarity.
+---
 
 ## Document Maintenance
 
 ### Version Control
+All documents are maintained in version control with the codebase. Changes to requirements should be tracked through standard pull request processes with appropriate review.
 
-This is the initial version of the requirements documentation. As the project evolves:
-- Requirements may be refined based on development feedback
-- Additional documents may be added for new features
-- This table of contents will be updated to reflect changes
+### Updates and Revisions
+When requirements change, update the relevant document(s) and ensure cross-references remain accurate. Major changes should trigger review of dependent documents.
 
 ### Feedback and Questions
-
-If you have questions about requirements or need clarification:
-- Refer to the specific document covering that topic
-- Check related documents for additional context
-- Consult with business stakeholders for business rule clarifications
-- Consult with the project team for scope questions
-
-## Getting Started
-
-### New to This Project?
-
-1. **Read the Service Overview** to understand the business vision
-2. **Review User Actors and Authentication** to understand security model
-3. **Scan the table of contents** above to familiarize yourself with all documents
-4. **Read documents 03-10** in sequence for comprehensive understanding
-5. **Refer back to specific documents** as needed during development
-
-### Ready to Build?
-
-Each document provides complete business requirements for its area. Developers have full autonomy to:
-- Design technical architecture
-- Create API specifications
-- Design database schemas
-- Make implementation decisions
-
-The requirements define **what** the system should do from a business perspective, while developers determine **how** to build it technically.
+Development teams should raise questions about requirements through standard project communication channels. Ambiguities should be resolved and documented through requirement clarifications.
 
 ---
 
-Developer Note: This documentation defines business requirements only. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.
+## Project Context
+
+### Platform Overview
+This is a Reddit-like community platform where users can create topic-based communities, share diverse content types, engage through voting and discussions, and build reputation through community contributions.
+
+### Business Model
+The platform operates on a freemium model with potential revenue streams from premium subscriptions, advertising, and community features. The core platform remains free to encourage user growth and engagement.
+
+### Target Market
+- Primary: Young adults (18-35) seeking topic-based online communities
+- Secondary: Niche interest groups seeking organized discussion platforms
+- Tertiary: Content creators building audience through community engagement
+
+### Success Metrics
+- Monthly Active Users (MAU)
+- Daily Active Users (DAU)
+- Communities created
+- Posts and comments per user
+- User retention rate (30-day, 90-day)
+- Average session duration
+- Content quality (measured by engagement)
+
+---
+
+## Development Approach
+
+### Requirements Philosophy
+These documents define **WHAT** the system should do (business requirements) and **WHY** it matters (business value). They deliberately avoid specifying **HOW** to implement features technically.
+
+### Developer Autonomy
+Backend developers have complete autonomy over:
+- System architecture and design patterns
+- API structure and endpoints
+- Database schema and relationships
+- Technology stack and frameworks
+- Performance optimization strategies
+- Code organization and modularity
+
+### Technical Decisions
+All technical implementation details—including but not limited to API specifications, database design, caching strategies, and infrastructure choices—are the responsibility of the development team based on their expertise and best practices.
+
+### Collaboration Model
+Business requirements (this documentation) + Developer expertise (technical implementation) = Successful platform
+
+---
+
+## Additional Resources
+
+### Related Documentation
+- API documentation (to be created by development team)
+- Database schema documentation (to be created by development team)
+- Deployment guides (to be created by DevOps team)
+- User guides and help documentation (to be created by product team)
+
+### External References
+- Reddit platform (primary inspiration for feature set)
+- EARS requirements syntax guide
+- JWT authentication standards (RFC 7519)
+- Markdown formatting specification
+
+---
+
+## Getting Started
+
+### New Team Members
+1. Read [Service Overview](./01-service-overview.md) for business context
+2. Review [User Actors and Authentication](./02-user-actors-authentication.md) to understand user types
+3. Follow the recommended reading sequence based on your role
+4. Ask questions through project communication channels
+
+### Beginning Development
+1. Start with authentication and user management
+2. Build community infrastructure
+3. Implement content creation and engagement features
+4. Add discovery and sorting mechanisms
+5. Integrate moderation and safety tools
+
+### Questions and Clarifications
+For questions about business requirements, contact the product owner. For technical implementation discussions, engage with the development team lead.
+
+---
+
+**Document Version:** 1.0  
+**Last Updated:** 2025-11-14  
+**Maintained By:** Product & Requirements Team
+
+*Developer Note: This document defines business requirements only. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

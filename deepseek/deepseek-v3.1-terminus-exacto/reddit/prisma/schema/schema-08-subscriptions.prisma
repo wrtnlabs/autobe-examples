@@ -1,150 +1,498 @@
-/// Core subscription relationship between users and communities. Tracks
-/// which communities users are subscribed to and manages subscription
-/// status. Users can independently subscribe/unsubscribe from communities,
-/// and this table enables personalized feed generation based on subscription
-/// relationships. {@link reddit_clone_members.id} {@link
-/// reddit_clone_communities.id}
+/// Main subscription entity tracking user-community relationships with
+/// polymorphic ownership support.
+///
+/// Represents the core subscription relationship between platform actors and
+/// communities, enabling personalized feed generation and content
+/// aggregation. The main entity contains shared business attributes while
+/// subtype entities handle actor-specific data.
+///
+/// Each subscription tracks status lifecycle from active to muted to
+/// inactive, with priority settings for feed ordering. The system supports
+/// multiple actor types (members, moderators, admins) creating subscriptions
+/// through the polymorphic ownership pattern.
+///
+/// Soft deletion maintains historical data for analytics while allowing
+/// users to unsubscribe. Discovery source tracking helps optimize
+/// recommendation algorithms and understand user behavior patterns.
 ///
 /// @namespace Subscriptions
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_subscriptions {
+model community_platform_subscriptions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Subscribed member's identifier. {@link reddit_clone_members.id}
-  reddit_clone_member_id String
+  /// Community being subscribed to. {@link community_platform_communities.id}.
+  community_platform_community_id String
   
-  /// Subscribed community's identifier. {@link reddit_clone_communities.id}
-  reddit_clone_community_id String
+  /// Type of actor who created the subscription: member, moderator, or admin.
+  /// Enables efficient filtering and polymorphic relationship resolution.
+  actor_type String
   
-  /// Subscription status indicating whether the subscription is active,
-  /// inactive, or pending.
+  /// Subscription status: active, muted, or inactive. Active subscriptions
+  /// receive content, muted are temporarily paused, inactive are permanently
+  /// unsubscribed.
   status String
   
-  /// Timestamp when the subscription was created.
+  /// Type of subscription: active (user-chosen) or suggested
+  /// (algorithm-recommended). Distinguishes user-initiated vs
+  /// system-recommended subscriptions.
+  subscription_type String
+  
+  /// User-defined priority for feed ordering (1-10). Higher priority
+  /// communities appear more prominently in personalized feeds.
+  priority Int
+  
+  /// Timestamp when a muted subscription will automatically reactivate. Null
+  /// for active or permanently inactive subscriptions.
+  muted_until DateTime?
+  
+  /// How this subscription was discovered: user_search,
+  /// algorithm_recommendation, friend_suggestion, trending, or
+  /// similar_communities.
+  discovery_source String?
+  
+  /// Timestamp when the subscription was initially created.
   created_at DateTime
   
-  /// Timestamp when the subscription was last updated.
+  /// Timestamp when the subscription was last modified.
   updated_at DateTime
   
-  /// Timestamp when the subscription was soft deleted, allowing for recovery.
+  /// Timestamp when the subscription was soft-deleted (unsubscribed). Null for
+  /// active subscriptions.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
-  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
   
-  reddit_clone_subscription_feeds reddit_clone_subscription_feeds[]
+  community_platform_subscription_of_members community_platform_subscription_of_members?
+  community_platform_subscription_of_moderators community_platform_subscription_of_moderators?
+  community_platform_subscription_of_admins community_platform_subscription_of_admins?
   
   // spellchecker: ignore-next-line
-  @@unique([reddit_clone_member_id, reddit_clone_community_id], map: "reddit_clone_subscriptions_reddit_clone_member_id_redd_8b325413")
-  @@index([reddit_clone_member_id, status])
-  @@index([reddit_clone_community_id, status])
-  @@index([created_at])
+  @@unique([actor_type, community_platform_community_id], map: "community_platform_subscriptions_actor_type_community__99d6fe7d")
+  @@index([actor_type, status])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, status], map: "community_platform_subscriptions_community_platform_co_65bac800")
+  @@index([status, created_at])
+  @@index([subscription_type, priority])
+  // spellchecker: ignore-next-line
+  @@index([actor_type, subscription_type, priority], map: "community_platform_subscriptions_actor_type_subscripti_63b4dabb")
 }
 
-/// Materialized view for optimized subscription feed generation.
-/// Pre-computes and caches personalized feed data for efficient content
-/// delivery to subscribed users. This denormalized view improves performance
-/// by aggregating subscription relationships and community content. {@link
-/// reddit_clone_subscriptions.id} {@link reddit_clone_members.id} {@link
-/// reddit_clone_communities.id}
+/// Stores user-specific feed customization preferences and display settings.
 ///
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_subscription_feeds {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Member identifier for personalized feed. {@link reddit_clone_members.id}
-  reddit_clone_member_id String
-  
-  /// Subscription relationship identifier. {@link
-  /// reddit_clone_subscriptions.id}
-  reddit_clone_subscription_id String
-  
-  /// JSON structure containing aggregated feed content from subscribed
-  /// communities.
-  feed_data String
-  
-  /// Timestamp when the feed data was last refreshed.
-  last_updated DateTime
-  
-  /// Type of feed (hot, new, top, controversial) for sorting algorithm.
-  feed_type String
-  
-  /// Number of content items in the current feed for pagination optimization.
-  content_count Int
-  
-  //----
-  // RELATIONS
-  //----
-  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
-  subscription reddit_clone_subscriptions @relation(fields: [reddit_clone_subscription_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([reddit_clone_subscription_id], map: "reddit_clone_subscription_feeds_reddit_clone_subscript_9974ed27")
-  
-  // spellchecker: ignore-next-line
-  @@unique([reddit_clone_member_id, feed_type], map: "reddit_clone_subscription_feeds_reddit_clone_member_id_fa5adacc")
-  @@index([last_updated])
-  @@index([feed_type])
-}
-
-/// User-specific preferences for feed customization and display settings.
-/// Stores individual user preferences for how their subscribed content is
-/// presented, including sorting preferences, content filters, and display
-/// options. {@link reddit_clone_members.id}
+/// Contains individual user preferences for how their personalized feed
+/// should be generated and displayed. These preferences work in conjunction
+/// with subscriptions to create tailored content experiences.
+///
+/// Preferences include content type filters, sorting defaults, display
+/// density settings, and notification preferences. Each user can customize
+/// their feed experience independently of their subscription list.
+///
+/// The system uses these preferences to optimize feed generation algorithms
+/// and ensure users receive content in their preferred format and order.
 ///
 /// @namespace Subscriptions
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_user_preferences {
+model community_platform_feed_preferences {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Member identifier for preference association. {@link
-  /// reddit_clone_members.id}
-  reddit_clone_member_id String
+  /// Member whose preferences are being stored. {@link
+  /// community_platform_members.id}.
+  community_platform_member_id String
   
-  /// Default sorting preference for the user's feed (hot, new, top,
-  /// controversial).
-  default_sort String
+  /// Default sorting method for the user's feed: hot, new, top, or
+  /// controversial. Applied when user hasn't specified a preference for
+  /// current session.
+  default_sorting String
   
-  /// Whether to show NSFW (Not Safe For Work) content in feeds.
-  show_nsfw Boolean
+  /// Preferred content display density: compact, standard, or detailed.
+  /// Affects how much information is shown per content item.
+  content_density String
   
-  /// Automatically expand media content in feed displays.
-  auto_expand_media Boolean
+  /// Automatic feed refresh interval in minutes. Zero disables auto-refresh.
+  auto_refresh_interval Int
   
-  /// Use compact view for feed display to show more content per page.
-  compact_view Boolean
+  /// Whether to display Not Safe For Work content in the feed. Respects
+  /// community and content NSFW flags.
+  show_nsfw_content Boolean
   
-  /// Preferred language for content filtering and display.
-  language_preference String?
+  /// Whether to automatically collapse content filtered by automated
+  /// moderation systems.
+  collapse_automod_filtered Boolean
   
-  /// Timestamp when preferences were initially set.
+  /// Whether to visually highlight posts with new comments since last visit.
+  highlight_new_comments Boolean
+  
+  /// Visual theme preference for feed display: light, dark, or auto (system
+  /// default).
+  theme_preference String
+  
+  /// Preferred feed view mode: algorithmic, chronological, community_group, or
+  /// compact.
+  feed_view_mode String
+  
+  /// Preferred notification frequency for new content: immediate,
+  /// digest_daily, digest_weekly, or disabled.
+  notification_frequency String
+  
+  /// Timestamp when the preferences were initially created.
   created_at DateTime
   
-  /// Timestamp when preferences were last modified.
+  /// Timestamp when the preferences were last modified.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
-  @@unique([reddit_clone_member_id])
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id], map: "community_platform_feed_preferences_community_platform_7690ebb8")
   
-  @@index([reddit_clone_member_id])
-  @@index([default_sort])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_feed_preferences_community_platform_6a4ac1dd")
+  @@index([default_sorting])
+  @@index([feed_view_mode])
+}
+
+/// Tracks community discovery patterns and algorithm recommendations for users.
+///
+/// Records how users discover new communities through various channels
+/// including algorithmic recommendations, search results, trending lists,
+/// and social connections. Used to improve discovery algorithms and
+/// understand user interest patterns.
+///
+/// Each discovery event includes the recommendation source, user interaction
+/// outcome, and contextual data about why the community was suggested. This
+/// data helps refine future recommendations and improve community matching
+/// accuracy.
+///
+/// The system uses discovery patterns to identify successful recommendation
+/// strategies and optimize the community discovery experience for all users.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_discovery {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who received the discovery recommendation. {@link
+  /// community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Community that was recommended for discovery. {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Source of the discovery recommendation: algorithm, search, trending,
+  /// friend_suggestion, similar_communities, or external_referral.
+  discovery_source String
+  
+  /// Algorithmic confidence score for this recommendation (0.0 to 1.0). Higher
+  /// scores indicate stronger algorithmic confidence in the match.
+  recommendation_score Float
+  
+  /// User's response to the discovery recommendation: subscribed, viewed,
+  /// ignored, or dismissed.
+  user_action String
+  
+  /// Algorithmic explanation for why this community was recommended. Includes
+  /// factors like similar interests, geographic proximity, or social
+  /// connections.
+  recommendation_reason String?
+  
+  /// Contextual information about the discovery session, including referring
+  /// content, search terms, or user activity patterns.
+  session_context String?
+  
+  /// Position where the recommendation was displayed in discovery interfaces.
+  /// Used for CTR analysis and positioning optimization.
+  display_position Int?
+  
+  /// Timestamp when the discovery recommendation was presented to the user.
+  created_at DateTime
+  
+  /// Timestamp when the user took action on the recommendation. Null if no
+  /// action was taken.
+  action_taken_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_community_id, discovery_source], map: "community_platform_community_discovery_community_platf_07854804")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, user_action], map: "community_platform_community_discovery_community_platf_2aa2e065")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, discovery_source], map: "community_platform_community_discovery_community_platf_59c987c6")
+  // spellchecker: ignore-next-line
+  @@index([discovery_source, created_at], map: "community_platform_community_discovery_discovery_sourc_6897098e")
+  // spellchecker: ignore-next-line
+  @@index([recommendation_score, user_action], map: "community_platform_community_discovery_recommendation__f54a5041")
+}
+
+/// Aggregated analytics data for subscription patterns and community growth
+/// metrics.
+///
+/// Provides system-level analytics on subscription trends, community growth
+/// patterns, and user engagement metrics. Used for platform optimization,
+/// community health monitoring, and business intelligence.
+///
+/// Analytics include subscription velocity, retention rates, discovery
+/// effectiveness, and geographic distribution patterns. Data is aggregated
+/// at various time intervals (hourly, daily, weekly) for trend analysis.
+///
+/// The system maintains these analytics separately from operational data to
+/// ensure performance optimization and enable complex analytical queries
+/// without impacting user-facing operations.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscription_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community being analyzed. {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Start timestamp of the analytics period being measured.
+  period_start DateTime
+  
+  /// End timestamp of the analytics period being measured.
+  period_end DateTime
+  
+  /// Type of analytics period: hourly, daily, weekly, or monthly. Determines
+  /// aggregation level and retention policy.
+  period_type String
+  
+  /// Number of new subscriptions gained during the period.
+  new_subscriptions Int
+  
+  /// Number of subscriptions lost (unsubscribed) during the period.
+  lost_subscriptions Int
+  
+  /// Net subscription change (new minus lost) during the period.
+  net_growth Int
+  
+  /// Subscription retention rate as percentage (0.0 to 1.0) for the period.
+  retention_rate Float
+  
+  /// Success rate of discovery recommendations that led to subscriptions (0.0
+  /// to 1.0).
+  discovery_success_rate Float
+  
+  /// Total number of active subscribers at the end of the period.
+  active_subscriber_count Int
+  
+  /// JSON-encoded geographic distribution data for subscribers by country or
+  /// region.
+  geographic_distribution String?
+  
+  /// JSON-encoded demographic breakdown data for subscriber analysis.
+  demographic_breakdown String?
+  
+  /// Timestamp when this analytics record was created.
+  created_at DateTime
+  
+  /// Timestamp when this analytics record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, period_start, period_type], map: "community_platform_subscription_analytics_community_pl_5839a8b4")
+  // spellchecker: ignore-next-line
+  @@index([period_start, period_type], map: "community_platform_subscription_analytics_period_start_58da601e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, period_start], map: "community_platform_subscription_analytics_community_pl_0d40eeb4")
+  // spellchecker: ignore-next-line
+  @@index([net_growth, period_type], map: "community_platform_subscription_analytics_net_growth_p_d41b8b3b")
+}
+
+/// Subtype entity for subscriptions created by regular community members.
+///
+/// Stores member-specific subscription data including the member identifier
+/// and session context. Each member subscription links to the main
+/// subscription entity through a 1:1 relationship.
+///
+/// This subtype pattern enables proper referential integrity while
+/// supporting multiple actor types creating subscriptions. Member
+/// subscriptions represent the most common subscription type created through
+/// user interaction with community discovery and feed features.
+///
+/// The subtype maintains the member's session context for audit trail
+/// purposes and supports member-specific subscription management operations.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscription_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main subscription entity. {@link
+  /// community_platform_subscriptions.id}.
+  community_platform_subscription_id String
+  
+  /// Member who created the subscription. {@link
+  /// community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Session context when the subscription was created. {@link
+  /// community_platform_member_sessions.id}.
+  community_platform_member_session_id String
+  
+  /// Timestamp when this member subscription was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  subscription community_platform_subscriptions @relation(fields: [community_platform_subscription_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  memberSession community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_subscription_of_members_community_p_390b2e5d")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_subscription_id], map: "community_platform_subscription_of_members_community_p_144cd0fa")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_subscription_of_members_community_p_82b70196")
+}
+
+/// Subtype entity for subscriptions created by community moderators.
+///
+/// Stores moderator-specific subscription data including the moderator
+/// identifier and moderation context. Moderator subscriptions typically
+/// represent administrative or moderation-related community following rather
+/// than personal content consumption.
+///
+/// This subtype enables moderators to follow communities they moderate for
+/// content monitoring, community management, and moderation workflow
+/// support. The subscription type may differ from regular member
+/// subscriptions in purpose and usage patterns.
+///
+/// The subtype maintains the moderator's session context and supports
+/// moderator-specific subscription management operations within their
+/// moderation responsibilities.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscription_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main subscription entity. {@link
+  /// community_platform_subscriptions.id}.
+  community_platform_subscription_id String
+  
+  /// Moderator who created the subscription. {@link
+  /// community_platform_moderators.id}.
+  community_platform_moderator_id String
+  
+  /// Session context when the subscription was created. {@link
+  /// community_platform_moderator_sessions.id}.
+  community_platform_moderator_session_id String
+  
+  /// Timestamp when this moderator subscription was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  subscription community_platform_subscriptions @relation(fields: [community_platform_subscription_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  moderatorSession community_platform_moderator_sessions @relation(fields: [community_platform_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_session_id], map: "community_platform_subscription_of_moderators_communit_d451c063")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_subscription_id], map: "community_platform_subscription_of_moderators_communit_10021813")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, created_at], map: "community_platform_subscription_of_moderators_communit_dbdfe26f")
+}
+
+/// Subtype entity for subscriptions created by platform administrators.
+///
+/// Stores admin-specific subscription data including the administrator
+/// identifier and administrative context. Admin subscriptions typically
+/// represent system monitoring, platform management, or administrative
+/// oversight purposes rather than personal content consumption.
+///
+/// This subtype enables administrators to follow communities for platform
+/// health monitoring, content quality assessment, and administrative
+/// workflow support. Admin subscriptions may have different visibility or
+/// management requirements compared to regular member subscriptions.
+///
+/// The subtype maintains the admin's session context and supports
+/// admin-specific subscription management operations within their
+/// administrative responsibilities.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscription_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main subscription entity. {@link
+  /// community_platform_subscriptions.id}.
+  community_platform_subscription_id String
+  
+  /// Administrator who created the subscription. {@link
+  /// community_platform_admins.id}.
+  community_platform_admin_id String
+  
+  /// Session context when the subscription was created. {@link
+  /// community_platform_admin_sessions.id}.
+  community_platform_admin_session_id String
+  
+  /// Timestamp when this admin subscription was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  subscription community_platform_subscriptions @relation(fields: [community_platform_subscription_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  adminSession community_platform_admin_sessions @relation(fields: [community_platform_admin_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_session_id], map: "community_platform_subscription_of_admins_community_pl_ec1199d0")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_subscription_id], map: "community_platform_subscription_of_admins_community_pl_9c1fa925")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_subscription_of_admins_community_pl_a36b3aec")
 }

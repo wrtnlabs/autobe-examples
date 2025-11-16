@@ -1,0 +1,30 @@
+/// User karma tracking entity.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_user_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target description. {@link community_user.id}.
+  user_id String
+  
+  /// Current karma score.
+  karma_score Int
+  
+  /// Karma tracking start time.
+  created_at DateTime
+  
+  /// Last karma update time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user community_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id])
+}

@@ -1,0 +1,42 @@
+/// Represents a communication channel for the discussion board. Channels can
+/// be used for different topics or categories of discussions.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model channels {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the channel.
+  name String
+  
+  /// Description of the channel.
+  description String?
+}
+
+/// Stores configuration settings for the discussion board. This can include
+/// site-wide settings, feature flags, and other configurable options.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Configuration key.
+  key String
+  
+  /// Configuration value.
+  value String
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+}

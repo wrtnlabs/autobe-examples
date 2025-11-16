@@ -7,33 +7,19 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserLogin(props: {
-  body: ITodoUser.ILogin;
-}): Promise<ITodoUser.IAuthorized> {
+  body: ITodoAppUser.ILogin;
+}): Promise<ITodoAppUser.IAuthorized> {
   // Find user by email
-  const user = await MyGlobal.prisma.todo_users.findUnique({
+  const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: { email: props.body.email },
   });
 
   if (!user) {
     throw new HttpException("Invalid credentials", 401);
-  }
-
-  // Check account security status
-  const isLocked =
-    user.locked_until && new Date(user.locked_until) > new Date();
-
-  if (isLocked) {
-    throw new HttpException("Account is locked. Please try again later", 423);
-  }
-  if (user.failed_login_attempts >= 5) {
-    throw new HttpException(
-      "Too many failed login attempts. Account locked",
-      423,
-    );
   }
 
   // Verify password
@@ -43,98 +29,68 @@ export async function postAuthUserLogin(props: {
   );
 
   if (!isValid) {
-    // Update failed attempts atomically with lockout on 5th attempt
-    const now = toISOStringSafe(new Date());
-    const newAttemptCount = user.failed_login_attempts + 1;
-    const shouldLockout = newAttemptCount >= 5;
-
-    await MyGlobal.prisma.todo_users.update({
-      where: { id: user.id },
-      data: {
-        failed_login_attempts: newAttemptCount,
-        locked_until: shouldLockout ? now : user.locked_until,
-        updated_at: now,
-      },
-    });
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Reset failed attempts since login was successful
+  // Calculate token expiration times as ISO strings
+  const now = new Date();
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const currentTime = toISOStringSafe(new Date());
 
-  // Create new session
-  const session = await MyGlobal.prisma.todo_user_sessions.create({
+  // Create new session record
+  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      todo_user_id: user.id,
-      ip: props.body.ip ?? "", // FIXED: Removed invalid props.ip reference
+      user_id: user.id,
+      ip: props.body.ip ?? "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: currentTime,
+      created_at: toISOStringSafe(now),
       expired_at: toISOStringSafe(accessExpires),
     },
   });
 
-  // Reset failed login attempts and clear lockout
-  await MyGlobal.prisma.todo_users.update({
-    where: { id: user.id },
-    data: {
-      failed_login_attempts: 0,
-      locked_until: null,
-      updated_at: currentTime,
+  // Generate JWT tokens with ISO timestamps
+  const accessToken = jwt.sign(
+    {
+      type: "user",
+      id: user.id,
+      session_id: session.id,
+      created_at: now.toISOString(),
     },
-  });
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
 
-  // Count active tasks for the user
-  const tasksCount = await MyGlobal.prisma.todo_tasks.count({
-    where: { todo_user_id: user.id },
-  });
+  const refreshToken = jwt.sign(
+    {
+      type: "user",
+      id: user.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: now.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
 
-  // Generate JWT tokens
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: session.id,
-        created_at: currentTime,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "user",
-        id: user.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: currentTime,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
-
-  // Return authorized user data with converted timestamps
+  // Return authorized user response
   return {
     id: user.id,
     email: user.email,
     created_at: toISOStringSafe(user.created_at),
-    updated_at: currentTime,
-    mfa_enabled: user.mfa_enabled,
-    failed_login_attempts: 0,
-    locked_until: null,
-    tasks_count: tasksCount,
-    token,
-  } satisfies ITodoUser.IAuthorized;
+    updated_at: toISOStringSafe(user.updated_at),
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
+    },
+  } satisfies ITodoAppUser.IAuthorized;
 }

@@ -9,95 +9,109 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminJoin(props: {
-  admin: AdminPayload;
-  body: IShoppingMallAdmin.IJoin;
+  body: IShoppingMallAdmin.ICreate;
 }): Promise<IShoppingMallAdmin.IAuthorized> {
-  const { body } = props;
-
-  const existingAdmin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
-    where: {
-      email: body.email,
-      deleted_at: null,
-    },
+  // Check if the admin with the given email already exists
+  const existingAdmin = await MyGlobal.prisma.shopping_mall_admins.findUnique({
+    where: { email: props.body.email },
   });
 
-  if (existingAdmin !== null) {
-    throw new HttpException("Email already registered", 409);
+  if (existingAdmin) {
+    throw new HttpException("Email is already registered", 409);
   }
 
-  const hashedPassword = await PasswordUtil.hash(body.password);
+  // Hash the password securely
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
 
+  // Prepare timestamp strings
   const now = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
+  // Generate UUIDs for admin and session
+  const adminId = v4();
+  const sessionId = v4();
+
+  // Create the new admin record
   const admin = await MyGlobal.prisma.shopping_mall_admins.create({
     data: {
-      id: v4(),
-      email: body.email,
+      id: adminId as string & tags.Format<"uuid">,
+      email: props.body.email,
+      name: props.body.name,
       password_hash: hashedPassword,
-      full_name: body.full_name,
       created_at: now,
       updated_at: now,
+      deleted_at: null,
+      business_status: "active",
+      status: "enabled",
     },
   });
 
-  const accessExpired = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpired = new Date(Date.now() + 7 * 24 * 3600 * 1000);
-
+  // Create the new admin session record
   const session = await MyGlobal.prisma.shopping_mall_admin_sessions.create({
     data: {
-      id: v4(),
-      shopping_mall_admin_id: admin.id,
+      id: sessionId as string & tags.Format<"uuid">,
+      shopping_mall_admin_id: adminId,
       created_at: now,
-      expired_at: toISOStringSafe(accessExpired),
+      expired_at: accessExpires,
       ip: "",
       href: "",
       referrer: "",
     },
   });
 
-  const issuedAt = now;
-  const token = {
-    access: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        created_at: issuedAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: issuedAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpired),
-    refreshable_until: toISOStringSafe(refreshExpired),
+  // Generate JWT access and refresh tokens
+  const nowStr = toISOStringSafe(new Date());
+  const accessToken = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session.id,
+      created_at: nowStr,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+
+  const refreshToken = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: nowStr,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+
+  // Compose the token response
+  const token: IAuthorizationToken = {
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
 
+  // Return the authorized admin information
   return {
     id: admin.id,
     email: admin.email,
-    full_name: admin.full_name,
+    name: admin.name,
+    role: props.body.role,
+    is_active: true,
     created_at: toISOStringSafe(admin.created_at),
     updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: null,
     token,
   };
 }

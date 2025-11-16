@@ -8,153 +8,128 @@ import type { ICommunityPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/st
 import type { ICommunityPlatformCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommentVote";
 import type { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
 import type { ICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPost";
-import type { ICommunityPlatformPostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostImage";
-import type { ICommunityPlatformPostLinks } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostLinks";
-import type { ICommunityPlatformPostTexts } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostTexts";
 import type { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
+import type { ICommunityPlatformUserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUserSession";
 
 /**
- * Verifies an authenticated user can create an upvote or downvote for a
- * comment.
+ * Validates creation of a comment vote (upvote/downvote) by an authenticated
+ * user.
  *
- * This function simulates the complete workflow:
+ * This test verifies that an authenticated user can upvote or downvote an
+ * existing comment on the platform, enforcing the business rules for comment
+ * voting. It covers the full workflow: user self-registration, comment
+ * creation, vote creation, uniqueness constraint (one vote per user per
+ * comment), and authentication enforcement. It checks:
  *
- * 1. Register (join) a new user
- * 2. Create a new community
- * 3. Create a post within the community
- * 4. Create a comment on the post
- * 5. Submit an upvote for the comment and verify single vote per user per comment
- * 6. Attempt a downvote to ensure vote toggling (update not duplicate)
- * 7. Assert that the correct vote state is returned
+ * 1. User account registration (join)
+ * 2. User creates a comment on a post (comment must exist)
+ * 3. User can create a vote (upvote or downvote) on the comment
+ * 4. Duplicate votes for the same comment by the same user are rejected
+ *    (uniqueness per user/comment)
+ * 5. Vote is linked to the correct user and comment
+ * 6. Unauthenticated users cannot create votes
  */
 export async function test_api_comment_vote_creation_by_user(
   connection: api.IConnection,
 ) {
-  // 1. Register a new user
-  const email = typia.random<string & tags.Format<"email">>();
-  const joinBody = {
-    email,
-    password: RandomGenerator.alphaNumeric(12),
-    display_name: RandomGenerator.name(),
-    ip: undefined,
-    href: "https://community.example.com/register",
-    referrer: "https://google.com",
-  } satisfies ICommunityPlatformUser.IJoin;
-
-  const authorized = await api.functional.auth.user.join(connection, {
-    body: joinBody,
+  // 1. Register genuine user
+  const userEmail = typia.random<string & tags.Format<"email">>();
+  const userPassword = RandomGenerator.alphaNumeric(12);
+  const user = await api.functional.auth.user.join(connection, {
+    body: {
+      email: userEmail,
+      password: userPassword,
+    } satisfies ICommunityPlatformUser.IJoin,
   });
-  typia.assert(authorized);
+  typia.assert(user);
 
-  // 2. Create a new community
-  const communityCreateBody = {
-    name: RandomGenerator.alphaNumeric(12).toLowerCase(),
-    description: RandomGenerator.paragraph({ sentences: 8 }),
-  } satisfies ICommunityPlatformCommunity.ICreate;
-  const community =
-    await api.functional.communityPlatform.user.communities.create(connection, {
-      body: communityCreateBody,
-    });
-  typia.assert(community);
+  // 2. Create a post context (simulate, as full post creation is not in scope, so we use a random post id and minimal ISummary shape)
+  const postId = typia.random<string & tags.Format<"uuid">>();
+  const communityId = typia.random<string & tags.Format<"uuid">>();
 
-  // 3. Create a post in the community
-  const postBody = {
-    community_id: community.id,
-    title: RandomGenerator.paragraph({ sentences: 5 }),
-    text_body: RandomGenerator.content({ paragraphs: 1 }),
-  } satisfies ICommunityPlatformPost.ICreate;
-  const post = await api.functional.communityPlatform.user.posts.create(
-    connection,
-    {
-      body: postBody,
-    },
-  );
-  typia.assert(post);
-
-  // 4. Create a comment on the post
-  const commentBody = {
-    post_id: post.id,
-    body: RandomGenerator.paragraph({ sentences: 6 }),
-  } satisfies ICommunityPlatformComment.ICreate;
+  // 3. User creates a comment on the post
   const comment = await api.functional.communityPlatform.user.comments.create(
     connection,
     {
-      body: commentBody,
+      body: {
+        post_id: postId,
+        body: RandomGenerator.paragraph({ sentences: 4 }),
+      } satisfies ICommunityPlatformComment.ICreate,
     },
   );
   typia.assert(comment);
-
-  // 5. Submit an upvote for the comment
-  const upvoteReq = {
-    community_platform_comment_id: comment.id,
-    is_upvote: true,
-  } satisfies ICommunityPlatformCommentVote.ICreate;
-  const upvote =
-    await api.functional.communityPlatform.user.commentVotes.create(
-      connection,
-      {
-        body: upvoteReq,
-      },
-    );
-  typia.assert(upvote);
-  TestValidator.equals("vote is upvote", upvote.is_upvote, true);
   TestValidator.equals(
-    "vote links to correct comment",
-    upvote.community_platform_comment_id,
+    "comment is created by the correct user",
+    comment.author.id,
+    user.id,
+  );
+  TestValidator.equals("comment post id matches", comment.post.id, postId);
+
+  // 4. User upvotes the comment
+  const vote = await api.functional.communityPlatform.user.commentVotes.create(
+    connection,
+    {
+      body: {
+        community_platform_comment_id: comment.id,
+        vote_type: "up",
+      } satisfies ICommunityPlatformCommentVote.ICreate,
+    },
+  );
+  typia.assert(vote);
+  TestValidator.equals("vote is linked to user", vote.user.id, user.id);
+  TestValidator.equals(
+    "vote is linked to the comment",
+    vote.comment.id,
     comment.id,
   );
-  TestValidator.equals(
-    "vote links to correct user",
-    upvote.community_platform_user_id,
-    authorized.id,
+  TestValidator.equals("vote type is up", vote.vote_type, "up");
+
+  // 5. User cannot upvote the same comment twice (uniqueness restriction)
+  await TestValidator.error(
+    "user cannot vote twice on the same comment",
+    async () => {
+      await api.functional.communityPlatform.user.commentVotes.create(
+        connection,
+        {
+          body: {
+            community_platform_comment_id: comment.id,
+            vote_type: "up",
+          } satisfies ICommunityPlatformCommentVote.ICreate,
+        },
+      );
+    },
   );
 
-  // Calling the same upvote again should not create a new vote (single vote per user per comment)
-  const upvoteAgain =
-    await api.functional.communityPlatform.user.commentVotes.create(
-      connection,
-      {
-        body: upvoteReq,
-      },
-    );
-  typia.assert(upvoteAgain);
-  TestValidator.equals(
-    "vote is still upvote after repeat",
-    upvoteAgain.is_upvote,
-    true,
-  );
-  TestValidator.equals(
-    "vote id is unchanged when upvoting again",
-    upvoteAgain.id,
-    upvote.id,
+  // 6. User cannot downvote the same comment after upvoting (uniqueness restriction)
+  await TestValidator.error(
+    "user cannot downvote same comment after upvoting",
+    async () => {
+      await api.functional.communityPlatform.user.commentVotes.create(
+        connection,
+        {
+          body: {
+            community_platform_comment_id: comment.id,
+            vote_type: "down",
+          } satisfies ICommunityPlatformCommentVote.ICreate,
+        },
+      );
+    },
   );
 
-  // 6. Submit a downvote (toggle), should update the vote record rather than duplicate
-  const downvoteReq = {
-    community_platform_comment_id: comment.id,
-    is_upvote: false,
-  } satisfies ICommunityPlatformCommentVote.ICreate;
-  const downvote =
-    await api.functional.communityPlatform.user.commentVotes.create(
-      connection,
-      {
-        body: downvoteReq,
-      },
-    );
-  typia.assert(downvote);
-  TestValidator.equals(
-    "vote is toggled to downvote",
-    downvote.is_upvote,
-    false,
-  );
-  TestValidator.equals(
-    "vote id remains same after vote toggle",
-    downvote.id,
-    upvote.id,
-  );
-  TestValidator.equals(
-    "vote links to correct comment after toggle",
-    downvote.community_platform_comment_id,
-    comment.id,
+  // 7. Unauthenticated user cannot vote
+  const unauthConn: api.IConnection = { ...connection, headers: {} };
+  await TestValidator.error(
+    "unauthenticated user cannot vote on comment",
+    async () => {
+      await api.functional.communityPlatform.user.commentVotes.create(
+        unauthConn,
+        {
+          body: {
+            community_platform_comment_id: comment.id,
+            vote_type: "up",
+          } satisfies ICommunityPlatformCommentVote.ICreate,
+        },
+      );
+    },
   );
 }

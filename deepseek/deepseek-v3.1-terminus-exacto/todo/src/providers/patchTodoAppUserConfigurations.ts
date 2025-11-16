@@ -8,6 +8,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { ITodoAppConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppConfiguration";
+import { IConfigurationDataType } from "@ORGANIZATION/PROJECT-api/lib/structures/IConfigurationDataType";
+import { ISortOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/ISortOrder";
 import { IPageITodoAppConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppConfiguration";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { UserPayload } from "../decorators/payload/UserPayload";
@@ -16,108 +18,66 @@ export async function patchTodoAppUserConfigurations(props: {
   user: UserPayload;
   body: ITodoAppConfiguration.IRequest;
 }): Promise<IPageITodoAppConfiguration.ISummary> {
-  const { body } = props;
-
-  // Parse pagination parameters with defaults
-  const page = Math.max(1, body.page ?? 1);
-  const limit = Math.max(1, Math.min(100, body.limit ?? 20));
+  const { page, limit } = props.body;
   const skip = (page - 1) * limit;
 
-  // Build WHERE condition with proper null/undefined handling
-  const where = {
-    // Search filter - simple contains for database compatibility
-    ...(body.search &&
-      body.search.trim().length > 0 && {
-        OR: [
-          { config_key: { contains: body.search } },
-          { description: { contains: body.search } },
-        ],
-      }),
+  // Build where conditions
+  const whereConditions: Record<string, unknown> = {};
 
-    // Exact match filters with proper null checks
-    ...(body.config_key !== undefined &&
-      body.config_key !== null &&
-      body.config_key.trim().length > 0 && {
-        config_key: body.config_key,
-      }),
-    ...(body.data_type !== undefined &&
-      body.data_type !== null &&
-      body.data_type.trim().length > 0 && {
-        data_type: body.data_type,
-      }),
-    ...(body.status !== undefined &&
-      body.status !== null &&
-      body.status.trim().length > 0 && {
-        status: body.status,
-      }),
-  };
+  // Handle search term (partial matching on key, description, category)
+  if (props.body.search && props.body.search.trim() !== "") {
+    whereConditions.OR = [
+      { key: { contains: props.body.search } },
+      { description: { contains: props.body.search } },
+      { category: { contains: props.body.search } },
+    ];
+  }
 
-  // Build orderBy conditionally to avoid type errors
-  const orderBy = (() => {
-    if (body.order_by === "config_key") {
-      return {
-        config_key:
-          body.order_direction === "asc" ? ("asc" as const) : ("desc" as const),
-      };
-    }
-    if (body.order_by === "updated_at") {
-      return {
-        updated_at:
-          body.order_direction === "asc" ? ("asc" as const) : ("desc" as const),
-      };
-    }
-    // Default: created_at descending
-    return {
-      created_at:
-        body.order_direction === "asc" ? ("asc" as const) : ("desc" as const),
-    };
-  })();
+  // Handle category filter
+  if (props.body.category) {
+    whereConditions.category = props.body.category;
+  }
 
-  try {
-    // Execute paginated query
-    const [records, total] = await Promise.all([
-      MyGlobal.prisma.todo_app_configurations.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          config_key: true,
-          config_value: true,
-          data_type: true,
-          status: true,
-          created_at: true,
-          updated_at: true,
-        },
-      }),
-      MyGlobal.prisma.todo_app_configurations.count({ where }),
-    ]);
+  // Handle data type filter
+  if (props.body.data_type) {
+    whereConditions.data_type = props.body.data_type;
+  }
 
-    // Convert records to API response format with proper date handling
-    const data = records.map((record) => ({
-      id: record.id as string & tags.Format<"uuid">,
-      config_key: record.config_key,
-      config_value: record.config_value,
-      data_type: record.data_type,
-      status: record.status,
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
-    }));
+  // Build orderBy
+  const orderBy: Record<string, unknown> = {};
+  const sortField = props.body.sort || "created_at";
+  const sortOrder = props.body.order || "desc";
+  orderBy[sortField] = sortOrder;
 
-    // Calculate pagination metadata with number type conversion
-    const pagination = {
-      current: Number(page),
-      limit: Number(limit),
+  // Execute concurrent queries
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.todo_app_configurations.findMany({
+      where: whereConditions,
+      skip,
+      take: limit,
+      orderBy,
+    }),
+    MyGlobal.prisma.todo_app_configurations.count({
+      where: whereConditions,
+    }),
+  ]);
+
+  // Convert to summary format
+  const summaryData: ITodoAppConfiguration.ISummary[] = data.map((config) => ({
+    id: config.id,
+    key: config.key,
+    value: config.value,
+    category: config.category,
+    data_type: config.data_type as IConfigurationDataType,
+  }));
+
+  return {
+    data: summaryData,
+    pagination: {
+      current: page,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination;
-
-    return {
-      pagination,
-      data,
-    };
-  } catch (error) {
-    throw new HttpException("Failed to retrieve configuration settings", 500);
-  }
+    },
+  };
 }

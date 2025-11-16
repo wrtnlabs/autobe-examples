@@ -1,0 +1,101 @@
+/// User karma records tracking reputation points earned through platform
+/// activities.
+///
+/// Stores the karma points earned by users through various activities on the
+/// platform.
+/// Each record is associated with a specific user and tracks the points earned,
+/// lost, or gained through different actions. The karma system is designed to
+/// reflect user engagement and contribution levels, with points being awarded
+/// for activities such as posting, commenting, and voting. The system also
+/// allows for the deduction of points for negative actions or violations of
+/// community guidelines. The karma records are used to determine user
+/// reputation, influence, and access to certain features within the platform.
+///
+/// The karma system is an essential component of the platform, as it encourages
+/// positive behavior and discourages negative actions. The system is designed
+/// to be transparent and fair, with clear rules for earning and losing points.
+/// The karma records are stored in a dedicated table to ensure efficient
+/// retrieval and management.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who earned or lost karma points. {@link
+  /// reddit_like_community_users.id}
+  reddit_like_community_user_id String
+  
+  /// Karma points earned or lost by the user. Positive values indicate points
+  /// earned, while negative values indicate points lost.
+  points Int
+  
+  /// Reason for earning or losing karma points. Describes the specific action
+  /// or activity that resulted in the karma change.
+  reason String
+  
+  /// Timestamp when the karma record was created. Indicates when the karma
+  /// points were earned or lost.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_community_users @relation(fields: [reddit_like_community_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id, created_at], map: "reddit_like_community_karma_reddit_like_community_user_c926c582")
+}
+
+/// Reference data for different types of karma actions and their point values.
+///
+/// Stores predefined types of karma actions and their corresponding point
+/// values.
+/// Each type represents a specific action or activity that can result in the
+/// earning
+/// or loss of karma points. The types are used to categorize and standardize
+/// the karma system, ensuring consistency and fairness in the distribution of
+/// points. The system allows for the creation of new types as needed, with each
+/// type having a unique identifier, name, and point value. The types are
+/// stored in
+/// a dedicated table to facilitate efficient retrieval and management.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_karma_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the karma type. Describes the specific action or activity that
+  /// results in the earning or loss of karma points.
+  name String
+  
+  /// Point value associated with the karma type. Indicates the number of
+  /// points earned or lost for the specific action or activity.
+  points Int
+  
+  /// Description of the karma type. Provides additional details about the
+  /// specific action or activity that results in the earning or loss of karma
+  /// points.
+  description String
+  
+  /// Timestamp when the karma type was created. Indicates when the type was
+  /// added to the system.
+  created_at DateTime
+  
+  /// Timestamp when the karma type was last updated. Indicates when the type
+  /// was modified or changed.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+}

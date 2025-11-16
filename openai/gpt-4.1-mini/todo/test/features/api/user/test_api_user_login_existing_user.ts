@@ -4,77 +4,69 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import type { ITodoListTodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodoListUser";
 
-/**
- * Test the user login process for an existing user.
- *
- * This function creates a new user account, then performs login with the
- * created user credentials. It validates the successful login flow, including
- * assertion of issued JWT tokens and returned user information.
- *
- * Steps:
- *
- * 1. Create user with random but valid email and password using the join endpoint.
- * 2. Log in using the same email and password.
- * 3. Assert that the login response includes valid JWT tokens and matching user
- *    ID.
- */
 export async function test_api_user_login_existing_user(
   connection: api.IConnection,
 ) {
-  // 1. Create a new user account
-  const email: string = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(12);
+  // Step 1: Generate user registration data
+  const email: string & tags.Format<"email"> = typia.random<
+    string & tags.Format<"email">
+  >();
+  const password = "1234";
+  const name = RandomGenerator.name();
 
-  const createdUser: ITodoUser.IAuthorized =
+  const createBody = {
+    email,
+    password,
+    name,
+  } satisfies ITodoListTodoListUser.ICreate;
+
+  // Step 2: Call join endpoint to create user
+  const joinedUser: ITodoListTodoListUser.IAuthorized =
     await api.functional.auth.user.join(connection, {
-      body: {
-        email: email,
-        password: password,
-      } satisfies ITodoUser.ICreate,
+      body: createBody,
     });
-  typia.assert(createdUser);
+  typia.assert(joinedUser);
 
-  // 2. Log in with the created user
-  const loginUser: ITodoUser.IAuthorized = await api.functional.auth.user.login(
-    connection,
-    {
-      body: {
-        email: email,
-        password: password,
-        ip: null,
-        href: "http://localhost/login",
-        referrer: "http://localhost/",
-      } satisfies ITodoUser.ILogin,
-    },
-  );
-  typia.assert(loginUser);
+  // Step 3: Call login endpoint to authenticate existing user
+  const loginBody = {
+    email,
+    password,
+    href: "https://example.com/login",
+    referrer: "https://example.com/referrer",
+  } satisfies ITodoListTodoListUser.ILogin;
 
-  // 3. Validate the login response
-  TestValidator.predicate("login returned user id", loginUser.id.length > 0);
+  const loggedInUser: ITodoListTodoListUser.IAuthorized =
+    await api.functional.auth.user.login(connection, {
+      body: loginBody,
+    });
+  typia.assert(loggedInUser);
+
+  // Step 4: Validate that the logged in user data matches the joined user
   TestValidator.equals(
-    "login user id matches created user id",
-    loginUser.id,
-    createdUser.id,
-  );
-
-  TestValidator.predicate(
-    "login returned token access",
-    typeof loginUser.token.access === "string" &&
-      loginUser.token.access.length > 0,
+    "user id should match after login",
+    loggedInUser.id,
+    joinedUser.id,
   );
   TestValidator.predicate(
-    "login returned token refresh",
-    typeof loginUser.token.refresh === "string" &&
-      loginUser.token.refresh.length > 0,
+    "token access is present",
+    typeof loggedInUser.token.access === "string" &&
+      loggedInUser.token.access.length > 0,
   );
   TestValidator.predicate(
-    "login token expired_at is valid ISO date",
-    !isNaN(Date.parse(loginUser.token.expired_at)),
+    "token refresh is present",
+    typeof loggedInUser.token.refresh === "string" &&
+      loggedInUser.token.refresh.length > 0,
   );
   TestValidator.predicate(
-    "login token refreshable_until is valid ISO date",
-    !isNaN(Date.parse(loginUser.token.refreshable_until)),
+    "token expiration time is a valid ISO string",
+    typeof loggedInUser.token.expired_at === "string" &&
+      loggedInUser.token.expired_at.length > 0,
+  );
+  TestValidator.predicate(
+    "token refreshable time is a valid ISO string",
+    typeof loggedInUser.token.refreshable_until === "string" &&
+      loggedInUser.token.refreshable_until.length > 0,
   );
 }

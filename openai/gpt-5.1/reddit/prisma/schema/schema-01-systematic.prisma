@@ -1,0 +1,254 @@
+/// Platform-wide configuration settings and thresholds for the
+/// communityPlatform service.
+///
+/// This table stores low-churn, cross-cutting configuration values that
+/// influence behavior in multiple domains, such as karma thresholds, voting
+/// limits, and safety toggles. It centralizes platform-level settings
+/// instead of scattering magic numbers or flags across business tables.
+///
+/// Other components reference these settings logically in service code (for
+/// example, to decide whether a user may create a community or how many
+/// votes per hour are allowed) but do not hold foreign keys to this table.
+/// The goal is to provide a single source of truth for operators and
+/// administrators to tune system behavior without schema changes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_platform_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Uniquely identifies a specific platform settings record.
+  id String @id
+  
+  /// Stable, machine-oriented identifier for this settings entry. Used by
+  /// backend services to look up a particular configuration value (for example
+  /// "karma.community_creation_threshold"). Must be unique across all platform
+  /// settings.
+  key String
+  
+  /// Serialized configuration value for this setting. The exact format (for
+  /// example JSON, integer rendered as string, boolean literal) is interpreted
+  /// by application logic based on the key.
+  value String
+  
+  /// Human-readable explanation of what this setting controls, including
+  /// units, valid ranges, and business impact where relevant.
+  description String
+  
+  /// Indicates whether this settings entry is currently active and should be
+  /// used by the platform. Inactive settings may represent deprecated or
+  /// experimental values kept for reference.
+  is_active Boolean
+  
+  /// Timestamp when this settings row was first created.
+  created_at DateTime
+  
+  /// Timestamp when this settings row was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When not null, the settings row is considered
+  /// logically removed and should not be used for active behavior, but is
+  /// preserved for audit and rollback analysis.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+  @@index([is_active, created_at])
+}
+
+/// Global taxonomy of high-level content policy categories enforced by the
+/// platform.
+///
+/// This table defines platform-wide content policy categories such as
+/// harassment, hate speech, explicit sexual content, or illegal activities.
+/// These categories are referenced conceptually by moderation actions,
+/// community configurations, and reporting flows.
+///
+/// Communities and moderation tools can associate content or rules with
+/// these categories to drive consistent policy enforcement. The taxonomy is
+/// managed centrally so that changes propagate coherently across all
+/// communities.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_content_policy_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Uniquely identifies a content policy category.
+  id String @id
+  
+  /// Stable, machine-friendly code for this content policy category (for
+  /// example "harassment", "hate_speech"). Used as a reference key in
+  /// application logic and other schemas.
+  code String
+  
+  /// Human-readable name of the content policy category shown in
+  /// administrative and moderation tools.
+  name String
+  
+  /// Detailed explanation of what this category covers, including examples and
+  /// guidance for moderators and policy authors.
+  description String
+  
+  /// Indicates whether this category is part of the core platform policy set
+  /// that should always be available across all communities.
+  is_default Boolean
+  
+  /// Indicates whether this category is currently active and should be offered
+  /// when configuring rules or labeling content. Inactive categories are
+  /// preserved for historical reference but not used for new configuration.
+  is_active Boolean
+  
+  /// Timestamp when this content policy category was created.
+  created_at DateTime
+  
+  /// Timestamp when this content policy category was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the category is logically removed from
+  /// active use but retained for audit and historical reporting.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([code])
+  @@unique([name])
+  // spellchecker: ignore-next-line
+  @@index([is_active, created_at], map: "community_platform_content_policy_categories_is_active_c0e0c2b8")
+}
+
+/// Global catalog of standardized report reason categories used when users
+/// report content or accounts.
+///
+/// This table defines the high-level reason categories that reporters can
+/// select, such as spam, harassment, explicit content, or illegal activity.
+/// It ensures that reporting data is structured and consistent across all
+/// communities.
+///
+/// Reporting workflows, moderation queues, and analytics use these
+/// categories to route reports, prioritize safety issues, and generate
+/// metrics. The taxonomy is centrally managed to maintain consistency and
+/// support policy evolution.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_reason_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Uniquely identifies a report reason category.
+  id String @id
+  
+  /// Stable, machine-oriented code for the report reason category (for example
+  /// "spam", "harassment", "illegal_content"). Used for routing logic and
+  /// analytics.
+  code String
+  
+  /// Human-readable name of the report reason category presented in user
+  /// interfaces and moderation tools.
+  name String
+  
+  /// Detailed description of when this report reason should be used, including
+  /// examples and any edge cases for moderators to consider.
+  description String
+  
+  /// Indicates whether this reason category should be visible to end users in
+  /// reporting UIs. Some categories may be internal-only for moderators or
+  /// admins.
+  is_user_visible Boolean
+  
+  /// Indicates whether this category is currently active and selectable for
+  /// new reports. Inactive categories remain for historical data integrity but
+  /// should not be offered for new submissions.
+  is_active Boolean
+  
+  /// Timestamp when this report reason category was created.
+  created_at DateTime
+  
+  /// Timestamp when this report reason category was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the category is considered deprecated
+  /// and should not be used for new reports, but existing reports remain
+  /// linked to it for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_reports community_platform_reports[]
+  
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([is_user_visible, is_active], map: "community_platform_report_reason_categories_is_user_vi_42f8d4fa")
+  // spellchecker: ignore-next-line
+  @@index([is_active, created_at], map: "community_platform_report_reason_categories_is_active__d9d3a3ba")
+}
+
+/// Catalog of rule categories that communities can use when defining their
+/// own community-specific rules.
+///
+/// This table provides a structured set of categories for community rules,
+/// such as content guidelines, behavior rules, posting restrictions, or
+/// reporting procedures. Communities reference these categories when
+/// authoring or classifying their local rules.
+///
+/// Using centralized rule categories improves discoverability, consistency,
+/// and analytics across communities, while still allowing communities to
+/// define rule text and details in their own domain-specific tables.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_rule_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Uniquely identifies a community rule category.
+  id String @id
+  
+  /// Stable, machine-friendly code for this rule category (for example
+  /// "behavior", "posting_policy", "safety"). Used by backend logic and
+  /// community tooling.
+  code String
+  
+  /// Human-readable name of the rule category displayed when communities
+  /// configure or review their rules.
+  name String
+  
+  /// Detailed explanation of what kind of rules belong in this category, with
+  /// examples to guide community moderators.
+  description String
+  
+  /// Relative ordering value used to control how categories are displayed in
+  /// configuration UIs. Lower values typically appear earlier.
+  sort_order Int
+  
+  /// Indicates whether this category is currently offered for new community
+  /// rules. Inactive categories are preserved for historical rule
+  /// classification but not suggested for new rules.
+  is_active Boolean
+  
+  /// Timestamp when this community rule category was created.
+  created_at DateTime
+  
+  /// Timestamp when this community rule category was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, this category is logically removed
+  /// from active use while remaining available for historical rule records.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_community_rules community_platform_community_rules[]
+  
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([is_active, sort_order], map: "community_platform_community_rule_categories_is_active_d910ba76")
+}

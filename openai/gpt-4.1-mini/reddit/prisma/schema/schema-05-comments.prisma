@@ -1,9 +1,19 @@
-/// Stores user comments on posts within communities, including support for
-/// nested comments through self-referential parent-child relationships. Each
-/// comment is authored by a registered user and belongs to a single post.
-/// Designed to preserve data integrity, support soft deletes, and allow
-/// efficient querying and full-text search on comment content. Temporal
-/// fields support audit trails and lifecycle management.
+/// User comments on posts within communities, supporting nested replies up
+/// to 5 levels.
+///
+/// This model stores text comments made by registered users on posts.
+/// Comments support optional parent comment nesting to allow threaded
+/// discussion up to 5 levels deep.
+///
+/// Comments belong to a single post and a single registered user, with
+/// temporal tracking for creation, update, and soft delete capabilities.
+///
+/// Content length is limited to 1000 characters to ensure concise
+/// communication.
+///
+/// The model enforces referential integrity with the posts and registered
+/// users already defined in other components, and self-referential integrity
+/// for comment nesting.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -14,20 +24,21 @@ model reddit_community_comments {
   /// Primary Key.
   id String @id
   
-  /// The post this comment belongs to. {@link reddit_community_posts.id}.
+  /// Reference to the post that this comment belongs to. {@link
+  /// reddit_community_posts.id}.
   reddit_community_post_id String
   
-  /// The parent comment in nested replies, null for top-level comments. {@link
-  /// reddit_community_comments.id}.
+  /// Reference to the registered user who authored the comment. {@link
+  /// reddit_community_registered_users.id}.
+  reddit_community_registered_user_id String
+  
+  /// Optional reference to a parent comment for nested replies, supporting up
+  /// to 5 levels. {@link reddit_community_comments.id}.
   parent_id String?
   
-  /// The user who authored this comment. {@link reddit_community_user.id}.
-  reddit_community_user_id String
-  
-  /// The textual content of the comment. Captures the full user-supplied
-  /// comment text with validation on length and content on the application
-  /// side.
-  body String
+  /// The text content of the comment, limited to 1000 characters for concise
+  /// replies.
+  content String
   
   /// Timestamp when the comment was created.
   created_at DateTime
@@ -35,22 +46,25 @@ model reddit_community_comments {
   /// Timestamp when the comment was last updated.
   updated_at DateTime
   
-  /// Timestamp when the comment was soft deleted. Null if comment is active.
+  /// Soft delete timestamp to mark comments as deleted without permanently
+  /// removing them.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  registeredUser reddit_community_registered_users @relation(fields: [reddit_community_registered_user_id], references: [id], onDelete: Cascade)
   parent reddit_community_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
-  user reddit_community_user @relation(fields: [reddit_community_user_id], references: [id], onDelete: Cascade)
   
   recursive reddit_community_comments[] @relation("recursive")
   reddit_community_comment_votes reddit_community_comment_votes[]
+  reddit_community_reports reddit_community_reports[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_registered_user_id], map: "reddit_community_comments_reddit_community_registered__f0bb8272")
+  @@index([parent_id])
   
   // spellchecker: ignore-next-line
   @@index([reddit_community_post_id, created_at], map: "reddit_community_comments_reddit_community_post_id_cre_7ea47a9e")
-  @@index([parent_id, created_at])
-  // spellchecker: ignore-next-line
-  @@index([reddit_community_user_id, created_at], map: "reddit_community_comments_reddit_community_user_id_cre_dea99341")
 }

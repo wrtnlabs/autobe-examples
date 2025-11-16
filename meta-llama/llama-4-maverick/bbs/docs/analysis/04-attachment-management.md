@@ -1,47 +1,69 @@
-## Attachment Management Requirements
+# Functional Requirements for Discussion Board
 
-### Overview
-This document outlines the requirements for managing attachments in the discussion board system. The system must support both image and file attachments while ensuring security, performance, and user-friendliness.
+## 1. Article Creation and Management
 
-### Attachment Types
-The system SHALL support two primary types of attachments:
-1. Image attachments (jpg, png, gif)
-2. File attachments (pdf, docx, txt)
+### 1.1. Create Article
+THE system SHALL allow registered users to create new articles.
+WHEN a registered user submits a new article, THE system SHALL validate the input (title, content, attachments).
+IF the input is valid, THEN THE system SHALL create the article and notify the user of success.
+IF the input is invalid, THEN THE system SHALL display an error message.
 
-### Attachment Size Limits
-THE system SHALL enforce the following maximum size limits:
-- Image attachments: 5MB
-- File attachments: 10MB
+### 1.2. Edit Article
+THE system SHALL allow registered users to edit their own articles.
+WHEN a registered user attempts to edit an article, THE system SHALL check if the user is the article's author.
+IF the user is the author, THEN THE system SHALL allow editing.
+IF not, THEN THE system SHALL deny access and display an error message.
 
-These limits SHALL be configurable by administrators.
+### 1.3. Delete Article
+THE system SHALL allow registered users to delete their own articles.
+WHEN a registered user attempts to delete an article, THE system SHALL check if the user is the article's author or has moderator permissions.
+IF the user has permission, THEN THE system SHALL delete the article and notify the user.
+IF not, THEN THE system SHALL deny access and display an error message.
 
-### Attachment Display
-1. Image attachments SHALL be displayed inline within articles where appropriate.
-2. File attachments SHALL be presented as downloadable links within articles.
-3. Attachments SHALL be stored securely with proper access controls to prevent unauthorized access.
+## 2. Comment System
 
-### Security Requirements
-To ensure the integrity and security of the system, THE following measures SHALL be implemented:
-1. Validate file types upon upload to prevent malicious file uploads.
-2. Scan attachments for malware using appropriate security measures.
-3. Store attachments outside the webroot to prevent direct access.
-4. Implement secure token-based access for attachment retrieval.
+### 2.1. Create Comment
+THE system SHALL allow registered users to comment on articles.
+WHEN a registered user submits a comment, THE system SHALL validate the input.
+IF the input is valid, THEN THE system SHALL create the comment and display it with the article.
+IF the input is invalid, THEN THE system SHALL display an error message.
 
-### User Requirements
-1. WHEN users are uploading attachments, THE system SHALL provide clear progress indication to maintain user awareness.
-2. WHILE an upload is in progress, THE system SHALL validate file type and size against defined limits.
-3. IF an upload fails due to validation errors or other issues, THEN THE system SHALL display a clear and informative error message.
-4. WHERE users have appropriate permissions, THE system SHALL allow for the deletion of attachments they have uploaded.
+### 2.2. Display Comments
+THE system SHALL display comments for an article in chronological order by default.
 
-### Moderation Requirements
-1. Moderators SHALL have comprehensive control over all attachments, including management and oversight capabilities.
-2. THE system SHALL maintain detailed logs of all attachment uploads and deletions for audit purposes.
-3. Moderators SHALL be able to view the history of attachments, including metadata such as upload time and user information.
+## 3. Attachment Management
 
-### Performance Requirements
-1. Attachment upload processes SHALL be designed to avoid blocking article submission, ensuring a smooth user experience.
-2. THE system SHALL be capable of handling concurrent uploads gracefully without significant performance degradation.
-3. The retrieval of attachments SHALL be optimized to prevent significant impact on page load times, maintaining a responsive user interface.
+### 3.1. Upload Attachments
+THE system SHALL allow registered users to upload attachments when creating or editing articles.
+WHEN a user uploads an attachment, THE system SHALL validate the file type and size.
+IF the file is valid, THEN THE system SHALL store the attachment and associate it with the article.
+IF the file is invalid, THEN THE system SHALL display an error message.
 
-### Conclusion
-The attachment management system SHALL balance functionality, security, and performance to provide a robust and user-friendly experience for all actors within the discussion board ecosystem.
+### 3.2. Display Attachments
+THE system SHALL display attachments for an article.
+
+## 4. Moderation
+
+### 4.1. Content Moderation
+THE system SHALL allow moderators to review and manage all content (articles and comments).
+WHEN a moderator reviews content, THE system SHALL provide options to approve, edit, or delete the content.
+
+### 4.2. User Management
+THE system SHALL allow moderators to manage user accounts.
+
+## EARS Format Requirements
+All requirements in this document are written in EARS format, using the keywords WHEN, THE, SHALL, IF, THEN, WHERE, and WHILE in English, while the rest of the content is in the user's locale language.
+
+## Mermaid Diagram for Article Creation Flow
+```mermaid
+graph LR
+    A["Start"] --> B{"Is User Logged In?"}
+    B -->|"Yes"| C["Validate Article Input"]
+    B -->|"No"| D["Show Error: Login Required"]
+    C --> E{"Is Input Valid?"}
+    E -->|"Yes"| F["Create Article"]
+    E -->|"No"| G["Show Error: Invalid Input"]
+    F --> H["Notify User: Article Created"]
+```
+
+This document provides detailed functional requirements for the discussion board, covering article creation and management, comment system, attachment management, and moderation features. The EARS format is used throughout to ensure clarity and testability of the requirements.

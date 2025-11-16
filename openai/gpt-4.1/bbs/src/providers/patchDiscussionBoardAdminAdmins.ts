@@ -16,113 +16,70 @@ export async function patchDiscussionBoardAdminAdmins(props: {
   admin: AdminPayload;
   body: IDiscussionBoardAdmin.IRequest;
 }): Promise<IPageIDiscussionBoardAdmin.ISummary> {
-  const body = props.body;
-  const page = body.page ?? 1;
-  let limit = body.limit ?? 20;
-  if (limit > 100) limit = 100;
-  const skip = (page - 1) * limit;
+  const {
+    email,
+    is_email_verified,
+    is_active,
+    is_blocked,
+    created_from,
+    created_to,
+    page = 1,
+    page_size = 100,
+    order_by = "created_at",
+    order_direction = "desc",
+  } = props.body;
 
-  const where = {
-    ...(body.email !== undefined && { email: body.email }),
-    ...(body.is_locked !== undefined && { is_locked: body.is_locked }),
-    ...(body.deleted_at !== undefined
-      ? body.deleted_at === null
-        ? { deleted_at: null }
-        : { deleted_at: body.deleted_at }
-      : {}),
-    ...(body.display_name !== undefined &&
-      body.display_name !== null &&
-      body.display_name !== "" && {
-        display_name: { contains: body.display_name },
-      }),
-    ...(body.search !== undefined &&
-      body.search !== null &&
-      body.search !== "" && {
-        OR: [
-          { email: { contains: body.search } },
-          { display_name: { contains: body.search } },
-        ],
-      }),
-    ...(body.created_at_start !== undefined || body.created_at_end !== undefined
-      ? {
-          created_at: {
-            ...(body.created_at_start !== undefined &&
-              body.created_at_start !== null && { gte: body.created_at_start }),
-            ...(body.created_at_end !== undefined &&
-              body.created_at_end !== null && { lte: body.created_at_end }),
-          },
-        }
-      : {}),
-    ...(body.updated_at_start !== undefined || body.updated_at_end !== undefined
-      ? {
-          updated_at: {
-            ...(body.updated_at_start !== undefined &&
-              body.updated_at_start !== null && { gte: body.updated_at_start }),
-            ...(body.updated_at_end !== undefined &&
-              body.updated_at_end !== null && { lte: body.updated_at_end }),
-          },
-        }
-      : {}),
+  // Build filter conditions
+  const where: Record<string, any> = {
+    ...(typeof email === "string" && { email }),
+    ...(typeof is_email_verified === "boolean" && { is_email_verified }),
+    ...(typeof is_active === "boolean" && { is_active }),
+    ...(typeof is_blocked === "boolean" && { is_blocked }),
+    ...((created_from || created_to) && {
+      created_at: {
+        ...(created_from && { gte: created_from }),
+        ...(created_to && { lte: created_to }),
+      },
+    }),
+    deleted_at: null, // Soft-deletion: only active (non-deleted) admins
   };
 
-  const allowedSortFields = [
-    "created_at",
-    "email",
-    "display_name",
-    "is_locked",
-    "deleted_at",
-  ];
-  const sortBy =
-    body.sort_by !== undefined && allowedSortFields.includes(body.sort_by)
-      ? body.sort_by
-      : "created_at";
-  const sortOrder =
-    body.sort_order === "asc" || body.sort_order === "desc"
-      ? body.sort_order
-      : "desc";
+  // Sorting
+  const orderBy = [{ [order_by]: order_direction }];
 
+  const skip = (page - 1) * page_size;
+  const take = page_size;
+
+  // Fetch results & total count concurrently
   const [admins, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_admins.findMany({
       where,
-      orderBy: { [sortBy]: sortOrder },
       skip,
-      take: limit,
+      take,
+      orderBy,
       select: {
         id: true,
         email: true,
-        display_name: true,
-        avatar_url: true,
-        is_locked: true,
-        deleted_at: true,
-        created_at: true,
-        updated_at: true,
       },
     }),
     MyGlobal.prisma.discussion_board_admins.count({ where }),
   ]);
 
+  // Summary info for response: display_name is the admin's email
+  const data = admins.map((admin) => ({
+    id: admin.id,
+    display_name: admin.email,
+  }));
+
+  // Pagination metadata
+  const pages = total === 0 ? 0 : Math.ceil(total / page_size);
   return {
     pagination: {
-      current: Number(page),
-      limit: Number(limit),
+      current: page,
+      limit: page_size,
       records: total,
-      pages: Math.ceil(total / Number(limit)),
+      pages,
     },
-    data: admins.map((admin) => ({
-      id: admin.id,
-      email: admin.email,
-      display_name: admin.display_name,
-      avatar_url:
-        admin.avatar_url !== null && admin.avatar_url !== undefined
-          ? admin.avatar_url
-          : undefined,
-      is_locked: admin.is_locked,
-      deleted_at:
-        admin.deleted_at !== null && admin.deleted_at !== undefined
-          ? toISOStringSafe(admin.deleted_at)
-          : null,
-      created_at: toISOStringSafe(admin.created_at),
-      updated_at: toISOStringSafe(admin.updated_at),
-    })),
+    data,
   };
 }

@@ -1,0 +1,561 @@
+/// User reports of inappropriate content across the platform with enhanced
+/// relationship tracking.
+///
+/// Stores detailed reports submitted by users when they encounter content
+/// that violates community guidelines or platform rules. Each report
+/// includes specific violation categories, reporter information, and
+/// contextual details to assist moderators in making informed decisions.
+///
+/// Reports can target various content types including posts, comments,
+/// images, and user profiles. The system tracks report status through
+/// moderation workflows and provides transparency to reporters about
+/// resolution outcomes.
+///
+/// Enhanced with proper content entity relationships and comprehensive
+/// status tracking to support complex moderation workflows. Soft deletion is
+/// supported to maintain audit trails while allowing content moderation
+/// history preservation.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting member's identity. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Session context for the reporting action. {@link
+  /// community_platform_member_sessions.id}.
+  community_platform_member_session_id String
+  
+  /// Reported post content target. {@link community_platform_posts.id}.
+  community_platform_post_id String?
+  
+  /// Reported comment content target. {@link community_platform_comments.id}.
+  community_platform_comment_id String?
+  
+  /// Category of content violation being reported. Valid values: spam,
+  /// harassment, illegal_content, misinformation, rule_violation, copyright,
+  /// hate_speech, safety_concern.
+  report_type String
+  
+  /// Type of content being reported. Valid values: post, comment,
+  /// user_profile, image, link, community.
+  target_type String
+  
+  /// Detailed explanation from the reporter about why the content violates
+  /// guidelines.
+  description String?
+  
+  /// Urgency level for moderation attention. Valid values: critical, high,
+  /// medium, low.
+  priority String
+  
+  /// Current status of the report. Valid values: submitted, under_review,
+  /// resolved, dismissed, escalated.
+  status String
+  
+  /// Explanation provided to reporter about the resolution outcome.
+  resolution_reason String?
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft deleted for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  reporterSession community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  reportedPost community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  reportedComment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_content_reports_community_platform__a81c022d")
+  
+  // spellchecker: ignore-next-line
+  @@index([status, priority, created_at], map: "community_platform_content_reports_status_priority_cre_46d4666e")
+  @@index([target_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_content_reports_community_platform__a5945759")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id], map: "community_platform_content_reports_community_platform__f1b734c6")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_content_reports_community_platform__ab612d7c")
+}
+
+/// Records of moderation decisions and actions taken on reported content
+/// with proper actor subtype normalization.
+///
+/// Captures the complete lifecycle of moderation activities including
+/// content removal, user warnings, temporary bans, and other enforcement
+/// actions. Each action is linked to the original report and includes
+/// detailed reasoning for transparency and audit purposes.
+///
+/// Uses proper polymorphic ownership pattern with actor_type field and
+/// corresponding subtype tables for different actor types (members,
+/// moderators, admins). The system maintains comprehensive records for
+/// accountability and community trust building.
+///
+/// All actions are timestamped and include the specific rule violations that
+/// prompted the moderation decision. Enhanced with escalation tracking and
+/// multi-level review capabilities.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original content report that triggered this moderation action. {@link
+  /// community_platform_content_reports.id}.
+  community_platform_content_report_id String
+  
+  /// Type of moderation action taken. Valid values: remove_content,
+  /// issue_warning, temporary_ban, permanent_ban, approve_content,
+  /// escalate_review.
+  action_type String
+  
+  /// Type of actor who performed the moderation action. Valid values: member,
+  /// moderator, admin. Used for quick filtering and subtype relationship
+  /// routing.
+  actor_type String
+  
+  /// Specific community rule or platform guideline that was violated.
+  rule_violation String
+  
+  /// Detailed explanation of the moderation decision and violation context.
+  reasoning String
+  
+  /// For temporary actions, the number of days the action remains in effect.
+  duration_days Int?
+  
+  /// Current status of the moderation action. Valid values: active, appealed,
+  /// overturned, completed, under_review.
+  status String
+  
+  /// Level of escalation for complex cases requiring multiple reviews.
+  escalation_level Int
+  
+  /// Timestamp when the moderation action was taken.
+  created_at DateTime
+  
+  /// Timestamp when the moderation action was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderation action was soft deleted for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  contentReport community_platform_content_reports @relation(fields: [community_platform_content_report_id], references: [id], onDelete: Cascade)
+  
+  community_platform_moderation_action_of_members community_platform_moderation_action_of_members?
+  community_platform_moderation_action_of_moderators community_platform_moderation_action_of_moderators?
+  community_platform_moderation_action_of_admins community_platform_moderation_action_of_admins?
+  community_platform_moderation_appeals community_platform_moderation_appeals[]
+  
+  // spellchecker: ignore-next-line
+  @@index([action_type, status, created_at], map: "community_platform_moderation_actions_action_type_stat_65d3eb24")
+  @@index([actor_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_content_report_id], map: "community_platform_moderation_actions_community_platfo_e1001925")
+  // spellchecker: ignore-next-line
+  @@index([escalation_level, created_at], map: "community_platform_moderation_actions_escalation_level_51198ceb")
+}
+
+/// Subtype entity for moderation actions performed by community members.
+///
+/// Stores member-specific context and session information for moderation
+/// actions taken by regular community members. This subtype pattern ensures
+/// proper normalization of actor-specific data while maintaining referential
+/// integrity.
+///
+/// Each record links to the main moderation_action entity and includes the
+/// member's identity and session context for audit purposes. This separation
+/// allows for clean querying of member-performed actions and maintains data
+/// consistency.
+///
+/// Used in conjunction with other actor subtype tables to support the
+/// polymorphic ownership pattern required by the moderation system.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_action_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main moderation action entity reference. {@link
+  /// community_platform_moderation_actions.id}.
+  community_platform_moderation_action_id String
+  
+  /// Member who performed the moderation action. {@link
+  /// community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Session context for the member's action. {@link
+  /// community_platform_member_sessions.id}.
+  community_platform_member_session_id String
+  
+  /// Timestamp when the member subtype record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction community_platform_moderation_actions @relation(fields: [community_platform_moderation_action_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  memberSession community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_moderation_action_id], map: "community_platform_moderation_action_of_members_commun_7de6f7d8")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id], map: "community_platform_moderation_action_of_members_commun_65baf237")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_moderation_action_of_members_commun_83bd5f90")
+}
+
+/// Subtype entity for moderation actions performed by community moderators.
+///
+/// Stores moderator-specific context and authorization information for
+/// moderation actions taken by appointed community moderators. This subtype
+/// pattern ensures proper normalization of actor-specific data while
+/// maintaining referential integrity.
+///
+/// Each record links to the main moderation_action entity and includes the
+/// moderator's identity and session context for audit purposes. This
+/// separation allows for clean querying of moderator-performed actions and
+/// maintains data consistency.
+///
+/// Used in conjunction with other actor subtype tables to support the
+/// polymorphic ownership pattern required by the moderation system.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_action_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main moderation action entity reference. {@link
+  /// community_platform_moderation_actions.id}.
+  community_platform_moderation_action_id String
+  
+  /// Moderator who performed the moderation action. {@link
+  /// community_platform_moderators.id}.
+  community_platform_moderator_id String
+  
+  /// Session context for the moderator's action. {@link
+  /// community_platform_moderator_sessions.id}.
+  community_platform_moderator_session_id String
+  
+  /// Timestamp when the moderator subtype record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction community_platform_moderation_actions @relation(fields: [community_platform_moderation_action_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  moderatorSession community_platform_moderator_sessions @relation(fields: [community_platform_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_moderation_action_id], map: "community_platform_moderation_action_of_moderators_com_2682059e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_session_id], map: "community_platform_moderation_action_of_moderators_com_82ffea34")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, created_at], map: "community_platform_moderation_action_of_moderators_com_19922e95")
+}
+
+/// Subtype entity for moderation actions performed by platform administrators.
+///
+/// Stores admin-specific context and authorization information for
+/// moderation actions taken by platform administrators. This subtype pattern
+/// ensures proper normalization of actor-specific data while maintaining
+/// referential integrity.
+///
+/// Each record links to the main moderation_action entity and includes the
+/// admin's identity and session context for audit purposes. This separation
+/// allows for clean querying of admin-performed actions and maintains data
+/// consistency.
+///
+/// Used in conjunction with other actor subtype tables to support the
+/// polymorphic ownership pattern required by the moderation system.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_action_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main moderation action entity reference. {@link
+  /// community_platform_moderation_actions.id}.
+  community_platform_moderation_action_id String
+  
+  /// Admin who performed the moderation action. {@link
+  /// community_platform_admins.id}.
+  community_platform_admin_id String
+  
+  /// Session context for the admin's action. {@link
+  /// community_platform_admin_sessions.id}.
+  community_platform_admin_session_id String
+  
+  /// Timestamp when the admin subtype record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction community_platform_moderation_actions @relation(fields: [community_platform_moderation_action_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  adminSession community_platform_admin_sessions @relation(fields: [community_platform_admin_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_moderation_action_id], map: "community_platform_moderation_action_of_admins_communi_f9ae0f9e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_session_id], map: "community_platform_moderation_action_of_admins_communi_a7161b0c")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_moderation_action_of_admins_communi_6e26c84d")
+}
+
+/// User appeals against moderation decisions and actions with enhanced
+/// tracking capabilities.
+///
+/// Provides a formal process for users to contest moderation decisions they
+/// believe were made in error or unfairly. Each appeal includes the original
+/// moderation action reference, user's justification for the appeal, and
+/// supporting evidence.
+///
+/// The system tracks appeal status through complex review workflows
+/// including multi-level escalation and ensures transparent communication
+/// between appellants and moderators. Appeals can result in action
+/// overturning, modification, or confirmation based on review outcomes.
+///
+/// Enhanced with escalation tracking, review level indicators, and
+/// comprehensive status history for complete appeal lifecycle management.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderation action being appealed. {@link
+  /// community_platform_moderation_actions.id}.
+  community_platform_moderation_action_id String
+  
+  /// Member submitting the appeal. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Detailed explanation from the appellant justifying why the moderation
+  /// action should be reviewed.
+  appeal_reason String
+  
+  /// Additional context or evidence provided by the appellant to support their
+  /// case.
+  supporting_evidence String?
+  
+  /// Current status of the appeal. Valid values: submitted, under_review,
+  /// granted, denied, partially_granted, escalated, awaiting_response.
+  status String
+  
+  /// Current level of review for multi-stage appeal processes.
+  review_level Int
+  
+  /// Explanation provided by moderators for the appeal resolution decision.
+  resolution_reason String?
+  
+  /// Timestamp when the appeal was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the appeal was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the appeal was soft deleted for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction community_platform_moderation_actions @relation(fields: [community_platform_moderation_action_id], references: [id], onDelete: Cascade)
+  appellant community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([status, review_level, created_at], map: "community_platform_moderation_appeals_status_review_le_5e861f86")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_moderation_appeals_community_platfo_eaf08a19")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderation_action_id], map: "community_platform_moderation_appeals_community_platfo_b9b04743")
+}
+
+/// Comprehensive audit trail for all moderation system activities.
+///
+/// Captures detailed logs of every action within the moderation workflow
+/// including report creation, moderation decisions, appeal processing, and
+/// system configuration changes. Each log entry includes actor information,
+/// action details, timestamp, and outcome.
+///
+/// The audit system supports transparency, accountability, and compliance
+/// requirements by maintaining immutable records of moderation activities.
+/// Logs are used for performance monitoring, dispute resolution, and system
+/// improvement analysis.
+///
+/// All audit records are retained according to data retention policies and
+/// support forensic analysis when needed.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of moderation system action being logged. Valid values:
+  /// report_submitted, action_taken, appeal_processed, filter_updated,
+  /// setting_changed.
+  action_type String
+  
+  /// Type of actor performing the action. Valid values: system, member,
+  /// moderator, admin.
+  actor_type String
+  
+  /// Identifier of the specific actor performing the action.
+  actor_id String?
+  
+  /// Type of entity being acted upon. Valid values: report, action, appeal,
+  /// filter, setting.
+  target_type String?
+  
+  /// Identifier of the specific target entity.
+  target_id String?
+  
+  /// Detailed description of the action including parameters and context.
+  details String
+  
+  /// IP address from which the action was performed for security tracking.
+  ip_address String
+  
+  /// Browser or client information for the action source.
+  user_agent String
+  
+  /// Result of the action. Valid values: success, failure, partial_success.
+  outcome String
+  
+  /// Timestamp when the audit event occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "community_platform_moderation_audit_logs_action_type_c_b678487a")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, created_at], map: "community_platform_moderation_audit_logs_actor_type_cr_95e03605")
+  // spellchecker: ignore-next-line
+  @@index([target_type, target_id], map: "community_platform_moderation_audit_logs_target_type_t_1b5f88ea")
+}
+
+/// Configuration and management of automated content filtering systems.
+///
+/// Stores filter rules, patterns, and machine learning models used for
+/// automated content moderation. Each filter includes specific criteria,
+/// confidence thresholds, and action parameters for automated
+/// decision-making.
+///
+/// The system supports various filter types including keyword matching,
+/// pattern detection, image analysis, and behavioral pattern recognition.
+/// Filters can be community-specific or platform-wide depending on
+/// configuration.
+///
+/// Filter performance metrics and false positive/negative rates are tracked
+/// for continuous improvement and model retraining. All automated actions
+/// are logged for human review and system transparency.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_automated_filters {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community-specific filter configuration. {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String?
+  
+  /// Type of automated filter being configured. Valid values: keyword,
+  /// pattern, image, behavioral, ml_model.
+  filter_type String
+  
+  /// Descriptive name for the filter rule or pattern.
+  name String
+  
+  /// JSON configuration containing filter parameters, patterns, and thresholds.
+  configuration String
+  
+  /// Minimum confidence level required for automated action.
+  confidence_threshold Float
+  
+  /// Action to take when filter criteria are met. Valid values: flag, hold,
+  /// remove, notify.
+  action_type String
+  
+  /// Whether the filter is currently active and processing content.
+  is_active Boolean
+  
+  /// JSON object tracking filter accuracy, false positives, and improvement
+  /// data.
+  performance_metrics String?
+  
+  /// Timestamp when the filter was created.
+  created_at DateTime
+  
+  /// Timestamp when the filter was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the filter was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([name, community_platform_community_id], map: "community_platform_automated_filters_name_community_pl_df0fd3fd")
+  @@index([filter_type, is_active])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_automated_filters_community_platfor_c6930b26")
+}

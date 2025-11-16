@@ -1,136 +1,310 @@
-# E-Commerce Shopping Mall Platform - Requirements Analysis Documentation
+# E-commerce Shopping Mall Platform - Requirements Documentation
 
-## Document Overview
+## Welcome to the Requirements Suite
 
-This comprehensive requirements analysis documentation defines the complete business requirements, user needs, and functional specifications for a multi-vendor e-commerce shopping mall platform. The platform enables customers to browse and purchase products from multiple sellers, allows sellers to manage their product catalogs and fulfill orders, and provides administrators with tools to oversee the entire marketplace ecosystem.
+This documentation suite provides comprehensive requirements for building a complete e-commerce shopping mall platform. The platform enables buyers to discover and purchase products, sellers to manage their inventory and fulfill orders, and administrators to oversee the entire marketplace ecosystem.
 
-## Purpose and Scope
+## How to Use This Documentation
 
-This documentation suite transforms business requirements into clear, actionable specifications that backend developers can use to build a production-ready e-commerce platform. The documentation focuses exclusively on **business requirements and user needs** expressed in natural language, deliberately avoiding technical implementation details such as database schemas, API specifications, or system architecture decisions.
+This requirements suite is organized into 10 specialized documents, each focusing on a specific aspect of the platform. The documents are written in business requirement language to describe **WHAT** the system should do, not **HOW** to implement it technically.
 
-**What This Documentation Covers:**
-- Business model and strategic objectives
-- User actor definitions and permission requirements
-- Complete user journeys and workflows for all actors
-- Functional requirements for all platform features
-- Business rules and validation requirements
-- Performance expectations from user perspective
-- Security and compliance requirements
-- Administrative operations and management needs
+### For Backend Developers
+Start with the Service Overview to understand the business context, then proceed to User Actors & Authentication to grasp the security foundation. From there, explore feature-specific documents based on your development priorities.
 
-**What This Documentation Does NOT Cover:**
-- Technical architecture or system design
-- Database schemas or entity relationship diagrams
-- API endpoint specifications or request/response formats
-- Frontend UI/UX designs or screen layouts
-- Technology stack selections or framework choices
-- Infrastructure or deployment specifications
+### For Product Managers
+Begin with the Service Overview for business context, then review the user journey documents (Buyer and Seller) to understand the complete user experience. Reference feature-specific documents as needed for detailed requirements.
 
-## User Actors
+### For Business Stakeholders
+The Service Overview provides the business model and market opportunity. User journey documents illustrate how different actors interact with the platform to achieve business goals.
 
-The platform supports three distinct user actor types:
+### For Complete Understanding
+Follow the document numbering sequence (01 through 10) for a comprehensive, logically flowing understanding of the entire platform.
 
-1. **Customer** - Registered buyers who browse products, manage shopping carts and wishlists, place orders, track shipments, and write product reviews
-2. **Seller** - Vendor accounts who manage product listings, inventory, and order fulfillment within their storefronts
-3. **Admin** - Platform administrators with elevated permissions to manage the entire marketplace, including moderation, dispute resolution, and system configuration
+## User Actors Overview
 
-## How to Navigate This Documentation
+This platform serves three distinct user actor types:
 
-The documentation is organized into 15 focused documents, each covering a specific aspect of the e-commerce platform. Read the documents in sequence for complete understanding, or jump to specific topics based on your immediate needs.
+| Actor | Role | Key Capabilities |
+|-------|------|------------------|
+| **Buyer** | Authenticated customer | Browse products, manage shopping cart and wishlist, place orders, track shipments, write reviews, manage addresses, view order history, request cancellations and refunds |
+| **Seller** | Authenticated merchant | Create and manage product listings, handle product variants (SKUs), manage inventory, process orders, update shipping status, respond to reviews, view sales analytics |
+| **Admin** | Platform administrator | Approve seller registrations, moderate product listings, manage categories, handle disputes and refunds, view platform analytics, manage user accounts, oversee marketplace operations |
 
-**Recommended Reading Order:**
-1. Start with **Service Overview** to understand the business context
-2. Read **User Actors & Authentication** to understand who uses the system
-3. Review user journey documents for each actor type
-4. Deep dive into specific feature requirements as needed
-5. Review security, performance, and admin operations for comprehensive understanding
+For detailed authentication flows and permission specifications, see [User Actors & Authentication Document](./02-user-actors-authentication.md).
 
-## Complete Documentation Structure
+## Complete Documentation List
 
-### Foundation Documents
+### 01. Service Overview
+**File:** [01-service-overview.md](./01-service-overview.md)
 
-#### [Service Overview & Business Model](./01-service-overview.md)
-Establishes the foundational understanding of the platform's business model, market positioning, value proposition, revenue strategy, and strategic objectives. This document answers why the platform exists and what market gap it fills.
+**Purpose:** Establishes the foundational business context for the e-commerce platform including the business vision, market opportunity, value proposition, and overall service goals.
 
-#### [User Actors & Authentication](./02-user-actors-authentication.md)
-Defines all user actors (customer, seller, admin) with complete authentication requirements, permission matrices, JWT token management, and session handling. This document specifies who can access the system and what permissions each actor has.
+**Key Topics:**
+- Executive summary and business model
+- Market opportunity and competitive landscape
+- Service vision and objectives
+- Core value propositions for buyers, sellers, and the platform
+- Target market segments
+- Success metrics and KPIs
+- Competitive advantages
 
-### User Journey Documents
-
-#### [Customer User Journeys](./03-customer-user-journeys.md)
-Details complete customer workflows from registration through product discovery, shopping cart management, checkout, order tracking, and post-purchase activities including reviews and refund requests.
-
-#### [Seller User Journeys](./04-seller-user-journeys.md)
-Describes seller-specific workflows for managing storefronts, creating products, managing inventory, processing orders, updating shipping status, and responding to customer reviews.
-
-### Core Feature Requirements
-
-#### [Product Management Requirements](./05-product-management-requirements.md)
-Specifies comprehensive product management including catalog structure, categories, product variants, SKU system, product information requirements, and validation rules for the multi-vendor marketplace.
-
-#### [Shopping & Checkout Process](./06-shopping-checkout-process.md)
-Defines shopping cart functionality, price calculation logic, discount application, tax and shipping calculations, and the complete checkout flow from cart to order placement.
-
-#### [Order Management & Fulfillment](./07-order-management-fulfillment.md)
-Details the complete order lifecycle from placement through fulfillment, including order status tracking, multi-seller order handling, cancellation rules, return processing, and refund management.
-
-#### [Payment Processing](./08-payment-processing.md)
-Specifies payment processing requirements, transaction security, payment method support, payment gateway integration needs, refund processing, and multi-seller payment distribution.
-
-#### [Inventory Management](./09-inventory-management.md)
-Defines SKU-level inventory tracking, stock update requirements, inventory reservation during checkout, low stock alerts, out-of-stock handling, and inventory synchronization across the platform.
-
-#### [Review & Rating System](./10-review-rating-system.md)
-Specifies product review and rating requirements including submission rules, moderation processes, aggregate rating calculations, seller response capabilities, and verified purchase indicators.
-
-#### [Search & Discovery Features](./11-search-discovery-features.md)
-Defines product search functionality, filtering and faceting requirements, search result ranking, category browsing, product sorting options, and discovery features like recommendations and trending products.
-
-### Platform Operations
-
-#### [Notification & Communication](./12-notification-communication.md)
-Specifies notification requirements for order updates, shipping status, payment confirmations, inventory alerts, review notifications, and user preference management for all communication channels.
-
-#### [Security & Compliance Requirements](./13-security-compliance.md)
-Defines data security requirements, privacy protection, payment security standards, authentication and authorization rules, encryption requirements, compliance obligations, and fraud prevention measures.
-
-#### [Performance & Scalability Requirements](./14-performance-scalability.md)
-Specifies performance expectations for page loads, search operations, checkout processes, concurrent user handling, peak load requirements, and scalability needs from the user experience perspective.
-
-#### [Admin Operations & Management](./15-admin-operations.md)
-Defines administrative capabilities for managing users, orders, products, reviews, seller accounts, disputes, platform analytics, system configuration, and content moderation.
-
-## Documentation Conventions
-
-**Requirements Format:**
-All functional requirements use EARS (Easy Approach to Requirements Syntax) format for clarity and precision:
-- **Ubiquitous**: "THE system SHALL function"
-- **Event-driven**: "WHEN trigger, THE system SHALL function"
-- **State-driven**: "WHILE state, THE system SHALL function"
-- **Unwanted behavior**: "IF condition, THEN THE system SHALL function"
-- **Optional features**: "WHERE feature, THE system SHALL function"
-
-**Visual Diagrams:**
-Complex workflows and processes are illustrated using Mermaid diagrams (flow charts, sequence diagrams) to enhance understanding and visual clarity.
-
-**Cross-References:**
-Documents reference related documentation using descriptive link text to help readers navigate between connected topics.
-
-## Getting Started
-
-**For Business Stakeholders:**
-Begin with the Service Overview document to understand the business model, then review user journey documents to see how customers and sellers interact with the platform.
-
-**For Development Teams:**
-Start with User Actors & Authentication, then proceed through the feature requirement documents in the order that aligns with your development priorities. Each document provides complete business requirements without prescribing technical implementation.
-
-**For Product Managers:**
-Review all user journey documents to understand complete user experiences, then dive into specific feature requirements to understand detailed business rules and validation requirements.
-
-## Document Maintenance
-
-This documentation represents the comprehensive requirements analysis as of the initial planning phase. As the platform evolves, these documents should be updated to reflect new features, changed business rules, or refined user workflows while maintaining the focus on business requirements rather than technical implementation.
+**Primary Audience:** Business stakeholders and development team
 
 ---
 
-> *Developer Note: This documentation defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+### 02. User Actors & Authentication
+**File:** [02-user-actors-authentication.md](./02-user-actors-authentication.md)
+
+**Purpose:** Defines all user actors (buyers, sellers, admins) with their authentication flows, permission hierarchies, and JWT-based access control to establish the security foundation.
+
+**Key Topics:**
+- User actor definitions and roles
+- Authentication system requirements using JWT
+- Buyer, Seller, and Admin permission specifications
+- Token management and session handling
+- Comprehensive permission matrix
+- Account security requirements
+
+**Primary Audience:** Backend developers
+
+---
+
+### 03. Buyer User Journey
+**File:** [03-buyer-user-journey.md](./03-buyer-user-journey.md)
+
+**Purpose:** Documents the complete buyer experience from account creation through product discovery, purchase, and post-purchase activities.
+
+**Key Topics:**
+- Buyer registration and onboarding
+- Product discovery and search journey
+- Shopping cart and wishlist management
+- Checkout and payment process
+- Order tracking experience
+- Product review submission
+- Order history and management
+- Cancellation and refund request process
+
+**Primary Audience:** Backend developers and product managers
+
+---
+
+### 04. Seller User Journey
+**File:** [04-seller-user-journey.md](./04-seller-user-journey.md)
+
+**Purpose:** Documents the complete seller experience including registration, product management, inventory control, order fulfillment, and sales analytics.
+
+**Key Topics:**
+- Seller registration and approval process
+- Seller dashboard and store management
+- Product listing creation with variants (SKUs)
+- Inventory management workflow
+- Order reception and processing
+- Shipping status updates
+- Review management and seller responses
+- Sales analytics and reporting
+
+**Primary Audience:** Backend developers and product managers
+
+---
+
+### 05. Admin Operations
+**File:** [05-admin-operations.md](./05-admin-operations.md)
+
+**Purpose:** Defines the administrative capabilities required to manage the entire platform including user management, product moderation, dispute resolution, and system-wide analytics.
+
+**Key Topics:**
+- Admin dashboard requirements
+- Seller approval and management
+- Product listing moderation
+- Category management system
+- Order dispute resolution
+- Refund request handling
+- User account management
+- Platform-wide analytics and reporting
+- System configuration management
+
+**Primary Audience:** Backend developers
+
+---
+
+### 06. Product Catalog Requirements
+**File:** [06-product-catalog-requirements.md](./06-product-catalog-requirements.md)
+
+**Purpose:** Specifies the complete product catalog system including categories, variants, search, filtering, and product data structures.
+
+**Key Topics:**
+- Product information requirements
+- Product variant (SKU) system with colors, sizes, and options
+- Hierarchical category structure
+- Product search and discovery
+- Filtering and sorting capabilities
+- Product image management
+- Price management per variant
+- Product availability and stock display
+- Product status workflow
+
+**Primary Audience:** Backend developers
+
+**Related Documents:** Buyer User Journey, Seller User Journey
+
+---
+
+### 07. Shopping Cart & Wishlist
+**File:** [07-shopping-cart-wishlist.md](./07-shopping-cart-wishlist.md)
+
+**Purpose:** Defines the shopping cart and wishlist functionality including persistence, item management, and checkout preparation.
+
+**Key Topics:**
+- Shopping cart requirements and behavior
+- Cart item management with variant support
+- Cart persistence across sessions
+- Cart quantity and availability validation
+- Wishlist functionality
+- Wishlist to cart conversion
+- Cart and wishlist synchronization
+- Guest cart handling
+
+**Primary Audience:** Backend developers
+
+**Related Documents:** Buyer User Journey, Product Catalog Requirements
+
+---
+
+### 08. Order Management Workflow
+**File:** [08-order-management-workflow.md](./08-order-management-workflow.md)
+
+**Purpose:** Specifies the complete order lifecycle from placement through fulfillment, including payment processing, status tracking, and post-order operations.
+
+**Key Topics:**
+- Order placement process
+- Payment processing requirements
+- Order status lifecycle and transitions
+- Order fulfillment workflow
+- Shipping status updates
+- Order tracking for buyers
+- Order cancellation rules and time limits
+- Refund request and approval process
+- Order history requirements
+
+**Primary Audience:** Backend developers
+
+**Related Documents:** Buyer User Journey, Seller User Journey, Admin Operations
+
+---
+
+### 09. Reviews & Ratings System
+**File:** [09-reviews-ratings-system.md](./09-reviews-ratings-system.md)
+
+**Purpose:** Defines the product review and rating system including submission rules, moderation, seller responses, and display logic.
+
+**Key Topics:**
+- Review submission requirements
+- Verified purchase validation
+- Rating system specifications
+- Review content guidelines
+- Review moderation rules
+- Seller response functionality
+- Review display and sorting logic
+- Review helpfulness voting
+- Aggregate rating calculations
+
+**Primary Audience:** Backend developers
+
+**Related Documents:** Buyer User Journey, Seller User Journey, Product Catalog Requirements
+
+---
+
+### 10. Inventory & Shipping Management
+**File:** [10-inventory-shipping-management.md](./10-inventory-shipping-management.md)
+
+**Purpose:** Specifies inventory tracking per SKU, stock management, address management, and shipping functionality for accurate fulfillment and delivery.
+
+**Key Topics:**
+- Inventory tracking at SKU level
+- Stock level management and updates
+- Low stock alerts and out-of-stock handling
+- Address management for buyers (multiple addresses)
+- Shipping method options
+- Shipping cost calculation
+- Shipping status tracking
+- Delivery confirmation
+
+**Primary Audience:** Backend developers
+
+**Related Documents:** Seller User Journey, Product Catalog Requirements, Order Management Workflow
+
+---
+
+## Recommended Reading Paths
+
+### For First-Time Readers (Complete Understanding)
+1. **Service Overview** - Understand the business context
+2. **User Actors & Authentication** - Grasp the security foundation
+3. **Buyer User Journey** - Learn the customer experience
+4. **Seller User Journey** - Understand merchant operations
+5. **Admin Operations** - See platform management capabilities
+6. Follow remaining documents (06-10) based on feature priority
+
+### For Backend Developers Starting Implementation
+1. **Service Overview** - Business context
+2. **User Actors & Authentication** - Security foundation (implement first)
+3. **Product Catalog Requirements** - Core data structures
+4. **Shopping Cart & Wishlist** - Buyer interaction layer
+5. **Order Management Workflow** - Transaction processing
+6. **Inventory & Shipping Management** - Fulfillment operations
+7. User journey and feature-specific documents as needed
+
+### For Product Managers Defining Features
+1. **Service Overview** - Business goals and KPIs
+2. **Buyer User Journey** - Customer experience flow
+3. **Seller User Journey** - Merchant experience flow
+4. **Reviews & Ratings System** - Trust and engagement
+5. Feature-specific documents based on roadmap priorities
+
+### For Quick Reference (Specific Topics)
+- **Authentication?** → Document 02
+- **Product variants/SKUs?** → Documents 06, 04
+- **Cart functionality?** → Document 07
+- **Order processing?** → Document 08
+- **Reviews?** → Document 09
+- **Inventory tracking?** → Documents 10, 04
+- **Shipping?** → Document 10
+- **Admin controls?** → Document 05
+
+## Document Conventions
+
+### EARS Format
+Requirements throughout these documents use EARS (Easy Approach to Requirements Syntax) format for clarity and testability:
+- **WHEN** [trigger], THE system SHALL [function]
+- **WHILE** [state], THE system SHALL [function]
+- **IF** [condition], THEN THE system SHALL [function]
+- **WHERE** [feature], THE system SHALL [function]
+- THE system SHALL [function] (ubiquitous requirements)
+
+### Mermaid Diagrams
+Complex workflows and processes are illustrated using Mermaid diagrams for visual clarity. All diagrams follow left-to-right or top-to-bottom orientation for better readability.
+
+### Cross-References
+Documents reference each other using descriptive link text. Follow these links to explore related requirements and understand dependencies.
+
+## Documentation Maintenance
+
+This documentation suite represents the business requirements for the e-commerce shopping mall platform as of the initial analysis phase. As the platform evolves and new business needs emerge, these documents should be updated to reflect current requirements.
+
+### Version Control
+Each document should be versioned independently as requirements evolve. Major requirement changes should trigger version increments.
+
+### Feedback and Clarifications
+For questions about business requirements or clarifications needed during implementation, refer back to the specific document sections and engage with product stakeholders.
+
+## Getting Started
+
+**New to this project?** Start with the [Service Overview](./01-service-overview.md) to understand why this platform exists and what business value it delivers.
+
+**Ready to build?** Begin with [User Actors & Authentication](./02-user-actors-authentication.md) to implement the security foundation that all other features depend upon.
+
+**Need specific feature details?** Use the document list above to jump directly to the requirements you need.
+
+---
+
+*This documentation defines business requirements only. All technical implementations (architecture, APIs, database design, technology choices, etc.) are at the discretion of the development team.*

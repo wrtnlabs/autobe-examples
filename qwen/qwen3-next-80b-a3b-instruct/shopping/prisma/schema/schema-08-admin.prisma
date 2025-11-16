@@ -1,0 +1,410 @@
+/// Records all actions performed by administrators on the system.
+///
+/// Captures a log of every administrative operation, such as user
+/// suspension, product deletion, order override, or refund approval. Each
+/// action is tied to an admin and an affected entity (e.g., a user, order,
+/// or product). This table serves as the primary audit trail for
+/// accountability.
+///
+/// Action types include: SUSPEND_USER, APPROVE_SELLER, DELETE_PRODUCT,
+/// OVERRIDE_INVENTORY, APPROVE_REFUND, etc.
+///
+/// This table is immutable — once recorded, entries never change. No soft
+/// delete capability is provided because administrative history is legally
+/// required to be preserved.
+///
+/// References the shopping_mall_admin table to identify the acting admin,
+/// and various other tables (shopping_mall_customer, shopping_mall_seller,
+/// shopping_mall_orders, shopping_mall_products) to identify the target of
+/// the action.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who performed this action. {@link
+  /// shopping_mall_admin.id}.
+  admin_id String
+  
+  /// Type of action performed. Examples: SUSPEND_USER, APPROVE_SELLER,
+  /// DELETE_PRODUCT, OVERRIDE_INVENTORY, APPROVE_REFUND, REJECT_REVIEW,
+  /// UPDATE_CONFIG. Must be one of the predefined administrative actions
+  /// supported by the system.
+  action_type String
+  
+  /// Type of entity affected by the action. Example values: 'customer',
+  /// 'seller', 'order', 'product', 'review', 'config'. Determines which table
+  /// contains the target_id reference.
+  target_entity_type String
+  
+  /// ID of the affected entity (e.g., shopping_mall_customer.id,
+  /// shopping_mall_orders.id, etc.). The meaning depends on
+  /// target_entity_type.
+  target_entity_id String
+  
+  /// Explanation provided by the admin for performing this action. Used for
+  /// audit trail and compliance review. May include comments like 'Fraud
+  /// detected' or 'Violation of TOS'.
+  reason String
+  
+  /// JSON string containing additional contextual data about the action (e.g.,
+  /// old/new values, specific parameters changed). Stored as text for
+  /// flexibility.
+  metadata String?
+  
+  /// Timestamp when the action was recorded. Always set by the system and
+  /// immutable.
+  created_at DateTime
+  
+  /// Timestamp indicating when this record was last modified. In this table,
+  /// this will always equal created_at since entries are immutable.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([admin_id, target_entity_type, target_entity_id, created_at], map: "shopping_mall_admin_actions_admin_id_target_entity_typ_b4180ba8")
+  @@index([admin_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([target_entity_type, target_entity_id], map: "shopping_mall_admin_actions_target_entity_type_target__31cb335f")
+  @@index([action_type, created_at])
+}
+
+/// Comprehensive system-wide audit trail capturing all critical system
+/// events involving administrators.
+///
+/// Records detailed system events related to administrative activities, such
+/// as config changes, login attempts, permission changes, or security
+/// alerts. This table is more granular than admin_actions and logs internal
+/// system responses to admin behavior (e.g., attempted privilege
+/// escalation).
+///
+/// Used for forensic analysis after security incidents or compliance
+/// investigations. Every entry ties back to an admin session or
+/// authentication context.
+///
+/// References shopping_mall_admin for identity and
+/// shopping_mall_admin_sessions for session context. Ensures complete
+/// accountability by logging both direct actions and system-detected
+/// anomalies.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator associated with this audit event. {@link
+  /// shopping_mall_admin.id}.
+  admin_id String
+  
+  /// The admin session during which the event occurred. {@link
+  /// shopping_mall_admin_sessions.id}.
+  session_id String
+  
+  /// Type of audit event. Examples: ADMIN_LOGIN, PERMISSION_CHANGE,
+  /// CONFIG_UPDATE, PRIVILEGE_GRANT, SESSION_TERMINATED, FAILED_LOGIN_ATTEMPT,
+  /// EXTERNAL_API_ERROR.
+  event_type String
+  
+  /// Criticality level of the audit event. Values: LOW, MEDIUM, HIGH,
+  /// CRITICAL. Determines alerting behavior and urgency for review.
+  severity String
+  
+  /// IP address from which the admin performed the action that triggered this
+  /// audit log.
+  ip_address String
+  
+  /// Browser or client user agent string used by the admin during this event.
+  user_agent String?
+  
+  /// Structured JSON string with detailed context for the audit event. May
+  /// include old/new values, error codes, or stack traces used for debugging.
+  details String?
+  
+  /// Time when the audit event was generated by the system. Always set
+  /// automatically.
+  created_at DateTime
+  
+  /// Timestamp indicating when this audit record was last modified. Always
+  /// equals created_at since entries are immutable.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  session shopping_mall_admin_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  @@unique([session_id, created_at])
+  @@index([admin_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([event_type, severity, created_at], map: "shopping_mall_admin_audit_logs_event_type_severity_cre_a8c19642")
+  @@index([ip_address, created_at])
+}
+
+/// Central configuration store for system-wide operational parameters.
+///
+/// Defines global settings that are shared across all users and components,
+/// such as tax rates, payment gateway preferences, email templates, pricing
+/// cap settings, and notification thresholds. Minimizes hardcoding and
+/// enables dynamic system behavior without deployments.
+///
+/// Each configuration is a key-value pair with an optionally scoped context
+/// (e.g., 'default', 'US', 'EUR'). Values are stored as JSON strings to
+/// handle complex structured data.
+///
+/// This table is managed exclusively by admins and is referenced by multiple
+/// microservices during runtime for configuration resolution.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who last modified this configuration entry. {@link
+  /// shopping_mall_admin.id}.
+  admin_id String
+  
+  /// Unique configuration key. Must be unique across the entire system.
+  /// Format: domain.field.example (e.g., 'payment.gateway',
+  /// 'email.template.order_confirmation', 'pricing.max_seller_price').
+  key String
+  
+  /// Configuration scope or environment. Examples: 'default', 'production',
+  /// 'staging', 'US', 'EU'. Used for environment-specific or region-specific
+  /// overrides. Defaults to 'default'.
+  environment String
+  
+  /// JSON-formatted string containing the configuration value. Supports
+  /// strings, numbers, booleans, arrays, and objects. Example: '{"enabled":
+  /// true, "fee_percent": 0.08}'.
+  value String
+  
+  /// Human-readable explanation of what this configuration controls. Used by
+  /// admin users to understand purpose. Example: 'Platform-wide transaction
+  /// fee percentage applied to all sales.'
+  description String?
+  
+  /// Timestamp when this configuration entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration entry was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([key, environment])
+  @@index([key])
+  @@index([environment])
+  @@index([admin_id, updated_at])
+}
+
+/// Global system-wide operational settings that define the platform's behavior.
+///
+/// Contains non-configurable, core platform-wide policies governed by legal,
+/// compliance, and security requirements. Unlike system_configurations
+/// (which are dynamic and reconfigurable), these values are typically
+/// hard-bound and require legal review to change.
+///
+/// Examples: GDPR retention periods, payment dispute window limits, refund
+/// eligibility duration, maximum file size upload, or admin session timeout
+/// levels.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_global_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who last modified this global setting. {@link
+  /// shopping_mall_admin.id}.
+  admin_id String
+  
+  /// Unique identifier for the setting, using dot-notation for hierarchy.
+  /// Examples: 'compliance.refund_period_days',
+  /// 'security.max_session_duration_minutes', 'upload.max_image_size_mb'.
+  setting_key String
+  
+  /// Value of the setting, stored as string for compatibility. For numeric
+  /// values: '14'. For boolean: 'true'. For thresholds: '500'.
+  value String
+  
+  /// Explanation of this setting, its legal or business rationale, and
+  /// consequences of change. Example: 'Maximum number of days a customer can
+  /// request a refund after delivery. Based on GDPR and local consumer laws.'
+  description String
+  
+  /// Whether this setting is currently active in the system. Used for toggling
+  /// policies on/off without deletion.
+  is_enabled Boolean
+  
+  /// Date and time when this global setting was first created.
+  created_at DateTime
+  
+  /// Date and time when this global setting was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([setting_key])
+  @@index([is_enabled])
+  @@index([admin_id, updated_at])
+}
+
+/// Management of notification triggers and rules for administrators.
+///
+/// Defines which administrative actions should trigger automated email or
+/// dashboard alerts (e.g., suspicious login, failed payment, high-risk
+/// refund request). Ensures that only critical events surface to the Admin
+/// Dashboard to prevent alert fatigue.
+///
+/// Each record specifies an event type from system_internal_observations, a
+/// target group (e.g., 'pending_admins', 'all_admins'), and whether the
+/// notification is enabled.
+///
+/// Allows admins to customize their alerting preferences for compliance,
+/// security, and operational monitoring.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who created or modified this notification rule. {@link
+  /// shopping_mall_admin.id}.
+  admin_id String
+  
+  /// Event type that triggers this notification. Examples:
+  /// 'ADMIN_LOGIN_FROM_NEW_DEVICE', 'HIGH_RISK_ORDER', 'SPAMMY_REVIEW',
+  /// 'TOP_SELLER_SUSPENDED'. Must correspond to system-generated event types
+  /// in audit logs.
+  event_type String
+  
+  /// How the notification is delivered. Values: 'email', 'dashboard_alert',
+  /// 'sms', or 'all'.
+  notification_channel String
+  
+  /// Group of admins who receive this notification. Examples: 'all_admins',
+  /// 'finance_team', 'security_team', 'support_lead'.
+  target_group String
+  
+  /// Whether this notification rule is active. Useful for temporarily
+  /// disabling non-critical alerts during system maintenance.
+  is_enabled Boolean
+  
+  /// Optional numerical threshold. For example: 'Trigger notification after 3
+  /// failed login attempts within 10 minutes'.
+  threshold Int?
+  
+  /// Description of what this notification is intended to help the admin
+  /// detect or respond to.
+  description String?
+  
+  /// Time when this notification rule was created.
+  created_at DateTime
+  
+  /// Time when this notification rule was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([event_type, target_group, notification_channel], map: "shopping_mall_admin_notifications_event_type_target_gr_953fbc9b")
+  @@index([event_type, is_enabled])
+  @@index([target_group, is_enabled])
+  @@index([admin_id, updated_at])
+}
+
+/// Personalized configuration for each admin's dashboard interface and
+/// display preferences.
+///
+/// Stores user-specific UI preferences such as which widgets to show, their
+/// order, default date ranges for analytics, chart types, and notification
+/// visibility level. Respects individual workflow styles while maintaining
+/// system-wide data integrity.
+///
+/// Each admin has one and only one dashboard configuration record. Changes
+/// are applied immediately to the user's active session upon next page load.
+///
+/// Only editable by the admin themselves or by senior admins for
+/// troubleshooting.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_dashboard_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator this configuration belongs to. {@link
+  /// shopping_mall_admin.id}.
+  admin_id String
+  
+  /// JSON array defining which dashboard widgets are visible and their order.
+  /// Example: ["order_volume", "admin_actions_count",
+  /// "recent_seller_approvals"]. Every admin must have at least one widget.
+  widgets String
+  
+  /// Default time range for analytics charts. Values: '7d', '30d', '90d',
+  /// 'ytd'.
+  default_timeframe String
+  
+  /// User-selected UI theme. Values: 'light', 'dark', 'auto'.
+  theme String
+  
+  /// How noisy notifications are for this admin. Values: 'high', 'medium',
+  /// 'low'. High = show all alerts. Low = show only CRITICAL events.
+  notification_level String
+  
+  /// Date and time when this configuration was first created.
+  created_at DateTime
+  
+  /// Date and time when this configuration was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@unique([admin_id])
+  
+  @@index([admin_id])
+  @@index([default_timeframe])
+  @@index([theme])
+  @@index([notification_level])
+}

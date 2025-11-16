@@ -1,169 +1,260 @@
-# Business Rules and Validation Requirements
+# Business Rules Specification for Todo Application
 
-## Introduction
-This document defines the complete set of business rules, validation requirements, and operational constraints that govern the Todo application. These rules ensure consistent behavior and data integrity throughout the system lifecycle.
+## Document Overview
 
-## Core Data Validation Rules
+This document defines the core business rules, validation logic, and data integrity constraints for the Todo application. These rules govern how the system should behave at the business logic level, ensuring consistent and predictable application behavior.
 
-### Todo Title Validation
-- **WHEN** creating a new todo, **THE** system **SHALL** validate that the title is not empty
-- **WHEN** updating a todo title, **THE** system **SHALL** validate that the title contains between 1 and 255 characters
-- **THE** todo title **SHALL** accept Unicode characters including spaces, punctuation, and special characters
-- **THE** system **SHALL** trim leading and trailing whitespace from todo titles
-- **IF** a todo title exceeds 255 characters, **THEN THE** system **SHALL** reject the creation with an appropriate error message
+## 1. Todo Validation Rules
 
-### Todo Description Validation (Optional)
-- **WHERE** a description is provided, **THE** system **SHALL** accept descriptions up to 2000 characters
-- **THE** todo description **SHALL** be optional and can be null
-- **WHEN** a description is provided, **THE** system **SHALL** validate it contains valid Unicode characters
+### 1.1 Todo Title Validation
 
-### Completion Status Rules
-- **WHEN** creating a new todo, **THE** system **SHALL** automatically set the completion status to "incomplete"
-- **WHEN** marking a todo as complete, **THE** system **SHALL** record the completion timestamp
-- **WHEN** marking a completed todo as incomplete, **THE** system **SHALL** clear the completion timestamp
+**WHEN creating a new todo item, THE system SHALL validate the title according to the following rules:**
+
+- **Minimum Length**: THE todo title SHALL contain at least 1 character
+- **Maximum Length**: THE todo title SHALL not exceed 255 characters
+- **Content Restrictions**: THE todo title SHALL not contain only whitespace characters
+- **Uniqueness Constraint**: WHERE a user creates multiple todos, THE system SHALL allow duplicate titles within the same user's todo list
+
+**WHEN updating an existing todo item, THE system SHALL apply the same validation rules as creation.**
+
+### 1.2 Todo Description Validation
+
+**WHERE a todo item includes a description, THE system SHALL validate the description according to the following rules:**
+
+- **Optional Field**: THE description field SHALL be optional
+- **Maximum Length**: THE description SHALL not exceed 1000 characters
+- **Content Format**: THE description SHALL accept any UTF-8 characters
+
+### 1.3 Todo Status Management
+
+**THE system SHALL support the following todo status values:**
+- "pending" - Todo item has been created but not started
+- "in-progress" - Todo item is currently being worked on
+- "completed" - Todo item has been finished
+
+**WHEN creating a new todo item, THE system SHALL automatically set the status to "pending".**
+
+**WHEN updating a todo status, THE system SHALL enforce the following transition rules:**
 
 ```mermaid
 graph LR
-  A["Create Todo"] --> B{"Title Valid?"}
-  B -->|"No"| C["Show Validation Error"]
-  B -->|"Yes"| D["Set Status: Incomplete"]
-  D --> E["Save Todo"]
-  E --> F["Return Success"]
+  A["pending"] --> B["in-progress"]
+  A --> C["completed"]
+  B --> C
+  B --> A
+  C --> A
 ```
 
-## Business Logic Constraints
+**Status Transition Rules:**
+- **FROM "pending"**: THE user SHALL be able to transition to "in-progress" or "completed"
+- **FROM "in-progress"**: THE user SHALL be able to transition to "completed" or back to "pending"
+- **FROM "completed"**: THE user SHALL be able to transition back to "pending"
 
-### Todo Ownership Rules
-- **THE** system **SHALL** ensure that users can only access, modify, or delete their own todos
-- **WHEN** a user requests todo operations, **THE** system **SHALL** validate todo ownership before processing
-- **IF** a user attempts to access another user's todo, **THEN THE** system **SHALL** return an access denied error
+## 2. User Account Rules
 
-### Todo Lifecycle Management
-- **WHEN** a todo is created, **THE** system **SHALL** assign a unique identifier and creation timestamp
-- **WHEN** a todo is updated, **THE** system **SHALL** update the modification timestamp
-- **WHEN** a todo is deleted, **THE** system **SHALL** perform a soft delete by marking it as archived
-- **THE** system **SHALL** permanently delete archived todos after 30 days of archival
+### 2.1 User Registration Rules
 
-### Completion Workflow Constraints
-- **THE** system **SHALL** allow users to toggle completion status for any todo
-- **WHEN** marking a todo complete, **THE** system **SHALL** not require any additional validation
-- **THE** system **SHALL** display completed todos separately from active todos
-- **THE** system **SHALL** maintain the original completion order of todos
+**WHEN a new user registers, THE system SHALL enforce the following rules:**
 
-## State Management Rules
+- **Email Validation**: THE email address SHALL be in valid email format
+- **Email Uniqueness**: THE email address SHALL be unique across all registered users
+- **Password Requirements**: THE password SHALL meet minimum security requirements:
+  - Minimum 8 characters in length
+  - At least one uppercase letter
+  - At least one lowercase letter
+  - At least one number
+  - At least one special character
 
-### Todo Status States
-- **THE** system **SHALL** support two primary states: "incomplete" and "completed"
-- **THE** system **SHALL** support an additional "archived" state for deleted todos
-- **WHEN** a todo is created, **THE** system **SHALL** automatically set the state to "incomplete"
+### 2.2 User Authentication Rules
 
-### State Transition Rules
+**WHEN a user attempts to log in, THE system SHALL:**
+
+- **Validate Credentials**: THE system SHALL verify the email and password combination
+- **Account Status Check**: THE system SHALL only allow login for active accounts
+- **Session Creation**: THE system SHALL create a new session upon successful authentication
+
+**WHILE a user is authenticated, THE system SHALL maintain their session for 30 days of inactivity.**
+
+**IF a user fails authentication 5 times within 15 minutes, THEN THE system SHALL temporarily lock the account for 30 minutes.**
+
+### 2.3 User Data Ownership Rules
+
+**THE system SHALL enforce strict data ownership rules:**
+
+- **Todo Access**: Users SHALL only be able to access their own todo items
+- **Data Isolation**: THE system SHALL ensure complete data isolation between users
+- **No Cross-User Access**: Users SHALL not be able to view, modify, or delete other users' todo items
+
+## 3. Data Integrity Constraints
+
+### 3.1 Todo Data Consistency
+
+**THE system SHALL maintain data consistency through the following constraints:**
+
+- **Required Fields**: Every todo item SHALL have:
+  - A unique identifier
+  - A title
+  - A status
+  - A creation timestamp
+  - An owner (user ID)
+
+- **Optional Fields**: Todo items MAY have:
+  - A description
+  - A due date
+  - A completion timestamp
+  - A last updated timestamp
+
+### 3.2 Data Validation Rules
+
+**WHEN processing todo data, THE system SHALL validate:**
+
+- **Timestamps**: All timestamp fields SHALL be in ISO 8601 format
+- **Due Dates**: WHERE a due date is provided, THE system SHALL ensure it is in the future
+- **Completion Logic**: THE completion timestamp SHALL only be set when status is "completed"
+
+### 3.3 Data Deletion Rules
+
+**WHEN a user deletes a todo item, THE system SHALL:**
+
+- **Soft Delete**: THE system SHALL mark the item as deleted rather than removing it permanently
+- **Data Retention**: Deleted items SHALL be retained for 30 days before permanent removal
+- **Recovery Option**: Users SHALL be able to restore deleted items within the 30-day retention period
+
+## 4. Business Logic Specifications
+
+### 4.1 Todo Creation Logic
+
+**WHEN a user creates a new todo item, THE system SHALL execute the following business logic:**
+
+1. **Validate Input**: Check title length and content rules
+2. **Set Defaults**: Assign "pending" status and current timestamp
+3. **Assign Ownership**: Associate the todo with the authenticated user
+4. **Generate ID**: Create a unique identifier for the todo
+5. **Persist Data**: Save the todo item to the database
+6. **Return Result**: Provide confirmation of successful creation
+
+### 4.2 Todo Update Logic
+
+**WHEN a user updates a todo item, THE system SHALL:**
+
+1. **Verify Ownership**: Confirm the user owns the todo item
+2. **Validate Changes**: Apply validation rules to updated fields
+3. **Update Timestamp**: Set the last updated timestamp
+4. **Handle Status Changes**: If status changes to "completed", set completion timestamp
+5. **Persist Changes**: Save updated todo item
+6. **Return Updated Item**: Provide the updated todo data
+
+### 4.3 Todo Deletion Logic
+
+**WHEN a user deletes a todo item, THE system SHALL:**
+
+1. **Verify Ownership**: Confirm the user owns the todo item
+2. **Soft Delete**: Mark the item as deleted with deletion timestamp
+3. **Maintain Data**: Keep the item in the database with deleted flag
+4. **Update User Interface**: Remove the item from active todo lists
+5. **Provide Confirmation**: Notify user of successful deletion
+
+## 5. Error Handling Rules
+
+### 5.1 Validation Error Scenarios
+
+**IF a user attempts to create a todo with an invalid title, THEN THE system SHALL:**
+
+- Return HTTP 400 Bad Request status
+- Provide specific error message indicating the validation failure
+- Include details about which rule was violated
+
+**IF a user attempts to update a todo they don't own, THEN THE system SHALL:**
+
+- Return HTTP 403 Forbidden status
+- Provide generic error message to avoid information disclosure
+- Log the unauthorized access attempt
+
+### 5.2 Business Logic Error Scenarios
+
+**IF a user attempts an invalid status transition, THEN THE system SHALL:**
+
+- Return HTTP 422 Unprocessable Entity status
+- Provide clear error message explaining valid transitions
+- Suggest appropriate alternative actions
+
+**IF the system encounters data inconsistency, THEN THE system SHALL:**
+
+- Return HTTP 500 Internal Server Error status
+- Log detailed error information for debugging
+- Provide user-friendly error message
+
+## 6. Data Lifecycle Management
+
+### 6.1 Todo Lifecycle Rules
+
+**THE system SHALL manage todo items through the following lifecycle:**
+
 ```mermaid
-graph LR
-  A["Incomplete"] -->|"Mark Complete"| B["Completed"]
-  B -->|"Mark Incomplete"| A
-  A -->|"Delete"| C["Archived"]
-  B -->|"Delete"| C
-  C -->|"30 Days Pass"| D["Permanently Deleted"]
+graph TD
+  A["Created"] --> B["Active (pending/in-progress)"]
+  B --> C["Completed"]
+  B --> D["Deleted"]
+  C --> D
+  D --> E["Permanently Removed"]
 ```
 
-### Valid State Transitions
-- **THE** system **SHALL** allow transition from "incomplete" to "completed"
-- **THE** system **SHALL** allow transition from "completed" to "incomplete"
-- **THE** system **SHALL** allow transition from any state to "archived" (deletion)
-- **THE** system **SHALL** automatically transition from "archived" to permanent deletion after 30 days
+**Lifecycle Rules:**
+- **Creation**: Todos are created with "pending" status
+- **Active Phase**: Todos remain active while in "pending" or "in-progress" status
+- **Completion**: Todos move to "completed" status when finished
+- **Deletion**: Todos are soft-deleted when user chooses to remove them
+- **Permanent Removal**: Soft-deleted todos are permanently removed after 30 days
 
-## Workflow Restrictions
+### 6.2 User Account Lifecycle
 
-### Creation Restrictions
-- **THE** system **SHALL** impose a limit of 1000 active todos per user
-- **WHEN** a user reaches the 1000 todo limit, **THE** system **SHALL** prevent creation of new todos
-- **THE** system **SHALL** display a clear message when the todo limit is reached
+**THE system SHALL manage user accounts through the following lifecycle:**
 
-### Modification Restrictions
-- **THE** system **SHALL** allow users to modify their own todos at any time
-- **THE** system **SHALL** preserve the original creation timestamp when modifying a todo
-- **WHEN** modifying a todo, **THE** system **SHALL** update the modification timestamp
+- **Registration**: Account created with email verification required
+- **Active**: Account is fully functional after email verification
+- **Inactive**: Account becomes inactive after 365 days of no login
+- **Archived**: Inactive accounts are archived after additional 90 days
+- **Deleted**: Archived accounts are permanently deleted after 180 days
 
-### Deletion Workflow
-- **WHEN** deleting a todo, **THE** system **SHALL** move it to the archived state
-- **THE** system **SHALL** provide users with the ability to view archived todos
-- **THE** system **SHALL** allow users to restore archived todos within 30 days
-- **THE** system **SHALL** permanently delete todos that have been archived for more than 30 days
+## 7. Performance and Scalability Rules
 
-## Permission-Based Business Rules
+### 7.1 Data Retrieval Limits
 
-### User Permission Matrix
-| Action | User Permission |
-|--------|-----------------|
-| Create Todo | ✅ Full access to create todos in their own account |
-| Read Todos | ✅ Full access to read their own todos |
-| Update Todos | ✅ Full access to update their own todos |
-| Delete Todos | ✅ Full access to delete their own todos |
-| View Archived | ✅ Access to view their own archived todos |
-| Restore Archived | ✅ Ability to restore their own archived todos |
+**WHERE a user requests their todo list, THE system SHALL:**
 
-### Authentication Requirements
-- **WHEN** performing any todo operation, **THE** system **SHALL** require valid user authentication
-- **THE** system **SHALL** validate user session for every API request
-- **IF** authentication fails, **THEN THE** system **SHALL** return an authentication error
+- Return maximum of 50 todo items per page
+- Support pagination for large todo collections
+- Sort todos by creation date (newest first) by default
+- Allow sorting by due date, status, or title as optional parameters
 
-## Exception Handling Policies
+### 7.2 Rate Limiting Rules
 
-### Input Validation Exceptions
-- **IF** a todo title is empty, **THEN THE** system **SHALL** return error code "VALIDATION_TITLE_EMPTY"
-- **IF** a todo title exceeds 255 characters, **THEN THE** system **SHALL** return error code "VALIDATION_TITLE_TOO_LONG"
-- **IF** a description exceeds 2000 characters, **THEN THE** system **SHALL** return error code "VALIDATION_DESCRIPTION_TOO_LONG"
+**THE system SHALL implement rate limiting to prevent abuse:**
 
-### Authorization Exceptions
-- **IF** a user attempts to access another user's todo, **THEN THE** system **SHALL** return error code "AUTHORIZATION_ACCESS_DENIED"
-- **IF** authentication credentials are invalid, **THEN THE** system **SHALL** return error code "AUTHENTICATION_INVALID_CREDENTIALS"
-- **IF** user session has expired, **THEN THE** system **SHALL** return error code "AUTHENTICATION_SESSION_EXPIRED"
+- **Todo Creation**: Maximum 100 todos per hour per user
+- **Todo Updates**: Maximum 500 updates per hour per user
+- **Authentication Attempts**: Maximum 10 login attempts per minute per IP address
 
-### Business Rule Exceptions
-- **IF** a user attempts to create a todo when they have reached the 1000 todo limit, **THEN THE** system **SHALL** return error code "BUSINESS_TODO_LIMIT_REACHED"
-- **IF** a user attempts to restore an archived todo after 30 days, **THEN THE** system **SHALL** return error code "BUSINESS_ARCHIVE_EXPIRED"
+## 8. Compliance and Data Protection Rules
 
-## Error Scenario Definitions
+### 8.1 Data Privacy Rules
 
-### Validation Error Scenarios
-- **Scenario**: User attempts to create a todo with empty title
-  - **Expected Behavior**: System rejects creation with clear error message
-  - **Recovery Action**: User must provide a valid title
-  - **Error Code**: VALIDATION_TITLE_EMPTY
+**THE system SHALL adhere to the following privacy rules:**
 
-- **Scenario**: User attempts to create a 256-character title
-  - **Expected Behavior**: System rejects creation with character limit message
-  - **Recovery Action**: User must shorten the title to 255 characters or less
-  - **Error Code**: VALIDATION_TITLE_TOO_LONG
+- **Data Minimization**: Only collect necessary user data for todo functionality
+- **Purpose Limitation**: User data SHALL only be used for todo management
+- **Storage Limitation**: User data SHALL be deleted according to retention policies
+- **Confidentiality**: Todo data SHALL be accessible only to the owning user
 
-### Authorization Error Scenarios
-- **Scenario**: User attempts to access todo belonging to another user
-  - **Expected Behavior**: System returns access denied error
-  - **Recovery Action**: User can only access their own todos
-  - **Error Code**: AUTHORIZATION_ACCESS_DENIED
+### 8.2 Audit and Logging Rules
 
-### Business Rule Error Scenarios
-- **Scenario**: User has 1000 active todos and attempts to create another
-  - **Expected Behavior**: System prevents creation and informs user of limit
-  - **Recovery Action**: User must delete or archive existing todos
-  - **Error Code**: BUSINESS_TODO_LIMIT_REACHED
+**THE system SHALL maintain audit logs for the following actions:**
 
-## Recovery and Graceful Degradation
+- User registration and authentication
+- Todo creation, updates, and deletions
+- Security-related events (failed logins, permission violations)
+- System errors and exceptions
 
-### Soft Delete Recovery
-- **WHEN** a user accidentally deletes a todo, **THE** system **SHALL** provide a 30-day recovery window
-- **THE** system **SHALL** maintain archived todos in a separate view
-- **WHEN** restoring an archived todo, **THE** system **SHALL** preserve all original data
-
-### Error Message Standards
-- **THE** system **SHALL** provide user-friendly error messages for all business rule violations
-- **THE** system **SHALL** include actionable guidance in error messages
-- **THE** system **SHALL** maintain consistent error code patterns
-
-### Data Integrity Rules
-- **THE** system **SHALL** ensure that todos cannot be duplicated with identical content
-- **THE** system **SHALL** maintain referential integrity for all todo relationships
-- **THE** system **SHALL** prevent data corruption through proper transaction handling
+**Audit logs SHALL be retained for 365 days for security monitoring and troubleshooting.**
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

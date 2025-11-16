@@ -1,0 +1,256 @@
+/// Shipment records for order fulfillment and logistics event tracking.
+///
+/// Captures all shipment detail for order items shipped via any integrated
+/// partner, including references to orders, order items, the selected
+/// carrier, label/tracking numbers, shipping status, and API/provider result
+/// codes. Used for both platform-initiated and manual shipments by sellers
+/// or admins.
+///
+/// Provides full auditability with actor attribution (who
+/// created/updated/cancelled), label/manifest data, and timestamps for each
+/// shipment event.
+///
+///
+/// @namespace Logistics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Order this shipment is part of. References {@link
+  /// shopping_mall_orders.id}.
+  order_id String
+  
+  /// Specific item in the order that this shipment fulfills. References {@link
+  /// shopping_mall_order_items.id}.
+  order_item_id String
+  
+  /// Shipping/logistics provider handling this shipment. References {@link
+  /// shopping_mall_shipping_partners.id}.
+  shipping_partner_id String
+  
+  /// Admin who created this shipment record, if automated. Nullable; present
+  /// if admin assigned the carrier.
+  created_by_admin_id String?
+  
+  /// Seller who created or fulfilled this shipment, if not auto-assigned.
+  /// Nullable; present if the seller itself handed off to carrier.
+  created_by_seller_id String?
+  
+  /// Carrier-assigned or external shipment/tracking code/number for reference
+  /// to shipping label or manifest. Nullable for shipments where code is not
+  /// yet issued.
+  carrier_tracking_code String?
+  
+  /// Current shipment status. Valid values: pending, ready, picked_up,
+  /// in_transit, delivered, cancelled, returned. Status transitions follow
+  /// fulfillment and return lifecycle rules.
+  status String
+  
+  /// Optional download URI for shipping label or manifest provided by the
+  /// carrier. Nullable if not supported.
+  manifest_url String?
+  
+  /// Last received status code/result from the API provider
+  /// (success/fail/integration result, if any). Nullable if no API call made
+  /// yet.
+  provider_response_code String?
+  
+  /// Timestamp when the shipment record was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the shipment record.
+  updated_at DateTime
+  
+  /// Timestamp when the shipment was marked as delivered by the carrier or
+  /// customer. Nullable if not yet delivered.
+  delivery_at DateTime?
+  
+  /// Timestamp if/when this shipment was cancelled. Nullable if not cancelled.
+  cancelled_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  shippingPartner shopping_mall_shipping_partners @relation(fields: [shipping_partner_id], references: [id], onDelete: Cascade)
+  createdByAdmin shopping_mall_admins? @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  createdBySeller shopping_mall_sellers? @relation(fields: [created_by_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_shipment_tracking_histories shopping_mall_shipment_tracking_histories[]
+  
+  @@index([order_item_id])
+  @@index([shipping_partner_id])
+  
+  @@unique([carrier_tracking_code])
+  @@index([order_id, order_item_id])
+  @@index([status, shipping_partner_id])
+  @@index([created_by_admin_id])
+  @@index([created_by_seller_id])
+}
+
+/// Chronological tracking updates and carrier event logs for each shipment.
+///
+/// Captures a complete, append-only history of carrier-side/warehouse-side
+/// shipment updates from dispatch to delivery. All status changes, tracking
+/// location events, and relevant carrier messages with actors, timestamps,
+/// geo-coordinates, provider event codes, and free-form tracking text are
+/// stored here.
+///
+/// Serves as an audit trail and full shipment journey visibility for
+/// platform users and admins. Accessible only via the parent shipment, never
+/// directly edited or deleted by users.
+///
+///
+/// @namespace Logistics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_tracking_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Shipment that this tracking event belongs to. References {@link
+  /// shopping_mall_shipments.id}.
+  shipment_id String
+  
+  /// Timestamp of the tracking event as provided by the carrier or system.
+  event_time DateTime
+  
+  /// Reported location (e.g., city, depot, or delivery point) for this event.
+  /// Nullable if not provided by carrier.
+  location String?
+  
+  /// Latitude coordinate attached to the event, if available. Nullable.
+  latitude Float?
+  
+  /// Longitude coordinate attached to the event, if available. Nullable.
+  longitude Float?
+  
+  /// Provider-specific event code (e.g., OUT_FOR_DELIVERY, DELIVERED, HELD,
+  /// etc.). Nullable for free-form events.
+  event_code String?
+  
+  /// Status code at this event step (e.g., pending, in_transit, delivered,
+  /// exception, returned). Used for shipment status timeline.
+  status String
+  
+  /// Full carrier or system-provided message as shown to both admins and
+  /// customers for shipment progress updates.
+  tracking_message String
+  
+  /// Timestamp when this tracking event record was created in the platform DB.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shipment_id, event_time], map: "shopping_mall_shipment_tracking_histories_shipment_id__c54740d8")
+}
+
+/// Return, pickup, and shipment reverse logistics request records.
+///
+/// Captures customer- or seller-initiated requests to return or pick up
+/// delivered items, including reason, status, actor attribution, scheduled
+/// pickup, and all carrier/shipment integration info. Enables tracking of
+/// the full lifecycle of returns from customer submission to carrier pickup,
+/// delivery to warehouse, and completion/cancellation.
+///
+/// Return requests are linked to specific order items and can be referenced
+/// in refund or dispute management. All requested actions are audit-trailed
+/// including user/actor IDs and timestamps for resolution.
+///
+///
+/// @namespace Logistics
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_return_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Order this return request refers to. References {@link
+  /// shopping_mall_orders.id}.
+  order_id String
+  
+  /// Order item being returned or picked up. References {@link
+  /// shopping_mall_order_items.id}.
+  order_item_id String
+  
+  /// Customer requesting the return or pickup. Nullable if request was not
+  /// customer-initiated.
+  requested_by_customer_id String?
+  
+  /// Seller requesting return/pickup (for defective goods, etc.). Nullable if
+  /// not applicable.
+  requested_by_seller_id String?
+  
+  /// Shipping partner assigned to the return/pickup. Nullable until carrier is
+  /// selected.
+  shipping_partner_id String?
+  
+  /// Free-form reason for return or pickup provided by the actor (customer,
+  /// seller, or admin). Displayed in detail views and tracking.
+  reason String
+  
+  /// Current status of the return/pickup request. Valid values: pending,
+  /// approved, scheduled, picked_up, delivered, completed, rejected,
+  /// cancelled. Required for workflow state machine.
+  status String
+  
+  /// Address where the item should be picked up (defaults to order delivery
+  /// address if omitted). Nullable if carrier not yet assigned.
+  pickup_address String?
+  
+  /// Scheduled date/time for the carrier to pick up the item (timezone:
+  /// Asia/Seoul). Nullable if not scheduled yet.
+  scheduled_pickup_at DateTime?
+  
+  /// Tracking code or RMA from the shipping partner for this pickup/return.
+  /// Nullable until assigned.
+  provider_tracking_code String?
+  
+  /// Timestamp when the return request was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to the return request record.
+  updated_at DateTime
+  
+  /// Timestamp when this return/pickup request was fully completed (goods
+  /// delivered to warehouse/refund processed). Nullable until finished.
+  completed_at DateTime?
+  
+  /// Timestamp if/when this return/pickup request was cancelled. Nullable if
+  /// not cancelled.
+  cancelled_at DateTime?
+  
+  /// Nullable; when present, marks this record as soft deleted, for
+  /// audit/history recovery.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  requestedByCustomer shopping_mall_customers? @relation(fields: [requested_by_customer_id], references: [id], onDelete: Cascade)
+  requestedBySeller shopping_mall_sellers? @relation(fields: [requested_by_seller_id], references: [id], onDelete: Cascade)
+  shippingPartner shopping_mall_shipping_partners? @relation(fields: [shipping_partner_id], references: [id], onDelete: Cascade)
+  
+  @@index([order_item_id])
+  @@index([requested_by_customer_id])
+  @@index([requested_by_seller_id])
+  @@index([shipping_partner_id])
+  
+  @@index([order_id, order_item_id])
+  @@index([status])
+}

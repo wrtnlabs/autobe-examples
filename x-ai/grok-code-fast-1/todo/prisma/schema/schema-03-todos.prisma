@@ -1,0 +1,53 @@
+/// User's personal todo items represent the core functionality of the todo
+/// application.
+///
+/// Each todo item contains a task that an authenticated user wants to track
+/// and complete. Todos are strictly owned by individual users with full CRUD
+/// permissions for their own items. The system maintains separate todo
+/// collections for each user, ensuring complete data privacy.
+///
+/// Todo items support basic task tracking with optional descriptions,
+/// completion status tracking, and timestamp audit trails. Users can create
+/// unlimited personal tasks and manage them independently without
+/// interfering with other users' todo lists.
+///
+/// The main business purpose is to help users organize their daily
+/// responsibilities through a simple, reliable task management system.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Todo item title (required field). Must be 1-200 characters.
+  title String
+  
+  /// Optional description of the todo item. Can be up to 1000 characters.
+  description String?
+  
+  /// Completion status of the todo item. True when completed, false when
+  /// pending.
+  complete Boolean
+  
+  /// Timestamp when the todo item was first created.
+  created_at DateTime
+  
+  /// Timestamp when the todo item was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_user_id, title, description])
+  @@index([todo_app_user_id])
+  @@index([created_at])
+}

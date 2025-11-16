@@ -1,0 +1,57 @@
+/// User reports for moderation.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting user. {@link community_user.id}
+  reporting_user_id String
+  
+  /// Reported user. {@link community_user.id}
+  reported_user_id String
+  
+  /// Community. {@link community_community.id}
+  community_id String
+  
+  /// Post. {@link community_posts.id}
+  post_id String?
+  
+  /// Comment. {@link community_post_comments.id}
+  comment_id String?
+  
+  /// Reason for report.
+  reason String
+  
+  /// Timestamp when report was created.
+  created_at DateTime
+  
+  /// Timestamp when report was resolved.
+  resolved_at DateTime?
+  
+  /// Moderator who resolved the report. {@link community_moderators.id}
+  resolved_by String?
+  
+  //----
+  // RELATIONS
+  //----
+  reportingUser community_user @relation("community_reports_of_reporting_user_id", fields: [reporting_user_id], references: [id], onDelete: Cascade)
+  reportedUser community_user @relation("community_reports_of_reported_user_id", fields: [reported_user_id], references: [id], onDelete: Cascade)
+  community community_community @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_post_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([reported_user_id])
+  @@index([community_id])
+  @@index([post_id])
+  @@index([comment_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([reporting_user_id, reported_user_id, community_id, post_id, comment_id], map: "community_reports_reporting_user_id_reported_user_id_c_746bc0a4")
+  @@index([created_at])
+  @@index([resolved_at])
+}

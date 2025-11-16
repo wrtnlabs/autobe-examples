@@ -1,175 +1,213 @@
-/// Represents different shopping channels within the e-commerce platform.
-/// Channels can be used to organize different shopping experiences such as
-/// main store, outlet section, seasonal promotions, or specialized
-/// marketplaces. Each channel has its own configuration and section
-/// organization. Channels serve as the top-level organizational structure
-/// for the shopping experience.
+/// Platform channels representing distinct shopping environments or
+/// storefronts.
+///
+/// Channels serve as organizational containers for products, sellers, and
+/// customers within the e-commerce platform. Each channel can have unique
+/// branding, product categories, and business rules while sharing the
+/// underlying platform infrastructure.
+///
+/// Channels support hierarchical organization through parent-child
+/// relationships, enabling multi-level channel structures for complex
+/// marketplace configurations. Channel status management allows
+/// administrators to activate, deactivate, or archive channels based on
+/// business needs.
+///
+/// Key channel attributes include name, description, status, and
+/// configuration settings that define the channel's behavior and appearance.
+/// Channels reference sections for content organization and serve as the
+/// primary navigation structure for customers browsing the platform.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_channels {
+model ecommerce_mall_channels {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique channel identifier code used for system references and URL
-  /// routing. Must be URL-safe and unique across the platform.
+  /// Parent channel reference for hierarchical organization. {@link
+  /// ecommerce_mall_channels.id}.
+  parent_id String?
+  
+  /// Unique channel identifier code for system reference and API access.
   code String
   
-  /// Display name of the channel shown to users and administrators. Used for
-  /// navigation and display purposes.
+  /// Display name of the channel shown to customers and administrators.
   name String
   
-  /// Detailed description explaining the channel's purpose, target audience,
-  /// and business context.
+  /// Detailed description explaining the channel's purpose and content focus.
   description String?
   
-  /// Current operational status of the channel: active (available to users),
-  /// inactive (hidden but maintained), or maintenance (temporarily
-  /// unavailable).
+  /// Current channel status: active, inactive, archived, or maintenance.
   status String
   
-  /// Timestamp when the channel was created.
+  /// JSON configuration data storing channel-specific settings and preferences.
+  configuration String?
+  
+  /// Timestamp when the channel was created in the system.
   created_at DateTime
   
-  /// Timestamp when the channel was last updated.
+  /// Timestamp when the channel was last modified.
   updated_at DateTime
   
-  /// Timestamp when the channel was soft deleted, if applicable. Allows for
-  /// recovery of accidentally deleted channels.
+  /// Timestamp when the channel was soft deleted, allowing for recovery.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_sections shopping_mall_sections[]
+  parent ecommerce_mall_channels? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive ecommerce_mall_channels[] @relation("recursive")
+  ecommerce_mall_sections ecommerce_mall_sections[]
+  ecommerce_mall_configurations ecommerce_mall_configurations[]
   
   @@unique([code])
+  @@index([parent_id, status])
   @@index([status, created_at])
-  @@index([created_at])
 }
 
-/// Organizes content within shopping channels. Sections represent logical
-/// groupings of products or content within a channel, such as featured
-/// products, new arrivals, or category-based sections. Sections enable
-/// hierarchical organization and targeted content presentation.
+/// Content sections within channels for organizing products and navigation.
+///
+/// Sections provide hierarchical content organization within channels,
+/// allowing administrators to structure product catalogs and create logical
+/// navigation paths for customers. Each section belongs to a specific
+/// channel and can contain multiple levels of subsections.
+///
+/// Sections support various content types including product categories,
+/// promotional areas, and informational content. Section ordering and
+/// visibility settings enable flexible content management and customer
+/// experience customization.
+///
+/// Key section attributes include display name, description, ordering
+/// position, and parent section relationships for building complex
+/// navigation hierarchies. Sections serve as the primary content
+/// organization mechanism within each channel.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sections {
+model ecommerce_mall_sections {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent channel that contains this section. Each section belongs to
-  /// exactly one channel. {@link shopping_mall_channels.id}
-  shopping_mall_channel_id String
+  /// Channel that contains this section. {@link ecommerce_mall_channels.id}.
+  ecommerce_mall_channel_id String
   
-  /// Unique section identifier code within the parent channel. Used for system
-  /// references and URL routing. Must be unique within each channel.
+  /// Parent section reference for hierarchical organization. {@link
+  /// ecommerce_mall_sections.id}.
+  parent_id String?
+  
+  /// Unique section identifier code for system reference and API access.
   code String
   
-  /// Display name of the section shown to users. Used for navigation and
-  /// display within the channel.
+  /// Display name of the section shown in navigation and content organization.
   name String
   
-  /// Detailed description of the section's content, purpose, and target
-  /// audience.
+  /// Detailed description explaining the section's content and purpose.
   description String?
   
-  /// Type of section: featured (highlighted content), category (product
-  /// category based), promotional (sales and offers), or custom (user-defined
-  /// organization).
-  section_type String
+  /// Numerical ordering position within the section hierarchy.
+  position Int
   
-  /// Numerical order for section display sequence within the channel. Lower
-  /// numbers appear first. Used to control section presentation order.
-  display_order Int
-  
-  /// Current status of the section: active (visible to users), inactive
-  /// (hidden but maintained), or hidden (completely removed from display).
+  /// Current section status: active, inactive, or hidden.
   status String
   
-  /// Timestamp when the section was created.
+  /// JSON configuration data storing section-specific settings and display
+  /// options.
+  configuration String?
+  
+  /// Timestamp when the section was created in the system.
   created_at DateTime
   
-  /// Timestamp when the section was last updated.
+  /// Timestamp when the section was last modified.
   updated_at DateTime
   
-  /// Timestamp when the section was soft deleted, if applicable.
+  /// Timestamp when the section was soft deleted, allowing for recovery.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  channel ecommerce_mall_channels @relation(fields: [ecommerce_mall_channel_id], references: [id], onDelete: Cascade)
+  parent ecommerce_mall_sections? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
   
-  @@unique([shopping_mall_channel_id, code])
+  recursive ecommerce_mall_sections[] @relation("recursive")
+  
+  @@index([parent_id])
+  
+  @@unique([ecommerce_mall_channel_id, code])
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_channel_id, display_order], map: "shopping_mall_sections_shopping_mall_channel_id_displa_d6778c49")
-  @@index([section_type])
-  @@index([status])
-  @@index([created_at])
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_channel_id, status, display_order], map: "shopping_mall_sections_shopping_mall_channel_id_status_6c74991d")
+  @@index([ecommerce_mall_channel_id, parent_id, position], map: "ecommerce_mall_sections_ecommerce_mall_channel_id_pare_02e2240b")
+  @@index([status, created_at])
 }
 
-/// Stores system-wide configuration settings and platform parameters. These
-/// configurations control platform behavior, feature toggles, and
-/// operational parameters. Configurations are managed by administrators and
-/// affect global platform functionality.
+/// System-wide configuration settings and platform parameters.
+///
+/// Configurations store platform-level settings that control global
+/// behavior, feature toggles, and system parameters. These settings affect
+/// all channels, sections, and users across the entire e-commerce platform.
+///
+/// Configuration values support various data types including strings,
+/// numbers, booleans, and JSON objects for complex settings. The system
+/// maintains configuration history and supports environment-specific values
+/// for development, staging, and production environments.
+///
+/// Key configuration attributes include setting name, value, data type, and
+/// environment scope. Configurations support hierarchical inheritance where
+/// channel-specific settings can override platform defaults, enabling
+/// flexible multi-tenant platform management.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_configurations {
+model ecommerce_mall_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key used to reference the setting in code. Follows
-  /// dot notation for hierarchical organization (e.g.,
-  /// 'payment.stripe.api_key').
-  config_key String
+  /// Channel-specific configuration override. {@link
+  /// ecommerce_mall_channels.id}.
+  ecommerce_mall_channel_id String?
   
-  /// Configuration value stored as string, to be parsed based on context.
-  /// Supports various data types through proper parsing logic.
-  config_value String
+  /// Unique configuration key identifier for system reference.
+  key String
   
-  /// Data type of the configuration value: string, number, boolean, json,
-  /// array, or object. Guides proper value parsing and validation.
+  /// Configuration value stored as string with type interpretation.
+  value String
+  
+  /// Data type of the configuration value: string, number, boolean, json.
   data_type String
   
-  /// Human-readable description of what this configuration controls, its
-  /// purpose, and any constraints or dependencies.
+  /// Environment scope: global, development, staging, production.
+  environment String
+  
+  /// Human-readable description of the configuration setting's purpose.
   description String
   
-  /// Category grouping for related configurations: payment, shipping, ui,
-  /// security, notifications, analytics, etc.
-  category String
-  
-  /// Indicates whether this configuration contains sensitive data that
-  /// requires encryption and access control protection.
-  is_sensitive Boolean
+  /// Whether the configuration value should be encrypted for security.
+  is_encrypted Boolean
   
   /// Timestamp when the configuration was created.
   created_at DateTime
   
-  /// Timestamp when the configuration was last updated.
+  /// Timestamp when the configuration was last modified.
   updated_at DateTime
   
-  /// Timestamp when the configuration was soft deleted, if applicable.
+  /// Timestamp when the configuration was soft deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@index([is_sensitive])
-  @@index([created_at])
-  @@index([category, config_key])
+  channel ecommerce_mall_channels? @relation(fields: [ecommerce_mall_channel_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([key, environment, ecommerce_mall_channel_id], map: "ecommerce_mall_configurations_key_environment_ecommerc_4adb2dd0")
+  @@index([environment, data_type])
+  @@index([ecommerce_mall_channel_id, key])
 }

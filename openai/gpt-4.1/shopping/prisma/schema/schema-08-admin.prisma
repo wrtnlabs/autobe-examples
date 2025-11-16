@@ -1,0 +1,187 @@
+/// Record of every privileged or system-level action performed by admin
+/// actors across the platform.
+///
+/// Captures the immutable trace of all administrative actions, including
+/// user modifications, order overrides, dispute resolutions, and escalated
+/// interventions. Provides detailed attribution with actor, target entity,
+/// action type, and optional contextual notes.
+/// Crucial for compliance audits, forensic analysis, dispute defense, and
+/// role-based access tracing. Each entry includes timestamp, responsible
+/// admin (FK), contextual references (which may be user, seller, order,
+/// product, etc.), and a required action category/type for grouped analysis.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_action_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin actor responsible for action. {@link shopping_mall_admins.id}.
+  shopping_mall_admin_id String
+  
+  /// Categorical type of admin action (e.g., user_suspend, order_refund,
+  /// role_escalate, config_change). Enables grouped analysis of actions.
+  action_type String
+  
+  /// Optional JSON-encoded or text data providing additional context (object
+  /// state, request params, results, etc.).
+  context_info String?
+  
+  /// Time the admin action was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id, created_at], map: "shopping_mall_admin_action_logs_shopping_mall_admin_id_aa5b01f4")
+  @@index([action_type, created_at])
+}
+
+/// Comprehensive audit log capturing sensitive and high-privilege platform
+/// events affecting compliance-relevant data.
+///
+/// Logs changes and accesses for critical operations (e.g., user PII
+/// changes, financial record updates, permission modifications, and security
+/// events). Includes full actor attribution, audit-relevant target entity,
+/// change type, risk classification, compliance tag, and immutable create
+/// timestamp.
+/// Indispensable for regulatory reviews, incident response, and integrity
+/// verification of privileged or risky operations.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin actor responsible for audited event. Nullable if external system or
+  /// automated (system process). {@link shopping_mall_admins.id}.
+  actor_admin_id String?
+  
+  /// Seller actor if the audited event is seller-performed. Nullable if not
+  /// relevant. {@link shopping_mall_sellers.id}.
+  actor_seller_id String?
+  
+  /// Customer actor if the event was customer-performed. Nullable if not
+  /// relevant. {@link shopping_mall_customers.id}.
+  actor_customer_id String?
+  
+  /// Nature of audited change (e.g., access, update, delete,
+  /// permission_change, data_export).
+  change_type String
+  
+  /// Risk classification by business/policy (e.g., low, medium, high,
+  /// critical).
+  risk_level String
+  
+  /// Compliance tag or business rule identifier justifying audit entry (e.g.,
+  /// GDPR_ARTICLE5, PCI_LOG, SOX_ACCESS).
+  compliance_tag String
+  
+  /// Detailed info about the change; may be structured JSON or plain text
+  /// depending on event type.
+  audit_detail String
+  
+  /// Timestamp when audit entry was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin shopping_mall_admins? @relation(fields: [actor_admin_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [actor_seller_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [actor_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_admin_id])
+  @@index([actor_seller_id])
+  @@index([actor_customer_id])
+  
+  @@index([created_at, change_type])
+}
+
+/// Business escalation event or platform dispute record requiring
+/// human/admin intervention, mediator assignment, or compliance workflow.
+///
+/// Captures unresolved or problematic events (customer complaints, seller
+/// issues, refund or return exceptions, policy breaches) that are in process
+/// or require investigation. Each entry tracks the initiating actor,
+/// responsible role/queue (e.g., admin, compliance), current status,
+/// escalation reason, priority, and resolution timestamps. Supports advanced
+/// filtering by status, queue, reason, and time for operational management
+/// and workflow automation.
+///
+/// @namespace Admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_escalation_queues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ID of admin initiator for cases started by an admin. Nullable if not
+  /// applicable. {@link shopping_mall_admins.id}.
+  initiator_actor_admin_id String?
+  
+  /// ID of seller initiator for cases started by a seller. Optional if not
+  /// applicable. {@link shopping_mall_sellers.id}.
+  initiator_actor_seller_id String?
+  
+  /// ID of customer initiator for cases started by a customer. Optional if not
+  /// applicable. {@link shopping_mall_customers.id}.
+  initiator_actor_customer_id String?
+  
+  /// ID of assigned admin handling the escalation. Null if auto/unassigned.
+  /// {@link shopping_mall_admins.id}.
+  assigned_admin_id String?
+  
+  /// Business category for escalation (e.g., refund_dispute, policy_violation,
+  /// compliance_check, complaint, delivery_exception).
+  escalation_type String
+  
+  /// Detailed explanation of why the event is escalated. Full business context
+  /// for review.
+  reason_detail String
+  
+  /// Current state in workflow (e.g., open, investigating, resolved, closed,
+  /// rejected, admin_pending, compliance_review).
+  status String
+  
+  /// Priority classification for triage (e.g., low, normal, high, urgent,
+  /// critical).
+  priority String
+  
+  /// Timestamp when escalation was created.
+  created_at DateTime
+  
+  /// Time when escalation was closed/resolved (nullable until resolved).
+  resolved_at DateTime?
+  
+  /// Time of last update (status/assignment change, message, etc.).
+  last_updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  adminInitiator shopping_mall_admins? @relation("shopping_mall_escalation_queues_of_initiator_actor_admin_id", fields: [initiator_actor_admin_id], references: [id], onDelete: Cascade)
+  sellerInitiator shopping_mall_sellers? @relation(fields: [initiator_actor_seller_id], references: [id], onDelete: Cascade)
+  customerInitiator shopping_mall_customers? @relation(fields: [initiator_actor_customer_id], references: [id], onDelete: Cascade)
+  assignedAdmin shopping_mall_admins? @relation("shopping_mall_escalation_queues_of_assigned_admin_id", fields: [assigned_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([initiator_actor_admin_id])
+  @@index([initiator_actor_seller_id])
+  // spellchecker: ignore-next-line
+  @@index([initiator_actor_customer_id], map: "shopping_mall_escalation_queues_initiator_actor_custom_a0649d38")
+  
+  @@index([status, priority, created_at])
+  @@index([assigned_admin_id, status])
+}

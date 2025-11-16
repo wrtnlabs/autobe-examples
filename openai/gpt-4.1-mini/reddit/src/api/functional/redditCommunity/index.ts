@@ -1,8 +1,6 @@
 export * as admin from "./admin/index";
-export * as guests from "./guests/index";
-export * as users from "./users/index";
-export * as user from "./user/index";
-export * as moderator from "./moderator/index";
+export * as redditCommunity from "./redditCommunity/index";
+export * as registeredUser from "./registeredUser/index";
+export * as communityModerator from "./communityModerator/index";
 export * as communities from "./communities/index";
-export * as redditCommunityContentTypes from "./redditCommunityContentTypes/index";
-export * as redditCommunityReportReasons from "./redditCommunityReportReasons/index";
+export * as posts from "./posts/index";

@@ -4,80 +4,105 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import type { IDiscussionBoardAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminSession";
+import type { IEconPolDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardAdmin";
 
 /**
- * Tests the registration workflow for a new administrator account.
- *
- * This test ensures that a new admin can be registered successfully by sending
- * a unique email and a secure password to the /auth/admin/join endpoint. Upon
- * success, the test verifies that the returned admin data includes valid
- * identification, authentication tokens, and timestamps.
- *
- * The test performs the following steps:
- *
- * 1. Create random but valid registration data with a unique email and password.
- * 2. Call the POST /auth/admin/join endpoint using the registered API method.
- * 3. Assert the structure and content of the response to verify correctness.
- * 4. Confirm that JWT tokens are present and correctly formatted.
+ * Test the administrator registration process by creating a new admin account
+ * with valid credentials. Verify successful creation of the admin account and
+ * issuance of JWT tokens for authenticated sessions. Validate the storage of
+ * admin credentials securely and the issuance of appropriate tokens upon
+ * registration.
  */
 export async function test_api_admin_registration(connection: api.IConnection) {
-  // Step 1: Prepare valid registration data
-  const email = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(12); // Secure random password
-  const requestBody = { email, password } satisfies IDiscussionBoardAdmin.IJoin;
+  // Prepare a unique username and email for the admin
+  const username = `admin_${RandomGenerator.alphaNumeric(8)}`;
+  const email = `${username}@example.com` as string & tags.Format<"email">;
+  const password = RandomGenerator.alphaNumeric(16); // a secure random password
 
-  // Step 2: Register new admin
-  const response: IDiscussionBoardAdmin.IAuthorized =
+  // Create the request body
+  const requestBody = {
+    username,
+    email,
+    password,
+  } satisfies IEconPolDiscussionBoardAdmin.IJoin;
+
+  // Call the admin join API to register the new admin
+  const response: IEconPolDiscussionBoardAdmin.IAuthorized =
     await api.functional.auth.admin.join(connection, { body: requestBody });
+
+  // Assert the response type safety
   typia.assert(response);
 
-  // Step 3: Validate response properties
+  // Validate response properties
   TestValidator.predicate(
-    "id is a valid UUID",
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      response.id,
+    "adminUsername matches request username",
+    response.adminUsername === username,
+  );
+
+  TestValidator.equals(
+    "admin email matches request email",
+    response.email,
+    email,
+  );
+
+  // Check that created_at and updated_at are proper ISO date-time strings
+  TestValidator.predicate(
+    "created_at is ISO date-time",
+    /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(
+      response.created_at,
     ),
   );
-  TestValidator.equals("email matches request", response.email, email);
   TestValidator.predicate(
-    "password_hash is non-empty string",
-    typeof response.password_hash === "string" &&
-      response.password_hash.length > 0,
+    "updated_at is ISO date-time",
+    /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(
+      response.updated_at,
+    ),
   );
-  TestValidator.predicate(
-    "created_at is valid ISO date-time",
-    !isNaN(Date.parse(response.created_at)),
-  );
-  TestValidator.predicate(
-    "updated_at is valid ISO date-time",
-    !isNaN(Date.parse(response.updated_at)),
-  );
-  // deleted_at can be null or undefined
-  if (response.deleted_at !== null && response.deleted_at !== undefined) {
-    TestValidator.predicate(
-      "deleted_at is valid ISO date-time",
-      !isNaN(Date.parse(response.deleted_at)),
-    );
-  }
 
-  // Step 4: Validate token object
-  const token: IAuthorizationToken = response.token;
+  // deleted_at can be null or undefined for active accounts, check if null or undefined
   TestValidator.predicate(
-    "token.access is a non-empty string",
-    typeof token.access === "string" && token.access.length > 0,
+    "deleted_at is null or undefined",
+    response.deleted_at === null || response.deleted_at === undefined,
+  );
+
+  // Role should be "admin"
+  TestValidator.equals("role is 'admin'", response.role, "admin");
+
+  // The admin must be active
+  TestValidator.predicate(
+    "is_active flag is true",
+    response.is_active === true,
+  );
+
+  // The id should be a non-empty string
+  TestValidator.predicate(
+    "id present",
+    typeof response.id === "string" && response.id.length > 0,
+  );
+
+  // Validate token properties
+  TestValidator.predicate(
+    "token.access is non-empty string",
+    typeof response.token.access === "string" &&
+      response.token.access.length > 0,
   );
   TestValidator.predicate(
-    "token.refresh is a non-empty string",
-    typeof token.refresh === "string" && token.refresh.length > 0,
+    "token.refresh is non-empty string",
+    typeof response.token.refresh === "string" &&
+      response.token.refresh.length > 0,
+  );
+
+  // Validate access token expiry timestamps with ISO8601 format
+  TestValidator.predicate(
+    "token.expired_at is ISO date-time",
+    /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(
+      response.token.expired_at,
+    ),
   );
   TestValidator.predicate(
-    "token.expired_at is valid ISO date-time",
-    !isNaN(Date.parse(token.expired_at)),
-  );
-  TestValidator.predicate(
-    "token.refreshable_until is valid ISO date-time",
-    !isNaN(Date.parse(token.refreshable_until)),
+    "token.refreshable_until is ISO date-time",
+    /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(
+      response.token.refreshable_until,
+    ),
   );
 }

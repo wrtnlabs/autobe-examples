@@ -5,31 +5,37 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
 /**
- * Authorization provider for discussion board users.
- * - Verifies JWT and user session.
- * - Ensures the user is not locked or deleted.
- * - Returns payload upon successful validation.
+ * Authenticates and authorizes a discussion board user by JWT.
+ * Validates user type and ensures the user is active, email-verified, not blocked, and not soft-deleted.
+ * Looks up the user via the correct user-session foreign key in the DB.
  */
 export async function userAuthorize(request: {
-  headers: { authorization?: string };
+  headers: {
+    authorization?: string;
+  };
 }): Promise<UserPayload> {
   const payload: UserPayload = jwtAuthorize({ request }) as UserPayload;
 
   if (payload.type !== "user") {
-    throw new ForbiddenException(`You're not a user.`);
+    throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Fetch user with active session, not locked, not soft deleted
-  const user = await MyGlobal.prisma.discussion_board_users.findFirst({
+  // Confirm user session exists, ties to active/unblocked user, and user is not deleted
+  const session = await MyGlobal.prisma.discussion_board_user_sessions.findFirst({
     where: {
-      id: payload.id,
-      is_locked: false,
-      deleted_at: null
+      id: payload.session_id,
+      discussion_board_user_id: payload.id,
+      user: {
+        deleted_at: null,
+        is_active: true,
+        is_blocked: false,
+        is_email_verified: true
+      }
     },
   });
 
-  if (user === null) {
-    throw new ForbiddenException("You're not enrolled or the account is inactive.");
+  if (!session) {
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

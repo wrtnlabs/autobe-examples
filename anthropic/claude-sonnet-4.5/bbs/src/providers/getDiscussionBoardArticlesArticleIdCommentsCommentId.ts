@@ -9,23 +9,15 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
-import { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 
 export async function getDiscussionBoardArticlesArticleIdCommentsCommentId(props: {
   articleId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardComment> {
-  const { articleId, commentId } = props;
-
-  const comment = await MyGlobal.prisma.discussion_board_comments.findFirst({
+  const comment = await MyGlobal.prisma.discussion_board_comments.findUnique({
     where: {
-      id: commentId,
-      discussion_board_article_id: articleId,
-      deleted_at: null,
-    },
-    include: {
-      memberAuthor: true,
-      moderatorAuthor: true,
+      id: props.commentId,
     },
   });
 
@@ -33,73 +25,75 @@ export async function getDiscussionBoardArticlesArticleIdCommentsCommentId(props
     throw new HttpException("Comment not found", 404);
   }
 
-  const memberAuthorSummary: IDiscussionBoardMember.ISummary | null =
-    comment.memberAuthor
-      ? {
-          id: comment.memberAuthor.id as string & tags.Format<"uuid">,
-          username: comment.memberAuthor.username,
-          display_name: comment.memberAuthor.display_name ?? null,
-          profile_picture_url: comment.memberAuthor.profile_picture_url
-            ? (comment.memberAuthor.profile_picture_url as string &
-                tags.Format<"uri">)
-            : null,
-        }
-      : null;
+  if (comment.discussion_board_article_id !== props.articleId) {
+    throw new HttpException("Comment not found", 404);
+  }
 
-  const moderatorAuthorSummary: IDiscussionBoardModerator.ISummary | null =
-    comment.moderatorAuthor
-      ? {
-          id: comment.moderatorAuthor.id as string & tags.Format<"uuid">,
-          username: comment.moderatorAuthor.username,
-          display_name: comment.moderatorAuthor.display_name,
-          profile_picture_url: comment.moderatorAuthor.profile_picture_url
-            ? (comment.moderatorAuthor.profile_picture_url as string &
-                tags.Format<"uri">)
-            : null,
-          email_verified: comment.moderatorAuthor.email_verified,
-          status: comment.moderatorAuthor.status,
-          moderation_permissions:
-            comment.moderatorAuthor.moderation_permissions,
-          profile_visibility: comment.moderatorAuthor.profile_visibility,
-          activity_visibility: comment.moderatorAuthor.activity_visibility,
-          bio: comment.moderatorAuthor.bio ?? null,
-          location: comment.moderatorAuthor.location ?? null,
-          website_url: comment.moderatorAuthor.website_url
-            ? (comment.moderatorAuthor.website_url as string &
-                tags.Format<"uri">)
-            : null,
-          last_login_at: comment.moderatorAuthor.last_login_at
-            ? toISOStringSafe(comment.moderatorAuthor.last_login_at)
-            : null,
-          created_at: toISOStringSafe(comment.moderatorAuthor.created_at),
-          updated_at: toISOStringSafe(comment.moderatorAuthor.updated_at),
-          deleted_at: comment.moderatorAuthor.deleted_at
-            ? toISOStringSafe(comment.moderatorAuthor.deleted_at)
-            : null,
-        }
-      : null;
+  const member = await MyGlobal.prisma.discussion_board_members.findUnique({
+    where: {
+      id: comment.discussion_board_member_id,
+    },
+  });
+
+  if (!member) {
+    throw new HttpException("Member not found", 404);
+  }
+
+  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: {
+      id: comment.discussion_board_article_id,
+    },
+  });
+
+  if (!article) {
+    throw new HttpException("Article not found", 404);
+  }
+
+  const articleAuthor =
+    await MyGlobal.prisma.discussion_board_members.findUnique({
+      where: {
+        id: article.discussion_board_member_id,
+      },
+    });
+
+  if (!articleAuthor) {
+    throw new HttpException("Article author not found", 404);
+  }
 
   return {
     id: comment.id as string & tags.Format<"uuid">,
     discussion_board_article_id: comment.discussion_board_article_id as string &
       tags.Format<"uuid">,
-    discussion_board_parent_comment_id:
-      comment.discussion_board_parent_comment_id
-        ? (comment.discussion_board_parent_comment_id as string &
-            tags.Format<"uuid">)
-        : null,
-    discussion_board_member_id: comment.discussion_board_member_id
-      ? (comment.discussion_board_member_id as string & tags.Format<"uuid">)
-      : null,
-    discussion_board_moderator_id: comment.discussion_board_moderator_id
-      ? (comment.discussion_board_moderator_id as string & tags.Format<"uuid">)
-      : null,
-    author_type: comment.author_type,
-    content: comment.content,
+    member_id: comment.discussion_board_member_id as string &
+      tags.Format<"uuid">,
+    content: comment.content as string & tags.MaxLength<2000>,
     created_at: toISOStringSafe(comment.created_at),
     updated_at: toISOStringSafe(comment.updated_at),
     deleted_at: comment.deleted_at ? toISOStringSafe(comment.deleted_at) : null,
-    memberAuthor: memberAuthorSummary,
-    moderatorAuthor: moderatorAuthorSummary,
+    member: {
+      id: member.id as string & tags.Format<"uuid">,
+      username: member.username,
+      email: member.email as string & tags.Format<"email">,
+      status: member.status,
+      email_verified: member.email_verified,
+      created_at: toISOStringSafe(member.created_at),
+    },
+    article: {
+      id: article.id as string & tags.Format<"uuid">,
+      title: article.title,
+      view_count: article.view_count as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      created_at: toISOStringSafe(article.created_at),
+      updated_at: toISOStringSafe(article.updated_at),
+      author: {
+        id: articleAuthor.id as string & tags.Format<"uuid">,
+        username: articleAuthor.username,
+        email: articleAuthor.email as string & tags.Format<"email">,
+        status: articleAuthor.status,
+        email_verified: articleAuthor.email_verified,
+        created_at: toISOStringSafe(articleAuthor.created_at),
+      },
+    },
   };
 }

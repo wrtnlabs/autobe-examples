@@ -1,360 +1,317 @@
-/// Shopping cart metadata for customers. Maintains persistent shopping carts
-/// per customer across sessions and devices. Each customer has their active
-/// shopping cart that persists independently from orders. The cart
-/// represents pre-purchase state and serves as the staging area before
-/// checkout. Relates to {@link shopping_mall_shopping_cart_items} containing
-/// individual items and to {@link shopping_mall_customers} for ownership.
+/// Shopping cart storage for authenticated customers, maintaining temporary
+/// collections of products before checkout.
+///
+/// Stores the customer's current shopping cart with aggregated totals
+/// including subtotal, discounts, shipping estimates, and tax calculations.
+/// Each customer maintains one active cart that persists across sessions and
+/// devices. Cart state includes metadata for checkout flow such as selected
+/// shipping address, shipping method preference, and applied promotional
+/// codes.
+///
+/// Carts are not converted to orders in this table; instead, successful
+/// checkouts create separate order records in the order management system.
+/// Abandoned carts may exist indefinitely in the system but are marked with
+/// last_modified timestamps for analytics and recovery email campaigns.
+///
+/// Includes comprehensive totals for display (subtotal, estimated shipping,
+/// estimated tax, discount amount, grand total) and state tracking (whether
+/// address and shipping selections are finalized).
 ///
 /// @namespace Shopping
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shopping_carts {
+model ecommerce_mall_shopping_carts {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the customer who owns this cart. {@link
-  /// shopping_mall_customers.id}
-  shopping_customer_id String
+  /// Reference to the customer who owns this cart. Each customer has exactly
+  /// one active cart. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
   
-  /// Current cart status tracking: 'active' (in use), 'abandoned' (inactive
-  /// 30+ days), 'converted' (order placed from this cart). Used for cart
-  /// recovery analytics and cleanup.
-  cart_status String
-  
-  /// Denormalized count of distinct items (SKUs) in cart. Updated when items
-  /// are added/removed. Used for quick display without querying items table.
-  total_items_count Int
-  
-  /// Denormalized sum of all item quantities in cart. Total units across all
-  /// line items. Updated whenever cart items change.
-  total_quantity Int
-  
-  /// Denormalized subtotal of all items (sum of unit_price × quantity for all
-  /// items). Calculated value updated when items are modified. Does not
-  /// include taxes or shipping.
+  /// Sum of all line item subtotals (item price × quantity) before taxes,
+  /// shipping, and discounts. Recalculated when cart items change.
   subtotal_amount Float
   
-  /// Estimated total with taxes and shipping. Recalculated based on shipping
-  /// address and method. Used for display purposes before final checkout
-  /// calculation.
-  estimated_total_amount Float?
+  /// Total discount amount applied through promotional codes or platform
+  /// promotions. Stored separately for transparency.
+  discount_amount Float
   
-  /// Timestamp when this cart was created for this customer. Records cart
-  /// creation time for analytics.
+  /// Estimated shipping cost based on selected shipping address and shipping
+  /// method. Recalculated if address or method changes.
+  estimated_shipping_amount Float?
+  
+  /// Estimated tax calculated based on shipping destination address. Updated
+  /// if address changes during checkout.
+  estimated_tax_amount Float?
+  
+  /// Final total including subtotal, discount, shipping, and tax. Used for
+  /// display during checkout and payment authorization.
+  grand_total_amount Float?
+  
+  /// Denormalized count of cart items for quick display (shows number of
+  /// products in cart). Incremented/decremented when items added/removed.
+  item_count Int
+  
+  /// Cart status indicating its lifecycle state. Values: ACTIVE (customer
+  /// shopping), ABANDONED (inactive 30+ days), CONVERTED (order placed). Used
+  /// for analytics and recovery campaigns.
+  status String
+  
+  /// Promotional code or coupon code currently applied to this cart, if any.
+  /// Stored for tracking and validation.
+  promo_code_applied String?
+  
+  /// UUID reference to the selected shipping address for this cart
+  /// (denormalized for performance). Optional field; address may not be
+  /// selected until checkout.
+  selected_address_id String?
+  
+  /// Selected shipping method name (Standard, Express, Overnight, etc.). Null
+  /// if not yet selected during checkout.
+  selected_shipping_method String?
+  
+  /// Timestamp when the shopping cart was created or first accessed by the
+  /// customer.
   created_at DateTime
   
-  /// Timestamp of most recent modification to cart (item
-  /// added/removed/quantity changed). Tracks last activity for abandonment
-  /// detection and idle timeout.
+  /// Timestamp of the most recent modification to the cart (items
+  /// added/removed, address/shipping updated).
   updated_at DateTime
-  
-  /// Soft delete timestamp. Null if cart is active, populated when cart is
-  /// archived. Enables cart recovery and historical analysis.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
-  shopping_mall_shopping_cart_items shopping_mall_shopping_cart_items[]
-  shopping_mall_cart_recovery_emails shopping_mall_cart_recovery_emails[]
+  ecommerce_mall_stock_reservations ecommerce_mall_stock_reservations[]
+  ecommerce_mall_cart_items ecommerce_mall_cart_items[]
   
-  @@unique([shopping_customer_id])
+  @@unique([ecommerce_mall_customer_id])
   
-  @@index([shopping_customer_id])
-  @@index([cart_status, updated_at])
-  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_shopping_carts_ecommerce_mall_customer__065aea4a")
+  @@index([status, updated_at])
 }
 
-/// Individual line items within shopping carts. Represents selected products
-/// with chosen variants (color, size, etc.) and quantities. Each cart item
-/// is a specific product variant with customer's quantity selection. Relates
-/// to {@link shopping_mall_shopping_carts} (parent cart), {@link
-/// shopping_mall_products} (product reference), and {@link
-/// shopping_mall_product_variants} (specific SKU chosen). Tracks selected
-/// options and timestamps for each item.
+/// Individual line items stored within a shopping cart, representing
+/// specific product variants with quantity and pricing.
+///
+/// Each cart item represents one specific product variant (SKU) with
+/// denormalized price, quantity, and seller information captured at the time
+/// of addition to cart. Cart items maintain independent pricing records so
+/// that if a seller changes their product price after the item was added,
+/// the customer still sees the original price.
+///
+/// Cart items link to product_skus for inventory validation during checkout.
+/// Seller information is stored for display and multi-seller cart
+/// organization. When customers modify quantity or remove items, cart items
+/// are deleted entirely (no soft delete needed for ephemeral cart data).
+///
+/// Prices and totals are recalculated when quantities change, and line item
+/// subtotals are aggregated up to the parent cart's subtotal.
 ///
 /// @namespace Shopping
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shopping_cart_items {
+model ecommerce_mall_cart_items {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the parent shopping cart. {@link
-  /// shopping_mall_shopping_carts.id}
-  shopping_cart_id String
+  /// Reference to the parent shopping cart that contains this item. {@link
+  /// ecommerce_mall_shopping_carts.id}
+  ecommerce_mall_shopping_cart_id String
   
-  /// Reference to the product being added to cart. {@link
-  /// shopping_mall_products.id}
-  shopping_product_id String
+  /// Reference to the specific product variant (SKU) being added to cart.
+  /// Links to inventory for stock validation. {@link
+  /// ecommerce_mall_product_skus.id}
+  ecommerce_mall_product_sku_id String
   
-  /// Reference to the specific product variant (SKU) selected. Customer chose
-  /// this specific color/size/option combination. {@link
-  /// shopping_mall_product_variants.id}
-  shopping_product_variant_id String
+  /// Reference to the seller offering this product variant. Stored for
+  /// multi-seller cart organization and fulfillment. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
   
-  /// Number of units of this variant in the cart. Must be positive integer.
-  /// Customer can have multiple units of same variant in cart.
+  /// Number of units of this product variant in the cart. Must be positive
+  /// integer. Limited to maximum 100 to prevent bulk buying abuse.
   quantity Int
   
-  /// Price per unit at time item was added to cart. Snapshot of price to show
-  /// customer what they will pay. May differ from current product price if
-  /// product was repriced.
+  /// Price per unit captured at the time the item was added to cart. Frozen
+  /// price independent of future seller price changes.
   unit_price Float
   
-  /// Denormalized line item total: unit_price × quantity. Cached value for
-  /// quick display. Should match calculated value.
+  /// Calculated subtotal for this line item (unit_price × quantity).
+  /// Recalculated when quantity changes.
   line_total Float
   
-  /// JSON snapshot of variant attributes selected (e.g., {"color": "Red",
-  /// "size": "M"}). Preserves the exact configuration customer selected in
-  /// case variant options change later.
-  variant_attributes_snapshot String?
+  /// Denormalized description of selected variant attributes (e.g., 'Color:
+  /// Blue, Size: Large, Width: Standard'). Used for display in cart.
+  variant_details String?
   
-  /// Timestamp when this item was added to the cart. Tracks item addition
-  /// order for analytics.
-  added_at DateTime
+  /// Timestamp when this item was added to the shopping cart.
+  created_at DateTime
   
   /// Timestamp of most recent modification to this cart item (quantity
-  /// changed, etc.). Tracks item-level activity.
+  /// changed).
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  cart shopping_mall_shopping_carts @relation(fields: [shopping_cart_id], references: [id], onDelete: Cascade)
-  product shopping_mall_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
-  variant shopping_mall_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+  cart ecommerce_mall_shopping_carts @relation(fields: [ecommerce_mall_shopping_cart_id], references: [id], onDelete: Cascade)
+  sku ecommerce_mall_product_skus @relation(fields: [ecommerce_mall_product_sku_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
   
-  // spellchecker: ignore-next-line
-  @@index([shopping_product_variant_id], map: "shopping_mall_shopping_cart_items_shopping_product_var_8f3922c7")
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_cart_id, shopping_product_variant_id], map: "shopping_mall_shopping_cart_items_shopping_cart_id_sho_5424acdd")
-  @@index([shopping_cart_id])
-  @@index([shopping_product_id])
-  @@index([added_at])
+  @@index([ecommerce_mall_shopping_cart_id])
+  @@index([ecommerce_mall_product_sku_id])
+  @@index([ecommerce_mall_seller_id])
 }
 
-/// Wishlist metadata for customers. Maintains wish lists for future purchase
-/// tracking and price tracking. Each customer has one wishlist for tracking
-/// products of interest. Similar structure to carts but for aspirational
-/// rather than committed purchases. Relates to {@link
-/// shopping_mall_wishlist_items} containing individual wish list items and
-/// to {@link shopping_mall_customers} for ownership.
+/// Wishlist collections where customers save products they are interested in
+/// purchasing later, separate from shopping carts.
+///
+/// Allows customers to maintain one or more named wishlists (e.g., 'Summer
+/// Clothes', 'Gifts for Mom') for organizing products of interest. Wishlists
+/// are persistent across sessions and customer logins, used for price
+/// tracking, demand signals, and notifications when items are back in stock.
+///
+/// Wishlists can be marked as public to share with other customers via
+/// shareable links, or kept private for personal use only. Wishlist metadata
+/// includes whether it's public/private and visibility status. Multiple
+/// wishlists per customer enable organization by theme or recipient.
+///
+/// Contains aggregated count of items in the wishlist for display and
+/// reference. Timestamps track creation date and recent modifications.
 ///
 /// @namespace Shopping
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_wishlists {
+model ecommerce_mall_wishlists {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the customer who owns this wishlist. {@link
-  /// shopping_mall_customers.id}
-  shopping_customer_id String
+  /// Reference to the customer who owns this wishlist. Customer can have
+  /// multiple wishlists. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
   
-  /// Denormalized count of distinct items (SKUs) in wishlist. Updated when
-  /// items are added/removed. Used for quick display of wishlist size.
-  total_items_count Int
+  /// User-friendly name for the wishlist (e.g., 'Summer Clothes', 'Birthday
+  /// Gifts'). Max 255 characters for display in UI.
+  name String
   
-  /// Denormalized sum of all item prices in wishlist. Represents total value
-  /// if all items were purchased at current prices. Used for analytics and
-  /// feature display.
-  total_value Float
+  /// Optional description of the wishlist's purpose or context. Helps customer
+  /// organize and remember why items are grouped together.
+  description String?
   
-  /// Timestamp when this wishlist was created (typically at customer
-  /// registration). Records wishlist creation time.
+  /// Whether this wishlist is publicly shareable via link or kept private.
+  /// Default false (private).
+  is_public Boolean
+  
+  /// Denormalized count of items in this wishlist for quick display.
+  /// Incremented/decremented when items added/removed.
+  item_count Int
+  
+  /// Timestamp when the wishlist was created by the customer.
   created_at DateTime
   
-  /// Timestamp of most recent modification to wishlist (item
-  /// added/removed/price changed). Tracks activity for engagement metrics.
+  /// Timestamp of most recent modification to the wishlist (items
+  /// added/removed, visibility changed).
   updated_at DateTime
   
-  /// Soft delete timestamp. Null if wishlist is active, populated if wishlist
-  /// was archived. Enables historical tracking.
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_wishlist_items ecommerce_mall_wishlist_items[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_wishlists_ecommerce_mall_customer_id_cr_3d3f738b")
+  @@index([is_public])
+}
+
+/// Individual items saved in a customer's wishlist, representing product
+/// variants they are interested in for potential future purchase.
+///
+/// Each wishlist item represents one specific product variant (SKU) added to
+/// a wishlist without quantity selection (wishlists save single units of
+/// each variant, not quantities). Wishlist items store denormalized pricing
+/// and availability information captured at the time of addition for display
+/// purposes.
+///
+/// Wishlist items maintain independent reference to product SKUs for
+/// tracking availability and detecting when items come back in stock
+/// (triggering optional customer notifications). Seller information is
+/// stored to display which seller offers each wishlist item and their
+/// ratings.
+///
+/// Unlike cart items, wishlist items can be soft-deleted (marked with
+/// deleted_at) to preserve history while hiding items from active wishlist
+/// display. This supports recovery if customer wishes to restore
+/// accidentally removed items.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent wishlist that contains this item. {@link
+  /// ecommerce_mall_wishlists.id}
+  ecommerce_mall_wishlist_id String
+  
+  /// Reference to the specific product variant (SKU) saved in the wishlist.
+  /// Used for availability and price tracking. {@link
+  /// ecommerce_mall_product_skus.id}
+  ecommerce_mall_product_sku_id String
+  
+  /// Reference to the seller offering this product variant. Stored for display
+  /// of seller information and ratings. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Product price captured at the time the item was added to the wishlist.
+  /// Stored to show customer price changes (if current price differs).
+  price_at_add Float
+  
+  /// Availability status captured when item was added (In Stock, Low Stock,
+  /// Out of Stock). Stored to detect availability changes.
+  availability_at_add String?
+  
+  /// Denormalized description of the product variant attributes (e.g., 'Color:
+  /// Blue, Size: Large'). Used for display in wishlist.
+  variant_details String?
+  
+  /// Whether customer wants to be notified if the price drops for this
+  /// wishlist item. Default false (no notification).
+  notify_price_drop Boolean
+  
+  /// Timestamp when this item was added to the wishlist.
+  created_at DateTime
+  
+  /// Timestamp of most recent modification to this wishlist item (notification
+  /// preference changed).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if item is active in wishlist, set to
+  /// deletion time if item was removed.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  wishlist ecommerce_mall_wishlists @relation(fields: [ecommerce_mall_wishlist_id], references: [id], onDelete: Cascade)
+  sku ecommerce_mall_product_skus @relation(fields: [ecommerce_mall_product_sku_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
-  
-  @@unique([shopping_customer_id])
-  
-  @@index([shopping_customer_id])
-  @@index([updated_at])
-}
-
-/// Individual items within customer wishlists. Represents products (with
-/// specific variants) that customers are interested in purchasing. Each
-/// wishlist item is a specific product variant with price snapshot and
-/// metadata. Relates to {@link shopping_mall_wishlists} (parent wishlist),
-/// {@link shopping_mall_products} (product reference), and {@link
-/// shopping_mall_product_variants} (specific SKU). Tracks when item was
-/// added and any price changes for notification purposes.
-///
-/// @namespace Shopping
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_wishlist_items {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the parent wishlist. {@link shopping_mall_wishlists.id}
-  shopping_wishlist_id String
-  
-  /// Reference to the product in wishlist. {@link shopping_mall_products.id}
-  shopping_product_id String
-  
-  /// Reference to the specific product variant (SKU) in wishlist. Customer
-  /// wishlist-added this specific variant. {@link
-  /// shopping_mall_product_variants.id}
-  shopping_product_variant_id String
-  
-  /// Price of the variant when item was added to wishlist. Snapshot to track
-  /// price changes and notify customer of drops. Allows comparison with
-  /// current price.
-  price_snapshot Float
-  
-  /// Current price of the variant. Updated periodically from product pricing.
-  /// Compared to price_snapshot to detect price drops and trigger
-  /// notifications.
-  current_price Float
-  
-  /// JSON snapshot of variant attributes (e.g., {"color": "Blue", "size":
-  /// "L"}). Preserves exact variant configuration customer selected.
-  variant_attributes_snapshot String?
-  
-  /// Seller name at time of wishlist addition. Stores seller information for
-  /// tracking without requiring FK query. May differ if seller name changes.
-  seller_name_snapshot String
-  
-  /// Priority level for this wishlist item: 'low', 'medium', 'high'. Helps
-  /// customer organize wishlist importance. Default is 'medium'.
-  priority_level String
-  
-  /// Timestamp when this item was added to wishlist. Tracks when customer
-  /// expressed interest in product.
-  added_at DateTime
-  
-  /// Timestamp of most recent change to this wishlist item (price updated,
-  /// priority changed). Tracks item-level modifications.
-  updated_at DateTime
-  
-  /// Timestamp when customer was last notified of price drop for this item.
-  /// Prevents duplicate notifications. Null if not yet notified.
-  price_drop_notified_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  wishlist shopping_mall_wishlists @relation(fields: [shopping_wishlist_id], references: [id], onDelete: Cascade)
-  product shopping_mall_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
-  variant shopping_mall_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
-  
-  @@index([shopping_product_variant_id])
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_wishlist_id, shopping_product_variant_id], map: "shopping_mall_wishlist_items_shopping_wishlist_id_shop_e0ba57d4")
-  @@index([shopping_wishlist_id])
-  @@index([shopping_product_id])
-  @@index([added_at])
-  @@index([priority_level])
-}
-
-/// Tracks abandoned cart recovery email notifications sent to customers.
-/// Records when recovery emails are sent, delivery status, and customer
-/// interactions. Supports abandoned cart recovery marketing campaigns to
-/// re-engage customers with carts left incomplete. Relates to {@link
-/// shopping_mall_shopping_carts} and {@link shopping_mall_customers}. Used
-/// for email campaign analytics and effectiveness tracking.
-///
-/// @namespace Shopping
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_cart_recovery_emails {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the abandoned shopping cart. {@link
-  /// shopping_mall_shopping_carts.id}
-  shopping_cart_id String
-  
-  /// Reference to the customer receiving recovery email. {@link
-  /// shopping_mall_customers.id}
-  shopping_customer_id String
-  
-  /// Email address to which recovery email was sent. Stored as snapshot in
-  /// case customer changes email after recovery is sent.
-  email_address String
-  
-  /// Type of recovery email template used: 'first_reminder' (sent after 1 day
-  /// idle), 'second_reminder' (sent after 3 days idle), 'final_offer' (sent
-  /// after 7 days with special discount). Tracks which campaign variant was
-  /// used.
-  email_template_type String
-  
-  /// Cart total value at time recovery email was sent. Snapshot for tracking
-  /// email effectiveness and value recovery metrics.
-  cart_value_at_send Float
-  
-  /// Timestamp when recovery email was sent to customer. Records email
-  /// dispatch time.
-  sent_at DateTime
-  
-  /// Email delivery status: 'pending' (awaiting send), 'sent' (dispatched),
-  /// 'delivered' (confirmed by email provider), 'bounced' (rejected), 'opened'
-  /// (customer opened), 'clicked' (customer clicked link). Tracks email
-  /// campaign performance.
-  delivery_status String
-  
-  /// Timestamp when customer opened the recovery email (if tracked by email
-  /// provider). Null if email not opened. Used for engagement analytics.
-  opened_at DateTime?
-  
-  /// Timestamp when customer clicked a link in recovery email. Null if link
-  /// not clicked. Indicates high engagement with recovery campaign.
-  clicked_at DateTime?
-  
-  /// Order ID if customer completed purchase from this recovered cart. Links
-  /// recovery email to successful conversion. Null if recovery unsuccessful
-  /// (cart abandoned without purchase).
-  cart_recovered_order_id String?
-  
-  /// Whether recovery was successful (cart_recovered_order_id is not null).
-  /// True if recovery email led to order completion, false otherwise. Used for
-  /// campaign effectiveness metrics.
-  recovery_success_flag Boolean
-  
-  /// Timestamp when this recovery email record was created. Records when
-  /// recovery campaign entry was made.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  cart shopping_mall_shopping_carts @relation(fields: [shopping_cart_id], references: [id], onDelete: Cascade)
-  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
-  
-  @@index([shopping_cart_id])
-  @@index([shopping_customer_id])
-  @@index([sent_at])
-  @@index([delivery_status])
-  @@index([recovery_success_flag])
+  @@index([ecommerce_mall_wishlist_id])
+  @@index([ecommerce_mall_product_sku_id])
+  @@index([ecommerce_mall_seller_id])
+  @@index([deleted_at])
 }

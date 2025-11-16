@@ -1,61 +1,72 @@
-/// Platform-wide configuration settings that control the overall behavior
-/// and features of the community platform. This foundational table stores
-/// system parameters such as API rate limits, content moderation thresholds,
-/// feature flags, and global settings that apply across all communities and
-/// users. These settings are read frequently but changed rarely, making them
-/// ideal for caching.
+/// Platform-wide configuration settings that control system behavior and
+/// feature availability.
+///
+/// Stores key-value pairs for global platform configuration including
+/// feature flags, thresholds, and operational parameters. All communities
+/// and users operate within constraints defined by these settings.
+/// Configuration changes affect the entire platform immediately.
+/// Administrators use these settings to control platform behavior without
+/// code deployment (e.g., enable/disable voting, set rate limits, manage
+/// feature access).
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_settings {
+model community_platform_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the setting (e.g., 'max_post_length',
-  /// 'min_karma_for_community_creation'). Used as the lookup key for
-  /// configuration values.
-  setting_key String
+  /// Configuration key identifier (e.g., 'max_posts_per_hour',
+  /// 'voting_enabled', 'min_karma_to_post'). Used to look up specific
+  /// settings. Must be unique and immutable after creation.
+  key String
   
-  /// The actual value of the setting stored as string (e.g., '40000', '100').
-  /// Values are serialized as strings to support multiple data types (numbers,
-  /// booleans, JSON) in a single table.
-  setting_value String
+  /// Configuration value as string (parsed by application based on key type).
+  /// Examples: 'true', '100', '1000', 'enabled'. Stores actual configuration
+  /// data.
+  value String
   
-  /// Data type of the setting value: 'string', 'number', 'boolean', or 'json'.
-  /// Used to deserialize values correctly when reading settings.
-  setting_type String
-  
-  /// Human-readable description of what this setting controls. Helps
-  /// administrators understand the purpose of each configuration parameter.
+  /// Human-readable description explaining what this configuration controls
+  /// and its impact on platform behavior. Helps administrators understand
+  /// settings.
   description String?
   
-  /// Whether this setting can be modified by administrators (true) or is
-  /// read-only/system-managed (false). Prevents accidental modification of
-  /// critical parameters.
-  is_editable Boolean
+  /// Data type of the value (e.g., 'boolean', 'integer', 'string', 'decimal').
+  /// Helps validate values when updated. Examples: 'boolean', 'int', 'string',
+  /// 'float'.
+  data_type String?
   
-  /// Timestamp when this setting was first created.
+  /// Timestamp when configuration setting was created. Records when this
+  /// configuration first entered the system.
   created_at DateTime
   
-  /// Timestamp when this setting was last modified.
+  /// Timestamp when configuration setting was last modified. Updated every
+  /// time the value changes.
   updated_at DateTime
+  
+  /// Timestamp when configuration was soft-deleted (if applicable). Null for
+  /// active configurations. Enables recovery of deleted settings.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([setting_key])
+  @@unique([key])
   @@index([created_at])
 }
 
 /// Predefined content categories used to organize and classify communities
-/// on the platform. This lookup table defines the taxonomy of community
-/// topics (e.g., Technology, Gaming, Entertainment, Education). Categories
-/// are selected during community creation to improve discoverability and
-/// help users find communities aligned with their interests. Categories are
-/// essentially static but can be expanded over time as the platform grows.
+/// on the platform.
+///
+/// Provides the taxonomy for community classification. Each community must
+/// be assigned exactly one category from this list. Categories guide content
+/// organization, enable filtering and discovery, and help users find
+/// communities aligned with their interests. Categories are curated by
+/// platform administrators and cannot be created by regular users. The
+/// category list remains relatively stable, with occasional additions or
+/// renames as platform evolves.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -66,42 +77,42 @@ model community_platform_categories {
   /// Primary Key.
   id String @id
   
-  /// Official name of the category (e.g., 'Technology', 'Gaming',
-  /// 'Entertainment'). Displayed to users when browsing and filtering
-  /// communities.
+  /// Display name of the category (e.g., 'Technology', 'Entertainment',
+  /// 'Sports'). Used in UI for category selection and filtering.
+  /// Human-readable label shown to users.
   name String
   
-  /// URL-friendly identifier for the category (e.g., 'technology', 'gaming').
-  /// Used in URLs and as a consistent identifier for category references.
+  /// URL-safe slug identifier for the category (e.g., 'technology',
+  /// 'entertainment', 'sports'). Used in URLs and API parameters. Lowercase
+  /// alphanumeric with hyphens only.
   slug String
   
-  /// Detailed description of the category explaining what types of communities
-  /// and content belong in this category. Helps users understand when to
-  /// select this category.
+  /// Detailed description of what communities belong in this category. Guides
+  /// community creators when selecting appropriate category. Up to 500
+  /// characters explaining scope and purpose.
   description String?
   
-  /// URL to the category icon image. Displayed in community listings,
-  /// discovery pages, and navigation to help users visually identify
-  /// categories.
+  /// URL to category icon image displayed in UI (e.g., gears for Technology,
+  /// film reel for Entertainment). Optional but recommended for visual
+  /// distinction.
   icon_url String?
   
-  /// Hex color code for the category (e.g., '#FF6B6B'). Used for visual
-  /// styling and color-coding category badges across the platform UI.
-  color_hex String?
-  
-  /// Sort order for displaying categories in lists. Lower numbers appear first
-  /// in category listings, allowing admins to prioritize important categories.
+  /// Sort order for displaying categories in UI lists and dropdowns. Lower
+  /// numbers appear first. Allows administrators to control category
+  /// prominence.
   display_order Int
   
-  /// Whether this category is currently active and available for selection.
-  /// Inactive categories are hidden from community creation forms but preserve
-  /// existing community associations.
+  /// Whether this category is currently available for use. Inactive categories
+  /// hide from selection dropdowns but existing communities in that category
+  /// continue working. Enables sunsetting old categories.
   is_active Boolean
   
-  /// Timestamp when this category was first created.
+  /// Timestamp when category was created in the system. Records when this
+  /// category was added to the platform.
   created_at DateTime
   
-  /// Timestamp when this category was last updated.
+  /// Timestamp when category was last modified. Updated when name,
+  /// description, icon, or other properties change.
   updated_at DateTime
   
   //----
@@ -112,71 +123,4 @@ model community_platform_categories {
   @@unique([slug])
   @@index([display_order])
   @@index([is_active])
-}
-
-/// Defines the reputation tiers in the karma system that users can achieve
-/// as they accumulate karma points. This static configuration table stores
-/// tier definitions including tier name (Bronze, Silver, Gold, Platinum,
-/// Diamond), karma thresholds, privileges unlocked at each tier, and visual
-/// styling. Tiers are used to display user reputation and control access to
-/// elevated features. These tiers are rarely changed but referenced
-/// frequently by the karma system.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_reputation_tiers {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Name of the reputation tier (e.g., 'Bronze', 'Silver', 'Gold',
-  /// 'Platinum', 'Diamond'). Displayed on user profiles and in reputation
-  /// displays.
-  tier_name String
-  
-  /// Numeric tier level (1-5, where 1=Bronze and 5=Diamond). Used for
-  /// comparisons and ordering of tiers.
-  tier_level Int
-  
-  /// Minimum karma points required to achieve this tier (e.g., 10 for Bronze,
-  /// 100 for Silver). Users automatically advance to this tier when their
-  /// karma exceeds this threshold.
-  min_karma_threshold Int
-  
-  /// Maximum karma points for this tier before advancing to next tier. Null
-  /// for the highest tier (Diamond) which has no upper bound.
-  max_karma_threshold Int?
-  
-  /// URL to the tier icon or badge image. Displayed next to usernames and on
-  /// profiles to visually indicate tier status.
-  icon_url String?
-  
-  /// Hex color code for the tier (e.g., '#8B7355' for bronze, '#C0C0C0' for
-  /// silver). Used for visual styling of tier badges and displays.
-  color_hex String?
-  
-  /// JSON-formatted list of privileges/capabilities unlocked at this tier.
-  /// Example: '["create_communities", "become_moderator", "custom_flair"]'.
-  /// Determines what elevated features users can access.
-  unlocked_privileges String?
-  
-  /// Description of the tier and what it represents (e.g., 'Established
-  /// contributor recognized by the community'). Helps users understand tier
-  /// significance.
-  description String?
-  
-  /// Timestamp when this tier definition was created.
-  created_at DateTime
-  
-  /// Timestamp when this tier definition was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([tier_name])
-  @@unique([tier_level])
-  @@unique([min_karma_threshold])
 }

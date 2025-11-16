@@ -14,56 +14,56 @@ import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 export async function patchRedditCommunityCommunities(props: {
   body: IRedditCommunityCommunity.IRequest;
 }): Promise<IPageIRedditCommunityCommunity.ISummary> {
-  const { body } = props;
+  const { page, limit, search, status, sortBy, sortDirection } = props.body;
 
-  // Calculate pagination variables
-  const page = body.page;
-  const limit = body.limit;
-  const skip = (page - 1) * limit;
+  const skip =
+    (page satisfies number as number) * (limit satisfies number as number);
+  const take = limit satisfies number as number;
 
-  // Build the where filter
-  const where = {
+  const where: Prisma.reddit_community_communitiesWhereInput = {
     deleted_at: null,
-    ...(body.search !== undefined &&
-      body.search !== null &&
-      body.search !== "" && {
-        OR: [
-          { name: { contains: body.search } },
-          { description: { contains: body.search } },
-        ],
-      }),
+    ...(search
+      ? { name: { contains: search, mode: "insensitive" as Prisma.QueryMode } }
+      : {}),
+    ...(status && status !== "all" ? { status: status } : {}),
   };
 
-  // Validate and set sort field and order
-  const allowedSortFields = ["name", "created_at"];
-  const sortBy = allowedSortFields.includes(body.sortBy ?? "")
-    ? body.sortBy!
-    : "created_at";
-  const sortOrder = body.sortOrder === "asc" ? "asc" : "desc";
+  type SortByKey = "name" | "created_at" | "updated_at";
+  const sortMap: Record<string, SortByKey> = {
+    communityName: "name",
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  };
 
-  // Query the database
-  const [communities, total] = await Promise.all([
+  const orderBy: Prisma.reddit_community_communitiesOrderByWithRelationInput =
+    sortBy && sortDirection && sortMap[sortBy]
+      ? { [sortMap[sortBy]]: sortDirection as "asc" | "desc" }
+      : { name: "asc" };
+
+  const [data, total] = await Promise.all([
     MyGlobal.prisma.reddit_community_communities.findMany({
       where,
-      select: {
-        id: true,
-        name: true,
-      },
-      orderBy: { [sortBy]: sortOrder },
       skip,
-      take: limit,
+      take,
+      orderBy,
     }),
     MyGlobal.prisma.reddit_community_communities.count({ where }),
   ]);
 
-  // Return paginated result
   return {
     pagination: {
       current: page satisfies number as number,
       limit: limit satisfies number as number,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(
+        total / (limit satisfies number as number),
+      ) satisfies number as number,
     },
-    data: communities.map(({ id, name }) => ({ id, name })),
+    data: data.map((community) => ({
+      id: community.id,
+      communityName: community.name,
+      status: community.status,
+      creator_id: community.creator_id,
+    })),
   };
 }

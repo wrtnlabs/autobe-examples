@@ -1,0 +1,1 @@
+The document outlines functional and non-functional requirements for the community platform, including performance expectations, security requirements, scalability, and reliability.

@@ -1,0 +1,520 @@
+/// Comprehensive customer profile information including personal details,
+/// contact information, and account settings.
+///
+/// Stores the main profile data for registered customers, serving as the
+/// central entity for customer account management. Each profile is linked to
+/// a customer authentication record and contains personal information,
+/// communication preferences, and account status.
+///
+/// Profiles support personalized shopping experiences by maintaining
+/// customer preferences, language settings, and marketing communication
+/// opt-ins. The profile serves as the parent entity for addresses, payment
+/// methods, and order history.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// account deactivation for privacy compliance.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer authentication record. {@link
+  /// ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Customer's first name for personalization and order processing.
+  first_name String
+  
+  /// Customer's last name for order processing and account identification.
+  last_name String
+  
+  /// Customer's primary contact phone number for order updates and support.
+  phone_number String?
+  
+  /// Customer's date of birth for age verification and personalized marketing.
+  date_of_birth DateTime?
+  
+  /// Customer's gender for personalized product recommendations.
+  gender String?
+  
+  /// URL to customer's profile picture for account personalization.
+  profile_picture_url String?
+  
+  /// Customer's preference for receiving marketing communications.
+  marketing_opt_in Boolean
+  
+  /// Indicates if the customer is subscribed to the newsletter.
+  newsletter_subscription Boolean
+  
+  /// Customer's preferred language for the shopping interface.
+  language_preference String
+  
+  /// Customer's preferred currency for pricing display.
+  currency_preference String
+  
+  /// Customer's timezone for order tracking and notification timing.
+  timezone String
+  
+  /// Timestamp when the customer profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the customer profile was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_customer_addresses ecommerce_mall_customer_addresses[]
+  ecommerce_mall_customer_payment_methods ecommerce_mall_customer_payment_methods[]
+  ecommerce_mall_customer_preferences ecommerce_mall_customer_preferences?
+  ecommerce_mall_customer_order_history ecommerce_mall_customer_order_history[]
+  ecommerce_mall_customer_order_summaries ecommerce_mall_customer_order_summaries[]
+  
+  @@unique([ecommerce_mall_customer_id])
+  @@index([created_at])
+}
+
+/// Customer address book entries for shipping and billing purposes.
+///
+/// Stores multiple addresses associated with a customer profile, enabling
+/// flexible shipping options and order management. Each address includes
+/// complete location details with validation for accuracy.
+///
+/// Addresses support both shipping and billing functions, with flags to
+/// indicate default preferences. Customers can maintain multiple addresses
+/// for different purposes (home, work, gift recipients).
+///
+/// Address validation ensures delivery accuracy and supports international
+/// shipping requirements. Soft deletion preserves address history for
+/// completed orders while allowing address management.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer profile that owns this address. {@link
+  /// ecommerce_mall_customer_profiles.id}
+  ecommerce_mall_customer_profile_id String
+  
+  /// User-defined nickname for the address (e.g., Home, Work, Summer House).
+  address_nickname String
+  
+  /// Full name of the person receiving shipments at this address.
+  recipient_name String
+  
+  /// Primary street address line for delivery location.
+  street_address_1 String
+  
+  /// Secondary address line (apartment, suite, building).
+  street_address_2 String?
+  
+  /// City or locality for the delivery address.
+  city String
+  
+  /// State or province for the delivery address.
+  state_province String
+  
+  /// Postal or ZIP code for address validation and shipping calculations.
+  postal_code String
+  
+  /// Country for international shipping and address validation.
+  country String
+  
+  /// Contact phone number for delivery coordination.
+  phone_number String?
+  
+  /// Indicates if this is the default shipping address for the customer.
+  is_default_shipping Boolean
+  
+  /// Indicates if this is the default billing address for the customer.
+  is_default_billing Boolean
+  
+  /// Type of address (residential, commercial, PO Box).
+  address_type String
+  
+  /// Status of address validation (pending, valid, invalid).
+  validation_status String
+  
+  /// Timestamp when the address was added to the customer's address book.
+  created_at DateTime
+  
+  /// Timestamp when the address information was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the address was soft deleted from the address book.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customerProfile ecommerce_mall_customer_profiles @relation(fields: [ecommerce_mall_customer_profile_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_orders_of_shipping_address_id ecommerce_mall_orders[] @relation("ecommerce_mall_orders_of_shipping_address_id")
+  ecommerce_mall_orders_of_billing_address_id ecommerce_mall_orders[] @relation("ecommerce_mall_orders_of_billing_address_id")
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_profile_id, is_default_shipping], map: "ecommerce_mall_customer_addresses_ecommerce_mall_custo_fcb207b0")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_profile_id, is_default_billing], map: "ecommerce_mall_customer_addresses_ecommerce_mall_custo_2cfe1eff")
+  @@index([country, state_province])
+  @@index([validation_status])
+  @@index([created_at])
+}
+
+/// Stored payment methods for customer convenience and faster checkout.
+///
+/// Securely stores tokenized payment information for customer accounts,
+/// enabling quick and secure payment processing. Each payment method is
+/// linked to a customer profile and includes necessary payment details.
+///
+/// Supports multiple payment types including credit cards, debit cards,
+/// digital wallets, and bank accounts. Payment information is stored using
+/// tokenization to ensure security and PCI compliance.
+///
+/// Customers can set default payment methods and manage their payment
+/// preferences. Soft deletion allows removal while maintaining audit trails
+/// for financial compliance.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_payment_methods {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer profile that owns this payment method. {@link
+  /// ecommerce_mall_customer_profiles.id}
+  ecommerce_mall_customer_profile_id String
+  
+  /// User-defined nickname for the payment method (e.g., Primary Credit Card).
+  payment_method_nickname String
+  
+  /// Type of payment method (credit_card, debit_card, paypal, bank_account).
+  payment_type String
+  
+  /// Secure token representing the payment method for gateway processing.
+  payment_token String
+  
+  /// Last four digits of the payment card for customer reference.
+  last_four_digits String?
+  
+  /// Expiration month of the payment card for validation.
+  expiration_month String?
+  
+  /// Expiration year of the payment card for validation.
+  expiration_year String?
+  
+  /// Brand of the payment card (Visa, MasterCard, American Express).
+  card_brand String?
+  
+  /// Indicates if this is the default payment method for the customer.
+  is_default Boolean
+  
+  /// Indicates if the payment method is currently active and usable.
+  is_active Boolean
+  
+  /// Status of payment method validation (pending, valid, expired).
+  validation_status String
+  
+  /// Timestamp when the payment method was added to the customer's account.
+  created_at DateTime
+  
+  /// Timestamp when the payment method information was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the payment method was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customerProfile ecommerce_mall_customer_profiles @relation(fields: [ecommerce_mall_customer_profile_id], references: [id], onDelete: Cascade)
+  
+  @@unique([payment_token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_profile_id, is_default], map: "ecommerce_mall_customer_payment_methods_ecommerce_mall_f7fae4f7")
+  @@index([payment_type])
+  @@index([is_active])
+  @@index([validation_status])
+  @@index([created_at])
+}
+
+/// Customer-specific preferences and settings for personalized shopping
+/// experience.
+///
+/// Stores various customer preferences including communication settings,
+/// display preferences, shopping behaviors, and notification choices. These
+/// preferences enable personalized user experiences across the platform.
+///
+/// Preferences cover areas such as email frequency, product recommendation
+/// settings, wishlist visibility, and shopping cart behavior. The system
+/// uses these preferences to tailor the shopping experience to individual
+/// customer needs.
+///
+/// Soft deletion supports preference management while maintaining historical
+/// data for analytics and customer service purposes.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer profile that owns these preferences. {@link
+  /// ecommerce_mall_customer_profiles.id}
+  ecommerce_mall_customer_profile_id String
+  
+  /// Number of products to display per page in product listings.
+  products_per_page Int
+  
+  /// Default sorting method for product listings (price, popularity, newest).
+  default_sort_order String
+  
+  /// Privacy setting for wishlists (private, friends_only, public).
+  wishlist_visibility String
+  
+  /// Preferred frequency for marketing emails (daily, weekly, monthly).
+  email_frequency String
+  
+  /// Opt-in for SMS order updates and promotions.
+  sms_notifications Boolean
+  
+  /// Opt-in for mobile push notifications.
+  push_notifications Boolean
+  
+  /// Receive notifications when watched products drop in price.
+  price_drop_alerts Boolean
+  
+  /// Receive notifications when out-of-stock items are restocked.
+  restock_notifications Boolean
+  
+  /// Default gift wrapping preference for orders.
+  gift_wrapping_preference Boolean
+  
+  /// Custom delivery instructions for all orders.
+  special_delivery_instructions String?
+  
+  /// Visual theme preference for the shopping interface.
+  theme_preference String
+  
+  /// Automatically save shopping cart contents between sessions.
+  auto_save_cart Boolean
+  
+  /// Number of recently viewed products to maintain in history.
+  recently_viewed_count Int
+  
+  /// Timestamp when the preferences were initially set.
+  created_at DateTime
+  
+  /// Timestamp when the preferences were last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the preferences were soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customerProfile ecommerce_mall_customer_profiles @relation(fields: [ecommerce_mall_customer_profile_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_customer_profile_id], map: "ecommerce_mall_customer_preferences_ecommerce_mall_cus_16e39ded")
+  
+  @@index([wishlist_visibility])
+  @@index([email_frequency])
+  @@index([created_at])
+}
+
+/// Comprehensive order history tracking for customer accounts.
+///
+/// Maintains a complete record of all customer orders with detailed
+/// information for tracking, reordering, and customer service. Each entry
+/// represents a historical order with its complete details.
+///
+/// The order history supports customer self-service by providing order
+/// status, tracking information, and purchase details. It enables features
+/// like reordering, order tracking, and purchase pattern analysis.
+///
+/// Soft deletion preserves order history for compliance while allowing
+/// customers to manage their purchase visibility. The history serves as a
+/// reference for returns, refunds, and customer support inquiries.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_order_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer profile that owns this order history entry.
+  /// {@link ecommerce_mall_customer_profiles.id}
+  ecommerce_mall_customer_profile_id String
+  
+  /// Reference to the original order record. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Unique order number for customer reference and tracking.
+  order_number String
+  
+  /// Date and time when the order was originally placed.
+  order_date DateTime
+  
+  /// Current status of the order (pending, processing, shipped, delivered,
+  /// cancelled).
+  order_status String
+  
+  /// Total amount of the order including taxes and shipping.
+  total_amount Float
+  
+  /// Number of items in the order for quick reference.
+  item_count Int
+  
+  /// Summary of the shipping address used for the order.
+  shipping_address_summary String
+  
+  /// Summary of the payment method used for the order.
+  payment_method_summary String
+  
+  /// Shipping tracking number for order delivery monitoring.
+  tracking_number String?
+  
+  /// Estimated delivery date provided at the time of order.
+  estimated_delivery_date DateTime?
+  
+  /// Actual delivery date when the order was received.
+  actual_delivery_date DateTime?
+  
+  /// Indicates if the order can be reordered with current product availability.
+  is_reorder_eligible Boolean
+  
+  /// Number of times this order has been reordered by the customer.
+  reorder_count Int
+  
+  /// Timestamp when the order history entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the order history was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the order history entry was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customerProfile ecommerce_mall_customer_profiles @relation(fields: [ecommerce_mall_customer_profile_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_id], map: "ecommerce_mall_customer_order_history_ecommerce_mall_o_237c19e9")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_profile_id, order_date], map: "ecommerce_mall_customer_order_history_ecommerce_mall_c_11ffc8ab")
+  @@index([order_status])
+  @@index([order_date])
+  @@index([total_amount])
+  // spellchecker: ignore-next-line
+  @@index([estimated_delivery_date], map: "ecommerce_mall_customer_order_history_estimated_delive_1b6c37d1")
+}
+
+/// Customer-specific order summaries for quick reference and reordering
+/// capabilities.
+///
+/// Provides a denormalized view of customer orders optimized for fast
+/// retrieval and reordering functionality. Each summary contains essential
+/// order information without storing redundant data from the main orders
+/// table.
+///
+/// Supports customer self-service features like order tracking, reordering,
+/// and purchase history browsing. The summaries are updated automatically
+/// when orders change status or are completed.
+///
+/// This entity enables efficient customer order management without violating
+/// normalization principles, as it references the main orders table rather
+/// than duplicating its data.
+///
+/// Soft deletion preserves order history for customer reference while
+/// allowing cleanup of outdated summaries.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_order_summaries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer profile that owns this order summary. {@link
+  /// ecommerce_mall_customer_profiles.id}
+  ecommerce_mall_customer_profile_id String
+  
+  /// Reference to the original order record. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Current status of the order for customer tracking purposes.
+  order_status String
+  
+  /// Number of items in the order for quick reference.
+  item_count Int
+  
+  /// Total amount of the order for customer reference.
+  total_amount Float
+  
+  /// Date when the order was placed for chronological sorting.
+  order_date DateTime
+  
+  /// Estimated delivery date for customer expectation management.
+  estimated_delivery_date DateTime?
+  
+  /// Indicates if the order can be reordered with current product availability.
+  is_reorder_eligible Boolean
+  
+  /// Number of times this order has been reordered by the customer.
+  reorder_count Int
+  
+  /// Timestamp when the order summary was created.
+  created_at DateTime
+  
+  /// Timestamp when the order summary was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the order summary was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customerProfile ecommerce_mall_customer_profiles @relation(fields: [ecommerce_mall_customer_profile_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_id], map: "ecommerce_mall_customer_order_summaries_ecommerce_mall_2642d4f3")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_profile_id, order_date], map: "ecommerce_mall_customer_order_summaries_ecommerce_mall_4af22b55")
+  @@index([order_status])
+  @@index([order_date])
+  // spellchecker: ignore-next-line
+  @@index([estimated_delivery_date], map: "ecommerce_mall_customer_order_summaries_estimated_deli_6f9d9ca5")
+}

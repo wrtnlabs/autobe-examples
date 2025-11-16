@@ -1,977 +1,874 @@
 # User Actors and Authentication System
 
-## 1. Authentication System Overview
+## 1. User Actor Hierarchy and Definitions
 
-### 1.1 System Purpose & Architecture
+The community platform implements a four-tier user actor hierarchy, each with distinct capabilities, responsibilities, and access levels. This hierarchy supports content governance, community management, and platform administration while maintaining security boundaries between user types.
 
-The Community Platform implements a role-based access control (RBAC) system with four distinct user actor types, each with clearly defined permissions and capabilities. The authentication system uses JWT (JSON Web Tokens) for stateless session management, enabling secure and scalable user management across the platform.
+### 1.1 Guest Actor
 
-### 1.2 Authentication Architecture Principles
+**Description**: Unauthenticated users with read-only access to public platform content.
 
-The platform operates on these core security principles:
+**Primary Responsibilities**:
+- Browse public communities and their listings
+- View published posts and their content
+- Read comments and discussion threads
+- Access user profile pages and public user information
+- View community descriptions and member counts
+- Access authentication endpoints (login and registration)
 
-- **Role-Based Access Control**: Every user belongs to exactly one actor type at the platform level, with additional community-specific roles possible for moderators
-- **Stateless Authentication**: JWT tokens eliminate server-side session storage, enabling horizontal scalability
-- **Zero Trust for Guests**: Unauthenticated users (guests) receive minimal permissions; platform assumes no user credentials until verified
-- **Permission Escalation**: Higher-tier actors inherit capabilities of lower tiers plus additional elevated permissions
-- **Explicit Authorization**: All permission checks are affirmative (explicitly granted) rather than default-allow
+**Capabilities**:
+- Search communities by name
+- Search posts by keywords within public communities
+- Browse posts sorted by hot, new, and top
+- View user profiles with public activity history
+- Read all comments and replies on public posts
+- Access help documentation and platform information
 
-### 1.3 Security Governance
-
-WHEN authentication is performed, THE system SHALL enforce HTTPS/TLS encryption for all credential transmission.
-
-IF a user provides invalid credentials, THEN THE system SHALL not reveal whether the email exists in the system (prevent account enumeration attacks).
-
-WHEN a user account is created, THE system SHALL hash passwords using industry-standard algorithms (bcrypt or equivalent with minimum 12 salt rounds) before storage.
-
-WHEN authentication fails, THE system SHALL log the failure attempt with timestamp, user email, and IP address for security monitoring.
-
-IF a user's account is suspended or deleted, THEN THE system SHALL invalidate all existing authentication tokens immediately and prevent all platform access.
-
----
-
-## 2. User Actor Definitions
-
-### 2.1 Guest Actor (Unauthenticated User)
-
-**Definition**: A user who has not authenticated with the platform and therefore has not logged in or created an account.
-
-**Access Level**: Public read-only
-
-**Typical Use Cases**:
-- Initial platform discovery and exploration
-- Browsing public communities without login
-- Viewing published posts and comments
-- Reading user profiles
-- Deciding whether to register for an account
-
-**Key Characteristics**:
-- No account credentials required
-- No email or personal information stored
-- Session is anonymous
-- Can access registration and login endpoints
-- All requests treated as unauthenticated
-
-**Guest Capabilities**:
-- Browse public communities (view community name, description, member count)
-- View published posts from public communities
-- View comments on published posts
-- View user profiles with public information (username, karma, post history)
-- Access the login and registration pages
-- Search for communities and users (basic directory functions)
-- Read community rules and guidelines
-
-**Guest Restrictions**:
-- Cannot create posts or comments
-- Cannot upvote or downvote content
+**Restrictions**:
+- Cannot create communities
+- Cannot post text, links, or images
+- Cannot comment on posts
+- Cannot vote on posts or comments
 - Cannot subscribe to communities
-- Cannot access personalized feeds or profiles
+- Cannot maintain a user profile
 - Cannot report content
-- Cannot view non-public community information
-- Cannot perform any write operations
-- Cannot access saved/bookmarked content
-- Cannot receive notifications
-- Cannot access private communities or hidden posts
+- Cannot access personal preferences or settings
 
-### 2.2 Member Actor (Regular Authenticated User)
+**Business Justification**: Guests provide low-friction access to platform content, encouraging exploration and community discovery. This tier converts users to members through positive content experiences without requiring registration friction upfront.
 
-**Definition**: A user who has successfully created an account and authenticated with valid credentials.
+### 1.2 Member Actor
 
-**Access Level**: Full user participation with content creation and engagement capabilities
+**Description**: Authenticated regular users who actively participate in communities through content creation, voting, and discussion.
 
-**Typical Use Cases**:
-- Creating posts to share content with communities
-- Commenting on posts and engaging in discussions
-- Voting on posts and comments
-- Subscribing to communities of interest
-- Managing personal profile and preferences
-- Reporting inappropriate content
-- Maintaining profile and activity history
+**Primary Responsibilities**:
+- Create and manage personal communities (subreddits)
+- Contribute posts to communities (text, links, images)
+- Participate in discussions through commenting
+- Build personal reputation through karma
+- Engage with content through voting
+- Manage community subscriptions
+- Maintain user profiles
+- Report inappropriate content to moderators
 
-**Key Characteristics**:
-- Has created an account with verified email
-- Must maintain valid JWT token for all operations
-- Has globally unique username
-- Accumulates karma through community engagement
-- Can participate in any public community
-- Can be restricted by community moderators or platform admins
-- Can maintain saved/bookmarked content
-- Can receive notifications about activity
-
-**Member Capabilities**:
-- Create posts (text, links, images) in subscribed communities
-- Edit own posts within 24 hours of creation
-- Delete own posts (soft delete with preservation)
+**Capabilities**:
+- Complete registration with email and password
+- Authenticate with email and password credentials
+- Create new communities and serve as community creator
+- Post text content to communities they can access
+- Post links to external content
+- Upload and post images
+- Edit their own posts within 24 hours of creation
+- Delete their own posts (soft delete with history)
 - Create comments on posts
-- Edit own comments within 24 hours of creation
-- Delete own comments (soft delete)
+- Create nested replies to comments (up to 10 levels deep)
+- Edit their own comments within 24 hours
+- Delete their own comments
 - Upvote posts and comments
 - Downvote posts and comments
+- Change their votes (switch from upvote to downvote or vice versa)
 - Subscribe to communities
 - Unsubscribe from communities
-- View personalized feed of subscribed communities
-- View own user profile and other user profiles
-- Update profile information (bio, avatar, preferences)
-- View personal post and comment history
-- View personal karma score and badges
-- Report inappropriate posts/comments
-- Reply to comments (nested discussion participation)
-- Receive notifications for replies to their content
-- View community rules and guidelines
-- Access personalized recommendations
-- Save/bookmark posts and comments
-- Create custom collections of saved content
-- Block and mute other users
-- Follow other members (optional feature)
+- View their personal feed of subscribed communities
+- Create and update personal profile
+- View their own activity history
+- View their own karma score and breakdown
+- Report posts, comments, or users for moderation
+- Access notification preferences
+- Change password
+- Verify email address
+- View their subscribed communities list
+- Receive notifications for subscribed communities
 
-**Member Restrictions**:
-- Cannot moderate communities they do not manage
-- Cannot remove other users' content
-- Cannot ban or restrict other users
-- Cannot modify community settings
-- Cannot access platform admin functions
-- Cannot view moderation logs or reported content (except their own reports)
-- Cannot view other users' private information
-- Cannot perform bulk operations on content
-- Cannot bypass community rules or restrictions
-- Cannot impersonate other users
-- Cannot access deleted/removed content except their own
+**Restrictions**:
+- Cannot delete other users' content
+- Cannot moderate communities they don't own/manage
+- Cannot suspend or ban other users
+- Cannot remove communities
+- Cannot view platform-wide analytics
+- Cannot change other users' karma manually
+- Cannot modify community settings they don't own
+- Cannot bypass content filters or moderation actions
+- Cannot access administrative tools or dashboards
+- Limited initial posting frequency based on karma (spam prevention)
 
-### 2.3 Community Moderator Actor (Elevated Permissions)
+**Business Justification**: Members are the core user type that creates platform value through content and community participation. The member tier enables monetization, engagement, and community building while restricting capabilities to prevent abuse.
 
-**Definition**: A member who has been assigned moderation responsibilities for one or more specific communities.
+### 1.3 Moderator Actor
 
-**Access Level**: Administrative control within assigned communities only
+**Description**: Community managers appointed by community creators or administrators who enforce community rules and manage community content.
 
-**Typical Use Cases**:
-- Removing posts that violate community rules
-- Removing comments that are inappropriate
-- Banning users who repeatedly violate rules
-- Setting and updating community rules and guidelines
-- Pinning important posts
-- Reviewing reported content within their community
-- Managing community settings and appearance
-- Taking preventive action against spam or abuse
-- Approving posts when community requires moderation
+**Primary Responsibilities**:
+- Manage assigned communities
+- Enforce community-specific rules and policies
+- Review reported content within their communities
+- Remove inappropriate posts and comments
+- Suspend members from their communities
+- Configure community settings
+- Assign and remove other moderators
+- Maintain moderation audit logs
 
-**Key Characteristics**:
-- Must be a member (has account and email verification)
-- Has moderator status assigned by platform admin or community creator
-- Moderator status is per-community (can moderate multiple communities)
-- Retains all member capabilities
-- Gains additional community-level administrative capabilities
-- Responsible for maintaining community standards
-- Accountable for moderation decisions and consistency
-
-**Community Moderator Capabilities** (In Addition to Member Capabilities):
-- Remove posts from their communities (with reason logging)
-- Remove comments from their communities (with reason logging)
-- Ban users from their communities (with duration and appeal mechanism)
-- Unban users from their communities
-- Issue warnings to community members
-- Set and edit community rules
-- View reported content within their communities
-- Take action on reported posts/comments
-- Pin important posts to community page
-- Unpin posts
-- Lock posts (prevent new comments)
-- Assign flair/tags to posts
-- View community moderation logs
+**Capabilities**:
+- All member capabilities (with additional permissions)
+- Remove posts from their managed communities
+- Remove comments from their managed communities
+- Ban users from their managed communities temporarily or permanently
+- Unban previously suspended users
+- Assign moderator status to other members
+- Revoke moderator status from other moderators
+- Configure community settings (description, rules, visibility, post type restrictions)
+- View community moderation queue and reports
+- Approve or reject reported content
 - Create community announcements
-- Modify community settings (description, rules, privacy settings)
-- Designate other moderators for their communities
-- Remove moderator status from other moderators
+- Access moderation dashboard for their communities
 - View community member list
-- View community statistics and activity metrics
-- Schedule posts in their communities
-- Mute users temporarily (24-72 hours)
-- Approve posts in moderation queue (if enabled)
-- Configure automod rules (content filtering)
+- View moderation audit log for their actions
+- View community statistics (post counts, member counts, activity trends)
+- Create community flair (user titles/badges) and assign to members
+- Edit community rules and policies
+- Manage community styling and appearance settings
+- Access community ban list and view banned users
+- View report history for their communities
 
-**Community Moderator Restrictions**:
-- Can only perform moderator actions within communities they moderate
-- Cannot access platform admin functions
-- Cannot view or modify global platform settings
-- Cannot moderate other communities
-- Cannot overrule platform admin decisions
-- Cannot view global moderation dashboard
-- Cannot access other communities' moderation logs
-- Cannot perform user ban appeals or reversals (platform admin only)
-- Cannot force-delete member accounts
-- Cannot override permanent bans (platform admin only)
-- Cannot access admin analytics or system configuration
+**Restrictions**:
+- Can only moderate communities they're assigned to
+- Cannot suspend administrators
+- Cannot access other communities' moderation tools
+- Cannot modify platform-wide settings
+- Cannot view analytics beyond their assigned communities
+- Cannot suspend members globally (only from their communities)
+- Cannot access user personal information beyond what's public
+- Cannot delete communities (owner only)
+- Cannot overrule platform administrator decisions
+- Cannot access administrative dashboards
 
-### 2.4 Platform Admin Actor (System-Level Administrator)
+**Moderator Hierarchy**: Within each community, moderators follow a hierarchy based on when they were assigned. The community creator is the top-level owner. Subsequent moderators have equal permissions unless explicitly configured otherwise. Moderators can only remove moderators who were assigned after them (lower in hierarchy).
 
-**Definition**: A system administrator with comprehensive access to all platform functions and user management capabilities.
+**Business Justification**: Moderators scale community governance without platform overhead. By empowering community creators to manage their communities, the platform grows sustainably while maintaining quality through distributed moderation.
 
-**Access Level**: Complete system control
+### 1.4 Administrator Actor
 
-**Typical Use Cases**:
-- Managing all user accounts across the platform
-- Moderating system-wide policy enforcement
-- Reviewing high-priority reported content
-- Managing platform communities and moderators
-- Handling user account issues and appeals
-- Monitoring system health and performance
-- Implementing global policies and settings
-- Auditing platform activity and compliance
-- Investigating security incidents
-- Managing third-party integrations
+**Description**: Platform administrators with system-wide management capabilities, enforcement authority, and access to all platform functions.
 
-**Key Characteristics**:
-- Must be explicitly assigned by system initialization or existing admin
-- Has member-level access plus all administrative privileges
-- Highest privilege level on the platform
-- Can override any user or moderator action
-- Responsible for system integrity and policy enforcement
-- Can audit all user and moderator actions
-- Maintains complete control over platform configuration
+**Primary Responsibilities**:
+- Enforce platform-wide policies and rules
+- Manage user accounts and suspensions
+- Manage communities
+- Review reports and moderation decisions
+- Access and analyze platform analytics
+- Configure platform settings
+- Perform emergency actions to maintain platform integrity
+- Monitor platform health and performance
 
-**Platform Admin Capabilities** (In Addition to Member Capabilities):
-- Access comprehensive admin dashboard
-- View and manage all user accounts
-- Suspend or delete user accounts
-- Reset user passwords
-- View all reported content across communities
-- Take action on all reported posts and comments
-- Override community moderator decisions
-- Create, edit, or delete communities
-- Assign or revoke moderator status
-- Access complete moderation logs across all communities
-- View platform-wide statistics and analytics
-- Access audit logs of all user actions
-- Configure global platform settings
-- Manage platform policies and guidelines
-- Handle user disputes and appeals
-- Monitor system performance and resource usage
-- Access database backups and recovery functions
-- Implement emergency measures (disable features, restrict users)
-- View user data and personal information (for legitimate admin purposes)
-- Generate compliance reports
-- Test platform features and functionality
-- Configure email templates and notifications
-- Manage content moderation filters
-- Access API management console
-- Perform system maintenance and updates
-- Manage backup and disaster recovery
-- Configure security policies and settings
-- Manage third-party integrations
-- Generate financial and usage reports
-- Export platform data for analysis
+**Capabilities**:
+- All member and moderator capabilities on all communities
+- Suspend or permanently ban users from the entire platform
+- Unsuspend or unban previously suspended users
+- Remove communities for policy violations
+- Remove posts from any community
+- Remove comments from any community
+- Override moderator decisions
+- Access global moderation dashboard
+- View platform-wide analytics and statistics
+- View all user accounts and their details
+- View all communities and their details
+- Access complete audit logs for all actions
+- View reported content across the entire platform
+- Approve or reject reports against users
+- Suspend or remove moderators
+- Configure platform-wide settings and policies
+- View user activity timelines
+- Access database administration tools
+- View platform performance metrics
+- Create administrator accounts
+- Manage API rate limits and quotas
+- Access system logs and error tracking
 
-**Platform Admin Restrictions**:
-- Cannot access user passwords (hashed storage prevents this)
-- Cannot access private messages without explicit legal authority
-- Should follow principle of least privilege when performing actions
-- Must log all admin actions for audit purposes
-- Cannot access other admin's administrative logs (separation of concerns)
+**Restrictions**:
+- Even administrators should follow ethical guidelines when accessing user data
+- Sensitive user information should only be accessed for legitimate platform governance
+- Actions are logged and auditable by other administrators
+- Should not manually manipulate karma scores without cause
 
----
+**Business Justification**: Administrators provide the oversight and enforcement capability needed to maintain platform integrity, prevent abuse at scale, and ensure compliance with legal and policy requirements.
 
-## 3. Actor Hierarchy and Permission Levels
+## 2. Authentication Requirements and System Overview
 
-### 3.1 Permission Inheritance Model
+### 2.1 Overall Authentication System Design
 
-The Community Platform uses a clear permission hierarchy where each level inherits capabilities from lower levels and adds elevated permissions:
+THE community platform SHALL implement a JWT (JSON Web Token)-based authentication system that supports stateless API requests while maintaining security, performance, and user control.
 
-```
-Platform Admin (Level 4)
-    ↓ Inherits from Level 3
-Community Moderator (Level 3)
-    ↓ Inherits from Level 2
-Member (Level 2)
-    ↓ Inherits from Level 1
-Guest (Level 1)
-```
+**Authentication Approach**:
+- JWT tokens for API authentication
+- Stateless token validation (no server-side session store required)
+- Refresh token mechanism for long-lived sessions
+- Email verification for member registration
+- Password hashing using bcrypt with salt
+- Multi-device session tracking
 
-### 3.2 Permission Matrix by Feature Category
+**User Session Model**:
+- Access tokens with 15-minute expiration for security
+- Refresh tokens with 30-day expiration for extended sessions
+- Users can have multiple active sessions across different devices
+- Users can revoke all sessions from account settings
+- Sessions are tracked server-side for revocation capability
 
-| Permission Domain | Guest | Member | Moderator | Admin |
-|---|---|---|---|---|
-| **Content Access** | View public posts | Create/edit/delete own content | + Remove others' content | + Override any action |
-| **Community Access** | Browse public | Subscribe/unsubscribe | Manage assigned communities | Manage all communities |
-| **User Management** | None | Manage own account | Ban users in communities | Manage all users |
-| **Voting** | None | Upvote/downvote | + Vote without restrictions | + Vote without restrictions |
-| **Moderation** | None | Report content | Review/action on reports | Review all reports |
-| **Admin Functions** | None | None | Community-level admin | Full platform admin |
-| **Content Visibility** | Public posts only | All accessible posts | All posts in communities | All posts including deleted |
-| **User Data Access** | Public profiles only | Own data + followed users | Community member data | All user data |
-| **Reporting** | None | Report content | View community reports | View all reports |
-| **Settings** | None | Own preferences only | Community settings | All platform settings |
+### 2.2 Guest Access (No Authentication)
 
-### 3.3 Permission Delegation and Escalation
+WHEN a guest user browses the platform, THE system SHALL grant read-only access to all public content without requiring authentication.
 
-Community moderators are designated by platform admins and gain moderation rights within specific communities. Moderators cannot delegate their authority to other users; only platform admins can assign new moderators.
+**Guest Capabilities**:
+- Browse communities and posts without login
+- View user profiles and activity
+- Search public content
+- Access all public information
 
-WHEN a member is promoted to community moderator, THE system SHALL add community moderator role without removing member status or capabilities.
+**Security Model**:
+- No authentication token required
+- IP-based rate limiting to prevent abuse
+- Same IP can make up to 30 requests per minute
+- Excessive requests result in temporary IP blocking (1 hour)
 
-WHEN a community moderator is revoked of moderator status, THE system SHALL remove moderator role while retaining member status and all member capabilities.
+### 2.3 Member Registration
 
-IF a member attempts to perform an action outside their actor type permissions, THEN THE system SHALL deny the action and return HTTP 403 Forbidden with descriptive error message.
+WHEN a user submits the registration form with email and password, THE system SHALL create a new member account and send a verification email.
 
----
+**Registration Requirements**:
+- Email address (must be unique across platform)
+- Password (minimum 8 characters, must contain uppercase, lowercase, number, and special character)
+- Username (must be unique, 3-20 characters, alphanumeric with underscores and hyphens allowed)
+- Terms of service acceptance (required)
 
-## 4. Authentication Flow Requirements
+**Registration Process**:
+1. User submits registration form with credentials
+2. System validates input format and constraints
+3. System checks email uniqueness (case-insensitive)
+4. System hashes password using bcrypt with salt rounds 12
+5. System creates member account with initial karma score of 0
+6. System generates email verification token (valid for 24 hours)
+7. System sends verification email with unique link
+8. Account is created but marked as "email_unverified"
+9. User cannot post, comment, or vote until email is verified
+10. User can resend verification email if needed
 
-### 4.1 User Registration Flow
+**Email Verification**:
+WHEN a user clicks the verification link in their email, THE system SHALL mark the email as verified and enable full member capabilities.
 
-**Flow**: New user creates account for first time
+Verification tokens:
+- Single-use tokens
+- Expire after 24 hours
+- Cannot be reused after verification
+- User can request new verification email multiple times
 
-WHEN a guest attempts to register with email and password, THE system SHALL validate email format and password requirements before account creation.
+### 2.4 Member Login
 
-WHEN an email address is already registered in the system, THE system SHALL return an error message without revealing that the email exists in the system.
+WHEN a member submits login credentials (email and password), THE system SHALL validate the credentials and return JWT tokens for authentication.
 
-WHEN registration credentials are valid, THE system SHALL create a new user account with member-level permissions and send a verification email.
+**Login Process**:
+1. User submits email and password
+2. System validates email exists in database
+3. System retrieves stored password hash
+4. System compares submitted password against stored hash using bcrypt
+5. IF credentials are valid: Generate JWT tokens and return to user
+6. IF credentials are invalid: Return HTTP 401 Unauthorized with error message
+7. System logs login event with timestamp and IP address
 
-WHEN the user confirms email verification by clicking the link, THE system SHALL activate the account and allow login.
+**Login Error Handling**:
+- After 5 failed login attempts from same IP in 15 minutes, temporarily lock that IP for 15 minutes
+- Error message must not reveal whether email exists (prevent email enumeration): "Invalid email or password"
+- Users can request password reset if they forget credentials
+- System tracks login attempts for security auditing
 
-IF the user does not verify email within 7 days, THEN THE system SHALL mark the account as inactive and prevent login attempts.
+### 2.5 Member Logout
 
-**Step-by-Step User Registration Process**:
-1. User navigates to registration page
-2. User enters email address
-3. System validates email format (standard email validation per RFC 5322)
-4. User enters desired username (3-20 alphanumeric characters)
-5. System validates username format and checks uniqueness
-6. User enters password
-7. System validates password meets requirements (minimum 8 characters, uppercase, lowercase, number, special character)
-8. User confirms password
-9. System validates both passwords match exactly
-10. User submits registration form
-11. System checks for spam/abuse patterns
-12. System creates account with member status
-13. System hashes password using bcrypt (cost factor 12+)
-14. System sends verification email to provided address
-15. User receives email with unique verification link
-16. User clicks verification link within 7 days
-17. System validates token is unexpired and valid
-18. System marks email as verified
-19. User receives confirmation message
-20. User can now log in with email and password
+WHEN a member clicks logout, THE system SHALL invalidate the user's current session tokens.
 
-**Registration Validation Rules**:
-- Email address must be valid and unique in system
-- Username must be 3-20 characters, alphanumeric plus underscores, unique
-- Password must be minimum 8 characters with: 1 uppercase, 1 lowercase, 1 number, 1 special character
-- Verification email must be sent and must be successfully delivered
-- Account creation timestamp recorded in UTC
-- Initial karma score is 10 (allowing all users to participate)
-- No duplicate registrations from same email address within 24 hours
+**Logout Mechanism**:
+- Remove refresh token from client storage
+- Invalidate refresh token server-side (add to token blacklist)
+- Access token becomes invalid on next request (or remains valid until expiration)
+- User must provide new credentials to resume authenticated requests
+- All logout events are logged with timestamp and IP address
 
-### 4.2 User Login Flow
+**Multiple Device Logout**:
+WHERE a user selects "logout from all devices", THE system SHALL invalidate all refresh tokens for that user across all active sessions.
 
-**Flow**: Existing user authenticates and begins session
+### 2.6 Password Management
 
-WHEN a member provides valid email and password, THE system SHALL validate credentials and issue a JWT access token and refresh token.
-
-WHEN a member provides invalid credentials, THE system SHALL return generic authentication failure message without revealing whether account or password is wrong.
-
-WHEN login is successful, THE system SHALL record login timestamp and grant session access with both tokens.
-
-WHEN a member attempts login more than 5 times with invalid credentials within 15 minutes, THE system SHALL lock the account temporarily for 30 minutes.
-
-**Step-by-Step Login Process**:
-1. User navigates to login page
-2. User enters email address
-3. User enters password
-4. User submits login form
-5. System retrieves user account by email
-6. System compares provided password against stored hash using bcrypt
-7. If credentials invalid, increment failed attempts counter for account
-8. If failed attempts exceed 5 within 15 minutes, lock account and skip to step 15
-9. If credentials valid and account not locked, proceed to step 10
-10. System verifies email is confirmed before granting access
-11. System generates JWT access token (15-minute expiration)
-12. System generates JWT refresh token (7-day expiration)
-13. System records successful login timestamp and IP address
-14. System resets failed login attempts counter to zero
-15. System returns both tokens to user
-16. User stores tokens securely (httpOnly cookie preferred)
-17. User is redirected to authenticated dashboard/feed
-18. User can now make authenticated requests using access token
-
-**Login Validation Rules**:
-- Email address must be verified before login allowed
-- Account must not be suspended or banned
-- Account must not be deleted
-- Password must match stored hash
-- Account lockout after 5 failed attempts within 15 minutes (30-minute cooldown)
-- Login timestamp must be recorded for audit trail
-- Failed login attempts must be tracked per account, not per IP (to prevent denial of service against accounts)
-
-### 4.3 JWT Token Structure & Payload
-
-**Access Token**:
-- Expiration: 15 minutes from issuance
-- Payload contains:
-  - User ID (unique identifier)
-  - Username (for display purposes)
-  - Email address (hashed or encrypted, for verification)
-  - Actor type (guest, member, communityModerator, platformAdmin)
-  - List of moderated community IDs (if applicable, null for non-moderators)
-  - Token issue timestamp (iat claim)
-  - Token expiration timestamp (exp claim)
-  - Token subject (sub claim) = user ID
-  - Issuer identifier (iss claim) = platform domain
-  - JWT ID (jti claim) = unique token identifier for blacklisting
-
-**Refresh Token**:
-- Expiration: 7 days from issuance
-- Payload contains:
-  - User ID (unique identifier)
-  - Token issue timestamp (iat claim)
-  - Token expiration timestamp (exp claim)
-  - Token type identifier (tokenType = "refresh")
-  - Subject (sub claim) = user ID
-  - Issuer (iss claim) = platform domain
-  - JWT ID (jti claim) = unique token identifier
-
-**Token Signing & Security**:
-- Access tokens signed using HS256 or RS256 algorithm
-- Refresh tokens signed using same algorithm
-- Token signing key must be at least 256 bits
-- Token verification must validate signature before accepting token
-- Token must not be modified after signing (signature verification ensures integrity)
-
-**Token Storage Strategy**:
-- Tokens should be stored securely (httpOnly cookies recommended for web browsers)
-- httpOnly attribute prevents access from JavaScript (protects against XSS)
-- Secure attribute ensures transmission only over HTTPS
-- SameSite=Strict attribute prevents CSRF attacks
-- localStorage can be used as fallback but is less secure
-- Tokens should never be stored in URL parameters or query strings
-- Tokens transmitted via Authorization header: `Authorization: Bearer <token>`
-
-### 4.4 Session Management
-
-WHEN an authenticated user makes a request with valid access token, THE system SHALL process request with user's permissions and role.
-
-WHEN an access token expires, THE system SHALL return HTTP 401 Unauthorized with message "Token expired".
-
-WHEN user provides valid refresh token, THE system SHALL validate the refresh token and issue new access token with updated expiration.
-
-WHEN refresh token expires or is revoked, THE system SHALL require user to log in again and return HTTP 401 Unauthorized.
-
-WHEN user clicks logout, THE system SHALL invalidate both access and refresh tokens immediately and end session.
-
-**Session Lifecycle**:
-- Access token valid for 15 minutes of issuance time
-- User remains logged in as long as they refresh access token before expiration
-- Refresh token valid for 7 days from issuance
-- If user inactive beyond refresh token expiration, must login again
-- User can logout explicitly to immediately invalidate tokens
-- System can force logout by revoking all user tokens (admin action)
-- Multiple concurrent sessions per user allowed (different devices/browsers)
-- Session data stored in distributed cache (Redis) for scalability
-
-### 4.5 Password Reset Flow
-
-WHEN a member requests password reset, THE system SHALL send reset link to verified email address only.
-
-WHEN user clicks reset link within 1 hour, THE system SHALL allow password change without current password verification.
-
-IF reset link expires after 1 hour, THEN THE system SHALL require user to request reset again.
-
-WHEN new password is confirmed, THE system SHALL hash and store new password, invalidate all existing tokens, and force re-login.
+WHEN a member requests password reset, THE system SHALL send a password reset email with a secure token.
 
 **Password Reset Process**:
-1. User clicks "Forgot Password" on login page
-2. User enters email address
-3. System verifies email exists in system
-4. System generates cryptographically secure reset token (32 bytes minimum)
-5. System sets token expiration to 1 hour from current time
-6. System stores token hash in database (not plain token)
-7. System sends email with reset link containing token
-8. User receives email with reset link
-9. User clicks link and is taken to password reset page
-10. System validates token is unexpired, valid, and unused
-11. System displays password reset form
-12. User enters new password (same validation rules as registration)
-13. User confirms new password
-14. System validates both passwords match
-15. System hashes new password and stores in database
-16. System marks reset token as used (invalidates for future use)
-17. System revokes all existing tokens for this user
-18. System sends confirmation email about password change
-19. User is redirected to login page
-20. User logs in with new password
+1. User enters email address on password reset form
+2. System checks if email exists (returns success message regardless for security)
+3. IF email exists: Generate password reset token (valid for 1 hour)
+4. System sends reset email with unique link containing token
+5. User clicks link and enters new password
+6. System validates token hasn't expired
+7. System validates new password meets complexity requirements
+8. System hashes new password with bcrypt
+9. System updates stored password hash
+10. System invalidates all existing refresh tokens (force login on all devices)
+11. System sends confirmation email
 
-**Password Reset Security Rules**:
-- Reset token valid for exactly 1 hour (not extensible)
-- Reset tokens single-use only (mark as used after one successful use)
-- Reset link includes user ID and token hash
-- Email verification required (cannot reset for unverified emails)
-- New password must meet same requirements as registration
-- All previous session tokens invalidated
-- Confirmation email sent about password change (user can check if unauthorized)
+**Password Change (Authenticated)**:
+WHEN a member changes their password while logged in, THE system SHALL require current password verification before updating.
 
-### 4.6 Email Verification
+- User enters current password and new password
+- System verifies current password is correct
+- System validates new password meets complexity requirements
+- System prevents reuse of last 5 passwords
+- System updates password hash
+- System sends confirmation email
+- All existing tokens are invalidated (user must login again)
 
-WHEN user account is created, THE system SHALL send verification email to provided address.
+**Password Requirements**:
+- Minimum 8 characters
+- Must contain at least one uppercase letter (A-Z)
+- Must contain at least one lowercase letter (a-z)
+- Must contain at least one number (0-9)
+- Must contain at least one special character (!@#$%^&*)
+- Cannot be a common/dictionary password
+- Cannot contain username
 
-WHEN user clicks verification link within 7 days, THE system SHALL mark email as verified and activate account.
+## 3. Core Authentication Flows
 
-IF email is not verified within 7 days, THEN THE system SHALL prevent login and mark account inactive.
+### 3.1 Guest to Member Conversion Flow
 
-WHEN user requests email verification resend, THE system SHALL generate new token and send new email.
+```mermaid
+graph LR
+    A["Guest User"] --> B{\"Visits Platform\"}
+    B --> C["Browses Content"]
+    C --> D{\"Clicks Register\"}
+    D --> E["Registration Form"]
+    E --> F["Submits Email/Password/Username"]
+    F --> G["System Validates Input"]
+    G --> H{\"Valid?\"}
+    H -->|"No"| I["Show Error Message"]
+    I --> E
+    H -->|"Yes"| J["Create Account"]
+    J --> K["Send Verification Email"]
+    K --> L["Account Created - Email Unverified"]
+    L --> M["User Clicks Verification Link"]
+    M --> N["Email Verified"]
+    N --> O["Member Account Active"]
+```
 
-**Email Verification Lifecycle**:
-- Verification email sent immediately upon registration
-- Verification link valid for 7 days
-- Unverified accounts can only access registration area
-- Verified email required before posting, voting, or commenting
-- If account inactive beyond 7 days without verification, becomes eligible for cleanup
-- Email change requires re-verification of new address
-- Resend limit: maximum 5 verification emails within 24 hours (prevent spam)
-- Verification tokens single-use (cannot reuse old verification links)
+### 3.2 Member Login Flow
 
----
+```mermaid
+graph LR
+    A["Member User"] --> B["Login Page"]
+    B --> C["Enter Email"]
+    C --> D["Enter Password"]
+    D --> E["Submit Login"]
+    E --> F["System Validates Credentials"]
+    F --> G{\"Credentials Valid?\"}
+    G -->|"No"| H["Increment Failed Attempts"]
+    H --> I{\"5 Failed Attempts?\"}
+    I -->|"Yes"| J["Temporarily Block IP"]
+    I -->|"No"| K["Show Error - Invalid Credentials"]
+    K --> B
+    G -->|"Yes"| L["Generate Access Token"]
+    L --> M["Generate Refresh Token"]
+    M --> N["Return Tokens to Client"]
+    N --> O["User Authenticated - Dashboard"]
+    J --> P["IP Blocked for 15 Minutes"]
+```
 
-## 5. Permission Matrix by Feature
+### 3.3 Token Refresh Flow
 
-### Complete Permission Matrix
+```mermaid
+graph LR
+    A["Access Token Expired"] --> B["Client Has Refresh Token"]
+    B --> C["Send Refresh Token to Server"]
+    C --> D{\"Refresh Token Valid?\"}
+    D -->|"No"| E["Redirect to Login"]
+    D -->|"Yes"| F{\"Token Blacklisted?\"}
+    F -->|"Yes"| G["Deny Refresh - Potential Compromise"]
+    G --> E
+    F -->|"No"| H["Generate New Access Token"]
+    H --> I["Return New Access Token"]
+    I --> J["Continue Authenticated Session"]
+```
 
-| Feature/Operation | Guest | Member | Community Moderator | Platform Admin |
-|---|---|---|---|---|
-| **POST OPERATIONS** | | | | |
-| Browse public posts | ✅ | ✅ | ✅ | ✅ |
-| View post details | ✅ | ✅ | ✅ | ✅ |
-| Create post in community | ❌ | ✅ | ✅ | ✅ |
-| Edit own post (24h window) | ❌ | ✅ | ✅ | ✅ |
-| Delete own post | ❌ | ✅ | ✅ | ✅ |
-| Remove other member's post | ❌ | ❌ | ✅ (own communities) | ✅ |
-| Pin post | ❌ | ❌ | ✅ (own communities) | ✅ |
-| Lock post (no new comments) | ❌ | ❌ | ✅ (own communities) | ✅ |
-| **COMMENT OPERATIONS** | | | | |
-| View comments | ✅ | ✅ | ✅ | ✅ |
-| Create comment | ❌ | ✅ | ✅ | ✅ |
-| Edit own comment (24h window) | ❌ | ✅ | ✅ | ✅ |
-| Delete own comment | ❌ | ✅ | ✅ | ✅ |
-| Remove other member's comment | ❌ | ❌ | ✅ (own communities) | ✅ |
-| **VOTING OPERATIONS** | | | | |
+### 3.4 Logout Flow
+
+```mermaid
+graph LR
+    A["User Clicks Logout"] --> B["System Invalidates Refresh Token"]
+    B --> C["Add Token to Blacklist"]
+    C --> D["Clear Client Tokens"]
+    D --> E["Redirect to Login Page"]
+    E --> F["Session Ended"]
+```
+
+## 4. User Permissions Matrix
+
+### 4.1 Complete Permission Matrix
+
+This matrix defines which operations each user actor can perform. Blank cells indicate the action is not applicable to that actor.
+
+| Action | Guest | Member | Moderator | Administrator |
+|--------|:-----:|:-------:|:---------:|:------------:|
+| **Authentication** | | | | |
+| Register new account | ✅ | ❌ | ❌ | ❌ |
+| Login to account | N/A | ✅ | ✅ | ✅ |
+| Logout from account | N/A | ✅ | ✅ | ✅ |
+| Change password | N/A | ✅ | ✅ | ✅ |
+| Reset forgotten password | ✅ | ✅ | ✅ | ✅ |
+| Verify email address | ✅ | ✅ | ✅ | ✅ |
+| **Community Access** | | | | |
+| View public communities | ✅ | ✅ | ✅ | ✅ |
+| Search communities | ✅ | ✅ | ✅ | ✅ |
+| Subscribe to communities | ❌ | ✅ | ✅ | ✅ |
+| Unsubscribe from communities | ❌ | ✅ | ✅ | ✅ |
+| Create new communities | ❌ | ✅ | ✅ | ✅ |
+| View subscribed communities | ❌ | ✅ | ✅ | ✅ |
+| **Community Management** | | | | |
+| Edit community settings (own) | ❌ | ✅ | ✅ | ✅ |
+| Assign moderators (own) | ❌ | ✅ | ✅ | ✅ |
+| Remove moderators (own) | ❌ | ✅ | ✅ | ✅ |
+| Delete community (own) | ❌ | ✅ | ❌ | ✅ |
+| Edit community settings (any) | ❌ | ❌ | ✅* | ✅ |
+| Remove community | ❌ | ❌ | ❌ | ✅ |
+| **Content Creation** | | | | |
+| View posts | ✅ | ✅ | ✅ | ✅ |
+| Create text posts | ❌ | ✅ | ✅ | ✅ |
+| Create image posts | ❌ | ✅ | ✅ | ✅ |
+| Create link posts | ❌ | ✅ | ✅ | ✅ |
+| Edit own posts (24h window) | ❌ | ✅ | ✅ | ✅ |
+| Delete own posts | ❌ | ✅ | ✅ | ✅ |
+| Create comments | ❌ | ✅ | ✅ | ✅ |
+| Reply to comments | ❌ | ✅ | ✅ | ✅ |
+| Edit own comments (24h window) | ❌ | ✅ | ✅ | ✅ |
+| Delete own comments | ❌ | ✅ | ✅ | ✅ |
+| **Voting & Engagement** | | | | |
 | View vote counts | ✅ | ✅ | ✅ | ✅ |
-| Upvote post/comment | ❌ | ✅ | ✅ | ✅ |
-| Downvote post/comment | ❌ | ✅ | ✅ | ✅ |
+| Upvote posts/comments | ❌ | ✅ | ✅ | ✅ |
+| Downvote posts/comments | ❌ | ✅ | ✅ | ✅ |
+| Change vote (upvote ↔ downvote) | ❌ | ✅ | ✅ | ✅ |
 | Remove own vote | ❌ | ✅ | ✅ | ✅ |
-| **COMMUNITY OPERATIONS** | | | | |
-| Browse public communities | ✅ | ✅ | ✅ | ✅ |
-| View community info/rules | ✅ | ✅ | ✅ | ✅ |
-| Subscribe to community | ❌ | ✅ | ✅ | ✅ |
-| Unsubscribe from community | ❌ | ✅ | ✅ | ✅ |
-| Create new community | ❌ | ✅ (100+ karma) | ✅ | ✅ |
-| Edit community settings | ❌ | ❌ | ✅ (own communities) | ✅ |
-| Delete community | ❌ | ❌ | ❌ | ✅ |
-| **MODERATION OPERATIONS** | | | | |
-| View community reports | ❌ | ❌ | ✅ (own communities) | ✅ |
-| Review reported content | ❌ | ❌ | ✅ (own communities) | ✅ |
-| Approve reported content | ❌ | ❌ | ✅ (own communities) | ✅ |
-| Remove reported content | ❌ | ❌ | ✅ (own communities) | ✅ |
-| Ban user from community | ❌ | ❌ | ✅ (own communities) | ✅ |
-| Unban user from community | ❌ | ❌ | ✅ (own communities) | ✅ |
-| View moderation logs | ❌ | ❌ | ✅ (own communities) | ✅ |
-| **USER PROFILE OPERATIONS** | | | | |
+| **User Profiles** | | | | |
+| View public user profiles | ✅ | ✅ | ✅ | ✅ |
 | View own profile | ❌ | ✅ | ✅ | ✅ |
-| View other profiles (public) | ✅ | ✅ | ✅ | ✅ |
-| Edit own profile info | ❌ | ✅ | ✅ | ✅ |
+| Edit own profile | ❌ | ✅ | ✅ | ✅ |
 | View own karma score | ❌ | ✅ | ✅ | ✅ |
 | View own post history | ❌ | ✅ | ✅ | ✅ |
 | View own comment history | ❌ | ✅ | ✅ | ✅ |
-| **REPORTING OPERATIONS** | | | | |
-| Report post | ❌ | ✅ | ✅ | ✅ |
-| Report comment | ❌ | ✅ | ✅ | ✅ |
+| View user's public activity | ✅ | ✅ | ✅ | ✅ |
+| **Moderation** | | | | |
+| Report content | ❌ | ✅ | ✅ | ✅ |
 | View own reports | ❌ | ✅ | ✅ | ✅ |
-| **PLATFORM ADMIN OPERATIONS** | | | | |
-| View admin dashboard | ❌ | ❌ | ❌ | ✅ |
-| Manage all user accounts | ❌ | ❌ | ❌ | ✅ |
+| Remove posts (own community) | ❌ | ❌ | ✅ | ✅ |
+| Remove comments (own community) | ❌ | ❌ | ✅ | ✅ |
+| Ban user (own community) | ❌ | ❌ | ✅ | ✅ |
+| Unban user (own community) | ❌ | ❌ | ✅ | ✅ |
+| View community reports | ❌ | ❌ | ✅ | ✅ |
+| View moderation queue | ❌ | ❌ | ✅ | ✅ |
+| Access moderation log (own) | ❌ | ❌ | ✅ | ✅ |
+| Remove posts (any community) | ❌ | ❌ | ❌ | ✅ |
+| Remove comments (any community) | ❌ | ❌ | ❌ | ✅ |
+| Ban user (global) | ❌ | ❌ | ❌ | ✅ |
+| Unban user (global) | ❌ | ❌ | ❌ | ✅ |
 | Suspend user account | ❌ | ❌ | ❌ | ✅ |
-| Delete user account | ❌ | ❌ | ❌ | ✅ |
-| Reset user password | ❌ | ❌ | ❌ | ✅ |
-| Assign moderator status | ❌ | ❌ | ❌ | ✅ |
-| Revoke moderator status | ❌ | ❌ | ❌ | ✅ |
-| View global reports | ❌ | ❌ | ❌ | ✅ |
-| View audit logs | ❌ | ❌ | ❌ | ✅ |
+| View all reports | ❌ | ❌ | ❌ | ✅ |
+| **Administration** | | | | |
+| Access admin dashboard | ❌ | ❌ | ❌ | ✅ |
+| View platform analytics | ❌ | ❌ | ❌ | ✅ |
+| View all user accounts | ❌ | ❌ | ❌ | ✅ |
+| View all communities | ❌ | ❌ | ❌ | ✅ |
+| Access audit logs | ❌ | ❌ | ❌ | ✅ |
 | Configure platform settings | ❌ | ❌ | ❌ | ✅ |
-| Generate compliance reports | ❌ | ❌ | ❌ | ✅ |
-
----
-
-## 6. Access Control Rules
-
-### 6.1 Post & Comment Authorization
-
-WHEN a member attempts to edit a post, THE system SHALL verify the member owns the post AND the post was created within 24 hours.
-
-IF a member attempts to edit a post they do not own, THEN THE system SHALL deny the request and return HTTP 403 Forbidden.
-
-WHEN a member attempts to delete a comment, THE system SHALL perform soft deletion (mark as deleted, preserve for historical integrity).
-
-WHEN a community moderator removes a post from their community, THE system SHALL log the action with timestamp, moderator ID, and removal reason.
-
-IF a member attempts to post in a community they are banned from, THEN THE system SHALL deny access and display error message explaining the ban.
-
-### 6.2 Voting & Karma Authorization
-
-WHEN a member casts a vote, THE system SHALL verify the member has not already voted on that content.
-
-WHEN a member removes a vote, THE system SHALL reverse the karma change applied to the post/comment author.
-
-IF a member has negative karma and attempts to post in a community with karma requirements, THEN THE system SHALL deny post creation and display minimum karma requirement.
-
-IF a member attempts to vote on their own content, THEN THE system SHALL reject the vote with message "You cannot vote on your own content."
-
-### 6.3 Community Moderation Authorization
-
-WHEN a moderator attempts to ban a user from community, THE system SHALL verify the moderator has authority in that community and the user is not already banned.
-
-WHEN a platform admin appeals a community ban, THE system SHALL override the ban and restore user access to community.
-
-IF a community moderator attempts to delete a community, THEN THE system SHALL deny request (only platform admin can delete communities).
-
-IF a community moderator attempts to perform action outside their community, THEN THE system SHALL deny request with HTTP 403 Forbidden.
-
-### 6.4 Admin Authorization
-
-WHEN a platform admin performs an action affecting user data, THE system SHALL log the action with admin ID, action type, timestamp, and affected user.
-
-IF a platform admin attempts to perform unauthorized operations outside scope, THEN THE system SHALL log the attempt and alert security team.
-
-IF an admin's action would violate data protection regulations, THEN THE system SHALL deny the action and require legal authorization.
-
-### 6.5 Error Handling for Authorization Failures
-
-WHEN a guest attempts to create a post, THE system SHALL return HTTP 401 Unauthorized with message "Login required to create posts".
-
-WHEN a member attempts to access admin functions, THE system SHALL return HTTP 403 Forbidden with message "You do not have permission for this action".
-
-WHEN a moderator attempts to moderate a community they don't manage, THE system SHALL return HTTP 403 Forbidden with message "You are not a moderator of this community".
-
-WHEN a user's token is invalid or expired, THE system SHALL return HTTP 401 Unauthorized requiring re-authentication.
-
-WHEN a user's account is suspended, THE system SHALL return HTTP 403 Forbidden with message "Your account has been suspended."
-
----
-
-## 7. Session & Token Management
-
-### 7.1 Token Lifecycle
-
-**Initial Issuance**:
-WHEN user successfully authenticates with valid credentials, THE system SHALL generate:
-- Access token with 15-minute expiration
-- Refresh token with 7-day expiration
-- Both tokens returned to client in single response
-- Tokens issued with unique JWT ID (jti claim) for tracking
-
-**Access Token Usage**:
-- Client includes access token in Authorization header for all authenticated requests
-- System validates token signature and expiration before processing request
-- Token contains user permissions for quick authorization decisions
-- Token is read-only (client cannot modify token contents)
-- System extracts user ID and role from token without database lookup
-
-**Token Refresh**:
-WHEN access token approaches expiration or expires, THE system SHALL accept refresh token to issue new access token.
-
-WHEN refresh token is used to obtain new access token, THE system SHALL:
-- Validate refresh token signature and expiration
-- Verify refresh token is not blacklisted
-- Generate new access token with updated 15-minute expiration
-- Return new access token to client
-- Keep refresh token valid (optionally rotate if > 50% expired)
-- Update token issue time
-
-**Token Revocation**:
-WHEN user logs out, THE system SHALL revoke all tokens (add to blacklist with expiration equal to token's remaining lifetime).
-
-WHEN user password is changed, THE system SHALL revoke all existing tokens and require re-login.
-
-WHEN platform admin forces logout of user, THE system SHALL revoke all user tokens immediately.
-
-WHEN refresh token expires naturally, THE system SHALL prevent further token refreshes for that token.
-
-### 7.2 Token Storage & Security
-
-**Recommended Storage (Most Secure)**:
-- Use httpOnly cookies set by server
-- Automatically sent with requests (not accessible to JavaScript)
-- Protected against XSS attacks
-- Requires CORS configuration for cross-origin requests
-- Cookie must have Secure flag (HTTPS only) and SameSite=Strict
-
-**Alternative Storage (Web Applications)**:
-- localStorage with secure, same-origin-only approach
-- Requires manual Authorization header construction
-- Vulnerable to XSS but acceptable for HTTPS with CSP headers
-- localStorage persists across browser sessions (user stays logged in)
-
-**NEVER Store In**:
-- URL parameters or query strings
-- Session storage without encryption
-- Local files accessible to other applications
-- Logs or monitoring systems (log rotation prevents storage)
-- Cookies without Secure and HttpOnly flags
-
-### 7.3 Concurrent Session Management
-
-WHEN a user logs in from multiple devices, THE system SHALL allow multiple concurrent sessions.
-
-WHEN a user logs out, THE system SHALL revoke all tokens for all devices simultaneously.
-
-WHEN user changes password, THE system SHALL revoke all tokens forcing re-login on all devices.
-
-WHEN platform admin forces logout, THE system SHALL invalidate all concurrent sessions immediately.
-
-WHEN user navigates to "Active Sessions" page, THE system SHALL display all current active sessions with device information and IP addresses, allowing selective logout of individual sessions.
-
-### 7.4 Token Expiration Strategy
-
-**Access Token Expiration** (15 minutes):
-- Short expiration reduces impact of token theft
-- Client automatically refreshes before expiration
-- Prevents use of revoked tokens for extended periods
-- Minimizes database queries for token validation
-- Aligns with industry standards (OAuth 2.0, OpenID Connect)
-
-**Refresh Token Expiration** (7 days):
-- Allows users to stay logged in across browser sessions
-- Longer than access token but still reasonable
-- Can be extended with continued use (optional sliding window)
-- Requires re-authentication if completely unused for 7 days
-- Similar to session timeout on traditional web applications
-
-**Emergency Revocation**:
-- All tokens for user can be revoked immediately by admin
-- Takes effect within 1 request cycle
-- User cannot use revoked tokens even if not expired
-- Revocation persists across all server instances via distributed cache
-
-### 7.5 Token Blacklisting & Revocation
-
-WHEN a token is revoked, THE system SHALL add it to a blacklist with expiration timestamp equal to token's exp claim.
-
-WHEN token validation occurs, THE system SHALL check if token exists in blacklist before accepting it.
-
-IF token found in blacklist, THEN THE system SHALL reject token and return HTTP 401 Unauthorized.
-
-THE blacklist entries automatically expire when token's exp time passes, reducing storage requirements.
-
----
-
-## 8. Security Requirements & Best Practices
-
-### 8.1 Password Security
-
-WHEN a password is stored, THE system SHALL hash using bcrypt with minimum cost factor of 12 before persistence.
-
-WHEN a user changes password, THE system SHALL hash new password independently, never reusing old hash.
-
-THE system SHALL enforce password policy: minimum 8 characters including uppercase, lowercase, and numeric characters.
-
-THE system SHALL not allow passwords that match username or common patterns (dictionary words, sequential numbers, keyboard patterns).
-
-### 8.2 Email Verification & Account Activation
-
-WHEN user registers, THE system SHALL require email verification before account can interact with platform.
-
-WHEN user attempts to post/vote/comment without verified email, THE system SHALL deny action and display "Verify your email to continue" message.
-
-THE system SHALL send verification emails from no-reply system address with clear sender identification.
-
-WHEN user clicks verification link, THE system SHALL validate token expiration and single-use constraint before marking verified.
-
-### 8.3 Account Security Measures
-
-WHEN user has 5 failed login attempts within 15 minutes, THE system SHALL temporarily lock account for 30 minutes.
-
-WHEN account is locked, THE system SHALL display message "Too many failed login attempts. Try again in [time]."
-
-WHEN user changes email address, THE system SHALL require verification of new email before updating.
-
-WHEN user resets password, THE system SHALL invalidate all existing sessions and tokens.
-
-### 8.4 Data Protection in Transit
-
-WHEN any authentication credential or token is transmitted, THE system SHALL use HTTPS/TLS encryption exclusively (HTTP prohibited).
-
-WHEN token is transmitted, THE system SHALL use Authorization header only (never URL parameters or request body for auth tokens).
-
-WHEN user provides credentials, THE system SHALL transmit using HTTPS POST request with request body (never URL parameters).
-
-THE system SHALL enforce HSTS (HTTP Strict-Transport-Security) header to force HTTPS for future requests.
-
-### 8.5 Audit & Logging
-
-WHEN user authenticates successfully, THE system SHALL log: timestamp, email, IP address, user agent, authentication method.
-
-WHEN authentication fails, THE system SHALL log: timestamp, email (if provided), IP address, reason for failure, user agent.
-
-WHEN admin performs account modifications, THE system SHALL log: timestamp, admin ID, action type, affected user ID, details of changes.
-
-WHEN access token is revoked, THE system SHALL log: timestamp, user ID, reason for revocation, actor (user or admin).
-
-WHEN password reset occurs, THE system SHALL log: timestamp, user ID, reset token generation and verification events.
-
----
-
-## 9. Authentication Flow Diagrams
-
-### User Registration Flow
-
-```mermaid
-graph LR
-  A["Guest visits platform"] --> B["Access registration form"]
-  B --> C["Enter email & password"]
-  C --> D{\"Email format valid?\"}
-  D -->|"No"| E["Show validation error"]
-  E --> C
-  D -->|"Yes"| F{\"Email already exists?\"}
-  F -->|"Yes"| G["Show email taken error"]
-  G --> C
-  F -->|"No"| H{\"Password meets requirements?\"}
-  H -->|"No"| I["Show password requirements"]
-  I --> C
-  H -->|"Yes"| J["Create member account"]
-  J --> K["Hash password with bcrypt"]
-  K --> L["Send verification email"]
-  L --> M["Show verification prompt"]
-  M --> N{\"User verifies email?\"}
-  N -->|"Within 7 days"| O["Mark email verified"]
-  N -->|"After 7 days"| P["Resend verification email"]
-  O --> Q["Account fully activated"]
-  Q --> R["Redirect to member dashboard"]
-  R --> S["Show welcome onboarding"]
+| Manage administrators | ❌ | ❌ | ❌ | ✅ |
+| View system logs | ❌ | ❌ | ❌ | ✅ |
+
+**Legend**:
+- ✅ = Permitted capability
+- ❌ = Denied capability
+- N/A = Not applicable to this actor type
+- ✅* = Permitted only for assigned communities (moderator can only modify communities they're assigned to)
+
+## 5. JWT Token Management Strategy
+
+### 5.1 JWT Structure and Payload
+
+THE system SHALL use JWT (JSON Web Tokens) for all API authentication, with tokens signed using HS256 algorithm and a secure secret key (minimum 256 bits).
+
+**Access Token Payload Structure**:
+```json
+{
+  "iat": 1699000000,
+  "exp": 1699900000,
+  "sub": "user_id_12345",
+  "userId": "user_id_12345",
+  "email": "user@example.com",
+  "username": "john_doe",
+  "role": "member",
+  "permissions": ["create_post", "create_comment", "vote", "subscribe"],
+  "emailVerified": true,
+  "karma": 125,
+  "tokenType": "access"
+}
 ```
 
-### User Login Flow
+**Token Details**:
+- `iat` (Issued At): Unix timestamp when token was created
+- `exp` (Expiration): Unix timestamp when token expires (15 minutes from creation)
+- `sub` (Subject): User ID (standard JWT claim)
+- `userId`: User ID for application reference
+- `email`: User's email address
+- `username`: User's unique username
+- `role`: User's primary role (guest, member, moderator, administrator)
+- `permissions`: Array of specific permissions this user has
+- `emailVerified`: Boolean indicating if email is verified
+- `karma`: User's current karma score (cached at token creation)
+- `tokenType`: Always "access" for access tokens
 
-```mermaid
-graph LR
-  A["User visits login page"] --> B["Enter email & password"]
-  B --> C["User submits form"]
-  C --> D["System retrieves user"]
-  D --> E{\"User account exists?\"}
-  E -->|"No"| F["Show auth failed"]
-  E -->|"Yes"| G["System validates password"]
-  G --> H{\"Password valid?\"}
-  H -->|"No"| I["Increment failed attempts"]
-  I --> J{\"Attempts >= 5?\"}
-  J -->|"Yes"| K["Lock account 30 min"]
-  K --> F
-  J -->|"No"| F
-  H -->|"Yes"| L{"Email verified?"}
-  L -->|"No"| M["Show email verification required"]
-  L -->|"Yes"| N["Reset failed attempts"]
-  N --> O["Generate JWT tokens"]
-  O --> P["Create user session"]
-  P --> Q["Set secure cookies"]
-  Q --> R["Redirect to dashboard"]
-  R --> S["Login successful"]
+**Refresh Token Payload Structure**:
+```json
+{
+  "iat": 1699000000,
+  "exp": 1699000000 + (30 * 24 * 60 * 60),
+  "sub": "user_id_12345",
+  "userId": "user_id_12345",
+  "tokenType": "refresh",
+  "version": 1
+}
 ```
 
-### Token Refresh Flow
+**Refresh Token Details**:
+- Minimal payload for security (only essential data)
+- `version`: Token version for invalidation strategy (when user changes password, increment version)
+- Expiration: 30 days from creation
+- Used only to obtain new access tokens
+- Never used for API authorization
 
-```mermaid
-graph LR
-  A["Client makes request"] --> B["Include access token"]
-  B --> C["Server validates token"]
-  C --> D{\"Token valid?\"}
-  D -->|"Yes"| E["Process request"]
-  E --> F["Return response"]
-  D -->|"No - Expired"| G{\"Refresh token valid?\"}
-  G -->|"No"| H["Return 401 Unauthorized"]
-  H --> I["Redirect to login"]
-  G -->|"Yes"| J["Validate refresh token"]
-  J --> K["Check token blacklist"]
-  K --> L{"Blacklisted?\"}
-  L -->|"Yes"| H
-  L -->|"No"| M["Generate new access token"]
-  M --> N["Return new token"]
-  N --> O["Client retries original request"]
-  O --> E
+### 5.2 Token Issuance
+
+WHEN a user successfully authenticates, THE system SHALL issue both an access token and a refresh token.
+
+**Token Issuance Requirements**:
+- Create access token with 15-minute expiration
+- Create refresh token with 30-day expiration
+- Store refresh token in secure database with user ID reference
+- Hash refresh token before storage using SHA-256
+- Return both tokens to client in response body
+- Include token type in response: `{ "accessToken": "...", "refreshToken": "...", "tokenType": "Bearer" }`
+
+**Token Storage Requirements**:
+- Access tokens stored in client-side memory (not persistent)
+- Refresh tokens stored in httpOnly secure cookies OR localStorage (developer choice)
+- httpOnly cookies: Automatic CSRF protection, no JavaScript access required, but slightly higher setup complexity
+- localStorage: JavaScript access required for management, must manually send in requests, but more flexible
+
+### 5.3 Token Validation
+
+WHEN an API request is received with an Authorization header, THE system SHALL validate the JWT token signature and claims before allowing access.
+
+**Validation Process**:
+1. Extract JWT from Authorization header (Bearer scheme)
+2. Verify token signature using the secret key
+3. Check token expiration time against current time
+4. Verify token type is "access"
+5. Verify token hasn't been blacklisted (for logout scenarios)
+6. Extract user information from token payload
+7. IF all validations pass: Allow request to proceed with user context
+8. IF any validation fails: Return HTTP 401 Unauthorized
+
+**Error Responses**:
+- Invalid signature: "Invalid token"
+- Expired token: "Token expired"
+- Malformed token: "Malformed token"
+- Missing token: "Missing authorization header"
+- Wrong token type: "Invalid token type"
+
+### 5.4 Token Refresh Mechanism
+
+WHEN an access token expires, THE system SHALL allow clients to obtain a new access token using the refresh token without requiring re-authentication.
+
+**Refresh Token Process**:
+1. Client sends refresh token to `/auth/refresh` endpoint
+2. System validates refresh token:
+   - Check signature
+   - Check expiration
+   - Check token type is "refresh"
+   - Check token hasn't been blacklisted
+3. Retrieve user from database using subject claim
+4. Verify user account is still active and not suspended
+5. Verify token version matches current user version
+6. IF all validations pass:
+   - Create new access token with current user data
+   - Return new access token to client
+   - Optionally return new refresh token (rolling refresh)
+7. IF any validation fails: Return HTTP 401 and require login
+
+**Rolling Refresh Strategy**:
+- Every refresh token usage generates both a new access token AND a new refresh token
+- Old refresh token is marked as used (can be reused up to 5 minutes for network race conditions)
+- Refresh tokens older than 30 days expire automatically
+- This prevents indefinite session extension with a single refresh token
+
+### 5.5 Token Revocation and Blacklisting
+
+WHEN a user logs out or changes password, THE system SHALL invalidate their refresh tokens to prevent further session extension.
+
+**Token Blacklist Requirements**:
+- Maintain a blacklist of revoked refresh tokens
+- Each blacklist entry includes:
+  - Token hash (never store raw token)
+  - User ID
+  - Revocation timestamp
+  - Reason for revocation (logout, password_changed, suspicious_activity, etc.)
+- Check blacklist during token refresh validation
+- Automatically clean up expired blacklist entries (remove entries older than 30 days)
+- Use Redis for quick blacklist lookups (sub-millisecond response)
+
+**Logout Revocation**:
+WHEN a user logs out, THE system SHALL add their refresh token to the blacklist.
+- Invalidate current refresh token
+- User must login again to get new tokens
+
+**Password Change Revocation**:
+WHEN a user changes their password, THE system SHALL revoke all existing refresh tokens.
+- Increment user's token version number
+- All existing tokens become invalid (version mismatch)
+- User forced to login again to get new tokens
+- Prevents attacker with stolen refresh token from extending session
+
+**Global Logout (All Devices)**:
+WHERE a user selects "logout from all devices", THE system SHALL revoke all refresh tokens for that user.
+- Increment user's token version number
+- All active sessions across all devices become invalid
+- User must login again on each device
+
+## 6. Session Management and Security
+
+### 6.1 Session Lifecycle
+
+WHILE a user is authenticated with a valid access token, THE system SHALL maintain an active session context.
+
+**Session States**:
+- **Active**: User has valid access token; can make authenticated requests
+- **Stale**: Access token expired; user can use refresh token to extend session
+- **Terminated**: User logged out; session cannot be extended
+- **Revoked**: Session invalidated due to security event; must re-authenticate
+- **Expired**: Session reached maximum lifetime; must re-authenticate
+
+**Session Duration Limits**:
+- Access token valid for 15 minutes
+- Refresh token valid for 30 days maximum
+- Maximum session lifetime: 30 days (refresh tokens don't extend beyond this)
+- Inactive session timeout: If access token not used for 30 days, refresh is denied
+
+### 6.2 Concurrent Sessions
+
+THE system SHALL allow each member to maintain multiple concurrent authenticated sessions across different devices.
+
+**Multi-Device Support**:
+- Users can be logged in simultaneously on mobile app, web browser, desktop app, etc.
+- Each device gets its own access and refresh tokens
+- Tokens are independent; logout on one device doesn't affect others
+- Users can see list of active sessions with device information
+- Users can remotely logout specific sessions
+
+**Session Information Stored**:
+- Device identifier (user agent hash)
+- Last IP address
+- Last activity timestamp
+- Device type/name (user can customize)
+- Browser/app type
+- Operating system
+
+### 6.3 Security Features
+
+WHEN a user logs in, THE system SHALL implement multiple security measures to protect the user's account.
+
+**Failed Login Protection**:
+- After 3 failed login attempts, require CAPTCHA for subsequent attempts
+- After 5 failed login attempts, temporarily lock account for 15 minutes
+- Tracking is per email address and per IP address
+- Lock is on whichever limit is reached first (email or IP)
+- Security email sent when account is locked
+- Users can request immediate unlock via email verification
+
+**Suspicious Activity Detection**:
+IF a login occurs from a new device or unusual location, THE system SHALL send a verification email.
+- New device detected if user agent differs significantly from previous sessions
+- Unusual location detected if IP geolocation differs from typical pattern
+- User must verify login within 1 hour via email link
+- Email contains device information and location details
+- User can deny the login attempt if it wasn't them
+
+**Session Invalidation Events**:
+- Password changed (all sessions invalidated)
+- Account suspended (all sessions terminated immediately)
+- Email changed (sessions remain active but require re-verification)
+- Global logout requested (all sessions terminated)
+- Suspicious activity detected (sessions reviewed; may be terminated)
+
+### 6.4 Account Security
+
+WHEN managing account security, THE system SHALL provide users with tools to control their authentication.
+
+**Available Security Features**:
+- View active sessions with device information
+- Remote logout from specific devices
+- Logout from all devices simultaneously
+- Change password anytime
+- View login history with dates, times, and locations
+- Receive notifications when account is accessed from new device
+- Set security preferences (email notifications on sensitive actions)
+- View all connected third-party applications (if OAuth implemented)
+
+**Password Security Requirements**:
+- Passwords stored using bcrypt with salt
+- Salt rounds: 12 (security/performance balance)
+- Each password gets unique salt
+- Original password never stored or logged
+- Password never sent over unencrypted connection (HTTPS required)
+
+### 6.5 Email Verification
+
+WHEN a user registers or changes their email, THE system SHALL require email verification before granting sensitive permissions.
+
+**Email Verification Process**:
+- System generates unique verification token (cryptographically random)
+- Token valid for 24 hours
+- Token is single-use (invalidated after verification)
+- Verification email contains unique link with embedded token
+- User clicks link to verify
+- Upon verification, email is marked as verified in system
+- User cannot post, comment, or vote until email is verified
+
+**Resend Verification Email**:
+- Users can request new verification email anytime (rate-limited to once per 5 minutes)
+- Generating new email invalidates old token
+- Old tokens don't work after new token is issued
+
+**Email Change Verification**:
+WHEN a user changes their email address, THE system SHALL verify both old and new email addresses.
+- Verification email sent to new address
+- User must verify new address to confirm change
+- Original email remains unchanged until verification completes
+- Email change can be canceled before verification
+
+## 7. Permission Enforcement and Access Control
+
+### 7.1 Role-Based Access Control (RBAC)
+
+THE system SHALL enforce all permissions based on the user's role (actor) and apply permission checks before executing any operation.
+
+**Permission Check Process**:
+1. Identify user's role from JWT token
+2. Load user's specific permissions
+3. Check if user's permissions include the requested action
+4. IF permission granted: Execute operation
+5. IF permission denied: Return HTTP 403 Forbidden with error message
+
+**Permission Error Responses**:
+```json
+{
+  "error": "INSUFFICIENT_PERMISSIONS",
+  "message": "You do not have permission to perform this action",
+  "requiredRole": "moderator",
+  "userRole": "member"
+}
 ```
 
-### Permission Check Flow
+### 7.2 Community-Based Permissions
 
-```mermaid
-graph LR
-  A["User attempts action"] --> B["Extract actor type & ID"]
-  B --> C["Load user permissions"]
-  C --> D["Check permission matrix"]
-  D --> E{\"Has permission?\"}
-  E -->|"No"| F["Return 403 Forbidden"]
-  F --> G["Log unauthorized attempt"]
-  E -->|"Yes"| H{\"Is moderator action?\"}
-  H -->|"Yes"| I["Verify moderator rights"]
-  I --> J{\"Is moderator?\"}
-  J -->|"No"| F
-  J -->|"Yes"| K["Proceed with action"]
-  H -->|"No"| K
-  K --> L["Execute request"]
-  L --> M["Log action in audit trail"]
+WHERE permissions depend on community ownership or moderator assignment, THE system SHALL verify community relationships before granting access.
+
+**Community Permission Levels**:
+- **Community Creator**: Full edit and moderation permissions for their community
+- **Assigned Moderator**: Moderation permissions for assigned community
+- **Community Member**: Limited permissions (post, comment, vote if not banned)
+- **Non-Member**: Read-only access if community is public
+
+**Permission Check for Community Actions**:
+- Verify user has relationship to community
+- Verify relationship grants required permission level
+- Verify user is not banned from community
+- Check community settings (posting enabled, commenting enabled, voting enabled)
+
+### 7.3 Content Ownership Permissions
+
+WHERE content editing or deletion is requested, THE system SHALL verify the requesting user is the content owner.
+
+**Content Ownership Rules**:
+- Only content creator can edit their post (within 24-hour window)
+- Only content creator can delete their post
+- Only content creator can edit their comment (within 24-hour window)
+- Only content creator can delete their comment
+- Moderators can delete any post/comment in their community
+- Administrators can delete any post/comment on platform
+
+**Ownership Verification**:
+- Extract user ID from JWT token
+- Load content metadata and verify creator ID matches user ID
+- IF match: Allow operation
+- IF no match: Return HTTP 403 Forbidden
+
+### 7.4 Temporal Permissions
+
+WHILE the 24-hour edit window is open, THE system SHALL allow users to edit their content.
+
+IF the 24-hour edit window has closed, THE system SHALL deny edit requests.
+
+**Edit Window Calculation**:
+- Creation timestamp stored with content
+- Edit request timestamp compared to creation timestamp
+- If less than 24 hours: Allow edit
+- If 24+ hours: Deny edit with error message "Edit window closed"
+
+### 7.5 Ban Enforcement
+
+IF a user is banned from a community, THE system SHALL deny all operations in that community except viewing.
+
+**Ban Enforcement Rules**:
+- Check if user has active ban in community
+- Ban can be temporary (with expiration) or permanent
+- Deny post creation, commenting, voting in banned community
+- Allow viewing public posts in banned community
+- Prevent subscribe action
+- Show ban message to banned user
+
+**Ban Status Checking**:
+```json
+{
+  "userId": "user_id_12345",
+  "communityId": "community_id_789",
+  "bannedAt": "2024-01-15T10:30:00Z",
+  "banExpires": "2024-01-22T10:30:00Z",
+  "reason": "Repeated violations of community rules",
+  "banType": "temporary"
+}
 ```
+
+IF `banExpires` is null: Ban is permanent
+IF `banExpires` is in future: Ban is active
+IF `banExpires` is in past: Ban expired; user can access community again
+
+### 7.6 Permission Auditing
+
+THE system SHALL maintain audit logs of all permission-related decisions for security and compliance.
+
+**Audit Log Contents**:
+- User ID making request
+- Requested action
+- Resource being accessed (post/comment/community ID)
+- Permission decision (granted/denied)
+- Reason for denial (if denied)
+- Timestamp of request
+- IP address of requestor
+- User's role at time of request
+
+**Audit Log Retention**:
+- Access logs retained for 90 days minimum
+- Permission denial logs retained for 1 year
+- Moderator actions logged indefinitely
+- Administrator actions logged indefinitely
+- Logs used for security auditing and compliance verification
 
 ---
 
-## 10. Special Cases & Edge Scenarios
-
-### 10.1 Suspended User Attempts Login
-
-WHEN suspended user attempts to login, THE system SHALL deny access and display message "Your account has been suspended. Please contact support."
-
-WHEN user is unsuspended by admin, THE system SHALL clear suspension flag and allow normal login.
-
-### 10.2 Deleted User Data
-
-WHEN platform admin deletes user account, THE system SHALL:
-- Set account status to deleted
-- Anonymize user data (username changed to "Deleted User")
-- Preserve posts and comments for historical integrity
-- Keep user ID for referential integrity
-
-### 10.3 Multiple Actor Roles
-
-WHEN member is promoted to community moderator, THE system SHALL:
-- Add community moderator role
-- Retain all member capabilities
-- Grant moderator permissions for assigned communities only
-
-WHEN community moderator is revoked of moderator status, THE system SHALL:
-- Remove moderator role
-- Retain member status and capabilities
-- Revoke moderator permissions
-
-### 10.4 Cross-Community Moderation
-
-WHEN moderator manages multiple communities, THE system SHALL:
-- Maintain separate permission context per community
-- Allow moderator to switch between communities
-- Apply community-specific permissions for each context
-
-### 10.5 Admin Impersonation (Audit Trail)
-
-WHEN platform admin needs to debug user issues, THE system SHALL:
-- Require explicit audit logging before allowing any impersonation
-- Log all actions performed while impersonating with clear markers
-- Prevent actual permission elevation (simulated access only)
-- Require written justification for each impersonation session
-
----
-
-## 11. Integration with Other Systems
-
-### User Actors Integration
-This document establishes user actor foundations that integrate with all other platform systems:
-- **Community Management** (04-community-management.md): Community moderators use these authentication/authorization rules
-- **Content Creation** (05-content-creation-posting.md): Post creation permission enforcement uses these actor definitions
-- **Moderation** (09-moderation-reporting.md): Moderation workflows use these permission levels
-- **User Profiles** (10-user-profiles-preferences.md): Profile access controlled by these actor types
-- **Karma System** (07-karma-reputation-system.md): Karma restrictions may require actor type checks
-
-### Functional Requirements Cross-Reference
-- **Core User Workflows** (03-core-user-workflows.md) describe how authentication flows enable all user journeys
-- **Non-Functional Requirements** (11-non-functional-requirements.md) specify security standards for authentication implementation
-
----
-
-> *Developer Note: This document defines **business requirements only**. All technical implementations (authentication libraries, JWT algorithms, database schema for user storage, API endpoints, etc.) are at the discretion of the development team.*
+*Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

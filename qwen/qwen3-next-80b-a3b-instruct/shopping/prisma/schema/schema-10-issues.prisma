@@ -1,0 +1,185 @@
+/// Main entity representing issue reports from any actor type (customer or
+/// seller). Holds shared attributes and tracks the actor type.
+///
+/// This is the central record for all issue reporting within the platform.
+/// It acts as a polymorphic container that relates to either a customer or
+/// seller through their respective subtype tables. This design ensures
+/// referential integrity at the database level, preventing ambiguous or
+/// invalid actor states (e.g., both actors set, neither actor set).
+///
+/// The actor_type field explicitly identifies whether the issue originates
+/// from a customer or seller. This enables efficient querying and filtering
+/// by actor type without any nullable fields. All shared issue metadata
+/// (title, body, status) resides here, while actor-specific contextual data
+/// (like sessions) is stored in the subtype entities.
+///
+/// This table is a primary entity because administrators and customers may
+/// directly view, filter, and manage issues from the platform interface,
+/// regardless of the actor type that reported them. It is referenced by the
+/// two subtype tables with 1:1 relationships.
+///
+/// @namespace Issues
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_issues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The type of actor who reported this issue. Must be either 'customer' or
+  /// 'seller'. This field enables the polymporphic pattern and replaces the
+  /// need for multiple nullable foreign keys.
+  actor_type String
+  
+  /// Concise summary of the reported issue. Often used as a subject line for
+  /// notifications and internal triaging.
+  title String
+  
+  /// Detailed description of the issue provided by the reporting actor. May
+  /// include screenshots, timestamps, or contextual details about what
+  /// occurred.
+  body String
+  
+  /// Current state of the issue report. Valid values: 'pending',
+  /// 'under_review', 'resolved', 'rejected'. New issues start as 'pending'.
+  /// Admins update the status as they process.
+  status String
+  
+  /// Timestamp when the issue was first created and reported. This is
+  /// immutable.
+  created_at DateTime
+  
+  /// Timestamp when any field in this record was last modified. Typically
+  /// updated when status changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, the issue is active. When set, the issue
+  /// is considered archived and hidden from active views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_issue_of_customers shopping_mall_issue_of_customers?
+  shopping_mall_issue_of_sellers shopping_mall_issue_of_sellers?
+  
+  @@index([actor_type])
+  @@index([status])
+}
+
+/// Subtype entity holding customer-specific contextual data linked to issues
+/// reported by customers.
+///
+/// This table extends the main shopping_mall_issues entity with data
+/// specific to customer-reported issues, including the customer ID and their
+/// session at the time of reporting. This design replaces a nullable
+/// customer_id field in the main table, enforcing referential integrity and
+/// allowing the database to guarantee that every issue of this subtype is
+/// linked to exactly one valid customer.
+///
+/// Each record in this table has a 1:1 relationship with exactly one record
+/// in shopping_mall_issues. The same issue cannot be linked to both a
+/// customer and a seller. Customer-specific session data is stored here to
+/// provide context for the issue (e.g., device, location), which may be
+/// different from seller context.
+///
+/// This table is subsidiary because it is always accessed through the main
+/// shopping_mall_issues entity and is not directly managed by users via API
+/// endpoints. It is managed automatically by the system when a customer
+/// reports an issue.
+///
+/// @namespace Issues
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_issue_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main issue this customer-specific report belongs to. {@link
+  /// shopping_mall_issues.id}.
+  shopping_mall_issue_id String
+  
+  /// The customer who reported this issue. {@link shopping_mall_customer.id}.
+  /// This field is non-nullable to enforce integrity.
+  shopping_mall_customer_id String
+  
+  /// The customer's active session ID at the time the issue was reported.
+  /// {@link shopping_mall_customer_sessions.id}. Provides context about the
+  /// user's device, IP, and environment.
+  shopping_mall_customer_session_id String
+  
+  //----
+  // RELATIONS
+  //----
+  issue shopping_mall_issues @relation(fields: [shopping_mall_issue_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_issue_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_issue_of_customers_shopping_mall_custome_cdc5a07c")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, shopping_mall_issue_id], map: "shopping_mall_issue_of_customers_shopping_mall_custome_76c39c60")
+}
+
+/// Subtype entity holding seller-specific contextual data linked to issues
+/// reported by sellers.
+///
+/// This table extends the main shopping_mall_issues entity with data
+/// specific to seller-reported issues, including the seller ID and their
+/// session at the time of reporting. This design replaces a nullable
+/// seller_id field in the main table, enforcing referential integrity and
+/// allowing the database to guarantee that every issue of this subtype is
+/// linked to exactly one valid seller.
+///
+/// Each record in this table has a 1:1 relationship with exactly one record
+/// in shopping_mall_issues. The same issue cannot be linked to both a seller
+/// and a customer. Seller-specific session data is stored here for
+/// accountability and audit purposes.
+///
+/// This table is subsidiary because it is always accessed through the main
+/// shopping_mall_issues entity and is not directly managed by users via API
+/// endpoints. It is created automatically by the system when a seller
+/// reports an issue.
+///
+/// @namespace Issues
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_issue_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main issue this seller-specific report belongs to. {@link
+  /// shopping_mall_issues.id}.
+  shopping_mall_issue_id String
+  
+  /// The seller who reported this issue. {@link shopping_mall_seller.id}. This
+  /// field is non-nullable to enforce integrity.
+  shopping_mall_seller_id String
+  
+  /// The seller's active session ID at the time the issue was reported. {@link
+  /// shopping_mall_seller_sessions.id}. Provides context about the seller's
+  /// device, IP, and environment, which is critical for fraud detection and
+  /// dispute resolution.
+  shopping_mall_seller_session_id String
+  
+  //----
+  // RELATIONS
+  //----
+  issue shopping_mall_issues @relation(fields: [shopping_mall_issue_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  sellerSession shopping_mall_seller_sessions @relation(fields: [shopping_mall_seller_session_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_issue_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_session_id], map: "shopping_mall_issue_of_sellers_shopping_mall_seller_se_e56a4bb7")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, shopping_mall_issue_id], map: "shopping_mall_issue_of_sellers_shopping_mall_seller_id_4427452a")
+}

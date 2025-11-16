@@ -1,0 +1,13 @@
+export * as member from "./member/index";
+export * as auth from "./auth/index";
+export * as moderator from "./moderator/index";
+export * as administrator from "./administrator/index";
+export * as communities from "./communities/index";
+export * as categories from "./categories/index";
+export * as posts from "./posts/index";
+export * as comments from "./comments/index";
+export * as reports from "./reports/index";
+export * as moderationAppeals from "./moderationAppeals/index";
+export * as members from "./members/index";
+export * as search from "./search/index";
+export * as trending from "./trending/index";

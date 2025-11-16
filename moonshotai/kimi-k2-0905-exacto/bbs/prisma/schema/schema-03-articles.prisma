@@ -1,0 +1,154 @@
+/// Core content entities representing economic and political discussion
+/// articles.
+///
+/// Articles serve as the primary content type where members and moderators
+/// share economic insights, political analysis, and policy discussions. Each
+/// article contains the main discussion content along with metadata for
+/// organization and moderation.
+///
+/// Articles support file attachments, categorization, and have complete
+/// version history tracking through the associated versions table. The
+/// content goes through moderation workflow with status tracking.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author member's {@link economic_discussion_members.id}
+  economic_discussion_member_id String?
+  
+  /// Author moderator's {@link economic_discussion_moderators.id}
+  economic_discussion_moderator_id String?
+  
+  /// Article title displaying the main topic or question
+  title String
+  
+  /// Main article content body with discussion text
+  content String
+  
+  /// Current workflow status: pending, approved, rejected
+  status String
+  
+  /// Current article version number for tracking edits
+  version Float
+  
+  /// Number of times the article has been viewed
+  view_count Int
+  
+  /// Creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for moderation
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member economic_discussion_members? @relation(fields: [economic_discussion_member_id], references: [id], onDelete: Cascade)
+  moderator economic_discussion_moderators? @relation(fields: [economic_discussion_moderator_id], references: [id], onDelete: Cascade)
+  
+  economic_discussion_article_categories economic_discussion_article_categories[]
+  economic_discussion_article_versions economic_discussion_article_versions[]
+  economic_discussion_comments economic_discussion_comments[]
+  economic_discussion_attachments economic_discussion_attachments[]
+  
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_member_id, created_at], map: "economic_discussion_articles_economic_discussion_membe_ee14d0c7")
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_moderator_id, created_at], map: "economic_discussion_articles_economic_discussion_moder_3f719e93")
+}
+
+/// Junction table managing many-to-many relationships between articles and
+/// categories.
+///
+/// This subsidiary table connects articles to their assigned categories,
+/// allowing articles to be tagged with multiple categories for better
+/// organization and discovery. Categories help users filter and browse
+/// content by topic areas like Economics, Politics, Business, etc.
+///
+/// The junction table maintains referential integrity while supporting
+/// efficient querying for category-based content discovery.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_article_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated article's {@link economic_discussion_articles.id}
+  economic_discussion_article_id String
+  
+  /// Associated category's {@link economic_discussion_categories.id}
+  economic_discussion_category_id String
+  
+  /// Association creation timestamp
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_discussion_articles @relation(fields: [economic_discussion_article_id], references: [id], onDelete: Cascade)
+  category economic_discussion_categories @relation(fields: [economic_discussion_category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_discussion_article_id, economic_discussion_category_id], map: "economic_discussion_article_categories_economic_discus_007e4b37")
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_category_id, created_at], map: "economic_discussion_article_categories_economic_discus_f4921674")
+}
+
+/// Historical snapshots capturing article states at specific points in time.
+///
+/// This snapshot table preserves complete article versions whenever
+/// significant changes occur, supporting audit trails and content recovery.
+/// Each version captures the full article state including content, title,
+/// and metadata at the time of the edit.
+///
+/// Version history enables rollback capabilities and provides transparency
+/// for content evolution tracking required in discussion forums.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_article_versions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original article's {@link economic_discussion_articles.id}
+  economic_discussion_article_id String
+  
+  /// Article title at time of version creation
+  title String
+  
+  /// Article content at time of version creation
+  content String
+  
+  /// Version number for this snapshot
+  version Float
+  
+  /// Version creation timestamp
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_discussion_articles @relation(fields: [economic_discussion_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_discussion_article_id, version], map: "economic_discussion_article_versions_economic_discussi_ace1135b")
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_article_id, created_at], map: "economic_discussion_article_versions_economic_discussi_50314d03")
+}

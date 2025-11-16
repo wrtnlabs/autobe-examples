@@ -13,18 +13,18 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthMemberRefresh(props: {
   body: IDiscussionBoardMember.IRefresh;
 }): Promise<IDiscussionBoardMember.IAuthorized> {
-  const { body } = props;
-
-  // Step 1: Verify and decode the refresh token
   let decoded: {
     id: string;
     session_id: string;
     type: "member";
   };
+
   try {
-    decoded = jwt.verify(body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as {
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as {
       id: string;
       session_id: string;
       type: "member";
@@ -33,12 +33,10 @@ export async function postAuthMemberRefresh(props: {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  // Step 2: Validate type matches expected actor type
   if (decoded.type !== "member") {
     throw new HttpException("Invalid token type", 403);
   }
 
-  // Step 3: Validate session exists and is active
   const session =
     await MyGlobal.prisma.discussion_board_member_sessions.findFirst({
       where: {
@@ -54,32 +52,16 @@ export async function postAuthMemberRefresh(props: {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  // Step 4: Validate member account status
-  if (session.member.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
-  }
-
-  if (!session.member.email_verified) {
-    throw new HttpException("Email not verified", 403);
-  }
-
-  if (session.member.status !== "active") {
-    throw new HttpException("Account is not active", 403);
-  }
-
-  // Step 5: Generate new access and refresh tokens with SAME session_id
-  const now = toISOStringSafe(new Date());
-  const accessExpiresTime = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpiresTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const accessExpires = toISOStringSafe(accessExpiresTime);
-  const refreshExpires = toISOStringSafe(refreshExpiresTime);
+  const nowMs = Date.now();
+  const accessExpiresMs = nowMs + 60 * 60 * 1000;
+  const refreshExpiresMs = nowMs + 7 * 24 * 60 * 60 * 1000;
 
   const accessToken = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: now,
+      created_at: new Date(nowMs).toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -94,7 +76,7 @@ export async function postAuthMemberRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: now,
+      created_at: new Date(nowMs).toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -103,55 +85,30 @@ export async function postAuthMemberRefresh(props: {
     },
   );
 
-  // Step 6: Update session expiration time
   await MyGlobal.prisma.discussion_board_member_sessions.update({
     where: {
       id: decoded.session_id,
     },
     data: {
-      expired_at: refreshExpiresTime,
+      expired_at: new Date(refreshExpiresMs),
     },
   });
 
-  // Step 7: Return member data with new tokens
+  const member = session.member;
+
   return {
-    id: session.member.id,
-    username: session.member.username,
-    email: session.member.email,
-    display_name:
-      session.member.display_name !== null
-        ? session.member.display_name
-        : undefined,
-    bio: session.member.bio !== null ? session.member.bio : undefined,
-    location:
-      session.member.location !== null ? session.member.location : undefined,
-    website_url:
-      session.member.website_url !== null
-        ? session.member.website_url
-        : undefined,
-    profile_picture_url:
-      session.member.profile_picture_url !== null
-        ? session.member.profile_picture_url
-        : undefined,
-    email_verified: session.member.email_verified,
-    status: session.member.status,
-    profile_visibility: session.member.profile_visibility,
-    activity_visibility: session.member.activity_visibility,
-    last_login_at:
-      session.member.last_login_at !== null
-        ? toISOStringSafe(session.member.last_login_at)
-        : undefined,
-    created_at: toISOStringSafe(session.member.created_at),
-    updated_at: toISOStringSafe(session.member.updated_at),
-    deleted_at:
-      session.member.deleted_at !== null
-        ? toISOStringSafe(session.member.deleted_at)
-        : undefined,
+    id: member.id,
+    username: member.username,
+    email: member.email,
+    status: member.status,
+    email_verified: member.email_verified,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
+      expired_at: toISOStringSafe(new Date(accessExpiresMs)),
+      refreshable_until: toISOStringSafe(new Date(refreshExpiresMs)),
     },
   };
 }

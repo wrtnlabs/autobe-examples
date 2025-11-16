@@ -1,0 +1,812 @@
+/// Global configuration entries for the shoppingMall platform.
+///
+/// Stores low-level key/value style configuration items grouped by
+/// namespace. Each row represents a single configuration key with its
+/// current value, used for feature toggles, numeric thresholds, and string
+/// parameters referenced by multiple subsystems.
+///
+/// Configs are managed primarily by platform administrators and are intended
+/// to be relatively static, with updates happening infrequently and under
+/// change control. Historical behavior for orders, payments, and reviews is
+/// preserved in their own domains by recording effective values or
+/// referencing specific policy records instead of retroactively changing
+/// past data.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the configuration entry.
+  id String @id
+  
+  /// Logical namespace that groups related configuration keys, such as
+  /// "checkout", "payment", or "reviews". Used to organize configs and
+  /// simplify lookups.
+  namespace String
+  
+  /// Unique configuration key within a namespace, such as "max_cart_items" or
+  /// "payment_timeout_seconds".
+  key String
+  
+  /// Configuration value serialized as text. The consuming subsystem is
+  /// responsible for interpreting the value as boolean, number, JSON, or other
+  /// structured type.
+  value String
+  
+  /// Human-readable explanation of the configuration key and how it is used
+  /// across the platform.
+  description String?
+  
+  /// Indicates whether this configuration row is currently considered active
+  /// for runtime evaluation. Inactive rows remain for audit and potential
+  /// rollback.
+  active Boolean
+  
+  /// Timestamp when this configuration row was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration row was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the configuration row is logically
+  /// removed from active use but preserved for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([namespace, key])
+  @@index([namespace, active])
+}
+
+/// High-level policy groups and configuration profiles for the shoppingMall
+/// platform.
+///
+/// Represents named collections of rules or parameters that describe how the
+/// platform behaves in different contexts, such as default cancellation
+/// windows, review time windows, or fraud-related thresholds. These settings
+/// are referenced by domain-specific policy tables and can be used as
+/// building blocks for more detailed rules.
+///
+/// Each policy setting is identified by a code and can be activated or
+/// deactivated independently, allowing platform administrators to prepare
+/// future configurations and switch between them in a controlled way.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_policy_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the policy setting.
+  id String @id
+  
+  /// Business identifier for the policy setting, such as
+  /// "default_cancellation_profile" or "holiday_refund_profile". Used as a
+  /// stable reference by other components.
+  code String
+  
+  /// Human-friendly name of the policy setting profile displayed in admin
+  /// tools.
+  name String
+  
+  /// Detailed explanation of what this policy setting profile controls and in
+  /// which business scenarios it is intended to be used.
+  description String?
+  
+  /// Logical category of the policy setting, such as "cancellation", "refund",
+  /// "review", or "age_restriction".
+  category String
+  
+  /// Serialized configuration payload that holds structured parameters for
+  /// this policy setting. Typically stores JSON text interpreted by the
+  /// consuming subsystem.
+  config_payload String?
+  
+  /// Indicates whether this policy setting profile is active and can be
+  /// referenced by domain-specific policies.
+  active Boolean
+  
+  /// Optional timestamp from which this policy setting becomes effective.
+  /// Allows scheduling of policy changes.
+  effective_from DateTime?
+  
+  /// Optional timestamp after which this policy setting is no longer
+  /// considered effective.
+  effective_to DateTime?
+  
+  /// Timestamp when this policy setting profile was created.
+  created_at DateTime
+  
+  /// Timestamp when this policy setting profile was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the profile is no longer available for
+  /// new references but remains for historical audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_cancellation_policies shopping_mall_cancellation_policies[]
+  shopping_mall_refund_policies shopping_mall_refund_policies[]
+  shopping_mall_review_policies shopping_mall_review_policies[]
+  shopping_mall_age_restriction_policies shopping_mall_age_restriction_policies[]
+  
+  @@unique([code])
+  @@index([category, active])
+  @@index([effective_from, effective_to])
+}
+
+/// Cancellation policy definitions for shoppingMall orders.
+///
+/// Each record describes how cancellations should be handled for a
+/// particular business context, including allowed time windows, conditions,
+/// and any associated configuration profile. These policies are referenced
+/// by the order and payment domains when processing customer- or
+/// seller-initiated cancellation requests.
+///
+/// Policies can be scoped by region and can be activated or deactivated over
+/// time. Historical orders and requests should store references to specific
+/// policies rather than relying on current defaults.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the cancellation policy.
+  id String @id
+  
+  /// Optional reference to the {@link shopping_mall_region_settings} entry
+  /// that this cancellation policy applies to. When null, the policy is
+  /// considered global or multi-region.
+  shopping_mall_region_setting_id String?
+  
+  /// Optional reference to the {@link shopping_mall_policy_settings} profile
+  /// that provides shared configuration parameters for this cancellation
+  /// policy.
+  shopping_mall_policy_setting_id String?
+  
+  /// Business code identifying the cancellation policy, such as
+  /// "default_cancellation" or "express_shipping_strict".
+  code String
+  
+  /// Human-friendly name of the cancellation policy shown in admin tools.
+  name String
+  
+  /// Detailed description of the cancellation rules, such as allowed time
+  /// windows, eligible statuses, and who may initiate cancellations.
+  description String?
+  
+  /// Maximum number of hours after successful payment during which
+  /// cancellations are normally accepted. Null means that the policy uses only
+  /// state-based rules or relies on the configuration payload.
+  max_hours_after_payment Int?
+  
+  /// Indicates whether customers can cancel orders up to the moment before
+  /// shipment according to this policy.
+  allow_cancellation_before_shipment Boolean
+  
+  /// Indicates whether partial cancellation of individual order lines is
+  /// allowed, rather than requiring cancellation of the entire order.
+  allow_partial_cancellation Boolean
+  
+  /// Serialized configuration payload for complex cancellation rules, such as
+  /// per-status behavior or product-category exceptions. Typically structured
+  /// as JSON text.
+  config_payload String?
+  
+  /// Indicates whether this cancellation policy is currently active for new
+  /// orders or flows that reference it.
+  active Boolean
+  
+  /// Optional timestamp from which this cancellation policy becomes effective.
+  effective_from DateTime?
+  
+  /// Optional timestamp after which this cancellation policy is no longer
+  /// effective for new operations.
+  effective_to DateTime?
+  
+  /// Timestamp when this cancellation policy definition was created.
+  created_at DateTime
+  
+  /// Timestamp when this cancellation policy definition was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the policy is logically removed but
+  /// remains for audit and historical references.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  regionSetting shopping_mall_region_settings? @relation(fields: [shopping_mall_region_setting_id], references: [id], onDelete: Cascade)
+  policySetting shopping_mall_policy_settings? @relation(fields: [shopping_mall_policy_setting_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_setting_id], map: "shopping_mall_cancellation_policies_shopping_mall_poli_12f8bdac")
+  
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_region_setting_id, active], map: "shopping_mall_cancellation_policies_shopping_mall_regi_fd4d0a22")
+  // spellchecker: ignore-next-line
+  @@index([effective_from, effective_to], map: "shopping_mall_cancellation_policies_effective_from_eff_abfc9ff5")
+}
+
+/// Refund policy definitions for orders and payments in shoppingMall.
+///
+/// Each record describes how refunds should be processed in different
+/// business contexts, including allowed refund windows, full vs partial
+/// refund behavior, and eligibility rules. The payment and order subsystems
+/// reference these policies when handling refund requests, returns, and
+/// admin interventions.
+///
+/// Refund policies can be scoped by region and may link to shared policy
+/// setting profiles. Historical records reference specific policies to
+/// preserve the rules that were in force at the time of the transaction.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the refund policy.
+  id String @id
+  
+  /// Optional reference to {@link shopping_mall_region_settings} specifying
+  /// the region this refund policy applies to. Null indicates a global or
+  /// multi-region policy.
+  shopping_mall_region_setting_id String?
+  
+  /// Optional reference to {@link shopping_mall_policy_settings} profile for
+  /// this refund policy, carrying shared configuration parameters.
+  shopping_mall_policy_setting_id String?
+  
+  /// Business code for the refund policy, such as "default_refund" or
+  /// "digital_goods_nonrefundable".
+  code String
+  
+  /// Human-friendly name of the refund policy shown in admin interfaces.
+  name String
+  
+  /// Detailed description of refund rules, including full vs partial refund
+  /// eligibility, fees, and conditions.
+  description String?
+  
+  /// Maximum number of days after delivery within which a customer can request
+  /// a refund or return. Null indicates that only other conditions or
+  /// configuration payload define the window.
+  max_days_after_delivery Int?
+  
+  /// Indicates whether full refunds are allowed in business scenarios governed
+  /// by this policy.
+  allow_full_refund Boolean
+  
+  /// Indicates whether partial refunds (for selected items or partial amounts)
+  /// are permitted.
+  allow_partial_refund Boolean
+  
+  /// Optional amount threshold over which admin approval is required for
+  /// refunds. Null means no threshold is configured here.
+  require_admin_approval_over_amount Float?
+  
+  /// Serialized configuration payload with advanced refund rules, such as
+  /// product-category exclusions or tiered policies. Typically stored as JSON
+  /// text.
+  config_payload String?
+  
+  /// Indicates whether this refund policy is active for new orders and refund
+  /// flows that reference it.
+  active Boolean
+  
+  /// Optional timestamp from which this refund policy becomes effective.
+  effective_from DateTime?
+  
+  /// Optional timestamp after which this refund policy is no longer effective
+  /// for new transactions.
+  effective_to DateTime?
+  
+  /// Timestamp when this refund policy was created.
+  created_at DateTime
+  
+  /// Timestamp when this refund policy was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the policy is no longer active but
+  /// remains for audit and historical orders.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  regionSetting shopping_mall_region_settings? @relation(fields: [shopping_mall_region_setting_id], references: [id], onDelete: Cascade)
+  policySetting shopping_mall_policy_settings? @relation(fields: [shopping_mall_policy_setting_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_setting_id], map: "shopping_mall_refund_policies_shopping_mall_policy_set_c05b9946")
+  
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_region_setting_id, active], map: "shopping_mall_refund_policies_shopping_mall_region_set_12a750d4")
+  @@index([effective_from, effective_to])
+}
+
+/// Review and rating policy definitions for the shoppingMall platform.
+///
+/// Each record defines rules governing product reviews and ratings,
+/// including eligibility, time windows, content restrictions, and moderation
+/// behavior. Review subsystems consult these policies when allowing
+/// customers to create, edit, or delete reviews, and when evaluating reports
+/// and moderation thresholds.
+///
+/// Policies can be scoped by region and may reference shared configuration
+/// profiles. Historical review records can store references to specific
+/// policies to preserve the criteria that applied when the review was
+/// created or moderated.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the review policy.
+  id String @id
+  
+  /// Optional reference to {@link shopping_mall_region_settings} representing
+  /// the region this review policy targets. Null means global or multi-region
+  /// scope.
+  shopping_mall_region_setting_id String?
+  
+  /// Optional reference to {@link shopping_mall_policy_settings} profile that
+  /// provides shared configuration parameters for this review policy.
+  shopping_mall_policy_setting_id String?
+  
+  /// Business code that uniquely identifies the review policy, for example
+  /// "default_review" or "strict_moderation".
+  code String
+  
+  /// Human-readable name of the review policy used in admin tools.
+  name String
+  
+  /// Detailed description of the review rules, including eligibility,
+  /// moderation strategies, and time windows.
+  description String?
+  
+  /// Maximum number of days after delivered status during which a customer is
+  /// allowed to submit a review. Null means the policy relies entirely on
+  /// configuration payload or other conditions.
+  max_days_after_delivery_for_review Int?
+  
+  /// Number of days after review creation during which a customer can edit
+  /// their review. Null indicates editing is either not restricted by time
+  /// here or defined in another configuration field.
+  allow_edit_within_days Int?
+  
+  /// Number of distinct abuse reports required to automatically hide a review
+  /// pending moderation. Null disables automatic hiding based on report counts
+  /// in this policy.
+  auto_hide_report_threshold Int?
+  
+  /// Serialized configuration payload describing additional review rules, such
+  /// as prohibited content categories or rating scale specifics. Typically
+  /// stored as JSON text.
+  config_payload String?
+  
+  /// Indicates whether this review policy is currently active for new reviews
+  /// and moderation flows.
+  active Boolean
+  
+  /// Optional timestamp from which this review policy becomes effective.
+  effective_from DateTime?
+  
+  /// Optional timestamp after which this review policy ceases to apply to new
+  /// operations.
+  effective_to DateTime?
+  
+  /// Timestamp when this review policy was created.
+  created_at DateTime
+  
+  /// Timestamp when this review policy was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp, indicating the policy is retired from active use
+  /// but preserved for historical references.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  regionSetting shopping_mall_region_settings? @relation(fields: [shopping_mall_region_setting_id], references: [id], onDelete: Cascade)
+  policySetting shopping_mall_policy_settings? @relation(fields: [shopping_mall_policy_setting_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_setting_id], map: "shopping_mall_review_policies_shopping_mall_policy_set_eaff3f22")
+  
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_region_setting_id, active], map: "shopping_mall_review_policies_shopping_mall_region_set_a67e95db")
+  @@index([effective_from, effective_to])
+}
+
+/// Age and eligibility restriction policies for products and categories in
+/// shoppingMall.
+///
+/// Defines rules controlling access to age-restricted or otherwise sensitive
+/// products based on customer age, region, and other eligibility criteria.
+/// Catalog, checkout, and review subsystems reference these policies to
+/// determine whether a customer may view, purchase, or review restricted
+/// items.
+///
+/// Policies may be tied to specific regions and configuration profiles,
+/// enabling different legal and regulatory requirements across markets.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_age_restriction_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the age restriction policy.
+  id String @id
+  
+  /// Optional reference to {@link shopping_mall_region_settings} indicating
+  /// the region this age restriction policy covers. Null indicates a global or
+  /// cross-region policy.
+  shopping_mall_region_setting_id String?
+  
+  /// Optional reference to {@link shopping_mall_policy_settings} profile
+  /// sharing configuration parameters for this age restriction policy.
+  shopping_mall_policy_setting_id String?
+  
+  /// Business code identifying the age restriction policy, such as
+  /// "adult_only" or "teen_restricted".
+  code String
+  
+  /// Human-friendly name of the age restriction policy used in admin tools.
+  name String
+  
+  /// Detailed description of the age and eligibility constraints imposed by
+  /// this policy.
+  description String?
+  
+  /// Minimum age in years required for a customer to access products governed
+  /// by this policy. Null indicates that age is not the primary criterion and
+  /// the policy uses other eligibility rules.
+  minimum_age_years Int?
+  
+  /// Indicates whether customers must have a verified age status in their
+  /// account to access items under this policy.
+  require_verified_age Boolean
+  
+  /// Serialized configuration payload for complex eligibility rules, such as
+  /// region-specific legal adjustments or additional verification steps.
+  /// Typically stored as JSON text.
+  config_payload String?
+  
+  /// Indicates whether this age restriction policy is currently active.
+  active Boolean
+  
+  /// Optional timestamp from which this age restriction policy becomes
+  /// effective.
+  effective_from DateTime?
+  
+  /// Optional timestamp after which this age restriction policy is no longer
+  /// effective for new operations.
+  effective_to DateTime?
+  
+  /// Timestamp when this age restriction policy was created.
+  created_at DateTime
+  
+  /// Timestamp when this age restriction policy was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp indicating that the policy is retired from active
+  /// use while remaining available for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  regionSetting shopping_mall_region_settings? @relation(fields: [shopping_mall_region_setting_id], references: [id], onDelete: Cascade)
+  policySetting shopping_mall_policy_settings? @relation(fields: [shopping_mall_policy_setting_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_compliance_flags shopping_mall_product_compliance_flags[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_policy_setting_id], map: "shopping_mall_age_restriction_policies_shopping_mall_p_2b0e9152")
+  
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_region_setting_id, active], map: "shopping_mall_age_restriction_policies_shopping_mall_r_6fb0630e")
+  // spellchecker: ignore-next-line
+  @@index([effective_from, effective_to], map: "shopping_mall_age_restriction_policies_effective_from__311b07a3")
+}
+
+/// Top-level category tree definitions for the shoppingMall catalog.
+///
+/// Represents independent category hierarchies, such as the main
+/// customer-facing catalog, specialized regional trees, or admin-only
+/// classification structures. Each tree contains many categories stored in
+/// {@link shopping_mall_categories}, which reference the tree by foreign
+/// key.
+///
+/// Tree definitions carry metadata such as purpose, default locale, and
+/// visibility flags, allowing the platform to manage multiple separate
+/// taxonomies if required.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_category_trees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the category tree.
+  id String @id
+  
+  /// Business code that uniquely identifies the category tree, such as
+  /// "main_catalog" or "regional_tree_eu".
+  code String
+  
+  /// Human-friendly name of the category tree, displayed in admin tools and
+  /// configuration screens.
+  name String
+  
+  /// Detailed description of the purpose and scope of this category tree,
+  /// including which products or markets it serves.
+  description String?
+  
+  /// Optional locale identifier, such as "en-US" or "ko-KR", used as the
+  /// primary language for category names and labels in this tree.
+  default_locale String?
+  
+  /// Indicates whether this category tree is active and available for catalog
+  /// navigation.
+  active Boolean
+  
+  /// Timestamp when this category tree definition was created.
+  created_at DateTime
+  
+  /// Timestamp when this category tree definition was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the category tree is retired from
+  /// active use while remaining for historical references.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_categories shopping_mall_categories[]
+  
+  @@unique([code])
+  @@index([active])
+}
+
+/// Category nodes within a specific category tree for the shoppingMall catalog.
+///
+/// Each record represents a single category in a tree, with optional parent
+/// linkage to form a hierarchy. Categories hold display names, slugs, and
+/// ordering information. They can be activated or deactivated without
+/// deleting underlying products, allowing the catalog to evolve.
+///
+/// Categories reference {@link shopping_mall_category_trees} to support
+/// multiple parallel trees. They provide the taxonomy backbone for products
+/// and influence search, filtering, and catalog navigation behavior across
+/// the platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the category node.
+  id String @id
+  
+  /// Reference to the {@link shopping_mall_category_trees} record this
+  /// category belongs to.
+  shopping_mall_category_tree_id String
+  
+  /// Optional self-referential link to the parent {@link
+  /// shopping_mall_categories} node. Null for root categories.
+  parent_id String?
+  
+  /// Business code that uniquely identifies this category within the platform,
+  /// often used by integrations or internal rules.
+  code String
+  
+  /// URL-friendly identifier used for building category paths in web
+  /// frontends, unique within a tree.
+  slug String
+  
+  /// Human-readable category name displayed to customers in navigation and
+  /// search results.
+  name String
+  
+  /// Optional description of the category, used for SEO and to help customers
+  /// understand the scope of products included.
+  description String?
+  
+  /// Ordering position of the category among siblings under the same parent.
+  /// Lower values are typically displayed first.
+  display_order Int
+  
+  /// Indicates whether this category is intended to be a leaf node in the tree
+  /// (no child categories). This helps optimization and UI decisions but does
+  /// not enforce structural constraints by itself.
+  is_leaf Boolean
+  
+  /// Indicates whether this category is currently visible in navigation and
+  /// catalog browsing. Inactive categories can still appear in historical
+  /// orders.
+  active Boolean
+  
+  /// Timestamp when this category was created.
+  created_at DateTime
+  
+  /// Timestamp when this category was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the category is logically removed
+  /// while remaining in historical references.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  categoryTree shopping_mall_category_trees @relation(fields: [shopping_mall_category_tree_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_product_category_assignments shopping_mall_product_category_assignments[]
+  
+  @@index([parent_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_category_tree_id, code], map: "shopping_mall_categories_shopping_mall_category_tree_i_a9894a99")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_category_tree_id, slug], map: "shopping_mall_categories_shopping_mall_category_tree_i_427b96d7")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_category_tree_id, parent_id, display_order], map: "shopping_mall_categories_shopping_mall_category_tree_i_4c78931c")
+  @@index([active])
+}
+
+/// Region configuration entries representing markets or geographic areas in
+/// shoppingMall.
+///
+/// Each record defines a logical region, such as a country, group of
+/// countries, or custom market segment, that can be referenced by policies,
+/// catalog rules, payment constraints, and shipping configurations. Regions
+/// capture basic metadata such as ISO codes, names, and activation status.
+///
+/// Other subsystems, including cancellation, refund, review, age
+/// restriction, and shipping zone policies, reference region settings to
+/// apply region-specific behavior without duplicating regional attributes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_region_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the region setting.
+  id String @id
+  
+  /// Business code for the region, such as an ISO country code ("US", "KR") or
+  /// a platform-defined market identifier like "EU_MARKET".
+  code String
+  
+  /// Human-readable name of the region, for example "United States" or
+  /// "European Union".
+  name String
+  
+  /// Optional ISO country code associated with this region. May be null for
+  /// composite or non-standard regions.
+  iso_country_code String?
+  
+  /// Default currency code (such as "USD" or "KRW") typically used for
+  /// transactions in this region.
+  currency_code String?
+  
+  /// Representative timezone identifier for the region, used in time-based
+  /// policy calculations like cancellation windows.
+  timezone String?
+  
+  /// Indicates whether this region is active and can be referenced by new
+  /// policies or configuration entries.
+  active Boolean
+  
+  /// Timestamp when this region setting record was created.
+  created_at DateTime
+  
+  /// Timestamp when this region setting record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, the region is retired from active use
+  /// while remaining for audit and historical references.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_cancellation_policies shopping_mall_cancellation_policies[]
+  shopping_mall_refund_policies shopping_mall_refund_policies[]
+  shopping_mall_review_policies shopping_mall_review_policies[]
+  shopping_mall_age_restriction_policies shopping_mall_age_restriction_policies[]
+  shopping_mall_shipping_zone_settings shopping_mall_shipping_zone_settings[]
+  shopping_mall_product_visibility_rules shopping_mall_product_visibility_rules[]
+  
+  @@unique([code])
+  @@index([active])
+  @@index([iso_country_code])
+}
+
+/// Shipping zone configuration for grouping regions into logistics and
+/// pricing areas.
+///
+/// Each record represents a shipping zone that may cover one or more regions
+/// and is used by fulfillment and pricing subsystems to determine available
+/// shipping methods, rates, and constraints. Zones can be regional (such as
+/// "Domestic", "EU", or "International") and are linked indirectly to orders
+/// through region assignments.
+///
+/// This table provides the canonical set of zones, while relationships
+/// between zones and regions may be represented by separate junction tables
+/// in other components if many-to-many mappings are required.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_zone_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the shipping zone setting.
+  id String @id
+  
+  /// Optional reference to a primary {@link shopping_mall_region_settings}
+  /// record associated with this shipping zone. Additional region-zone
+  /// mappings may exist in other tables.
+  shopping_mall_region_setting_id String?
+  
+  /// Business code for the shipping zone, such as "DOMESTIC", "EU_ZONE", or
+  /// "GLOBAL".
+  code String
+  
+  /// Human-readable name of the shipping zone displayed in admin tools and
+  /// logistics configuration screens.
+  name String
+  
+  /// Description of which regions or countries are included in this shipping
+  /// zone and how it is used for shipping rate calculations.
+  description String?
+  
+  /// Indicates whether this shipping zone is active and can be used for
+  /// shipping configuration and rate calculation.
+  active Boolean
+  
+  /// Timestamp when this shipping zone was created.
+  created_at DateTime
+  
+  /// Timestamp when this shipping zone was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp indicating that the shipping zone is retired from
+  /// active use but remains for historical references.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  primaryRegion shopping_mall_region_settings? @relation(fields: [shopping_mall_region_setting_id], references: [id], onDelete: Cascade)
+  
+  @@unique([code])
+  @@index([active])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_region_setting_id], map: "shopping_mall_shipping_zone_settings_shopping_mall_reg_162748d0")
+}

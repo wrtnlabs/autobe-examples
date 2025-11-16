@@ -1,0 +1,470 @@
+/// Core order entity representing completed transactions in the e-commerce
+/// platform.
+///
+/// Stores comprehensive order information including customer details, order
+/// totals, shipping information, and fulfillment status. Each order
+/// represents a completed purchase transaction with associated payment and
+/// shipping records.
+///
+/// Orders follow a defined lifecycle from placement through delivery, with
+/// status tracking at each stage. The system maintains audit trails for
+/// order modifications, cancellations, and fulfillment updates to ensure
+/// transaction integrity and customer satisfaction.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed the order. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Seller responsible for order fulfillment. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Shipping address for order delivery. {@link
+  /// ecommerce_mall_customer_addresses.id}
+  shipping_address_id String
+  
+  /// Billing address for payment processing. {@link
+  /// ecommerce_mall_customer_addresses.id}
+  billing_address_id String
+  
+  /// Unique order identifier for customer reference and tracking.
+  order_number String
+  
+  /// Current order status (pending, processing, shipped, delivered, cancelled,
+  /// completed).
+  status String
+  
+  /// Internal business status for workflow management and reporting.
+  business_status String
+  
+  /// Total order amount including products, shipping, and taxes.
+  total_amount Float
+  
+  /// Order subtotal before shipping and taxes.
+  subtotal_amount Float
+  
+  /// Shipping cost for the order.
+  shipping_amount Float
+  
+  /// Tax amount calculated for the order.
+  tax_amount Float
+  
+  /// Currency code for order amounts (e.g., USD, EUR, GBP).
+  currency String
+  
+  /// Customer notes or special instructions for the order.
+  notes String?
+  
+  /// Estimated delivery date provided to customer.
+  estimated_delivery_date DateTime?
+  
+  /// Actual delivery date when order is completed.
+  actual_delivery_date DateTime?
+  
+  /// Order creation timestamp.
+  created_at DateTime
+  
+  /// Last order update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for order cancellation or archival.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  shippingAddress ecommerce_mall_customer_addresses @relation("ecommerce_mall_orders_of_shipping_address_id", fields: [shipping_address_id], references: [id], onDelete: Cascade)
+  billingAddress ecommerce_mall_customer_addresses @relation("ecommerce_mall_orders_of_billing_address_id", fields: [billing_address_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_order_items ecommerce_mall_order_items[]
+  ecommerce_mall_payments ecommerce_mall_payments[]
+  ecommerce_mall_shipments ecommerce_mall_shipments[]
+  ecommerce_mall_reviews ecommerce_mall_reviews[]
+  ecommerce_mall_customer_order_history ecommerce_mall_customer_order_history?
+  ecommerce_mall_customer_order_summaries ecommerce_mall_customer_order_summaries?
+  
+  @@index([shipping_address_id])
+  @@index([billing_address_id])
+  
+  @@unique([order_number])
+  @@index([ecommerce_mall_customer_id, created_at])
+  @@index([ecommerce_mall_seller_id, created_at])
+  @@index([status, created_at])
+  @@index([estimated_delivery_date])
+}
+
+/// Individual items within an order, representing specific products purchased.
+///
+/// Each order item corresponds to a product variant selected by the
+/// customer, with quantity and pricing details. Items maintain references to
+/// both the parent order and the original product for inventory tracking and
+/// customer reference.
+///
+/// Order items support complex product configurations through associated
+/// option records, enabling detailed order tracking and accurate fulfillment
+/// processing. The total_price field has been removed to maintain 3NF
+/// compliance - this should be calculated at application level.
+///
+/// Items now include enhanced status tracking and seller references for
+/// improved fulfillment management.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order containing this item. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Product variant purchased by customer. {@link
+  /// ecommerce_mall_product_variants.id}
+  ecommerce_mall_product_variant_id String
+  
+  /// Seller responsible for this item's fulfillment. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Quantity of the product variant ordered.
+  quantity Int
+  
+  /// Price per unit at time of purchase.
+  unit_price Float
+  
+  /// Item fulfillment status (pending, allocated, shipped, delivered,
+  /// cancelled, returned).
+  status String
+  
+  /// Quantity allocated from inventory for this order item.
+  allocated_quantity Int
+  
+  /// Quantity shipped to customer for this order item.
+  shipped_quantity Int
+  
+  /// Quantity cancelled from this order item.
+  cancelled_quantity Int
+  
+  /// Item creation timestamp.
+  created_at DateTime
+  
+  /// Last item update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for item cancellation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_order_item_options ecommerce_mall_order_item_options[]
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_id, created_at], map: "ecommerce_mall_order_items_ecommerce_mall_order_id_cre_a44064e3")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_order_items_ecommerce_mall_product_vari_9fcb9a09")
+  @@index([ecommerce_mall_seller_id, status])
+  @@index([status])
+}
+
+/// Configuration options selected for order items, capturing product
+/// customizations.
+///
+/// Stores specific variant options chosen by customers during purchase, such
+/// as size, color, material, or other product attributes. Each option record
+/// links an order item to its corresponding product variant option for
+/// accurate fulfillment and customer reference.
+///
+/// This table ensures that complex product configurations are preserved
+/// throughout the order lifecycle, supporting accurate inventory management
+/// and customer satisfaction.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_item_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order item being configured. {@link ecommerce_mall_order_items.id}
+  ecommerce_mall_order_item_id String
+  
+  /// Product variant option selected. {@link
+  /// ecommerce_mall_product_variant_options.id}
+  ecommerce_mall_product_variant_option_id String
+  
+  /// Specific value chosen for this option (e.g., "Red", "Large", "Cotton").
+  option_value String
+  
+  /// Option creation timestamp.
+  created_at DateTime
+  
+  /// Last option update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for option removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  productVariantOption ecommerce_mall_product_variant_options @relation(fields: [ecommerce_mall_product_variant_option_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_item_id, ecommerce_mall_product_variant_option_id], map: "ecommerce_mall_order_item_options_ecommerce_mall_order_93cc0e82")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_item_id], map: "ecommerce_mall_order_item_options_ecommerce_mall_order_521d47be")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_option_id], map: "ecommerce_mall_order_item_options_ecommerce_mall_produ_b80ad9d0")
+}
+
+/// Payment records associated with customer orders.
+///
+/// Stores comprehensive payment information including transaction details,
+/// payment method, status, and processing history. Each payment record links
+/// to a specific order and maintains audit trails for financial compliance
+/// and customer service.
+///
+/// Supports multiple payment methods including credit cards, digital
+/// wallets, and bank transfers, with secure handling of payment data through
+/// tokenization and compliance with financial regulations. Enhanced with
+/// seller references for payment distribution tracking.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order being paid. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Customer making the payment. {@link ecommerce_mall_customers.id}
+  ecommerce_mall_customer_id String
+  
+  /// Seller receiving payment distribution. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Payment method used (credit_card, paypal, bank_transfer, etc.).
+  payment_method String
+  
+  /// Payment gateway processor used for transaction.
+  payment_gateway String
+  
+  /// Unique transaction identifier from payment gateway.
+  transaction_id String
+  
+  /// Payment amount processed.
+  amount Float
+  
+  /// Currency code for payment amount.
+  currency String
+  
+  /// Payment status (pending, processing, completed, failed, refunded,
+  /// partially_refunded).
+  status String
+  
+  /// Reason for payment failure if applicable.
+  failure_reason String?
+  
+  /// Timestamp when payment was processed by gateway.
+  processed_at DateTime?
+  
+  /// Amount refunded to customer if applicable.
+  refunded_amount Float?
+  
+  /// Timestamp when refund was processed.
+  refunded_at DateTime?
+  
+  /// Amount distributed to seller after fees and commissions.
+  seller_amount Float?
+  
+  /// Platform commission deducted from payment.
+  commission_amount Float?
+  
+  /// Payment record creation timestamp.
+  created_at DateTime
+  
+  /// Last payment update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for payment record archival.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([transaction_id])
+  @@index([ecommerce_mall_order_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_payments_ecommerce_mall_customer_id_cre_db83f3cc")
+  @@index([ecommerce_mall_seller_id, status])
+  @@index([status, created_at])
+  @@index([payment_method])
+}
+
+/// Shipping records for order fulfillment and delivery tracking.
+///
+/// Manages the complete shipping lifecycle from order preparation through
+/// final delivery. Each shipment record contains carrier information,
+/// tracking details, shipping costs, and delivery status updates.
+///
+/// Supports multiple shipping methods and carriers, with integration to
+/// external shipping APIs for real-time tracking and label generation.
+/// Enhanced with item-level tracking capabilities for partial shipments and
+/// improved seller management.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order being shipped. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// Seller responsible for shipment. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Shipping carrier used (UPS, FedEx, DHL, USPS, etc.).
+  carrier String
+  
+  /// Carrier-provided tracking number for shipment.
+  tracking_number String
+  
+  /// Shipping service level (standard, expedited, overnight, etc.).
+  shipping_method String
+  
+  /// Cost of shipping charged to customer.
+  shipping_cost Float
+  
+  /// Actual cost paid to carrier for shipping.
+  actual_shipping_cost Float
+  
+  /// Shipment status (created, picked_up, in_transit, out_for_delivery,
+  /// delivered, exception, cancelled).
+  status String
+  
+  /// Estimated delivery date provided by carrier.
+  estimated_delivery_date DateTime?
+  
+  /// Actual delivery date when shipment completed.
+  actual_delivery_date DateTime?
+  
+  /// Total weight of shipment in kilograms.
+  weight Float?
+  
+  /// Package dimensions (length×width×height) for shipping calculations.
+  dimensions String?
+  
+  /// Insurance value for shipment if applicable.
+  insurance_amount Float?
+  
+  /// Number of order items included in this shipment.
+  items_count Int
+  
+  /// Shipment creation timestamp.
+  created_at DateTime
+  
+  /// Last shipment update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for shipment record archival.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_shipment_tracking ecommerce_mall_shipment_tracking[]
+  
+  @@unique([tracking_number])
+  @@index([ecommerce_mall_order_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_shipments_ecommerce_mall_seller_id_crea_af109285")
+  @@index([status, created_at])
+  @@index([carrier])
+}
+
+/// Detailed tracking events for shipment progress and delivery status.
+///
+/// Captures individual tracking events received from shipping carriers,
+/// providing real-time visibility into shipment movement. Each tracking
+/// record includes event type, location, timestamp, and status description
+/// for comprehensive delivery monitoring.
+///
+/// Supports integration with multiple carrier APIs for automated tracking
+/// updates and provides the foundation for customer notifications and
+/// delivery exception handling.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipment_tracking {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipment being tracked. {@link ecommerce_mall_shipments.id}
+  ecommerce_mall_shipment_id String
+  
+  /// Tracking event type (pickup, transit, delivery, exception, etc.).
+  event_type String
+  
+  /// Detailed description of tracking event.
+  event_description String
+  
+  /// Location where event occurred (city, state, facility).
+  location String?
+  
+  /// Timestamp when tracking event occurred according to carrier.
+  event_timestamp DateTime
+  
+  /// Raw status code provided by carrier API.
+  carrier_status String?
+  
+  /// Tracking record creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment ecommerce_mall_shipments @relation(fields: [ecommerce_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_shipment_id, event_timestamp], map: "ecommerce_mall_shipment_tracking_ecommerce_mall_shipme_a34d8814")
+  @@index([event_type])
+  @@index([event_timestamp])
+}

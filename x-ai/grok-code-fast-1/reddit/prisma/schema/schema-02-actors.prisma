@@ -1,0 +1,226 @@
+/// Anonymous visitors browsing public content without authentication.
+///
+/// Tracks unauthenticated platform visitors for basic analytics and abuse
+/// prevention. No personal identifiable information is stored to maintain
+/// privacy standards. Guest activity is logged to support platform security
+/// monitoring and site statistics. This table provides foundational tracking
+/// for users before they become authenticated members.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Visitor IP address for basic tracking and security monitoring.
+  ip String
+  
+  /// Current page URL visited by the anonymous user.
+  href String
+  
+  /// Referrer URL that directed the guest to this page.
+  referrer String?
+  
+  /// Timestamp when this guest visit began tracking.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([ip, created_at])
+}
+
+/// Authenticated platform users who actively participate in content creation
+/// and community engagement.
+///
+/// These users have verified accounts with email authentication and can
+/// create posts, comments, vote on content, and subscribe to communities.
+/// Users build reputation through karma scores and can be suspended for
+/// policy violations. They form the core of the platform's interactive
+/// community, enabling democratic content evaluation through voting
+/// mechanisms.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User email address used for login authentication and platform
+  /// notifications.
+  email String
+  
+  /// Bcrypt hashed password for secure user authentication.
+  password_hash String
+  
+  /// Unique display name for user identification across the platform.
+  nickname String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp of last user account modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for suspended accounts.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_user_sessions community_platform_user_sessions[]
+  community_platform_communities community_platform_communities[]
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_posts community_platform_posts[]
+  community_platform_comments community_platform_comments[]
+  community_platform_votes community_platform_votes[]
+  community_platform_vote_of_posts community_platform_vote_of_posts[]
+  community_platform_vote_of_comments community_platform_vote_of_comments[]
+  
+  @@unique([email])
+  @@unique([nickname])
+}
+
+/// Session records tracking authenticated user login activity and security
+/// information.
+///
+/// Maintains audit trails for user access sessions including connection
+/// details, timestamps, and device information. Sessions expire
+/// automatically after inactivity periods and support immediate logout
+/// functionality. Used for authentication validation, security monitoring,
+/// and abuse detection across user accounts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated user's {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// IP address of the user's connection for security tracking.
+  ip String
+  
+  /// URL where the user initiated their session.
+  href String
+  
+  /// Referrer URL that brought the user to the login page.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session was terminated or expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  community_platform_posts community_platform_posts[]
+  community_platform_comments community_platform_comments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, created_at], map: "community_platform_user_sessions_community_platform_us_cc8d68d4")
+}
+
+/// System administrators with elevated permissions for platform governance
+/// and moderation.
+///
+/// These privileged users oversee platform operations including user
+/// management, content moderation, community administration, and system
+/// configuration. Administrators have access to all platform data and can
+/// perform sensitive operations. Account creation requires special approval
+/// and enhanced security validation.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator email address for secure login authentication.
+  email String
+  
+  /// Bcrypt hashed password for administrator authentication.
+  password_hash String
+  
+  /// Display name for administrator identification.
+  nickname String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp of last administrator account modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for deactivated administrator accounts.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_admin_sessions community_platform_admin_sessions[]
+  
+  @@unique([email])
+  @@unique([nickname])
+}
+
+/// Session records for administrative access tracking security and audit
+/// requirements.
+///
+/// Maintains comprehensive audit trails for administrator login sessions
+/// including detailed connection information and activity timestamps.
+/// Sessions have strict expiration policies and enhanced security monitoring
+/// due to elevated permissions. Used for compliance tracking and breach
+/// detection in administrative operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated administrator's {@link community_platform_administrators.id}.
+  community_platform_administrator_id String
+  
+  /// IP address of the administrator's connection for security auditing.
+  ip String
+  
+  /// URL where the administrator initiated their session.
+  href String
+  
+  /// Referrer URL for the administrator login attempt.
+  referrer String
+  
+  /// Timestamp when the administrator session was established.
+  created_at DateTime
+  
+  /// Timestamp when the administrator session ended or expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator community_platform_administrators @relation(fields: [community_platform_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_administrator_id, created_at], map: "community_platform_admin_sessions_community_platform_a_bd9fb65f")
+}

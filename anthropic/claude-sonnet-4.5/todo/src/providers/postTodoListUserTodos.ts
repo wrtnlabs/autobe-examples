@@ -14,33 +14,49 @@ export async function postTodoListUserTodos(props: {
   user: UserPayload;
   body: ITodoListTodo.ICreate;
 }): Promise<ITodoListTodo> {
-  const { user, body } = props;
-
-  const now = toISOStringSafe(new Date());
-  const todoId = v4() as string & tags.Format<"uuid">;
-  const status = body.status ?? "incomplete";
-
   const created = await MyGlobal.prisma.todo_list_todos.create({
     data: {
-      id: todoId,
-      todo_list_user_id: user.id,
-      title: body.title,
-      description: body.description ?? null,
-      status: status,
-      created_at: now,
-      updated_at: now,
+      id: v4() as string & tags.Format<"uuid">,
+      todo_list_user_id: props.user.id,
+      title: props.body.title,
+      description: props.body.description ?? null,
+      status: props.body.status ?? "pending",
+      priority: props.body.priority ?? "medium",
+      due_date: props.body.due_date ?? null,
+      completed: props.body.completed ?? false,
+      completed_at:
+        (props.body.completed ?? false) ? toISOStringSafe(new Date()) : null,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     },
   });
 
   return {
-    id: todoId,
-    todo_list_user_id: user.id,
+    id: created.id as string & tags.Format<"uuid">,
     title: created.title,
-    description: created.description ?? undefined,
-    status: status,
-    created_at: now,
-    updated_at: now,
-    deleted_at: undefined,
+    description: created.description === null ? undefined : created.description,
+    status: created.status as
+      | "pending"
+      | "in_progress"
+      | "completed"
+      | "cancelled",
+    priority:
+      created.priority === null
+        ? undefined
+        : (created.priority as "low" | "medium" | "high"),
+    due_date:
+      created.due_date === null ? undefined : toISOStringSafe(created.due_date),
+    completed: created.completed,
+    completed_at:
+      created.completed_at === null
+        ? undefined
+        : toISOStringSafe(created.completed_at),
+    created_at: toISOStringSafe(created.created_at),
+    updated_at: toISOStringSafe(created.updated_at),
+    deleted_at:
+      created.deleted_at === null
+        ? undefined
+        : toISOStringSafe(created.deleted_at),
   };
 }

@@ -7,49 +7,45 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import { ITodoListTodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodoListUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function postAuthUserLogin(props: {
   user: UserPayload;
-  body: ITodoUser.ILogin;
-}): Promise<ITodoUser.IAuthorized> {
-  const { body } = props;
-
-  const user = await MyGlobal.prisma.todo_users.findFirst({
-    where: {
-      email: body.email,
-      deleted_at: null,
-    },
+  body: ITodoListTodoListUser.ILogin;
+}): Promise<ITodoListTodoListUser.IAuthorized> {
+  const user = await MyGlobal.prisma.todo_list_users.findFirst({
+    where: { email: props.body.email },
   });
 
   if (!user) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const isValid = await PasswordUtil.verify(body.password, user.password_hash);
+  const isValid = await PasswordUtil.verify(
+    props.body.password,
+    user.password_hash,
+  );
+
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const now = toISOStringSafe(new Date());
-  const accessExpiration = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiration = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const session = await MyGlobal.prisma.todo_user_sessions.create({
+  const session = await MyGlobal.prisma.todo_list_user_sessions.create({
     data: {
       id: v4(),
-      todo_user_id: user.id,
-      ip: body.ip ?? "",
-      href: body.href,
-      referrer: body.referrer,
-      created_at: now,
-      expired_at: accessExpiration,
+      todo_list_user_id: user.id,
+      ip: props.body.ip ?? "",
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: toISOStringSafe(now) as string & tags.Format<"date-time">,
+      expired_at: toISOStringSafe(accessExpires) as string &
+        tags.Format<"date-time">,
     },
   });
 
@@ -59,10 +55,13 @@ export async function postAuthUserLogin(props: {
         type: "user",
         id: user.id,
         session_id: session.id,
-        created_at: now,
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
     ),
     refresh: jwt.sign(
       {
@@ -70,13 +69,18 @@ export async function postAuthUserLogin(props: {
         id: user.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: now,
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
     ),
-    expired_at: accessExpiration,
-    refreshable_until: refreshExpiration,
+    expired_at: toISOStringSafe(accessExpires) as string &
+      tags.Format<"date-time">,
+    refreshable_until: toISOStringSafe(refreshExpires) as string &
+      tags.Format<"date-time">,
   };
 
   return {

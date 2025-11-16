@@ -1,0 +1,59 @@
+/// Access tokens for authenticated users.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model access_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// FK to users.id
+  user_id String
+  
+  /// Access token value.
+  token String
+  
+  /// Token expiration time.
+  expires_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  
+  @@unique([token])
+}
+
+/// Refresh tokens for authenticated users.
+///
+/// @namespace Security
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model refresh_tokens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// FK to users.id
+  user_id String
+  
+  /// Refresh token value.
+  token String
+  
+  /// Token expiration time.
+  expires_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  
+  @@unique([token])
+}

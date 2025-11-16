@@ -1,121 +1,185 @@
-/// Stores global system settings and configuration values for the shopping
-/// mall platform infrastructure. Holds configurable parameters impacting
-/// system behavior and administration.
+/// Channels represent the main entry points or marketplaces within the
+/// e-commerce platform.
+///
+/// Each channel defines its unique code and display name, enabling clear
+/// identification and management within the system.
+///
+/// Channels serve as organizational units that link to specific sections and
+/// categories to structure the shopping experience.
+///
+/// Soft deletion is supported to retain historical records while allowing
+/// content moderation and administrative control.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_settings {
+model shopping_mall_channels {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique key identifier for the system setting.
+  /// Unique code identifying the channel, used for internal system references
+  /// and API routing.
+  code String
+  
+  /// Display name of the channel as presented to customers and administrators.
+  name String
+  
+  /// Timestamp when the channel record was created.
+  created_at DateTime
+  
+  /// Timestamp when the channel record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the channel record was soft deleted; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_sections shopping_mall_sections[]
+  shopping_mall_channel_categories shopping_mall_channel_categories[]
+  shopping_mall_coins shopping_mall_coins[]
+  
+  @@unique([code])
+}
+
+/// Sections represent subdivisions or areas within a channel that group
+/// related categories and products.
+///
+/// Each section belongs to a single channel and serves to organize offerings
+/// logically for improved navigation and management.
+///
+/// Sections have unique codes within the system and support soft deletion
+/// for administrative purposes.
+///
+/// They track creation and update timestamps to support auditing and
+/// operational history.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the channel to which this section belongs. {@link
+  /// shopping_mall_channels.id}.
+  shopping_mall_channel_id String
+  
+  /// Unique code identifying the section for internal use and API access.
+  code String
+  
+  /// Display name of the section to show in the administrative interfaces and
+  /// to customers.
+  name String
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null when the section is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  
+  @@unique([code])
+  @@index([shopping_mall_channel_id])
+}
+
+/// Channel categories link specific categories to channels, defining the
+/// category organization within a particular channel context.
+///
+/// Each category linked to a channel may influence navigation, filtering,
+/// and presentation of products within that channel.
+///
+/// This table supports soft deletion to allow removal without losing
+/// historical relationships.
+///
+/// Timestamps track creation and update events for audit trails and system
+/// operations.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_channel_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the shopping mall channel. {@link shopping_mall_channels.id}.
+  shopping_mall_channel_id String
+  
+  /// Reference to product category associated with this channel category.
+  /// {@link shopping_mall_product_categories.id}.
+  shopping_mall_product_category_id String
+  
+  /// Timestamp when the channel category record was created.
+  created_at DateTime
+  
+  /// Timestamp of last update to this record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null means active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  productCategory shopping_mall_product_categories @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_channel_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_category_id], map: "shopping_mall_channel_categories_shopping_mall_product_4c711dc8")
+}
+
+/// Configurations store key-value pairs representing system-wide settings
+/// and preferences.
+///
+/// Each configuration entry has a unique key to prevent duplicates and
+/// ensure unambiguous retrieval.
+///
+/// Configurations can be soft deleted to allow deactivation without data loss.
+///
+/// Timestamps for creation and updates are maintained for auditing and
+/// change tracking.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier key for the configuration setting.
   key String
   
-  /// Value corresponding to the configuration key.
+  /// Configuration value as a string. Interpretation is context-dependent.
   value String
-  
-  /// Detailed explanation of the setting's purpose and usage.
-  description String?
   
   /// Record creation timestamp.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Last modification timestamp.
   updated_at DateTime
   
-  /// Soft delete timestamp; null if active.
+  /// Soft delete timestamp; null when configuration is active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([key])
-  @@index([created_at])
-}
-
-/// Configuration parameters specific to the shopping mall platform instance,
-/// including feature flags, versioning, and environment settings.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_platform_configs {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique name of the configuration parameter.
-  config_name String
-  
-  /// Value of the configuration parameter.
-  config_value String
-  
-  /// Detailed explanation of the configuration usage.
-  description String?
-  
-  /// Record creation timestamp.
-  created_at DateTime
-  
-  /// Record last modification timestamp.
-  updated_at DateTime
-  
-  /// Soft delete timestamp, null if active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([config_name])
-  @@index([created_at])
-}
-
-/// Defines communication or operational channels within the shopping mall
-/// platform. Supports hierarchical channel groups via parent-child
-/// relationships.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_channel_definitions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the parent channel for hierarchical grouping. {@link
-  /// shopping_mall_channel_definitions.id}.
-  parent_channel_id String?
-  
-  /// Unique code identifying the channel.
-  channel_code String
-  
-  /// Human-readable name of the channel.
-  channel_name String
-  
-  /// Descriptive text explaining the channel's purpose.
-  description String?
-  
-  /// When the channel was created.
-  created_at DateTime
-  
-  /// Last time the channel was updated.
-  updated_at DateTime
-  
-  /// Soft delete timestamp to mark channel as removed.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  parentChannel shopping_mall_channel_definitions? @relation("recursive", fields: [parent_channel_id], references: [id], onDelete: Cascade)
-  
-  recursive shopping_mall_channel_definitions[] @relation("recursive")
-  
-  @@unique([channel_code])
-  // spellchecker: ignore-next-line
-  @@index([parent_channel_id, created_at], map: "shopping_mall_channel_definitions_parent_channel_id_cr_5c543bcd")
 }

@@ -7,77 +7,56 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
-import { ITodoAppAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAuthorizationToken";
+import { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
+import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserLogin(props: {
-  body: ITodoAppUser.ILogin;
-  ip: string;
-  href: string;
-  referrer: string;
-}): Promise<ITodoAppUser.IAuthorized> {
-  // 1. Find user by email
-  const user = await MyGlobal.prisma.todo_app_users.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
-  });
+  body: ITodoListUser.ILogin;
+}): Promise<ITodoListUser.IAuthorized> {
+  // Extract and verify JWT token from the body (string)
+  try {
+    const decoded = jwt.verify(props.body, MyGlobal.env.JWT_SECRET_KEY, {
+      issuer: "autobe",
+    }) as { id: string & tags.Format<"uuid">; type: "user" };
 
-  // 2. Validate user exists
-  if (!user) {
-    throw new HttpException("Invalid credentials", 401);
-  }
+    // Validate the token is for a user
+    if (decoded.type !== "user") {
+      throw new HttpException("Invalid token type", 401);
+    }
 
-  // 3. Verify password
-  const isValid = await PasswordUtil.verify(
-    props.body.password,
-    user.password_hash,
-  );
+    // Get user by ID
+    const user = await MyGlobal.prisma.todo_list_users.findUnique({
+      where: { id: decoded.id },
+    });
 
-  if (!isValid) {
-    throw new HttpException("Invalid credentials", 401);
-  }
+    if (!user) {
+      throw new HttpException("User not found", 401);
+    }
 
-  // 4. Create new session record
-  const accessExpiresStr = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiresStr = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      user_id: user.id,
-      ip: props.ip,
-      href: props.href,
-      referrer: props.referrer,
-      created_at: toISOStringSafe(new Date()),
-      expired_at: accessExpiresStr,
-    },
-  });
+    // Generate new token expiry dates
+    const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
+    const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  // 5. Generate JWT tokens
-  const token = {
-    access: jwt.sign(
+    // Generate new tokens
+    const accessToken = jwt.sign(
       {
         type: "user",
         id: user.id,
-        session_id: session.id,
+        session_id: user.id,
         created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
-        expiresIn: "1h",
+        expiresIn: "15m",
         issuer: "autobe",
       },
-    ),
-    refresh: jwt.sign(
+    );
+
+    const refreshToken = jwt.sign(
       {
         type: "user",
         id: user.id,
-        session_id: session.id,
+        session_id: user.id,
         tokenType: "refresh",
         created_at: toISOStringSafe(new Date()),
       },
@@ -86,14 +65,19 @@ export async function postAuthUserLogin(props: {
         expiresIn: "7d",
         issuer: "autobe",
       },
-    ),
-    expired_at: accessExpiresStr,
-    refreshable_until: refreshExpiresStr,
-  };
+    );
 
-  // 6. Return authorized response
-  return {
-    id: user.id,
-    token,
-  } satisfies ITodoAppUser.IAuthorized;
+    // Return successful authentication
+    return {
+      id: user.id,
+      token: {
+        access: accessToken,
+        refresh: refreshToken,
+        expired_at: toISOStringSafe(accessExpires),
+        refreshable_until: toISOStringSafe(refreshExpires),
+      },
+    } satisfies ITodoListUser.IAuthorized;
+  } catch (error) {
+    throw new HttpException("Invalid credentials", 401);
+  }
 }

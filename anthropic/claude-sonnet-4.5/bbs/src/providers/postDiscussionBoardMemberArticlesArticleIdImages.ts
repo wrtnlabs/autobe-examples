@@ -8,7 +8,6 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardArticleImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleImage";
-import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 
 export async function postDiscussionBoardMemberArticlesArticleIdImages(props: {
@@ -16,12 +15,12 @@ export async function postDiscussionBoardMemberArticlesArticleIdImages(props: {
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleImage.ICreate;
 }): Promise<IDiscussionBoardArticleImage> {
-  const { member, articleId, body } = props;
-
-  const article = await MyGlobal.prisma.discussion_board_articles.findFirst({
-    where: {
-      id: articleId,
-      deleted_at: null,
+  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: { id: props.articleId },
+    select: {
+      id: true,
+      discussion_board_member_id: true,
+      deleted_at: true,
     },
   });
 
@@ -29,75 +28,42 @@ export async function postDiscussionBoardMemberArticlesArticleIdImages(props: {
     throw new HttpException("Article not found", 404);
   }
 
-  if (article.discussion_board_member_id !== member.id) {
-    throw new HttpException(
-      "Unauthorized: You can only upload images to your own articles",
-      403,
-    );
+  if (article.deleted_at !== null) {
+    throw new HttpException("Article not found", 404);
   }
 
-  const imageCount =
-    await MyGlobal.prisma.discussion_board_article_images.count({
-      where: {
-        discussion_board_article_id: articleId,
-        deleted_at: null,
-      },
-    });
-
-  if (imageCount >= 10) {
-    throw new HttpException(
-      "Maximum image limit reached: articles can have at most 10 images",
-      400,
-    );
+  if (article.discussion_board_member_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
   }
 
-  const extension = body.original_name.split(".").pop() || "jpg";
-  const storedName = `${v4()}.${extension}`;
+  const imageId: string & tags.Format<"uuid"> = v4();
 
   const created = await MyGlobal.prisma.discussion_board_article_images.create({
     data: {
-      id: v4(),
-      discussion_board_article_id: articleId,
-      uploaded_by_member_id: member.id,
-      original_name: body.original_name,
-      stored_name: storedName,
-      mime_type: body.mime_type,
-      size_bytes: body.size_bytes,
-      width: body.width,
-      height: body.height,
-      created_at: toISOStringSafe(new Date()),
+      id: imageId,
+      discussion_board_article_id: props.articleId,
+      original_filename: props.body.original_filename,
+      file_size: props.body.file_size,
+      content_type: props.body.content_type,
+      storage_url: props.body.storage_url,
+      width: props.body.width ?? null,
+      height: props.body.height ?? null,
+      created_at: new Date(),
     },
   });
-
-  const uploader =
-    await MyGlobal.prisma.discussion_board_members.findUniqueOrThrow({
-      where: { id: member.id },
-      select: {
-        id: true,
-        username: true,
-        display_name: true,
-        profile_picture_url: true,
-      },
-    });
 
   return {
     id: created.id,
     discussion_board_article_id: created.discussion_board_article_id,
-    uploaded_by_member_id: created.uploaded_by_member_id,
-    url: body.url,
-    original_name: created.original_name,
-    stored_name: created.stored_name,
-    mime_type: created.mime_type,
-    size_bytes: created.size_bytes,
-    width: created.width,
-    height: created.height,
+    original_filename: created.original_filename,
+    file_size: created.file_size,
+    content_type: created.content_type,
+    storage_url: created.storage_url,
+    width: created.width === null ? undefined : created.width,
+    height: created.height === null ? undefined : created.height,
     created_at: toISOStringSafe(created.created_at),
-    deleted_at: null,
-    uploader: {
-      id: uploader.id,
-      username: uploader.username,
-      display_name: uploader.display_name ?? undefined,
-      profile_picture_url: uploader.profile_picture_url ?? undefined,
-    },
+    deleted_at: created.deleted_at
+      ? toISOStringSafe(created.deleted_at)
+      : undefined,
   };
 }

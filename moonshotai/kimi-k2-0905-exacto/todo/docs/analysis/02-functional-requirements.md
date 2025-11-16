@@ -1,149 +1,241 @@
-# Functional Requirements Document
+# Todo Application - Functional Requirements
 
-## User Authentication Requirements
+## 1. Authentication Requirements
 
-### Authentication Flow
+### User Registration Process
 
-Users SHALL authenticate using simple email and password credentials. THE system SHALL provide user registration with minimal required fields: email address and password. WHEN a user attempts to register, THE system SHALL validate that the email address is unique and properly formatted. AFTER successful registration, THE system SHALL automatically log the user in and redirect to their task dashboard.
+**WHEN** a new user provides email and password for registration, **THE** system **SHALL** create a unique user account with validated credentials.
 
-WHILE users are logged in, THE system SHALL maintain their session for 24 hours of inactivity. WHEN users attempt to log in with incorrect credentials, THE system SHALL provide a clear error message without revealing which field was incorrect. THE system SHALL allow users to reset their password through email verification. WHEN a password reset is requested, THE system SHALL send a unique link valid for 30 minutes.
+**Business Rules:**
+- Email addresses must follow RFC 5322 format with proper domain validation
+- Passwords must contain minimum 8 characters including at least one uppercase letter, one lowercase letter, and one number
+- Email addresses must be unique across the entire system
+- Registration must complete within 3 seconds under normal load conditions
+- System must send welcome email within 5 minutes of successful registration
 
-### Guest User Experience
+**WHEN** registration fails due to invalid input, **THE** system **SHALL** provide specific error messages:
+- "Please enter a valid email address" for email format errors
+- "Password must be at least 8 characters and contain letters and numbers" for password requirements
+- "This email address is already registered" for duplicate email attempts
 
-THE system SHALL redirect unauthenticated users to the login page. WHEN a guest attempts to access any todo functionality, THE system SHALL redirect to login with a message prompting authentication. Guests SHALL be able to view a demo page showing a sample todo list to understand how the service works. WHEN attempting to perform any actions, THE system SHALL display appropriate "Login Required" messages.
+### User Login and Session Management
 
-WHILE users remain logged in, THE system SHALL remember their session locally so users don't need to login repeatedly. WHEN users explicitly log out, THE system SHALL clear their local session data and redirect to the login screen.
+**WHEN** a registered user provides valid email and password, **THE** system **SHALL** authenticate the user and create a secure session lasting 30 days.
 
-## Todo Task Management
+**Session Requirements:**
+- Sessions must remain active for 30 days or until explicit logout
+- User activity must extend session expiration automatically
+- System must support concurrent sessions across multiple devices
+- Upon successful login, users must be redirected to their personal todo list
 
-### Task Creation and Structure
+**WHEN** login fails, **THE** system **SHALL** display "Invalid email or password" without revealing which credential is incorrect
 
-Users SHALL be able to create tasks using a simple input interface. THE system SHALL support task creation with the following properties: task description (text), completion status (boolean), and creation timestamp. THE system SHALL automatically generate unique task identifiers for each new task created by a user.
+**WHEN** a user logs out, **THE** system **SHALL** immediately invalidate the session and redirect to the login page
 
-WHEN users create a task, THE system SHALL validate that the task description is not empty. THE default completion status SHALL be false (incomplete). THE system SHALL automatically assign the current timestamp as the creation date for new tasks. Users SHALL be able to add multiple tasks quickly without page reloads or delays.
+## 2. Todo Task Management
 
-### Task Organization and Viewing
+### Task Creation Workflow
 
-Users SHALL be able to view all their tasks in a single organized list. THE system SHALL display tasks sorted by creation date, with newest tasks appearing first. Users SHALL be able to easily distinguish between completed and incomplete tasks through visual differentiation.
+**WHEN** an authenticated user creates a new task, **THE** system **SHALL** require a task title with minimum 1 character and maximum 200 characters.
 
-THE system SHALL display task counts showing total tasks and completed tasks separately. Users SHALL be able to quickly see at a glance how many tasks remain incomplete. THE system SHALL maintain consistent formatting and display across all user devices and screen sizes.
+**Task Creation Rules:**
+- Task titles must contain at least one non-whitespace character
+- Tasks automatically receive "pending" status upon creation
+- Tasks are assigned unique identifiers system-wide
+- Tasks are automatically ordered by creation timestamp (newest first)
+- Creation must be instant with visual confirmation within 500 milliseconds
 
-## Task Operations
+**WHEN** task creation is successful, **THE** system **SHALL** immediately display the new task at the top of the user's todo list
 
-### Create Operation
+**IF** task creation fails validation, **THE** system **SHALL** preserve the user's input and display specific error messages:
+- "Please enter a task title" for empty titles
+- "Task title cannot exceed 200 characters" for overly long titles
 
-WHEN users add a new task, THE system SHALL immediately display the task in their list with the pending status. THE system SHALL provide instant feedback that the task has been created successfully. IF the task creation fails, THEN THE system SHALL display an appropriate error message and allow the user to retry.
+### Task Status Management
 
-WHILE adding tasks, THE system SHALL allow users to create tasks with simple text descriptions up to 500 characters. THE system SHALL automatically trim leading and trailing whitespace from task descriptions. THE system SHALL prevent creation of duplicate tasks by checking if an identical task description already exists for that user.
+**WHEN** a user clicks to complete a task, **THE** system **SHALL** immediately update the task status and record completion timestamp.
 
-### Complete Operation
+**Task Status Rules:**
+- Completed tasks must be visually distinct (strikethrough or color change)
+- Users can mark completed tasks as incomplete if needed
+- Task completion cannot be undone after 30 days without administrator intervention
+- Deleted tasks are permanently removed with no recovery option
 
-WHEN users complete a task, THE system SHALL immediately update the status to completed. THE system SHALL provide smooth animations to demonstrate the state change visually. Users SHALL be able to mark tasks as completed by clicking a toggle or checkbox next to each task.
+**WHEN** a task is marked complete, **THE** system **SHALL** display a brief success message:"Task completed successfully"
 
-IF a task is accidentally marked complete, THEN users SHALL be able to immediately undo this action. THE system SHALL maintain the completion timestamp for each completed task. Users SHALL never lose a completed task, even if they navigate away from the page.
+### Task Editing Capabilities
 
-### Delete Operation
+**THE** user **SHALL** be able to edit existing task titles at any time before deletion.
 
-Users SHALL be able to delete tasks by selecting an appropriate deletion function. WHEN users delete a task, THE system SHALL either immediately remove it or provide an undo mechanism for up to 10 seconds. THE deletion SHOULD be permanent after the undo period expires.
+**Editing Requirements:**
+- Edits must preserve the same validation rules as creation
+- Edit history should be maintained for audit purposes
+- Changes must be saved automatically without requiring explicit save action
+- Edit mode must be clearly indicated to prevent accidental changes
 
-IF a user attempts to delete a task they don't own, THEN THE system SHALL prevent the action and display an appropriate error message. Users SHALL be able to delete both completed and incomplete tasks based on their preference.
+**WHEN** a user saves an edited task, **THE** system **SHALL** validate the new title and either:
+- Save successfully and update the display, or
+- Display validation error and preserve the original title
 
-### Update Operation
+## 3. User Interface Flow
 
-Users SHALL be able to edit existing task descriptions by clicking on the task text. THE system SHALL allow users to modify task descriptions while the task remains in its current completion state. WHEN users save changes, THE system SHALL provide immediate visual confirmation of the updates.
+### Navigation Structure
 
-IF a user attempts to save a blank description, THEN THE system SHALL display a validation error and preserve the existing task description. THE system SHALL maintain a history of the most recent edit timestamp for each task.
+**THE** application **SHALL** maintain three primary views accessible through consistent navigation:
 
-## User Interface Flows
+1. **All Tasks View** - Shows complete task history for the user
+2. **Active Tasks View** - Shows only incomplete tasks (default view)
+3. **Completed Tasks View** - Shows only finished tasks
 
-### Main Task Flow
+**WHEN** users switch between views, **THE** system **SHALL** preserve any unsaved changes and maintain the current filter state
 
-Users start by viewing a simple dashboard showing their current todo list. WHEN users have no tasks, THE system SHALL display an encouraging message prompting them to add their first task. A prominent input field at the top SHALL allow users to quickly add new tasks.
+### Task Display Requirements
 
-As tasks are added, THE system SHALL dynamically update the list without requiring page refreshes. Users SHALL be able to move between viewing all tasks and viewing only incomplete tasks through simple filtering controls. THE system SHALL remember users' preferences between sessions, restoring their last view settings when they return.
+**THE** system **SHALL** display tasks in a clean, easy-to-read format with the following elements:
+- Task title prominently displayed
+- Completion checkbox clearly visible
+- Creation date and time shown
+- Edit and delete action buttons accessible
 
-### Task Completion Celebration
+**WHEN** displaying more than 20 tasks, **THE** system **SHALL** implement pagination or infinite scroll to maintain performance
 
-WHEN users complete a task, THE system SHALL provide subtle positive feedback such as a checkmark animation or brief success message. THE completion action SHALL be immediate, requiring only a single click or tap. The completed task SHALL move to a visually distinct completed section of the interface if filtering is applied.
+## 4. Data Validation Rules
 
-Users SHALL feel motivated to continue using the application through satisfying completion interactions. THE interface SHALL support both desktop mouse interactions and mobile touch interactions seamlessly.
+### Input Validation Standards
 
-## Business Rules
+**THE** system **SHALL** validate all user inputs before processing to prevent malformed data and security issues.
 
-### Todo Task Rules
+**Validation Rules for Task Data:**
+- Task titles must be 1-200 characters in length
+- Task titles cannot contain only whitespace characters
+- HTML or script tags must be stripped from task titles
+- SQL injection attempts must be detected and rejected
+- Unicode characters must be properly supported
 
-THE system SHALL limit users to 100 active tasks to maintain performance and simplicity. WHEN users reach this limit, THE system SHALL prompt them to complete or delete existing tasks before adding new ones. THE system SHALL ensure users cannot create tasks with identical descriptions within their personal list.
+**WHEN** validation fails, **THE** system **SHALL** provide user-friendly error messages that explain exactly what needs to be corrected
 
-THE completion rate calculation SHALL be based on the ratio of completed tasks divided by total tasks. THE system SHALL retain task history until users explicitly delete individual tasks. THE system SHALL preserve task order based on creation timestamp unless users apply filters or completion sorting.
+### Data Integrity Requirements
 
-### Access Control Rules
+**THE** system **SHALL** maintain referential integrity between users and their tasks:
+- Every task must belong to exactly one user
+- User deletion must cascade to delete all associated tasks
+- Task IDs must be unique across the entire system
+- Task creation timestamps must be accurate to the second
 
-Users SHALL only access and modify their own tasks, never tasks belonging to other users. THE system SHALL securely associate tasks with users and verify this association before allowing actions. THE system SHALL prevent unauthorized access through session timeouts and appropriate authentication checks.
+## 5. Error Handling Requirements
 
-IF users attempt to access restricted functionality, THEN THE system SHALL gracefully redirect them to appropriate authorized pages with clear explanations of access requirements. THE system SHALL maintain audit trails of all task modifications for users to understand recent changes to their lists.
+### User-Facing Error Messages
 
-## Error Handling
+**WHEN** errors occur, **THE** system **SHALL** present clear, actionable error messages that help users understand and resolve issues.
 
-### Input Validation Errors
+**Error Message Examples:**
+- "Please enter a valid email address" (format validation)
+- "This password is too short. Please use at least 8 characters" (length validation)
+- "We're having trouble connecting. Please try again in a moment" (network issues)
+- "You don't have permission to access this task" (authorization errors)
 
-WHEN users attempt to create tasks with excessive length (over 500 characters), THE system SHALL display a clear message about the maximum allowed length and provide a character counter. IF users leave required fields empty, THEN THE system SHALL highlight the specific field and display appropriate instructions for correction.
+**THE** system **SHALL** never expose technical details like stack traces or database errors to end users
 
-WHEN users encounter network connectivity issues, THE system SHALL provide offline functionality allowing users to continue using the application and sync changes once connectivity is restored. THE system SHALL gracefully handle temporary server errors by caching user actions and retrying operations when the service becomes available again.
+### System Error Recovery
 
-### Authentication Errors
+**WHEN** server errors occur (HTTP 5xx), **THE** system **SHALL:**
+- Log detailed error information for debugging
+- Display generic error message to users
+- Provide retry option where appropriate
+- Notify system administrators of critical errors
 
-IF login fails, THEN THE system SHALL provide clear error messages distinguishing between invalid credentials and authentication system issues. WHEN users exceed login attempt limits, THE system SHALL temporarily lock their account and provide instructions for recovery. THE system SHALL handle password reset requests promptly while maintaining security.
-
-IF account suspension occurs due to abusive behavior, THEN THE system SHALL provide users with clear explanations and steps for account recovery. THE system SHALL maintain appropriate security measures to prevent unauthorized access attempts.
-
-### System Maintenance Scenarios
-
-WHEN the service is temporarily unavailable for maintenance, THE system SHALL display user-friendly maintenance messages with estimated downtime. THE system SHALL preserve user data integrity during maintenance periods, ensuring no data loss occurs during service interruptions.
-
-IF users attempt to create, complete, or delete tasks while the service is offline, THEN THE system SHALL queue these operations and execute them in the correct order once service is restored. THE system SHALL provide users with clear status updates about any pending operations during restoration.
-
-## Performance Expectations
+## 6. Performance Expectations
 
 ### Response Time Standards
 
-THE system SHALL respond to users' actions almost instantly, displaying immediate feedback without noticeable delays. WHEN loading the task list, THE system SHALL display cached data immediately while fetching updates in the background. THE system SHALL complete all task operations within 300 milliseconds to maintain user attention and engagement.
+**THE** system **SHALL** meet the following performance benchmarks under normal load conditions:
 
-THE interface SHALL never appear frozen or unresponsive during user interactions. THE system SHALL minimize loading times through efficient data retrieval and caching strategies. THE overall user experience SHALL feel fast and responsive, eliminating frustration caused by sluggish performance.
+- **Task List Loading**: Complete page load within 2 seconds
+- **Task Creation**: New task appears in list within 500 milliseconds
+- **Task Update**: Status changes reflect immediately within 1 second
+- **User Authentication**: Login process completes within 3 seconds
+- **Database Queries**: Individual queries execute within 100 milliseconds
 
-### Task List Performance
+### Scalability Requirements
 
-THE system SHALL support large task lists with hundreds of items without degrading performance. THE interface SHALL implement virtual scrolling or pagination to maintain smooth navigation through extensive task lists. Filter and search functionality SHALL execute quickly even with many tasks to sort.
+**THE** system **SHALL** support growth without performance degradation:
+- Support 10,000 concurrent active users
+- Handle 100,000 tasks total across all users
+- Accommodate up to 1,000 tasks per individual user
+- Maintain 99.9% uptime availability
 
-THE system SHALL provide real-time updates to maintain consistency across multiple browser tabs or devices when users access their accounts. THE synchronization SHALL occur seamlessly without interrupting user activities or requiring manual refresh actions.
+**WHEN** user loads exceed these thresholds, **THE** system **SHALL** provide warnings to administrators and suggest scaling solutions
 
-### Resource Efficiency
+### Data Loading Efficiency
 
-THE application SHALL use minimal browser resources, avoiding memory leaks or excessive CPU usage during extended usage sessions. THE system SHALL efficiently handle task creation and completion operations without requiring expensive computations or database queries.
+**THE** system **SHALL** optimize data loading for better user experience:
+- Load first 20 tasks immediately upon page load
+- Implement lazy loading for additional tasks
+- Cache user authentication tokens for 30 minutes
+- Minimize database queries through efficient joins
 
-THE system SHALL optimize data transmission by sending only necessary information between the server and browser, reducing network usage. THE performance characteristics SHALL remain consistent as users create and complete many tasks over time, maintaining the application's responsiveness regardless of account history or active task volume.
+## 7. Mobile and Accessibility Requirements
 
-## Additional Business Scenario: Onboarding New Users
+### Responsive Design Standards
 
-### First User Experience
+**THE** application **SHALL** provide full functionality across device types:
+- Desktop: Complete feature set with optimized layouts
+- Tablet: Touch-friendly interface with appropriate sizing
+- Mobile: Simplified interface prioritizing essential actions
 
-WHEN a new user visits the application, THE system SHALL display a clean, minimal interface that communicates the application's purpose immediately. THE homepage SHALL provide clear calls to action for registration or demonstration access. IF users choose to register, THE system SHALL guide them through a frictionless process requiring only necessary information.
+**WHEN** accessed on mobile devices, **THE** system **SHALL** provide:
+- Touch-optimized buttons (minimum 44px target size)
+- Readable text without zooming (minimum 16px font size)
+- Swipe gestures for common actions
+- Offline capability with sync when connection returns
 
-THE system SHALL provide an optional guided tour or contextual help for first-time users explaining basic functionality. AFTER registration completion, THE system SHALL immediately display an empty task dashboard with helpful placeholder content suggesting common first tasks to build momentum. THE interface SHALL encourage users to add their first task with prominent input areas and clear prompts.
+### Accessibility Compliance
 
-## Additional Security Scenario: Account Protection
+**THE** system **SHALL** meet WCAG 2.1 Level AA accessibility standards:
+- Keyboard navigation support for all interactive elements
+- Screen reader compatibility with proper ARIA labels
+- Color contrast ratios of at least 4.5:1 for normal text
+- Alternative text for all images and icons
+- Focus indicators visible for keyboard users
 
-### Failed Authentication Handling
+## 8. Data Retention and Privacy
 
-WHEN users exceed reasonable login attempt limits (5 attempts in 5 minutes), THEN THE system SHALL temporarily lock the account for 15 minutes to prevent brute force attacks. THE lockout SHALL include a timer showing when the account will be accessible again. IF legitimate users are locked out, THEN THE system SHALL provide password reset functionality without unlocking the account.
+### User Data Protection
 
-THE system SHALL log failed authentication attempts including timestamp, IP address, and attempted username. THE security monitoring SHALL detect suspicious patterns such as rapid succession attempts or attempts across multiple accounts from the same IP address. WHEN unusual patterns are detected, THEN THE system SHALL automatically implement progressive delays between login attempts or contact system administrators based on business policies.
+**THE** system **SHALL** protect user privacy through secure data handling:
+- All task data remains private to individual users
+- No sharing or collaboration features exist
+- User passwords are encrypted using industry-standard hashing
+- Personal information is never sold to third parties
 
-## Additional Recovery Scenario: Data Protection
+### Data Backup and Recovery
 
-### Task Data Integrity
+**THE** system **SHALL** implement regular data backups to prevent loss:
+- Daily automated backups of all user data
+- Backup retention for 30 days minimum
+- Point-in-time recovery capability
+- Geographic redundancy for critical data
 
-THE system SHALL maintain complete data integrity for all user task information through reliable database transactions. WHEN users make changes to their task list, THE system SHALL provide transaction rollback capabilities if errors occur during updates. THE data protection SHALL ensure users never experience data loss or corruption due to system issues.
+**WHEN** data corruption occurs, **THE** system **SHALL** restore from the most recent available backup within 4 hours
 
-IF users accidentally make changes they wish to undo, THEN THE system SHALL provide an undo history for the most recent user action. THE system SHALL maintain backup snapshot capabilities at regular intervals to restore user data in case of major system issues. Users SHALL be able to export their task list at any time for personal backup purposes through simple data export functionality.
+## 9. Security Requirements
 
-THE system SHALL implement proper audit trails showing all task modifications including creation, completion, and deletion timestamps. THE audit information SHALL be available to users for reference purposes while maintaining user privacy and data protection regulations.
+### Authentication Security
+
+**THE** system **SHALL** implement security measures to protect user accounts:
+- Rate limiting on login attempts (5 attempts per 15 minutes)
+- Account lockout after 5 consecutive failed attempts
+- Secure password reset via email verification
+- Session timeout after 30 minutes of inactivity
+- HTTPS encryption for all data transmission
+
+### Data Security Standards
+
+**THE** system **SHALL** protect stored data through encryption and access controls:
+- Database encryption at rest using AES-256
+- Secure API endpoints with proper authentication
+- Input sanitization to prevent injection attacks
+- Regular security audits and vulnerability assessments
+- Immediate patching of known security vulnerabilities
+
+These functional requirements provide a comprehensive specification for implementing a secure, performant, and user-friendly Todo application that meets enterprise standards while maintaining simplicity and ease of use.

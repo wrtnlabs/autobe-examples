@@ -1,3 +1,3 @@
-export * as visitor from "./visitor/index";
-export * as members from "./members/index";
+export * as guest from "./guest/index";
+export * as member from "./member/index";
 export * as moderator from "./moderator/index";

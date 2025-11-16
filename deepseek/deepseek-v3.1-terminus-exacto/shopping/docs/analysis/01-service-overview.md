@@ -1,205 +1,377 @@
-# Shopping Mall E-commerce Platform - Service Overview
+# E-Commerce Shopping Mall Platform - Service Overview
 
 ## Executive Summary
 
-The Shopping Mall e-commerce platform represents a comprehensive digital marketplace designed to connect buyers and sellers in a seamless online shopping experience. This platform addresses the growing demand for feature-rich e-commerce solutions that support complex product catalogs, multiple seller accounts, and sophisticated order management capabilities.
+This document outlines the strategic vision and business requirements for a comprehensive e-commerce shopping mall platform designed to serve both individual consumers and business sellers. The platform will provide a modern, scalable marketplace where sellers can efficiently manage their product catalogs and customers can enjoy a seamless shopping experience with advanced features including product variants, inventory management, order tracking, and comprehensive customer service capabilities.
 
-**Core Business Purpose**: To create a scalable, multi-vendor e-commerce platform that enables businesses to sell products online while providing customers with a superior shopping experience comparable to physical retail stores.
+**Platform Vision**: To create a trusted online marketplace that connects buyers and sellers through an intuitive, feature-rich platform that simplifies e-commerce operations while delivering exceptional customer experiences.
 
-**Market Positioning**: Positioned as a premium e-commerce solution that bridges the gap between simple marketplace platforms and complex enterprise systems, offering robust features while maintaining user-friendly interfaces.
+## Business Vision and Mission
 
-## Business Model and Vision
+### Vision Statement
+To become the preferred e-commerce platform for small to medium-sized businesses seeking to establish or expand their online presence, while providing consumers with a reliable, feature-complete shopping destination.
 
-### Long-Term Vision
-To become the leading multi-vendor e-commerce platform for small to medium-sized businesses seeking comprehensive online retail capabilities without enterprise-level complexity.
+### Mission Statement
+Our mission is to democratize e-commerce by providing businesses of all sizes with enterprise-grade selling tools and consumers with a secure, convenient shopping experience that combines the breadth of a marketplace with the personalization of boutique shopping.
 
-### Core Business Strategy
-- **Platform-as-a-Service Model**: Generate revenue through seller subscription fees, transaction commissions, and premium features
-- **Scalable Architecture**: Support from individual sellers to large retail chains with consistent feature set
-- **Ecosystem Development**: Build a network effect where more sellers attract more buyers, creating a virtuous cycle
+## Market Analysis and Opportunity
 
-### Value Creation Framework
-- **For Sellers**: Complete product management, inventory control, and sales analytics
-- **For Customers**: Seamless shopping experience with advanced search, reviews, and reliable delivery
-- **For Platform**: Sustainable revenue through multiple monetization streams
-
-## Market Opportunity
-
-### Target Market Size
-- **Primary Market**: Small to medium-sized retailers ($500B+ market)
-- **Secondary Market**: Individual sellers and artisans ($50B+ market)
-- **Geographic Focus**: Initially targeting English-speaking markets with global expansion potential
+### Industry Context
+The global e-commerce market continues to experience significant growth, with increasing consumer preference for online shopping driven by convenience, product variety, and competitive pricing. The COVID-19 pandemic accelerated digital transformation, making robust e-commerce platforms essential for business survival and growth.
 
 ### Market Gap Analysis
-Current e-commerce solutions suffer from:
-- **Oversimplification**: Basic platforms lack sophisticated product variant management
-- **Overcomplexity**: Enterprise systems are too expensive and complex for SMBs
-- **Limited Integration**: Many platforms lack comprehensive shipping and payment integrations
-- **Poor Mobile Experience**: Inadequate mobile optimization for modern shopping behaviors
+Current market offerings present several gaps that this platform aims to address:
 
-### Competitive Landscape
-**Direct Competitors**:
-- Shopify (simpler but less feature-rich)
-- Magento (more complex, higher learning curve)
-- WooCommerce (plugin-based, requires technical setup)
+- **Complexity Barrier**: Many existing platforms require significant technical expertise, limiting accessibility for small businesses
+- **Limited Variant Support**: Basic e-commerce solutions often lack sophisticated product variant management
+- **Fragmented Seller Tools**: Sellers frequently need multiple tools for inventory, orders, and analytics
+- **Customer Experience Gaps**: Many platforms prioritize seller features over comprehensive buyer experiences
 
-**Competitive Differentiation**:
-- Superior product variant management with SKU-level inventory
-- Advanced seller management tools without enterprise complexity
-- Comprehensive mobile-first shopping experience
-- Integrated shipping and payment processing
+### Target Market Size
+- **Primary Market**: Small to medium-sized businesses ($500B-$1T annual e-commerce revenue)
+- **Secondary Market**: Individual consumers seeking reliable online shopping experiences
+- **Geographic Focus**: Initially targeting English-speaking markets with global expansion potential
+
+## Target Audience
+
+### Primary User Segments
+
+#### Business Sellers
+- **Small Business Owners**: Entrepreneurs seeking to establish online presence
+- **Established Retailers**: Brick-and-mortar stores expanding to digital channels
+- **Artisans and Creators**: Individual makers selling unique or handmade products
+- **Dropshippers**: Businesses managing inventory through third-party suppliers
+
+#### Individual Consumers
+- **Regular Shoppers**: Users making frequent online purchases across categories
+- **Brand Loyalists**: Customers seeking specific brands or product types
+- **Bargain Hunters**: Price-conscious shoppers comparing options
+- **Convenience Seekers**: Users prioritizing ease of use and fast checkout
+
+### Customer Personas
+
+**Seller Persona - "Retail Rachel"**
+- Small boutique owner with physical store
+- Limited technical expertise but business-savvy
+- Needs simple inventory management and order processing
+- Values customer relationship management tools
+
+**Buyer Persona - "Busy Brian"**
+- Working professional with limited shopping time
+- Values convenience, reliability, and fast delivery
+- Prefers mobile shopping with saved preferences
+- Expects transparent pricing and order tracking
+
+## Competitive Landscape
+
+### Direct Competitors
+- **Shopify**: Comprehensive e-commerce platform with extensive app ecosystem
+- **WooCommerce**: WordPress-based solution popular with technical users
+- **BigCommerce**: Enterprise-focused platform with robust features
+- **Amazon Marketplace**: Large-scale marketplace with massive customer base
+
+### Competitive Differentiation Strategy
+
+#### Technical Advantages
+- **Simplified Setup**: Lower technical barrier compared to self-hosted solutions
+- **Integrated Features**: Native variant management and inventory controls
+- **Mobile-First Design**: Optimized for growing mobile commerce trends
+
+#### Business Model Advantages
+- **Transparent Pricing**: Clear fee structure without hidden costs
+- **Seller Support**: Dedicated tools for business growth and analytics
+- **Customer Focus**: Enhanced buyer experience with comprehensive features
 
 ## Value Proposition
 
 ### For Sellers
-- **Complete Product Management**: Advanced variant options (colors, sizes, custom attributes)
-- **Real-time Inventory Control**: SKU-level stock management with automated alerts
-- **Sales Analytics**: Comprehensive reporting on sales performance and customer behavior
-- **Multi-channel Integration**: Unified management across web and mobile platforms
+- **Complete Business Tools**: Integrated inventory, order, and customer management
+- **Scalable Platform**: Grow from single product to full catalog without platform changes
+- **Customer Insights**: Analytics and reporting to understand buyer behavior
+- **Reduced Complexity**: Single platform handling all e-commerce operations
 
-### For Customers
-- **Advanced Product Discovery**: Sophisticated search, filtering, and recommendation systems
-- **Seamless Shopping Experience**: Intuitive cart management, wishlists, and quick checkout
-- **Trust Building**: Verified reviews, ratings, and seller performance metrics
-- **Reliable Delivery**: Real-time order tracking and status updates
+### For Buyers
+- **Trusted Marketplace**: Verified sellers and secure payment processing
+- **Product Discovery**: Advanced search, filtering, and recommendation features
+- **Seamless Experience**: From browsing to delivery with comprehensive tracking
+- **Customer Protection**: Secure transactions and reliable dispute resolution
 
-### Platform Advantages
-- **Scalable Architecture**: Handles from single sellers to thousands of vendors
-- **Mobile-First Design**: Optimized for modern shopping behaviors
-- **Compliance Ready**: Built-in security, privacy, and regulatory compliance features
-- **API-First Approach**: Easy integration with third-party services
+### Platform-Wide Benefits
+- **Ecosystem Growth**: Network effects from increasing buyer and seller participation
+- **Quality Standards**: Consistent experience maintained through platform guidelines
+- **Innovation Foundation**: Modular architecture supporting future feature expansion
 
-## Target Market Analysis
+## Business Model
 
-### Primary Customer Segments
+### Core Revenue Streams
 
-#### Small to Medium Businesses (SMBs)
-- **Profile**: Established retailers seeking online expansion
-- **Needs**: Comprehensive product catalog management, inventory control, multi-channel sales
-- **Value**: Professional online presence with enterprise-level features at affordable pricing
+#### 1. Subscription Tiers for Sellers
+- **Starter Plan**: Basic features for new sellers with limited products
+- **Professional Plan**: Advanced tools for growing businesses
+- **Enterprise Plan**: Custom solutions for high-volume sellers
 
-#### Individual Sellers and Artisans
-- **Profile**: Creators, artisans, and small-scale producers
-- **Needs**: Easy setup, product showcasing, secure payment processing
-- **Value**: Access to professional e-commerce tools without technical complexity
+#### 2. Transaction Fees
+- Percentage-based commission on completed sales
+- Tiered pricing based on seller subscription level
+- Waived fees for high-volume enterprise partners
 
-#### Enterprise Clients
-- **Profile**: Larger retailers requiring custom solutions
-- **Needs**: Advanced features, API integrations, white-label options
-- **Value**: Scalable platform with enterprise-grade reliability
+#### 3. Premium Services
+- Enhanced listing features and product promotion
+- Advanced analytics and business intelligence tools
+- Custom integration and API access for developers
 
-### Market Positioning Strategy
-- **Price Positioning**: Mid-market pricing between basic platforms and enterprise solutions
-- **Feature Positioning**: "Goldilocks" approach - not too simple, not too complex
-- **Service Positioning**: Comprehensive support and onboarding for technical and non-technical users
+### Cost Structure
+- **Platform Development**: Ongoing feature development and maintenance
+- **Infrastructure Costs**: Hosting, storage, and processing resources
+- **Payment Processing**: Transaction fees to payment gateways
+- **Customer Support**: Multi-channel support infrastructure
+- **Marketing and Acquisition**: User acquisition and retention programs
 
 ## Revenue Strategy
 
-### Primary Revenue Streams
+### Phase 1: Foundation Building (Months 1-6)
+- **Focus**: Seller acquisition and platform validation
+- **Pricing**: Competitive introductory rates to attract early adopters
+- **Goal**: Establish critical mass of active sellers and products
 
-#### Seller Subscription Tiers
-- **Basic Tier**: $29/month - Up to 100 products, basic features
-- **Professional Tier**: $79/month - Up to 1,000 products, advanced features
-- **Enterprise Tier**: $199/month - Unlimited products, premium features
+### Phase 2: Growth Acceleration (Months 7-18)
+- **Focus**: Buyer acquisition and transaction volume growth
+- **Expansion**: Introduce premium features and services
+- **Goal**: Achieve sustainable transaction volume and revenue
 
-#### Transaction Fees
-- **Standard Commission**: 2.5% on all transactions
-- **Reduced Commission**: 1.5% for enterprise-tier sellers
-- **Payment Processing**: Additional revenue share from integrated payment providers
+### Phase 3: Market Leadership (Months 19-36)
+- **Focus**: Platform optimization and market expansion
+- **Innovation**: Introduce advanced AI and personalization features
+- **Goal**: Establish as leading platform in target market segments
 
-#### Premium Services
-- **Custom Development**: API customization and white-label solutions
-- **Advanced Analytics**: Premium reporting and business intelligence
-- **Marketing Services**: Promoted listings and advertising features
+### Pricing Philosophy
+- **Transparent**: Clear, predictable pricing without hidden fees
+- **Value-Based**: Pricing aligned with features and business value
+- **Scalable**: Accommodates businesses of all sizes and growth stages
 
-### Financial Projections
-- **Year 1**: Target 500 sellers, $1.5M GMV, $250K revenue
-- **Year 2**: Target 2,000 sellers, $10M GMV, $1.5M revenue
-- **Year 3**: Target 5,000 sellers, $50M GMV, $5M revenue
+## Growth Plan
 
-### Monetization Timeline
-- **Phase 1 (Launch)**: Focus on seller acquisition with competitive pricing
-- **Phase 2 (Growth)**: Introduce premium features and value-added services
-- **Phase 3 (Maturity)**: Expand to enterprise solutions and international markets
+### User Acquisition Strategy
 
-## Growth Objectives
+#### Seller Acquisition
+- **Content Marketing**: Educational resources for e-commerce success
+- **Partnership Programs**: Integration with existing business tools
+- **Referral Incentives**: Rewards for bringing new sellers to platform
+- **Industry Events**: Participation in retail and e-commerce conferences
 
-### Short-Term Goals (0-12 Months)
-- **Platform Launch**: Successful MVP release with core features
-- **Seller Acquisition**: Reach 500 active sellers across diverse categories
-- **Customer Base**: Achieve 10,000 registered customers with 25% monthly active users
-- **Transaction Volume**: Process $1.5M in gross merchandise value
+#### Buyer Acquisition
+- **SEO Optimization**: Product and category pages for search visibility
+- **Social Commerce**: Integration with social media platforms
+- **Email Marketing**: Personalized recommendations and promotions
+- **Affiliate Programs**: Commission-based referral system
 
-### Medium-Term Goals (12-24 Months)
-- **Feature Expansion**: Roll out advanced analytics, mobile apps, API marketplace
-- **Market Expansion**: Enter 3 additional geographic markets
-- **Partnership Development**: Establish 10+ strategic partnerships with payment and shipping providers
-- **Scale Operations**: Support 2,000+ active sellers with 99.9% platform uptime
+### Platform Growth Metrics
+- **Seller Growth Rate**: Target 20% month-over-month seller acquisition
+- **Buyer Activation**: 30-day active user growth target of 15% monthly
+- **Transaction Volume**: Aim for $1M in GMV within first 12 months
+- **Geographic Expansion**: Plan for international markets in Year 2
 
-### Long-Term Vision (24+ Months)
-- **Market Leadership**: Become top 3 multi-vendor e-commerce platform in target markets
-- **Global Presence**: Expand to 10+ countries with localized experiences
-- **Ecosystem Development**: Build app marketplace with 100+ third-party integrations
-- **Enterprise Solutions**: Capture 20%+ market share in SMB e-commerce segment
-
-### Scalability Considerations
-- **Technical Scalability**: Cloud-native architecture supporting 10x growth without redesign
-- **Operational Scalability**: Automated processes for seller onboarding and support
-- **Financial Scalability**: Revenue model that scales with platform usage and transaction volume
-- **Team Scalability**: Organizational structure supporting rapid growth and market expansion
+### Technology Scaling Strategy
+- **Cloud Infrastructure**: Scalable architecture supporting rapid growth
+- **Microservices**: Modular design enabling independent feature development
+- **API-First Approach**: Supporting third-party integrations and extensions
+- **Performance Optimization**: Continuous improvement of platform speed and reliability
 
 ## Success Metrics
 
 ### Key Performance Indicators (KPIs)
 
-#### Platform Health Metrics
-- **Monthly Active Users (MAU)**: Target 25,000+ within first year
-- **Seller Retention Rate**: 85%+ monthly seller retention
-- **Customer Conversion Rate**: 3%+ visitor to buyer conversion
-- **Average Order Value (AOV)**: Target $75+ across all categories
+#### Business Health Metrics
+- **Monthly Recurring Revenue (MRR)**: Target $50K within first year
+- **Gross Merchandise Volume (GMV)**: Measure total platform sales value
+- **Customer Acquisition Cost (CAC)**: Optimize marketing efficiency
+- **Lifetime Value (LTV)**: Maximize long-term customer value
 
-#### Business Performance Metrics
-- **Gross Merchandise Value (GMV)**: Quarterly growth target of 25%
-- **Revenue Growth**: Target 50% quarter-over-quarter growth
-- **Customer Acquisition Cost (CAC)**: Maintain below $50 per paying customer
-- **Lifetime Value (LTV)**: Target LTV:CAC ratio of 3:1 or better
+#### Platform Engagement Metrics
+- **Daily Active Users (DAU)**: Measure platform usage intensity
+- **Session Duration**: Track user engagement quality
+- **Conversion Rate**: Optimize shopping experience effectiveness
+- **Cart Abandonment Rate**: Identify and address friction points
 
-#### Quality and Satisfaction Metrics
-- **Net Promoter Score (NPS)**: Target 40+ for both sellers and customers
-- **Customer Support Response Time**: Under 2 hours for priority issues
-- **Platform Uptime**: 99.9%+ availability with <1 hour monthly downtime
-- **Mobile App Ratings**: 4.5+ stars on major app stores
+#### Seller Success Metrics
+- **Seller Retention Rate**: Measure platform satisfaction and value
+- **Average Order Value (AOV)**: Track transaction size growth
+- **Product Listing Growth**: Monitor catalog expansion rate
+- **Seller Satisfaction Score**: Regular feedback collection
 
-### Measurement Framework
-- **Real-time Dashboard**: Comprehensive analytics dashboard for all KPIs
-- **Weekly Reporting**: Automated performance reports to stakeholders
-- **Quarterly Reviews**: Deep-dive analysis of metrics and strategic adjustments
-- **Annual Audits**: Comprehensive business performance assessment
+#### Buyer Experience Metrics
+- **Order Completion Rate**: Measure successful transaction percentage
+- **Delivery Time Performance**: Track shipping reliability
+- **Customer Satisfaction (CSAT)**: Regular buyer feedback collection
+- **Net Promoter Score (NPS)**: Measure customer loyalty and advocacy
 
-### Success Thresholds
-- **Minimum Viable Success**: 200 active sellers, $500K GMV within 6 months
-- **Sustainable Business**: Profitability achieved within 18 months
-- **Market Leadership**: Top 5 market position in target segments within 3 years
-- **Long-term Success**: $100M+ valuation and strategic acquisition or IPO potential
+### Milestone Timeline
 
-## Strategic Differentiators
+#### Quarter 1-2: Platform Launch
+- Complete core feature development
+- Onboard initial seller cohort (50+ sellers)
+- Achieve first 1,000 registered buyers
+- Process first 500 successful orders
 
-### Technology Advantage
-- **Advanced Product Variants**: Superior SKU management compared to competitors
-- **Mobile-First Architecture**: Built for modern shopping behaviors from ground up
-- **API-First Design**: Easy integration ecosystem for third-party services
-- **Scalable Infrastructure**: Cloud-native architecture supporting rapid growth
+#### Quarter 3-4: Growth Phase
+- Expand to 500+ active sellers
+- Reach 10,000 registered buyers
+- Achieve $100K monthly GMV
+- Introduce premium service tiers
 
-### Business Model Innovation
-- **Flexible Pricing**: Tiered approach accommodating businesses of all sizes
-- **Value-Added Services**: Revenue diversification beyond basic subscriptions
-- **Partnership Ecosystem**: Strategic alliances enhancing platform value
-- **Global Ready**: Multi-currency, multi-language support from launch
+#### Year 2: Scale Phase
+- Expand to international markets
+- Reach 5,000+ active sellers
+- Achieve $1M+ monthly GMV
+- Introduce advanced AI features
 
-### Customer Experience Focus
-- **Seller Empowerment**: Tools that make complex e-commerce simple
-- **Buyer Confidence**: Trust-building features throughout shopping journey
-- **Seamless Operations**: Automated processes reducing manual work
-- **Continuous Improvement**: Regular feature updates based on user feedback
+### Risk Mitigation Strategy
+- **Technical Risks**: Comprehensive testing and monitoring systems
+- **Market Risks**: Flexible pricing and feature adaptation
+- **Competitive Risks**: Continuous innovation and customer focus
+- **Regulatory Risks**: Compliance with e-commerce regulations and data protection laws
+
+## Business Process Requirements
+
+### Seller Onboarding Process
+WHEN a new seller registers, THE system SHALL guide them through a comprehensive onboarding workflow:
+1. Business verification and documentation submission
+2. Store setup and customization
+3. Product catalog import and configuration
+4. Payment and shipping setup
+5. Platform training and best practices
+
+### Customer Registration Flow
+WHEN a customer creates an account, THE system SHALL provide immediate value through:
+- Quick registration with minimal required information
+- Address book setup for faster checkout
+- Wishlist creation for future purchases
+- Personalized product recommendations
+
+### Order Fulfillment Workflow
+WHEN an order is placed, THE system SHALL manage the complete fulfillment process:
+1. Order validation and payment processing
+2. Inventory reservation and seller notification
+3. Shipping label generation and tracking setup
+4. Delivery status updates and customer notifications
+5. Post-delivery customer satisfaction follow-up
+
+### Customer Support Escalation
+WHEN customer issues require escalation, THE system SHALL provide structured support workflows:
+- Tier 1: Automated solutions and self-service options
+- Tier 2: Seller-level support and issue resolution
+- Tier 3: Platform administrator intervention
+- Tier 4: Executive escalation for critical issues
+
+## Authentication and Security Requirements
+
+### User Authentication
+THE platform SHALL implement comprehensive authentication systems for:
+- **Customers**: Email/password with optional social login
+- **Sellers**: Business verification with multi-factor authentication
+- **Administrators**: Strict access controls with audit logging
+
+### Data Security
+WHILE handling sensitive information, THE system SHALL ensure:
+- End-to-end encryption for all transactions
+- Secure storage of payment information using tokenization
+- Regular security audits and vulnerability assessments
+- Compliance with PCI DSS and GDPR requirements
+
+### Access Control
+WHERE user permissions are managed, THE system SHALL implement:
+- Role-based access control for all platform features
+- Granular permission settings for seller employees
+- Time-based access restrictions for sensitive operations
+- Comprehensive audit trails for all user actions
+
+## Performance and Scalability Requirements
+
+### Platform Performance
+THE system SHALL meet the following performance benchmarks:
+- Page load times under 2 seconds for 95% of requests
+- Search results returned within 1 second for common queries
+- Checkout process completion within 3 minutes
+- Mobile application responsiveness across all devices
+
+### Scalability Targets
+THE platform architecture SHALL support:
+- 10,000 concurrent users during peak shopping events
+- 1,000 simultaneous transactions per minute
+- 100,000 product searches per hour
+- Linear scaling to support 1 million registered users
+
+### Availability Requirements
+THE platform SHALL maintain:
+- 99.9% uptime for core shopping functionality
+- 24/7 availability with scheduled maintenance windows
+- Geographic redundancy for critical system components
+- Automated failover for database and application servers
+
+## Integration Requirements
+
+### Payment Gateway Integration
+THE platform SHALL integrate with multiple payment providers including:
+- Credit card processors (Stripe, PayPal, Square)
+- Digital wallets (Apple Pay, Google Pay)
+- Regional payment methods based on market needs
+- Alternative payment options for unbanked customers
+
+### Shipping Carrier Integration
+WHERE shipping services are required, THE system SHALL support:
+- Major carriers (UPS, FedEx, DHL, USPS)
+- Regional and local delivery services
+- Real-time shipping rate calculations
+- Automated tracking updates and delivery notifications
+
+### Analytics and Reporting
+THE platform SHALL provide comprehensive analytics through integration with:
+- Web analytics tools (Google Analytics, Mixpanel)
+- Business intelligence platforms
+- Custom reporting dashboards
+- Real-time performance monitoring
+
+## Compliance and Regulatory Requirements
+
+### Data Privacy
+THE platform SHALL comply with global data protection regulations including:
+- GDPR for European customers
+- CCPA for California residents
+- Regional data protection laws in target markets
+- Industry-specific compliance requirements
+
+### E-commerce Regulations
+WHERE legal requirements apply, THE system SHALL support:
+- Tax calculation and reporting
+- Consumer protection laws
+- Product safety regulations
+- Digital service compliance
+
+### Financial Compliance
+WHILE processing payments, THE platform SHALL ensure:
+- Proper financial record keeping
+- Tax collection and remittance
+- Anti-money laundering controls
+- Fraud detection and prevention
+
+## Future Enhancement Roadmap
+
+### Phase 1 Enhancements (Months 7-12)
+- Advanced product recommendation engine
+- Multi-language and multi-currency support
+- Enhanced mobile application features
+- Seller analytics and business insights
+
+### Phase 2 Enhancements (Months 13-24)
+- AI-powered customer service chatbots
+- Augmented reality product visualization
+- Social commerce integration
+- Predictive inventory management
+
+### Phase 3 Enhancements (Months 25-36)
+- Blockchain integration for supply chain transparency
+- Voice commerce capabilities
+- Advanced personalization algorithms
+- International market expansion tools
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

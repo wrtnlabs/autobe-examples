@@ -1,0 +1,606 @@
+/// Parent order record representing a buyer's complete purchase transaction.
+///
+/// Stores the main order information including buyer, delivery address,
+/// payment details, and order totals.
+/// Serves as the parent entity for multi-seller orders where items come from
+/// different sellers.
+///
+/// Each order is created when a buyer completes checkout and payment is
+/// confirmed.
+/// The order may contain items from multiple sellers, with each seller
+/// portion tracked in shopping_mall_order_sellers.
+/// Order items are stored in shopping_mall_order_items referencing specific
+/// product SKUs.
+///
+/// Order status progresses through a defined lifecycle tracked in
+/// shopping_mall_order_status_histories.
+/// Buyers can independently search, filter, and manage their orders
+/// including cancellation and refund requests.
+///
+/// Soft deletion is supported to maintain historical records while allowing
+/// order removal from active views.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Buyer who placed this order. {@link shopping_mall_buyers.id}.
+  shopping_mall_buyer_id String
+  
+  /// Delivery address for this order. {@link shopping_mall_buyer_addresses.id}.
+  shopping_mall_buyer_address_id String
+  
+  /// Unique order number displayed to buyers and used for tracking. Format:
+  /// ORD-YYYYMMDD-NNNNNN.
+  order_number String
+  
+  /// Current order status. Values: pending_payment, payment_confirmed,
+  /// processing, ready_to_ship, shipped, in_transit, out_for_delivery,
+  /// delivered, completed, cancelled_payment_failed, cancelled_buyer_request,
+  /// cancelled_seller_unavailable, cancelled_admin_action, delivery_failed,
+  /// returned_to_sender, refund_requested, refund_approved, refund_denied,
+  /// refunded.
+  status String
+  
+  /// Sum of all order item line totals before shipping and taxes.
+  subtotal Float
+  
+  /// Total shipping cost for all items in the order across all sellers.
+  shipping_total Float
+  
+  /// Total tax amount charged on the order.
+  tax_total Float
+  
+  /// Total discount amount applied to the order from promotions or coupons.
+  discount_total Float
+  
+  /// Final total amount paid by buyer. Calculated as subtotal + shipping_total
+  /// + tax_total - discount_total.
+  total_amount Float
+  
+  /// Earliest estimated delivery date based on shipping method and processing
+  /// time.
+  estimated_delivery_start DateTime?
+  
+  /// Latest estimated delivery date based on shipping method and processing
+  /// time.
+  estimated_delivery_end DateTime?
+  
+  /// Actual delivery timestamp when package was successfully delivered to
+  /// recipient.
+  actual_delivery_at DateTime?
+  
+  /// Timestamp when the order was cancelled.
+  cancelled_at DateTime?
+  
+  /// Timestamp when the order reached completed status after successful
+  /// delivery and completion period.
+  completed_at DateTime?
+  
+  /// Timestamp when the order was created and placed by the buyer.
+  created_at DateTime
+  
+  /// Timestamp when the order record was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Orders marked as deleted are retained for
+  /// historical records but hidden from active views.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  buyer shopping_mall_buyers @relation(fields: [shopping_mall_buyer_id], references: [id], onDelete: Cascade)
+  deliveryAddress shopping_mall_buyer_addresses @relation(fields: [shopping_mall_buyer_address_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_inventory_transactions shopping_mall_inventory_transactions[]
+  shopping_mall_inventory_reservations shopping_mall_inventory_reservations[]
+  shopping_mall_order_sellers shopping_mall_order_sellers[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_status_histories shopping_mall_order_status_histories[]
+  shopping_mall_order_cancellations shopping_mall_order_cancellations[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
+  shopping_mall_refund_transactions shopping_mall_refund_transactions[]
+  shopping_mall_platform_commissions shopping_mall_platform_commissions[]
+  shopping_mall_reviews shopping_mall_reviews[]
+  
+  @@index([shopping_mall_buyer_address_id])
+  
+  @@unique([order_number])
+  @@index([shopping_mall_buyer_id, created_at])
+  @@index([status, created_at])
+}
+
+/// Seller-specific portion of a multi-seller order.
+///
+/// When a buyer's order contains items from multiple sellers, the order is
+/// split into sub-orders for each seller.
+/// Each sub-order is represented by one record in this table, containing
+/// seller-specific information and totals.
+///
+/// Each seller processes and fulfills their portion of the order
+/// independently with their own shipping and tracking.
+/// The parent order maintains the buyer's unified view while this table
+/// enables seller-specific fulfillment workflows.
+///
+/// This table is managed through the parent order and does not require
+/// independent buyer operations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order this seller portion belongs to. {@link
+  /// shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Seller fulfilling this portion of the order. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique sub-order number for this seller portion. Format:
+  /// ORD-YYYYMMDD-NNNNNN-S#.
+  sub_order_number String
+  
+  /// Current status for this seller's portion. Same status values as parent
+  /// order but tracked independently.
+  status String
+  
+  /// Sum of all item line totals for this seller's items before shipping and
+  /// taxes.
+  subtotal Float
+  
+  /// Shipping cost for this seller's items based on selected shipping method.
+  shipping_cost Float
+  
+  /// Shipping method selected for this seller's items. Values: standard,
+  /// express, next_day, economy, international.
+  shipping_method String
+  
+  /// Carrier tracking number provided by seller when order is shipped.
+  tracking_number String?
+  
+  /// Shipping carrier name (UPS, FedEx, USPS, DHL, etc.) for tracking and
+  /// delivery.
+  carrier_name String?
+  
+  /// Timestamp when seller marked this sub-order as shipped and provided
+  /// tracking.
+  shipped_at DateTime?
+  
+  /// Timestamp when carrier confirmed delivery for this seller's shipment.
+  delivered_at DateTime?
+  
+  /// Timestamp when this seller sub-order was created from the parent order.
+  created_at DateTime
+  
+  /// Timestamp when this seller sub-order was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this seller sub-order.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_status_histories shopping_mall_order_status_histories[]
+  shopping_mall_order_cancellations shopping_mall_order_cancellations[]
+  shopping_mall_refund_requests shopping_mall_refund_requests[]
+  
+  @@unique([sub_order_number])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, shopping_mall_seller_id], map: "shopping_mall_order_sellers_shopping_mall_order_id_sho_8cfcc8cc")
+  @@index([shopping_mall_seller_id, status])
+}
+
+/// Individual line items within an order representing purchased products.
+///
+/// Each record represents one product SKU variant purchased with specific
+/// quantity and pricing.
+/// Order items capture product information as it existed at the time of
+/// purchase for historical accuracy.
+///
+/// Items reference the specific sale SKU variant purchased, preserving
+/// color, size, and option selections.
+/// Pricing is captured at order time to maintain accurate records even if
+/// product prices change later.
+///
+/// This table is managed through the parent order and supports order
+/// fulfillment, invoicing, and buyer order history.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order this item belongs to. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Seller sub-order this item is part of for multi-seller order management.
+  /// {@link shopping_mall_order_sellers.id}.
+  shopping_mall_order_seller_id String
+  
+  /// Product SKU variant that was purchased. {@link
+  /// shopping_mall_sale_skus.id}.
+  shopping_mall_sale_sku_id String
+  
+  /// Product name captured at time of purchase for historical accuracy.
+  product_name String
+  
+  /// SKU code captured at time of purchase for reference.
+  sku_code String
+  
+  /// JSON string capturing selected variant attributes (color, size, options)
+  /// at time of purchase.
+  variant_attributes String?
+  
+  /// Price per unit at the time of purchase, preserving historical pricing.
+  unit_price Float
+  
+  /// Number of units purchased for this line item.
+  quantity Int
+  
+  /// Total price for this line item calculated as unit_price × quantity.
+  line_total Float
+  
+  /// Discount amount applied to this specific line item from promotions or
+  /// coupons.
+  discount_amount Float
+  
+  /// Timestamp when this order item was created as part of order placement.
+  created_at DateTime
+  
+  /// Timestamp when this order item record was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this order item.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderSeller shopping_mall_order_sellers @relation(fields: [shopping_mall_order_seller_id], references: [id], onDelete: Cascade)
+  saleSku shopping_mall_sale_skus @relation(fields: [shopping_mall_sale_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_seller_id])
+  
+  @@index([shopping_mall_order_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_sku_id, created_at], map: "shopping_mall_order_items_shopping_mall_sale_sku_id_cr_ce9325be")
+}
+
+/// Historical record of all order status transitions for complete audit trail.
+///
+/// Captures every status change throughout the order lifecycle including
+/// timestamps and the actor who triggered the change.
+/// Provides transparency into order progression from placement through
+/// completion, cancellation, or refund.
+///
+/// Each record represents a single status transition with the previous
+/// status, new status, and optional change reason.
+/// The actor type and actor ID identify whether the change was triggered by
+/// buyer, seller, admin, or system automation.
+///
+/// This snapshot table enables audit trail review, dispute resolution, and
+/// performance analytics on order processing speed.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_status_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order whose status changed. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Seller sub-order whose status changed, for tracking seller-specific
+  /// fulfillment progress. {@link shopping_mall_order_sellers.id}.
+  shopping_mall_order_seller_id String?
+  
+  /// Order status before this transition occurred.
+  previous_status String?
+  
+  /// Order status after this transition occurred.
+  new_status String
+  
+  /// Type of actor who triggered the status change. Values: buyer, seller,
+  /// admin, system.
+  actor_type String
+  
+  /// ID of the actor who triggered the status change (buyer_id, seller_id,
+  /// admin_id, or system identifier).
+  actor_id String?
+  
+  /// Optional explanation or reason for the status change provided by the
+  /// actor.
+  change_reason String?
+  
+  /// IP address of the actor when the status change occurred for security
+  /// audit.
+  ip_address String?
+  
+  /// Timestamp when this status change occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderSeller shopping_mall_order_sellers? @relation(fields: [shopping_mall_order_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_seller_id], map: "shopping_mall_order_status_histories_shopping_mall_ord_c9a2112e")
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_status_histories_shopping_mall_ord_8dd665db")
+  @@index([actor_type, created_at])
+}
+
+/// Order cancellation requests and approvals tracking the cancellation
+/// workflow.
+///
+/// Records all cancellation attempts including buyer-initiated,
+/// seller-initiated, and admin-initiated cancellations.
+/// Captures the cancellation reason, approval status, and resolution
+/// timeline for accountability.
+///
+/// Buyers can request cancellation before shipment, which may require seller
+/// or admin approval based on order status.
+/// Sellers can cancel orders they cannot fulfill due to inventory or other
+/// issues.
+/// Admins can cancel orders for fraud, policy violations, or dispute
+/// resolution.
+///
+/// This table supports independent cancellation workflow management with
+/// search and filtering capabilities for all actors.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_cancellations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order being cancelled. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Seller sub-order being cancelled for multi-seller order partial
+  /// cancellations. {@link shopping_mall_order_sellers.id}.
+  shopping_mall_order_seller_id String?
+  
+  /// Buyer who requested the cancellation if buyer-initiated. {@link
+  /// shopping_mall_buyers.id}.
+  requested_by_buyer_id String?
+  
+  /// Seller who requested the cancellation if seller-initiated. {@link
+  /// shopping_mall_sellers.id}.
+  requested_by_seller_id String?
+  
+  /// Admin who requested the cancellation if admin-initiated. {@link
+  /// shopping_mall_admins.id}.
+  requested_by_admin_id String?
+  
+  /// Seller who approved the cancellation request if seller approval was
+  /// required. {@link shopping_mall_sellers.id}.
+  approved_by_seller_id String?
+  
+  /// Admin who approved the cancellation request if admin approval was
+  /// required. {@link shopping_mall_admins.id}.
+  approved_by_admin_id String?
+  
+  /// Reason code for cancellation. Values: buyer_changed_mind,
+  /// buyer_ordered_by_mistake, seller_out_of_stock, seller_cannot_deliver,
+  /// seller_product_discontinued, seller_pricing_error, admin_fraud_detected,
+  /// admin_policy_violation, payment_failed, other.
+  cancellation_reason String
+  
+  /// Detailed explanation or notes about the cancellation reason provided by
+  /// the requestor.
+  cancellation_explanation String?
+  
+  /// Current approval status of the cancellation request. Values: pending,
+  /// auto_approved, seller_approved, admin_approved, denied, expired.
+  approval_status String
+  
+  /// Amount refunded to buyer as a result of this cancellation.
+  refund_amount Float?
+  
+  /// Timestamp when the cancellation was requested.
+  requested_at DateTime
+  
+  /// Timestamp when the cancellation was approved.
+  approved_at DateTime?
+  
+  /// Timestamp when the cancellation request was denied.
+  denied_at DateTime?
+  
+  /// Timestamp when the cancellation was fully processed and refund completed.
+  completed_at DateTime?
+  
+  /// Timestamp when this cancellation record was created.
+  created_at DateTime
+  
+  /// Timestamp when this cancellation record was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this cancellation record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderSeller shopping_mall_order_sellers? @relation(fields: [shopping_mall_order_seller_id], references: [id], onDelete: Cascade)
+  requestedByBuyer shopping_mall_buyers? @relation(fields: [requested_by_buyer_id], references: [id], onDelete: Cascade)
+  requestedBySeller shopping_mall_sellers? @relation("shopping_mall_order_cancellations_of_requested_by_seller_id", fields: [requested_by_seller_id], references: [id], onDelete: Cascade)
+  requestedByAdmin shopping_mall_admins? @relation("shopping_mall_order_cancellations_of_requested_by_admin_id", fields: [requested_by_admin_id], references: [id], onDelete: Cascade)
+  approvedBySeller shopping_mall_sellers? @relation("shopping_mall_order_cancellations_of_approved_by_seller_id", fields: [approved_by_seller_id], references: [id], onDelete: Cascade)
+  approvedByAdmin shopping_mall_admins? @relation("shopping_mall_order_cancellations_of_approved_by_admin_id", fields: [approved_by_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_seller_id], map: "shopping_mall_order_cancellations_shopping_mall_order__f2396e65")
+  @@index([requested_by_buyer_id])
+  @@index([requested_by_seller_id])
+  @@index([requested_by_admin_id])
+  @@index([approved_by_seller_id])
+  @@index([approved_by_admin_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_cancellations_shopping_mall_order__4b3f2c32")
+  // spellchecker: ignore-next-line
+  @@index([approval_status, requested_at], map: "shopping_mall_order_cancellations_approval_status_requ_c9cbdb3e")
+}
+
+/// Buyer refund requests for delivered orders requiring admin review and
+/// approval.
+///
+/// Records all refund requests submitted by buyers after receiving orders,
+/// capturing the reason, evidence, and resolution.
+/// Each request initiates an admin review workflow where admins evaluate the
+/// claim and decide on full, partial, or no refund.
+///
+/// Refund requests can be submitted within the refund window (typically 7-30
+/// days after delivery) for various reasons including defective products,
+/// incorrect items, or buyer remorse.
+/// The system tracks the complete refund workflow from initial request
+/// through admin decision and payment processing.
+///
+/// Buyers need to independently search and track their refund requests,
+/// making this a primary entity with dedicated management UI.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order for which refund is requested. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Seller sub-order for which refund is requested, supporting partial
+  /// refunds in multi-seller orders. {@link shopping_mall_order_sellers.id}.
+  shopping_mall_order_seller_id String?
+  
+  /// Buyer who submitted the refund request. {@link shopping_mall_buyers.id}.
+  shopping_mall_buyer_id String
+  
+  /// Admin who reviewed and decided on the refund request. {@link
+  /// shopping_mall_admins.id}.
+  reviewed_by_admin_id String?
+  
+  /// Unique refund request number for tracking and reference. Format:
+  /// REF-YYYYMMDD-NNNNNN.
+  refund_request_number String
+  
+  /// Reason category for the refund request. Values: defective_product,
+  /// not_as_described, wrong_item, damaged_in_shipping, never_arrived,
+  /// buyer_changed_mind, other.
+  refund_reason String
+  
+  /// Detailed explanation provided by buyer describing the issue and reason
+  /// for refund request.
+  refund_explanation String
+  
+  /// Amount buyer is requesting to be refunded (may be full order amount or
+  /// partial).
+  requested_amount Float
+  
+  /// Current status of the refund request. Values: requested, under_review,
+  /// information_requested, approved, processing, completed, denied,
+  /// cancelled.
+  status String
+  
+  /// Admin decision on the refund request. Values: approve_full,
+  /// approve_partial, deny, escalate, pending.
+  admin_decision String?
+  
+  /// Admin notes explaining the decision rationale for transparency and
+  /// record-keeping.
+  admin_decision_notes String?
+  
+  /// Actual refund amount approved by admin, which may differ from requested
+  /// amount for partial refunds.
+  approved_refund_amount Float?
+  
+  /// Whether buyer must return the product to receive the refund.
+  return_required Boolean
+  
+  /// Tracking number provided by buyer when returning the product.
+  return_tracking_number String?
+  
+  /// Timestamp when seller confirmed receipt of returned product.
+  return_received_at DateTime?
+  
+  /// Timestamp when the buyer submitted the refund request.
+  requested_at DateTime
+  
+  /// Timestamp when admin reviewed the refund request.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the refund was approved.
+  approved_at DateTime?
+  
+  /// Timestamp when the refund request was denied.
+  denied_at DateTime?
+  
+  /// Timestamp when the refund processing was completed and funds returned to
+  /// buyer.
+  completed_at DateTime?
+  
+  /// Timestamp when this refund request record was created.
+  created_at DateTime
+  
+  /// Timestamp when this refund request record was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this refund request.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderSeller shopping_mall_order_sellers? @relation(fields: [shopping_mall_order_seller_id], references: [id], onDelete: Cascade)
+  buyer shopping_mall_buyers @relation(fields: [shopping_mall_buyer_id], references: [id], onDelete: Cascade)
+  reviewedByAdmin shopping_mall_admins? @relation(fields: [reviewed_by_admin_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_refund_transactions shopping_mall_refund_transactions[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_seller_id], map: "shopping_mall_refund_requests_shopping_mall_order_sell_cbf3fb2a")
+  @@index([reviewed_by_admin_id])
+  
+  @@unique([refund_request_number])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_order_id_c_fc29405e")
+  @@index([shopping_mall_buyer_id, status])
+  @@index([status, requested_at])
+}

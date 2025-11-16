@@ -1,60 +1,139 @@
-/// Predefined categories for organizing politicsBBS articles and
-/// discussions. Categories facilitate content discoverability and filtering,
-/// focusing on economic and political topics as specified in the
-/// requirements. Categories are created and managed by moderators through
-/// the system interface.
+/// Article categories for organizing economic and political discussions.
+///
+/// Categories serve as the primary taxonomy system for content organization
+/// within the discussion board.
+/// They enable users to filter and find relevant discussions based on topic
+/// areas and maintain content discoverability across the platform.
+///
+/// Each category represents a specific field of economic or political
+/// discourse, allowing users to browse discussions within their areas of
+/// interest.
+/// The categories are predefined by the system administrators and remain
+/// consistent across the platform to ensure standardized content
+/// organization.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model politics_bbs_categories {
+model economic_discussion_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique category code for internal reference and URL generation
+  /// Unique category code used for identification and URL generation.
   code String
   
-  /// Display name for the category shown to users
+  /// Display name for the category shown to users in navigation and filters.
   name String
   
-  /// Detailed description of the category's purpose and scope
-  description String
+  /// Optional detailed description explaining the scope and purpose of this
+  /// category.
+  description String?
   
-  /// CSS color code for visual identification of the category
-  color String?
+  /// Numerical order position for displaying categories in user interfaces and
+  /// menus.
+  display_order Int
   
-  /// Icon identifier for visual representation
-  icon String?
+  /// Whether this category is currently active and available for new article
+  /// creation.
+  is_active Boolean
   
-  /// Display order for category sorting in lists
-  sequence Int
+  /// Cached count of articles in this category for performance optimization.
+  article_count Int
   
-  /// Whether this is a primary featured category
-  primary Boolean
-  
-  /// Whether this category is required to be assigned
-  required Boolean
-  
-  /// Whether multiple categories can be assigned to content
-  multiplicative Boolean
-  
-  /// Category creation timestamp
+  /// Timestamp when this category was first created in the system.
   created_at DateTime
   
-  /// Last modification timestamp
+  /// Timestamp when this category was last modified or updated.
   updated_at DateTime
   
-  /// Soft delete timestamp
+  /// Soft deletion timestamp when this category was removed from active use.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  politics_bbs_articles politics_bbs_articles[]
+  economic_discussion_article_categories economic_discussion_article_categories[]
   
   @@unique([code])
-  @@index([sequence])
-  @@index([primary, sequence])
+  @@index([is_active, display_order])
+  @@index([created_at])
+}
+
+/// System-wide configuration settings for the Economic/Political Discussion
+/// Board platform.
+///
+/// This table stores platform-wide configuration parameters that affect all
+/// users and operations across the discussion board.
+/// Settings control behavior such as posting limits, file upload
+/// restrictions, security policies, moderation rules, and performance
+/// parameters.
+///
+/// Each setting represents a specific configuration parameter identified by
+/// a unique key, with type-appropriate values that determine system
+/// behavior.
+/// The settings provide administrators with flexible control over platform
+/// behavior without requiring code changes or system restarts.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier key for this system setting used for programmatic
+  /// access.
+  setting_key String
+  
+  /// The value of this setting as a string, may contain serialized data for
+  /// non-string types.
+  setting_value String
+  
+  /// Data type of the setting value: string, integer, boolean, json, or float
+  /// for validation purposes.
+  setting_type String
+  
+  /// Human-readable display name for this setting shown in administration
+  /// interfaces.
+  display_name String
+  
+  /// Detailed explanation of what this setting controls and its impact on
+  /// platform behavior.
+  description String?
+  
+  /// Logical grouping category for organizing related settings in the
+  /// administration interface.
+  category String
+  
+  /// Whether this setting is critical to system operation and should not be
+  /// modified without administrator approval.
+  is_system_critical Boolean
+  
+  /// Identifier of the administrator or system process that last modified this
+  /// setting for audit purposes.
+  last_modified_by String?
+  
+  /// Optional JSON-serialized validation rules for this setting value
+  /// including allowed ranges or values.
+  validation_rules String?
+  
+  /// Timestamp when this system setting was first established in the
+  /// configuration system.
+  created_at DateTime
+  
+  /// Timestamp when this system setting was last modified or its value was
+  /// changed.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([setting_key])
+  @@unique([category, display_name])
+  @@index([category, created_at])
+  @@index([is_system_critical])
 }

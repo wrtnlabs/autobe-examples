@@ -1,74 +1,74 @@
-/// Shopping cart containers managing interim shopping state before order
-/// placement. Each cart belongs to either an authenticated customer or guest
-/// user and serves as the primary container for cart items during the
-/// shopping journey.
+/// Shopping cart management for customers in multi-vendor marketplace.
+///
+/// Maintains shopping cart state across sessions with proper ownership
+/// tracking through polymorphic design. Supports both customer and guest
+/// ownership while ensuring data integrity and audit trail capabilities.
+///
+/// The cart preserves product selections, quantities, and pricing snapshots
+/// while coordinating inventory availability across multiple sellers. Each
+/// cart maintains creator attribution through actor-specific subtype
+/// entities enabling comprehensive tracking and recovery capabilities.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shopping_carts {
+model shopping_mall_carts {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged customer's {@link shopping_mall_customers.id}
-  shopping_customer_id String?
+  /// Actor type identifier (customer, guest) for cart ownership.
+  actor_type String
   
-  /// Belonged guest user's {@link shopping_mall_guests.id}
-  shopping_guest_id String?
+  /// Unique cart identifier for customer reference and sharing.
+  code String
   
-  /// Cart type distinguishing between 'customer' and 'guest' shopping cart
-  /// with associated ownership model
-  type String
-  
-  /// Current cart status including 'active', 'abandoned', 'converted'
-  /// indicating shopping journey progression
+  /// Cart status (active, abandoned, converted, expired) for lifecycle
+  /// tracking.
   status String
   
-  /// Total number of items in the cart for performance optimization and UI
-  /// display
-  item_count Int
-  
-  /// Calculated total amount of all cart items including base prices and
-  /// quantity multiplications
-  total_amount Float
-  
-  /// Currency code for cart pricing consistency with marketplace regional
-  /// support
-  currency String
-  
-  /// Cart creation timestamp
-  created_at DateTime
-  
-  /// Last modification timestamp
-  updated_at DateTime
-  
-  /// Cart expiration timestamp for automatic cleanup and inventory release
+  /// Cart expiration timestamp for automatic cleanup of inactive carts.
   expires_at DateTime?
   
-  /// Soft deletion timestamp for cart removal without permanent data deletion
+  /// Timestamp when the cart was created.
+  created_at DateTime
+  
+  /// Last modification timestamp for cart contents.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for cart recovery and audit trails.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers? @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
-  guest shopping_mall_guests? @relation(fields: [shopping_guest_id], references: [id], onDelete: Cascade)
+  actorType shopping_mall_guests @relation(fields: [actor_type], references: [id], onDelete: Cascade)
   
   shopping_mall_cart_items shopping_mall_cart_items[]
-  shopping_mall_cart_abandonments shopping_mall_cart_abandonments[]
+  shopping_mall_cart_of_customers shopping_mall_cart_of_customers?
+  shopping_mall_cart_of_guests shopping_mall_cart_of_guests?
   
-  @@unique([shopping_customer_id])
-  @@unique([shopping_guest_id])
-  @@index([type, status])
-  @@index([updated_at])
+  @@index([actor_type])
+  
+  @@unique([code])
+  @@index([status])
   @@index([expires_at])
+  @@index([created_at])
 }
 
-/// Individual cart items representing products added to shopping carts with
-/// variant-specific information and quantity tracking for purchase
-/// processing.
+/// Individual items within customer's shopping cart with comprehensive audit
+/// tracking.
+///
+/// Represents each product selection in the cart including variant choices,
+/// quantity preferences, pricing snapshots, and inventory tracking. The
+/// system enables sophisticated inventory management with real-time
+/// availability monitoring across multiple sellers.
+///
+/// Items maintain independent tracking for each seller in the cart with
+/// comprehensive audit trail support enabling historical analysis of cart
+/// contents, customer behavior patterns, and business intelligence insights
+/// across the multi-vendor marketplace.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -79,188 +79,175 @@ model shopping_mall_cart_items {
   /// Primary Key.
   id String @id
   
-  /// Belonged shopping cart's {@link shopping_mall_shopping_carts.id}
-  shopping_mall_shopping_cart_id String
+  /// Parent cart's {@link shopping_mall_carts.id}. Each item belongs to
+  /// exactly one cart.
+  shopping_mall_cart_id String
   
-  /// Referenced product variant's {@link shopping_mall_product_variants.id}
-  shopping_mall_product_variant_id String
+  /// Selected product variant's {@link shopping_mall_sale_units.id}.
+  /// Identifies specific variant (size, color, etc.).
+  shopping_mall_sale_unit_id String?
   
-  /// Number of variant units in the cart for accurate quantity tracking
+  /// Number of units of this item in the cart for checkout processing.
   quantity Int
   
-  /// Price per unit at time of cart addition for price consistency preservation
+  /// Price per unit of this variant at cart addition time for pricing accuracy.
   unit_price Float
   
-  /// Line item total (quantity * unit_price) for cart summary calculations
-  total_price Float
-  
-  /// Item addition timestamp for cart analytics and shopping behavior tracking
+  /// Timestamp when this item was added to cart for audit trail.
   added_at DateTime
   
-  /// Last modification timestamp for quantity changes or price updates
+  /// Last modification timestamp for quantity or cart association.
   updated_at DateTime
   
-  //----
-  // RELATIONS
-  //----
-  shoppingCart shopping_mall_shopping_carts @relation(fields: [shopping_mall_shopping_cart_id], references: [id], onDelete: Cascade)
-  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_shopping_cart_id, shopping_mall_product_variant_id], map: "shopping_mall_cart_items_shopping_mall_shopping_cart_i_2ed36205")
-  @@index([shopping_mall_shopping_cart_id])
-  @@index([shopping_mall_product_variant_id])
-  @@index([added_at])
-}
-
-/// Wishlist containers allowing customers to save products for future
-/// purchase consideration with category organization and sharing
-/// capabilities for enhanced shopping experience.
-///
-/// @namespace Carts
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_wishlists {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Belonged customer's {@link shopping_mall_customers.id}
-  shopping_customer_id String
-  
-  /// Custom wishlist name for personal organization and sharing identification
-  name String
-  
-  /// Optional wishlist description for additional context and sharing purposes
-  description String?
-  
-  /// Wishlist privacy setting including 'private', 'shared', or 'public'
-  /// access levels
-  privacy String
-  
-  /// Unique code for secure sharing without exposing user identity or personal
-  /// information
-  share_code String?
-  
-  /// Total number of items in the wishlist for display optimization and
-  /// analytics
-  item_count Int
-  
-  /// Wishlist creation timestamp
-  created_at DateTime
-  
-  /// Last modification timestamp
-  updated_at DateTime
-  
-  /// Soft deletion timestamp for wishlist removal without permanent data
-  /// deletion
+  /// Soft deletion timestamp for item recovery and audit trails.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  saleUnit shopping_mall_sale_units? @relation(fields: [shopping_mall_sale_unit_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_wishlist_items shopping_mall_wishlist_items[]
+  shopping_mall_cart_item_snapshots shopping_mall_cart_item_snapshots[]
   
-  @@unique([shopping_customer_id, name])
-  @@unique([share_code])
-  @@index([privacy])
-  @@index([updated_at])
+  @@index([shopping_mall_cart_id, added_at])
+  @@index([shopping_mall_sale_unit_id])
+  @@index([deleted_at])
 }
 
-/// Individual wishlist items allowing customers to save specific product
-/// variants or entire products for future consideration with price tracking
-/// and notification capabilities.
+/// Customer-owned shopping carts enabling proper attribution and tracking.
+///
+/// Links shopping carts to authenticated customers while maintaining
+/// referential integrity and enabling comprehensive customer behavior
+/// analysis. Supports cart recovery, abandonment tracking, and multi-device
+/// synchronization for registered users.
+///
+/// The subtype entity ensures that customer-owned carts maintain proper data
+/// integrity while enabling sophisticated customer service features and
+/// business intelligence analysis across the multi-vendor marketplace
+/// platform.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_wishlist_items {
+model shopping_mall_cart_of_customers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged wishlist's {@link shopping_mall_wishlists.id}
-  shopping_mall_wishlist_id String
+  /// Parent cart's {@link shopping_mall_carts.id}. Ensures 1:1 relationship
+  /// with cart entity.
+  shopping_mall_cart_id String
   
-  /// Referenced product's {@link shopping_mall_products.id} for general
-  /// product interest
-  shopping_mall_product_id String?
+  /// Cart owner's {@link shopping_mall_customers.id}. Provides customer
+  /// attribution for cart analysis.
+  shopping_mall_customer_id String
   
-  /// Referenced product variant's {@link shopping_mall_product_variants.id}
-  /// for specific item interest
-  shopping_mall_product_variant_id String?
+  /// Customer session's {@link shopping_mall_customer_sessions.id}. Links cart
+  /// to specific authenticated session.
+  shopping_mall_customer_session_id String
   
-  /// Item addition timestamp for wishlist analytics and price observation
-  /// tracking
-  added_at DateTime
-  
-  /// Price at time of wishlist addition for price drop tracking and
-  /// notification triggers
-  original_price Float
-  
-  /// Flag to enable notifications when price drops below stored threshold
-  notify_on_price_drop Boolean
-  
-  /// Percentage threshold for price drop notifications such as 10% or 25%
-  /// decrease
-  price_drop_threshold Float?
+  /// Timestamp when customer-cart relationship was established.
+  created_at DateTime
   
   //----
   // RELATIONS
   //----
-  wishlist shopping_mall_wishlists @relation(fields: [shopping_mall_wishlist_id], references: [id], onDelete: Cascade)
-  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  productVariant shopping_mall_product_variants? @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_cart_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_cart_of_customers_shopping_mall_customer_8b650dcf")
   
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_wishlist_id, shopping_mall_product_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_57096080")
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_wishlist_id, shopping_mall_product_variant_id], map: "shopping_mall_wishlist_items_shopping_mall_wishlist_id_e2467ce3")
-  @@index([shopping_mall_wishlist_id])
-  @@index([shopping_mall_product_id])
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_variant_id], map: "shopping_mall_wishlist_items_shopping_mall_product_var_4a27a4f7")
-  @@index([added_at])
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_cart_of_customers_shopping_mall_customer_127fd2d8")
 }
 
-/// Cart abandonment tracking capturing when customers leave without
-/// completing purchases for marketing recovery emails and analytical
-/// insights into shopping behavior patterns.
+/// Guest-owned shopping carts enabling temporary cart management.
+///
+/// Links shopping carts to temporary guest accounts while maintaining
+/// session-based tracking and enabling cart persistence across guest
+/// browsing sessions. Supports cart recovery for guest users who later
+/// create accounts.
+///
+/// The subtype entity ensures that guest-owned carts maintain proper data
+/// integrity while enabling multi-session cart persistence and future
+/// customer conversion tracking across the marketplace platform.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_cart_abandonments {
+model shopping_mall_cart_of_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Associated cart's {@link shopping_mall_shopping_carts.id}
-  shopping_mall_shopping_cart_id String
+  /// Parent cart's {\link shopping_mall_carts.id}. Ensures 1:1 relationship
+  /// with cart entity.
+  shopping_mall_cart_id String
   
-  /// Cart abandonment timestamp for analytics and recovery schedule timing
-  abandoned_at DateTime
+  /// Cart owner's {\link shopping_mall_guests.id}. Provides temporary guest
+  /// attribution.
+  shopping_mall_guest_id String
   
-  /// Last customer action timestamp for activity pattern analysis
-  last_activity_at DateTime
-  
-  /// Recovery email sent timestamp for campaign effectiveness tracking
-  recovery_sent_at DateTime?
+  /// Timestamp when guest-cart relationship was established.
+  created_at DateTime
   
   //----
   // RELATIONS
   //----
-  shoppingCart shopping_mall_shopping_carts @relation(fields: [shopping_mall_shopping_cart_id], references: [id], onDelete: Cascade)
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  guest shopping_mall_guests @relation(fields: [shopping_mall_guest_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_cart_id])
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_shopping_cart_id], map: "shopping_mall_cart_abandonments_shopping_mall_shopping_106fc7d9")
+  @@index([shopping_mall_guest_id, created_at], map: "shopping_mall_cart_of_guests_shopping_mall_guest_id_cr_bd219d9e")
+}
+
+/// Historical snapshots capturing cart item states for audit trails.
+///
+/// Preserves point-in-time states of cart items to track pricing changes,
+/// inventory availability, and customer behavior patterns. Essential for
+/// cart abandonment analysis, customer service, and business intelligence
+/// reporting.
+///
+/// The snapshot system enables comprehensive tracking of cart contents over
+/// time while maintaining data integrity and supporting sophisticated
+/// analytics for marketplace operations optimization and customer experience
+/// improvement initiatives.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
   
-  @@index([abandoned_at])
-  @@index([last_activity_at])
-  @@index([recovery_sent_at])
+  /// Cart item's {@link shopping_mall_cart_items.id}. Links snapshot to
+  /// specific item.
+  shopping_mall_cart_item_id String
+  
+  /// Captured quantity at snapshot time for historical accuracy.
+  quantity Int
+  
+  /// Captured unit price for audit trail and pricing analysis.
+  unit_price Float
+  
+  /// Snapshot creation timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cartItem shopping_mall_cart_items @relation(fields: [shopping_mall_cart_item_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cart_item_id, created_at], map: "shopping_mall_cart_item_snapshots_shopping_mall_cart_i_5862c27e")
 }

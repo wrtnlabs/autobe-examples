@@ -1,0 +1,112 @@
+/// User favorite products in the shopping mall platform.
+///
+/// This table captures the relationship between customers and their favorite
+/// products. Each record links a customer to a specific product they have
+/// marked as favorite. The table tracks the customer session when the
+/// favorite was marked or updated.
+///
+/// Created_at and updated_at timestamps allow auditing and sorting by
+/// recency. This supports personalized user experiences by enabling
+/// efficient retrieval of favorite products.
+///
+/// The model has a primary stance as users independently manage their
+/// favorite products with dedicated CRUD operations.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_favorite_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who marked the product as favorite. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer session during which the favorite action took place. {@link
+  /// shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String?
+  
+  /// Product marked as favorite. {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Timestamp when the favorite was created.
+  created_at DateTime
+  
+  /// Timestamp when the favorite was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions? @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_favorite_products_shopping_mall_customer_d51e7aef")
+  @@index([shopping_mall_product_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_favorite_products_shopping_mall_customer_1bae144e")
+  // spellchecker: ignore-next-line
+  @@index([created_at, shopping_mall_customer_id], map: "shopping_mall_favorite_products_created_at_shopping_ma_0bb53731")
+}
+
+/// User favorite sellers in the shopping mall platform.
+///
+/// This table records the relationship between customers and their favorite
+/// sellers. Each record associates a customer with a seller they prefer or
+/// follow. The customer session capturing the favorite addition or update is
+/// kept for auditing.
+///
+/// Timestamps for creation and last update support sorting favorites by
+/// recency and audit tracking.
+///
+/// As a primary stance model, favorite seller relationships are managed
+/// independently with dedicated endpoints.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_favorite_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who marked the seller as favorite. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer session during which the favorite was marked. {@link
+  /// shopping_mall_customer_sessions.id}.
+  shopping_mall_customer_session_id String?
+  
+  /// Seller marked as favorite. {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Timestamp when the favorite was created.
+  created_at DateTime
+  
+  /// Timestamp when the favorite was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions? @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_favorite_sellers_shopping_mall_customer__5112d462")
+  @@index([shopping_mall_seller_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_seller_id], map: "shopping_mall_favorite_sellers_shopping_mall_customer__d982a05f")
+  // spellchecker: ignore-next-line
+  @@index([created_at, shopping_mall_customer_id], map: "shopping_mall_favorite_sellers_created_at_shopping_mal_e4cc8ab6")
+}

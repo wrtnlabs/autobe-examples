@@ -1,0 +1,74 @@
+/// Main entity for user favorites. Represents a collection of favorite items
+/// for a specific customer. Each favorite collection is associated with a
+/// specific customer and can contain multiple favorite items. The favorite
+/// collection itself doesn't contain any business data, but serves as a
+/// container for the favorite items. It's primarily used to organize and
+/// manage the customer's favorite items.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// When the favorite collection was created.
+  created_at DateTime
+  
+  /// When the favorite collection was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_favorite_items shopping_mall_favorite_items[]
+  
+  @@index([shopping_mall_customer_id])
+}
+
+/// Items within a user's favorite collection. Represents individual items
+/// that a customer has marked as favorites. Each favorite item is associated
+/// with a specific favorite collection and a specific sale unit. The
+/// favorite item entity captures the specific variant of a product that the
+/// customer has favorited, including any selected options. It also tracks
+/// when the item was added to the favorites collection.
+///
+/// @namespace Favorites
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_favorite_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged favorite collection's {@link shopping_mall_favorites.id}.
+  shopping_mall_favorite_id String
+  
+  /// Belonged sale unit's {@link shopping_mall_sale_units.id}.
+  shopping_mall_sale_unit_id String
+  
+  /// When the item was added to the favorite collection.
+  created_at DateTime
+  
+  /// When the favorite item was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  favorite shopping_mall_favorites @relation(fields: [shopping_mall_favorite_id], references: [id], onDelete: Cascade)
+  saleUnit shopping_mall_sale_units @relation(fields: [shopping_mall_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_favorite_id, shopping_mall_sale_unit_id], map: "shopping_mall_favorite_items_shopping_mall_favorite_id_b52fb508")
+  @@index([shopping_mall_favorite_id])
+  @@index([shopping_mall_sale_unit_id])
+}

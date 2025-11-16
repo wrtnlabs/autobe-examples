@@ -8,93 +8,103 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IDiscussionBoardAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAuthorizationToken";
 
 export async function postAuthAdminRefresh(props: {
   body: IDiscussionBoardAdmin.IRefresh;
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
-  let decodedToken: { id: string; session_id: string; type: string };
+  let decoded: { id: string; session_id: string; type: "admin" };
   try {
-    decodedToken = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    ) as { id: string; session_id: string; type: string };
-  } catch {
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+      issuer: "autobe",
+    }) as { id: string; session_id: string; type: "admin" };
+  } catch (err) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  if (decodedToken.type !== "admin") {
-    throw new HttpException("Invalid token type for admin refresh", 403);
+
+  if (decoded.type !== "admin") {
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
+
   const session =
     await MyGlobal.prisma.discussion_board_admin_sessions.findFirst({
       where: {
-        id: decodedToken.session_id,
-        discussion_board_admin_id: decodedToken.id,
+        id: decoded.session_id,
+        discussion_board_admin_id: decoded.id,
       },
       include: {
         admin: true,
       },
     });
-  if (!session) {
-    throw new HttpException("Session not found or expired", 401);
+
+  const nowEpoch = Date.now();
+  if (
+    !session ||
+    (session.expired_at && session.expired_at.getTime() <= nowEpoch)
+  ) {
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
-  if (session.admin.is_locked) {
-    throw new HttpException("Account is locked", 403);
+
+  const admin = session.admin;
+  if (
+    !admin ||
+    !admin.is_active ||
+    admin.is_blocked ||
+    admin.deleted_at !== null
+  ) {
+    throw new HttpException("Account unavailable for refresh", 403);
   }
-  if (session.admin.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
-  }
-  const nowValue = Date.now();
-  const accessExpValue = nowValue + 60 * 60 * 1000;
-  const refreshExpValue = nowValue + 7 * 24 * 60 * 60 * 1000;
-  const nowIso = toISOStringSafe(new Date(nowValue));
-  const accessExpiresIso = toISOStringSafe(new Date(accessExpValue));
-  const refreshExpiresIso = toISOStringSafe(new Date(refreshExpValue));
-  const jwtPayload = {
-    type: "admin",
-    id: session.admin.id,
-    session_id: session.id,
-    created_at: nowIso,
+
+  const accessExpiresEpoch = nowEpoch + 60 * 60 * 1000;
+  const refreshExpiresEpoch = nowEpoch + 7 * 24 * 60 * 60 * 1000;
+
+  const token = {
+    access: jwt.sign(
+      {
+        type: "admin",
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "admin",
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: toISOStringSafe(new Date(accessExpiresEpoch)),
+    refreshable_until: toISOStringSafe(new Date(refreshExpiresEpoch)),
   };
-  const access = jwt.sign(jwtPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refresh = jwt.sign(
-    { ...jwtPayload, tokenType: "refresh" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+
   await MyGlobal.prisma.discussion_board_admin_sessions.update({
-    where: { id: session.id },
-    data: { expired_at: new Date(refreshExpValue) },
+    where: { id: decoded.session_id },
+    data: { expired_at: new Date(refreshExpiresEpoch) },
   });
+
   return {
-    id: session.admin.id,
-    email: session.admin.email,
-    display_name: session.admin.display_name,
-    avatar_url:
-      session.admin.avatar_url !== undefined &&
-      session.admin.avatar_url !== null
-        ? session.admin.avatar_url
-        : null,
-    is_locked: session.admin.is_locked,
+    id: admin.id,
+    email: admin.email,
+    is_email_verified: admin.is_email_verified,
+    is_active: admin.is_active,
+    is_blocked: admin.is_blocked,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
     deleted_at:
-      session.admin.deleted_at !== undefined &&
-      session.admin.deleted_at !== null
-        ? toISOStringSafe(session.admin.deleted_at)
-        : null,
-    created_at: toISOStringSafe(session.admin.created_at),
-    updated_at: toISOStringSafe(session.admin.updated_at),
-    token: {
-      access,
-      refresh,
-      expired_at: accessExpiresIso,
-      refreshable_until: refreshExpiresIso,
-    },
+      admin.deleted_at === null ? undefined : toISOStringSafe(admin.deleted_at),
+    token,
   };
 }

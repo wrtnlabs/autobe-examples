@@ -1,0 +1,480 @@
+/// Seller business profiles containing company information, verification
+/// status, and contact details.
+///
+/// Stores comprehensive business information for sellers including company
+/// registration details, tax identification, and verification status. Each
+/// profile is associated with a seller account and undergoes approval
+/// workflow before activation.
+///
+/// Profiles maintain business contact information, operational hours, and
+/// service policies. The verification process includes document submission
+/// and administrative review to ensure platform compliance and customer
+/// trust.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// account management. Status tracking enables proper workflow management
+/// from pending approval to active operation.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated seller account. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Legal company name for business verification and customer display.
+  company_name String
+  
+  /// Official business registration or tax identification number.
+  business_registration_number String
+  
+  /// Registered business address for legal and correspondence purposes.
+  business_address String
+  
+  /// Business contact email for official communications.
+  contact_email String
+  
+  /// Business contact phone number for customer support.
+  contact_phone String
+  
+  /// Standard business operating hours for customer service.
+  business_hours String?
+  
+  /// Seller's service policies including shipping, returns, and customer
+  /// service.
+  service_policies String?
+  
+  /// Current verification status: pending, approved, rejected, suspended.
+  verification_status String
+  
+  /// JSON array of uploaded verification document references.
+  verification_documents String?
+  
+  /// Timestamp when seller profile was approved by administrators.
+  approved_at DateTime?
+  
+  /// Reason provided if seller profile was rejected during verification.
+  rejection_reason String?
+  
+  /// Timestamp when seller profile was created.
+  created_at DateTime
+  
+  /// Timestamp when seller profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when seller profile was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_mall_seller_id])
+  @@unique([business_registration_number])
+  @@index([verification_status])
+  @@index([company_name])
+  @@index([created_at])
+}
+
+/// Seller storefront configurations including branding, layout, and display
+/// settings.
+///
+/// Manages individual seller storefront presentations with customizable
+/// branding elements, store descriptions, and visual configurations. Each
+/// store is associated with a seller profile and can be configured
+/// independently.
+///
+/// Stores support multiple themes, banner images, and layout options to
+/// create unique shopping experiences. Store status controls visibility to
+/// customers while maintenance mode allows for updates without public
+/// access.
+///
+/// Performance metrics track store engagement and customer interactions.
+/// Store configurations support internationalization with multi-language and
+/// multi-currency capabilities.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_stores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner seller account. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Display name of the seller's storefront.
+  store_name String
+  
+  /// URL-friendly identifier for store access.
+  store_slug String
+  
+  /// Detailed description of the store for customer information.
+  store_description String?
+  
+  /// URL to store logo image for branding.
+  store_logo String?
+  
+  /// URL to store banner image for header display.
+  store_banner String?
+  
+  /// Selected theme configuration for store appearance.
+  store_theme String
+  
+  /// Layout configuration for product display and navigation.
+  store_layout String
+  
+  /// Current store status: active, inactive, maintenance.
+  store_status String
+  
+  /// Primary currency for product pricing in this store.
+  default_currency String
+  
+  /// JSON array of supported languages for store content.
+  supported_languages String?
+  
+  /// JSON configuration for search engine optimization.
+  seo_settings String?
+  
+  /// JSON array of social media profile links.
+  social_media_links String?
+  
+  /// Timestamp when store configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when store configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when store configuration was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_mall_seller_id])
+  @@unique([store_slug])
+  @@index([store_status])
+  @@index([store_name])
+  @@index([created_at])
+}
+
+/// Seller-specific product pricing and presentation configurations.
+///
+/// Manages seller-specific pricing strategies, promotional campaigns, and
+/// product presentation settings for products offered in their store. Each
+/// record represents a seller's customized offering of a platform product
+/// with individual pricing and marketing configurations.
+///
+/// Supports flexible pricing models including regular pricing, sale pricing
+/// with date ranges, and promotional strategies. Product status controls
+/// visibility in the seller's store while presentation settings allow for
+/// customized product descriptions and images.
+///
+/// Integration with inventory management ensures pricing reflects current
+/// availability. Performance tracking monitors sales effectiveness of
+/// pricing strategies for business optimization.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller offering this product. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Base product from catalog. {@link ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Seller-specific regular price for this product offering.
+  seller_price Float
+  
+  /// Temporary sale price for promotional campaigns.
+  sale_price Float?
+  
+  /// Start date and time for sale pricing period.
+  sale_start_date DateTime?
+  
+  /// End date and time for sale pricing period.
+  sale_end_date DateTime?
+  
+  /// Seller-specific product description and marketing content.
+  seller_description String?
+  
+  /// JSON array of seller-specific product images and media.
+  seller_images String?
+  
+  /// Status: active, inactive, discontinued for store visibility.
+  product_status String
+  
+  /// Days required for order processing before shipping.
+  handling_time Int
+  
+  /// Seller-specific shipping cost for this product.
+  shipping_cost Float?
+  
+  /// Order value that qualifies for free shipping promotion.
+  free_shipping_threshold Float?
+  
+  /// Timestamp when seller product configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when seller product configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when seller product was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_seller_inventory ecommerce_mall_seller_inventory?
+  
+  @@index([ecommerce_mall_product_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_seller_id, ecommerce_mall_product_id], map: "ecommerce_mall_seller_products_ecommerce_mall_seller_i_bbfed9ae")
+  @@index([product_status])
+  @@index([seller_price])
+  @@index([created_at])
+}
+
+/// Seller performance analytics and business intelligence data.
+///
+/// Collects and aggregates seller performance metrics including sales data,
+/// customer engagement, and operational efficiency. Provides insights for
+/// business optimization and strategic decision-making.
+///
+/// Tracks key performance indicators such as conversion rates, average order
+/// value, and customer retention. Data is aggregated at daily, weekly, and
+/// monthly intervals for trend analysis.
+///
+/// Integration with order and customer systems ensures comprehensive data
+/// collection. Analytics support seller growth through performance
+/// benchmarking and opportunity identification.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_analytics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller account for analytics. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Time period for analytics: daily, weekly, monthly.
+  analytics_period String
+  
+  /// Start date of analytics reporting period.
+  period_start_date DateTime
+  
+  /// End date of analytics reporting period.
+  period_end_date DateTime
+  
+  /// Total sales revenue for the period.
+  total_sales Float
+  
+  /// Total number of orders processed.
+  total_orders Int
+  
+  /// Average value of orders during period.
+  average_order_value Float
+  
+  /// Percentage of visitors who made purchases.
+  conversion_rate Float
+  
+  /// Number of new customers acquired.
+  customer_acquisition Int
+  
+  /// Percentage of returning customers.
+  customer_retention_rate Float
+  
+  /// JSON array of best-selling product IDs and metrics.
+  top_performing_products String?
+  
+  /// JSON breakdown of customer traffic sources.
+  traffic_sources String?
+  
+  /// JSON data of customer locations.
+  geographic_distribution String?
+  
+  /// Timestamp when analytics record was created.
+  created_at DateTime
+  
+  /// Timestamp when analytics record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_seller_id, analytics_period, period_start_date], map: "ecommerce_mall_seller_analytics_ecommerce_mall_seller__e0bf1101")
+  @@index([period_start_date])
+  @@index([total_sales])
+  @@index([analytics_period])
+}
+
+/// Seller payment records and payout management.
+///
+/// Manages financial transactions related to seller earnings, payouts, and
+/// commission calculations. Tracks payment processing, fee deductions, and
+/// settlement status.
+///
+/// Supports multiple payout methods including bank transfers, digital
+/// wallets, and platform credits. Payment scheduling follows business rules
+/// with minimum payout thresholds and processing cycles.
+///
+/// Integration with order and commission systems ensures accurate financial
+/// reporting. Security measures protect sensitive payment information and
+/// prevent fraudulent activities.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller receiving payment. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Time period covered by this payout.
+  payout_period String
+  
+  /// Total amount to be paid to seller.
+  payout_amount Float
+  
+  /// Platform commission deducted from earnings.
+  commission_deductions Float
+  
+  /// Payment processing fees applied.
+  processing_fees Float
+  
+  /// Final amount transferred to seller after deductions.
+  net_amount Float
+  
+  /// Payment method: bank_transfer, digital_wallet, platform_credit.
+  payout_method String
+  
+  /// Current status: pending, processing, completed, failed.
+  payout_status String
+  
+  /// Encrypted bank account information for transfers.
+  bank_account_details String?
+  
+  /// Encrypted digital wallet payment details.
+  digital_wallet_info String?
+  
+  /// External payment gateway transaction reference.
+  transaction_reference String?
+  
+  /// Date when payout is scheduled for processing.
+  payout_scheduled_date DateTime
+  
+  /// Date when payout was successfully processed.
+  payout_processed_date DateTime?
+  
+  /// Timestamp when payment record was created.
+  created_at DateTime
+  
+  /// Timestamp when payment record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_seller_id, payout_period], map: "ecommerce_mall_seller_payments_ecommerce_mall_seller_i_2dcbe062")
+  @@index([payout_status])
+  @@index([payout_scheduled_date])
+  @@index([payout_method])
+}
+
+/// Seller-specific inventory management for product stock levels and
+/// availability.
+///
+/// Tracks real-time inventory quantities, stock thresholds, and availability
+/// status for products offered by sellers. Separates inventory management
+/// from pricing configurations to maintain proper normalization and
+/// independent lifecycle management.
+///
+/// Supports stock level tracking with low stock alerts and out-of-stock
+/// management. Inventory snapshots enable historical tracking of stock
+/// movements and sales patterns for business intelligence.
+///
+/// Integration with order processing ensures accurate stock level updates
+/// and prevents overselling. Separate inventory management allows for
+/// independent stock operations without affecting pricing configurations.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_inventory {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller product configuration. {@link ecommerce_mall_seller_products.id}
+  ecommerce_mall_seller_product_id String
+  
+  /// Current available stock quantity for this seller's product.
+  stock_quantity Int
+  
+  /// Stock level that triggers low stock alerts to seller.
+  low_stock_threshold Int
+  
+  /// Quantity reserved for pending orders or carts.
+  reserved_quantity Int
+  
+  /// Calculated available quantity (stock - reserved).
+  available_quantity Int
+  
+  /// Status: in_stock, low_stock, out_of_stock, discontinued.
+  inventory_status String
+  
+  /// Timestamp when inventory was last replenished.
+  last_restock_date DateTime?
+  
+  /// Timestamp when inventory record was created.
+  created_at DateTime
+  
+  /// Timestamp when inventory record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sellerProduct ecommerce_mall_seller_products @relation(fields: [ecommerce_mall_seller_product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_seller_product_id], map: "ecommerce_mall_seller_inventory_ecommerce_mall_seller__24e097c1")
+  @@index([inventory_status])
+  @@index([stock_quantity])
+  @@index([last_restock_date])
+}

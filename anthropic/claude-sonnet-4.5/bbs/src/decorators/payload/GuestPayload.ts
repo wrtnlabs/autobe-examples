@@ -1,10 +1,10 @@
 import { tags } from "typia";
 
 export interface GuestPayload {
-  /** Top-level guest user ID (the fundamental guest identifier in the system). */
+  /** Guest visitor identifier (primary key from discussion_board_guests table). */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID associated with the guest user. */
+  /** Session ID associated with the guest visitor. */
   session_id: string & tags.Format<"uuid">;
 
   /** Discriminator for the discriminated union type. */

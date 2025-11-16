@@ -1,274 +1,204 @@
-/// Platform-wide key/value configuration entries for system-level settings
-/// (URL, SMTP, feature flags, etc). These are needed for initialization,
-/// seeding, and global runtime parameterization. Each config is uniquely
-/// keyed and soft deletable for historical reference.
+/// Platform-wide configuration entries managing system parameters, feature
+/// flags, and constants.
+///
+/// Allows admin-only CRUD of key-value structured settings that control
+/// feature toggles, global options, or business parameters for the entire
+/// shopping mall backend. Heavily referenced by all modules, with audit and
+/// soft deletion required for traceability.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_system_configurations {
+model shopping_mall_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique system configuration key (case-insensitive, e.g.
-  /// 'core.smtp_server').
+  /// Unique configuration key name, used in service and API lookup.
+  /// Recommended to namespace with prefixes by category or domain.
   config_key String
   
-  /// Configuration value, serialized as text (JSON or plain values).
+  /// String or JSON-serialized value. Raw storage; business logic interprets
+  /// entry per config_key.
   config_value String
   
-  /// Documentation of what this config controls.
-  description String?
+  /// Detailed explanation of the configuration's role and effect for admin
+  /// reference.
+  description String
   
-  /// Configuration creation timestamp.
+  /// active, inactive, or deprecated—for admin gating and safe rollout/testing.
+  status String
+  
+  /// Timestamp of row creation (audit trail).
   created_at DateTime
   
-  /// Configuration last modification timestamp.
+  /// Last mutation timestamp.
   updated_at DateTime
   
-  /// Configuration deletion timestamp (soft delete).
+  /// Soft delete marker for removed/legacy entries.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([config_key])
-  @@index([created_at])
+  @@index([status])
 }
 
-/// Global business policy and operational settings for the shopping
-/// platform: currency, supported regions, tax policy, regulatory flags, etc.
-/// Used for deployment-wide logic, onboarding, and migration. Only one row
-/// per setting type/key is permitted. No coupling to business actors.
+/// Product and navigation category taxonomy, supporting arbitrarily deep
+/// nesting via self-referencing parent_id.
+///
+/// Each category row is used for user browsing, search filters, and system
+/// reference. Parent categories have parent_id = null. Admins manage
+/// category CRUD and soft delete for cross-domain stability.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_business_settings {
+model shopping_mall_categories {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Business setting key (e.g., 'currency', 'country', 'tax_region').
-  setting_key String
-  
-  /// Arbitrary string data for the setting value (could serialize as JSON for
-  /// compound).
-  setting_value String
-  
-  /// Description of this setting.
-  description String?
-  
-  /// Row creation timestamp.
-  created_at DateTime
-  
-  /// Row last update timestamp.
-  updated_at DateTime
-  
-  /// Row deletion time (soft delete).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([setting_key])
-  @@index([created_at])
-}
-
-/// Centralized status code/enum definitions for use across the platform
-/// (orders, reviews, payments, etc). Enables reference-integrity, decouples
-/// code from hardcoded enums, and allows runtime editing of business states.
-/// Soft deletable for historical tracking.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_status_enums {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Domain/entity scope for this status enum (such as 'order', 'review',
-  /// 'payment').
-  enum_domain String
-  
-  /// Exact status code (e.g., 'pending', 'paid', 'failed', case-insensitive).
-  status_code String
-  
-  /// Human-readable label to display for this status in UIs.
-  display_label String
-  
-  /// Ordering value for deterministic sequence in dropdowns or reports.
-  sort_order Int
-  
-  /// Whether this status code is currently in active use (business logic
-  /// toggle).
-  is_active Boolean
-  
-  /// Comment or description for this enum value.
-  description String?
-  
-  /// Time when the enum was created.
-  created_at DateTime
-  
-  /// When this row was last updated.
-  updated_at DateTime
-  
-  /// Soft delete timestamp for enum deprecation.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([enum_domain, status_code])
-  @@index([enum_domain])
-  @@index([is_active])
-}
-
-/// Root node definition for each independent category tree or taxonomy used
-/// by the platform (e.g., shop main categories, secondary/auxiliary trees
-/// for brands, etc). Not tied to actors or transactions. Implements unique
-/// category tree code per taxonomy.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_category_trees {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique category tree code for this taxonomy (case-insensitive, e.g.,
-  /// 'main', 'brand')
-  tree_code String
-  
-  /// English/official display name for this category tree.
-  tree_name String
-  
-  /// Business context for the category tree usage/role.
-  description String?
-  
-  /// Tree creation timestamp.
-  created_at DateTime
-  
-  /// Tree update timestamp.
-  updated_at DateTime
-  
-  /// Soft delete timestamp.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_categories shopping_categories[]
-  
-  @@unique([tree_code])
-  @@index([created_at])
-}
-
-/// One row per category node in any registered category tree. Supports
-/// multi-level hierarchical structure via optional parent relationship. Used
-/// only for classification and system-level grouping – never directly
-/// coupled to transactions or business actors. Category code and tree ID
-/// must be unique per tree.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_categories {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Belonged category tree's {@link shopping_category_trees.id} (required).
-  category_tree_id String
-  
-  /// Parent category's {@link shopping_categories.id} (nullable for root).
+  /// Self-foreign key for category hierarchy—null for root categories.
+  /// Cascades to build full tree structure.
   parent_id String?
   
-  /// Unique code for this category node, lowercase, unique per tree (e.g.
-  /// 'womens_dresses').
-  category_code String
+  /// Unique category name, as seen in UIs and for API reference.
+  name String
   
-  /// Display name for this category node.
-  category_name String
+  /// Long-form description of purpose and coverage for admin/merchandiser
+  /// context.
+  description String
   
-  /// Order among siblings for deterministic tree display.
+  /// Ordering for navigation and display; lower values first.
   sort_order Int
   
-  /// Optional category notes or usage documentation.
-  description String?
+  /// active/inactive/deprecated for admin approval or programmatic use.
+  status String
   
-  /// Category creation time.
+  /// Audit trail—creation moment.
   created_at DateTime
   
-  /// Category update time.
+  /// Last admin/edit update.
   updated_at DateTime
   
-  /// Category deletion (soft delete).
+  /// Soft delete for safe deactivation.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  categoryTree shopping_category_trees @relation(fields: [category_tree_id], references: [id], onDelete: Cascade)
-  parent shopping_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  parentCategory shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
   
-  recursive shopping_categories[] @relation("recursive")
-  shopping_category_product_assignments shopping_category_product_assignments[]
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_products_categories shopping_mall_products_categories[]
   
-  @@unique([category_tree_id, category_code])
-  @@index([category_tree_id])
-  @@index([parent_id])
+  @@unique([name])
+  @@index([parent_id, sort_order])
+  @@index([status])
 }
 
-/// System-wide append-only audit or operational logs. Used for tracking
-/// system events, errors, administrative actions, migrations, or audit
-/// trails. Not tied to user/business actor context. Full-text search enabled
-/// for efficient diagnostics.
+/// Registered external payment providers for all enabled checkout flows and
+/// payment methods.
+///
+/// Defines all payment gateways/platforms (e.g., Stripe, Toss, PayPal)
+/// integrated by admin and referenced in order/payment tables. Directly
+/// managed by admins for status, audit, and usable methods in commerce
+/// flows. CRUD enabled via admin tools; uses status and soft delete to
+/// manage reconfiguration and deprecation safely. Uniquely keyed by
+/// provider_name and provider_code.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_system_logs {
+model shopping_mall_external_payment_providers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Timestamp for when the log event was generated.
-  event_time DateTime
+  /// Display name as shown in checkout UIs—unique for each provider.
+  provider_name String
   
-  /// Severity or log level (e.g., 'info', 'warn', 'error', 'fatal').
-  log_level String
+  /// System integration key/code—unique for backend mapping and API
+  /// orchestration.
+  provider_code String
   
-  /// Type/category of log event (e.g., 'system_init', 'migration',
-  /// 'admin_action').
-  event_type String
+  /// active/inactive/deprecated—controls available methods/platforms in UX.
+  status String
   
-  /// Origin/source of the event (module, subsystem, service name).
-  event_source String
+  /// Legal/business context and integration notes for provider.
+  description String
   
-  /// Summary log message.
-  message String
-  
-  /// Optional event details, stack trace, or contextual metadata (potentially
-  /// JSON-encoded).
-  details String?
-  
-  /// Log row creation time (for durability trace).
+  /// Creation timestamp (for audit).
   created_at DateTime
+  
+  /// Last update (admin/edit context).
+  updated_at DateTime
+  
+  /// Soft delete—row remains for historical audit/logging.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@index([event_time])
-  @@index([log_level])
-  @@index([event_type])
+  shopping_mall_payments shopping_mall_payments[]
+  
+  @@unique([provider_name])
+  @@unique([provider_code])
+  @@index([status])
+}
+
+/// Official platform registry for logistics/shipping partners in buyer and
+/// seller flows.
+///
+/// All partners that can be used for order shipments, available for admin
+/// CRUD and for use in shipment, order, or tracking-related tables via FKs.
+/// Managed for status and audit; supports deprecation via soft delete but
+/// keeps historical/inactive partners visible for audit and referencing
+/// legacy data.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_partners {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name (UI/reference); unique.
+  partner_name String
+  
+  /// Integration code for backend (system use); unique.
+  partner_code String
+  
+  /// active/inactive/deprecated—admin only control.
+  status String
+  
+  /// Business and operational info about the partner.
+  description String
+  
+  /// Creation moment (audit).
+  created_at DateTime
+  
+  /// Mutation/audit update time.
+  updated_at DateTime
+  
+  /// Soft delete for legacy/decommissioned partners.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_order_shipments shopping_mall_order_shipments[]
+  shopping_mall_shipments shopping_mall_shipments[]
+  shopping_mall_return_requests shopping_mall_return_requests[]
+  
+  @@unique([partner_name])
+  @@unique([partner_code])
+  @@index([status])
 }

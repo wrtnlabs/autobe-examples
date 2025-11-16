@@ -19,4 +19,13 @@ export namespace IPage {
      */
     pages: number & tags.Type<"int32"> & tags.Minimum<0>;
   };
+
+  /** Page request data */
+  export type IRequest = {
+    /** Page number. */
+    page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
+
+    /** Limitation of records per a page. */
+    limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
+  };
 }

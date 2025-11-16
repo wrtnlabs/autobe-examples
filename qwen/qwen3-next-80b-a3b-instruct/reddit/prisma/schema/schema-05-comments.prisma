@@ -1,0 +1,496 @@
+/// User comments posted on community platform posts.
+///
+/// Primary entity for storing content comments on posts. Supports unlimited
+/// nesting through self-referential parent-child relationships. Users can
+/// create, edit (within 24 hours), and delete their own comments. Comments
+/// are associated with a specific post and authored by a member, moderator,
+/// or admin.
+///
+/// This table represents the core comment entity and serves as the base for
+/// all comment-related interactions. It contains the raw text content and
+/// metadata about the comment's creation and modification. Parent-child
+/// relationships are stored directly within this table to enable efficient
+/// querying of comment threads. This table remains primary since it contains
+/// the shared comment structure, but storage of actor information is moved
+/// to subtype tables to preserve 3NF normalization.
+///
+/// To determine the actor type that created a comment, query the
+/// corresponding actor-specific subtype table (e.g.,
+/// community_platform_comment_of_members). The actor_type field is used as a
+/// discriminator to identify which subtype table contains the actor-specific
+/// data for this comment.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this comment belongs to. {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// The parent comment this comment is replying to. {@link
+  /// community_platform_comments.id}. If null, this is a top-level comment.
+  parent_comment_id String?
+  
+  /// The text content of the comment. Must be between 1 and 500 characters.
+  content String
+  
+  /// The timestamp when this comment was created (Asia/Seoul timezone).
+  created_at DateTime
+  
+  /// The timestamp when this comment was last updated (Asia/Seoul timezone).
+  updated_at DateTime
+  
+  /// The timestamp when this comment was deleted (soft delete). If null, the
+  /// comment is active.
+  deleted_at DateTime?
+  
+  /// Actor type that created this comment. Valid values: 'guest', 'member',
+  /// 'moderator', 'admin'. This field serves as a discriminator to determine
+  /// which subtype table (community_platform_comment_of_*) contains the
+  /// actor-specific data for this comment.
+  actor_type String
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_comment_threads_of_community_platfo_391c2593 community_platform_comment_threads? @relation("community_platform_comment_threads_of_community_platfo_391c2593")
+  community_platform_comment_threads_of_root_comment_id community_platform_comment_threads[] @relation("community_platform_comment_threads_of_root_comment_id")
+  community_platform_comment_snapshots community_platform_comment_snapshots[]
+  community_platform_comment_tags community_platform_comment_tags[]
+  community_platform_comment_of_guests community_platform_comment_of_guests?
+  community_platform_comment_of_members community_platform_comment_of_members?
+  community_platform_comment_of_moderators community_platform_comment_of_moderators?
+  community_platform_comment_of_admins community_platform_comment_of_admins?
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_comment_karma community_platform_comment_karma?
+  
+  @@index([parent_comment_id])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  @@index([actor_type])
+}
+
+/// Thread metadata for comment hierarchies, optimizing navigation performance.
+///
+/// Stores structural information for comment thread navigation to optimize
+/// performance, especially for deep nesting. This table maintains metadata
+/// on the root comment of a thread and the depth of each comment in the
+/// hierarchy. While comment content resides in community_platform_comments,
+/// this table supports efficient queries for thread structure and depth
+/// limits.
+///
+/// This subsidiary entity exists to avoid costly recursive queries on large
+/// comment threads. By pre-calculating and storing thread structure data
+/// here, the system can quickly retrieve the entire thread hierarchy,
+/// determine if a comment exceeds nesting limits, and identify root comments
+/// without traversing the entire tree in the comments table.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_threads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment this thread metadata belongs to. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// The ID of the root comment in this thread (the top-level comment). {@link
+  /// community_platform_comments.id}.
+  root_comment_id String
+  
+  /// The depth level of this comment in the thread hierarchy. Root comments
+  /// have depth 0, direct replies have depth 1, and so on.
+  depth Int
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation("community_platform_comment_threads_of_community_platfo_391c2593", fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  rootComment community_platform_comments @relation("community_platform_comment_threads_of_root_comment_id", fields: [root_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_threads_community_platform__83df29cd")
+  
+  @@index([root_comment_id, depth])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_comment_threads_community_platform__4427f9b3")
+}
+
+/// Historical snapshots of comments for audit trail and versioning.
+///
+/// Captures the state of comments at the time they were created and after
+/// edits, preserving an audit trail for moderation and compliance. This
+/// snapshot table is immutable (append-only) and records the content,
+/// timestamp, and author of every comment state. This ensures that even if a
+/// comment is edited or deleted, its historical versions remain available
+/// for review.
+///
+/// Following snapshot architecture principles, this table is crucial for
+/// maintaining trust in the platform's moderation system. It allows
+/// moderators to compare current and past versions of a comment, understand
+/// context for moderation decisions, and preserve content even after
+/// deletion. Snapshots are populated on comment creation and any edit. This
+/// table now follows the main entity + subtype pattern for actor ownership,
+/// aligning with the corrected structure of community_platform_comments and
+/// its subtype tables.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The original comment that this snapshot captures. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// The guest user who authored this snapshot version. {@link
+  /// community_platform_guest.id}. For comments originally created by guests.
+  community_platform_guest_id String?
+  
+  /// The member user who authored this snapshot version. {@link
+  /// community_platform_member.id}. For comments originally created by
+  /// members.
+  community_platform_member_id String?
+  
+  /// The moderator user who authored this snapshot version. {@link
+  /// community_platform_moderator.id}. For comments originally created by
+  /// moderators.
+  community_platform_moderator_id String?
+  
+  /// The admin user who authored this snapshot version. {@link
+  /// community_platform_admin.id}. For comments originally created by admins.
+  community_platform_admin_id String?
+  
+  /// The content of the comment at this point in time.
+  content String
+  
+  /// The timestamp when this snapshot was taken (Asia/Seoul timezone).
+  snapshot_timestamp DateTime
+  
+  /// Indicates whether this snapshot was created after an edit (true) or was
+  /// the initial creation (false).
+  is_edited Boolean
+  
+  /// Actor type that created the comment at the time of this snapshot. Valid
+  /// values: 'guest', 'member', 'moderator', 'admin'. References the
+  /// actor_type in the original comment to maintain audit consistency.
+  actor_type String
+  
+  //----
+  // RELATIONS
+  //----
+  originalComment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  guest community_platform_guest? @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
+  member community_platform_member? @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderator? @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  admin community_platform_admin? @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guest_id], map: "community_platform_comment_snapshots_community_platfor_86a36a8c")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_comment_snapshots_community_platfor_88ee3126")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id], map: "community_platform_comment_snapshots_community_platfor_ecf21261")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id], map: "community_platform_comment_snapshots_community_platfor_7626e32e")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, snapshot_timestamp], map: "community_platform_comment_snapshots_community_platfor_f1a02e6a")
+  @@index([actor_type])
+}
+
+/// Many-to-many relationship table for tagging comments with custom tags.
+///
+/// Enables flexible categorization of comments with user-defined or
+/// system-generated tags. This junction table links comments to tags,
+/// allowing each comment to have multiple tags and each tag to be applied to
+/// multiple comments. This supports structured navigation, filtering, and
+/// content discovery systems.
+///
+/// This subsidiary table optimizes for search and filtering performance by
+/// creating an explicit many-to-many relationship. It decouples tag names
+/// from comment data, allowing tags to be changed without modifying the
+/// comment content, and enabling efficient queries to find all comments with
+/// a specific tag.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment associated with this tag. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// The tag associated with this comment. {@link
+  /// community_platform_community_tags.id}.
+  community_platform_tag_id String
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  tag community_platform_community_tags @relation(fields: [community_platform_tag_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id, community_platform_tag_id], map: "community_platform_comment_tags_community_platform_com_4702f097")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_comment_tags_community_platform_com_6ad142a8")
+  @@index([community_platform_tag_id])
+}
+
+/// Subtype table that captures guest-created comments with guest-specific
+/// context.
+///
+/// Enforces that a comment created by a guest must be associated with a
+/// specific guest user through a required foreign key relationship. This
+/// table exists to properly implement polymorphic ownership for guest
+/// commenters, following the same pattern successfully used in
+/// community_platform_report_of_guests.
+///
+/// By isolating guest comment ownership information in a separate table, we
+/// achieve 3NF compliance, ensure referential integrity (guest_id cannot be
+/// null), control the 1:1 relationship with the main comment, and prevent
+/// invalid states where a comment has no actor or multiple actors assigned.
+/// This table enables precise tracking of anonymous user activity while
+/// maintaining database-level constraints.
+///
+/// This table should never be accessed directly by frontend interfaces but
+/// must be referenced by backend authorization systems to validate guest
+/// comment ownership for moderation and deletion requests.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_of_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment this subtype belongs to. {@link
+  /// community_platform_comments.id}. Mandatory 1:1 relationship.
+  community_platform_comment_id String
+  
+  /// The guest user who created this comment. {@link
+  /// community_platform_guest.id}. Non-nullable to enforce that every guest
+  /// comment has a valid guest record.
+  community_platform_guest_id String
+  
+  /// The timestamp when this guest created the comment. Maintained separately
+  /// from the comment's created_at to minimize confusion between comment
+  /// creation time and guest interaction time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  guest community_platform_guest @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_of_guests_community_platfor_3932b656")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_comment_of_guests_community_platfor_d3f14409")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guest_id], map: "community_platform_comment_of_guests_community_platfor_049a7346")
+}
+
+/// Subtype table that captures member-created comments with member-specific
+/// context.
+///
+/// Enforces that a comment created by a member must be associated with a
+/// specific member user through a required foreign key relationship. This
+/// table exists to properly implement polymorphic ownership for member
+/// commenters, following the same pattern successfully used in
+/// community_platform_report_of_members.
+///
+/// By isolating member comment ownership information in a separate table, we
+/// achieve 3NF compliance, ensure referential integrity (member_id cannot be
+/// null), control the 1:1 relationship with the main comment, and prevent
+/// invalid states where a comment has no actor or multiple actors assigned.
+/// This table enables precise tracking of authenticated user activity while
+/// maintaining database-level constraints.
+///
+/// This table should never be accessed directly by frontend interfaces but
+/// must be referenced by backend authorization systems to validate member
+/// comment ownership for moderation, karma calculations, and deletion
+/// requests.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment this subtype belongs to. {@link
+  /// community_platform_comments.id}. Mandatory 1:1 relationship.
+  community_platform_comment_id String
+  
+  /// The member user who created this comment. {@link
+  /// community_platform_member.id}. Non-nullable to enforce that every member
+  /// comment has a valid member record.
+  community_platform_member_id String
+  
+  /// The timestamp when this member created the comment. Maintained separately
+  /// from the comment's created_at to minimize confusion between comment
+  /// creation time and member interaction time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_of_members_community_platfo_aeccac9a")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_comment_of_members_community_platfo_c34d454f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id], map: "community_platform_comment_of_members_community_platfo_a839b235")
+}
+
+/// Subtype table that captures moderator-created comments with
+/// moderator-specific context.
+///
+/// Enforces that a comment created by a moderator must be associated with a
+/// specific moderator user through a required foreign key relationship. This
+/// table exists to properly implement polymorphic ownership for moderator
+/// commenters, following the same pattern successfully used in
+/// community_platform_report_of_moderators.
+///
+/// By isolating moderator comment ownership information in a separate table,
+/// we achieve 3NF compliance, ensure referential integrity (moderator_id
+/// cannot be null), control the 1:1 relationship with the main comment, and
+/// prevent invalid states where a comment has no actor or multiple actors
+/// assigned. This table enables precise tracking of moderator activity while
+/// maintaining database-level constraints.
+///
+/// This table should never be accessed directly by frontend interfaces but
+/// must be referenced by backend authorization systems to validate moderator
+/// comment ownership for audit trails and moderation oversight.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment this subtype belongs to. {@link
+  /// community_platform_comments.id}. Mandatory 1:1 relationship.
+  community_platform_comment_id String
+  
+  /// The moderator user who created this comment. {@link
+  /// community_platform_moderator.id}. Non-nullable to enforce that every
+  /// moderator comment has a valid moderator record.
+  community_platform_moderator_id String
+  
+  /// The timestamp when this moderator created the comment. Maintained
+  /// separately from the comment's created_at to minimize confusion between
+  /// comment creation time and moderator interaction time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderator @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_of_moderators_community_pla_44f7c26b")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_comment_of_moderators_community_pla_d74619cb")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id], map: "community_platform_comment_of_moderators_community_pla_3274b834")
+}
+
+/// Subtype table that captures admin-created comments with admin-specific
+/// context.
+///
+/// Enforces that a comment created by an admin must be associated with a
+/// specific admin user through a required foreign key relationship. This
+/// table exists to properly implement polymorphic ownership for admin
+/// commenters, following the same pattern successfully used in
+/// community_platform_report_of_admins.
+///
+/// By isolating admin comment ownership information in a separate table, we
+/// achieve 3NF compliance, ensure referential integrity (admin_id cannot be
+/// null), control the 1:1 relationship with the main comment, and prevent
+/// invalid states where a comment has no actor or multiple actors assigned.
+/// This table enables precise tracking of system administrator activity
+/// while maintaining database-level constraints.
+///
+/// This table should never be accessed directly by frontend interfaces but
+/// must be referenced by backend authorization systems to validate admin
+/// comment ownership for security audit trails and privileged action
+/// logging.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment this subtype belongs to. {@link
+  /// community_platform_comments.id}. Mandatory 1:1 relationship.
+  community_platform_comment_id String
+  
+  /// The admin user who created this comment. {@link
+  /// community_platform_admin.id}. Non-nullable to enforce that every admin
+  /// comment has a valid admin record.
+  community_platform_admin_id String
+  
+  /// The timestamp when this admin created the comment. Maintained separately
+  /// from the comment's created_at to minimize confusion between comment
+  /// creation time and admin interaction time.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  admin community_platform_admin @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_of_admins_community_platfor_14eccca5")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_comment_of_admins_community_platfor_d36cab6f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id], map: "community_platform_comment_of_admins_community_platfor_9d19f4f7")
+}

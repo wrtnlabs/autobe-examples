@@ -1,0 +1,381 @@
+/// User-generated reports for content requiring moderation review.
+///
+/// Stores reports submitted by users flagging inappropriate content, policy
+/// violations, or other issues requiring moderator attention. Each report
+/// captures the specific content being reported, the reporting user, and
+/// detailed information about the violation type and context.
+///
+/// Reports follow a workflow from submission through review to resolution,
+/// with status tracking and audit trails. Moderators use these reports to
+/// identify and address content that violates community guidelines.
+///
+/// The system supports multiple report categories including spam,
+/// harassment, misinformation, and other violation types as defined in the
+/// content policy.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting member's {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Reported article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String?
+  
+  /// Reported comment's {@link discussion_board_comments.id}.
+  discussion_board_comment_id String?
+  
+  /// Category of violation being reported (spam, harassment, misinformation,
+  /// etc.).
+  report_type String
+  
+  /// Detailed explanation of the reported violation with specific concerns.
+  description String
+  
+  /// Current status of the report (pending, under_review, resolved, dismissed).
+  status String
+  
+  /// Priority level based on violation severity (low, medium, high, critical).
+  priority String
+  
+  /// Timestamp when the report was initially submitted.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the report status or information.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reporter discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles? @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments? @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id], map: "discussion_board_content_reports_discussion_board_arti_e7120b87")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id], map: "discussion_board_content_reports_discussion_board_comm_900fa5b7")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_content_reports_discussion_board_memb_d6e50cb1")
+  @@index([status, priority])
+  @@index([report_type, created_at])
+}
+
+/// Records of moderation actions taken by moderators on platform content.
+///
+/// Serves as the main entity for all moderation activities, capturing the
+/// core action details while delegating target-specific information to
+/// subtype entities. This design replaces the problematic polymorphic
+/// target_id pattern with explicit, normalized relationships.
+///
+/// Each action records the moderator responsible, the action type, and
+/// general metadata. Target-specific details are managed through dedicated
+/// subtype tables (articles, comments, users) to maintain referential
+/// integrity and proper normalization.
+///
+/// The system supports comprehensive audit trails for transparency and
+/// accountability in content moderation decisions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action {@link discussion_board_moderators.id}.
+  discussion_board_moderator_id String
+  
+  /// Associated content report {@link discussion_board_content_reports.id}.
+  discussion_board_content_report_id String?
+  
+  /// Associated user violation {@link discussion_board_user_violations.id}.
+  discussion_board_user_violation_id String?
+  
+  /// Type of moderation action performed (approve, remove, warn, suspend, ban,
+  /// etc.).
+  action_type String
+  
+  /// Detailed explanation of the moderation decision and policy rationale.
+  reason String
+  
+  /// Duration of temporary actions like suspensions (e.g., '24h', '7d', '30d').
+  duration String?
+  
+  /// Current status of the moderation action (active, completed, cancelled,
+  /// appealed).
+  status String
+  
+  /// Timestamp when the moderation action was performed.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the action record.
+  updated_at DateTime
+  
+  /// Timestamp when the action record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator discussion_board_moderators @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  contentReport discussion_board_content_reports? @relation(fields: [discussion_board_content_report_id], references: [id], onDelete: Cascade)
+  userViolation discussion_board_user_violations? @relation(fields: [discussion_board_user_violation_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_action_of_articles discussion_board_moderation_action_of_articles?
+  discussion_board_moderation_action_of_comments discussion_board_moderation_action_of_comments?
+  discussion_board_moderation_action_of_users discussion_board_moderation_action_of_users?
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_content_report_id], map: "discussion_board_moderation_actions_discussion_board_c_755c108e")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_violation_id], map: "discussion_board_moderation_actions_discussion_board_u_eb0ddf46")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_moderation_actions_discussion_board_m_74437f0e")
+  @@index([action_type, status])
+  @@index([status, created_at])
+}
+
+/// Records of user violations and associated disciplinary actions.
+///
+/// Tracks violations of community guidelines by users, documenting the
+/// specific infractions, violation severity, and resulting disciplinary
+/// measures. Each violation record serves as the basis for progressive
+/// discipline and user behavior monitoring.
+///
+/// Violations are categorized by type and severity, with corresponding
+/// actions ranging from warnings to temporary suspensions or permanent bans.
+/// The system maintains comprehensive violation histories to ensure
+/// consistent enforcement and support user rehabilitation.
+///
+/// This table provides the foundation for user accountability, moderation
+/// consistency, and community standards enforcement across the platform.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_violations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who committed the violation {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Moderator who recorded the violation {@link
+  /// discussion_board_moderators.id}.
+  discussion_board_moderator_id String
+  
+  /// Category of violation committed (spam, harassment, hate_speech, etc.).
+  violation_type String
+  
+  /// Severity level of the violation (minor, moderate, severe, critical).
+  severity String
+  
+  /// Detailed description of the violation with specific evidence and context.
+  description String
+  
+  /// Disciplinary action applied (warning, suspension, ban, etc.).
+  action_taken String
+  
+  /// Current status of the violation record (active, resolved, appealed,
+  /// expired).
+  status String
+  
+  /// Timestamp when temporary actions like suspensions expire.
+  expires_at DateTime?
+  
+  /// Timestamp when the violation was initially recorded.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the violation record.
+  updated_at DateTime
+  
+  /// Timestamp when the violation record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  violator discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  recordingModerator discussion_board_moderators @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id], map: "discussion_board_user_violations_discussion_board_mode_0a883026")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_user_violations_discussion_board_memb_6aab85e2")
+  @@index([violation_type, severity])
+  @@index([status, expires_at])
+}
+
+/// Subtype entity for moderation actions specifically targeting discussion
+/// board articles.
+///
+/// Captures article-specific moderation details while maintaining proper
+/// normalization through explicit foreign key relationships. Each record
+/// represents a moderation action applied to a specific article, with the
+/// main action entity handling common metadata.
+///
+/// This design replaces the problematic polymorphic target_id pattern with
+/// proper referential integrity. Articles can be approved, removed, or have
+/// other moderation actions applied while maintaining clear audit trails.
+///
+/// The relationship ensures that article moderation actions are properly
+/// tracked and can be efficiently queried without the performance issues of
+/// polymorphic relationships.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_action_of_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent moderation action {@link discussion_board_moderation_actions.id}.
+  discussion_board_moderation_action_id String
+  
+  /// Target article being moderated {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Snapshot of the article at the time of moderation {@link
+  /// discussion_board_article_snapshots.id}.
+  article_snapshot_id String?
+  
+  /// Article-specific moderation notes and context.
+  moderation_notes String?
+  
+  /// Timestamp when the article moderation action was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction discussion_board_moderation_actions @relation(fields: [discussion_board_moderation_action_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_moderation_action_id], map: "discussion_board_moderation_action_of_articles_discuss_5a89cc16")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_moderation_action_of_articles_discuss_ddbc79b4")
+}
+
+/// Subtype entity for moderation actions specifically targeting discussion
+/// board comments.
+///
+/// Manages comment-specific moderation details through proper normalized
+/// relationships. Each record represents a moderation action applied to a
+/// specific comment, with the main action entity handling common metadata.
+///
+/// This design eliminates the polymorphic relationship anti-pattern by
+/// providing explicit foreign key constraints. Comments can be approved,
+/// removed, or have warnings applied while maintaining clear audit trails.
+///
+/// The explicit relationship ensures efficient querying and proper
+/// referential integrity for comment moderation workflows.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_action_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent moderation action {@link discussion_board_moderation_actions.id}.
+  discussion_board_moderation_action_id String
+  
+  /// Target comment being moderated {@link discussion_board_comments.id}.
+  discussion_board_comment_id String
+  
+  /// Snapshot of the comment at the time of moderation {@link
+  /// discussion_board_comment_snapshots.id}.
+  comment_snapshot_id String?
+  
+  /// Comment-specific moderation notes and context.
+  moderation_notes String?
+  
+  /// Timestamp when the comment moderation action was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction discussion_board_moderation_actions @relation(fields: [discussion_board_moderation_action_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_moderation_action_id], map: "discussion_board_moderation_action_of_comments_discuss_8065e61c")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_moderation_action_of_comments_discuss_10dbf1df")
+}
+
+/// Subtype entity for moderation actions specifically targeting platform users.
+///
+/// Handles user-specific moderation details through proper normalized
+/// relationships. Each record represents a moderation action applied to a
+/// specific user, such as warnings, suspensions, or bans.
+///
+/// This design replaces the problematic polymorphic pattern with explicit
+/// foreign key constraints. User moderation actions are properly tracked
+/// with clear relationships to both the action and the target user.
+///
+/// The explicit relationship ensures efficient user moderation workflows and
+/// proper audit trails for user disciplinary actions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_action_of_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent moderation action {@link discussion_board_moderation_actions.id}.
+  discussion_board_moderation_action_id String
+  
+  /// Target user being moderated {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// User-specific moderation notes and behavioral context.
+  moderation_notes String?
+  
+  /// Count of previous violations by the user at the time of action.
+  previous_violation_count Int
+  
+  /// Timestamp when the user moderation action was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderationAction discussion_board_moderation_actions @relation(fields: [discussion_board_moderation_action_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_moderation_action_id], map: "discussion_board_moderation_action_of_users_discussion_c285bcbe")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_moderation_action_of_users_discussion_9df2537c")
+}

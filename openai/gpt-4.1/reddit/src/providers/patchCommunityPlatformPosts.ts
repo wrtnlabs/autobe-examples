@@ -17,73 +17,82 @@ export async function patchCommunityPlatformPosts(props: {
   body: ICommunityPlatformPost.IRequest;
 }): Promise<IPageICommunityPlatformPost.ISummary> {
   const body = props.body;
-  // Defaults for page/limit
   const page = body.page ?? 1;
   const limit = body.limit ?? 20;
-  const offset = (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
-  // Filters for where clause
-  const where: Record<string, any> = {
+  // Build dynamic where conditions
+  const where: Record<string, unknown> = {
+    // Exclude soft deleted posts
     deleted_at: null,
-    ...(body.community_id !== undefined && {
-      community_platform_community_id: body.community_id,
-    }),
-    ...(body.author_id !== undefined && {
-      community_platform_user_id: body.author_id,
-    }),
+    ...(body.type !== undefined && { type: body.type }),
     ...(body.status !== undefined && { status: body.status }),
-    // Exclude posts with deleted/archived status by default if no status filter is given
-    ...(body.status === undefined && {
-      status: { notIn: ["deleted", "archived"] },
+    ...(body.community_id !== undefined && { community_id: body.community_id }),
+    ...(body.user_id !== undefined && { user_id: body.user_id }),
+    ...((body.created_after || body.created_before) && {
+      created_at: {
+        ...(body.created_after !== undefined && { gte: body.created_after }),
+        ...(body.created_before !== undefined && { lte: body.created_before }),
+      },
     }),
-    // Text search (title contains); ignore query if empty string or only whitespace
-    ...(body.query &&
-      body.query.trim().length > 0 && {
-        title: { contains: body.query },
+    ...(body.search !== undefined &&
+      body.search.trim().length > 0 && {
+        // Full text search by title or body using Prisma's contains (can use raw query for more advanced ft search)
+        OR: [
+          { title: { contains: body.search } },
+          { body: { contains: body.search } },
+        ],
       }),
   };
 
-  // Main post records with joined community and user, exclude posts whose community is soft-deleted/archived
-  const [rows, total] = await Promise.all([
+  const orderField = body.sort_by ?? "created_at";
+  const orderDirection = body.sort_order ?? "desc";
+
+  // Query in parallel for efficiency
+  const [posts, total] = await Promise.all([
     MyGlobal.prisma.community_platform_posts.findMany({
-      where,
-      orderBy:
-        body.sort === "new" ? { created_at: "desc" } : { created_at: "desc" },
-      skip: offset,
+      where: where,
+      skip: skip,
       take: limit,
+      orderBy: { [orderField]: orderDirection },
       include: {
         community: true,
         user: true,
       },
     }),
-    MyGlobal.prisma.community_platform_posts.count({ where }),
+    MyGlobal.prisma.community_platform_posts.count({ where: where }),
   ]);
 
-  // Filter out posts whose related community is deleted or archived
-  const posts = rows.filter((row) => row.community.deleted_at == null);
+  const data = posts.map((post: any) => ({
+    id: post.id,
+    community_id: post.community_id,
+    community: post.community
+      ? {
+          id: post.community.id,
+          name: post.community.name,
+          display_title: post.community.display_title,
+          description: post.community.description,
+          visibility: post.community.visibility,
+          image_url:
+            post.community.image_url === null ? null : post.community.image_url,
+          status: post.community.status,
+        }
+      : undefined,
+    user_id: post.user_id,
+    user: post.user
+      ? {
+          id: post.user.id,
+        }
+      : undefined,
+  }));
 
   return {
+    data,
     pagination: {
-      current: Number(page),
-      limit: Number(limit),
+      current: page,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     },
-    data: posts.map((row) => ({
-      id: row.id,
-      community: {
-        id: row.community.id,
-        name: row.community.name,
-        description: row.community.description,
-      },
-      user: {
-        id: row.user.id,
-        display_name: row.user.display_name,
-      },
-      title: row.title,
-      status: row.status,
-      created_at: toISOStringSafe(row.created_at),
-      updated_at: row.updated_at ? toISOStringSafe(row.updated_at) : undefined,
-    })),
   };
 }

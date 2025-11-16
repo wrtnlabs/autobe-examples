@@ -1,0 +1,292 @@
+/// Top-level and nested comment entities for all user-created discussions
+/// below posts or within communities.
+///
+/// Supports hierarchical, tree-structured threaded replies via a
+/// self-referencing parent_id foreign key. Each comment is uniquely
+/// associated with a specific post and owned by a platform user and session
+/// for strong attribution and auditability. Comments may be attached to
+/// either a post or, via parent_id, to another comment, allowing for
+/// unlimited depth of nesting within permitted business-configurable limits.
+/// Soft deletion is implemented to preserve conversation flow while hiding
+/// deleted content from non-moderator views. All comment creation, updates,
+/// and deletions are recorded by linking to comment snapshots and status
+/// logs. Comments support full-text search over their body content.
+/// Attachments, edit history, and moderation events are managed by
+/// subsidiary tables.
+///
+/// This table forms the core of threaded discussions for the community
+/// platform and is the primary reference for all comment-related subsidiary
+/// and snapshot data.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post this comment belongs to. {@link
+  /// community_platform_posts.id}.
+  post_id String
+  
+  /// The platform user who authored this comment. {@link
+  /// community_platform_users.id}.
+  user_id String
+  
+  /// Session context in which the user created the comment. {@link
+  /// community_platform_user_sessions.id}.
+  user_session_id String
+  
+  /// Self-referential to support nesting/threading of comment replies; null
+  /// for top-level comments. {@link community_platform_comments.id}.
+  parent_id String?
+  
+  /// Main comment body text. Supports full Markdown formatting. 1–2000
+  /// characters per business rules.
+  body String
+  
+  /// Timestamp indicating soft deletion of this comment; null if comment is
+  /// active.
+  deleted_at DateTime?
+  
+  /// Timestamp of initial comment creation in UTC.
+  created_at DateTime
+  
+  /// Timestamp of most recent comment edit in UTC.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  userSession community_platform_user_sessions @relation(fields: [user_session_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_comment_attachments community_platform_comment_attachments[]
+  community_platform_comment_snapshots community_platform_comment_snapshots[]
+  community_platform_comment_edit_history community_platform_comment_edit_history[]
+  community_platform_comment_status_logs community_platform_comment_status_logs[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_comment_bookmarks community_platform_comment_bookmarks[]
+  community_platform_subscription_audit_logs community_platform_subscription_audit_logs[]
+  community_platform_reports community_platform_reports[]
+  community_platform_moderation_actions community_platform_moderation_actions[]
+  community_platform_content_quarantines community_platform_content_quarantines[]
+  
+  @@index([user_id])
+  @@index([user_session_id])
+  
+  @@unique([post_id, id])
+  @@index([post_id, created_at])
+  @@index([parent_id, created_at])
+}
+
+/// Attachment records linked directly to comments, supporting images, files,
+/// or links embedded within user replies.
+///
+/// Each attachment is associated with a single comment, and all attachments
+/// for a comment are managed as a child collection. Attachment files are
+/// stored externally (e.g., object storage) with only the metadata and URI
+/// references saved in this table. Maintains referential integrity with both
+/// the comment and the uploading user session for audit. No direct user CRUD
+/// endpoints; all operations are managed through the parent comment entity.
+///
+/// This model enables seamless expansion of content formats in threaded
+/// discussions and preserves a normalized, scalable approach to media
+/// linking within comments.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing the parent comment for this attachment. {@link
+  /// community_platform_comments.id}.
+  comment_id String
+  
+  /// Session through which the attachment was uploaded. {@link
+  /// community_platform_user_sessions.id}.
+  user_session_id String
+  
+  /// The external URI of the linked file, image, or resource for the
+  /// attachment.
+  uri String
+  
+  /// Timestamp when the attachment was created and linked to the comment.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  userSession community_platform_user_sessions @relation(fields: [user_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_session_id])
+  
+  @@unique([comment_id, uri])
+  // spellchecker: ignore-next-line
+  @@index([comment_id, created_at], map: "community_platform_comment_attachments_comment_id_crea_2eb19ae8")
+}
+
+/// Snapshot records preserving point-in-time, historical states of comments
+/// for audit, moderation, and rollback.
+///
+/// Each snapshot stores a complete immutable image of a comment's body and
+/// all critical fields at the time of creation, allowing administrators,
+/// moderators, and the system to reconstruct any past comment version.
+/// Snapshots are created on every initial creation and whenever a comment
+/// undergoes an edit or deletion with content change. Snapshots are
+/// append-only and never updated or deleted. This model supports compliance,
+/// transparency, and user appeal/audit workflows.
+///
+/// Snapshots are typically referenced by the core comment or by edit/status
+/// log models who link to the corresponding snapshot for display and audit
+/// operations.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the comment this snapshot captures. {@link
+  /// community_platform_comments.id}.
+  comment_id String
+  
+  /// The full comment body text as of the snapshot creation time.
+  body String
+  
+  /// UTC timestamp recording when this snapshot was saved.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  community_platform_comment_edit_history community_platform_comment_edit_history[]
+  
+  @@unique([comment_id, created_at])
+  @@index([comment_id])
+}
+
+/// Edit history records, logging all user-driven or moderation-initiated
+/// modifications to comments.
+///
+/// Each record references the affected comment, the snapshot (capturing the
+/// edited version), and the actor session performing the modification. The
+/// table tracks the chronological sequence of edits with timestamps,
+/// supporting end-to-end audit, rollback, and user transparency. All history
+/// entries are subordinate to their respective comments.
+///
+/// No direct user endpoints; history is included in moderation tools, user
+/// revision lists, and appeals processes for restoration or audit review.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_edit_history {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key for the comment whose edit is being tracked. {@link
+  /// community_platform_comments.id}.
+  comment_id String
+  
+  /// Managed link to the snapshot capturing the new version. {@link
+  /// community_platform_comment_snapshots.id}.
+  snapshot_id String
+  
+  /// Session context of the user or moderator performing the edit. {@link
+  /// community_platform_user_sessions.id}.
+  user_session_id String
+  
+  /// Reason for the edit, e.g., typo correction, content update, required by
+  /// moderator. Nullable if no reason specified.
+  edit_reason String?
+  
+  /// Timestamp when this edit was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  snapshot community_platform_comment_snapshots @relation(fields: [snapshot_id], references: [id], onDelete: Cascade)
+  userSession community_platform_user_sessions @relation(fields: [user_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([snapshot_id])
+  @@index([user_session_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([comment_id, created_at], map: "community_platform_comment_edit_history_comment_id_cre_b140a51f")
+  @@index([comment_id])
+}
+
+/// Status log entries tracking moderation actions (removal, restoration,
+/// quarantine, etc.) and soft-deletion-related state transitions for
+/// comments.
+///
+/// Chronologically records all user, moderator, or system-driven status
+/// changes with timestamps, linking each event to a comment, the acting user
+/// session, and optionally the moderator or administrator session for
+/// auditability. Reason and status fields provide context for each action,
+/// supporting user appeal, moderation transparency, and compliance audits.
+/// Retained as a permanent, immutable record for every status transition.
+///
+/// This table supports complete recovery of comment lifecycle, including
+/// deletion/restore and system moderation interventions.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_status_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key for the comment whose status or moderation event is being
+  /// logged. {@link community_platform_comments.id}.
+  comment_id String
+  
+  /// Session that performed the action (user or moderator/administrator).
+  /// {@link community_platform_user_sessions.id}.
+  user_session_id String
+  
+  /// The new lifecycle state after this event. E.g., 'active', 'soft_deleted',
+  /// 'restored', 'quarantined', 'removed', per business rules.
+  status String
+  
+  /// Optional freeform reason for this action, such as moderation note or
+  /// user-provided explanation.
+  reason String?
+  
+  /// Timestamp when this log entry was added.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  userSession community_platform_user_sessions @relation(fields: [user_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_session_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([comment_id, created_at], map: "community_platform_comment_status_logs_comment_id_crea_0fd52be1")
+  @@index([comment_id])
+}

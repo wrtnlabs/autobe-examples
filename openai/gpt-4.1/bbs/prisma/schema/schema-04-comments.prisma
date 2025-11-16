@@ -1,0 +1,115 @@
+/// Commentary created by registered users or administrators on discussion
+/// board articles.
+///
+/// Each comment is associated with a specific article. Comments can be
+/// authored by either normal users or admins, linked by foreign keys. The
+/// content of each comment is subject to length validations and may include
+/// up to 2 attached files managed via subsidiary attachments table.
+///
+/// Comments are visible under their parent article and support creation,
+/// editing, and deletion by their owner (user or admin) as well as by
+/// administrators for moderation. When an article is deleted, all its
+/// comments are deleted as well. Comment deletions are implemented as soft
+/// deletes for traceability and moderation audit.
+///
+/// Comment creation and modification times are recorded for sorting and
+/// review. Provides the central entity for all discussion under articles.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The article to which this comment belongs. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// User author of the comment, if authored by a regular user. Nullable for
+  /// admin-authored comments. {@link discussion_board_users.id}.
+  discussion_board_user_id String?
+  
+  /// Admin author of the comment, if authored by an admin. Nullable for
+  /// user-authored comments. {@link discussion_board_admins.id}.
+  discussion_board_admin_id String?
+  
+  /// The content text of the comment. Subject to business validation (2-1000
+  /// characters).
+  body String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last edited.
+  updated_at DateTime
+  
+  /// Soft deletion time. Set when the comment is removed for user or
+  /// moderation reasons.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  user discussion_board_users? @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_comment_attachments discussion_board_comment_attachments[]
+  
+  @@index([discussion_board_user_id])
+  @@index([discussion_board_admin_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
+}
+
+/// Files or images attached to a comment on the discussion board.
+///
+/// Each record links a single file/image to one parent comment. Used to
+/// manage comment attachment uploads (max two per comment). Only attachments
+/// of allowed types and sizes may be added per business validation.
+///
+/// Attachment entities are always dependent on their parent comment and
+/// deleted when the parent is deleted. Includes information needed to
+/// implement download authorization (only for authenticated users), as well
+/// as metadata for moderation and auditing.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment this attachment belongs to. {@link
+  /// discussion_board_comments.id}.
+  discussion_board_comment_id String
+  
+  /// Storage location URI for the attachment file.
+  file_url String
+  
+  /// The filename as originally uploaded by the user.
+  original_filename String
+  
+  /// MIME type of the attachment (e.g., 'image/png', 'application/pdf').
+  mime_type String
+  
+  /// The file size in bytes. Enforced as max 10MB by business rules.
+  file_size_bytes Int
+  
+  /// Timestamp when the attachment was created/uploaded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_id, original_filename], map: "discussion_board_comment_attachments_discussion_board__6dec0111")
+}

@@ -1,96 +1,47 @@
-/// Core system configurations for the redditCommunity platform. Contains
-/// key-value settings that govern platform-wide behaviors and validation
-/// rules such as community naming policies and other global system
-/// parameters. This table serves as the authoritative source for
-/// system-level runtime configuration.
+/// System-wide configuration settings for the redditCommunity platform.
+///
+/// This table stores individual configuration entries that govern
+/// platform-wide behaviors and parameters. Each setting is uniquely
+/// identified by a name and holds a string value representing the
+/// configuration. Optional description provides human-readable explanation.
+///
+/// These settings are used by backend services to customize behavior without
+/// hardcoding values. While typically few in number, enforcing uniqueness on
+/// setting names prevents duplication.
+///
+/// Timestamps track creation and update times for auditability and change
+/// tracking. No soft deletion is supported as settings are expected to be
+/// actively maintained.
+///
+/// This model has a primary stance as a main business entity for platform
+/// configuration management and API access.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_system_configurations {
+model reddit_community_system_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique key identifying the configuration setting.
-  config_key String
+  /// Unique name identifying the system setting. Used as a configuration key.
+  name String
   
-  /// Value of the configuration setting as a string.
-  config_value String
+  /// String value associated with the system setting.
+  value String
   
-  /// Detailed explanation of the configuration setting's purpose and usage.
+  /// Optional human-readable explanation of the setting's purpose or usage.
   description String?
   
-  /// Timestamp when the configuration was created.
+  /// Creation timestamp of the configuration record.
   created_at DateTime
   
-  /// Timestamp when the configuration was last updated.
+  /// Last update timestamp of the configuration record.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@unique([config_key])
-}
-
-/// Enumeration of valid content types that users can post within
-/// communities, such as text, link, and image. This table underpins
-/// validation logic and enforces allowed content categories ensuring
-/// consistency and integration with moderation workflows.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_content_types {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique code representing the content type (e.g., 'text', 'link', 'image').
-  content_type_code String
-  
-  /// Human-readable name of the content type.
-  content_type_name String
-  
-  /// Detailed description of the content type and its validation rules.
-  description String?
-  
-  //----
-  // RELATIONS
-  //----
-  reddit_community_posts reddit_community_posts[]
-  
-  @@unique([content_type_code])
-}
-
-/// Enumeration of reasons users may provide when reporting inappropriate
-/// content. Enables structured reporting and improves moderation efficiency
-/// by categorizing reports according to predefined reasons.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_report_reasons {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique code representing the report reason.
-  reason_code String
-  
-  /// Descriptive name of the report reason.
-  reason_name String
-  
-  /// Detailed explanation of the report reason to guide user selection.
-  description String?
-  
-  //----
-  // RELATIONS
-  //----
-  reddit_community_content_reports reddit_community_content_reports[]
-  
-  @@unique([reason_code])
+  @@unique([name])
 }

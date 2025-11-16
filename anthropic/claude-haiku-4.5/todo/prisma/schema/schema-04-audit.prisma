@@ -1,0 +1,214 @@
+/// Immutable audit trail recording all significant system events for
+/// security, compliance, and troubleshooting purposes.
+///
+/// Captures comprehensive records of authentication events (login, logout,
+/// password changes), user account operations (registration, deletion), todo
+/// item management (create, update, complete, delete), admin actions (user
+/// management, settings changes), and security incidents (failed
+/// authentication, unauthorized access attempts).
+///
+/// Each audit log entry records exactly what happened, who performed the
+/// action, when it occurred, where it originated from (IP address), the
+/// outcome, and any relevant error information. Audit logs are immutable -
+/// once created, they cannot be modified or deleted during their retention
+/// period, ensuring the integrity of the audit trail.
+///
+/// These records serve as the definitive source of truth for system activity
+/// and enable administrators to investigate security incidents, trace data
+/// modifications, verify compliance with policies, and troubleshoot system
+/// issues.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_audit_log {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ID of the user who performed the action. Foreign key referencing {@link
+  /// todo_app_user.id}. Null for system-level events or unauthenticated
+  /// operations.
+  user_id String?
+  
+  /// ID of the todo item affected by the action (if applicable). Foreign key
+  /// referencing {@link todo_app_todo.id}. Null for non-todo-related events.
+  todo_app_todo_id String?
+  
+  /// The specific type of action performed. Examples: 'user_registration',
+  /// 'user_login', 'user_logout', 'password_change', 'password_reset',
+  /// 'todo_created', 'todo_updated', 'todo_deleted', 'todo_marked_complete',
+  /// 'todo_marked_incomplete', 'user_account_status_changed',
+  /// 'user_account_deleted', 'admin_password_reset',
+  /// 'unauthorized_access_attempt'.
+  action_type String
+  
+  /// The type of resource affected by the action. Examples: 'user', 'todo',
+  /// 'authentication', 'system_config', 'account', 'session'.
+  resource_type String
+  
+  /// The unique identifier of the specific resource affected. For todo-related
+  /// events, this is the todo ID. For user-related events, this is the user
+  /// ID. For other events, this identifies the specific resource.
+  resource_id String?
+  
+  /// The type of actor who performed the action. Values: 'user' (regular
+  /// user), 'admin' (administrator), 'system' (automated system action).
+  actor_type String
+  
+  /// For update operations, the previous value before the change. Stored as
+  /// JSON string for complex objects. Null for create or delete operations.
+  old_value String?
+  
+  /// For create or update operations, the new value after the change. Stored
+  /// as JSON string for complex objects. Null for delete operations.
+  new_value String?
+  
+  /// The result of the action. Values: 'success' (action completed
+  /// successfully), 'failure' (action failed), 'partial' (action partially
+  /// completed).
+  status String
+  
+  /// If the action failed, description of the error that occurred. Null if
+  /// status is 'success'. Should not contain sensitive information like
+  /// passwords or tokens.
+  error_message String?
+  
+  /// The IP address from which the action was initiated. Used for security
+  /// analysis and identifying patterns of suspicious activity.
+  ip_address String?
+  
+  /// Browser and client information from the request User-Agent header. Helps
+  /// identify the type of client application making the request.
+  user_agent String?
+  
+  /// Additional contextual information about the action. Examples: bulk
+  /// operation details, number of items affected, reason for admin action.
+  /// Stored as JSON for complex data.
+  details String?
+  
+  /// The exact timestamp when the audit log entry was created, recorded in
+  /// UTC. This timestamp is set automatically and represents the precise
+  /// moment the event occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_user? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  todo todo_app_todo? @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  todo_app_alert todo_app_alert[]
+  
+  @@index([todo_app_todo_id])
+  
+  @@index([user_id, created_at])
+  @@index([action_type, created_at])
+  @@index([resource_type, resource_id, created_at])
+  @@index([created_at])
+  @@index([actor_type])
+}
+
+/// System alerts tracking anomalies, threshold violations, and conditions
+/// requiring administrator attention.
+///
+/// Monitors system health and detects suspicious patterns such as high
+/// failure rates, unusual access patterns, resource utilization thresholds,
+/// and security-related anomalies. Each alert record documents the condition
+/// detected, its severity level, when it was triggered, and the underlying
+/// metrics or audit entries that prompted the alert.
+///
+/// Alerts are derived from audit logs and system monitoring and serve to
+/// notify administrators of issues requiring investigation or intervention.
+/// Alert records are retained for historical trend analysis and incident
+/// investigation, allowing administrators to correlate multiple alerts to
+/// identify systemic issues or attack patterns.
+///
+/// Alerts support severity levels (info, warning, critical) to help
+/// administrators prioritize investigation and response efforts. The alert
+/// system enables proactive system management by detecting problems early
+/// before they impact users.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_alert {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional reference to the audit log entry that triggered this alert.
+  /// Foreign key referencing {@link todo_app_audit_log.id}. Null for alerts
+  /// generated from system metrics rather than specific events.
+  todo_app_audit_log_id String?
+  
+  /// The category or classification of the alert. Examples:
+  /// 'high_failed_logins', 'rate_limit_exceeded', 'bulk_user_deletion',
+  /// 'high_api_error_rate', 'unusual_data_access',
+  /// 'system_performance_degradation', 'concurrent_login_anomaly',
+  /// 'brute_force_attempt_detected'.
+  alert_type String
+  
+  /// The severity level indicating how serious the alert is. Values: 'info'
+  /// (informational), 'warning' (requires attention), 'critical' (immediate
+  /// action required).
+  severity String
+  
+  /// Short descriptive title of the alert. Examples: 'High failed login rate
+  /// detected', 'API error rate above threshold', 'Unusual bulk deletion
+  /// activity'.
+  title String
+  
+  /// Detailed description of the alert condition, including specific metrics,
+  /// thresholds, and context. Examples: 'Failed login attempts: 25 from 5
+  /// different IPs in 30 minutes', 'Error rate: 12% (threshold: 5%)'.
+  description String
+  
+  /// The specific metric or condition that triggered the alert. Examples:
+  /// 'failed_login_count', 'api_error_rate', 'cpu_utilization',
+  /// 'db_connection_pool_usage'.
+  metric_name String?
+  
+  /// The actual value of the metric that exceeded the threshold. Stored as
+  /// string to accommodate various data types. Examples: '25', '12%', '85'.
+  metric_value String?
+  
+  /// The threshold value that was exceeded, triggering the alert. Stored as
+  /// string for flexibility. Examples: '10', '5%', '80'.
+  threshold_value String?
+  
+  /// Additional context or metadata related to the alert, stored as JSON.
+  /// Examples: IP addresses involved, user IDs affected, system component
+  /// names, resource details.
+  context_data String?
+  
+  /// The current state of the alert. Values: 'open' (alert still
+  /// active/unresolved), 'acknowledged' (admin has seen it), 'resolved' (issue
+  /// has been addressed).
+  status String
+  
+  /// Timestamp when an administrator acknowledged the alert. Null until the
+  /// alert is acknowledged.
+  acknowledged_at DateTime?
+  
+  /// Timestamp when the alert condition was resolved or the alert was closed.
+  /// Null until the alert is resolved.
+  resolved_at DateTime?
+  
+  /// Timestamp when the alert was generated, recorded in UTC.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  auditLog todo_app_audit_log? @relation(fields: [todo_app_audit_log_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_audit_log_id])
+  
+  @@index([alert_type, created_at])
+  @@index([severity, created_at])
+  @@index([status, created_at])
+  @@index([created_at])
+}

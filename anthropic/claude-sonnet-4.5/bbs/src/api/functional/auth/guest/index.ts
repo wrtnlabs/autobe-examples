@@ -6,38 +6,40 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardGuest } from "../../../structures/IDiscussionBoardGuest";
 
 /**
- * Register a new member account from guest status.
+ * Register temporary guest account and issue session tokens for anonymous
+ * browsing.
  *
- * This endpoint enables guest users to create a new member account on the
- * discussion board platform. Guests provide a unique username, valid email
- * address, and secure password to register. The system validates the
- * registration data, creates a new member account with
- * pending_email_verification status, and sends a verification email to the
- * provided address.
+ * Creates a temporary guest account for unauthenticated visitors and issues JWT
+ * tokens for session tracking.
  *
- * Upon successful registration, the operation immediately issues JWT access and
- * refresh tokens, allowing the user to authenticate as a member. However,
- * certain member privileges (such as posting articles and comments) may require
- * email verification completion.
+ * This operation registers an anonymous guest user in the system by generating
+ * a unique guest identifier and establishing a temporary session. The guest
+ * account is created in the discussion_board_guests table without requiring any
+ * personal information, email verification, or password. Upon successful
+ * registration, the system issues both access and refresh JWT tokens that
+ * enable the guest to browse public articles and discussions with a tracked
+ * session.
  *
- * The registration process enforces username uniqueness (case-insensitive),
- * email uniqueness (case-insensitive), and password strength requirements
- * (minimum 8 characters with uppercase, lowercase, number, and special
- * character). Username must be 3-30 characters containing only alphanumeric
- * characters, underscores, and hyphens.
+ * The implementation creates a new record in the discussion_board_guests table
+ * with a system-generated unique identifier. No authentication credentials are
+ * stored since guest users do not authenticate with passwords. The response
+ * includes JWT tokens (access token and refresh token) that the guest client
+ * must use for subsequent API requests to maintain their temporary session.
  *
- * This operation is public and requires no authentication. Any guest can
- * attempt to register, subject to validation rules and rate limiting to prevent
- * abuse.
+ * Guest accounts are designed for read-only access to public content. They
+ * cannot post articles, submit comments, or perform any write operations. The
+ * guest session is temporary and may be subject to expiration policies defined
+ * by the system. This operation is completely public and requires no prior
+ * authentication.
  *
- * After successful registration, the user receives an email with a verification
- * link. Clicking this link transitions the account from
- * pending_email_verification to active status, enabling full member
- * capabilities.
+ * This endpoint integrates with the broader authentication system by providing
+ * the entry point for anonymous users to establish trackable sessions. Guest
+ * users may later choose to upgrade to full member accounts through the member
+ * registration flow if they wish to gain posting and interaction capabilities.
  *
  * @param props.connection
- * @param props.body Registration information including username, email, and
- *   password for creating a new member account
+ * @param props.body Guest registration request (may be empty or contain
+ *   optional device/session metadata)
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/join
@@ -73,12 +75,12 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Registration information including username, email, and password for
-     * creating a new member account
+     * Guest registration request (may be empty or contain optional
+     * device/session metadata)
      */
-    body: IDiscussionBoardGuest.IRegistration;
+    body: IDiscussionBoardGuest.ICreate;
   };
-  export type Body = IDiscussionBoardGuest.IRegistration;
+  export type Body = IDiscussionBoardGuest.ICreate;
   export type Response = IDiscussionBoardGuest.IAuthorized;
 
   export const METADATA = {
@@ -123,33 +125,39 @@ export namespace join {
 }
 
 /**
- * Refresh JWT access token using a valid refresh token.
+ * Refresh guest user access token using valid refresh token.
  *
- * This endpoint enables token refresh for guest sessions or registered users
- * with valid refresh tokens. The refresh mechanism allows users to obtain a new
- * access token when the current access token expires (30-minute lifespan)
- * without requiring full re-authentication.
+ * Refreshes JWT access tokens for guest users using a valid refresh token.
  *
- * The operation accepts a valid refresh token (14-day lifespan) and validates
- * its authenticity and expiration status. Upon successful validation, the
- * system issues a new access token with a fresh 30-minute expiration period.
- * The refresh token itself may optionally be rotated for enhanced security.
+ * This operation enables guest users to renew their access tokens without
+ * creating a new guest account. When a guest's access token expires, they can
+ * use their refresh token to obtain a new access token, maintaining session
+ * continuity. The system validates the provided refresh token against the
+ * discussion_board_guests table and associated session records to ensure it is
+ * authentic, not expired, and belongs to a valid guest account.
  *
- * This operation is essential for maintaining seamless user experience during
- * extended browsing sessions. Users don't need to repeatedly enter credentials
- * as long as their refresh token remains valid.
+ * The implementation verifies the refresh token's signature and expiration,
+ * checks that the associated guest account still exists in the
+ * discussion_board_guests table, and that the session has not been invalidated.
+ * Upon successful validation, a new access token is generated and returned to
+ * the client. The refresh token itself may also be rotated depending on the
+ * system's token rotation policy.
  *
- * The refresh token is typically stored securely (httpOnly cookie or secure
- * storage) and transmitted with refresh requests. If the refresh token is
- * expired, invalid, or revoked, the operation returns an authentication error,
- * requiring the user to log in again with full credentials.
+ * This operation is critical for maintaining guest user sessions beyond the
+ * initial access token lifetime. It allows guests to continue browsing public
+ * articles and discussions without interruption. The refresh token must be
+ * included in the request, typically in the Authorization header or request
+ * body as defined by the authentication strategy.
  *
- * This endpoint is public but requires a valid refresh token in the request.
- * Rate limiting prevents abuse and brute-force attacks on the refresh
- * mechanism.
+ * Security considerations include rate limiting to prevent token refresh abuse,
+ * validation of token authenticity to prevent forgery, and proper session
+ * management to ensure that invalidated or expired refresh tokens are rejected.
+ * This endpoint requires a valid refresh token but does not require an active
+ * access token since it is specifically designed for token renewal scenarios.
  *
  * @param props.connection
- * @param props.body Refresh token information for obtaining a new access token
+ * @param props.body Refresh token request containing the valid refresh token to
+ *   exchange for new access token
  * @setHeader token.access Authorization
  *
  * @path /auth/guest/refresh
@@ -184,7 +192,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token information for obtaining a new access token */
+    /**
+     * Refresh token request containing the valid refresh token to exchange
+     * for new access token
+     */
     body: IDiscussionBoardGuest.IRefresh;
   };
   export type Body = IDiscussionBoardGuest.IRefresh;

@@ -1,0 +1,88 @@
+/// Core content entity representing articles published by members for
+/// economic and political discussions.
+///
+/// Articles are the primary business value of the discussion board, allowing
+/// members to share comprehensive analysis, perspectives, and arguments on
+/// economic policies and political developments. Each article contains a
+/// title and body content with support for rich text formatting.
+///
+/// Articles are created by authenticated members through their active
+/// sessions and immediately published for public viewing by all users
+/// including guests. The author can edit their articles at any time, and
+/// moderators can edit or remove any article for community standards
+/// enforcement.
+///
+/// The view_count field tracks how many times an article has been accessed,
+/// providing engagement metrics. Articles support attachments through
+/// separate image and file entities, enabling evidence-based discussions
+/// with supporting materials like charts, data, and reference documents.
+///
+/// Soft deletion is supported through deleted_at to maintain discussion
+/// continuity when content is moderated or removed, preserving references
+/// from comments and other entities while hiding content from public view.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author who created this article. References the member's {@link
+  /// discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Authentication session through which this article was created. References
+  /// the session's {@link discussion_board_member_sessions.id} for audit trail
+  /// purposes.
+  discussion_board_member_session_id String
+  
+  /// Article title summarizing the topic or main argument. Must be between 5
+  /// and 200 characters to ensure meaningful yet concise titles.
+  title String
+  
+  /// Full article content containing the member's analysis, arguments, and
+  /// discussion points. Supports rich text formatting including paragraphs and
+  /// line breaks. Must be between 10 and 50,000 characters to ensure
+  /// substantive content.
+  body String
+  
+  /// Number of times this article has been viewed by any user including
+  /// guests. Incremented each time the article detail page is accessed,
+  /// providing engagement metrics.
+  view_count Int
+  
+  /// Timestamp when the article was originally created and published.
+  /// Preserved permanently even when article is edited.
+  created_at DateTime
+  
+  /// Timestamp of the most recent edit to the article. Updated whenever the
+  /// title, body, or attachments are modified by the author or a moderator.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp indicating when the article was removed by the
+  /// author or a moderator. When set, the article is hidden from public view
+  /// but preserved in the database to maintain referential integrity with
+  /// comments and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession discussion_board_member_sessions @relation(fields: [discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_article_images discussion_board_article_images[]
+  discussion_board_article_files discussion_board_article_files[]
+  discussion_board_comments discussion_board_comments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_articles_discussion_board_member_id_c_f434e708")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_session_id, created_at], map: "discussion_board_articles_discussion_board_member_sess_14784a2a")
+  @@index([created_at])
+  @@index([view_count])
+  @@index([deleted_at])
+}

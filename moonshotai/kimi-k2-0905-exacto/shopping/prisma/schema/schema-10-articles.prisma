@@ -1,0 +1,199 @@
+/// Articles and blog posts published by users on the platform for content
+/// sharing and information dissemination.
+///
+/// This table stores published articles including blog posts, news updates,
+/// and educational content created by platform users. Articles serve as
+/// primary content for customer engagement and SEO benefits while
+/// maintaining publication workflows with draft and published states for
+/// content management quality control.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged section's {@link shopping_mall_sections.id}
+  shopping_mall_section_id String
+  
+  /// Author customer's {@link shopping_mall_customers.id}
+  shopping_customer_id String
+  
+  /// Parent article's {@link shopping_mall_articles.id} for article series
+  parent_id String?
+  
+  /// Article title for display and SEO
+  title String
+  
+  /// Main article content in markdown format
+  content String
+  
+  /// Publication status: draft, published, archived
+  status String
+  
+  /// Number of times the article has been viewed
+  view_count Int
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  section shopping_mall_sections @relation(fields: [shopping_mall_section_id], references: [id], onDelete: Cascade)
+  author shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_articles? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_articles[] @relation("recursive")
+  shopping_mall_comments shopping_mall_comments[]
+  
+  @@index([parent_id])
+  
+  @@index([shopping_mall_section_id])
+  @@index([shopping_customer_id])
+  @@index([status])
+}
+
+/// Forum topics and discussion posts for community interaction and user
+/// engagement.
+///
+/// This table stores BBS (Bulletin Board System) posts including forum
+/// topics, discussion threads, and community content created by users. BBS
+/// posts facilitate structured conversation and community building with
+/// threading support through hierarchical parent-child relationships for
+/// organized discussion management.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_bbs_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged forum section's {@link shopping_mall_sections.id}
+  shopping_mall_section_id String
+  
+  /// Author customer's {@link shopping_mall_customers.id}
+  shopping_customer_id String
+  
+  /// Parent forum post's {@link shopping_mall_bbs_posts.id}
+  parent_id String?
+  
+  /// Forum topic title or subject
+  title String
+  
+  /// Forum post content text
+  content String
+  
+  /// Forum post status: active, locked, deleted
+  status String
+  
+  /// Number of views for this forum post
+  view_count Int
+  
+  /// Whether the forum topic is locked for comments
+  is_locked Boolean
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  section shopping_mall_sections @relation(fields: [shopping_mall_section_id], references: [id], onDelete: Cascade)
+  author shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_bbs_posts? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_bbs_posts[] @relation("recursive")
+  shopping_mall_comments shopping_mall_comments[]
+  
+  @@index([shopping_mall_section_id])
+  @@index([shopping_customer_id])
+  @@index([parent_id])
+  @@index([status])
+}
+
+/// User comments and discussions attached to articles, posts, and other
+/// content for community interaction.
+///
+/// This table stores user-generated comments including article comments,
+/// forum responses, and community discussions created by platform users.
+/// Comments enable user engagement and content interaction while maintaining
+/// moderation capabilities through hierarchical parent-child relationships
+/// for threaded discussion support.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment author's {@link shopping_mall_customers.id}
+  shopping_customer_id String
+  
+  /// Article's {@link shopping_mall_articles.id} when applicable
+  shopping_mall_article_id String?
+  
+  /// BBS post's {@link shopping_mall_bbs_posts.id} when applicable
+  shopping_mall_bbs_post_id String?
+  
+  /// Parent comment's {@link shopping_mall_comments.id} for threading
+  parent_id String?
+  
+  /// Comment content text
+  content String
+  
+  /// Comment moderation status: pending, published, rejected
+  status String
+  
+  /// Number of likes for this comment
+  like_count Int
+  
+  /// Whether the comment is posted anonymously
+  is_anonymous Boolean
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Last modification timestamp
+  updated_at DateTime
+  
+  /// Soft deletion timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  article shopping_mall_articles? @relation(fields: [shopping_mall_article_id], references: [id], onDelete: Cascade)
+  bbsPost shopping_mall_bbs_posts? @relation(fields: [shopping_mall_bbs_post_id], references: [id], onDelete: Cascade)
+  parent shopping_mall_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_comments[] @relation("recursive")
+  
+  @@index([shopping_customer_id])
+  @@index([shopping_mall_article_id])
+  @@index([shopping_mall_bbs_post_id])
+  @@index([parent_id])
+  @@index([status])
+}

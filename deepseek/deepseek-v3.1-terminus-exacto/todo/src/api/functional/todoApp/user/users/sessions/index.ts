@@ -7,32 +7,34 @@ import { ITodoAppUserSession } from "../../../../../structures/ITodoAppUserSessi
 import { IPageITodoAppUserSession } from "../../../../../structures/IPageITodoAppUserSession";
 
 /**
- * Search and retrieve a filtered, paginated list of user sessions.
+ * Search and retrieve a filtered, paginated list of user sessions for a
+ * specific user.
  *
- * Retrieve a filtered and paginated list of user sessions from the system. This
- * operation provides advanced search capabilities for finding sessions based on
- * multiple criteria including IP address patterns, creation date ranges,
- * expiration status, and referrer information.
+ * Retrieve a filtered and paginated list of user sessions associated with a
+ * specific user account. This operation provides advanced search capabilities
+ * for finding sessions based on multiple criteria including session status
+ * (active vs expired), creation date ranges, IP address patterns, and
+ * connection context information.
  *
  * The operation supports comprehensive pagination with configurable page sizes
- * and sorting options. Users can sort by creation date, expiration date, or
- * other relevant fields in ascending or descending order. The search
- * functionality allows filtering for active sessions, expired sessions, or
- * sessions within specific date ranges.
+ * and sorting options. Sessions can be sorted by creation date, expiration
+ * date, or other relevant fields in ascending or descending order. Filtering
+ * options include searching for active sessions only, expired sessions only, or
+ * all sessions regardless of status.
  *
  * Security considerations include ensuring that users can only access their own
- * session data. The system validates that the authenticated user matches the
- * userId parameter before returning any session information. Session data may
- * contain sensitive information such as IP addresses and referrer URLs.
+ * session data. The operation validates that the requesting user has permission
+ * to view the sessions for the specified user ID. Rate limiting applies to
+ * prevent excessive session listing requests.
  *
  * This operation integrates with the todo_app_user_sessions table as defined in
- * the Prisma schema, which tracks user authentication sessions with detailed
- * connection information. The response includes session summary information
- * optimized for administrative review.
+ * the Prisma schema, incorporating all available session fields including IP
+ * address, connection URL, referrer information, and timestamps. The response
+ * includes session summary information optimized for administrative and
+ * user-facing displays.
  *
  * @param props.connection
- * @param props.userId Unique identifier of the target user whose sessions to
- *   retrieve
+ * @param props.userId Unique identifier of the target user
  * @param props.body Search criteria and pagination parameters for session
  *   filtering
  * @path /todoApp/user/users/:userId/sessions
@@ -63,7 +65,7 @@ export async function index(
 }
 export namespace index {
   export type Props = {
-    /** Unique identifier of the target user whose sessions to retrieve */
+    /** Unique identifier of the target user */
     userId: string & tags.Format<"uuid">;
 
     /** Search criteria and pagination parameters for session filtering */
@@ -116,28 +118,32 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific user session by ID.
+ * Retrieve detailed information about a specific user session.
  *
- * This operation retrieves detailed information about a specific user session
- * identified by the session ID. The session must belong to the authenticated
- * user specified in the path parameter.
+ * Retrieve comprehensive details about a specific user session identified by
+ * its unique session ID. This operation provides complete session information
+ * including connection context (IP address, URL, referrer), creation timestamp,
+ * expiration status, and the associated user information.
  *
- * User sessions represent active login instances and contain metadata such as
- * IP address, connection URL, referrer information, and timestamps. This
- * operation is primarily used for session management and audit purposes.
+ * The operation validates that the session belongs to the specified user and
+ * that the requesting user has appropriate permissions to view the session
+ * details. Session data includes security-relevant information that may be used
+ * for audit purposes or user activity monitoring.
  *
- * Security considerations include verifying that the requesting user has
- * permission to access the specified session. The system validates that the
- * session belongs to the authenticated user before returning session details.
+ * Security considerations include ensuring that users can only access their own
+ * session data. The operation performs ownership verification to prevent
+ * unauthorized access to session information. Session details may be used for
+ * security auditing, troubleshooting connection issues, or monitoring user
+ * activity patterns.
  *
  * This operation integrates with the todo_app_user_sessions table as defined in
- * the Prisma schema, returning complete session information including creation
- * time, expiration status, and connection details.
+ * the Prisma schema, returning all available session fields. The response
+ * includes the complete session object with relationship information to the
+ * associated user account.
  *
  * @param props.connection
- * @param props.userId Unique identifier of the target user (global scope)
- * @param props.sessionId Unique identifier of the target session within the
- *   user (scoped to user)
+ * @param props.userId Unique identifier of the target user
+ * @param props.sessionId Unique identifier of the target session
  * @path /todoApp/user/users/:userId/sessions/:sessionId
  * @accessor api.functional.todoApp.user.users.sessions.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -165,13 +171,10 @@ export async function at(
 }
 export namespace at {
   export type Props = {
-    /** Unique identifier of the target user (global scope) */
+    /** Unique identifier of the target user */
     userId: string & tags.Format<"uuid">;
 
-    /**
-     * Unique identifier of the target session within the user (scoped to
-     * user)
-     */
+    /** Unique identifier of the target session */
     sessionId: string & tags.Format<"uuid">;
   };
   export type Response = ITodoAppUserSession;
@@ -217,30 +220,35 @@ export namespace at {
 }
 
 /**
- * Terminate a specific user session by ID.
+ * Permanently delete a specific user session.
  *
- * This operation terminates a user session by marking it as expired. The
- * operation performs a soft delete by setting the expired_at timestamp in the
- * todo_app_user_sessions table, allowing for session audit trails while
- * effectively ending the session.
+ * This operation permanently removes a user session record from the database.
+ * The session is identified by both the user ID and session ID to ensure proper
+ * scoping and authorization.
  *
- * Session termination is useful for security purposes, such as when a user
- * wants to log out from a specific device or when suspicious activity is
- * detected. The system validates that the session belongs to the authenticated
- * user before allowing termination.
+ * User sessions are created automatically during authentication and track user
+ * login activity across different devices. This delete operation allows
+ * administrators to forcibly terminate sessions for security reasons, such as
+ * when a device is lost or compromised, or when suspicious activity is
+ * detected.
  *
- * Security considerations include preventing users from terminating sessions
- * that do not belong to them. The operation ensures proper authorization checks
- * are performed before modifying session records.
+ * The operation requires both the user ID and session ID to ensure that only
+ * authorized administrators can delete sessions. This prevents accidental or
+ * malicious deletion of sessions belonging to other users. The deletion is
+ * permanent and cannot be undone, so it should be used with caution.
+ *
+ * Security considerations include proper authorization checks to ensure only
+ * administrators can perform this operation. The system should log all session
+ * deletion events for audit purposes. Rate limiting may be applied to prevent
+ * abuse of this endpoint.
  *
  * This operation integrates with the todo_app_user_sessions table as defined in
- * the Prisma schema, updating the expired_at field to effectively terminate the
- * session while preserving audit information.
+ * the Prisma schema, permanently removing the session record and all associated
+ * data.
  *
  * @param props.connection
- * @param props.userId Unique identifier of the target user (global scope)
- * @param props.sessionId Unique identifier of the target session within the
- *   user (scoped to user)
+ * @param props.userId Unique identifier of the user who owns the target session
+ * @param props.sessionId Unique identifier of the target session to be deleted
  * @path /todoApp/user/users/:userId/sessions/:sessionId
  * @accessor api.functional.todoApp.user.users.sessions.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -248,7 +256,7 @@ export namespace at {
 export async function erase(
   connection: IConnection,
   props: erase.Props,
-): Promise<erase.Response> {
+): Promise<void> {
   return true === connection.simulate
     ? erase.simulate(connection, props)
     : await PlainFetcher.fetch(
@@ -268,16 +276,12 @@ export async function erase(
 }
 export namespace erase {
   export type Props = {
-    /** Unique identifier of the target user (global scope) */
+    /** Unique identifier of the user who owns the target session */
     userId: string & tags.Format<"uuid">;
 
-    /**
-     * Unique identifier of the target session within the user (scoped to
-     * user)
-     */
+    /** Unique identifier of the target session to be deleted */
     sessionId: string & tags.Format<"uuid">;
   };
-  export type Response = ITodoAppUserSession;
 
   export const METADATA = {
     method: "DELETE",
@@ -291,12 +295,11 @@ export namespace erase {
 
   export const path = (props: Props) =>
     `/todoApp/user/users/${encodeURIComponent(props.userId ?? "null")}/sessions/${encodeURIComponent(props.sessionId ?? "null")}`;
-  export const random = (): ITodoAppUserSession =>
-    typia.random<ITodoAppUserSession>();
+  export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
     props: erase.Props,
-  ): Response => {
+  ): void => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,

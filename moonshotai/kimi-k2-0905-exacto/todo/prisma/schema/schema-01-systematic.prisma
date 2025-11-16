@@ -1,50 +1,57 @@
-/// System-wide configuration settings that store application-wide settings
-/// and preferences. This table provides a flexible key-value store for
-/// various configuration parameters that can be adjusted without requiring
-/// code changes or deployments.
+/// System-wide application configuration settings.
+///
+/// Stores key-value pairs for application-wide settings that control system
+/// behavior, features, and operational parameters. These configurations
+/// affect all users and are typically managed by system administrators
+/// rather than individual users.
+///
+/// Configurations include settings like maximum task limits, session
+/// timeouts, feature flags, and other system-level parameters that maintain
+/// consistent application behavior across all user interactions. Each
+/// configuration entry maintains a unique key with flexible value storage
+/// for different data types.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_configurations {
+model todo_app_configurations {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key
   id String @id
   
-  /// Unique configuration key identifier used to reference the setting in
-  /// application code.
+  /// Unique configuration key identifier used for lookups and type safety
+  /// validation
   key String
   
-  /// Configuration value stored as string. Can contain JSON data for complex
-  /// configuration objects.
+  /// Configuration value stored as string with flexible parsing for different
+  /// data types
   value String
   
-  /// Human-readable description of what this configuration setting controls.
+  /// Human-readable description explaining the configuration's purpose and
+  /// usage
   description String?
   
-  /// Configuration type indicating if this is a string, number, boolean, or
-  /// JSON configuration value.
-  type String
+  /// Configuration category grouping for organization and administrative
+  /// management
+  category String?
   
-  /// Whether this is a system-level configuration that cannot be modified by
-  /// users. Defaults to true for critical settings.
-  is_system Boolean
+  /// Whether this configuration is currently active and enforced by the system
+  is_enabled Boolean
   
-  /// Timestamp when the configuration was initially created.
+  /// Timestamp when the configuration was initially created
   created_at DateTime
   
-  /// Timestamp when the configuration was last modified.
+  /// Timestamp when the configuration was last modified
   updated_at DateTime
   
-  /// Timestamp when the configuration was soft deleted. Null if the
-  /// configuration is active.
+  /// Soft deletion timestamp for configuration history
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([key])
-  @@index([type])
+  @@index([category, is_enabled])
   @@index([created_at])
 }

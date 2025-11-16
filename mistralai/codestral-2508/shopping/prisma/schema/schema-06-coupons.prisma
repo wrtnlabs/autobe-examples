@@ -1,0 +1,95 @@
+/// Coupon information for sales promotions. Coupons are issued by sellers
+/// and can be used by customers to receive discounts on purchases. Each
+/// coupon has a unique code, discount amount, and expiration date. Coupons
+/// can be applied to specific products or the entire order. The coupon's
+/// status indicates whether it is active, expired, or used up.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller who issued the coupon. {@link shopping_mall_sellers.id}
+  shopping_seller_id String
+  
+  /// Unique code for the coupon.
+  code String
+  
+  /// Discount amount provided by the coupon.
+  discount_amount Float
+  
+  /// Expiration date of the coupon.
+  expiration_date DateTime
+  
+  /// Status of the coupon (active, expired, used_up).
+  status String
+  
+  /// Creation timestamp of the coupon.
+  created_at DateTime
+  
+  /// Last update timestamp of the coupon.
+  updated_at DateTime
+  
+  /// Deletion timestamp of the coupon.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
+  
+  @@unique([code])
+  @@index([shopping_seller_id])
+  @@index([status])
+  @@index([expiration_date])
+}
+
+/// Coupon usage information for tracking coupon usage by customers. Each
+/// coupon usage record includes the customer who used the coupon, the order
+/// in which it was used, and the discount amount applied. The usage record
+/// also includes timestamps for creation and deletion.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupon_usages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Coupon used by the customer. {@link shopping_mall_coupons.id}
+  shopping_mall_coupon_id String
+  
+  /// Customer who used the coupon. {@link shopping_mall_customers.id}
+  shopping_customer_id String
+  
+  /// Order in which the coupon was used. {@link shopping_mall_orders.id}
+  shopping_order_id String
+  
+  /// Discount amount applied by the coupon.
+  discount_amount Float
+  
+  /// Creation timestamp of the coupon usage record.
+  created_at DateTime
+  
+  /// Deletion timestamp of the coupon usage record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  coupon shopping_mall_coupons @relation(fields: [shopping_mall_coupon_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_coupon_id])
+  @@index([shopping_customer_id])
+  @@index([shopping_order_id])
+}

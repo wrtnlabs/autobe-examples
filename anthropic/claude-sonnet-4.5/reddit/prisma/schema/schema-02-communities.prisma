@@ -1,0 +1,292 @@
+/// Core community entity representing topic-based spaces where users share
+/// content and engage in discussions.
+///
+/// Communities serve as the foundational organizing principle of the
+/// platform, enabling decentralized content organization around specific
+/// topics, interests, or themes. Each community is created and managed by
+/// moderators who establish rules, enforce standards, and maintain community
+/// culture.
+///
+/// Communities have unique names (used in URLs and references), customizable
+/// descriptions, and optional rules that members must follow. Any
+/// authenticated member can create a community and automatically becomes its
+/// founding moderator with full administrative privileges.
+///
+/// Subscription mechanics allow members to follow communities, causing posts
+/// from subscribed communities to appear in personalized homepage feeds.
+/// Subscriber counts provide social proof and help users discover active
+/// communities.
+///
+/// Communities support soft deletion to preserve historical data and
+/// discussion context even when communities are removed. Deleted communities
+/// remain in the database but are excluded from public discovery and access.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Founding member who created this community and serves as the original
+  /// moderator. {@link reddit_community_members.id}.
+  creator_member_id String
+  
+  /// Unique community name used in URLs and references. Must be 3-21
+  /// characters, lowercase alphanumeric and underscores only. Immutable after
+  /// creation to preserve URL stability and prevent confusion.
+  name String
+  
+  /// Human-readable community title displayed in UI. Maximum 100 characters,
+  /// supports Unicode for international communities. Editable by moderators to
+  /// refine community presentation.
+  display_title String
+  
+  /// Community description explaining purpose, topic, and culture. Maximum 500
+  /// characters. Displayed on community pages to help users understand what
+  /// the community is about. Editable by moderators.
+  description String
+  
+  /// Optional URL to community icon/avatar image. Displayed alongside
+  /// community name throughout the platform. Editable by moderators for visual
+  /// customization.
+  icon_url String?
+  
+  /// Optional URL to community banner image displayed on community page
+  /// header. Provides visual identity and customization. Editable by
+  /// moderators.
+  banner_url String?
+  
+  /// Total number of members subscribed to this community. Automatically
+  /// updated when users subscribe or unsubscribe. Used for popularity ranking
+  /// and social proof.
+  subscriber_count Int
+  
+  /// Total number of posts created in this community. Incremented on post
+  /// creation, decremented on post deletion. Provides activity metrics for
+  /// community discovery.
+  post_count Int
+  
+  /// Timestamp when this community was created. Immutable. Used for
+  /// calculating community age and displaying tenure information.
+  created_at DateTime
+  
+  /// Timestamp when community configuration was last modified (description,
+  /// rules, images). Updated automatically on any edit operation.
+  updated_at DateTime
+  
+  /// Timestamp when community was deleted (soft delete). Null for active
+  /// communities. Deleted communities are excluded from discovery but
+  /// preserved for historical data and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  creatorMember reddit_community_members @relation(fields: [creator_member_id], references: [id], onDelete: Cascade)
+  
+  reddit_community_community_subscriptions reddit_community_community_subscriptions[]
+  reddit_community_community_moderators reddit_community_community_moderators[]
+  reddit_community_community_rules reddit_community_community_rules[]
+  reddit_community_posts reddit_community_posts[]
+  reddit_community_reports reddit_community_reports[]
+  reddit_community_moderation_actions reddit_community_moderation_actions[]
+  reddit_community_community_bans reddit_community_community_bans[]
+  
+  @@unique([name])
+  @@index([creator_member_id, created_at])
+  @@index([subscriber_count])
+  @@index([created_at])
+}
+
+/// Many-to-many relationship tracking which members are subscribed to which
+/// communities.
+///
+/// Subscriptions enable personalized content feeds by determining which
+/// communities' posts appear on a member's homepage. When a member
+/// subscribes to a community, posts from that community are included in
+/// their personalized feed aggregation.
+///
+/// Each subscription record represents a single member's interest in a
+/// single community. Members can subscribe to unlimited communities, and
+/// communities can have unlimited subscribers.
+///
+/// Subscriptions are created when members click subscribe buttons on
+/// community pages and removed when they unsubscribe. The subscription
+/// timestamp tracks when the member joined the community for tenure display
+/// and analytics.
+///
+/// This table supports community discovery recommendations by analyzing
+/// subscription patterns (users who subscribe to community A often subscribe
+/// to community B).
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who subscribed to the community. {@link
+  /// reddit_community_members.id}.
+  member_id String
+  
+  /// Community that the member subscribed to. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Timestamp when the member subscribed to this community. Used for
+  /// calculating subscription tenure and displaying join date on member
+  /// profiles.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([member_id, community_id], map: "reddit_community_community_subscriptions_member_id_com_15224692")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "reddit_community_community_subscriptions_community_id__f4028def")
+}
+
+/// Many-to-many relationship tracking which moderators have moderation
+/// authority in which communities.
+///
+/// Moderators are members granted authority to manage specific communities,
+/// including content removal, user banning, rule enforcement, and appointing
+/// additional moderators. Moderation authority is scoped to specific
+/// communities rather than platform-wide.
+///
+/// The founding community creator is automatically assigned as the first
+/// moderator with permanent status. Additional moderators can be appointed
+/// by existing moderators to help manage community growth and enforce
+/// standards.
+///
+/// Each record represents a single moderator's authority over a single
+/// community. Moderators can manage multiple communities, and communities
+/// can have multiple moderators to distribute moderation workload.
+///
+/// The appointment timestamp tracks when moderation privileges were granted.
+/// The is_creator flag distinguishes the founding moderator who has special
+/// privileges like appointing/removing other moderators and cannot be
+/// removed.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who has moderation authority in this community. {@link
+  /// reddit_community_members.id}.
+  member_id String
+  
+  /// Community where this member has moderation privileges. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Member who appointed this moderator. Null for community creators who are
+  /// auto-appointed. {@link reddit_community_members.id}.
+  appointed_by_member_id String?
+  
+  /// Whether this moderator is the founding community creator. Creators have
+  /// permanent status and cannot be removed by other moderators. Only one
+  /// creator per community.
+  is_creator Boolean
+  
+  /// Timestamp when moderation privileges were granted. For creators, this
+  /// matches community creation time. For appointed moderators, this is the
+  /// appointment timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_community_members @relation("reddit_community_community_moderators_of_member_id", fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  appointedByMember reddit_community_members? @relation("reddit_community_community_moderators_of_appointed_by_member_id", fields: [appointed_by_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([appointed_by_member_id], map: "reddit_community_community_moderators_appointed_by_mem_5b0fe8ed")
+  
+  // spellchecker: ignore-next-line
+  @@unique([member_id, community_id], map: "reddit_community_community_moderators_member_id_commun_e310efdf")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "reddit_community_community_moderators_community_id_cre_970b8b93")
+}
+
+/// Community-specific rules that define acceptable behavior and content
+/// standards.
+///
+/// Rules establish the norms and guidelines that members must follow when
+/// posting and commenting within a community. Each community can define
+/// custom rules tailored to their topic, culture, and moderation philosophy.
+///
+/// Rules are displayed on community pages and during post/comment creation
+/// to help members understand expectations. When members report content,
+/// community rules appear as report reason options to enable precise
+/// violation classification.
+///
+/// Each rule has a short title for quick reference and an optional detailed
+/// description explaining the rule's intent and enforcement. Rules are
+/// numbered sequentially for easy citation in moderation actions.
+///
+/// Moderators can create, edit, reorder, and delete rules to adapt community
+/// standards as the community evolves. Rule changes are logged with
+/// timestamps to track policy evolution.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that this rule applies to. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Sequential rule number within the community (1, 2, 3, etc.). Used for
+  /// ordering rules and citation in moderation actions. Moderators can reorder
+  /// rules by changing these numbers.
+  rule_number Int
+  
+  /// Short rule title summarizing the rule. Maximum 100 characters. Displayed
+  /// in rule lists and report forms. Examples: 'No spam', 'Be respectful',
+  /// 'Stay on topic'.
+  title String
+  
+  /// Detailed explanation of the rule, enforcement guidelines, and examples.
+  /// Maximum 500 characters per rule. Supports basic markdown formatting.
+  /// Helps members understand rule intent and moderators apply rules
+  /// consistently.
+  description String?
+  
+  /// Timestamp when this rule was created. Immutable. Used for tracking rule
+  /// history and policy evolution.
+  created_at DateTime
+  
+  /// Timestamp when rule text was last modified. Updated automatically on edit
+  /// operations. Helps moderators track recent policy changes.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id, rule_number])
+  @@index([community_id, created_at])
+}

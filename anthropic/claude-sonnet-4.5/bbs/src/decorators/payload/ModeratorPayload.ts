@@ -2,7 +2,7 @@ import { tags } from "typia";
 
 export interface ModeratorPayload {
   /**
-   * Top-level moderator table ID (the fundamental moderator identifier in the
+   * Top-level moderator ID (the fundamental moderator identifier in the
    * system).
    */
   id: string & tags.Format<"uuid">;

@@ -15,17 +15,34 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const member = await MyGlobal.prisma.discussion_board_members.findFirst({
+  const session = await MyGlobal.prisma.discussion_board_member_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
-      status: "active",
-      email_verified: true,
+      id: payload.session_id,
+      discussion_board_member_id: payload.id,
+      expired_at: null,
+    },
+    select: {
+      id: true,
+      member: {
+        select: {
+          id: true,
+          status: true,
+          email_verified: true,
+        },
+      },
     },
   });
 
-  if (member === null) {
+  if (session === null) {
     throw new ForbiddenException("You're not enrolled");
+  }
+
+  if (session.member.status !== "active") {
+    throw new ForbiddenException("Your account is not active");
+  }
+
+  if (session.member.email_verified !== true) {
+    throw new ForbiddenException("Your email is not verified");
   }
 
   return payload;

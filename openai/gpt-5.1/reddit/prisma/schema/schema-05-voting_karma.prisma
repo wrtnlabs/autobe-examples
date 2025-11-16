@@ -1,0 +1,321 @@
+/// Individual votes that member users cast on posts.
+///
+/// This model records explicit upvotes and downvotes for posts in
+/// communities. Each row represents one member user’s current vote on a
+/// specific post, enforcing at most one active vote per (user, post) pair.
+/// It is used to derive post scores, drive sorting modes like top and hot,
+/// and feed karma calculations for post authors.
+///
+/// Votes are only created for authenticated member users, and only for posts
+/// that are visible and votable according to community and platform
+/// policies. When posts are removed or locked, new votes are blocked at the
+/// application layer, while existing rows remain for consistency and
+/// auditing via other subsystems.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the post vote record.
+  id String @id
+  
+  /// Member user who cast this vote. {@link community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Target post that received this vote. {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Numeric representation of the vote. Business rules constrain this to -1
+  /// for downvote and +1 for upvote; absence of a row means no vote.
+  vote_value Int
+  
+  /// Timestamp when this vote was first created.
+  created_at DateTime
+  
+  /// Timestamp when this vote record was last updated, for example when
+  /// changing from upvote to downvote.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_memberuser_id, community_platform_post_id], map: "community_platform_post_votes_community_platform_membe_465ba7c0")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_votes_community_platform_post__80871491")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_memberuser_id, created_at], map: "community_platform_post_votes_community_platform_membe_2db07d28")
+}
+
+/// Individual votes that member users cast on comments and replies.
+///
+/// This model stores explicit upvotes and downvotes for comments in
+/// discussion threads. Each row corresponds to one member user’s current
+/// vote on a specific comment, with a unique constraint ensuring at most one
+/// active vote per (user, comment) pair. Comment scores derived from these
+/// rows are used for display (for example collapsing low-score comments) and
+/// for karma updates on comment authors.
+///
+/// Votes are created only for authenticated member users on comments they
+/// are allowed to see and interact with, taking into account locks,
+/// removals, and community bans enforced in other components.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the comment vote record.
+  id String @id
+  
+  /// Member user who cast this vote. {@link community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Target comment that received this vote. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Numeric representation of the vote. Business rules constrain this to -1
+  /// for downvote and +1 for upvote; absence of a row means no vote.
+  vote_value Int
+  
+  /// Timestamp when this vote was first created.
+  created_at DateTime
+  
+  /// Timestamp when this vote record was last updated, such as when changing
+  /// vote direction.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_memberuser_id, community_platform_comment_id], map: "community_platform_comment_votes_community_platform_me_82d34bc4")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_votes_community_platform_co_68a9b5f7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_memberuser_id, created_at], map: "community_platform_comment_votes_community_platform_me_5fb3b3d6")
+}
+
+/// Aggregated post-related karma per member user.
+///
+/// This model maintains the cumulative karma that each member user has
+/// earned from votes on their posts. It separates post karma from other
+/// kinds of karma so that business rules can treat post performance
+/// differently from comment performance.
+///
+/// The table has exactly one row per member user, enforced by a unique
+/// constraint on the foreign key. It is updated whenever votes on that
+/// user’s posts change and may also be recalculated in batch jobs, tracked
+/// via timestamps.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_post_karmas {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the post karma aggregate record.
+  id String @id
+  
+  /// Member user whose post karma is summarized in this record. {@link
+  /// community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Total karma contribution from all votes on this user’s posts. Positive
+  /// values indicate net community approval; negative values indicate net
+  /// disapproval.
+  post_karma Int
+  
+  /// Timestamp when this karma aggregate row was created.
+  created_at DateTime
+  
+  /// Timestamp when this karma aggregate row was last updated, either
+  /// incrementally or via a recalculation.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_memberuser_id], map: "community_platform_user_post_karmas_community_platform_29451509")
+  @@index([post_karma, updated_at])
+}
+
+/// Aggregated comment-related karma per member user.
+///
+/// This model records the cumulative karma that each member user has earned
+/// from votes on their comments and replies. It allows the platform to
+/// distinguish reputation based on discussion quality separately from
+/// reputation based on post creation.
+///
+/// The table enforces exactly one row per member user with a unique
+/// constraint on the member FK. Values are updated when comment votes on the
+/// user’s content change, and may be periodically reconciled to ensure
+/// consistency with underlying vote data.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_comment_karmas {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the comment karma aggregate record.
+  id String @id
+  
+  /// Member user whose comment karma is summarized in this record. {@link
+  /// community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Total karma contribution from all votes on this user’s comments and
+  /// replies. Positive values indicate net approval of their discussion
+  /// contributions.
+  comment_karma Int
+  
+  /// Timestamp when this karma aggregate row was created.
+  created_at DateTime
+  
+  /// Timestamp when this karma aggregate row was last updated, either
+  /// incrementally or via a recalculation.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_memberuser_id], map: "community_platform_user_comment_karmas_community_platf_3da06d01")
+  // spellchecker: ignore-next-line
+  @@index([comment_karma, updated_at], map: "community_platform_user_comment_karmas_comment_karma_u_edf984d8")
+}
+
+/// Total karma aggregates per member user, combining posts and comments.
+///
+/// This model captures the overall reputation score for each member user by
+/// storing a single total_karma value that conceptually combines both post
+/// and comment karma. It is used for business rules that depend on overall
+/// reputation, such as eligibility for community creation or access to
+/// restricted communities.
+///
+/// The design keeps this table in 3NF by storing only the combined total and
+/// relying on separate post and comment karma tables for more granular
+/// breakdowns. Each member user has at most one row, enforced by a unique
+/// index on the foreign key.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_total_karmas {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the total karma aggregate record.
+  id String @id
+  
+  /// Member user whose total karma is summarized in this record. {@link
+  /// community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Total karma for this user across all content types, derived from combined
+  /// effects of post and comment votes.
+  total_karma Int
+  
+  /// Timestamp when this total karma aggregate row was created.
+  created_at DateTime
+  
+  /// Timestamp when this total karma aggregate row was last updated, either
+  /// incrementally or via full recalculation.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_memberuser_id], map: "community_platform_user_total_karmas_community_platfor_5d7bd584")
+  @@index([total_karma, updated_at])
+}
+
+/// Per-user voting rate limit windows and counters.
+///
+/// This model tracks how many votes a member user has cast within a given
+/// time window and scope, supporting enforcement of rate limiting and
+/// anti-abuse policies. Scopes can be global or tied to a specific
+/// community, allowing the platform to apply different limits per context.
+///
+/// Each row represents one rate-limiting window for a user and scope
+/// combination, including separate counters for post and comment votes.
+/// Application logic maintains and evaluates these rows when deciding
+/// whether to accept new votes.
+///
+/// @namespace VotingKarma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_voting_rate_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the voting rate limit record.
+  id String @id
+  
+  /// Member user whose voting activity is being rate limited in this record.
+  /// {@link community_platform_memberusers.id}.
+  community_platform_memberuser_id String
+  
+  /// Optional community scope for this rate limit. Null indicates a global
+  /// scope across all communities. {@link community_platform_communities.id}.
+  community_platform_community_id String?
+  
+  /// Type of scope for this rate limit window. Typical values include "global"
+  /// for platform-wide limits and "community" for per-community limits.
+  /// Business rules validate allowed values.
+  scope_type String
+  
+  /// Start timestamp of the rate limit evaluation window for this record.
+  window_start DateTime
+  
+  /// End timestamp of the rate limit evaluation window for this record.
+  window_end DateTime
+  
+  /// Number of post vote actions performed by this user within this window and
+  /// scope.
+  post_votes_count Int
+  
+  /// Number of comment vote actions performed by this user within this window
+  /// and scope.
+  comment_votes_count Int
+  
+  /// Timestamp when this rate limit record was created.
+  created_at DateTime
+  
+  /// Timestamp when this rate limit record was last updated as voting activity
+  /// changed.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberUser community_platform_memberusers @relation(fields: [community_platform_memberuser_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id], map: "community_platform_voting_rate_limits_community_platfo_5b4177bf")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_memberuser_id, scope_type, community_platform_community_id, window_start], map: "community_platform_voting_rate_limits_community_platfo_cbdde6e7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_memberuser_id, window_start], map: "community_platform_voting_rate_limits_community_platfo_26584f11")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_memberuser_id, window_end], map: "community_platform_voting_rate_limits_community_platfo_1ca9c72f")
+}

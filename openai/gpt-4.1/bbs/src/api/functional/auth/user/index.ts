@@ -6,48 +6,42 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardUser } from "../../../structures/IDiscussionBoardUser";
 
 /**
- * Register a new user account (discussion_board_users) as a member actor with
- * session start.
+ * Register a new user (member) and issue authentication tokens
+ * (discussion_board_users table).
  *
- * Registers a new user account in the discussion_board_users table by storing
- * email, password_hash (hashed by the service), display_name, and optional
- * avatar_url, leveraging schema constraints for uniqueness, length, and
- * optionality. Does not set is_locked or deleted_at, ensuring the account is
- * active upon creation. Soft deletion and locks are deferred to update/delete
- * operations, not present on registration.
+ * This endpoint enables new users to register as members on the discussion
+ * board. It requires credentials as defined by the 'discussion_board_users'
+ * Prisma schema, supporting initial email and password setup and enforcing
+ * uniqueness constraints. The newly registered user will be granted member
+ * permissions, allowing them full participation in economic and political
+ * discussions.
  *
- * Implements full business rules for user credentials: unique email, non-empty
- * display_name, secure password captured as password_hash (never plain text),
- * and avatar_url accepted as optional per schema definition. Account locking
- * and soft deletion fields are exposed for future permission or moderation
- * flows only, not triggered here.
+ * Implementation is tightly bound to the fields in the 'discussion_board_users'
+ * table. Email and password validation, hashing, and user status initialization
+ * are handled as per business logic, ensuring secure and robust user
+ * onboarding. Any registration errors, such as duplicate emails, are surfaced
+ * cleanly in the API response.
  *
- * On success, immediately issues a new session in
- * discussion_board_user_sessions, capturing session audit attributes: ip, href,
- * referrer, and timestamps for security review. This aligns to the schema's
- * session relationship for usage reporting, recovery, and compliance.
+ * This operation is strictly for onboarding new users; profile completion and
+ * preference updates are out of scope. Successful onboarding results in
+ * immediate issuance of an access token and refresh token for API
+ * authentication, with token details returned according to
+ * IDiscussionBoardUser.IAuthorized.
  *
- * API strongly references the schema's author, display_name, password_hash,
- * is_locked, and avatar_url columns, and enforces validation strictly per
- * backend logic specified for those columns. No extraneous fields are
- * considered. Avatar_url's presence is optional, matching the schema's handling
- * of nullable values and enforced size/type.
+ * The operation is central to all follow-on authentication—a user must join
+ * before login or token refresh are available. It is referenced by subsequent
+ * authentication endpoints such as login and refresh, with error handling
+ * supporting both user experience and system security.
  *
- * Security is implemented using JWT token response structures, compliant with
- * core DiscussionBoard requirements and the business logic described in actor
- * flows. This endpoint sets up the foundational credential for all
- * authenticated workflows for regular members.
- *
- * Relates to login (next step in JWT issuance) and refresh (for session
- * continuation), all using the same authorization actor. This endpoint never
- * returns raw password_hash, but only returns tokens and session meta per
- * IDiscussionBoardUser.IAuthorized structure.
+ * Related operations include user login and token refresh for members.
+ * Documentation and interface conventions follow standard patterns for
+ * authentication onboarding within this domain.
  *
  * @param props.connection
- * @param props.body User registration details for creation of a new
- *   discussion_board_users record, including required email (unique), password,
- *   display_name, and optional avatar_url. All fields must conform to schema
- *   validation rules.
+ * @param props.body New user registration payload for creating a discussion
+ *   board member account. The structure is defined as
+ *   IDiscussionBoardUser.ICreate in the components.schemas section, mirroring
+ *   fields in the 'discussion_board_users' schema (e.g., email, password).
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -83,10 +77,10 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * User registration details for creation of a new
-     * discussion_board_users record, including required email (unique),
-     * password, display_name, and optional avatar_url. All fields must
-     * conform to schema validation rules.
+     * New user registration payload for creating a discussion board member
+     * account. The structure is defined as IDiscussionBoardUser.ICreate in
+     * the components.schemas section, mirroring fields in the
+     * 'discussion_board_users' schema (e.g., email, password).
      */
     body: IDiscussionBoardUser.ICreate;
   };
@@ -135,37 +129,39 @@ export namespace join {
 }
 
 /**
- * User login for discussion_board_users to create a JWT session as a member
- * actor.
+ * Authenticate user login and issue access/refresh tokens
+ * (discussion_board_users table).
  *
- * Authenticates a member (user) for the discussion board by verifying submitted
- * credentials against the email and password_hash stored in the
- * discussion_board_users table. Only accounts with is_locked=false and
- * deleted_at=null may log in, hard enforcing schema's lock and soft-delete
- * logic for security. On successful authentication, creates a new session in
- * discussion_board_user_sessions for the audit trail and returns JWT tokens and
- * authorized context as defined in IDiscussionBoardUser.IAuthorized structure.
- * Login flows comply with the schema's unique email, hashed password, and
- * soft/hard lockout controls. Does not allow login if is_locked is true or
- * deleted_at is not null, enabling business rules for banned/suspended or
- * deleted actors. Auditing uses related session columns (ip, href, referrer)
- * and timestamping. No sensitive columns like raw password_hash are exposed via
- * API response.
+ * This endpoint authenticates a user (member) on the discussion board platform.
+ * As defined by the 'discussion_board_users' Prisma schema, it receives login
+ * credentials (commonly an email and password). The operation checks credential
+ * validity, ensures the account is active, and verifies password hashes
+ * securely.
  *
- * The API references schema constraints for both login credentials and session
- * log. Integration with join (registration) and refresh (session continuation)
- * is explicit. Unsuccessful logins always hide details of authentication state,
- * leaking no business logic other than account not found or credential invalid.
- * All error responses follow the business-driven validation failures per
- * requirements.
+ * On success, the system issues a new JWT access and refresh token pair, both
+ * encapsulated in IDiscussionBoardUser.IAuthorized. Authentication status is
+ * updated in any relevant session-tracking structures, referencing related user
+ * and session tables as per business rules.
  *
- * Related to join (initial registration) and refresh (session/token renewal).
- * This endpoint is the canonical login entry point for members (users).
+ * Security is enforced through multilayered checks: incorrect credentials
+ * result in non-specific error responses to avoid information leaks, and
+ * repeated failed attempts may trigger account lockout logic if defined. All
+ * aspects of credential integrity and session management are handled at this
+ * layer, including refresh token rotation where appropriate.
+ *
+ * This operation is central to the authentication workflow for members,
+ * referenced by any business logic that requires user identity confirmation. It
+ * is a prerequisite for all actions that require an authenticated user
+ * context.
+ *
+ * Related operations include registration (join) and token refresh, each
+ * following strict security and validation guidelines to ensure robust member
+ * authentication.
  *
  * @param props.connection
- * @param props.body Credentials (email and password) for authenticating an
- *   existing member user. Parsed to validate against schema's email and
- *   password_hash columns.
+ * @param props.body User login payload consisting of credentials (refer to
+ *   IDiscussionBoardUser.ILoginRequest in components.schemas), typically
+ *   mapping to email and password fields in 'discussion_board_users'.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -201,13 +197,13 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Credentials (email and password) for authenticating an existing
-     * member user. Parsed to validate against schema's email and
-     * password_hash columns.
+     * User login payload consisting of credentials (refer to
+     * IDiscussionBoardUser.ILoginRequest in components.schemas), typically
+     * mapping to email and password fields in 'discussion_board_users'.
      */
-    body: IDiscussionBoardUser.ILogin;
+    body: IDiscussionBoardUser.ILoginRequest;
   };
-  export type Body = IDiscussionBoardUser.ILogin;
+  export type Body = IDiscussionBoardUser.ILoginRequest;
   export type Response = IDiscussionBoardUser.IAuthorized;
 
   export const METADATA = {
@@ -252,33 +248,36 @@ export namespace login {
 }
 
 /**
- * Refresh JWT session and tokens for an authenticated member user
- * (discussion_board_users), using session validation.
+ * Refresh a member user's authentication tokens using a valid refresh token
+ * (discussion_board_users table).
  *
- * Refreshes the session and JWT tokens for a member user by validating the
- * provided refresh token against valid, unexpired
- * discussion_board_user_sessions records. Only active, not expired sessions
- * (expired_at is null or in the future) for non-deleted, non-locked users are
- * eligible. Integrates with the session fields in the schema to enforce
- * business logic for refresh validity and session rollover. On success, issues
- * new tokens via the IDiscussionBoardUser.IAuthorized response structure; on
- * failure, returns an explicit error tied to authentication state.
+ * This endpoint allows a logged-in user (member) to renew their authentication
+ * session by presenting a valid refresh token. The 'discussion_board_users'
+ * Prisma schema and relevant session tables are used to validate token
+ * authenticity and expiration.
  *
- * Relates to login (creates session) and join (initial registration) – forms
- * the third leg of membership authentication flows. Ensures tokens and sessions
- * always reference current schema structure and validation logic by using only
- * exposed session and user columns. No password_hash or other credentials are
- * re-used or re-exposed during the refresh. Integrates with session and audit
- * logic by chaining with session's created_at and expired_at business flows.
+ * On success, a new set of JWT access and refresh tokens is generated,
+ * conforming to the contract type IDiscussionBoardUser.IAuthorized. Security is
+ * maintained through strict token validation: expired or malformed tokens are
+ * rejected, and token rotation or invalidation logic is applied to minimize
+ * risk.
  *
- * Does not expose any user or session schema columns directly in the API
- * response, only via authentication structure conforming to actor-appropriate
- * expectations. The refresh logic is an essential part of business
- * authentication flows for members (users).
+ * The operation does not grant new privileges but only extends session validity
+ * for already authenticated users, playing a central role in token lifecycle
+ * management. Extensive error handling is enforced for token misuse or
+ * revocation cases.
+ *
+ * This is a key operation for long-lived member sessions, referenced as a
+ * prerequisite for endpoints requiring continuous authentication, such as
+ * posting articles or comments.
+ *
+ * Related endpoints include user registration (join) and login. All endpoints
+ * follow the platform's authentication and security policies to guarantee safe
+ * token issuance and renewal for members.
  *
  * @param props.connection
- * @param props.body Refresh token for validating current session and extending
- *   token lifecycle. Only valid unexpired sessions for member actor allowed.
+ * @param props.body Token refresh payload accepting a refresh token, matching
+ *   the schema IDiscussionBoardUser.IRefreshRequest as in components.schemas.
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -314,12 +313,12 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Refresh token for validating current session and extending token
-     * lifecycle. Only valid unexpired sessions for member actor allowed.
+     * Token refresh payload accepting a refresh token, matching the schema
+     * IDiscussionBoardUser.IRefreshRequest as in components.schemas.
      */
-    body: IDiscussionBoardUser.IRefresh;
+    body: IDiscussionBoardUser.IRefreshRequest;
   };
-  export type Body = IDiscussionBoardUser.IRefresh;
+  export type Body = IDiscussionBoardUser.IRefreshRequest;
   export type Response = IDiscussionBoardUser.IAuthorized;
 
   export const METADATA = {

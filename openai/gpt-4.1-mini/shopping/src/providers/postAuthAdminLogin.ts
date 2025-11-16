@@ -9,42 +9,47 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminLogin(props: {
-  admin: AdminPayload;
   body: IShoppingMallAdmin.ILogin;
 }): Promise<IShoppingMallAdmin.IAuthorized> {
-  const { body } = props;
-
   const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
-    where: {
-      email: body.email,
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
   });
+
   if (!admin) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const isValid = await PasswordUtil.verify(body.password, admin.password_hash);
+  const isValid = await PasswordUtil.verify(
+    props.body.password,
+    admin.password_hash,
+  );
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  const now = toISOStringSafe(new Date());
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  if (admin.status !== "active" || admin.business_status !== "approve") {
+    throw new HttpException("Forbidden", 403);
+  }
+
+  const nowMs = Date.now();
+  const accessExpiresMs = nowMs + 60 * 60 * 1000;
+  const refreshExpiresMs = nowMs + 7 * 24 * 60 * 60 * 1000;
+
+  const accessExpires = toISOStringSafe(new Date(accessExpiresMs));
+  const refreshExpires = toISOStringSafe(new Date(refreshExpiresMs));
+  const nowISOString = toISOStringSafe(new Date(nowMs));
 
   const session = await MyGlobal.prisma.shopping_mall_admin_sessions.create({
     data: {
       id: v4(),
       shopping_mall_admin_id: admin.id,
-      ip: body.ip ?? "",
-      href: body.href,
-      referrer: body.referrer,
-      created_at: now,
-      expired_at: toISOStringSafe(accessExpires),
+      ip: (props.body.ip ?? "") satisfies string as string,
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: nowISOString,
+      expired_at: accessExpires,
     },
   });
 
@@ -54,13 +59,10 @@ export async function postAuthAdminLogin(props: {
         type: "admin",
         id: admin.id,
         session_id: session.id,
-        created_at: now,
+        created_at: nowISOString,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
+      { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
@@ -68,26 +70,23 @@ export async function postAuthAdminLogin(props: {
         id: admin.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: now,
+        created_at: nowISOString,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
+      { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
 
   return {
     id: admin.id,
     email: admin.email,
-    full_name: admin.full_name,
+    name: admin.name,
+    role: "admin",
+    is_active: true,
     created_at: toISOStringSafe(admin.created_at),
     updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
     token,
-    roles: undefined,
-  };
+  } satisfies IShoppingMallAdmin.IAuthorized;
 }

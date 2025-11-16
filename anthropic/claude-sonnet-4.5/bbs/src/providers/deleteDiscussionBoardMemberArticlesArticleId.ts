@@ -7,75 +7,56 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 
 export async function deleteDiscussionBoardMemberArticlesArticleId(props: {
   member: MemberPayload;
   articleId: string & tags.Format<"uuid">;
-}): Promise<void> {
-  const { member, articleId } = props;
+}): Promise<IDiscussionBoardArticle> {
+  const existing = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: { id: props.articleId },
+    include: {
+      member: true,
+    },
+  });
 
-  // Fetch the article and verify it exists
-  const article =
-    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
-      where: { id: articleId },
-      select: {
-        id: true,
-        discussion_board_member_id: true,
-      },
-    });
-
-  // MANDATORY authorization check - verify ownership
-  if (article.discussion_board_member_id !== member.id) {
-    throw new HttpException(
-      "Unauthorized: You can only delete your own articles",
-      403,
-    );
+  if (!existing) {
+    throw new HttpException("Article not found", 404);
   }
 
-  // Prepare deletion timestamp once for consistency
-  const now = toISOStringSafe(new Date());
+  if (existing.discussion_board_member_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
 
-  // Soft delete the article
-  await MyGlobal.prisma.discussion_board_articles.update({
-    where: { id: articleId },
+  const now = new Date();
+  const deleted = await MyGlobal.prisma.discussion_board_articles.update({
+    where: { id: props.articleId },
     data: {
       deleted_at: now,
       updated_at: now,
     },
-  });
-
-  // Cascade soft delete to related comments
-  await MyGlobal.prisma.discussion_board_comments.updateMany({
-    where: {
-      discussion_board_article_id: articleId,
-      deleted_at: null,
-    },
-    data: {
-      deleted_at: now,
-      updated_at: now,
+    include: {
+      member: true,
     },
   });
 
-  // Cascade soft delete to image attachments
-  await MyGlobal.prisma.discussion_board_article_images.updateMany({
-    where: {
-      discussion_board_article_id: articleId,
-      deleted_at: null,
+  return {
+    id: deleted.id,
+    title: deleted.title,
+    body: deleted.body,
+    view_count: deleted.view_count,
+    created_at: toISOStringSafe(deleted.created_at),
+    updated_at: toISOStringSafe(deleted.updated_at),
+    deleted_at: deleted.deleted_at ? toISOStringSafe(deleted.deleted_at) : null,
+    author: {
+      id: deleted.member.id,
+      username: deleted.member.username,
+      email: deleted.member.email,
+      status: deleted.member.status,
+      email_verified: deleted.member.email_verified,
+      created_at: toISOStringSafe(deleted.member.created_at),
     },
-    data: {
-      deleted_at: now,
-    },
-  });
-
-  // Cascade soft delete to document attachments
-  await MyGlobal.prisma.discussion_board_article_documents.updateMany({
-    where: {
-      discussion_board_article_id: articleId,
-      deleted_at: null,
-    },
-    data: {
-      deleted_at: now,
-    },
-  });
+  };
 }

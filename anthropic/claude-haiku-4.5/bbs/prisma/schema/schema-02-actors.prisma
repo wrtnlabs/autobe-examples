@@ -1,7 +1,8 @@
-/// Registered member users who can create articles, post comments, and
-/// participate in discussions. Members are authenticated content creators
-/// with standard user permissions. Each member maintains a unique email
-/// address for authentication and account recovery.
+/// Registered members who can create articles, post comments, and
+/// participate in discussions. Members authenticate via email/username and
+/// password, undergo email verification before posting access, and can be
+/// suspended or deleted. This table represents the core participant base of
+/// the discussion board.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -12,61 +13,80 @@ model discussion_board_members {
   /// Primary Key.
   id String @id
   
-  /// Member's email address used for authentication and account management.
-  /// Must be unique across all members. Used for login and password recovery
-  /// workflows.
+  /// Member's email address used for authentication, verification, and
+  /// communication. Must be unique across all members, valid email format (max
+  /// 254 characters). Used for account recovery and password reset.
   email String
   
-  /// Hashed password using industry-standard algorithms (bcrypt, scrypt, or
-  /// similar). Never stores plaintext passwords. Required for member
-  /// authentication during login.
+  /// Member's chosen username for login and public identification.
+  /// Case-insensitive unique constraint enforced. 3-30 characters,
+  /// alphanumeric plus underscore/hyphen. Used as alternative login identifier
+  /// to email.
+  username String
+  
+  /// Bcrypt-hashed password with salt (minimum 12 rounds). Never stored in
+  /// plain text. Used for authentication during login. Updated when member
+  /// changes password.
   password_hash String
   
-  /// Member account creation timestamp in ISO 8601 UTC format.
-  /// System-generated when member registers. Tracks account age for audit
-  /// purposes.
+  /// Public-facing display name shown as author attribution on articles and
+  /// comments. 1-50 characters. May differ from username for privacy or
+  /// professional presentation.
+  display_name String
+  
+  /// Flag indicating whether member's email address has been verified. False
+  /// for new registrations. Must be true before member can create articles or
+  /// post comments. Set to true when verification link is clicked.
+  email_verified Boolean
+  
+  /// Current account status controlling access and permissions. Values:
+  /// 'active' (normal operation), 'suspended' (temporary restriction due to
+  /// violations), 'terminated' (permanent ban), 'deleted' (user-initiated
+  /// deletion). Default: 'active' after email verification.
+  account_status String
+  
+  /// Account creation timestamp in UTC. Immutable. Recorded when registration
+  /// is completed.
   created_at DateTime
   
-  /// Last modification timestamp for member account in ISO 8601 UTC format.
-  /// Updated when account details change (email update, password reset,
-  /// profile modifications).
+  /// Timestamp of last profile or account update. Updated when member modifies
+  /// display name, bio, profile picture, or other profile fields.
   updated_at DateTime
   
-  /// Soft delete timestamp for account deactivation. Null means active
-  /// account. Populated when member deletes account or is deleted by
-  /// moderators. Enables account recovery and maintains data integrity for
-  /// historical references.
+  /// Soft deletion timestamp. Non-null only when account_status is 'deleted'.
+  /// Used for audit trail and data retention policy enforcement. Allows
+  /// recovery within 30-day window.
   deleted_at DateTime?
   
-  /// Current status of the member account: 'active' (normal operation),
-  /// 'suspended' (temporary access denial, typically 7 days), or 'banned'
-  /// (permanent access denial). Controls whether member can authenticate and
-  /// create content.
-  account_status String
+  /// Timestamp of last successful login. Updated on each successful
+  /// authentication. Null for never-logged-in accounts. Used for activity
+  /// tracking and security monitoring.
+  last_login_at DateTime?
   
   //----
   // RELATIONS
   //----
   discussion_board_member_sessions discussion_board_member_sessions[]
+  discussion_board_member_profiles discussion_board_member_profiles?
+  discussion_board_member_preferences discussion_board_member_preferences?
   discussion_board_articles discussion_board_articles[]
-  discussion_board_article_revisions discussion_board_article_revisions[]
   discussion_board_comments discussion_board_comments[]
-  discussion_board_attachments discussion_board_attachments[]
-  discussion_board_moderation_logs discussion_board_moderation_logs[]
-  discussion_board_user_violations discussion_board_user_violations[]
-  discussion_board_notifications_of_recipient_member_id discussion_board_notifications[] @relation("discussion_board_notifications_of_recipient_member_id")
-  discussion_board_notifications_of_source_member_id discussion_board_notifications[] @relation("discussion_board_notifications_of_source_member_id")
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_user_warnings discussion_board_user_warnings[]
+  discussion_board_reports discussion_board_reports[]
   
   @@unique([email])
-  @@index([created_at])
+  @@unique([username])
+  @@index([email_verified])
   @@index([account_status])
+  @@index([created_at])
 }
 
-/// Authentication session records for logged-in members. Tracks active
-/// sessions with connection context (IP address, referrer URL). Each session
-/// corresponds to a member's login instance. Sessions expire after defined
-/// duration (7 days) or when member logs out explicitly. Used for validating
-/// JWT tokens and managing user sessions across devices.
+/// Authentication sessions for verified members. Each session represents a
+/// login instance from a specific IP address and device. Sessions track
+/// connection context (IP, URL, referrer) for security auditing. Members can
+/// have multiple concurrent sessions across different devices. Sessions
+/// expire after 7 days or when member logs out.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -77,32 +97,32 @@ model discussion_board_member_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the member's {@link discussion_board_members.id} who owns
-  /// this session. Non-nullable and non-unique to allow multiple concurrent
-  /// sessions per member.
+  /// Reference to the member who owns this session. Member's {@link
+  /// discussion_board_members.id}. Non-nullable (session must belong to
+  /// authenticated member).
   discussion_board_member_id String
   
-  /// IP address of the connection where this session was created. Captured for
-  /// security auditing and anomaly detection. Used to track login locations.
+  /// IP address (IPv4 or IPv6) from which the login originated. Used for
+  /// security tracking, fraud detection, and geographic login monitoring.
   ip String
   
-  /// URL of the page where member initiated login or authentication. Provides
-  /// context about member's entry point into the application.
+  /// Full URL/URI where login occurred. Captures the page context of
+  /// authentication. Used for understanding member access patterns and
+  /// security context.
   href String
   
-  /// HTTP referrer URL indicating where member came from before logging in.
-  /// Tracks traffic sources and member navigation patterns.
+  /// HTTP Referrer header value when login occurred. Indicates which page
+  /// referred member to authentication. May be empty string if referrer
+  /// unavailable.
   referrer String
   
-  /// Session creation timestamp in ISO 8601 UTC format when member
-  /// authenticated. System-generated. Used to calculate session age and
-  /// expiration.
+  /// Session creation timestamp (login time) in UTC. Records when this
+  /// authentication session was established. Immutable.
   created_at DateTime
   
-  /// Session expiration timestamp in ISO 8601 UTC format. Null means session
-  /// is still active. Set to current time + 7 days on creation, or updated to
-  /// actual logout time if member explicitly logs out. Null expiry indicates
-  /// ongoing session.
+  /// Session termination timestamp. Non-null when session ends (member logout
+  /// or expiration). Null for active sessions. Sessions expire automatically
+  /// after 7 days or when member explicitly logs out.
   expired_at DateTime?
   
   //----
@@ -114,11 +134,11 @@ model discussion_board_member_sessions {
   @@index([discussion_board_member_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_336fc309")
 }
 
-/// Administrator/moderator user accounts with elevated permissions for
-/// content moderation, user management, and community enforcement.
-/// Moderators can review, edit, or remove any content, suspend/ban users,
-/// and access moderation dashboards. Separate from members due to distinct
-/// permission model and administrative responsibilities.
+/// Administrative users with elevated permissions for content moderation and
+/// user management. Moderators authenticate separately from members with
+/// their own credentials. Moderators can review pending articles, delete
+/// inappropriate content, suspend/ban users, and access moderation
+/// dashboards and audit logs.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -130,54 +150,68 @@ model discussion_board_moderators {
   id String @id
   
   /// Moderator's email address used for authentication and administrative
-  /// account management. Must be unique across all moderators. Used for
-  /// moderator login and security alerts.
+  /// communication. Must be unique across all moderators, valid email format
+  /// (max 254 characters). Typically organizational email for accountability.
   email String
   
-  /// Hashed password using industry-standard algorithms. Required for
-  /// moderator authentication. Never stores plaintext passwords for security
-  /// compliance.
+  /// Moderator's username for login and administrative identification.
+  /// Case-insensitive unique constraint. 3-30 characters, alphanumeric plus
+  /// underscore/hyphen. Used as alternative login identifier.
+  username String
+  
+  /// Bcrypt-hashed password with salt (minimum 12 rounds). Never stored in
+  /// plain text. Used for moderator authentication. Moderators may be required
+  /// to use stronger passwords than members.
   password_hash String
   
-  /// Moderator account creation timestamp in ISO 8601 UTC format.
-  /// System-generated when moderator account is created by administrator.
-  /// Tracks when moderator access was granted.
+  /// Moderator's display name for identification in audit logs and moderation
+  /// history. 1-50 characters. Shows publicly in moderation actions (e.g.,
+  /// 'Comment removed by [display_name]').
+  display_name String
+  
+  /// Current moderator account status controlling access. Values: 'active'
+  /// (full moderator privileges), 'inactive' (temporarily no moderation
+  /// access), 'terminated' (permanently revoked moderator status). Default:
+  /// 'active'.
+  account_status String
+  
+  /// Timestamp when moderator account was created and role assigned in UTC.
+  /// Immutable. Records when moderator was granted administrative access.
   created_at DateTime
   
-  /// Last modification timestamp for moderator account in ISO 8601 UTC format.
-  /// Updated when moderator details change (email update, password reset,
-  /// permission modifications).
+  /// Timestamp of last moderator account update. Updated when moderator status
+  /// changes (activation/deactivation) or password changes.
   updated_at DateTime
   
-  /// Soft delete timestamp for moderator account deactivation. Null means
-  /// active moderator account. Populated when moderator access is revoked.
-  /// Enables recovery and maintains historical reference for moderation
-  /// actions.
+  /// Soft deletion timestamp. Non-null only when account_status is
+  /// 'terminated'. Used for audit trail when moderator role is revoked. Allows
+  /// tracking of when access was removed.
   deleted_at DateTime?
   
-  /// Current status of moderator account: 'active' (performing moderation
-  /// duties), 'inactive' (access suspended but not revoked), or 'removed'
-  /// (permanently revoked). Controls whether moderator can authenticate and
-  /// access admin features.
-  account_status String
+  /// Timestamp of last successful moderator login. Updated on each successful
+  /// authentication. Null for never-logged-in moderators. Used for activity
+  /// tracking and to identify inactive moderators.
+  last_login_at DateTime?
   
   //----
   // RELATIONS
   //----
   discussion_board_moderator_sessions discussion_board_moderator_sessions[]
-  discussion_board_article_revisions discussion_board_article_revisions[]
-  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_user_warnings discussion_board_user_warnings[]
+  discussion_board_reports discussion_board_reports[]
   
   @@unique([email])
-  @@index([created_at])
+  @@unique([username])
   @@index([account_status])
+  @@index([created_at])
 }
 
-/// Authentication session records for logged-in moderators. Tracks active
-/// administrative sessions with connection context (IP, referrer). Each
-/// session corresponds to a moderator's login instance. Sessions expire
-/// after defined duration or explicit logout. Used for validating moderator
-/// JWT tokens and managing admin session lifecycle across sessions.
+/// Authentication sessions for moderators performing administrative tasks.
+/// Each session represents a moderator login from a specific IP address.
+/// Tracks connection context (IP, URL, referrer) for security and audit
+/// purposes. Moderators can have multiple concurrent sessions. Sessions
+/// expire after 7 days or explicit logout.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -188,32 +222,34 @@ model discussion_board_moderator_sessions {
   /// Primary Key.
   id String @id
   
-  /// Reference to the moderator's {@link discussion_board_moderators.id} who
-  /// owns this session. Non-nullable and non-unique to allow multiple
-  /// concurrent sessions per moderator.
+  /// Reference to the moderator who owns this session. Moderator's {@link
+  /// discussion_board_moderators.id}. Non-nullable (session must belong to
+  /// authenticated moderator).
   discussion_board_moderator_id String
   
-  /// IP address of the connection where moderator authenticated. Captured for
-  /// security audit trail of admin access and to detect unauthorized access
-  /// attempts.
+  /// IP address (IPv4 or IPv6) from which the moderator login originated.
+  /// Critical for security monitoring of administrative access and detecting
+  /// unauthorized login attempts.
   ip String
   
-  /// URL of the page where moderator initiated login or authentication.
-  /// Provides context about moderator's entry point into admin interface.
+  /// Full URL/URI where moderator login occurred. Captures the entry point for
+  /// moderation dashboard access. Used for understanding moderation access
+  /// patterns.
   href String
   
-  /// HTTP referrer URL indicating where moderator came from before logging in.
-  /// Tracks administrative access patterns and traffic sources.
+  /// HTTP Referrer header value when moderator login occurred. Indicates
+  /// source of authentication request. May be empty string if referrer not
+  /// available.
   referrer String
   
-  /// Session creation timestamp in ISO 8601 UTC format when moderator
-  /// authenticated. System-generated. Used to calculate session age and
-  /// determine expiration.
+  /// Session creation timestamp (login time) in UTC. Records when moderator
+  /// authentication session was established. Immutable. Used for login history
+  /// tracking.
   created_at DateTime
   
-  /// Session expiration timestamp in ISO 8601 UTC format. Null means session
-  /// is still active. Set to current time + 7 days on creation, or updated to
-  /// actual logout time if moderator explicitly logs out.
+  /// Session termination timestamp. Non-null when session ends (moderator
+  /// logout or automatic expiration). Null for active sessions. Sessions
+  /// expire after 7 days or explicit logout.
   expired_at DateTime?
   
   //----

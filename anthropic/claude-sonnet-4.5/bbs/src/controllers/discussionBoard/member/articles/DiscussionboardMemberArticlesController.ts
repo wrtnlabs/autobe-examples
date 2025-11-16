@@ -12,67 +12,40 @@ import { IDiscussionBoardArticle } from "../../../../api/structures/IDiscussionB
 @Controller("/discussionBoard/member/articles")
 export class DiscussionboardMemberArticlesController {
   /**
-   * Create and publish a new discussion board article as a member.
+   * Create a new discussion board article.
    *
-   * Create a new article in the discussion board system for sharing economic
-   * and political analysis, commentary, and discussions. This operation allows
-   * authenticated members to publish content with rich text formatting,
-   * categorization, tagging, and multimedia attachments including images and
-   * documents.
+   * Create a new article on the discussion board for economic and political
+   * discussions. This operation allows authenticated members to publish new
+   * content including a title, body content, optional summary/excerpt, and
+   * categorization information.
    *
-   * The article creation process validates all required fields according to
-   * business rules defined in the requirements. The title must be between 5 and
-   * 200 characters, providing enough space for descriptive headlines while
-   * preventing excessive length. The body content must be between 20 and 50,000
-   * characters, ensuring substantive content while preventing abuse. The system
-   * requires selection of at least one category from predefined economic and
-   * political topic categories (stored in discussion_board_categories), and
-   * supports up to 5 optional tags (from discussion_board_tags) for enhanced
-   * discoverability.
+   * The member's identity is automatically extracted from the JWT
+   * authentication token and associated as the article author. The operation
+   * validates that the article content meets minimum quality requirements
+   * including title length, body content length, and proper formatting.
+   * Optional features include setting initial categories, tags, and content
+   * visibility settings.
    *
-   * Attachment support enables evidence-based discussions by allowing members
-   * to upload supporting materials. Articles can include up to 10 image
-   * attachments (JPEG, PNG, GIF, WebP formats, maximum 5MB each) for charts,
-   * graphs, infographics, and visual evidence, as well as up to 5 document
-   * attachments (PDF, DOCX, DOC, TXT, RTF, ODT formats, maximum 10MB each) for
-   * research papers, policy documents, and supplementary materials. The total
-   * attachment size across all files is limited to 50MB per article to balance
-   * functionality with storage and performance considerations.
+   * Security measures include authentication verification to ensure only
+   * registered members can create articles, rate limiting to prevent spam
+   * posting, and content validation to enforce community standards. The
+   * operation may trigger additional workflows such as content moderation queue
+   * assignment for new authors or notification to moderators.
    *
-   * Upon successful creation, the system sets the article status to
-   * 'published', initializes view_count and comment_count to 0, assigns the
-   * authenticated member as the author in the discussion_board_member_id field,
-   * and records the creation timestamp. The operation returns the complete
-   * article entity including the system-generated article ID, allowing the
-   * client to navigate to the newly published article.
+   * The created article is initially set to an appropriate publication status
+   * based on member reputation and moderation settings. High-reputation members
+   * may have articles published immediately, while new members might have
+   * articles queued for moderation review. The operation returns the complete
+   * created article object including system-assigned metadata like creation
+   * timestamp, unique identifier, and initial metrics.
    *
-   * Security and data integrity measures include authentication verification to
-   * ensure only logged-in members can create articles, input sanitization to
-   * prevent XSS attacks while preserving formatting, validation of category and
-   * tag references against the discussion_board_categories and
-   * discussion_board_tags tables, file upload validation including type
-   * checking, size limits, and malware scanning, and rate limiting to prevent
-   * spam or automated article creation abuse.
-   *
-   * This operation integrates with multiple system components including the
-   * user authentication system to verify member identity, the file storage
-   * system to handle image and document uploads
-   * (discussion_board_article_images and discussion_board_article_documents
-   * tables), the category and tag systems for content organization
-   * (discussion_board_article_categories and discussion_board_article_tags
-   * junction tables), and the snapshot system which creates an initial version
-   * record in discussion_board_article_snapshots for audit trail purposes.
-   *
-   * Related operations include the article search endpoint (PATCH /articles)
-   * for discovering existing content before posting to avoid duplicates, the
-   * article detail endpoint (GET /articles/{articleId}) for viewing the newly
-   * published article, and the article update endpoint (PUT
-   * /articles/{articleId}) for editing the article after publication if
-   * corrections are needed.
+   * Related operations include updating articles (PUT /articles/{articleId}),
+   * retrieving article details (GET /articles/{articleId}), and searching
+   * articles (PATCH /articles).
    *
    * @param connection
-   * @param body Article creation data including title, body content, category,
-   *   optional tags, optional summary, and attachment references
+   * @param body Article creation data including title, content, optional
+   *   summary, and categorization information
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -94,61 +67,38 @@ export class DiscussionboardMemberArticlesController {
   }
 
   /**
-   * Update an existing article with new content and metadata.
+   * Update an existing discussion board article.
    *
    * Update the content and metadata of an existing article in the discussion
-   * board system. This operation allows article authors to modify their
-   * published articles by updating the title, body content, summary,
-   * publication status, associated categories, tags, and managing image and
-   * document attachments. The operation enforces strict ownership validation
-   * ensuring that only the original author (identified by
-   * discussion_board_member_id) can update their own articles, unless the
-   * requesting user is a moderator who possesses elevated permissions to edit
-   * any article regardless of authorship.
+   * board system.
    *
-   * The update process validates all input fields according to the business
-   * rules defined in the requirements. Article titles must be between 5 and 200
-   * characters, body content must be between 20 and 50,000 characters,
-   * summaries are optional with a maximum of 500 characters, and up to 5 tags
-   * can be applied with each tag being 2-30 characters. The system validates
-   * that selected categories exist in the discussion_board_categories table and
-   * that tags conform to the normalized lowercase format defined in the
-   * discussion_board_tags table.
+   * This operation allows article authors to modify their published or draft
+   * articles. Updateable fields include the article title, content body,
+   * publication status, and associated metadata. The operation preserves the
+   * original creation timestamp while updating the modification timestamp to
+   * reflect the edit time.
    *
-   * When a member successfully updates their article, the system creates a new
-   * record in the discussion_board_article_snapshots table to preserve the
-   * previous version for version control and audit purposes. This snapshot
-   * includes the complete article state before the update including title,
-   * body, summary, and status fields along with a timestamp marking when this
-   * version existed. The created_by_member_id in the snapshot references the
-   * member who made the update.
+   * Authorization is enforced to ensure only the article author or authorized
+   * moderators can perform updates. The system validates that the article
+   * exists and that the requesting user has appropriate permissions. Changes to
+   * publication status (e.g., from draft to published) are tracked and may
+   * trigger additional workflows.
    *
-   * Attachment management during article updates supports adding new images and
-   * documents up to the defined limits (10 images maximum, 5 documents maximum,
-   * with individual file size limits of 5MB for images and 10MB for documents).
-   * When attachments are removed during an edit, the system marks the
-   * corresponding records in discussion_board_article_images or
-   * discussion_board_article_documents with a deleted_at timestamp following
-   * the soft deletion pattern. The system enforces total attachment limits
-   * including both existing and newly added files.
+   * Security and business rules: Members can only update their own articles
+   * unless they have moderator privileges. Moderators can update any article
+   * for content moderation purposes. The operation maintains data integrity by
+   * validating all input fields according to the schema constraints. Audit
+   * trails may be maintained for significant changes.
    *
-   * The operation automatically updates the updated_at timestamp to the current
-   * time, preserving the original created_at timestamp as an immutable
-   * historical record. If a moderator performs the update, the
-   * last_modified_by_moderator_id field is set to the moderator's ID to track
-   * moderator intervention in the content. The view_count and comment_count
-   * fields are not modified by this operation as they are system-managed
-   * metrics updated through separate processes.
-   *
-   * This endpoint respects the soft deletion mechanism in the schema. If the
-   * article has a non-null deleted_at timestamp, the article is considered
-   * deleted and the update operation returns a 404 Not Found error. Only active
-   * articles (deleted_at is null) can be updated through this endpoint.
+   * This operation integrates with the discussion_board_articles table as
+   * defined in the Prisma schema. The response returns the updated article with
+   * all current field values, allowing the client to refresh its view with the
+   * latest data.
    *
    * @param connection
    * @param articleId Unique identifier of the target article to update
-   * @param body Updated article content and metadata including title, body,
-   *   summary, categories, tags, and attachment management instructions
+   * @param body Updated article data including modified title, content, status,
+   *   and other editable fields
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":articleId")
@@ -173,67 +123,39 @@ export class DiscussionboardMemberArticlesController {
   }
 
   /**
-   * Mark an article as deleted while preserving it for audit and potential
-   * recovery.
+   * Soft delete an article from the discussion board.
    *
-   * This operation marks an article as deleted in the discussion board system
-   * by setting the deleted_at timestamp, while preserving all article data and
-   * relationships in the database for audit trail purposes and potential
-   * recovery. This follows the soft delete pattern defined in the Prisma schema
-   * for the discussion_board_articles table.
+   * Mark an article as deleted in the discussion board system by setting its
+   * deleted_at timestamp.
    *
-   * When an article is soft deleted, the system sets the deleted_at field to
-   * the current timestamp. This timestamp acts as a marker that the article has
-   * been deleted, causing it to be filtered out from public article listings,
-   * search results, and normal browsing interfaces. However, the complete
-   * article record remains in the database with all its content, metadata, and
-   * relationships intact. This preservation is essential for maintaining
-   * discussion context, enabling content recovery if deletion was accidental or
-   * incorrect, supporting moderation audit trails, and complying with data
-   * retention requirements.
+   * This operation performs a soft deletion of the article record, setting the
+   * deleted_at field to the current timestamp. The article is not physically
+   * removed from the database but is hidden from public view. This soft-delete
+   * pattern preserves the article data to maintain referential integrity with
+   * related entities including comments (discussion_board_comments), attached
+   * images (discussion_board_article_images), and file attachments
+   * (discussion_board_article_files).
    *
-   * The soft deletion process affects related data in a coordinated manner.
-   * Comments posted on the article (discussion_board_comments) are typically
-   * also soft deleted by setting their deleted_at timestamps, hiding the entire
-   * discussion thread from public view while preserving it for audit purposes.
-   * Historical article snapshots (discussion_board_article_snapshots) are
-   * retained unchanged since they represent historical versions and serve as
-   * permanent audit records. Category associations
-   * (discussion_board_article_categories) and tag associations
-   * (discussion_board_article_tags) may be removed or retained based on
-   * implementation strategy. Image attachments
-   * (discussion_board_article_images) and document attachments
-   * (discussion_board_article_documents) are typically soft deleted by setting
-   * their deleted_at fields, hiding them from public access while preserving
-   * file metadata and enabling potential restoration.
+   * Security: This operation requires appropriate authorization. Typically,
+   * only the article's original author or moderators with content management
+   * permissions can delete articles. The authorization logic ensures users
+   * cannot delete articles created by others unless they have elevated
+   * moderator privileges.
    *
-   * From a security and permissions perspective, this operation can be
-   * performed by two types of users. The original article author (identified by
-   * discussion_board_member_id in the article record) has the right to delete
-   * their own articles at any time after publication. Additionally, any
-   * moderator has the authority to delete any article regardless of authorship
-   * as part of content moderation responsibilities. The system enforces these
-   * permissions by verifying either ownership match or moderator role before
-   * allowing the deletion to proceed. When a moderator deletes another user's
-   * article, the action should be logged in the
-   * discussion_board_moderation_actions table with action_type set to
-   * delete_content, creating a complete audit trail of the moderation
-   * intervention.
+   * Data preservation: The soft-delete approach preserves discussion continuity
+   * and audit trails. Comments referencing the deleted article remain intact,
+   * and the article can potentially be restored by clearing the deleted_at
+   * timestamp. The deleted_at field is indexed for efficient filtering of
+   * active versus deleted content.
    *
-   * This operation supports content recovery and audit capabilities. Because
-   * soft deleted articles remain in the database with all their data intact,
-   * moderators or the original author can potentially restore the article by
-   * clearing or nullifying the deleted_at timestamp. The article and all its
-   * associated content can be brought back to public visibility if the deletion
-   * was performed in error or if review determines the content does not violate
-   * guidelines. This recovery capability is a key advantage of soft deletion
-   * over hard deletion. Users should still be prompted for confirmation before
-   * deletion is executed to prevent accidental deletions, even though soft
-   * deletion is reversible.
+   * This operation is part of the content lifecycle management workflow.
+   * Related operations include creating articles (POST /articles), updating
+   * articles (PUT /articles/{articleId}), and retrieving article details (GET
+   * /articles/{articleId}). List operations should filter out articles where
+   * deleted_at is not null to show only active content.
    *
    * @param connection
-   * @param articleId Unique identifier of the target article to be marked as
-   *   deleted
+   * @param articleId Unique identifier of the target article to be soft deleted
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":articleId")
@@ -242,7 +164,7 @@ export class DiscussionboardMemberArticlesController {
     member: MemberPayload,
     @TypedParam("articleId")
     articleId: string & tags.Format<"uuid">,
-  ): Promise<void> {
+  ): Promise<IDiscussionBoardArticle> {
     try {
       return await deleteDiscussionBoardMemberArticlesArticleId({
         member,

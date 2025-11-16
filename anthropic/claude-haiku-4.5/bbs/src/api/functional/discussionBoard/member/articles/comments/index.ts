@@ -6,61 +6,40 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IDiscussionBoardComment } from "../../../../../structures/IDiscussionBoardComment";
 
 /**
- * Create a new comment or reply on a specific article to participate in
- * discussions.
+ * Create a new comment on a discussion board article.
  *
- * Create a new comment on a specific article, enabling members to participate
- * in and contribute to ongoing discussions. This operation handles both
- * top-level comments posted directly to articles and nested reply comments
- * responding to other members' comments. Comments are the primary mechanism for
- * discussion engagement on the platform.
+ * Create and publish a new comment on a discussion board article, enabling
+ * members to share perspectives, ask questions, and respond to article content.
+ * Comments are published immediately upon creation without requiring moderator
+ * approval, creating immediate visibility for community engagement.
  *
- * The comment creation process requires the authenticated member to provide
- * substantive content (minimum 1 character, maximum 5,000 characters) that will
- * be published immediately without moderation approval. Members can post
- * comments on any published article, creating discussion threads where other
- * members can reply to specific comments, enabling natural conversation flow.
- * When posting a reply to another comment, the system automatically captures
- * the parent-child relationship enabling proper threading and notification to
- * the parent comment author.
+ * The comment body must be between 1 and 5,000 characters and supports plain
+ * text with basic formatting. Comments can include file and image attachments
+ * that are uploaded separately or embedded within the content. The creating
+ * member's identity is automatically populated from the authenticated JWT
+ * token.
  *
- * Security and validation considerations include verifying the member is
- * authenticated (guests cannot comment), checking the member account is not
- * suspended or banned, validating the target article exists and is published
- * (not deleted or archived), enforcing rate limiting (maximum 50 comments per
- * member per hour to prevent spam), and validating comment content meets length
- * requirements. The system also prevents members from exceeding content limits
- * and displays specific error messages guiding users to correct validation
- * failures.
+ * Unlike articles which undergo a moderation workflow before publication,
+ * comments become immediately visible to all users who can access the parent
+ * article. This enables real-time discussion and rapid community response.
+ * Members can later edit comments to correct content or delete comments to
+ * remove them from public view.
  *
- * Thread structure support includes automatic calculation of thread depth (0
- * for top-level, 1+ for replies) up to maximum depth of 3 levels, with replies
- * to depth-3 comments attaching to the depth-3 parent rather than creating
- * further nesting. Notification system automatically identifies when a comment
- * is a reply and sends notifications to the parent comment author if they have
- * notifications enabled.
+ * Security considerations include rate limiting on comment creation to prevent
+ * spam and abuse, validation of comment length to ensure reasonable content
+ * boundaries, and attachment scanning for malware and inappropriate content.
+ * The system automatically tracks comment creation and modification timestamps
+ * for audit purposes.
  *
- * This operation integrates with the discussion_board_comments and
- * discussion_board_articles tables, creating the comment record with proper
- * relationships, timestamp capture, and status initialization. Optional file
- * attachments (maximum 5 files per comment) are stored with the comment. The
- * created comment is immediately visible to all users unless marked as
- * moderated. Related operations include PATCH /articles/{articleId}/comments
- * (view/search comments), PUT /articles/{articleId}/comments/{commentId} (edit
- * own comment), DELETE /articles/{articleId}/comments/{commentId} (delete own
- * comment).
- *
- * Expected behavior includes immediate publication of the comment without
- * approval workflow, instant visibility in the comment thread, increment of the
- * article's comment count, potential notification delivery to relevant parties
- * (parent comment author if reply), and preservation of comment metadata
- * including author, timestamp, and reply relationship.
+ * Related operations: GET /articles/{articleId}/comments/{commentId} to
+ * retrieve comment details, and operations to manage comment attachments and
+ * edit comment content.
  *
  * @param props.connection
- * @param props.articleId Unique identifier of the target article where the
- *   comment is being posted
- * @param props.body Comment content and optional parent comment reference for
- *   creating replies within discussion threads
+ * @param props.articleId Unique identifier of the target article the comment is
+ *   being posted to
+ * @param props.body Comment creation payload containing the comment text and
+ *   optional attachments
  * @path /discussionBoard/member/articles/:articleId/comments
  * @accessor api.functional.discussionBoard.member.articles.comments.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -90,14 +69,14 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Unique identifier of the target article where the comment is being
-     * posted
+     * Unique identifier of the target article the comment is being posted
+     * to
      */
     articleId: string & tags.Format<"uuid">;
 
     /**
-     * Comment content and optional parent comment reference for creating
-     * replies within discussion threads
+     * Comment creation payload containing the comment text and optional
+     * attachments
      */
     body: IDiscussionBoardComment.ICreate;
   };
@@ -148,39 +127,36 @@ export namespace create {
 }
 
 /**
- * Update the content of a comment within the discussion.
+ * Update an existing discussion board comment on a specified article.
  *
- * Update the text content of an existing comment. This operation allows the
- * original comment author to modify their comment text within 24 hours of
- * creation, or allows moderators to edit any comment at any time. The system
- * preserves all structural information: the comment author, creation date,
- * parent comment reference, and article association remain immutable. Only the
- * comment content text field is modifiable.
+ * Update comment content and metadata for a specific comment belonging to an
+ * article. This operation modifies the comment's text body and optionally its
+ * attachments while preserving the original creation timestamp and author
+ * information.
  *
- * When a member edits their own comment, the system updates the comment text,
- * increments the edit_count, and updates the modified timestamp to current
- * time. An 'Edited' indicator is displayed to all users showing the edit
- * timestamp. The original creation date remains unchanged for audit trail
- * purposes. If a member attempts to edit after 24 hours have elapsed, the
- * system rejects the edit and displays: 'Comments can only be edited within 24
- * hours of creation. This comment is [X] hours old and can no longer be
- * edited.'
+ * The operation requires both the article ID and comment ID in the path to
+ * ensure the comment belongs to the correct article. The comment must exist and
+ * not be permanently deleted (soft deletion flag is checked). The request body
+ * contains the updated comment data following the
+ * IDiscussionBoardComment.IUpdate schema.
  *
- * When a moderator edits a comment, the same process occurs but the system
- * records the edit with edit_type 'moderator_edit', moderator ID, timestamp,
- * and optional change_reason for transparency. Moderators bypass the 24-hour
- * restriction and can edit any comment.
+ * Security and authorization: Only the comment author or moderators with
+ * appropriate permissions can update a comment. The system validates ownership
+ * or moderator status before allowing the update. The operation maintains the
+ * audit trail by updating the updated_at timestamp to reflect when the
+ * modification occurred.
  *
- * Validation requirements: comment content must be 1-5000 characters, cannot be
- * empty or only whitespace, and must contain meaningful text (not just special
- * characters). If validation fails, the system rejects the update and preserves
- * the original comment content.
+ * Related operations: To retrieve comment details before updating, use GET
+ * /articles/{articleId}/comments/{commentId}. To delete a comment, use DELETE
+ * /articles/{articleId}/comments/{commentId}. To view all comments on an
+ * article, use PATCH /articles/{articleId}/comments.
  *
  * @param props.connection
- * @param props.articleId Unique identifier of the article containing the
- *   comment to update
- * @param props.commentId Unique identifier of the comment to update
- * @param props.body Updated comment content and optional moderation reason
+ * @param props.articleId Unique identifier of the article that contains the
+ *   target comment
+ * @param props.commentId Unique identifier of the comment to be updated
+ * @param props.body Updated comment data including modified text content and
+ *   optional attachment information
  * @path /discussionBoard/member/articles/:articleId/comments/:commentId
  * @accessor api.functional.discussionBoard.member.articles.comments.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -209,13 +185,16 @@ export async function update(
 }
 export namespace update {
   export type Props = {
-    /** Unique identifier of the article containing the comment to update */
+    /** Unique identifier of the article that contains the target comment */
     articleId: string & tags.Format<"uuid">;
 
-    /** Unique identifier of the comment to update */
+    /** Unique identifier of the comment to be updated */
     commentId: string & tags.Format<"uuid">;
 
-    /** Updated comment content and optional moderation reason */
+    /**
+     * Updated comment data including modified text content and optional
+     * attachment information
+     */
     body: IDiscussionBoardComment.IUpdate;
   };
   export type Body = IDiscussionBoardComment.IUpdate;
@@ -266,42 +245,36 @@ export namespace update {
 }
 
 /**
- * Delete a specific comment from an article.
+ * Delete a discussion board comment from a specified article.
  *
- * Delete a comment from an article and remove it from the discussion. This
- * operation removes a comment identified by commentId from the article
- * identified by articleId. The comment author can delete their own comments at
- * any time. Moderators can delete any comment regardless of authorship. Guest
- * users cannot delete any content.
+ * Remove a comment from an article by marking it as deleted. This operation
+ * performs a soft deletion, setting the is_deleted flag to true while
+ * preserving the original comment record in the database for audit and recovery
+ * purposes.
  *
- * When a comment is deleted, the system removes the comment and all nested
- * replies to that comment. If the comment has attachments, those are also
- * removed. The article's total comment count is decremented by one for each
- * deleted comment.
+ * The operation requires both the article ID and comment ID in the path to
+ * ensure the correct comment is deleted. The comment must exist and belong to
+ * the specified article. Soft deletion hides the comment from regular user
+ * views while maintaining the historical record for moderation audits and
+ * system accountability.
  *
- * The deletion respects the database schema design where comments have
- * soft-delete capability through the deleted_at field. Deleted comments are
- * marked with a timestamp rather than permanently removed, allowing for
- * recovery and audit trail preservation. The deletion operation cascades to any
- * child replies, which are also soft-deleted with their own deletion
- * timestamps.
+ * Security and authorization: Only the comment author or moderators with
+ * appropriate permissions can delete a comment. The system validates ownership
+ * or moderator status before allowing deletion. Once deleted, comments are
+ * typically hidden from user interfaces but may be accessible to moderators for
+ * audit purposes. The operation preserves comment metadata including creation
+ * and update timestamps for historical reference.
  *
- * Authorization is enforced through role-based access control. The
- * authenticated user must be either the comment's author (verified by comparing
- * user ID with discussion_board_member_id field) or a moderator. If a member
- * attempts to delete a comment they did not create, the request is denied with
- * appropriate error message. Guests receive a login prompt. Moderators can
- * delete any comment with full audit logging of their action.
- *
- * The system records this deletion action in the moderation audit logs if
- * performed by a moderator. If performed by the comment author, the action is
- * still recorded for audit purposes but classified differently. Related
- * notifications are cleaned up when a comment is deleted.
+ * Related operations: To update a comment instead of deleting it, use PUT
+ * /articles/{articleId}/comments/{commentId}. To retrieve comment details, use
+ * GET /articles/{articleId}/comments/{commentId}. To view all comments on an
+ * article including their deletion status, use PATCH
+ * /articles/{articleId}/comments.
  *
  * @param props.connection
  * @param props.articleId Unique identifier of the article containing the
- *   comment to delete
- * @param props.commentId Unique identifier of the comment to delete
+ *   comment to be deleted
+ * @param props.commentId Unique identifier of the comment to be deleted
  * @path /discussionBoard/member/articles/:articleId/comments/:commentId
  * @accessor api.functional.discussionBoard.member.articles.comments.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -309,7 +282,7 @@ export namespace update {
 export async function erase(
   connection: IConnection,
   props: erase.Props,
-): Promise<void> {
+): Promise<erase.Response> {
   return true === connection.simulate
     ? erase.simulate(connection, props)
     : await PlainFetcher.fetch(
@@ -329,12 +302,13 @@ export async function erase(
 }
 export namespace erase {
   export type Props = {
-    /** Unique identifier of the article containing the comment to delete */
+    /** Unique identifier of the article containing the comment to be deleted */
     articleId: string & tags.Format<"uuid">;
 
-    /** Unique identifier of the comment to delete */
+    /** Unique identifier of the comment to be deleted */
     commentId: string & tags.Format<"uuid">;
   };
+  export type Response = IDiscussionBoardComment;
 
   export const METADATA = {
     method: "DELETE",
@@ -348,11 +322,12 @@ export namespace erase {
 
   export const path = (props: Props) =>
     `/discussionBoard/member/articles/${encodeURIComponent(props.articleId ?? "null")}/comments/${encodeURIComponent(props.commentId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
+  export const random = (): IDiscussionBoardComment =>
+    typia.random<IDiscussionBoardComment>();
   export const simulate = (
     connection: IConnection,
     props: erase.Props,
-  ): void => {
+  ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,

@@ -1,0 +1,152 @@
+/// Discussion board articles representing user- or admin-authored posts as
+/// primary content for economic and political debate.
+///
+/// Each article contains essential business data such as title and body,
+/// subject to length limits and business rules described in requirements.
+/// Articles are attributed to the creating user or admin. File and image
+/// attachments are handled via a separate table. Articles are the main entry
+/// point for debate, searchable by title or content. Edits and deletions are
+/// fully audit-trailed by related snapshot and moderation tables. Removal
+/// will cascade to attachments and comments.
+///
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique article identifier.
+  id String @id
+  
+  /// Optional reference to the user who authored this article. Null if
+  /// authored by an admin. {@link discussion_board_users.id}.
+  author_user_id String?
+  
+  /// Optional reference to the admin who authored this article. Null if
+  /// authored by a user. {@link discussion_board_admins.id}.
+  author_admin_id String?
+  
+  /// Article headline. Required. Must be between 5 and 150 characters.
+  title String
+  
+  /// Main content of the article. Must be between 20 and 5000 characters.
+  body String
+  
+  /// Timestamp when article was created.
+  created_at DateTime
+  
+  /// Timestamp when article was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  authorUser discussion_board_users? @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
+  authorAdmin discussion_board_admins? @relation(fields: [author_admin_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_article_attachments discussion_board_article_attachments[]
+  discussion_board_article_snapshots discussion_board_article_snapshots[]
+  discussion_board_comments discussion_board_comments[]
+  
+  @@index([author_user_id, created_at])
+  @@index([author_admin_id, created_at])
+}
+
+/// Attachments associated with articles, such as images or documents,
+/// supporting evidence-based discussion.
+///
+/// Each attachment is directly tied to a single article. Allowed file types
+/// and size limits are enforced at business logic layer. Attachments are
+/// stored as URIs referencing backend storage locations. Deletion of the
+/// parent article cascades to attachments.
+///
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Unique attachment identifier.
+  id String @id
+  
+  /// Reference to the article this attachment belongs to. {@link
+  /// discussion_board_articles.id}.
+  article_id String
+  
+  /// Storage URI for the file or image attachment.
+  uri String
+  
+  /// Original filename of the uploaded attachment.
+  file_name String
+  
+  /// MIME type of the attachment, as checked on upload.
+  file_type String
+  
+  /// Size of attachment in bytes. Enforced maximum 10MB via business rules.
+  file_size Int
+  
+  /// Timestamp when the attachment was uploaded.
+  uploaded_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  @@index([article_id, uploaded_at])
+}
+
+/// Historical snapshots of article states for versioning, edit trails, and
+/// audit purposes.
+///
+/// Stores a copy of article content, title, and author information at each
+/// versioning event. New snapshot records are created whenever an article is
+/// edited. Snapshots ensure a complete edit history for compliance,
+/// moderation, and rollback analysis. Snapshots are never modified or
+/// deleted outside of full article or system purge events.
+///
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Snapshot identifier.
+  id String @id
+  
+  /// Reference to the article whose state this snapshot captures. {@link
+  /// discussion_board_articles.id}.
+  article_id String
+  
+  /// Reference to the user author at the time of this snapshot. Nullable if
+  /// authored or modified by admin. {@link discussion_board_users.id}.
+  author_user_id String?
+  
+  /// Reference to the admin author at the time of this snapshot. Nullable if
+  /// authored/modified by user. {@link discussion_board_admins.id}.
+  author_admin_id String?
+  
+  /// Snapshot of the article title at the time of snapshot creation.
+  title String
+  
+  /// Snapshot of the main article content at the snapshot time.
+  body String
+  
+  /// When the snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  authorUser discussion_board_users? @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
+  authorAdmin discussion_board_admins? @relation(fields: [author_admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([author_user_id])
+  @@index([author_admin_id])
+  
+  @@index([article_id, created_at])
+}

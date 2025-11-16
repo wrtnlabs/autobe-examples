@@ -14,73 +14,105 @@ import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 export async function patchCommunityPlatformCommunities(props: {
   body: ICommunityPlatformCommunity.IRequest;
 }): Promise<IPageICommunityPlatformCommunity.ISummary> {
-  const { page, limit, search, creator_user_id, from_date, to_date, status } =
-    props.body;
+  const {
+    name,
+    display_title,
+    description,
+    visibility,
+    status,
+    created_at_from,
+    created_at_to,
+    sort_by,
+    sort_direction,
+    page = 1,
+    limit = 100,
+  } = props.body ?? {};
 
-  const pageNum = Number(page) < 1 ? 1 : Number(page);
-  const limitNum = Number(limit) < 1 ? 20 : Number(limit);
-  const skip = (pageNum - 1) * limitNum;
+  const safeLimit = Math.min(Math.max(Number(limit ?? 100), 1), 100);
+  const safePage = Math.max(Number(page ?? 1), 1);
+  const skip = (safePage - 1) * safeLimit;
 
-  // Only return active or archived based on status param.
-  // By default, show only active (deleted_at=null), if status==='archived', show only archived (deleted_at!=null)
-  let deletedAtFilter: {};
-  if (status === "archived") {
-    deletedAtFilter = { deleted_at: { not: null } };
-  } else {
-    deletedAtFilter = { deleted_at: null };
-  }
+  const allowedSortBy = ["name", "display_title", "created_at", "status"];
+  const orderByField: "name" | "display_title" | "created_at" | "status" =
+    allowedSortBy.includes(sort_by as string)
+      ? (sort_by as "name" | "display_title" | "created_at" | "status")
+      : "created_at";
+  const orderByDirection: "asc" | "desc" =
+    sort_direction === "asc" || sort_direction === "desc"
+      ? sort_direction
+      : "desc";
 
-  // Build filters
-  const where = {
-    ...deletedAtFilter,
-    ...(search
-      ? {
-          OR: [
-            { name: { contains: search } },
-            { description: { contains: search } },
-          ],
-        }
-      : {}),
-    ...(creator_user_id !== undefined &&
-      creator_user_id !== null && {
-        creator_user_id,
-      }),
-    ...(from_date || to_date
-      ? {
-          created_at: {
-            ...(from_date ? { gte: from_date } : {}),
-            ...(to_date ? { lte: to_date } : {}),
-          },
-        }
-      : {}),
+  const orderBy: Record<string, "asc" | "desc"> = {};
+  orderBy[orderByField] = orderByDirection;
+
+  const where: any = {
+    ...(name && {
+      name: { contains: name, mode: Prisma.QueryMode.insensitive },
+    }),
+    ...(display_title && {
+      display_title: {
+        contains: display_title,
+        mode: Prisma.QueryMode.insensitive,
+      },
+    }),
+    ...(description && {
+      description: {
+        contains: description,
+        mode: Prisma.QueryMode.insensitive,
+      },
+    }),
+    ...(visibility && { visibility }),
+    ...(status && { status }),
+    ...((created_at_from || created_at_to) && {
+      created_at: {
+        ...(created_at_from && {
+          gte:
+            typeof created_at_from === "object"
+              ? toISOStringSafe(created_at_from)
+              : created_at_from,
+        }),
+        ...(created_at_to && {
+          lte:
+            typeof created_at_to === "object"
+              ? toISOStringSafe(created_at_to)
+              : created_at_to,
+        }),
+      },
+    }),
   };
 
-  const [rows, total] = await Promise.all([
+  const [records, total] = await Promise.all([
     MyGlobal.prisma.community_platform_communities.findMany({
       where,
-      orderBy: { created_at: "desc" },
+      orderBy,
       skip,
-      take: limitNum,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-      },
+      take: safeLimit,
     }),
     MyGlobal.prisma.community_platform_communities.count({ where }),
   ]);
 
+  const data = records.map((c) => {
+    return {
+      id: c.id,
+      name: c.name,
+      display_title: c.display_title,
+      description: c.description,
+      visibility: c.visibility,
+      image_url:
+        c.image_url === null || typeof c.image_url === "undefined"
+          ? undefined
+          : c.image_url,
+      status: c.status,
+    };
+  });
+
   return {
+    data,
     pagination: {
-      current: Number(pageNum),
-      limit: Number(limitNum),
+      current: safePage,
+      limit: safeLimit,
       records: total,
-      pages: Math.ceil(total / limitNum),
+      pages: Math.ceil(total / safeLimit),
     },
-    data: rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-    })),
   };
 }

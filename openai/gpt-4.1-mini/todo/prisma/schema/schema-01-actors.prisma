@@ -1,75 +1,120 @@
-/// Authenticated user accounts who can login and manage their personal todo
-/// items. Includes credentials and audit information. Uniquely identified by
-/// UUID. Soft deletable for account deactivation.
+/// Guest users who access the system without authentication.
+///
+/// Stores minimal identifying information for tracking purposes.
+/// Guests do not have sessions since they are unauthenticated.
+///
+/// Used for analytics, monitoring, and optionally restricting access based
+/// on IP or device.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_users {
+model todo_list_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User's unique email address for authentication and contact.
-  email String
+  /// IP address of the guest user for tracking and access control.
+  ip String
   
-  /// Hashed password for secure authentication.
-  password_hash String
+  /// User agent string of the guest browser or client device.
+  user_agent String
   
-  /// Timestamp when the user account was created.
+  /// Time when the guest record was created.
   created_at DateTime
-  
-  /// Timestamp when the user account was last updated.
-  updated_at DateTime
-  
-  /// Soft delete timestamp to mark user deactivation.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todo_user_sessions todo_user_sessions[]
-  todo_todo_items todo_todo_items[]
-  
-  @@unique([email])
+  @@index([ip])
 }
 
-/// Sessions for authenticated users maintaining JWTs for access control and
-/// expiration. Each session references an existing user and records
-/// connection context like IP and referrer.
+/// Authenticated users of the Todo List application.
+///
+/// Users must register with a unique email and password hash.
+///
+/// Manages user identity, authentication credentials, and account metadata.
+///
+/// Supports authentication workflows and user-specific todo data access
+/// controls.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_user_sessions {
+model todo_list_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Referenced user's {@link todo_users.id}.
-  todo_user_id String
+  /// Unique email address for user login and communication.
+  email String
   
-  /// IP address of the session client.
+  /// Hashed password string for user authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// User account creation timestamp.
+  created_at DateTime
+  
+  /// Timestamp of last account update.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_user_sessions todo_list_user_sessions[]
+  todo_list_todos todo_list_todos[]
+  
+  @@unique([email])
+  @@index([created_at, updated_at])
+}
+
+/// Sessions for authenticated users of the Todo List application.
+///
+/// Tracks active and historical login sessions for users.
+///
+/// Records connection context such as IP, referrer, and access URL.
+///
+/// Supports session expiration and audit logging.
+///
+/// Each session links to its owning user.
+///
+/// This table has a composite index on user_id and created_at to optimize
+/// session queries.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the owning user. {@link todo_list_users.id}.
+  todo_list_user_id String
+  
+  /// IP address from which the session was established.
   ip String
   
-  /// URL from which the session was established.
+  /// URL accessed during the session.
   href String
   
-  /// Referrer URL of the session request.
+  /// Referrer URL for the session.
   referrer String
   
   /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when the session expires or ends.
+  /// Timestamp when the session expired or was terminated.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todoUser todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_user_id, created_at])
+  @@index([todo_list_user_id, created_at])
 }

@@ -1,171 +1,443 @@
-/// Main comment entity containing comment content, author information, and
-/// moderation status. Comments support nested replies up to 10 levels deep
-/// and can be associated with posts in any community. {@link
-/// reddit_clone_posts.id} {@link reddit_clone_members.id}
+/// Main entity for user comments on posts with threaded discussion support.
+///
+/// Stores the core comment content including text, parent relationships for
+/// threading, and engagement metrics. Comments support nested replies up to
+/// 10 levels deep and can be created by different actor types (members,
+/// moderators, admins) through subtype entities.
+///
+/// Each comment maintains its own lifecycle independent from the parent
+/// post, allowing for independent moderation, voting, and user management.
+/// Comments can be edited within a limited timeframe and support soft
+/// deletion for content moderation while preserving discussion context.
+///
+/// The entity includes status tracking for active, deleted, and moderated
+/// states, with comprehensive audit trails for all modifications. Comments
+/// form the foundation of community discussions and require efficient
+/// querying for threaded display and user activity tracking.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_comments {
+model community_platform_comments {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Associated post where this comment is posted. {@link
-  /// reddit_clone_posts.id}
-  reddit_clone_post_id String
+  /// Reference to the parent post where this comment is posted. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
   
-  /// Member who created this comment. {@link reddit_clone_members.id}
-  reddit_clone_member_id String
+  /// Self-referencing foreign key for comment threading. Points to the parent
+  /// comment for nested replies. {@link community_platform_comments.id}
+  parent_id String?
   
-  /// Session when the comment was created. {@link
-  /// reddit_clone_member_sessions.id}
-  reddit_clone_member_session_id String
+  /// Type of actor who created the comment. Valid values: member, moderator,
+  /// admin. Used for quick filtering and relationship routing.
+  actor_type String
   
-  /// Parent comment for nested replies (nullable for top-level comments).
-  /// {@link reddit_clone_comments.id}
-  parent_comment_id String?
+  /// Comment content text with markdown formatting support. Maximum length of
+  /// 10,000 characters to accommodate detailed discussions.
+  body String
   
-  /// Comment text content with markdown formatting support.
-  content String
-  
-  /// Comment moderation status (pending, approved, removed, locked).
+  /// Current comment status. Valid values: active, deleted, moderated.
+  /// Controls comment visibility and moderation state.
   status String
   
-  /// Depth level in comment hierarchy (0 for top-level comments).
-  nesting_level Int
+  /// Nesting level of the comment within the thread. Root comments have depth
+  /// 0, replies have increasing depth values.
+  depth Int
   
-  /// Timestamp when the comment was created.
+  /// Timestamp when the comment was originally created.
   created_at DateTime
   
-  /// Timestamp when the comment was last modified.
+  /// Timestamp when the comment was last modified. Updated on edits, status
+  /// changes, or engagement updates.
   updated_at DateTime
   
-  /// Timestamp when the comment was soft-deleted.
+  /// Timestamp when the comment was soft deleted. Null if comment is active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
-  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
-  memberSession reddit_clone_member_sessions @relation(fields: [reddit_clone_member_session_id], references: [id], onDelete: Cascade)
-  parent reddit_clone_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
   
-  recursive reddit_clone_comments[] @relation("recursive")
-  reddit_clone_comment_threads_of_root_comment_id reddit_clone_comment_threads[] @relation("reddit_clone_comment_threads_of_root_comment_id")
-  reddit_clone_comment_threads_of_latest_comment_id reddit_clone_comment_threads[] @relation("reddit_clone_comment_threads_of_latest_comment_id")
-  reddit_clone_comment_replies_of_parent_comment_id reddit_clone_comment_replies[] @relation("reddit_clone_comment_replies_of_parent_comment_id")
-  reddit_clone_comment_replies_of_child_comment_id reddit_clone_comment_replies[] @relation("reddit_clone_comment_replies_of_child_comment_id")
-  reddit_clone_comment_votes reddit_clone_comment_votes[]
-  reddit_clone_karma_history reddit_clone_karma_history[]
-  reddit_clone_content_reports reddit_clone_content_reports[]
-  reddit_clone_moderation_actions reddit_clone_moderation_actions[]
-  reddit_clone_user_activity reddit_clone_user_activity[]
-  reddit_clone_content_metrics reddit_clone_content_metrics[]
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_comment_of_members community_platform_comment_of_members?
+  community_platform_comment_of_moderators community_platform_comment_of_moderators?
+  community_platform_comment_of_admins community_platform_comment_of_admins?
+  community_platform_comment_reports community_platform_comment_reports[]
+  community_platform_comment_votes community_platform_comment_votes[]
+  community_platform_comment_threads_of_root_comment_id community_platform_comment_threads[] @relation("community_platform_comment_threads_of_root_comment_id")
+  community_platform_comment_threads_of_parent_comment_id community_platform_comment_threads[] @relation("community_platform_comment_threads_of_parent_comment_id")
+  community_platform_karma_breakdowns community_platform_karma_breakdowns[]
+  community_platform_content_reports community_platform_content_reports[]
   
-  @@index([reddit_clone_member_session_id])
-  
-  @@index([reddit_clone_post_id, created_at])
-  @@index([reddit_clone_member_id, created_at])
-  @@index([parent_comment_id, created_at])
-  @@index([nesting_level])
-  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  @@index([parent_id, created_at])
+  @@index([actor_type, created_at])
+  @@index([status, created_at])
+  @@index([actor_type, status, created_at])
 }
 
-/// Thread management table for organizing comment hierarchies and tracking
-/// thread properties. Supports efficient loading and navigation of comment
-/// threads. {@link reddit_clone_comments.id} {@link reddit_clone_posts.id}
+/// Subtype entity for comments created by regular community members.
+///
+/// Stores member-specific context for comment creation including the
+/// member's session information and creation timestamp. This entity enables
+/// proper polymorphic ownership pattern where different actor types can
+/// create comments while maintaining referential integrity and
+/// actor-specific metadata.
+///
+/// Each comment created by a member has a corresponding record in this table
+/// that links the main comment entity to the specific member and their
+/// session context. This separation allows for efficient querying of
+/// member-specific comment activity and proper audit trails.
+///
+/// The entity supports the platform's authentication system by tracking
+/// which member created each comment and under which session context,
+/// enabling comprehensive user activity tracking and moderation workflows.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_comment_threads {
+model community_platform_comment_of_members {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Post containing this comment thread. {@link reddit_clone_posts.id}
-  reddit_clone_post_id String
+  /// Reference to the main comment entity. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String
   
-  /// Root comment that started this thread. {@link reddit_clone_comments.id}
-  root_comment_id String
+  /// Reference to the member who created the comment. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
   
-  /// Most recent comment in this thread. {@link reddit_clone_comments.id}
-  latest_comment_id String?
+  /// Reference to the member's session when the comment was created. {@link
+  /// community_platform_member_sessions.id}
+  community_platform_member_session_id String
   
-  /// Total number of comments in this thread.
-  comment_count Int
-  
-  /// Maximum nesting depth reached in this thread.
-  max_nesting_level Int
-  
-  /// Whether this thread is locked for new comments.
-  is_locked Boolean
-  
-  /// Timestamp of the most recent activity in this thread.
-  last_activity_at DateTime
-  
-  /// Timestamp when the thread was created.
+  /// Timestamp when the member created this comment.
   created_at DateTime
   
-  /// Timestamp when thread properties were last updated.
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  memberSession community_platform_member_sessions @relation(fields: [community_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_of_members_community_platfo_aeccac9a")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_of_members_community_platfo_beedf931")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_session_id, created_at], map: "community_platform_comment_of_members_community_platfo_281a9524")
+}
+
+/// Subtype entity for comments created by community moderators.
+///
+/// Stores moderator-specific context for comment creation including the
+/// moderator's session information and creation timestamp. This entity
+/// enables proper polymorphic ownership pattern where different actor types
+/// can create comments while maintaining referential integrity and
+/// actor-specific metadata.
+///
+/// Each comment created by a moderator has a corresponding record in this
+/// table that links the main comment entity to the specific moderator and
+/// their session context. This separation allows for efficient querying of
+/// moderator-specific comment activity and proper audit trails.
+///
+/// The entity supports the platform's moderation system by tracking which
+/// moderator created each comment and under which session context, enabling
+/// comprehensive moderation activity tracking and accountability.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main comment entity. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// Reference to the moderator who created the comment. {@link
+  /// community_platform_moderators.id}
+  community_platform_moderator_id String
+  
+  /// Reference to the moderator's session when the comment was created. {@link
+  /// community_platform_moderator_sessions.id}
+  community_platform_moderator_session_id String
+  
+  /// Timestamp when the moderator created this comment.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  moderatorSession community_platform_moderator_sessions @relation(fields: [community_platform_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_of_moderators_community_pla_44f7c26b")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, created_at], map: "community_platform_comment_of_moderators_community_pla_7aa093fe")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_session_id, created_at], map: "community_platform_comment_of_moderators_community_pla_00717432")
+}
+
+/// Subtype entity for comments created by platform administrators.
+///
+/// Stores admin-specific context for comment creation including the admin's
+/// session information and creation timestamp. This entity enables proper
+/// polymorphic ownership pattern where different actor types can create
+/// comments while maintaining referential integrity and actor-specific
+/// metadata.
+///
+/// Each comment created by an admin has a corresponding record in this table
+/// that links the main comment entity to the specific admin and their
+/// session context. This separation allows for efficient querying of
+/// admin-specific comment activity and proper audit trails.
+///
+/// The entity supports the platform's administration system by tracking
+/// which admin created each comment and under which session context,
+/// enabling comprehensive administrative activity tracking and system
+/// accountability.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main comment entity. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// Reference to the admin who created the comment. {@link
+  /// community_platform_admins.id}
+  community_platform_admin_id String
+  
+  /// Reference to the admin's session when the comment was created. {@link
+  /// community_platform_admin_sessions.id}
+  community_platform_admin_session_id String
+  
+  /// Timestamp when the admin created this comment.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  adminSession community_platform_admin_sessions @relation(fields: [community_platform_admin_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_comment_of_admins_community_platfor_14eccca5")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_comment_of_admins_community_platfor_cc2e914f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_session_id, created_at], map: "community_platform_comment_of_admins_community_platfor_dd750e0c")
+}
+
+/// User reports for inappropriate or rule-violating comments.
+///
+/// Stores reports submitted by users flagging comments that violate
+/// community guidelines or platform rules. Each report includes
+/// categorization, severity assessment, and reporter context for effective
+/// moderation workflows.
+///
+/// Reports are processed through the moderation system with priority based
+/// on severity and community impact. The system maintains comprehensive
+/// reporting history for pattern analysis, user education, and moderation
+/// quality improvement.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the reported comment. {@link community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// Reference to the member who submitted the report. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Category of the reported violation. Valid values: spam, harassment,
+  /// illegal, misinformation, rule_violation.
+  report_category String
+  
+  /// Reported severity level. Valid values: low, medium, high, critical.
+  severity String
+  
+  /// Optional detailed explanation provided by the reporter. Maximum 1000
+  /// characters.
+  description String?
+  
+  /// Current report status. Valid values: pending, reviewing, resolved,
+  /// dismissed.
+  status String
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated. Updated during moderation
+  /// workflow.
+  updated_at DateTime
+  
+  /// Timestamp when the report was resolved. Null if report is still active.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  reporter community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id, community_platform_member_id], map: "community_platform_comment_reports_community_platform__3c831c90")
+  // spellchecker: ignore-next-line
+  @@index([report_category, created_at], map: "community_platform_comment_reports_report_category_cre_ff951fbf")
+  @@index([severity, created_at])
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_reports_community_platform__9c1aae12")
+}
+
+/// Individual votes (upvotes/downvotes) on comments for engagement scoring.
+///
+/// Stores each vote cast on comments, enabling the calculation of comment
+/// scores and user karma contributions. The system prevents duplicate voting
+/// and maintains vote integrity through unique constraints and validation
+/// rules.
+///
+/// Votes contribute to comment visibility in sorting algorithms and user
+/// reputation calculations. The entity supports vote changing within limited
+/// timeframes and maintains audit trails for vote manipulation detection.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the voted comment. {@link community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// Reference to the member who cast the vote. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Type of vote cast. Valid values: upvote, downvote.
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated. Used for vote change tracking.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
-  rootComment reddit_clone_comments @relation("reddit_clone_comment_threads_of_root_comment_id", fields: [root_comment_id], references: [id], onDelete: Cascade)
-  latestComment reddit_clone_comments? @relation("reddit_clone_comment_threads_of_latest_comment_id", fields: [latest_comment_id], references: [id], onDelete: Cascade)
-  
-  @@index([root_comment_id])
-  @@index([latest_comment_id])
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  voter community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([reddit_clone_post_id, root_comment_id], map: "reddit_clone_comment_threads_reddit_clone_post_id_root_ecb894e2")
+  @@unique([community_platform_comment_id, community_platform_member_id], map: "community_platform_comment_votes_community_platform_co_c5f3e82e")
+  @@index([vote_type, created_at])
   // spellchecker: ignore-next-line
-  @@index([reddit_clone_post_id, last_activity_at], map: "reddit_clone_comment_threads_reddit_clone_post_id_last_5badd31a")
-  @@index([is_locked])
-  @@index([comment_count])
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_votes_community_platform_me_2c59b90a")
 }
 
-/// Junction table for managing reply relationships between comments.
-/// Supports efficient querying of reply chains and nested comment
-/// structures. {@link reddit_clone_comments.id}
+/// Organizational structure for comment threading and nested discussions.
+///
+/// Maintains the hierarchical relationships between comments to enable
+/// efficient threaded display and navigation. This entity supports the
+/// platform's nested comment system with up to 10 levels of reply depth.
+///
+/// Used for optimizing comment retrieval, calculating thread statistics, and
+/// supporting advanced comment navigation features. The system maintains
+/// thread integrity through proper parent-child relationships and depth
+/// validation.
+///
+/// As a primary entity, thread structures require independent management for
+/// thread-level operations, moderation workflows, and analytics. Threads can
+/// be locked, archived, or managed independently from individual comments
+/// within them.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_comment_replies {
+model community_platform_comment_threads {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent comment being replied to. {@link reddit_clone_comments.id}
-  parent_comment_id String
+  /// Reference to the root comment of this thread. {@link
+  /// community_platform_comments.id}
+  root_comment_id String
   
-  /// Child comment that is the reply. {@link reddit_clone_comments.id}
-  child_comment_id String
+  /// Reference to the direct parent comment. {@link
+  /// community_platform_comments.id}
+  parent_comment_id String?
   
-  /// Depth level of this reply in the hierarchy.
-  reply_depth Int
+  /// Maximum depth of comments within this thread. Used for performance
+  /// optimization.
+  thread_depth Int
   
-  /// Timestamp when the reply relationship was created.
+  /// Total number of comments in this thread. Updated automatically.
+  comment_count Int
+  
+  /// Timestamp of the most recent activity in this thread.
+  last_activity_at DateTime
+  
+  /// Timestamp when the thread structure was created.
   created_at DateTime
+  
+  /// Timestamp when the thread structure was last updated.
+  updated_at DateTime
+  
+  /// Thread status for moderation and management. Valid values: active,
+  /// locked, archived.
+  status String
   
   //----
   // RELATIONS
   //----
-  parentComment reddit_clone_comments @relation("reddit_clone_comment_replies_of_parent_comment_id", fields: [parent_comment_id], references: [id], onDelete: Cascade)
-  childComment reddit_clone_comments @relation("reddit_clone_comment_replies_of_child_comment_id", fields: [child_comment_id], references: [id], onDelete: Cascade)
+  rootComment community_platform_comments @relation("community_platform_comment_threads_of_root_comment_id", fields: [root_comment_id], references: [id], onDelete: Cascade)
+  parentComment community_platform_comments? @relation("community_platform_comment_threads_of_parent_comment_id", fields: [parent_comment_id], references: [id], onDelete: Cascade)
   
+  @@index([parent_comment_id])
+  
+  @@unique([root_comment_id])
   // spellchecker: ignore-next-line
-  @@unique([parent_comment_id, child_comment_id], map: "reddit_clone_comment_replies_parent_comment_id_child_c_36f3881d")
-  @@index([parent_comment_id, reply_depth])
-  @@index([child_comment_id])
-  @@index([reply_depth])
+  @@index([thread_depth, last_activity_at], map: "community_platform_comment_threads_thread_depth_last_a_853073f1")
+  // spellchecker: ignore-next-line
+  @@index([comment_count, last_activity_at], map: "community_platform_comment_threads_comment_count_last__37fae973")
+  @@index([status, last_activity_at])
 }

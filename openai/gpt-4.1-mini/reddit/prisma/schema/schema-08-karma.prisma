@@ -1,0 +1,49 @@
+/// User karma tracking for registered users within the reddit community
+/// platform.
+///
+/// This table stores the aggregated karma score representing the reputation
+/// of each registered user based on votes received on their posts and
+/// comments.
+///
+/// Each record is associated with exactly one registered user and maintains
+/// timestamps for creation, updates, and soft deletion to support audit
+/// trails and business logic related to user reputation management.
+///
+/// Karma values reflect the net total of upvotes minus downvotes and
+/// influence user privileges such as community creation eligibility.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_karma {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the registered user. {@link
+  /// reddit_community_registered_users.id}.
+  registered_user_id String
+  
+  /// Aggregated karma points representing the user's reputation calculated
+  /// from votes on posts and comments.
+  karma Int
+  
+  /// Timestamp when this karma record was created.
+  created_at DateTime
+  
+  /// Timestamp when this karma record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp allows marking records as deleted without
+  /// physical removal, supporting audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser reddit_community_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([registered_user_id])
+  @@index([karma])
+}

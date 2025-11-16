@@ -1,0 +1,356 @@
+/// Customer-authored product reviews and star ratings.
+///
+/// Stores individual reviews created by customers for products they have
+/// purchased. Each review contains a numeric rating, an optional textual
+/// comment, and state indicating whether it is visible in public listings.
+///
+/// The table links each review to a specific product and optionally to a
+/// concrete SKU variant when reviews are configured at SKU level. It also
+/// links to the customer who authored the review and supports standard
+/// temporal fields for audit and soft deletion.
+///
+/// Moderation state is stored here for fast filtering, while detailed
+/// moderation history is kept in {@link
+/// shopping_mall_product_review_moderation_events}. Aggregated rating
+/// statistics per product are stored separately in {@link
+/// shopping_mall_product_rating_aggregates}.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the product review record.
+  id String @id
+  
+  /// Identifier of the product being reviewed. References the catalog product
+  /// entity. {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Optional identifier of the specific SKU variant being reviewed when
+  /// SKU-level reviews are enabled. {@link shopping_mall_product_skus.id}.
+  product_sku_id String?
+  
+  /// Customer who authored the review. {@link shopping_mall_customer.id}.
+  customer_id String
+  
+  /// Star rating value provided by the customer. Uses a fixed integer scale
+  /// such as 15 inclusive, where the lowest value indicates the worst
+  /// experience and the highest value the best.
+  rating Int
+  
+  /// Optional short summary or headline for the review. Shown in listing views
+  /// where a brief title is helpful.
+  title String?
+  
+  /// Optional free-form text comment describing the customer experience,
+  /// subject to length limits and content policies.
+  body String?
+  
+  /// Moderation and lifecycle status of the review. Typical values include
+  /// pending, approved, hidden, rejected, and removed, and determine public
+  /// visibility and eligibility for aggregation.
+  status String
+  
+  /// Indicates whether the review is currently visible in public product
+  /// review lists. Derived from status but stored for efficient filtering.
+  is_public Boolean
+  
+  /// Timestamp when the review record was first created.
+  created_at DateTime
+  
+  /// Timestamp when the review record was last updated, including moderation
+  /// changes or customer edits.
+  updated_at DateTime
+  
+  /// Optional timestamp indicating when the review was soft-deleted. Null when
+  /// the review is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_product_skus? @relation(fields: [product_sku_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_product_review_reports shopping_mall_product_review_reports[]
+  shopping_mall_product_review_moderation_events shopping_mall_product_review_moderation_events[]
+  shopping_mall_product_review_seller_responses shopping_mall_product_review_seller_responses?
+  
+  @@index([product_sku_id])
+  
+  @@unique([customer_id, product_id])
+  @@index([product_id, created_at])
+  @@index([customer_id, created_at])
+  @@index([status, product_id])
+}
+
+/// Reports and abuse flags submitted against product reviews.
+///
+/// Stores complaints created by customers, sellers, or administrators about
+/// specific product reviews. Each report records who reported the review,
+/// why they reported it, and when the report was created.
+///
+/// Reports feed moderation workflows and help surface reviews that may
+/// contain spam, abusive language, policy violations, or other issues.
+/// Detailed moderation decisions based on these reports are captured in
+/// {@link shopping_mall_product_review_moderation_events}.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_review_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the review report record.
+  id String @id
+  
+  /// Identifier of the review being reported. {@link
+  /// shopping_mall_product_reviews.id}.
+  review_id String
+  
+  /// Type of actor who submitted the report. Typical values include customer,
+  /// seller, and platformAdmin and determine how reporter_actor_id is
+  /// interpreted at the application level.
+  reporter_actor_type String
+  
+  /// Identifier of the actor who submitted the report. Interpreted together
+  /// with reporter_actor_type to reference customer, seller, or platform admin
+  /// identities in their own tables.
+  reporter_actor_id String
+  
+  /// Structured reason code categorizing why the review was reported, such as
+  /// spam, inappropriate_language, privacy_violation, off_topic, or
+  /// conflict_of_interest.
+  reason_code String
+  
+  /// Optional free-form comment from the reporter providing additional context
+  /// or explanation for the report.
+  comment String?
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report record was last updated, for example when
+  /// changing reason_code or comment.
+  updated_at DateTime
+  
+  /// Optional timestamp indicating when the report was soft-deleted or
+  /// logically cleared. Null while the report is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_product_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  
+  @@index([review_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([reporter_actor_type, reporter_actor_id, created_at], map: "shopping_mall_product_review_reports_reporter_actor_ty_bd2b1fce")
+}
+
+/// Historical moderation actions applied to product reviews.
+///
+/// Captures an append-only timeline of moderation decisions taken for each
+/// review, such as approving, hiding, rejecting, or removing content. Each
+/// event links to the target review and the platform administrator who
+/// performed the action.
+///
+/// This table provides an immutable audit trail for compliance and dispute
+/// resolution, complementing the current status fields stored on {@link
+/// shopping_mall_product_reviews}. It supports queries over moderation
+/// history by review, by admin actor, or by event type.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_review_moderation_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the moderation event record.
+  id String @id
+  
+  /// Identifier of the review to which this moderation decision applies.
+  /// {@link shopping_mall_product_reviews.id}.
+  review_id String
+  
+  /// Platform administrator who performed the moderation action. {@link
+  /// shopping_mall_platformadmin.id}.
+  platformadmin_id String
+  
+  /// Previous moderation status of the review before this event was applied.
+  /// Null for the initial moderation event when there is no prior status.
+  from_status String?
+  
+  /// New moderation status of the review after this event, such as approved,
+  /// hidden, rejected, or removed.
+  to_status String
+  
+  /// Optional structured reason code describing why this moderation action was
+  /// taken, for example policy_violation, abuse, spam, or legal_request.
+  reason_code String?
+  
+  /// Optional free-form note provided by the moderator with additional context
+  /// or justification for the decision.
+  note String?
+  
+  /// Timestamp when the moderation event was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the moderation event record was last updated, usually
+  /// matching created_at in append-only usage.
+  updated_at DateTime
+  
+  /// Optional timestamp indicating when the moderation event was logically
+  /// removed from active views. Null under normal append-only usage.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_product_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  platformAdmin shopping_mall_platformadmin @relation(fields: [platformadmin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([review_id, created_at], map: "shopping_mall_product_review_moderation_events_review__e438162f")
+  // spellchecker: ignore-next-line
+  @@index([platformadmin_id, created_at], map: "shopping_mall_product_review_moderation_events_platfor_3bf131d0")
+}
+
+/// Seller-authored responses to customer product reviews.
+///
+/// Stores optional replies written by sellers in response to customer
+/// reviews of their products. Each response is associated with exactly one
+/// review and one seller and is constrained so that at most one response
+/// exists per review.
+///
+/// Seller responses allow merchants to address feedback publicly while
+/// keeping the original review content unchanged. Visibility and moderation
+/// of responses can be coordinated with the parent review and overall
+/// moderation policies.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_review_seller_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the seller response record.
+  id String @id
+  
+  /// Identifier of the review this seller response is attached to. Enforced as
+  /// 1:1 so each review has at most one response. {@link
+  /// shopping_mall_product_reviews.id}.
+  review_id String
+  
+  /// Seller who authored the response. {@link shopping_mall_seller.id}.
+  seller_id String
+  
+  /// Text content of the seller response visible to customers, subject to
+  /// moderation and content policies.
+  body String
+  
+  /// Timestamp when the seller response was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller response was last updated.
+  updated_at DateTime
+  
+  /// Optional timestamp indicating when the seller response was soft-deleted
+  /// or hidden from public view.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_product_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_seller @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([review_id])
+  // spellchecker: ignore-next-line
+  @@index([seller_id, created_at], map: "shopping_mall_product_review_seller_responses_seller_i_249bbfb5")
+}
+
+/// Materialized aggregate ratings and review counts per product and optional
+/// SKU.
+///
+/// Caches denormalized statistics derived from {@link
+/// shopping_mall_product_reviews}, such as average rating and total count of
+/// contributing reviews. This table is optimized for fast catalog and
+/// product-detail queries that require rating summaries without scanning all
+/// individual reviews.
+///
+/// Entries are typically maintained by background jobs or transactional
+/// update logic whenever reviews are created, edited, or re-moderated. It
+/// supports both product-level and SKU-level aggregates when SKU-specific
+/// reviews are enabled.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_rating_aggregates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the rating aggregate record.
+  id String @id
+  
+  /// Identifier of the product for which rating aggregates are computed.
+  /// {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Optional identifier of the SKU variant when aggregates are calculated at
+  /// SKU level. Null for product-level aggregates. {@link
+  /// shopping_mall_product_skus.id}.
+  product_sku_id String?
+  
+  /// Average rating value for this product or SKU based on approved reviews.
+  /// Null when no contributing reviews exist.
+  average_rating Float?
+  
+  /// Total number of reviews contributing to this aggregate for the product or
+  /// SKU, typically counting only approved and public reviews.
+  review_count Int
+  
+  /// Number of contributing reviews with the lowest rating value (for example,
+  /// 1 star) for this product or SKU.
+  rating_1_count Int
+  
+  /// Number of contributing reviews with rating value 2 for this product or
+  /// SKU when using a 15 scale.
+  rating_2_count Int
+  
+  /// Number of contributing reviews with rating value 3 for this product or
+  /// SKU when using a 15 scale.
+  rating_3_count Int
+  
+  /// Number of contributing reviews with rating value 4 for this product or
+  /// SKU when using a 15 scale.
+  rating_4_count Int
+  
+  /// Number of contributing reviews with the highest rating value (for
+  /// example, 5 stars) for this product or SKU.
+  rating_5_count Int
+  
+  /// Timestamp when the aggregate record was first created.
+  created_at DateTime
+  
+  /// Timestamp when the aggregate record was last recalculated or updated.
+  updated_at DateTime
+  
+  /// Optional timestamp indicating when this aggregate was logically removed,
+  /// for example when the product is deprecated. Null while active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  sku shopping_mall_product_skus? @relation(fields: [product_sku_id], references: [id], onDelete: Cascade)
+  
+  @@index([product_sku_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([product_id, product_sku_id], map: "shopping_mall_product_rating_aggregates_product_id_pro_f4285895")
+  @@index([product_id])
+}

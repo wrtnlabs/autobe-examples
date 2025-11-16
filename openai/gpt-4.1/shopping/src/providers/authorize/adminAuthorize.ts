@@ -5,31 +5,33 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
 
 /**
- * Verifies authentication and existence for Admin role.
+ * Authenticate and authorize Shopping Mall Admin user from JWT token.
  *
- * @param request Incoming HTTP request containing Bearer token
- * @returns Authenticated AdminPayload
- * @throws ForbiddenException if not an admin or not enrolled/active
+ * Verifies JWT, role, and database record for admin status and active/valid account state.
+ * Throws ForbiddenException on any failure. Returns AdminPayload for authorized admin.
  */
 export async function adminAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
+  headers: { authorization?: string };
 }): Promise<AdminPayload> {
+  // Decode JWT and validate role
   const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
+
   if (payload.type !== "admin") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
-  // Validate admin exists and is not soft-deleted or inactive
-  const admin = await MyGlobal.prisma.shopping_admins.findFirst({
+  // payload.id is shopping_mall_admins.id (top-level admin PK)
+  // Validate admin exists and is active (status, is_email_verified, etc.)
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
-      status: "active"
+      is_email_verified: true,
+      status: "active",
     },
   });
+
   if (admin === null) {
     throw new ForbiddenException("You're not enrolled or not active");
   }
+
   return payload;
 }

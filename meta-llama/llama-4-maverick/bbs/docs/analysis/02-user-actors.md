@@ -1,55 +1,61 @@
-## User Actors and Permissions
+# User Actors and Authentication Requirements
 
 ## Introduction
-This document defines the user actors that will interact with the discussion board system and their respective permissions. Understanding these actors is crucial for implementing proper authentication and authorization mechanisms.
+This document defines the user actors that will interact with the discussion board system and outlines the authentication requirements for the application. Understanding these actors and their roles is crucial for implementing proper authentication and authorization mechanisms.
 
-## User Actor Hierarchy
-The discussion board system recognizes three primary user actors:
+## User Actor Definitions
+The discussion board system will have three primary user actors:
 
-1. **Guest**: Unauthenticated users who can view content but cannot interact with it.
-2. **Member**: Authenticated users who can create and interact with content.
-3. **Moderator**: Users with elevated permissions to manage content and other users.
+1. **Guest**: Unauthenticated users who can view public content but cannot interact with the system.
+2. **RegisteredUser**: Authenticated users who can create articles, comment, and upload attachments.
+3. **Moderator**: Users with elevated permissions to moderate content, manage user accounts, and perform administrative tasks.
 
-## Guest User Capabilities
-Guests have limited capabilities:
-- They can view articles and comments.
-- They cannot create, edit, or delete any content.
-- They cannot participate in discussions.
-
-## Member User Capabilities
-Members have more extensive capabilities:
-- They can create new articles.
-- They can comment on articles.
-- They can edit their own articles and comments.
-- They can delete their own articles and comments.
-
-## Moderator Capabilities
-Moderators have the highest level of permissions:
-- They can manage all articles and comments (edit, delete).
-- They can ban or unban users.
-- They can assign or remove moderator roles from other users.
-
-## Permission Matrix
-
-| Action | Guest | Member | Moderator |
-|--------|-------|--------|-----------|
-| View Articles | ✅ | ✅ | ✅ |
-| Create Article | ❌ | ✅ | ✅ |
-| Edit Article | ❌ | Own Only | ✅ |
-| Delete Article | ❌ | Own Only | ✅ |
-| Comment on Article | ❌ | ✅ | ✅ |
-| Edit Comment | ❌ | Own Only | ✅ |
-| Delete Comment | ❌ | Own Only | ✅ |
-| Ban User | ❌ | ❌ | ✅ |
-| Assign Moderator Role | ❌ | ❌ | ✅ |
+### Actor Hierarchy
+```mermaid
+graph TD
+    A["Guest"] -->|"Registers/Login"| B["RegisteredUser"]
+    B -->|"Promoted"| C["Moderator"]
+```
 
 ## Authentication Requirements
-The system SHALL use JSON Web Tokens (JWT) for authentication. The JWT payload SHALL include the user's role (guest, member, moderator) and their unique identifier.
+The system will implement the following authentication mechanisms:
 
-### EARS Format Requirements:
-1. WHEN a user logs in, THE system SHALL generate a JWT token containing their role and user ID.
-2. THE system SHALL validate the JWT token on every request.
-3. IF the token is invalid or expired, THEN THE system SHALL return an authentication error.
-4. WHERE the user role is 'moderator', THE system SHALL grant elevated permissions.
+1. **Registration**: Users can create an account by providing a valid email address and password.
+2. **Login**: Registered users can log in using their email address and password.
+3. **Logout**: Users can log out to end their session.
+4. **Session Management**: The system will maintain user sessions securely.
 
-This document provides a comprehensive overview of the user actors and their permissions within the discussion board system. It serves as a guide for implementing the necessary authentication and authorization mechanisms.
+### Authentication Flow
+```mermaid
+graph LR
+    A["Start"] --> B["User Enters Credentials"]
+    B --> C["Validate Input"]
+    C --> D{Credentials Valid?}
+    D -->|"Yes"| E["Generate JWT Token"]
+    D -->|"No"| F["Show Error Message"]
+    E --> G["Return Token to User"]
+    F --> H["End"]
+    G --> H
+```
+
+## Authorization Rules
+The system will enforce the following authorization rules:
+
+1. Guests can view public articles and comments.
+2. RegisteredUsers can create articles, comment on articles, and upload attachments.
+3. Moderators can moderate content, manage user accounts, and perform administrative tasks.
+4. Users can only edit or delete their own content.
+5. Moderators can delete any content.
+
+### Permission Matrix
+
+| Action | Guest | RegisteredUser | Moderator |
+|--------|-------|----------------|-----------|
+| View Public Content | ✅ | ✅ | ✅ |
+| Create Article | ❌ | ✅ | ✅ |
+| Comment on Article | ❌ | ✅ | ✅ |
+| Upload Attachments | ❌ | ✅ | ✅ |
+| Moderate Content | ❌ | ❌ | ✅ |
+| Manage User Accounts | ❌ | ❌ | ✅ |
+
+This document provides a comprehensive overview of the user actors and authentication requirements for the discussion board system. It serves as a foundation for implementing secure authentication and authorization mechanisms.

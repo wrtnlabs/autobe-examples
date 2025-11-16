@@ -1,59 +1,43 @@
 import { IConnection, HttpError } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { IDiscussionBoardMember } from "../../../../structures/IDiscussionBoardMember";
-export * as password from "./password/index";
+export * as sessions from "./sessions/index";
 
 /**
- * Update profile information for the authenticated member's own account.
+ * Update member profile information.
  *
- * Update the profile information for the authenticated member identified by the
- * username path parameter. This operation allows members to modify their
- * optional profile fields including display name, biography, location, website
- * URL, and profile picture URL. Members can only update their own profiles -
- * the operation verifies that the authenticated user's username matches the
- * memberUsername path parameter before allowing any modifications.
+ * Update the profile information of a registered discussion board member.
  *
- * The operation validates all input fields according to business rules defined
- * in the user profile requirements. Display names must be between 1 and 50
- * characters if provided. Biographies are limited to 500 characters maximum.
- * Location fields cannot exceed 100 characters. Website URLs are validated for
- * proper HTTP or HTTPS format. All text fields are sanitized to remove or
- * escape HTML and script tags, preventing cross-site scripting (XSS) attacks
- * while preserving line breaks and basic text formatting.
+ * This operation allows members to modify their own account details including
+ * their username and other personal information. The member must be
+ * authenticated and can only update their own profile information. The system
+ * enforces strict ownership verification by checking that the authenticated
+ * member ID matches the memberId specified in the path parameter. This prevents
+ * unauthorized modification of other members' information.
  *
- * Security considerations include ownership verification to prevent
- * unauthorized profile modifications. The system validates that the
- * authenticated member's identity matches the profile being updated. Email
- * address changes require a separate verification flow and are not handled
- * through this profile update endpoint. Password changes similarly require
- * dedicated password change operations with additional security validations.
- * The operation maintains audit trails by updating the updated_at timestamp in
- * the discussion_board_members table.
+ * The update operation validates all input data according to business rules
+ * defined in the requirements. For example, usernames must be unique across the
+ * platform and meet length requirements as defined in the Prisma schema
+ * constraints.
  *
- * This operation integrates with the discussion_board_members table as defined
- * in the Prisma schema, modifying editable fields (display_name, bio, location,
- * website_url, profile_picture_url) while preserving immutable fields (id,
- * username, email, password_hash, created_at). The operation respects soft
- * deletion by rejecting updates to members where deleted_at is not null.
- * Profile visibility settings (profile_visibility, activity_visibility) can
- * also be updated through this operation to control privacy preferences.
+ * The operation returns the complete updated member profile upon successful
+ * modification, allowing the client to refresh their local state with the
+ * authoritative server data. If validation fails or the member is not found,
+ * appropriate error responses are returned with detailed error messages
+ * explaining the failure reason.
  *
- * Related API operations include GET /members/{memberUsername} for retrieving
- * profile information, separate password change endpoints for credential
- * updates, and email verification endpoints for changing email addresses.
- * Profile picture uploads may involve separate file upload operations that
- * return URLs to be included in this profile update request.
+ * Related operations: Members can also delete their account using the DELETE
+ * endpoint on the same resource path.
  *
  * @param props.connection
- * @param props.memberUsername Unique username identifier of the member whose
- *   profile is being updated (must match authenticated user's username)
- * @param props.body Updated profile information including optional fields such
- *   as display name, bio, location, website URL, profile picture URL, and
- *   privacy settings
- * @path /discussionBoard/member/members/:memberUsername
+ * @param props.memberId Unique identifier of the target member whose profile is
+ *   being updated
+ * @param props.body Updated member profile information including username and
+ *   other modifiable fields
+ * @path /discussionBoard/member/members/:memberId
  * @accessor api.functional.discussionBoard.member.members.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -81,16 +65,12 @@ export async function update(
 }
 export namespace update {
   export type Props = {
-    /**
-     * Unique username identifier of the member whose profile is being
-     * updated (must match authenticated user's username)
-     */
-    memberUsername: string;
+    /** Unique identifier of the target member whose profile is being updated */
+    memberId: string & tags.Format<"uuid">;
 
     /**
-     * Updated profile information including optional fields such as display
-     * name, bio, location, website URL, profile picture URL, and privacy
-     * settings
+     * Updated member profile information including username and other
+     * modifiable fields
      */
     body: IDiscussionBoardMember.IUpdate;
   };
@@ -99,7 +79,7 @@ export namespace update {
 
   export const METADATA = {
     method: "PUT",
-    path: "/discussionBoard/member/members/:memberUsername",
+    path: "/discussionBoard/member/members/:memberId",
     request: {
       type: "application/json",
       encrypted: false,
@@ -111,7 +91,7 @@ export namespace update {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/discussionBoard/member/members/${encodeURIComponent(props.memberUsername ?? "null")}`;
+    `/discussionBoard/member/members/${encodeURIComponent(props.memberId ?? "null")}`;
   export const random = (): IDiscussionBoardMember =>
     typia.random<IDiscussionBoardMember>();
   export const simulate = (
@@ -125,7 +105,7 @@ export namespace update {
       contentType: "application/json",
     });
     try {
-      assert.param("memberUsername")(() => typia.assert(props.memberUsername));
+      assert.param("memberId")(() => typia.assert(props.memberId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -141,49 +121,53 @@ export namespace update {
 }
 
 /**
- * Permanently delete a member account and associated personal data.
+ * Delete member account.
  *
- * Permanently deletes a member account from the discussion board system,
- * removing all personal data in compliance with GDPR and privacy requirements.
- * This operation implements the complete account deletion workflow as defined
- * in the User Profiles and Settings requirements document, ensuring that all
- * personally identifiable information is securely erased while handling
- * published content according to the platform's content preservation policy.
+ * Permanently remove a member's own account from the discussion board system.
  *
- * The deletion process performs several critical actions: removes the member's
- * email address, password hash, profile information (display name, bio,
- * location, website), profile picture, privacy settings, notification
- * preferences, login history, and activity history from the system. Published
- * articles and comments are either anonymized (changing authorship to 'Deleted
- * User') or completely removed based on the content policy configuration. All
- * file attachments associated with deleted content are removed from storage.
- * Active sessions are immediately terminated and all JWT refresh tokens are
- * invalidated to prevent further access.
+ * This operation allows members to delete their own account, removing their
+ * profile and associated data from the platform. The deletion process handles
+ * related data appropriately, such as articles and comments authored by the
+ * member, following the platform's content preservation policies.
  *
- * This operation requires the authenticated member to be deleting their own
- * account - members cannot delete other members' accounts. The operation
- * includes security measures such as requiring password confirmation in the
- * request and may implement a grace period before permanent deletion as defined
- * in the requirements. The deletion is atomic and transactional to ensure data
- * consistency - if any part of the deletion fails, all changes are rolled back.
- * Moderation logs that reference the deleted account are preserved for audit
- * purposes but with personal data removed. This operation is irreversible after
- * completion and represents a complete termination of the member's relationship
- * with the discussion board platform.
+ * Security is critical for this operation. The system enforces strict
+ * authorization checks ensuring that only the member themselves can delete
+ * their own account. The implementation must verify that the authenticated
+ * member ID matches the memberId path parameter exactly. This prevents
+ * unauthorized deletion of other members' accounts.
+ *
+ * The deletion operation is irreversible and represents a significant action.
+ * Based on the Prisma schema for discussion_board_members (which has no
+ * deleted_at or soft delete fields), this operation performs a permanent hard
+ * deletion, completely removing the account from the database. The member's
+ * data cannot be recovered after deletion.
+ *
+ * Upon successful deletion, the operation returns the deleted member's
+ * information as confirmation. This allows clients to display a confirmation
+ * message or perform cleanup of local state. The member's authentication
+ * session should be invalidated following successful account deletion.
+ *
+ * Related data handling: The system must determine how to handle the member's
+ * articles and comments. Options include cascading deletion, anonymization
+ * (showing as "deleted user"), or preservation with author marked as removed.
+ * The specific approach aligns with the platform's content policies and user
+ * expectations.
+ *
+ * Note: Moderators delete member accounts through separate administrative
+ * endpoints under the moderator access path, not through this member
+ * self-service endpoint.
  *
  * @param props.connection
- * @param props.memberUsername Unique username of the member account to be
- *   deleted (global scope)
- * @param props.body Account deletion confirmation including password
- *   verification and optional deletion reason
- * @path /discussionBoard/member/members/:memberUsername
+ * @param props.memberId Unique identifier of the target member whose account is
+ *   being deleted
+ * @path /discussionBoard/member/members/:memberId
  * @accessor api.functional.discussionBoard.member.members.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
 export async function erase(
   connection: IConnection,
   props: erase.Props,
-): Promise<void> {
+): Promise<erase.Response> {
   return true === connection.simulate
     ? erase.simulate(connection, props)
     : await PlainFetcher.fetch(
@@ -199,42 +183,33 @@ export async function erase(
           path: erase.path(props),
           status: null,
         },
-        props.body,
       );
 }
 export namespace erase {
   export type Props = {
-    /** Unique username of the member account to be deleted (global scope) */
-    memberUsername: string;
-
-    /**
-     * Account deletion confirmation including password verification and
-     * optional deletion reason
-     */
-    body: IDiscussionBoardMember.IDeleteRequest;
+    /** Unique identifier of the target member whose account is being deleted */
+    memberId: string & tags.Format<"uuid">;
   };
-  export type Body = IDiscussionBoardMember.IDeleteRequest;
+  export type Response = IDiscussionBoardMember;
 
   export const METADATA = {
     method: "DELETE",
-    path: "/discussionBoard/member/members/:memberUsername",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
+    path: "/discussionBoard/member/members/:memberId",
+    request: null,
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
-    `/discussionBoard/member/members/${encodeURIComponent(props.memberUsername ?? "null")}`;
-  export const random = (): void => typia.random<void>();
+  export const path = (props: Props) =>
+    `/discussionBoard/member/members/${encodeURIComponent(props.memberId ?? "null")}`;
+  export const random = (): IDiscussionBoardMember =>
+    typia.random<IDiscussionBoardMember>();
   export const simulate = (
     connection: IConnection,
     props: erase.Props,
-  ): void => {
+  ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
@@ -242,8 +217,7 @@ export namespace erase {
       contentType: "application/json",
     });
     try {
-      assert.param("memberUsername")(() => typia.assert(props.memberUsername));
-      assert.body(() => typia.assert(props.body));
+      assert.param("memberId")(() => typia.assert(props.memberId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

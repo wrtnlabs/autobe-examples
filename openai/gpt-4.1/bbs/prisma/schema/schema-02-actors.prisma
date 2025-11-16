@@ -1,0 +1,213 @@
+/// User accounts for platform participants.
+///
+/// Represents each registered end-user on the discussion board. Contains
+/// identity fields for login, authentication, account status, and minimal
+/// profile information. Every user may have multiple concurrent active
+/// sessions tracked in the discussion_board_user_sessions table. Business
+/// logic ensures email is unique for secure login. Temporal fields enable
+/// soft deletion and audit trails. Fields facilitate account recovery and
+/// future extensibility for additional user profile attributes.
+///
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Universally unique identifier for the user.
+  id String @id
+  
+  /// User's email address for login and notification purposes. Must be unique.
+  /// Used for authentication and password recovery.
+  email String
+  
+  /// Secure hash of the user's password. Used for authentication. Plain
+  /// passwords are never stored.
+  password_hash String
+  
+  /// Indicates whether the user's email address has been verified. Email
+  /// verification is required before participation.
+  is_email_verified Boolean
+  
+  /// Denotes if the user account is active and allowed to log in. Blocked
+  /// users have this set to false.
+  is_active Boolean
+  
+  /// Indicates if the user is blocked for rule violations. Blocked users
+  /// cannot log in or participate until reactivated.
+  is_blocked Boolean
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Optional timestamp for soft deletion. If set, the account is considered
+  /// deleted but can be restored.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_user_sessions discussion_board_user_sessions[]
+  discussion_board_articles discussion_board_articles[]
+  discussion_board_article_snapshots discussion_board_article_snapshots[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_reports discussion_board_reports[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Session records for user authentication.
+///
+/// Tracks each login session established by a user. Enables multiple
+/// concurrent sessions for a single user (multi-device support). Stores IP
+/// and contextual metadata for audits and access control. Sessions are
+/// associated with discussion_board_users via a foreign key. Expired
+/// sessions are notable for audit and security purposes. No other business
+/// data is stored in this subsidiary table.
+///
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Universally unique identifier for the session.
+  id String @id
+  
+  /// Reference to the associated user account. {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// IP address from which the session was initiated.
+  ip String
+  
+  /// URL from which the login or session was established.
+  href String
+  
+  /// HTTP referrer value at the start of the session.
+  referrer String
+  
+  /// Time the session was created.
+  created_at DateTime
+  
+  /// Time the session expired or ended, nullable until session ends.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_user_sessions_discussion_board_user_i_2eaa2baa")
+}
+
+/// Administrator accounts for platform oversight and moderation.
+///
+/// Stores credentials and status flags for admin users who govern the
+/// discussion board. Admins are promoted from the user base by operators and
+/// have enhanced privileges for moderation, content management, and account
+/// control. Email addresses must be unique for proper authentication. Admins
+/// feature the same authentication and status patterns as regular users but
+/// are managed in a distinct, secured table. Soft deletion and audit fields
+/// help maintain compliance and traceability for admin actions.
+///
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Universally unique identifier for the admin.
+  id String @id
+  
+  /// Admin's unique email address used for login and communication.
+  email String
+  
+  /// Secure hash of the admin's password for authentication.
+  password_hash String
+  
+  /// Indicates if the admin's email address has been verified.
+  is_email_verified Boolean
+  
+  /// True if admin account is active and enabled for moderation activity.
+  is_active Boolean
+  
+  /// True if the admin is suspended or blocked from accessing admin features.
+  is_blocked Boolean
+  
+  /// Timestamp when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the admin's profile or status.
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion; nullable if the account is not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_admin_sessions discussion_board_admin_sessions[]
+  discussion_board_articles discussion_board_articles[]
+  discussion_board_article_snapshots discussion_board_article_snapshots[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_moderation_logs discussion_board_moderation_logs[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Session records for administrator authentication and moderation tracking.
+///
+/// Stores all admin login sessions, supporting audit trails and concurrent
+/// multi-device moderation. Each session references the corresponding admin
+/// in the discussion_board_admins table. Tracks connection context and
+/// session lifecycle. Sessions are removed or expired for security and
+/// operational management. Essential for logging admin actions and
+/// maintaining platform integrity.
+///
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Universally unique identifier for the admin session.
+  id String @id
+  
+  /// Reference to the associated admin account. {@link
+  /// discussion_board_admins.id}.
+  discussion_board_admin_id String
+  
+  /// Network IP address for this moderation session.
+  ip String
+  
+  /// URL at start of session or moderation activity.
+  href String
+  
+  /// Referrer value for admin connection context.
+  referrer String
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session end time, nullable until expired.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_sessions_discussion_board_admin_56d4dfa1")
+}

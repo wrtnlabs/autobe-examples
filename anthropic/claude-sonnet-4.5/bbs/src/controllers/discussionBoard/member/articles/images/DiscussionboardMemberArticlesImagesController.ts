@@ -11,58 +11,47 @@ import { IDiscussionBoardArticleImage } from "../../../../../api/structures/IDis
 @Controller("/discussionBoard/member/articles/:articleId/images")
 export class DiscussionboardMemberArticlesImagesController {
   /**
-   * Upload and attach image files to an existing article.
+   * Add an image attachment to an article.
    *
-   * This operation enables authenticated members to enhance their articles by
-   * uploading image attachments such as charts, graphs, infographics, or
-   * photographs that support their economic or political analysis. Images serve
-   * as visual evidence and help readers better understand complex concepts
-   * discussed in the article text.
+   * Create a new image attachment record associated with a specific article in
+   * the discussion board.
    *
-   * The image upload process begins when a member submits image data along with
-   * metadata. The system performs comprehensive validation before accepting the
-   * upload. File type validation ensures the image is in one of the supported
-   * formats: JPEG, PNG, GIF, or WebP. The system validates the MIME type
-   * matches the file content, not just the file extension, preventing users
-   * from bypassing restrictions by renaming files. File size validation
-   * confirms the image does not exceed the 5MB limit for individual images.
-   * Dimension validation checks that the image is at least 50x50 pixels
-   * (minimum readable size) and does not exceed 8000x8000 pixels (maximum
-   * practical size). The system also verifies that adding this image will not
-   * cause the article to exceed the maximum of 10 total image attachments.
+   * This operation allows article authors to enrich their content with visual
+   * supporting materials by uploading images. The image is stored as a
+   * reference (URL) in the discussion_board_article_images table with metadata
+   * including the image name, file extension, and optional dimensions (width
+   * and height).
    *
-   * When all validations pass, the system proceeds with the upload process. The
-   * image file is stored in the file storage system with a unique generated
-   * filename (stored_name) to prevent filename conflicts while preserving the
-   * original user-provided filename (original_name) for display purposes. The
-   * system records comprehensive metadata in the
-   * discussion_board_article_images table including the parent article
-   * reference (discussion_board_article_id), the uploader's member ID
-   * (uploaded_by_member_id) captured from the authenticated session, original
-   * and stored filenames, MIME type, file size in bytes, image dimensions
-   * (width and height), and the upload timestamp (created_at). The
-   * uploaded_by_member_id field is particularly important for tracking who
-   * added each attachment and enforcing permission rules for attachment
-   * management.
+   * The articleId path parameter establishes the parent-child relationship
+   * between the article and the image attachment. Each image belongs to exactly
+   * one article, while articles can have multiple image attachments to provide
+   * comprehensive visual context for economic and political discussions.
    *
-   * From a security and permissions perspective, this operation is restricted
-   * to authenticated members and moderators. The article author can add images
-   * to their own article, and moderators can add images to any article as part
-   * of content management duties. The system should verify the article exists
-   * and is accessible before accepting image uploads. Additionally, the system
-   * must scan uploaded images for malware and reject any files that fail
-   * security validation, protecting the community from malicious uploads. When
-   * an image is successfully uploaded, it becomes immediately visible on the
-   * article page in the order it was uploaded, with the original filename
-   * displayed to help readers identify the content. Note that uploaded images
-   * have soft delete support through the deleted_at field, allowing recovery if
-   * images are removed in error or if the parent article deletion is reversed.
+   * Security: This operation requires authentication and appropriate
+   * authorization. Typically, only the article's original author or moderators
+   * can add images to an article. The implementation should validate that the
+   * authenticated user has permission to modify the target article.
+   *
+   * File handling: While this operation creates the database record with image
+   * metadata, the actual image file upload and storage (to cloud storage or
+   * CDN) should be handled separately, with the resulting URL provided in the
+   * request body. This follows the pattern of separating file storage concerns
+   * from database operations.
+   *
+   * Validation: The operation should validate that the referenced article
+   * exists and that the image metadata (extension, dimensions) are reasonable
+   * and within acceptable constraints. The URL should point to a valid,
+   * accessible image resource.
+   *
+   * Related operations: This complements article creation (POST /articles),
+   * article updates (PUT /articles/{articleId}), and article retrieval (GET
+   * /articles/{articleId}) which would include the list of associated images.
    *
    * @param connection
-   * @param articleId Unique identifier of the target article to which the image
+   * @param articleId Unique identifier of the parent article to which the image
    *   will be attached
-   * @param body Image file data and metadata for uploading a new image
-   *   attachment to the article
+   * @param body Image attachment creation data including name, URL reference,
+   *   file extension, and optional dimensions
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -87,42 +76,35 @@ export class DiscussionboardMemberArticlesImagesController {
   }
 
   /**
-   * Soft delete a specific image attachment from an article.
+   * Soft delete an image attachment from a discussion board article.
    *
-   * Performs soft deletion on a specific image attachment by setting the
-   * deleted_at timestamp, hiding the image from public view while retaining the
-   * database record and file for audit purposes and potential recovery. This
-   * operation is part of the article attachment management workflow, enabling
-   * article authors to curate their visual content and moderators to remove
-   * inappropriate images while preserving the rest of the article.
+   * Remove a specific image attachment from a discussion board article by
+   * setting its deletion timestamp.
    *
-   * The operation validates that the requesting user has appropriate
-   * permissions to delete the image. Article authors can delete images from
-   * their own articles, while moderators can delete images from any article as
-   * part of their content management responsibilities. The system verifies
-   * ownership or moderator status before proceeding with the deletion.
+   * This operation performs a soft delete by setting the deleted_at field to
+   * mark the image as removed. The image record is preserved in the database to
+   * maintain audit trails and referential integrity, while the image is hidden
+   * from public view and article displays. This aligns with the
+   * discussion_board_article_images schema which explicitly supports soft
+   * deletion for recovery and audit purposes.
    *
-   * When an image is successfully soft deleted, the system sets the deleted_at
-   * timestamp on the record in the discussion_board_article_images table. The
-   * image becomes hidden from public article displays and attachment lists, but
-   * the database record is preserved for audit trails, moderation review, and
-   * potential restoration if needed. The actual image file remains in storage,
-   * following the soft deletion pattern used consistently throughout the
-   * discussion board schema for articles, comments, and other content
-   * entities.
+   * Security considerations: Only the article author or moderators can delete
+   * images. The operation validates that the specified image actually belongs
+   * to the specified article to prevent unauthorized deletion attempts. Rate
+   * limiting applies to prevent abuse.
    *
-   * This soft deletion approach maintains data integrity, supports
-   * comprehensive audit trails, enables content recovery if deletion was
-   * accidental or inappropriate, and aligns with the moderation and content
-   * management requirements. The parent article remains intact with its other
-   * attachments and content preserved. Moderators can view soft-deleted images
-   * in their moderation interfaces to review deletion decisions.
+   * The deleted_at timestamp enables recovery and audit trail capabilities as
+   * designed in the schema. The physical image file can be removed from storage
+   * after soft deletion, but the database record is retained for referential
+   * integrity and compliance purposes.
+   *
+   * Related operations: Upload image (POST /articles/{articleId}/images), List
+   * article images (GET /articles/{articleId}/images).
    *
    * @param connection
-   * @param articleId Unique identifier of the parent article containing the
-   *   image attachment
-   * @param imageId Unique identifier of the specific image attachment to soft
-   *   delete
+   * @param articleId Unique identifier of the target article containing the
+   *   image
+   * @param imageId Unique identifier of the specific image attachment to delete
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":imageId")
@@ -133,7 +115,7 @@ export class DiscussionboardMemberArticlesImagesController {
     articleId: string & tags.Format<"uuid">,
     @TypedParam("imageId")
     imageId: string & tags.Format<"uuid">,
-  ): Promise<void> {
+  ): Promise<IDiscussionBoardArticleImage> {
     try {
       return await deleteDiscussionBoardMemberArticlesArticleIdImagesImageId({
         member,

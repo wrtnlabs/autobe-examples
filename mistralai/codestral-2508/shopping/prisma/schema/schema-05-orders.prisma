@@ -1,0 +1,180 @@
+/// Main order entity representing customer purchases. Contains order header
+/// information and status tracking. Each order is associated with a specific
+/// customer and sale, and contains temporal information for lifecycle
+/// management.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed the order. {@link shopping_mall_customers.id}
+  shopping_customer_id String
+  
+  /// Customer session during order placement. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_customer_session_id String
+  
+  /// Sale that the order is based on. {@link shopping_mall_sales.id}
+  shopping_sale_id String
+  
+  /// Current order status. Valid values: pending, processing, shipped,
+  /// delivered, cancelled
+  status String
+  
+  /// Business workflow status. Valid values: normal, hold, return_requested,
+  /// refunded
+  business_status String
+  
+  /// Order creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_customer_session_id], references: [id], onDelete: Cascade)
+  sale shopping_mall_sales @relation(fields: [shopping_sale_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_snapshots shopping_mall_order_snapshots[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_payments shopping_mall_order_payments[]
+  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
+  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
+  
+  @@index([shopping_customer_session_id])
+  @@index([shopping_sale_id])
+  
+  @@index([shopping_customer_id, created_at])
+  @@index([status, created_at])
+}
+
+/// Historical states of orders for audit trails and reconciliation. Captures
+/// point-in-time states of orders including status and business status. Each
+/// snapshot is associated with a specific order and contains temporal
+/// information for historical tracking.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order that this snapshot represents. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Order status at snapshot time
+  status String
+  
+  /// Business workflow status at snapshot time
+  business_status String
+  
+  /// Snapshot creation timestamp
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_snapshots_shopping_mall_order_id_c_07acd28a")
+}
+
+/// Order items representing purchased products. Contains product information
+/// and quantity. Each item is associated with a specific order and sale
+/// unit, and contains temporal information for lifecycle management.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order that this item belongs to. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Sale unit that was purchased. {@link shopping_mall_sale_units.id}
+  shopping_sale_unit_id String
+  
+  /// Quantity of the product purchased
+  quantity Int
+  
+  /// Item creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  saleUnit shopping_mall_sale_units @relation(fields: [shopping_sale_unit_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_sale_unit_id])
+  
+  @@index([shopping_mall_order_id, created_at])
+}
+
+/// Payment information for orders. Contains payment method and amount. Each
+/// payment is associated with a specific order, and contains temporal
+/// information for lifecycle management.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order that this payment belongs to. {@link shopping_mall_orders.id}
+  shopping_mall_order_id String
+  
+  /// Payment method used. Valid values: credit_card, bank_transfer,
+  /// digital_wallet
+  method String
+  
+  /// Payment amount
+  amount Float
+  
+  /// Payment creation timestamp
+  created_at DateTime
+  
+  /// Last update timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coin_transactions shopping_mall_coin_transactions[]
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, created_at], map: "shopping_mall_order_payments_shopping_mall_order_id_cr_915f286a")
+}

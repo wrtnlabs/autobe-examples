@@ -8,62 +8,57 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IRedditCommunityGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityGuest";
-import { IRedditCommunityGuestSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityGuestSession";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { GuestPayload } from "../decorators/payload/GuestPayload";
 
 export async function postAuthGuestRefresh(props: {
   guest: GuestPayload;
-  body: IRedditCommunityGuest.IRefresh & { refreshToken: string };
+  body: IRedditCommunityGuest.IRefresh;
 }): Promise<IRedditCommunityGuest.IAuthorized> {
-  let decoded: { id: string; session_id: string; type: "guest" };
-
-  try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as { id: string; session_id: string; type: "guest" };
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
+  interface DecodedRefreshToken {
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "guest";
+    tokenType?: string;
+    created_at?: string & tags.Format<"date-time">;
   }
+
+  const decodedToken = jwt.verify(
+    props.body.refreshToken,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { issuer: "autobe" },
+  ) as unknown;
+
+  const decoded = decodedToken as DecodedRefreshToken;
 
   if (decoded.type !== "guest") {
     throw new HttpException("Invalid token type", 403);
   }
 
-  const session =
-    await MyGlobal.prisma.reddit_community_guest_sessions.findFirst({
-      where: {
-        id: decoded.session_id,
-        reddit_community_guest_id: decoded.id,
-      },
-      include: {
-        redditCommunityGuest: true,
-      },
-    });
+  const guest = await MyGlobal.prisma.reddit_community_guests.findFirst({
+    where: {
+      id: decoded.id,
+    },
+  });
 
-  if (!session) {
-    throw new HttpException("Session expired or revoked", 401);
+  if (!guest) {
+    throw new HttpException("Guest session not found or expired", 403);
   }
 
-  const deletedAtRaw = (session.redditCommunityGuest as any).deleted_at;
-  if (deletedAtRaw !== null && deletedAtRaw !== undefined) {
-    throw new HttpException("Account has been deleted", 403);
-  }
-
-  const nowIso = toISOStringSafe(new Date());
-  const accessExpiresIso = toISOStringSafe(
+  const now = toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
+  const accessExpireAt = toISOStringSafe(
     new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiresIso = toISOStringSafe(
+  ) as string & tags.Format<"date-time">;
+  const refreshExpireAt = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  ) as string & tags.Format<"date-time">;
 
-  const access = jwt.sign(
+  const accessToken = jwt.sign(
     {
-      type: decoded.type,
+      type: "guest",
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: nowIso,
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -72,13 +67,13 @@ export async function postAuthGuestRefresh(props: {
     },
   );
 
-  const refresh = jwt.sign(
+  const refreshToken = jwt.sign(
     {
-      type: decoded.type,
+      type: "guest",
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: nowIso,
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -87,30 +82,20 @@ export async function postAuthGuestRefresh(props: {
     },
   );
 
-  await MyGlobal.prisma.reddit_community_guest_sessions.update({
-    where: { id: decoded.session_id },
-    data: { expired_at: refreshExpiresIso },
-  });
-
-  const guestId = decoded.id;
-  const createdAt = toISOStringSafe(
-    session.redditCommunityGuest.created_at as Date,
-  );
-
-  // Defensive extraction where reddit_community_guest_sessions might be missing
-  const guestSessions =
-    (session.redditCommunityGuest as any).reddit_community_guest_sessions ??
-    undefined;
-
   return {
-    id: guestId,
-    created_at: createdAt,
-    reddit_community_guest_sessions: guestSessions,
+    id: guest.id,
+    session_id: (guest as any).session_id ?? null,
+    ip_address: (guest as any).ip_address ?? null,
+    created_at: toISOStringSafe(guest.created_at) as string &
+      tags.Format<"date-time">,
+    updated_at: guest.updated_at
+      ? (toISOStringSafe(guest.updated_at) as string & tags.Format<"date-time">)
+      : undefined,
     token: {
-      access,
-      refresh,
-      expired_at: accessExpiresIso,
-      refreshable_until: refreshExpiresIso,
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpireAt,
+      refreshable_until: refreshExpireAt,
     },
-  } satisfies IRedditCommunityGuest.IAuthorized;
+  };
 }

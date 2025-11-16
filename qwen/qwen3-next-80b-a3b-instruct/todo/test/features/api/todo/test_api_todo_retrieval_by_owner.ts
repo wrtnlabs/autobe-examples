@@ -3,65 +3,84 @@ import { IConnection } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
-import type { ITodoAppAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppAuthorizationToken";
-import type { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
-import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { ITodoListTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListTodo";
+import type { ITodoListUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoListUser";
 
 export async function test_api_todo_retrieval_by_owner(
   connection: api.IConnection,
 ) {
-  const user: ITodoAppUser.IAuthorized = await api.functional.auth.user.join(
+  // Step 1: Create authenticated user context
+  const userEmail: string = typia.random<string & tags.Format<"email">>();
+  const userAuth: ITodoListUser.IAuthorized =
+    await api.functional.auth.user.join(connection, {
+      body: {
+        email: userEmail,
+        password: RandomGenerator.alphabets(12),
+        href: "https://example.com/join",
+        referrer: "https://example.com/home",
+      } satisfies ITodoListUser.ICreate,
+    });
+  typia.assert(userAuth);
+
+  // Step 2: Create a todo item for the authenticated user
+  const todoText: string = RandomGenerator.paragraph({
+    sentences: 5,
+    wordMin: 3,
+    wordMax: 8,
+  });
+  const todo: ITodoListTodo = await api.functional.todoList.user.todos.create(
     connection,
     {
       body: {
-        email: typia.random<string & tags.Format<"email">>(),
-        password: RandomGenerator.alphaNumeric(12),
-      } satisfies ITodoAppUser.ICreate,
-    },
-  );
-  typia.assert(user);
-
-  const todo: ITodoAppTodo = await api.functional.todoApp.user.todos.create(
-    connection,
-    {
-      body: RandomGenerator.paragraph({ sentences: 3, wordMin: 3, wordMax: 8 }),
+        text: todoText,
+      } satisfies ITodoListTodo.ICreate,
     },
   );
   typia.assert(todo);
+  TestValidator.equals("todo item text matches", todo.text, todoText);
 
-  const retrievedTodo: ITodoAppTodo =
-    await api.functional.todoApp.user.todos.at(connection, {
+  // Step 3: Retrieve the todo item by its ID
+  const retrievedTodo: ITodoListTodo =
+    await api.functional.todoList.user.todos.at(connection, {
       todoId: todo.id,
     });
   typia.assert(retrievedTodo);
 
+  // Step 4: Validate the retrieved todo item matches the created one
+  TestValidator.equals("retrieved todo id matches", retrievedTodo.id, todo.id);
   TestValidator.equals(
-    "retrieved todo title matches created todo",
-    retrievedTodo.title,
-    todo.title,
+    "retrieved todo text matches",
+    retrievedTodo.text,
+    todo.text,
   );
   TestValidator.equals(
-    "retrieved todo completion status matches created todo",
+    "retrieved todo completed status matches",
     retrievedTodo.completed,
     todo.completed,
   );
-  TestValidator.equals(
-    "retrieved todo user_id matches authenticated user",
-    retrievedTodo.user_id,
-    user.id,
-  );
-  TestValidator.predicate(
-    "retrieved todo created_at is valid date-time",
-    () => {
-      const date = new Date(retrievedTodo.created_at);
-      return !isNaN(date.getTime());
-    },
-  );
-  TestValidator.predicate(
-    "retrieved todo updated_at is valid date-time",
-    () => {
-      const date = new Date(retrievedTodo.updated_at);
-      return !isNaN(date.getTime());
-    },
-  );
+  typia.assert(retrievedTodo.created_at);
+  typia.assert(retrievedTodo.updated_at);
+
+  // Verify the system correctly enforces ownership by switching to a new user and attempting to access
+  const anotherUserEmail: string = typia.random<
+    string & tags.Format<"email">
+  >();
+  const anotherUserAuth: ITodoListUser.IAuthorized =
+    await api.functional.auth.user.join(connection, {
+      body: {
+        email: anotherUserEmail,
+        password: RandomGenerator.alphabets(12),
+        href: "https://example.com/join",
+        referrer: "https://example.com/home",
+      } satisfies ITodoListUser.ICreate,
+    });
+  typia.assert(anotherUserAuth);
+
+  // Attempt to access the todo item created by the first user (should fail)
+  await TestValidator.error("other user cannot access todo", async () => {
+    await api.functional.todoList.user.todos.at(connection, {
+      todoId: todo.id,
+    });
+  });
 }

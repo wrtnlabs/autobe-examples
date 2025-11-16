@@ -16,65 +16,63 @@ export async function putDiscussionBoardUserArticlesArticleIdAttachmentsAttachme
   attachmentId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleAttachment.IUpdate;
 }): Promise<IDiscussionBoardArticleAttachment> {
-  // Fetch the attachment, ensure it belongs to the target article and is not deleted
-  const attachment =
-    await MyGlobal.prisma.discussion_board_article_attachments.findFirst({
-      where: {
-        id: props.attachmentId,
-        discussion_board_article_id: props.articleId,
-        deleted_at: null,
-      },
-      include: { article: { select: { author_user_id: true } } },
-    });
-  if (!attachment) {
-    throw new HttpException("Attachment not found or already deleted", 404);
+  // Check if the article exists and is authored by the current user (regular users only edit their own articles)
+  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: { id: props.articleId },
+    select: { id: true, author_user_id: true },
+  });
+  if (!article) {
+    throw new HttpException("Article not found", 404);
   }
-  // Only the author can update (admins not handled in this endpoint)
-  if (attachment.article.author_user_id !== props.user.id) {
+  if (article.author_user_id !== props.user.id) {
     throw new HttpException(
-      "You do not have permission to update this attachment",
+      "You do not have permission to modify attachments for this article",
       403,
     );
   }
-  // Prepare update fields (PATCH semantics)
-  const updateFields = {
-    ...(props.body.filename !== undefined && { filename: props.body.filename }),
-    ...(props.body.kind !== undefined && { kind: props.body.kind }),
-    ...(props.body.mimetype !== undefined && { mimetype: props.body.mimetype }),
-    ...(props.body.filesize !== undefined && { filesize: props.body.filesize }),
-  };
-  if (Object.keys(updateFields).length === 0) {
-    // nothing to update
-    return {
-      id: attachment.id,
-      discussion_board_article_id: attachment.discussion_board_article_id,
-      filename: attachment.filename,
-      kind: attachment.kind,
-      mimetype: attachment.mimetype,
-      filesize: attachment.filesize,
-      virus_scanned: attachment.virus_scanned,
-      created_at: toISOStringSafe(attachment.created_at),
-      deleted_at: attachment.deleted_at
-        ? toISOStringSafe(attachment.deleted_at)
-        : undefined,
-    };
+  // Check if the attachment exists and is linked to the target article
+  const attachment =
+    await MyGlobal.prisma.discussion_board_article_attachments.findUnique({
+      where: { id: props.attachmentId },
+    });
+  if (!attachment) {
+    throw new HttpException("Attachment not found", 404);
   }
+  if (attachment.article_id !== props.articleId) {
+    throw new HttpException(
+      "Attachment does not belong to the specified article",
+      400,
+    );
+  }
+  // Only file_name and file_type can be updated (business logic: cannot update uri or article_id)
+  if ("uri" in props.body || "article_id" in props.body) {
+    throw new HttpException(
+      "You cannot update file URI or article/article_id",
+      400,
+    );
+  }
+  // Perform update
   const updated =
     await MyGlobal.prisma.discussion_board_article_attachments.update({
       where: { id: props.attachmentId },
-      data: updateFields,
+      data: {
+        file_name:
+          props.body.file_name !== undefined
+            ? props.body.file_name
+            : attachment.file_name,
+        file_type:
+          props.body.file_type !== undefined
+            ? props.body.file_type
+            : attachment.file_type,
+      },
     });
   return {
     id: updated.id,
-    discussion_board_article_id: updated.discussion_board_article_id,
-    filename: updated.filename,
-    kind: updated.kind,
-    mimetype: updated.mimetype,
-    filesize: updated.filesize,
-    virus_scanned: updated.virus_scanned,
-    created_at: toISOStringSafe(updated.created_at),
-    deleted_at: updated.deleted_at
-      ? toISOStringSafe(updated.deleted_at)
-      : undefined,
+    article_id: updated.article_id,
+    uri: updated.uri,
+    file_name: updated.file_name,
+    file_type: updated.file_type,
+    file_size: updated.file_size,
+    uploaded_at: toISOStringSafe(updated.uploaded_at),
   };
 }

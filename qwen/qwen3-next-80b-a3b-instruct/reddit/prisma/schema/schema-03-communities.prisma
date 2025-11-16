@@ -1,0 +1,376 @@
+/// Main community entity representing a user-created discussion group.
+///
+/// Each community is a self-governing space where users can post, comment,
+/// and vote. Communities are created by members and have a unique name,
+/// description, and settings.
+///
+/// Communities are the foundational organizational unit of the platform.
+/// Users can subscribe to communities to see their content in their home
+/// feed.
+///
+/// Communities can be archived by administrators, which changes their state
+/// but preserves all historical content. Machines do not automatically
+/// delete communities. However, communities can be renamed or have their
+/// moderation rules updated through their settings.
+///
+/// This is the primary entity for community content and must support
+/// independent CRUD operations for both users and admins.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The unique display name of the community. Must be globally unique,
+  /// contain only alphanumeric characters, hyphens, and underscores, and be
+  /// between 3 and 50 characters long.
+  name String
+  
+  /// A brief description of the community's purpose or topic. This text is
+  /// shown to users when browsing communities.
+  description String
+  
+  /// Timestamp when the community was created. Set to the moment of creation
+  /// in Asia/Seoul timezone.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the community's metadata. Updated
+  /// whenever the name, description, or any setting changes.
+  updated_at DateTime
+  
+  /// Null if the community is active. Non-null if the community has been
+  /// soft-deleted (archived permanently by admin). This supports soft
+  /// deletion, preserving data for audit trails while hiding content from
+  /// regular users.
+  deleted_at DateTime?
+  
+  /// The current number of members subscribed to this community. This is a
+  /// denormalized counter field for performance, updated whenever a
+  /// subscription is added or removed. It should be calculated from the
+  /// community_platform_community_subscriptions table.
+  subscriber_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_community_settings community_platform_community_settings?
+  community_platform_community_subscriptions community_platform_community_subscriptions[]
+  community_platform_community_moderators community_platform_community_moderators[]
+  community_platform_community_tags community_platform_community_tags[]
+  community_platform_community_archive_logs community_platform_community_archive_logs[]
+  community_platform_posts community_platform_posts[]
+  
+  @@unique([name])
+  @@index([created_at])
+  @@index([deleted_at])
+  @@index([updated_at])
+  @@index([subscriber_count])
+}
+
+/// Configuration settings for a community, linked one-to-one to a community.
+///
+/// This table holds non-core configuration parameters for a community that
+/// affect its behavior and appearance, such as whether new posts require
+/// moderator approval, whether the community is marked as NSFW, or whether
+/// embedded images are allowed.
+///
+/// All settings are managed entirely through the corresponding community
+/// entity and are not independently accessible. This table prevents bloat in
+/// the main community table while preserving data integrity.
+///
+/// This table is strictly owned by and has a 1:1 relationship with the
+/// community_platform_communities table.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent community which this setting belongs to. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// If true, this community is marked as Not Safe For Work. Users must opt-in
+  /// to see this community's content. Default is false.
+  nsfw Boolean
+  
+  /// If true, new posts in this community must be approved by a moderator
+  /// before becoming visible. Default is false.
+  requires_moderator_approval Boolean
+  
+  /// If true, users may upload images when creating posts. If false, only text
+  /// and link posts are allowed. Default is true.
+  allow_image_posts Boolean
+  
+  /// If true, users may submit external links as posts. If false, only text
+  /// and image posts are allowed. Default is true.
+  allow_link_posts Boolean
+  
+  /// If true, users may submit text posts. If false, only image and link posts
+  /// are allowed. Default is true.
+  allow_text_posts Boolean
+  
+  /// If true, users may comment on posts in this community. If false, no
+  /// comments are permitted. Default is true.
+  allow_comments Boolean
+  
+  /// Timestamp when these settings were created or first initialized. This
+  /// matches the creation of the associated community.
+  created_at DateTime
+  
+  /// Timestamp when any setting was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id])
+}
+
+/// Junction table for the many-to-many relationship between members and
+/// communities.
+///
+/// This table represents which members are subscribed to which communities.
+/// A member must be subscribed to a community to see its posts in their
+/// personalized feed.
+///
+/// This table is essential for implementing the personalized content feed
+/// feature. It is managed indirectly through the community and member
+/// interfaces; users subscribe and unsubscribe via their profile, not
+/// through direct CRUD on this table.
+///
+/// This is a pure junction table without additional business data, enabling
+/// a scalable and flexible subscription system.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community this subscription belongs to. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Reference to the member who subscribed to the community. {@link
+  /// community_platform_member.id}.
+  member_id String
+  
+  /// Timestamp when this subscription was created.
+  created_at DateTime
+  
+  /// Timestamp when this subscription was last modified (e.g., if unsubscribed
+  /// and re-subscribed).
+  updated_at DateTime
+  
+  /// Null if subscribed. Non-null if the subscription was deactivated (user
+  /// unsubscribed). This supports soft-deletion so subscription history is
+  /// preserved for analytics and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member community_platform_member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_id, member_id], map: "community_platform_community_subscriptions_community_i_b6e3b49b")
+  @@index([community_id])
+  @@index([member_id])
+  @@index([deleted_at])
+}
+
+/// Junction table that defines which moderators are assigned to which
+/// communities.
+///
+/// Each community can have multiple moderators, and a single member can be a
+/// moderator of multiple communities. This table establishes the
+/// relationship between moderators (from community_platform_moderator) and
+/// communities (from community_platform_communities).
+///
+/// This table is essential for permission management. Moderators are granted
+/// rights and responsibilities within a community through this assignment.
+/// Modifying this table requires admin approval. Removing a moderator from
+/// this table revokes their moderation rights without deleting the moderator
+/// account.
+///
+/// This table ensures that moderation is decoupled from user roles and is
+/// precisely scoped to individual communities.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community this moderator is assigned to. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Reference to the moderator user who manages this community. {@link
+  /// community_platform_moderator.id}.
+  moderator_id String
+  
+  /// Timestamp when the moderator was assigned to this community. This helps
+  /// track the history of moderation assignments.
+  assigned_at DateTime
+  
+  /// Timestamp of the last update to this relationship (e.g., if assigned
+  /// again after removal).
+  updated_at DateTime
+  
+  /// Null if still an active moderator. Non-null if the moderator was removed
+  /// from this community. This supports soft-deletion so the history of
+  /// moderation assignments is preserved for audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderator @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_id, moderator_id], map: "community_platform_community_moderators_community_id_m_1d15b46b")
+  @@index([community_id])
+  @@index([moderator_id])
+  @@index([deleted_at])
+}
+
+/// Tags associated with communities for categorization and filtering.
+///
+/// Each community can have multiple tags, and tags can be shared across
+/// multiple communities. This table facilitates discovery of communities
+/// related by similar topics.
+///
+/// This table enables users to filter communities by interest (e.g.,
+/// "photography", "technology"), enhancing content discovery without
+/// requiring a hierarchical category structure. Tags are simple strings
+/// chosen by creators or administrators and are not managed in a
+/// domain-specific vocabulary.
+///
+/// No independent CRUD operations exist for this table; tags are added or
+/// removed through the community settings or admin panel.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community this tag belongs to. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// The actual tag text (e.g., 'gaming', 'science', 'books'). Must be
+  /// lowercase and use only alphanumeric characters and hyphens. Maximum 50
+  /// characters.
+  tag String
+  
+  /// Timestamp when this tag was added to the community.
+  created_at DateTime
+  
+  /// Timestamp of the last modification (rare, typically when tag is made
+  /// unique).
+  updated_at DateTime
+  
+  /// Null if the tag is still associated. Non-null if the tag was removed from
+  /// the community. This allows the tag to be reused and preserves history for
+  /// analytics.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_post_tags community_platform_post_tags[]
+  community_platform_comment_tags community_platform_comment_tags[]
+  
+  @@unique([community_id, tag])
+  @@index([community_id])
+  @@index([tag])
+  @@index([deleted_at])
+}
+
+/// Audit trail of community archive/unarchive events.
+///
+/// This table records all historical state changes to a community’s archive
+/// status. Each record represents a single event: a community was either
+/// archived (made inactive) or unarchived (re-activated) by either a
+/// moderator or admin.
+///
+/// Since community archive status is a snapshot that needs to be preserved
+/// for compliance and audit trails, this table is entirely append-only. No
+/// updates or deletions are allowed once logged. The soft-delete flag in the
+/// main community table mirrors the latest status in this log.
+///
+/// This structure ensures that all historical decisions about community
+/// health are transparent and retrievable.
+///
+/// To determine if a community is currently archived: query this table for
+/// the latest log for the community where action = 'archive' without a
+/// corresponding 'unarchive' event.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_archive_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community that was archived or unarchived. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Reference to the admin or moderator who performed the archive/unarchive
+  /// action. {@link community_platform_admin.id} or {@link
+  /// community_platform_moderator.id}.
+  acted_by_id String
+  
+  /// The type of action performed: 'archive' or 'unarchive'. This defines
+  /// whether the state change is enabling or disabling the community.
+  action String
+  
+  /// The human-readable reason for the archive/unarchive action provided by
+  /// the acting admin/moderator. Examples: 'Excessive reports', 'Violated
+  /// community guidelines', 'Community inactivity', 'Requested by owner'.
+  reason String
+  
+  /// Timestamp of when the archive/unarchive action was taken. This is
+  /// immutable and set at record creation.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  actedBy community_platform_admin @relation(fields: [acted_by_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_community_archive_logs_community_id_f386a00f")
+  @@index([acted_by_id])
+  @@index([action, created_at])
+}

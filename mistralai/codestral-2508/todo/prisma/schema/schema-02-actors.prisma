@@ -1,0 +1,281 @@
+/// User accounts for the todo list application.
+///
+/// Stores core user information including authentication credentials and
+/// account status. Each user has a unique email address and username.
+/// Passwords are stored as secure hashes. Users can have multiple login
+/// methods (email, username, social media).
+///
+/// Supports soft deletion to allow account recovery while maintaining audit
+/// trails. Includes timestamps for account creation and last update.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address for authentication and communication. Must be unique
+  /// across all users.
+  email String
+  
+  /// User's chosen username for authentication. Must be unique across all
+  /// users.
+  username String
+  
+  /// Secure hash of user's password. Never store plain text passwords.
+  password_hash String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was soft-deleted. Null if account is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  todo_list_user_sessions todo_list_user_sessions[]
+  todo_list_user_email_logins todo_list_user_email_logins[]
+  todo_list_user_username_logins todo_list_user_username_logins[]
+  todo_list_user_social_media_logins todo_list_user_social_media_logins[]
+  todo_list_user_password_resets todo_list_user_password_resets[]
+  todo_list_todo_items todo_list_todo_items[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// User session records for tracking active user sessions.
+///
+/// Stores information about active user sessions including IP address,
+/// connection
+/// context, and session duration. Each session is associated with a specific
+/// user account and session type.
+///
+/// Supports session expiration and provides audit trail for user activity.
+/// Includes timestamps for session creation and expiration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account associated with this session. {@link todo_list_users.id}
+  todo_list_user_id String
+  
+  /// IP address from which the session was initiated.
+  ip String
+  
+  /// URL of the page where the session was initiated.
+  href String
+  
+  /// Referrer URL that led to the session initiation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expired or was terminated. Null if session is
+  /// active.
+  expired_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+}
+
+/// Email login records for user authentication.
+///
+/// Stores information about successful email logins including IP address and
+/// connection context. Each login record is associated with a specific user
+/// account.
+///
+/// Provides audit trail for user authentication activity. Includes
+/// timestamps for login attempts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user_email_logins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account associated with this login. {@link todo_list_users.id}
+  todo_list_user_id String
+  
+  /// IP address from which the login attempt was made.
+  ip String
+  
+  /// URL of the page where the login attempt was initiated.
+  href String
+  
+  /// Referrer URL that led to the login attempt.
+  referrer String
+  
+  /// Timestamp when the login attempt was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+}
+
+/// Username login records for user authentication.
+///
+/// Stores information about successful username logins including IP address and
+/// connection context. Each login record is associated with a specific user
+/// account.
+///
+/// Provides audit trail for user authentication activity. Includes
+/// timestamps for login attempts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user_username_logins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account associated with this login. {@link todo_list_users.id}
+  todo_list_user_id String
+  
+  /// IP address from which the login attempt was made.
+  ip String
+  
+  /// URL of the page where the login attempt was initiated.
+  href String
+  
+  /// Referrer URL that led to the login attempt.
+  referrer String
+  
+  /// Timestamp when the login attempt was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_list_user_id, created_at])
+}
+
+/// Social media login records for user authentication.
+///
+/// Stores information about successful social media logins including provider
+/// information, IP address, and connection context. Each login record is
+/// associated with a specific user account.
+///
+/// Provides audit trail for user authentication activity. Includes
+/// timestamps for login attempts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user_social_media_logins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account associated with this login. {@link todo_list_users.id}
+  todo_list_user_id String
+  
+  /// Social media provider used for authentication (e.g., 'google',
+  /// 'facebook').
+  provider String
+  
+  /// Unique identifier provided by the social media provider for the user.
+  provider_id String
+  
+  /// IP address from which the login attempt was made.
+  ip String
+  
+  /// URL of the page where the login attempt was initiated.
+  href String
+  
+  /// Referrer URL that led to the login attempt.
+  referrer String
+  
+  /// Timestamp when the login attempt was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, provider_id])
+  // spellchecker: ignore-next-line
+  @@index([todo_list_user_id, created_at], map: "todo_list_user_social_media_logins_todo_list_user_id_c_12af0253")
+}
+
+/// Password reset records for user account recovery.
+///
+/// Stores information about password reset requests including reset token, IP
+/// address, and connection context. Each reset record is associated with a
+/// specific user account.
+///
+/// Provides audit trail for password reset activity. Includes timestamps
+/// for reset requests and completions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_list_user_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account associated with this password reset. {@link
+  /// todo_list_users.id}
+  todo_list_user_id String
+  
+  /// Secure token for password reset verification. Must be unique and
+  /// time-limited.
+  token String
+  
+  /// IP address from which the password reset request was made.
+  ip String
+  
+  /// URL of the page where the password reset request was initiated.
+  href String
+  
+  /// Referrer URL that led to the password reset request.
+  referrer String
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset was completed. Null if reset is pending.
+  completed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_list_users @relation(fields: [todo_list_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  @@index([todo_list_user_id, created_at])
+}

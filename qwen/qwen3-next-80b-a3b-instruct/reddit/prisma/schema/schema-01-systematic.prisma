@@ -1,553 +1,398 @@
-/// Core community entities that users can subscribe to and participate in.
-/// Represents a topic-based discussion group. Each community has a moderator
-/// and settings. Related to posts (one-to-many) and settings (one-to-one).
+/// Global portal settings that define the behavior and appearance of the
+/// CommunityPlatform user interface.
+///
+/// Contains configuration constants and display options that affect the
+/// entire platform. These settings control UI elements like theme colors,
+/// footer text, website title, and other global presentation parameters.
+/// Changes to these settings affect all users across all communities.
+///
+/// This table is managed exclusively by administrators through secure
+/// administrative interfaces and is referenced by the frontend application
+/// to render consistent branding and behavior throughout the platform.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_communities {
+model community_platform_portal_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Owner moderator's {@link community_platform_moderator.id}.
-  community_moderator_id String?
-  
-  /// Configuration settings of this community. {@link
-  /// community_platform_community_settings.id}.
-  community_settings_id String
-  
-  /// The unique URL-safe identifier for the community (slug). Example:
-  /// 'technology'.
-  name String
-  
-  /// Human-readable display name of the community. Example: 'Technology &
-  /// Innovation'.
-  display_name String
-  
-  /// Brief description of the community's purpose and rules.
-  description String?
-  
-  /// Indicates whether the community contains Not Safe For Work content.
-  is_nsfw Boolean
-  
-  /// Whether the community is currently active and visible to users.
-  is_active Boolean
-  
-  /// Total number of users subscribed to this community.
-  subscriber_count Int
-  
-  /// Total number of posts created in this community.
-  post_count Int
-  
-  /// Timestamp when the community was created.
-  created_at DateTime
-  
-  /// Timestamp when the community was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the community was soft-deleted (archived). null if active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  moderator community_platform_moderator? @relation(fields: [community_moderator_id], references: [id], onDelete: Cascade)
-  settings community_platform_community_settings @relation(fields: [community_settings_id], references: [id], onDelete: Cascade)
-  
-  community_platform_posts community_platform_posts[]
-  community_platform_reports community_platform_reports[]
-  community_platform_community_subscriptions community_platform_community_subscriptions[]
-  community_platform_community_memberships community_platform_community_memberships[]
-  community_platform_community_moderators community_platform_community_moderators[]
-  community_platform_community_banner_images community_platform_community_banner_images?
-  community_platform_community_themes community_platform_community_themes?
-  community_platform_community_invitations community_platform_community_invitations[]
-  
-  @@unique([community_moderator_id])
-  
-  @@unique([name])
-  @@unique([community_settings_id])
-  @@index([is_active])
-  @@index([is_nsfw])
-  @@index([created_at])
-  // spellchecker: ignore-next-line
-  @@index([community_moderator_id, created_at], map: "community_platform_communities_community_moderator_id__1e424600")
-}
-
-/// User-generated content items posted in communities. Posts are the primary
-/// content type and can be of different types (text, link, image). Each post
-/// is associated with a community, author (member), and status.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_posts {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Community where this post was created. {@link
-  /// community_platform_communities.id}.
-  community_id String
-  
-  /// Member who created this post. {@link community_platform_member.id}.
-  author_id String
-  
-  /// Type of the post (text/link/image). {@link
-  /// community_platform_post_types.id}.
-  post_type_id String
-  
-  /// Current status of the post (published/rejected/removed/etc.). {@link
-  /// community_platform_post_status.id}.
-  post_status_id String
-  
-  /// Title of the post. Required for all post types.
-  title String
-  
-  /// Main text content of the post (e.g., body of a text post). Nullable for
-  /// link/image posts.
-  content String?
-  
-  /// URL for link-type posts. Nullable for text/image posts.
-  link_url String?
-  
-  /// The URL to the uploaded image file. Nullable for text/link posts.
-  image_url String?
-  
-  /// Total number of upvotes received.
-  upvote_count Int
-  
-  /// Total number of downvotes received.
-  downvote_count Int
-  
-  /// Total number of comments on this post.
-  comment_count Int
-  
-  /// Timestamp when the post was created.
-  created_at DateTime
-  
-  /// Timestamp when the post was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the post was soft-deleted. null if active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  author community_platform_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  postType community_platform_post_types @relation(fields: [post_type_id], references: [id], onDelete: Cascade)
-  status community_platform_post_status @relation(fields: [post_status_id], references: [id], onDelete: Cascade)
-  
-  community_platform_comments community_platform_comments[]
-  community_platform_reactions community_platform_reactions[]
-  community_platform_karma_ledger community_platform_karma_ledger[]
-  community_platform_post_votes community_platform_post_votes[]
-  community_platform_reports community_platform_reports[]
-  community_platform_report_audit_trail community_platform_report_audit_trail[]
-  community_platform_search_indexes community_platform_search_indexes[]
-  community_platform_search_popularity_scores community_platform_search_popularity_scores?
-  community_platform_search_recommendations community_platform_search_recommendations[]
-  
-  @@unique([community_id, title])
-  @@index([community_id, created_at])
-  @@index([author_id, created_at])
-  @@index([post_type_id])
-  @@index([post_status_id])
-  @@index([upvote_count, created_at])
-}
-
-/// Lookup table that defines the possible types of posts allowed on the
-/// platform (e.g., 'text', 'link', 'image'). This ensures constraint and
-/// consistency across all posts.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_types {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The unique identifier for the post type (e.g., 'text', 'link', 'image').
-  name String
-  
-  /// Human-readable name for display in UI (e.g., 'Text Post', 'Link Post',
-  /// 'Image Post').
-  display_name String
-  
-  /// Whether this post type is currently enabled for use by members.
-  is_enabled Boolean
-  
-  /// Timestamp when the post type was created in the system.
-  created_at DateTime
-  
-  /// Timestamp when the post type was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  community_platform_posts community_platform_posts[]
-  
-  @@unique([name])
-  @@index([is_enabled])
-}
-
-/// User comments on posts or replies to other comments. Comments are
-/// human-generated text responses that support threaded discussions.
-/// Comments are associated with a post, author, and status.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_comments {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The post this comment is responding to. {@link
-  /// community_platform_posts.id}.
-  post_id String
-  
-  /// The parent comment if this is a reply. {@link
-  /// community_platform_comments.id} (self-referencing).
-  parent_comment_id String?
-  
-  /// Member who wrote this comment. {@link community_platform_member.id}.
-  author_id String
-  
-  /// Current status of the comment (published/rejected/removed/etc.). {@link
-  /// community_platform_comment_status.id}.
-  comment_status_id String
-  
-  /// The text content of the comment, limited to 500 characters as per
-  /// requirements.
-  content String
-  
-  /// Total number of upvotes received.
-  upvote_count Int
-  
-  /// Total number of downvotes received.
-  downvote_count Int
-  
-  /// Number of direct replies to this comment.
-  reply_count Int
-  
-  /// Timestamp when the comment was created.
-  created_at DateTime
-  
-  /// Timestamp when the comment was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the comment was soft-deleted. null if active.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  parent community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
-  author community_platform_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  status community_platform_comment_status @relation(fields: [comment_status_id], references: [id], onDelete: Cascade)
-  
-  recursive community_platform_comments[] @relation("recursive")
-  community_platform_reactions community_platform_reactions[]
-  community_platform_karma_ledger community_platform_karma_ledger[]
-  community_platform_comment_votes community_platform_comment_votes[]
-  community_platform_reports community_platform_reports[]
-  community_platform_report_audit_trail community_platform_report_audit_trail[]
-  community_platform_search_indexes community_platform_search_indexes[]
-  community_platform_search_popularity_scores community_platform_search_popularity_scores?
-  
-  @@index([post_id, created_at])
-  @@index([parent_comment_id, created_at])
-  @@index([author_id, created_at])
-  @@index([comment_status_id])
-}
-
-/// Represents replies to comments. This table is logically a subset of
-/// comments but modeled separately due to its nested structure and to
-/// prevent circular dependencies. However, since replies are a direct form
-/// of comment, this table is deprecated in favor of recursive comments with
-/// parent_id. According to requirements, replies are simply comments with
-/// parent_comment_id referencing a parent comment. This table has been
-/// omitted as it's redundant and violates normalization - the
-/// 'community_platform_comments' table handles all comment/reply nesting
-/// with parent_comment_id.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_comment_replies {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-}
-
-/// User reactions (e.g., upvote/downvote, emoji) to posts or comments. While
-/// upvotes/downvotes are tracked numerically in posts/comments, this table
-/// captures individual voter actions as events for audit and integrity.
-/// Upvote/downvote here represents the specific vote action, not cumulative
-/// count.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_reactions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Member who cast the reaction. {@link community_platform_member.id}.
-  author_id String
-  
-  /// The post this reaction is on. Either post_id or comment_id must be
-  /// non-null. {@link community_platform_posts.id}.
-  post_id String?
-  
-  /// The comment this reaction is on. Either post_id or comment_id must be
-  /// non-null. {@link community_platform_comments.id}.
-  comment_id String?
-  
-  /// The type of reaction (e.g., upvote, downvote). {@link
-  /// community_platform_notification_types.id}.
-  reaction_type_id String
-  
-  /// Timestamp when the reaction was recorded.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  author community_platform_member @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
-  type community_platform_notification_types @relation(fields: [reaction_type_id], references: [id], onDelete: Cascade)
-  
-  @@unique([author_id, post_id])
-  @@unique([author_id, comment_id])
-  @@index([post_id])
-  @@index([comment_id])
-  @@index([author_id])
-  @@index([reaction_type_id])
-  @@index([created_at])
-}
-
-/// System-defined categories of reports that users can select when reporting
-/// content. This lookup table standardizes reporting reason codes.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_report_categories {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique identifier for the category (e.g., 'spam', 'hate_speech').
-  name String
-  
-  /// Human-readable label shown to users (e.g., 'Spam or irrelevant').
-  display_name String
-  
-  /// Priority level: 'low', 'medium', or 'high'. Determines escalation path.
-  priority String
-  
-  /// Whether this category is currently available for selection.
-  is_active Boolean
-  
-  /// Timestamp when the category was created.
-  created_at DateTime
-  
-  /// Timestamp when the category was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  community_platform_reports community_platform_reports[]
-  
-  @@unique([name])
-  @@index([priority])
-  @@index([is_active])
-}
-
-/// Configuration settings for each community, defining moderation policies
-/// and behavioral rules. Each community has exactly one settings record.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_community_settings {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Maximum character length allowed for a post's text content.
+  /// The title displayed in the browser tab and website header. Must not
+  /// exceed 100 characters.
+  website_title String
+  
+  /// Text displayed in the banner on the homepage. Supports HTML formatting
+  /// for styling.
+  homepage_banner_text String?
+  
+  /// Text displayed in the site footer. Typically includes copyright
+  /// information and links to terms of service.
+  footer_text String
+  
+  /// Primary color hex code used for buttons, links, and highlights (e.g.,
+  /// #2563EB). Must be a valid CSS hex color.
+  theme_color_primary String
+  
+  /// Secondary color hex code used for accents and secondary buttons (e.g.,
+  /// #1d4ed8). Must be a valid CSS hex color.
+  theme_color_secondary String
+  
+  /// Default sorting method for feed view: 'new', 'hot', 'top', or
+  /// 'controversial'. Defines the initial sort order when users visit the
+  /// homepage.
+  default_post_sort String
+  
+  /// Whether unauthenticated guests can view posts and communities without
+  /// logging in. If false, users must log in to access any content.
+  enable_guest_browsing Boolean
+  
+  /// Maximum allowed character count for text posts. Must be between 1 and
+  /// 10000. Provides an upper limit to post content length.
   max_post_length Int
   
-  /// Minimum character length required for a post's text content.
-  min_post_length Int
-  
-  /// Maximum character length allowed for a comment.
+  /// Maximum allowed character count for comments. Must be between 1 and 500.
+  /// Prevents excessively long comments.
   max_comment_length Int
   
-  /// Maximum file size (in KB) allowed for image uploads.
-  max_image_size_kb Int
+  /// Maximum allowed file size for image uploads in megabytes. Must be between
+  /// 1 and 20. Controls storage costs and bandwidth usage.
+  max_image_size_mb Int
   
-  /// Whether users must verify their email before posting in this community.
-  require_email_verification_to_post Boolean
-  
-  /// Whether 'guest' users can post (should always be false, but kept for
-  /// extensibility).
-  allow_anonymous_posting Boolean
-  
-  /// Whether comments are allowed on posts in this community.
-  allow_comments Boolean
-  
-  /// If true, new posts are automatically published (no moderation queue).
-  auto_approve_posts Boolean
-  
-  /// Timestamp when settings were created or last modified.
+  /// Timestamp when this configuration record was created in the system.
   created_at DateTime
   
-  /// Timestamp when settings were last updated.
+  /// Timestamp when this configuration record was last modified.
   updated_at DateTime
   
-  //----
-  // RELATIONS
-  //----
-  community_platform_communities community_platform_communities?
-  
-  @@index([auto_approve_posts])
-  // spellchecker: ignore-next-line
-  @@index([require_email_verification_to_post], map: "community_platform_community_settings_require_email_ve_085f72e5")
+  /// Timestamp when this configuration record was logically deleted. Null
+  /// indicates active configuration. Used for audit trails.
+  deleted_at DateTime?
 }
 
-/// Lookup table for possible statuses of a post (e.g., 'draft', 'published',
-/// 'rejected', 'removed'). Defines lifecycle states.
+/// Core system configuration parameters that define platform-wide
+/// operational behavior and technical settings.
+///
+/// Contains critical runtime configuration that governs how the platform
+/// functions, including moderation rules, rate limits, storage
+/// configurations, and performance tuning. Unlike portal_settings which are
+/// UI-focused, this table holds infrastructure-level configuration that
+/// affects system behavior.
+///
+/// All changes to this table require administrative access and should be
+/// carefully documented due to their global impact on platform functionality
+/// and user experience.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_status {
+model community_platform_system_config {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Status identifier (e.g., 'published', 'removed').
-  name String
+  /// Maximum number of consecutive failed login attempts before account
+  /// lockout. Default value is 5. Prevents brute force attacks.
+  max_login_attempts Int
   
-  /// UI label (e.g., 'Published', 'Post Removed').
-  display_name String
+  /// Duration (in minutes) that an account remains locked after exceeding
+  /// max_login_attempts. Default value is 30. Controls security response time.
+  lockout_duration_minutes Int
   
-  /// If true, this status cannot be changed (e.g., 'removed' or 'deleted').
-  is_final Boolean
+  /// Duration (in minutes) that a JWT access token remains valid before
+  /// requiring refresh. Default value is 15. Balances security and user
+  /// experience.
+  access_token_expiration_minutes Int
   
-  /// If true, posts with this status are visible to users.
-  is_public Boolean
+  /// Duration (in days) that a JWT refresh token remains valid before
+  /// requiring re-authentication. Default value is 30. Manages long-term
+  /// session persistence.
+  refresh_token_expiration_days Int
   
-  /// Timestamp when this status type was created in the system.
+  /// Maximum number of posts a member can create per hour. Default value is
+  /// 50. Prevents spam flooding.
+  max_post_rate_per_hour Int
+  
+  /// Maximum number of comments a member can create per hour. Default value is
+  /// 100. Prevents spam flooding.
+  max_comment_rate_per_hour Int
+  
+  /// Maximum number of votes a member can cast per hour. Default value is 300.
+  /// Prevents vote manipulation.
+  max_vote_rate_per_hour Int
+  
+  /// Maximum number of reports a member can submit per hour. Default value is
+  /// 50. Prevents abuse of reporting system.
+  max_report_rate_per_hour Int
+  
+  /// Maximum number of community subscriptions a member can make per hour.
+  /// Default value is 20. Prevents spam subscriptions.
+  max_subscription_rate_per_hour Int
+  
+  /// Number of days to retain audit logs before purging. Default value is 2555
+  /// (7 years). Complies with data retention laws.
+  audit_log_retention_days Int
+  
+  /// Number of months of inactivity before a community is automatically
+  /// archived. Default value is 12. Manages system storage and performance.
+  max_archive_inactivity_months Int
+  
+  /// Number of reports a post or comment needs to trigger automatic moderation
+  /// review. Default value is 3. Balances workload between users and
+  /// moderators.
+  moderation_report_threshold Int
+  
+  /// Number of reports that triggers automatic removal of a post. Default
+  /// value is 10. Prevents toxic content proliferation.
+  post_rejection_threshold Int
+  
+  /// Number of reports that triggers automatic removal of a comment. Default
+  /// value is 15. Balances freedom of expression with content safety.
+  comment_rejection_threshold Int
+  
+  /// Karma threshold below which users are suspended from posting. Default
+  /// value is -500. Prevents necromancy and trolling behaviour.
+  death_karma_threshold Int
+  
+  /// Timestamp when this configuration record was created in the system.
   created_at DateTime
   
-  //----
-  // RELATIONS
-  //----
-  community_platform_posts community_platform_posts[]
+  /// Timestamp when this configuration record was last modified.
+  updated_at DateTime
   
-  @@unique([name])
-  @@index([is_public])
-  @@index([is_final])
+  /// Timestamp when this configuration record was logically deleted. Null
+  /// indicates active configuration. Used for audit trails.
+  deleted_at DateTime?
 }
 
-/// Lookup table for possible statuses of a comment (e.g., 'published',
-/// 'moderation_pending', 'removed'). Defines lifecycle states.
+/// Record of IP addresses that have been suspended from accessing the
+/// CommunityPlatform due to violations of terms of service.
+///
+/// This table maintains a list of IP addresses that have been flagged for
+/// abusive behavior, such as spamming, distributed denial-of-service
+/// attacks, or coordinated vote manipulation. Suspended IPs are blocked from
+/// performing any action on the platform.
+///
+/// The system uses this table to enforce IP-based bans at the network layer,
+/// preventing bypass of user account suspensions through account farming or
+/// proxy usage. Suspensions are temporary and automatically expire after a
+/// configurable duration.
+///
+/// This table plays a critical role in platform security and is referenced
+/// by the authentication and rate-limiting systems to enforce global bans.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_comment_status {
+model community_platform_suspended_ips {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Status identifier (e.g., 'published', 'removed').
-  name String
+  /// The IP address that has been suspended, stored in standard IPv4 or IPv6
+  /// format (e.g., '192.168.1.1' or
+  /// '2001:0db8:85a3:0000:0000:8a2e:0370:7334'). Must be unique.
+  ip_address String
   
-  /// UI label (e.g., 'Published', 'Comment Removed').
-  display_name String
+  /// The ID of the administrator who initiated this suspension. References
+  /// community_platform_admin.id. Provides accountability for bans.
+  suspended_by_admin_id String
   
-  /// If true, this status cannot be changed (e.g., 'removed').
-  is_final Boolean
+  /// The reason for this suspension (e.g., 'spamming', 'DDoS attack', 'virtual
+  /// account farming'). Must be less than 255 characters.
+  reason String
   
-  /// If true, comments with this status are visible to users.
-  is_public Boolean
+  /// Timestamp when this IP address was suspended. Indicates when the ban
+  /// became active.
+  suspended_at DateTime
   
-  /// Timestamp when this status type was created in the system.
+  /// Timestamp when this suspension will automatically expire and be lifted.
+  /// Null indicates permanent suspension.
+  expires_at DateTime?
+  
+  /// Indicates whether this suspension is currently active. May be false if
+  /// suspension has expired or been manually lifted.
+  is_active Boolean
+  
+  /// Timestamp when this record was created in the system.
   created_at DateTime
+  
+  /// Timestamp when this record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this suspension was lifted and the record logically
+  /// deleted. Null indicates active suspension. Used for audit trails.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  community_platform_comments community_platform_comments[]
-  
-  @@unique([name])
-  @@index([is_public])
-  @@index([is_final])
+  @@unique([ip_address])
+  @@index([is_active, expires_at])
 }
 
-/// Defines types of notifications that can be triggered in the system (e.g.,
-/// 'new_post', 'comment_reply', 'report_submitted'). Used to categorize and
-/// template notifications.
+/// Configuration for analytics collection and tracking behavior in the
+/// CommunityPlatform system.
+///
+/// Defines which user behaviors are tracked, what level of anonymity is
+/// maintained, and how analytics data is processed. This configuration
+/// controls the data collection pipeline for business intelligence and
+/// system monitoring.
+///
+/// The platform prioritizes user privacy, so this table ensures that
+/// analytics instrumentation follows strict privacy principles, anonymizing
+/// user data before transmission and never collecting personally
+/// identifiable information.
+///
+/// Administrators adjust these settings to balance business insight needs
+/// with user privacy expectations.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_notification_types {
+model community_platform_analytics_config {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Identifier for notification type (e.g., 'new_post', 'reaction',
-  /// 'report_status').
-  name String
+  /// Whether to track when users view individual posts. Enables analytics on
+  /// content popularity and engagement patterns.
+  enable_post_view_tracking Boolean
   
-  /// Human-readable label (e.g., 'New Post in Community', 'Your Comment Was
-  /// Replied To').
-  display_name String
+  /// Whether to track when users upvote or downvote content. Essential for
+  /// understanding community sentiment and moderation effectiveness.
+  enable_vote_tracking Boolean
   
-  /// Whether notifications of this type are enabled by default.
-  is_enabled Boolean
+  /// Whether to track when users create comments. Provides insight into
+  /// conversation depth and community interaction levels.
+  enable_comment_creation_tracking Boolean
   
-  /// Whether this is a core system notification (cannot be disabled by user).
-  is_system Boolean
+  /// Whether to track when users subscribe to or unsubscribe from communities.
+  /// Essential for understanding community growth and audience segmentation.
+  enable_subscription_tracking Boolean
   
-  /// Timestamp when this notification type was defined in the system.
+  /// Whether to track when users report content. Critical for identifying
+  /// emerging moderation issues and user community standards.
+  enable_report_tracking Boolean
+  
+  /// Whether to send only aggregated statistical data to analytics services
+  /// instead of individual event data. When true, ensures greater user privacy
+  /// and compliance.
+  aggregate_analytics_only Boolean
+  
+  /// Number of analytics events to batch before transmission to reduce server
+  /// load. Default value is 100. Balances real-time data needs with system
+  /// performance.
+  event_batch_size Int
+  
+  /// Maximum time interval (in seconds) between analytics event batches,
+  /// regardless of size. Default value is 30. Ensures timely data
+  /// transmission.
+  event_batch_interval_seconds Int
+  
+  /// Whether to hash user IDs before sending to the analytics platform. When
+  /// true, users are tracked by pseudonymous identifiers, never their actual
+  /// IDs.
+  hash_user_identifiers Boolean
+  
+  /// Whether to hash IP addresses before sending to the analytics platform.
+  /// When true, geographic and network patterns are analyzed without exposing
+  /// user locations.
+  hash_ip_addresses Boolean
+  
+  /// The identifier of the analytics service provider being used (e.g.,
+  /// 'amplitude', 'mixpanel', 'plausible'). Controls configuration parameters
+  /// for the connected service.
+  analytics_provider String
+  
+  /// Timestamp when this configuration record was created in the system.
   created_at DateTime
   
-  //----
-  // RELATIONS
-  //----
-  community_platform_reactions community_platform_reactions[]
-  community_platform_notifications community_platform_notifications[]
-  community_platform_notification_preferences community_platform_notification_preferences[]
-  community_platform_notification_delivery_logs community_platform_notification_delivery_logs[]
+  /// Timestamp when this configuration record was last modified.
+  updated_at DateTime
   
-  @@unique([name])
-  @@index([is_enabled])
-  @@index([is_system])
+  /// Timestamp when this configuration record was logically deleted. Null
+  /// indicates active configuration. Used for audit trails.
+  deleted_at DateTime?
+}
+
+/// Platform-wide moderation rules and content policies that apply to all
+/// communities and users across the CommunityPlatform.
+///
+/// Contains the foundational content moderation guidelines that every
+/// community and user must follow. This includes prohibited content types,
+/// definition of harassment, acceptable use policies, and automated flagging
+/// criteria.
+///
+/// These rules serve as the baseline for automated moderation systems and
+/// provide consistency in enforcement across all communities. Communities
+/// can have additional specific rules, but they cannot be less restrictive
+/// than these global standards.
+///
+/// The rules in this table are referenced by AI moderation tools, reporter
+/// systems, and human moderators to ensure uniform enforcement of platform
+/// policy.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_global_moderation_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// List of prohibited content categories as comma-separated strings (e.g.,
+  /// 'child_exploitation, harassment, threats, hate_speech, misinformation').
+  /// Categories must be from a predefined system list.
+  prohibited_content_types String
+  
+  /// Detailed definition of what constitutes harassment on the platform,
+  /// including examples of behavior that is considered abusive, threatening,
+  /// or intimidation-based.
+  harassment_definition String
+  
+  /// Complete acceptable use policy outlining expected user behavior,
+  /// prohibited activities, and consequences for violations. Includes
+  /// guidelines around impersonation, spam, and coordinated manipulation.
+  acceptable_use_policy String
+  
+  /// Rules for detecting fraudulent behavior including vote manipulation, fake
+  /// accounts, shell communities, and coordinated inauthentic activity.
+  fraud_detection_rules String
+  
+  /// List of keywords and phrases that automatically trigger content filtering
+  /// for suspected policy violations. Each keyword should be separated by a
+  /// comma. Examples include slurs, threats, and code words for illegal
+  /// activity.
+  automated_filtering_keywords String
+  
+  /// Number of false reports (reports on approved content) that triggers a
+  /// penalty for a user. Default value is 5. Prevents abuse of reporting
+  /// system.
+  false_report_penalty_threshold Int
+  
+  /// Number of days a user is penalized after accumulating
+  /// false_report_penalty_threshold false reports. Default value is 7. Deters
+  /// malicious reporting.
+  false_report_penalty_duration_days Int
+  
+  /// Detailed notes on recent changes to the global moderation rules,
+  /// including date, revision number, and summary of modifications. Used for
+  /// audit and legal compliance.
+  rule_revision_notes String
+  
+  /// Timestamp when this configuration record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this configuration record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this configuration record was logically deleted. Null
+  /// indicates active configuration. Used for audit trails.
+  deleted_at DateTime?
 }

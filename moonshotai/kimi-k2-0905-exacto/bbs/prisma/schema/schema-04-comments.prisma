@@ -1,0 +1,104 @@
+/// User comments on economic and political discussion articles.
+///
+/// Comments enable community discussion and debate around posted articles,
+/// supporting nested replies up to 3 levels deep for organized conversation
+/// threads. Each comment maintains relationships with both the parent
+/// article and the commenting member, ensuring proper content organization
+/// and user accountability.
+///
+/// The comment system supports moderation workflows with status tracking,
+/// allowing for content review before public visibility. Edit history is
+/// preserved through version snapshots, maintaining transparency while
+/// allowing users to correct typos or clarify statements within the
+/// permitted time window.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The article this comment belongs to. {@link
+  /// economic_discussion_articles.id}
+  economic_discussion_article_id String
+  
+  /// Member who created this comment. {@link economic_discussion_members.id}
+  economic_discussion_member_id String
+  
+  /// Parent comment for nested replies. {@link economic_discussion_comments.id}
+  parent_id String?
+  
+  /// Comment text content. Minimum 10 characters, maximum 1000 characters.
+  content String
+  
+  /// Moderation status: pending, approved, or rejected.
+  status String
+  
+  /// Comment creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for content moderation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_discussion_articles @relation(fields: [economic_discussion_article_id], references: [id], onDelete: Cascade)
+  member economic_discussion_members @relation(fields: [economic_discussion_member_id], references: [id], onDelete: Cascade)
+  parent economic_discussion_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive economic_discussion_comments[] @relation("recursive")
+  economic_discussion_comment_versions economic_discussion_comment_versions[]
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_article_id, created_at], map: "economic_discussion_comments_economic_discussion_artic_6d5873de")
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_member_id, created_at], map: "economic_discussion_comments_economic_discussion_membe_c01c2e19")
+  @@index([parent_id, created_at])
+}
+
+/// Historical snapshots of comment content for audit trail and edit tracking.
+///
+/// This table preserves the complete edit history of comments, storing
+/// point-in-time snapshots whenever users modify their comments within the
+/// allowed edit window. Each version captures the exact content state,
+/// modification timestamp, and editor information for transparency.
+///
+/// The versioning system ensures accountability while allowing users to
+/// correct errors or clarify their statements. All versions remain
+/// accessible for moderation purposes and provide a complete audit trail of
+/// discussion evolution over time.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_discussion_comment_versions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original comment this version belongs to. {@link
+  /// economic_discussion_comments.id}
+  economic_discussion_comment_id String
+  
+  /// Comment content at the time of snapshot.
+  content String
+  
+  /// Snapshot creation timestamp when version was saved.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment economic_discussion_comments @relation(fields: [economic_discussion_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_discussion_comment_id, created_at], map: "economic_discussion_comment_versions_economic_discussi_2b24b981")
+}

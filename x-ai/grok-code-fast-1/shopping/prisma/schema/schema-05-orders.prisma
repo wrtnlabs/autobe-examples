@@ -1,0 +1,104 @@
+/// Complete transaction records capturing customer purchases, payment
+/// details, and fulfillment status. Serves as the primary entity for order
+/// management, tracking business workflow from creation through completion
+/// while maintaining comprehensive audit trails.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Associated seller's {@link shopping_mall_sellers.id} (optional for
+  /// platform orders).
+  shopping_mall_seller_id String?
+  
+  /// Unique order code following ORD-YYYYMMDD-NNNN format for business
+  /// reference.
+  order_code String
+  
+  /// Total order amount including all items and fees.
+  total_price Float
+  
+  /// Order status (pending, confirmed, shipped, delivered, cancelled).
+  status String
+  
+  /// Complete shipping address for delivery.
+  shipping_address String
+  
+  /// Order creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_reviews shopping_mall_reviews[]
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_coupon_redemptions shopping_mall_coupon_redemptions[]
+  
+  @@index([shopping_mall_seller_id])
+  
+  @@unique([order_code])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Individual line items within orders, tracking product variants and
+/// quantities. Total price calculated at query time to avoid pre-computed
+/// fields.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Associated product variant's {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Quantity ordered for this item.
+  quantity Int
+  
+  /// Price per unit at time of order.
+  unit_price Float
+  
+  /// Item addition timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_product_variant_id])
+}

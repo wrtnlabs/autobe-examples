@@ -7,78 +7,118 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 
 /**
- * Test successful guest token refresh workflow.
+ * Test successful token refresh for active guest sessions.
  *
- * Validates that a guest with a valid refresh token can obtain new JWT tokens
- * (access and refresh) without re-registering through the join endpoint. The
- * test verifies:
+ * This test validates the guest token refresh endpoint by:
  *
- * 1. Guest account creation via join endpoint with initial tokens
- * 2. Token refresh using the initial refresh token
- * 3. New tokens are returned and differ from initial tokens
- * 4. Token expiration windows are properly set (15 min access, 7 day refresh)
- * 5. Access token expires before refresh token
- * 6. Refresh operation maintains guest session continuity
+ * 1. Creating an initial guest session with tokens
+ * 2. Extracting the refresh token from the initial session
+ * 3. Using the refresh token to obtain new access and refresh tokens
+ * 4. Validating that new tokens are returned with valid structure
+ * 5. Confirming the new access token's expiration is further in the future
+ * 6. Verifying the guest session ID remains consistent
  *
- * This workflow represents the typical guest user session extension scenario
- * where the access token expires during active browsing but the guest continues
- * their session using the refresh token.
+ * The test ensures guest session continuity and proper token rotation
+ * mechanics.
  */
 export async function test_api_guest_token_refresh_success(
   connection: api.IConnection,
 ) {
-  // Step 1: Create a guest account via join endpoint
-  const initialAuth: IDiscussionBoardMember.IAuthorized =
+  // Step 1: Create initial guest session
+  const initialGuest: IDiscussionBoardMember.IAuthorized =
     await api.functional.auth.guest.join(connection);
-  typia.assert(initialAuth);
+  typia.assert(initialGuest);
 
-  // Step 2: Refresh the guest token using the initial refresh token
-  const refreshRequest = {
-    refresh_token: initialAuth.token.refresh,
-  } satisfies IDiscussionBoardMember.IRefreshRequest;
+  // Verify initial guest session has valid tokens
+  TestValidator.predicate(
+    "initial guest should have valid ID",
+    initialGuest.id !== null && initialGuest.id !== undefined,
+  );
+  TestValidator.predicate(
+    "initial guest should have access token",
+    initialGuest.token.access !== null &&
+      initialGuest.token.access !== undefined,
+  );
+  TestValidator.predicate(
+    "initial guest should have refresh token",
+    initialGuest.token.refresh !== null &&
+      initialGuest.token.refresh !== undefined,
+  );
 
-  const refreshedAuth: IDiscussionBoardMember.IAuthorized =
-    await api.functional.auth.guest.refresh(connection, {
-      body: refreshRequest,
-    });
-  typia.assert(refreshedAuth);
+  // Store initial token expiration for comparison
+  const initialExpiredAt = new Date(initialGuest.token.expired_at).getTime();
+  const initialRefreshableUntil = new Date(
+    initialGuest.token.refreshable_until,
+  ).getTime();
 
-  // Step 3: Validate token rotation - new tokens should be different from initial
+  // Step 2: Refresh the guest tokens using the refresh token
+  const refreshedGuest: IDiscussionBoardMember.IAuthorized =
+    await api.functional.auth.guest.refresh(connection);
+  typia.assert(refreshedGuest);
+
+  // Step 3: Validate refreshed guest session
+  TestValidator.predicate(
+    "refreshed guest should have valid ID",
+    refreshedGuest.id !== null && refreshedGuest.id !== undefined,
+  );
+  TestValidator.predicate(
+    "refreshed guest should have new access token",
+    refreshedGuest.token.access !== null &&
+      refreshedGuest.token.access !== undefined,
+  );
+  TestValidator.predicate(
+    "refreshed guest should have new refresh token",
+    refreshedGuest.token.refresh !== null &&
+      refreshedGuest.token.refresh !== undefined,
+  );
+
+  // Step 4: Verify guest session ID remains the same
+  TestValidator.equals(
+    "guest session ID should remain unchanged",
+    refreshedGuest.id,
+    initialGuest.id,
+  );
+
+  // Step 5: Verify new tokens have updated expiration timestamps
+  const refreshedExpiredAt = new Date(
+    refreshedGuest.token.expired_at,
+  ).getTime();
+  const refreshedRefreshableUntil = new Date(
+    refreshedGuest.token.refreshable_until,
+  ).getTime();
+
+  TestValidator.predicate(
+    "new access token expiration should be in the future",
+    refreshedExpiredAt > initialExpiredAt,
+  );
+  TestValidator.predicate(
+    "new refresh token expiration should be in the future",
+    refreshedRefreshableUntil > initialRefreshableUntil,
+  );
+
+  // Step 6: Verify tokens are different (rotation occurred)
   TestValidator.notEquals(
-    "new access token should differ from initial access token",
-    refreshedAuth.token.access,
-    initialAuth.token.access,
+    "access token should be rotated",
+    refreshedGuest.token.access,
+    initialGuest.token.access,
   );
-
   TestValidator.notEquals(
-    "new refresh token should differ from initial refresh token",
-    refreshedAuth.token.refresh,
-    initialAuth.token.refresh,
+    "refresh token should be rotated",
+    refreshedGuest.token.refresh,
+    initialGuest.token.refresh,
   );
 
-  // Step 4: Verify refresh token expiration is in future (7-day window)
-  const now = new Date();
-  const refreshableUntil = new Date(refreshedAuth.token.refreshable_until);
-  const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-
+  // Step 7: Verify token format and structure
   TestValidator.predicate(
-    "refresh token should be valid for approximately 7 days",
-    refreshableUntil.getTime() - now.getTime() > 6 * 24 * 60 * 60 * 1000 &&
-      refreshableUntil.getTime() - now.getTime() <= sevenDaysInMs + 60000, // +1 min tolerance
+    "new expired_at should be valid ISO datetime",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(
+      refreshedGuest.token.expired_at,
+    ),
   );
-
-  // Step 5: Verify access token expiration is sooner than refresh token
-  const expiredAt = new Date(refreshedAuth.token.expired_at);
   TestValidator.predicate(
-    "access token should expire before refresh token",
-    expiredAt.getTime() < refreshableUntil.getTime(),
-  );
-
-  // Step 6: Verify access token expiration is within 15-minute window
-  const fifteenMinutesInMs = 15 * 60 * 1000;
-  TestValidator.predicate(
-    "access token should expire within approximately 15 minutes",
-    expiredAt.getTime() - now.getTime() > 14 * 60 * 1000 &&
-      expiredAt.getTime() - now.getTime() <= fifteenMinutesInMs + 60000, // +1 min tolerance
+    "new refreshable_until should be valid ISO datetime",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(
+      refreshedGuest.token.refreshable_until,
+    ),
   );
 }

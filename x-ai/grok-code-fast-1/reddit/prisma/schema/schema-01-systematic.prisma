@@ -1,0 +1,49 @@
+/// Systematic categories for organizing communities by topic areas. This
+/// foundation table provides predefined category options for users when
+/// creating communities, ensuring consistent topic classification across the
+/// platform. Categories include broad topic areas like technology,
+/// entertainment, and lifestyle to help users discover relevant communities.
+/// As a subsidiary stance, these categories exist to support primary
+/// entities (communities) without being directly managed by users in the
+/// same way communities themselves are managed.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category name such as 'Technology', 'Sports', or 'Entertainment'. This
+  /// field serves as the human-readable identifier for each category and must
+  /// be unique across all categories.
+  name String
+  
+  /// Detailed description explaining what topics and subtopics belong under
+  /// this category. Helps users understand whether their community would fit
+  /// in this category during community creation.
+  description String?
+  
+  /// Timestamp when the category was first created in the system. Essential
+  /// for auditing and historical tracking of the platform's evolution.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this category. Tracks when category
+  /// information was updated for maintenance purposes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp allowing categories to be marked as inactive
+  /// without permanently removing them. Prevents data loss and supports audit
+  /// trails.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_communities community_platform_communities[]
+  
+  @@unique([name])
+  @@index([created_at])
+}

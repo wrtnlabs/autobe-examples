@@ -1,0 +1,60 @@
+/// Comments posted by members on economic and political discussion board
+/// articles.
+///
+/// Each comment is associated with a specific article and authored by a
+/// registered member. Comments support nesting by allowing a parent comment
+/// reference for up to two levels of replies.
+///
+/// The comments table tracks creation and update timestamps for audit and
+/// moderation purposes. Comments are designed for minimal complexity,
+/// enabling straightforward querying and management within the discussion
+/// board.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_pol_discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article that this comment belongs to. {@link
+  /// econ_pol_discussion_board_articles.id}.
+  econ_pol_discussion_board_article_id String
+  
+  /// Author of the comment, a registered member. {@link
+  /// econ_pol_discussion_board_members.id}.
+  econ_pol_discussion_board_member_id String
+  
+  /// Optional reference to the parent comment for nested replies, allowing up
+  /// to two levels of nesting within the discussion board. {@link
+  /// econ_pol_discussion_board_comments.id}.
+  parent_comment_id String?
+  
+  /// Plain text content of the comment. Limited to 500 characters as per
+  /// business requirements.
+  body String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article econ_pol_discussion_board_articles @relation(fields: [econ_pol_discussion_board_article_id], references: [id], onDelete: Cascade)
+  member econ_pol_discussion_board_members @relation(fields: [econ_pol_discussion_board_member_id], references: [id], onDelete: Cascade)
+  parentComment econ_pol_discussion_board_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive econ_pol_discussion_board_comments[] @relation("recursive")
+  
+  @@index([parent_comment_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([econ_pol_discussion_board_article_id, created_at], map: "econ_pol_discussion_board_comments_econ_pol_discussion_72565863")
+  // spellchecker: ignore-next-line
+  @@index([econ_pol_discussion_board_member_id, created_at], map: "econ_pol_discussion_board_comments_econ_pol_discussion_7adb67b9")
+}

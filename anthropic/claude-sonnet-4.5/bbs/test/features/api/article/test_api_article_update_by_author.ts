@@ -5,173 +5,179 @@ import typia, { tags } from "typia";
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
-import type { IDiscussionBoardArticleDocument } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleDocument";
-import type { IDiscussionBoardArticleImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleImage";
-import type { IDiscussionBoardCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardCategory";
 import type { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
-import type { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
-import type { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
 
 /**
- * Test that a member can successfully update their own article content
- * including title, body, summary, categories, and tags.
+ * Test that article authors can successfully update their own articles' title
+ * and body content.
  *
- * This test validates the ownership-based editing permission model in the
- * discussion board system. It ensures that members can modify their published
- * content while maintaining proper version control and audit trails.
+ * This test validates the core article update functionality with proper
+ * authorization, ensuring that authenticated members can modify their own
+ * articles while preserving data integrity.
  *
- * Business flow:
+ * Test workflow:
  *
- * 1. Register a member account for article authorship
- * 2. Create categories for article classification
- * 3. Create an initial article with specific content
- * 4. Update the article with new title, body, summary, and categories
- * 5. Verify all updated fields are correctly reflected
- * 6. Confirm timestamp behavior (updated_at changed, created_at preserved)
+ * 1. Create and authenticate a member account (article author)
+ * 2. Create an article with initial title and body content
+ * 3. Update the article with new title and body content
+ * 4. Verify the response returns updated article data
+ * 5. Confirm title changed to the new value (5-200 character constraint)
+ * 6. Confirm body changed to the new value (10-50,000 character constraint)
+ * 7. Verify updated_at timestamp is refreshed to current time
+ * 8. Verify created_at timestamp remains unchanged (immutable)
+ * 9. Verify id, author, view_count remain unchanged
+ * 10. Ensure deleted_at remains null
+ * 11. Validate that the update operation preserves data integrity
  */
 export async function test_api_article_update_by_author(
   connection: api.IConnection,
 ) {
-  // Step 1: Register a member account
-  const memberEmail = typia.random<string & tags.Format<"email">>();
-  const memberPassword = typia.random<string & tags.MinLength<8>>();
+  // Step 1: Create and authenticate a member account
+  const memberData = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: "testPassword123",
+    username: RandomGenerator.name(),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IDiscussionBoardMember.ICreate;
 
-  const member = await api.functional.auth.member.join(connection, {
-    body: {
-      username: RandomGenerator.alphaNumeric(8),
-      email: memberEmail,
-      password: memberPassword,
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-    } satisfies IDiscussionBoardMember.IJoin,
+  const authenticatedMember: IDiscussionBoardMember.IAuthorized =
+    await api.functional.auth.member.join(connection, {
+      body: memberData,
+    });
+  typia.assert(authenticatedMember);
+
+  // Step 2: Create an article with initial title and body
+  const initialTitle = RandomGenerator.paragraph({
+    sentences: 3,
+    wordMin: 3,
+    wordMax: 7,
   });
-  typia.assert(member);
+  const initialBody = RandomGenerator.content({
+    paragraphs: 2,
+    sentenceMin: 10,
+    sentenceMax: 20,
+    wordMin: 4,
+    wordMax: 8,
+  });
 
-  // Step 2: Create categories for article classification
-  const category1 =
-    await api.functional.discussionBoard.moderator.categories.create(
-      connection,
-      {
-        body: {
-          name: `Category ${RandomGenerator.name(2)}`,
-          description: RandomGenerator.paragraph({ sentences: 2 }),
-        } satisfies IDiscussionBoardCategory.ICreate,
-      },
-    );
-  typia.assert(category1);
+  const initialArticleData = {
+    title: initialTitle,
+    body: initialBody,
+  } satisfies IDiscussionBoardArticle.ICreate;
 
-  const category2 =
-    await api.functional.discussionBoard.moderator.categories.create(
-      connection,
-      {
-        body: {
-          name: `Category ${RandomGenerator.name(2)}`,
-          description: RandomGenerator.paragraph({ sentences: 2 }),
-        } satisfies IDiscussionBoardCategory.ICreate,
-      },
-    );
-  typia.assert(category2);
+  const createdArticle: IDiscussionBoardArticle =
+    await api.functional.discussionBoard.member.articles.create(connection, {
+      body: initialArticleData,
+    });
+  typia.assert(createdArticle);
 
-  // Step 3: Create initial article with specific content
-  const originalTitle = `Original Title ${RandomGenerator.name(3)}`;
-  const originalBody = RandomGenerator.content({ paragraphs: 3 });
-  const originalSummary = RandomGenerator.paragraph({ sentences: 2 });
+  // Capture original values for comparison
+  const originalCreatedAt = createdArticle.created_at;
+  const originalId = createdArticle.id;
+  const originalAuthor = createdArticle.author;
+  const originalViewCount = createdArticle.view_count;
 
-  const article = await api.functional.discussionBoard.member.articles.create(
-    connection,
-    {
-      body: {
-        title: originalTitle,
-        body: originalBody,
-        summary: originalSummary,
-        category_ids: [category1.id],
-      } satisfies IDiscussionBoardArticle.ICreate,
-    },
-  );
-  typia.assert(article);
+  // Small delay to ensure updated_at will be different
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
-  // Verify initial article creation
-  TestValidator.equals("initial title matches", article.title, originalTitle);
-  TestValidator.equals("initial body matches", article.body, originalBody);
-  TestValidator.equals(
-    "initial summary matches",
-    article.summary,
-    originalSummary,
-  );
-  TestValidator.equals("initial category count", article.categories.length, 1);
-  TestValidator.equals(
-    "initial category ID",
-    article.categories[0].id,
-    category1.id,
-  );
+  // Step 3: Update the article with new title and body
+  const newTitle = RandomGenerator.paragraph({
+    sentences: 4,
+    wordMin: 4,
+    wordMax: 8,
+  });
+  const newBody = RandomGenerator.content({
+    paragraphs: 3,
+    sentenceMin: 15,
+    sentenceMax: 25,
+    wordMin: 5,
+    wordMax: 10,
+  });
 
-  // Store original timestamps for later comparison
-  const originalCreatedAt = article.created_at;
-  const originalUpdatedAt = article.updated_at;
+  const updateData = {
+    title: newTitle,
+    body: newBody,
+  } satisfies IDiscussionBoardArticle.IUpdate;
 
-  // Step 4: Update the article with new content
-  const updatedTitle = `Updated Title ${RandomGenerator.name(3)}`;
-  const updatedBody = RandomGenerator.content({ paragraphs: 4 });
-  const updatedSummary = RandomGenerator.paragraph({ sentences: 3 });
-
-  const updatedArticle =
+  const updatedArticle: IDiscussionBoardArticle =
     await api.functional.discussionBoard.member.articles.update(connection, {
-      articleId: article.id,
-      body: {
-        title: updatedTitle,
-        body: updatedBody,
-        summary: updatedSummary,
-        category_ids: [category2.id],
-      } satisfies IDiscussionBoardArticle.IUpdate,
+      articleId: createdArticle.id,
+      body: updateData,
     });
   typia.assert(updatedArticle);
 
-  // Step 5: Verify all updated fields are correctly reflected
+  // Step 4-11: Verify all update expectations
+
+  // Step 5: Confirm title changed to the new value
   TestValidator.equals(
-    "updated title matches",
+    "title should be updated to new value",
     updatedArticle.title,
-    updatedTitle,
-  );
-  TestValidator.equals(
-    "updated body matches",
-    updatedArticle.body,
-    updatedBody,
-  );
-  TestValidator.equals(
-    "updated summary matches",
-    updatedArticle.summary,
-    updatedSummary,
-  );
-  TestValidator.equals(
-    "updated category count",
-    updatedArticle.categories.length,
-    1,
-  );
-  TestValidator.equals(
-    "updated category ID",
-    updatedArticle.categories[0].id,
-    category2.id,
+    newTitle,
   );
 
-  // Step 6: Verify timestamp behavior
+  // Step 6: Confirm body changed to the new value
   TestValidator.equals(
-    "created_at unchanged",
+    "body should be updated to new value",
+    updatedArticle.body,
+    newBody,
+  );
+
+  // Step 7: Verify updated_at timestamp is refreshed
+  TestValidator.predicate(
+    "updated_at should be refreshed after update",
+    new Date(updatedArticle.updated_at).getTime() >
+      new Date(originalCreatedAt).getTime(),
+  );
+
+  // Step 8: Verify created_at timestamp remains unchanged (immutable)
+  TestValidator.equals(
+    "created_at should remain unchanged",
     updatedArticle.created_at,
     originalCreatedAt,
   );
-  TestValidator.notEquals(
-    "updated_at changed",
-    updatedArticle.updated_at,
-    originalUpdatedAt,
+
+  // Step 9: Verify id remains unchanged
+  TestValidator.equals(
+    "article id should remain unchanged",
+    updatedArticle.id,
+    originalId,
   );
 
-  // Verify article ID remains the same
-  TestValidator.equals("article ID unchanged", updatedArticle.id, article.id);
-
-  // Verify author remains the same
+  // Step 9: Verify author remains unchanged
   TestValidator.equals(
-    "author ID unchanged",
+    "author should remain unchanged",
     updatedArticle.author.id,
-    member.id,
+    originalAuthor.id,
+  );
+  TestValidator.equals(
+    "author username should remain unchanged",
+    updatedArticle.author.username,
+    originalAuthor.username,
+  );
+
+  // Step 9: Verify view_count remains unchanged
+  TestValidator.equals(
+    "view_count should remain unchanged",
+    updatedArticle.view_count,
+    originalViewCount,
+  );
+
+  // Step 10: Ensure deleted_at remains null
+  TestValidator.equals(
+    "deleted_at should remain null",
+    updatedArticle.deleted_at,
+    null,
+  );
+
+  // Step 11: Validate overall data integrity
+  TestValidator.predicate(
+    "title should respect length constraints",
+    updatedArticle.title.length >= 5 && updatedArticle.title.length <= 200,
+  );
+
+  TestValidator.predicate(
+    "body should respect length constraints",
+    updatedArticle.body.length >= 10 && updatedArticle.body.length <= 50000,
   );
 }

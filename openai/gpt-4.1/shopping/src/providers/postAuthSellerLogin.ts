@@ -7,52 +7,51 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IShoppingSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingSeller";
-import { IShoppingAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAuthorizationToken";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthSellerLogin(props: {
-  body: IShoppingSeller.ILogin;
-}): Promise<IShoppingSeller.IAuthorized> {
-  // 1. Find the seller by email (do not distinguish not found, for anti-enumeration)
-  const seller = await MyGlobal.prisma.shopping_sellers.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+  body: IShoppingMallSeller.ILogin;
+}): Promise<IShoppingMallSeller.IAuthorized> {
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
+    where: { email: props.body.email },
   });
-  // 2. Validate credentials (generic failure for invalid)
-  const isActive =
-    !!seller && seller.deleted_at === null && seller.status !== "suspended";
-  if (!seller || !isActive) {
+  if (!seller) {
     throw new HttpException("Invalid credentials", 401);
   }
-  const passwordOk = await PasswordUtil.verify(
+  if (!seller.is_email_verified) {
+    throw new HttpException("Email verification required", 403);
+  }
+  if (seller.status !== "approved") {
+    throw new HttpException("Account not permitted to login", 403);
+  }
+  const passwordValid = await PasswordUtil.verify(
     props.body.password,
     seller.password_hash,
   );
-  if (!passwordOk) {
+  if (!passwordValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Create new session
-  const accessExpiredAt = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiredAt = toISOStringSafe(
+  const now = toISOStringSafe(new Date());
+  const access_expiry = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refresh_expiry = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
-  const now = toISOStringSafe(new Date());
-  const session = await MyGlobal.prisma.shopping_seller_sessions.create({
-    data: {
-      id: v4(),
-      shopping_seller_id: seller.id,
-      ip: props.body.ip ?? "", // fallback to empty string if missing
-      href: props.body.href,
-      referrer: props.body.referrer,
-      created_at: now,
-      expired_at: accessExpiredAt,
-    },
+  const session_id = v4();
+  const session_create_data: any = {
+    id: session_id,
+    shopping_mall_seller_id: seller.id,
+    href: props.body.href,
+    referrer: props.body.referrer,
+    created_at: now,
+    expired_at: access_expiry,
+  };
+  if (typeof props.body.ip === "string") {
+    session_create_data.ip = props.body.ip satisfies string as string;
+  }
+  const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
+    data: session_create_data,
   });
-  // 4. Generate tokens
   const token = {
     access: jwt.sign(
       {
@@ -62,38 +61,33 @@ export async function postAuthSellerLogin(props: {
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
+      { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
         type: "seller",
         id: seller.id,
         session_id: session.id,
-        created_at: now,
         tokenType: "refresh",
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
+      { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpiredAt,
-    refreshable_until: refreshExpiredAt,
+    expired_at: access_expiry,
+    refreshable_until: refresh_expiry,
   };
-  // 5. Return authorized DTO
   return {
     id: seller.id,
     email: seller.email,
-    display_name: seller.display_name,
-    contact_phone: seller.contact_phone,
+    business_name: seller.business_name,
+    registration_number: seller.registration_number,
+    business_phone: seller.business_phone,
+    is_email_verified: seller.is_email_verified,
     status: seller.status,
-    is_active: isActive,
     created_at: toISOStringSafe(seller.created_at),
     updated_at: toISOStringSafe(seller.updated_at),
     token,
+    seller: { id: seller.id, business_name: seller.business_name },
   };
 }

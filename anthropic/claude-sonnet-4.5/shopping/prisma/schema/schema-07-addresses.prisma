@@ -1,0 +1,129 @@
+/// Buyer delivery addresses for order fulfillment and shipping.
+///
+/// Stores multiple saved delivery addresses for each authenticated buyer,
+/// enabling convenient address selection during checkout and reuse across
+/// multiple orders.
+/// Each buyer can save up to 10 delivery addresses with complete recipient
+/// and location information required for successful package delivery.
+///
+/// Addresses are managed independently of orders - buyers create and
+/// maintain their address book, and orders reference these addresses at the
+/// time of placement.
+/// When an order is placed, the address data is captured in the order record
+/// as a snapshot, allowing buyers to modify or delete addresses from their
+/// address book without affecting historical order records.
+///
+/// One address per buyer can be designated as the default address, which is
+/// pre-selected during checkout for streamlined purchasing.
+/// The first address created by a buyer automatically becomes their default
+/// address.
+/// Addresses support both residential and commercial delivery types with
+/// optional special delivery instructions for carriers.
+///
+/// Address validation ensures data quality through format validation of
+/// postal codes, phone numbers, and required field completeness.
+/// Duplicate addresses are prevented based on matching street address, city,
+/// state, and postal code to maintain address book integrity.
+///
+/// @namespace Addresses
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_buyer_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Buyer who owns this delivery address. {@link shopping_mall_buyers.id}.
+  shopping_mall_buyer_id String
+  
+  /// Full name of the recipient who will receive deliveries at this address.
+  /// May differ from the buyer's account name when shipping gifts or to other
+  /// individuals. Maximum 100 characters containing letters, spaces, hyphens,
+  /// and apostrophes.
+  recipient_name String
+  
+  /// Contact phone number for delivery coordination and carrier communication.
+  /// Must include country code for international compatibility. Used by
+  /// carriers to contact recipient for delivery issues or access questions.
+  phone String
+  
+  /// Primary street address line containing street number, street name, and
+  /// unit/apartment/suite number if applicable. Required field for delivery
+  /// location identification. Maximum 200 characters.
+  street_address_line1 String
+  
+  /// Additional address details such as building name, floor number, company
+  /// name, or supplementary location information. Optional field for complex
+  /// addresses requiring extra detail. Maximum 200 characters.
+  street_address_line2 String?
+  
+  /// City or district name for the delivery address. Required for carrier
+  /// routing and delivery zone determination. Maximum 100 characters.
+  city String
+  
+  /// State, province, or region name for the delivery address. Required for
+  /// carrier routing, shipping cost calculation, and shipping restriction
+  /// validation. Maximum 100 characters.
+  state String
+  
+  /// Postal code, ZIP code, or postcode for the delivery address. Format
+  /// validated based on country-specific patterns (US: 5-digit or ZIP+4,
+  /// Canada: A1A 1A1, UK: SW1A 1AA, etc.). Required for precise delivery
+  /// location and shipping cost calculation. Maximum 20 characters.
+  postal_code String
+  
+  /// Country name for the delivery address selected from supported countries
+  /// list. Required for international shipping validation, customs
+  /// documentation, and shipping method availability determination. Maximum
+  /// 100 characters.
+  country String
+  
+  /// Custom label assigned by buyer for easy address identification in their
+  /// address book. Examples: Home, Office, Parents House, Vacation Home. Must
+  /// be unique within the buyer's address list. Maximum 50 characters.
+  address_label String
+  
+  /// Indicates whether this address is the buyer's default shipping address.
+  /// Default address is automatically pre-selected during checkout for
+  /// convenience. Only one address per buyer can have this flag set to true at
+  /// any time. First created address automatically becomes default.
+  is_default Boolean
+  
+  /// Type of delivery location indicating whether the address is residential
+  /// or commercial. Affects carrier delivery procedures, delivery time
+  /// windows, and signature requirements. Values: residential, commercial.
+  address_type String
+  
+  /// Optional delivery instructions for carriers such as gate codes, building
+  /// access details, safe drop-off locations, or recipient availability notes.
+  /// Helps ensure successful delivery on first attempt. Maximum 500
+  /// characters.
+  special_delivery_instructions String?
+  
+  /// Timestamp when the address was first created and added to the buyer's
+  /// address book. Used for sorting addresses by recency and tracking address
+  /// book growth over time.
+  created_at DateTime
+  
+  /// Timestamp when the address was last modified. Tracks changes to recipient
+  /// information, location details, or delivery instructions. Updated whenever
+  /// any address field is edited by the buyer.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  buyer shopping_mall_buyers @relation(fields: [shopping_mall_buyer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_orders shopping_mall_orders[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_buyer_id, address_label], map: "shopping_mall_buyer_addresses_shopping_mall_buyer_id_a_25e4296e")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_buyer_id, street_address_line1, city, state, postal_code], map: "shopping_mall_buyer_addresses_shopping_mall_buyer_id_s_66ea98ce")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_buyer_id, is_default], map: "shopping_mall_buyer_addresses_shopping_mall_buyer_id_i_3793184c")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_buyer_id, created_at], map: "shopping_mall_buyer_addresses_shopping_mall_buyer_id_c_b23cf809")
+}

@@ -1,0 +1,60 @@
+/// Content moderation reports allowing users and guests to flag
+/// inappropriate posts or comments.
+///
+/// This table stores all reports submitted for review by administrators,
+/// with categorization of violation types and status tracking throughout the
+/// moderation process. Reports can target either posts or comments, and may
+/// be submitted by authenticated users or anonymous guests to ensure
+/// community safety and content standards.
+///
+/// The system supports various report categories including spam, harassment,
+/// hate speech, and illegal content, with status tracking from submission
+/// through resolution.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of reporter actor: user, guest, or admin for moderator-submitted
+  /// reports
+  actor_type String
+  
+  /// Type of reported content: post or comment
+  content_type String
+  
+  /// ID of the specific post or comment being reported
+  content_id String
+  
+  /// Report violation category: spam, harassment, hate_speech,
+  /// illegal_content, misinformation, copyright_infringement,
+  /// pornographic_content, self_harm, doxxing, impersonation
+  category String
+  
+  /// Detailed explanation of the violation provided by the reporter
+  reason String?
+  
+  /// Current status of the report: pending, reviewed, action_taken, dismissed
+  status String
+  
+  /// Timestamp when the report was first submitted
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the report
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for reports that have been withdrawn or
+  /// invalidated
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([status])
+  @@index([created_at])
+  @@index([content_type, content_id])
+}

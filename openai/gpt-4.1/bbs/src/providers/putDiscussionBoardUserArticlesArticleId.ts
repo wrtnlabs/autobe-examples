@@ -8,8 +8,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
-import { IDiscussionBoardArticleAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleAttachment";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function putDiscussionBoardUserArticlesArticleId(props: {
@@ -17,121 +17,60 @@ export async function putDiscussionBoardUserArticlesArticleId(props: {
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticle.IUpdate;
 }): Promise<IDiscussionBoardArticle> {
-  // Step 1: Fetch article (must not be deleted)
+  // 1. Fetch the article
   const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId, deleted_at: null },
+    where: { id: props.articleId },
   });
   if (!article) {
-    throw new HttpException("Article not found", 404);
+    throw new HttpException("Article not found.", 404);
   }
-
-  // Step 2: Only author allowed to update (no admin context)
-  if (article.author_user_id !== props.user.id) {
-    throw new HttpException("Only the article's author may update", 403);
+  if (!article.author_user_id || article.author_user_id !== props.user.id) {
+    throw new HttpException(
+      "You are not authorized to update this article.",
+      403,
+    );
   }
-
-  // Step 3: Update article core fields
+  if (!props.body.title && !props.body.body) {
+    throw new HttpException(
+      "At least one of title or body must be provided for update.",
+      400,
+    );
+  }
   const now = toISOStringSafe(new Date());
-  await MyGlobal.prisma.discussion_board_articles.update({
+  const updated = await MyGlobal.prisma.discussion_board_articles.update({
     where: { id: props.articleId },
     data: {
-      title: props.body.title ?? undefined,
-      body: props.body.body ?? undefined,
+      ...(props.body.title ? { title: props.body.title } : {}),
+      ...(props.body.body ? { body: props.body.body } : {}),
       updated_at: now,
     },
   });
-
-  // Step 4: Replace attachments if present
-  if (props.body.attachments !== undefined) {
-    // Soft delete all existing attachments for this article
-    const existing =
-      await MyGlobal.prisma.discussion_board_article_attachments.findMany({
-        where: {
-          discussion_board_article_id: props.articleId,
-          deleted_at: null,
-        },
-      });
-    const deleted_at = now;
-    await Promise.all(
-      existing.map((att) =>
-        MyGlobal.prisma.discussion_board_article_attachments.update({
-          where: { id: att.id },
-          data: { deleted_at },
-        }),
-      ),
-    );
-    // Create all new provided as attachments (no reuse logic)
-    await Promise.all(
-      props.body.attachments.map((att) =>
-        MyGlobal.prisma.discussion_board_article_attachments.create({
-          data: {
-            id: v4(),
-            discussion_board_article_id: props.articleId,
-            filename: att.filename ?? "",
-            kind: att.kind ?? "document",
-            mimetype: att.mimetype ?? "application/octet-stream",
-            filesize: att.filesize ?? 0,
-            virus_scanned: true,
-            created_at: now,
-            deleted_at: null,
-          },
-        }),
-      ),
-    );
-  }
-
-  // Step 5: Load updated article, with related attachments and author
-  const updated =
-    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
-      where: { id: props.articleId },
-      include: {
-        authorUser: true,
-        discussion_board_article_attachments: true,
-      },
-    });
-
-  // Step 6: Only include non-deleted attachments in API response
-  const attachments = updated.discussion_board_article_attachments
-    .filter((a) => a.deleted_at === null)
-    .map((a) => ({
-      id: a.id,
-      discussion_board_article_id: a.discussion_board_article_id,
-      filename: a.filename,
-      kind: a.kind,
-      mimetype: a.mimetype,
-      filesize: a.filesize,
-      virus_scanned: a.virus_scanned,
-      created_at: toISOStringSafe(a.created_at),
-      deleted_at: a.deleted_at ? toISOStringSafe(a.deleted_at) : undefined,
-    }));
-
-  // Step 7: Count only non-deleted comments
-  const comments_count =
-    await MyGlobal.prisma.discussion_board_article_comments.count({
-      where: {
-        discussion_board_article_id: updated.id,
-        deleted_at: null,
-      },
-    });
-
-  // Step 8: Compose author summary
-  const author = {
-    id: updated.authorUser.id,
-    display_name: updated.authorUser.display_name,
-    avatar_url: updated.authorUser.avatar_url ?? undefined,
-  };
-
+  const user = article.author_user_id
+    ? await MyGlobal.prisma.discussion_board_users.findUnique({
+        where: { id: article.author_user_id },
+      })
+    : undefined;
   return {
     id: updated.id,
     title: updated.title,
     body: updated.body,
-    author,
-    attachments,
+    author_user: user
+      ? {
+          id: user.id,
+          email: user.email,
+          is_email_verified: user.is_email_verified,
+          is_active: user.is_active,
+          is_blocked: user.is_blocked,
+          created_at: toISOStringSafe(user.created_at),
+          updated_at: toISOStringSafe(user.updated_at),
+          deleted_at:
+            user.deleted_at !== null
+              ? toISOStringSafe(user.deleted_at)
+              : undefined,
+        }
+      : undefined,
+    author_admin: undefined,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at
-      ? toISOStringSafe(updated.deleted_at)
-      : undefined,
-    comments_count,
   };
 }

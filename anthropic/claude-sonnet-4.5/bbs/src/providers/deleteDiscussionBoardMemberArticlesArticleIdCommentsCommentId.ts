@@ -9,7 +9,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
-import { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 
 export async function deleteDiscussionBoardMemberArticlesArticleIdCommentsCommentId(props: {
@@ -17,51 +17,69 @@ export async function deleteDiscussionBoardMemberArticlesArticleIdCommentsCommen
   articleId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardComment> {
-  const { member, articleId, commentId } = props;
+  const comment = await MyGlobal.prisma.discussion_board_comments.findUnique({
+    where: { id: props.commentId },
+    include: {
+      member: true,
+      article: {
+        include: {
+          member: true,
+        },
+      },
+    },
+  });
 
-  const comment =
-    await MyGlobal.prisma.discussion_board_comments.findUniqueOrThrow({
-      where: { id: commentId },
-    });
+  if (!comment) {
+    throw new HttpException("Comment not found", 404);
+  }
 
-  if (comment.discussion_board_article_id !== articleId) {
+  if (comment.discussion_board_article_id !== props.articleId) {
     throw new HttpException(
       "Comment does not belong to the specified article",
       404,
     );
   }
 
-  if (comment.discussion_board_member_id !== member.id) {
-    throw new HttpException(
-      "Unauthorized: You can only delete your own comments",
-      403,
-    );
+  if (comment.discussion_board_member_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
   }
 
-  const now = toISOStringSafe(new Date());
-
-  await MyGlobal.prisma.discussion_board_comments.update({
-    where: { id: commentId },
-    data: {
-      deleted_at: now,
-      updated_at: now,
-    },
+  await MyGlobal.prisma.discussion_board_comments.delete({
+    where: { id: props.commentId },
   });
 
   return {
     id: comment.id,
     discussion_board_article_id: comment.discussion_board_article_id,
-    discussion_board_parent_comment_id:
-      comment.discussion_board_parent_comment_id ?? null,
-    discussion_board_member_id: comment.discussion_board_member_id ?? null,
-    discussion_board_moderator_id:
-      comment.discussion_board_moderator_id ?? null,
-    author_type: comment.author_type,
+    member_id: comment.discussion_board_member_id,
     content: comment.content,
     created_at: toISOStringSafe(comment.created_at),
-    updated_at: now,
-    deleted_at: now,
-    memberAuthor: null,
-    moderatorAuthor: null,
+    updated_at: toISOStringSafe(comment.updated_at),
+    deleted_at: comment.deleted_at
+      ? toISOStringSafe(comment.deleted_at)
+      : undefined,
+    member: {
+      id: comment.member.id,
+      username: comment.member.username,
+      email: comment.member.email,
+      status: comment.member.status,
+      email_verified: comment.member.email_verified,
+      created_at: toISOStringSafe(comment.member.created_at),
+    },
+    article: {
+      id: comment.article.id,
+      title: comment.article.title,
+      view_count: comment.article.view_count,
+      created_at: toISOStringSafe(comment.article.created_at),
+      updated_at: toISOStringSafe(comment.article.updated_at),
+      author: {
+        id: comment.article.member.id,
+        username: comment.article.member.username,
+        email: comment.article.member.email,
+        status: comment.article.member.status,
+        email_verified: comment.article.member.email_verified,
+        created_at: toISOStringSafe(comment.article.member.created_at),
+      },
+    },
   };
 }

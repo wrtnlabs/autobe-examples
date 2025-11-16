@@ -1,0 +1,165 @@
+/// Core content entities representing user-generated posts within
+/// communities. Posts are the primary content creation mechanism, supporting
+/// multiple formats including text discussions, link shares, and image
+/// uploads. All posts belong to specific communities and are created by
+/// authenticated users through their active sessions. Posts drive community
+/// engagement through karma-based scoring derived from user votes. Soft
+/// deletion is supported to maintain discussion thread integrity while
+/// allowing content moderation. Post editing is limited to short windows
+/// post-publication to preserve discussion quality.','material':false,
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community's {@link community_platform_users.id} who
+  /// created this post.
+  community_platform_user_id String
+  
+  /// Reference to the user's active session {@link
+  /// community_platform_user_sessions.id} when creating the post.
+  community_platform_user_session_id String
+  
+  /// Reference to the target {@link community_platform_communities.id} where
+  /// this post is published.
+  community_platform_community_id String
+  
+  /// Post content type identifier. Valid values: 'text' for text-only posts,
+  /// 'link' for external URL shares, 'image' for uploaded visual content.
+  type String
+  
+  /// Post headline or title. Limited to 300 characters for consistent display
+  /// across interfaces.
+  title String
+  
+  /// Main post content. Supports text for text-only posts, optional commentary
+  /// for link posts. Limited to 40,000 characters to maintain readability.
+  body String?
+  
+  /// External URL for link posts. Must be valid HTTP/HTTPS URL when type is
+  /// 'link'.
+  url String?
+  
+  /// Reference to uploaded file for image posts. Points to attachment file
+  /// when type is 'image'.
+  file_id String?
+  
+  /// Publication status of the post. Valid values: 'published' (visible to
+  /// community), 'draft' (author-only view), 'removed' (moderation action).
+  status String
+  
+  /// Timestamp when the post was first created. Used for chronological sorting
+  /// and post aging.
+  created_at DateTime
+  
+  /// Timestamp of last post modification. Tracks editing activity for
+  /// moderation purposes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Set when post is removed to maintain comment
+  /// thread integrity while hiding from public view.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  session community_platform_user_sessions @relation(fields: [community_platform_user_session_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  community_platform_comments community_platform_comments[]
+  community_platform_vote_of_posts community_platform_vote_of_posts[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_session_id], map: "community_platform_posts_community_platform_user_sessi_8ff1b0eb")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_posts_community_platform_community__4df12ea5")
+  @@index([type])
+  @@index([status])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, created_at], map: "community_platform_posts_community_platform_user_id_cr_897aa442")
+}
+
+/// User-generated comments that form threaded discussions under posts.
+/// Comments support nested replies up to 8 levels deep, enabling structured
+/// conversations. Each comment belongs to a specific post and is created by
+/// authenticated users. Comments contribute to karma calculations and
+/// support independent ranking through voting. Soft deletion supports
+/// content moderation while preserving thread integrity. Users can edit
+/// comments within limited time windows to ensure discussion
+/// quality.','material':false,
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the commenter's {@link community_platform_users.id} who
+  /// created this comment.
+  community_platform_user_id String
+  
+  /// Reference to the user's active session {@link
+  /// community_platform_user_sessions.id} when commenting.
+  community_platform_user_session_id String
+  
+  /// Reference to the parent {@link community_platform_posts.id} this comment
+  /// belongs to.
+  community_platform_post_id String
+  
+  /// Reference to parent {@link community_platform_comments.id} for threaded
+  /// replies. Null for top-level comments.
+  parent_comment_id String?
+  
+  /// Comment text content with optional markdown formatting. Limited to 2000
+  /// characters to maintain readability in threaded discussions.
+  body String
+  
+  /// Nesting level in comment thread. Range 0-8 where 0 is top-level comment.
+  /// Prevents excessive nesting that reduces discussion quality.
+  depth Int
+  
+  /// Timestamp when the comment was first created. Essential for chronological
+  /// sorting within threads.
+  created_at DateTime
+  
+  /// Timestamp of last comment modification. Tracks editing for moderation and
+  /// context preservation.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Maintains thread structure while hiding content
+  /// from public view after moderation actions.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  session community_platform_user_sessions @relation(fields: [community_platform_user_session_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_vote_of_comments community_platform_vote_of_comments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_session_id], map: "community_platform_comments_community_platform_user_se_e3534d33")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  @@index([parent_comment_id, created_at])
+  @@index([depth])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, created_at], map: "community_platform_comments_community_platform_user_id_d682cb89")
+}

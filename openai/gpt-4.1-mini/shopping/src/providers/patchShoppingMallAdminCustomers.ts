@@ -16,76 +16,74 @@ export async function patchShoppingMallAdminCustomers(props: {
   admin: AdminPayload;
   body: IShoppingMallCustomer.IRequest;
 }): Promise<IPageIShoppingMallCustomer.ISummary> {
-  const { body } = props;
+  const {
+    page: reqPage,
+    limit: reqLimit,
+    search,
+    // Removed status as it is not in Prisma schema
+    sort_by,
+    order,
+  } = props.body;
 
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 10;
+  const page = reqPage >= 1 ? reqPage : 1;
+  const limit = reqLimit > 0 && reqLimit <= 100 ? reqLimit : 100;
+  const skip = (page - 1) * limit;
 
-  const where: {
-    deleted_at?: null;
-    email?: { contains: string };
-    nickname?: { contains: string };
-    created_at?: {
-      gte?: string & tags.Format<"date-time">;
-      lte?: string & tags.Format<"date-time">;
-    };
-  } = {};
+  const where = {
+    deleted_at: null,
+    ...(search
+      ? {
+          OR: [
+            {
+              name: { contains: search, mode: "insensitive" as "insensitive" },
+            },
+            {
+              email: { contains: search, mode: "insensitive" as "insensitive" },
+            },
+          ],
+        }
+      : {}),
+    // Removed status filter because field does not exist in Prisma schema
+  } satisfies Prisma.shopping_mall_customersWhereInput;
 
-  if (!body.includeDeleted) {
-    where.deleted_at = null;
-  }
+  const orderBy =
+    sort_by && order && (order === "asc" || order === "desc")
+      ? { [sort_by]: order as Prisma.SortOrder }
+      : { created_at: "desc" as Prisma.SortOrder };
 
-  if (body.searchEmail !== undefined && body.searchEmail !== null) {
-    where.email = { contains: body.searchEmail };
-  }
-
-  if (body.searchNickname !== undefined && body.searchNickname !== null) {
-    where.nickname = { contains: body.searchNickname };
-  }
-
-  if (
-    (body.createdAfter !== undefined && body.createdAfter !== null) ||
-    (body.createdBefore !== undefined && body.createdBefore !== null)
-  ) {
-    where.created_at = {};
-    if (body.createdAfter !== undefined && body.createdAfter !== null) {
-      where.created_at.gte = body.createdAfter;
-    }
-    if (body.createdBefore !== undefined && body.createdBefore !== null) {
-      where.created_at.lte = body.createdBefore;
-    }
-  }
-
-  const [results, total] = await Promise.all([
+  const [customers, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_customers.findMany({
       where,
+      skip,
+      take: limit,
+      orderBy,
       select: {
         id: true,
         email: true,
-        nickname: true,
+        name: true,
         created_at: true,
+        updated_at: true,
       },
-      orderBy: {
-        [body.orderBy]: body.orderDirection,
-      },
-      skip: (page - 1) * limit,
-      take: limit,
     }),
     MyGlobal.prisma.shopping_mall_customers.count({ where }),
   ]);
 
   return {
+    data: customers.map((customer) => ({
+      id: customer.id,
+      email: customer.email,
+      name: customer.name,
+      status: "active", // default value for missing Prisma field
+      created_at: toISOStringSafe(customer.created_at),
+      updated_at: customer.updated_at
+        ? toISOStringSafe(customer.updated_at)
+        : undefined,
+    })),
     pagination: {
-      current: Number(page),
-      limit: Number(limit),
+      current: page,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     },
-    data: results.map((item) => ({
-      id: item.id,
-      email: item.email,
-      nickname: item.nickname,
-      created_at: toISOStringSafe(item.created_at),
-    })),
   };
 }

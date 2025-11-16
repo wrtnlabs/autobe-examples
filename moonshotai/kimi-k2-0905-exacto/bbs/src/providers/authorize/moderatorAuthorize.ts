@@ -15,10 +15,9 @@ export async function moderatorAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const moderator = await MyGlobal.prisma.politics_bbs_moderators.findFirst({
+  const moderator = await MyGlobal.prisma.economic_discussion_moderators.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
     },
   });
 

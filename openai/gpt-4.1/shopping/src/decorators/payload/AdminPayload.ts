@@ -1,11 +1,13 @@
 import { tags } from "typia";
 
-/** Authenticated payload for Admin actor */
+/** JWT payload for Shopping Mall Admin authentication. */
 export interface AdminPayload {
-  /** Top-level admin ID (UUID of shopping_admins row) */
+  /** Top-level admin account ID (shopping_mall_admins PK). */
   id: string & tags.Format<"uuid">;
-  /** Session ID associated with the admin session (UUID) */
+
+  /** Admin session ID for the current login session. */
   session_id: string & tags.Format<"uuid">;
-  /** Discriminator for admin role */
+
+  /** Discriminator for the admin payload type. */
   type: "admin";
 }

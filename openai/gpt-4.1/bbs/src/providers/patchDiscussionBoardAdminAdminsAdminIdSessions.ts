@@ -10,6 +10,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { IDiscussionBoardAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminSession";
 import { IPageIDiscussionBoardAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdminSession";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function patchDiscussionBoardAdminAdminsAdminIdSessions(props: {
@@ -17,69 +18,52 @@ export async function patchDiscussionBoardAdminAdminsAdminIdSessions(props: {
   adminId: string & tags.Format<"uuid">;
   body: IDiscussionBoardAdminSession.IRequest;
 }): Promise<IPageIDiscussionBoardAdminSession.ISummary> {
-  // Step 1: Only allow self-service (admin can only see own sessions)
-  if (props.admin.id !== props.adminId) {
-    throw new HttpException(
-      "Forbidden: You are only authorized to access your own session records.",
-      403,
-    );
-  }
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const offset = (page - 1) * limit;
+  const sortBy = props.body.sort_by || "created_at";
+  const order = props.body.order || "desc";
 
-  const {
-    page = 1,
-    limit = 20,
-    status,
-    ip,
-    orderBy = "created_at",
-    orderDirection = "desc",
-    search,
-  } = props.body || {};
-  const safePage = page < 1 ? 1 : page;
-  const safeLimit = limit < 1 ? 20 : limit;
-
-  // Build flexible AND/OR filtering
-  const where: Record<string, any> = {
-    discussion_board_admin_id: props.adminId,
-    ...(status === "active" ? { expired_at: null } : {}),
-    ...(status === "expired" ? { NOT: { expired_at: null } } : {}),
-    ...(ip ? { ip: { contains: ip } } : {}),
-    ...(search
-      ? {
-          OR: [
-            { ip: { contains: search } },
-            { href: { contains: search } },
-            { referrer: { contains: search } },
-          ],
-        }
-      : {}),
-  };
-
-  // Step 2: Query paged results (order by field, direction inline)
-  const [rows, total] = await Promise.all([
+  const [sessions, count] = await Promise.all([
     MyGlobal.prisma.discussion_board_admin_sessions.findMany({
-      where,
-      orderBy: { [orderBy]: orderDirection },
-      skip: (safePage - 1) * safeLimit,
-      take: safeLimit,
+      where: { discussion_board_admin_id: props.adminId },
+      orderBy: { [sortBy]: order },
+      skip: offset,
+      take: limit,
+      include: {
+        admin: true,
+      },
     }),
-    MyGlobal.prisma.discussion_board_admin_sessions.count({ where }),
+    MyGlobal.prisma.discussion_board_admin_sessions.count({
+      where: { discussion_board_admin_id: props.adminId },
+    }),
   ]);
 
-  return {
-    pagination: {
-      current: Number(safePage),
-      limit: Number(safeLimit),
-      records: total,
-      pages: Math.ceil(total / safeLimit),
+  const data = sessions.map((session) => ({
+    id: session.id,
+    admin: {
+      id: session.admin.id,
+      display_name: "",
     },
-    data: rows.map((row) => ({
-      id: row.id,
-      discussion_board_admin_id: row.discussion_board_admin_id,
-      ip: row.ip,
-      href: row.href,
-      referrer: row.referrer,
-      created_at: toISOStringSafe(row.created_at),
-      expired_at: row.expired_at ? toISOStringSafe(row.expired_at) : undefined,
-    })),
+    ip: session.ip,
+    href: session.href,
+    referrer: session.referrer,
+    created_at: toISOStringSafe(session.created_at),
+    expired_at:
+      session.expired_at === null || session.expired_at === undefined
+        ? undefined
+        : toISOStringSafe(session.expired_at),
+  }));
+
+  const pagination = {
+    current: page,
+    limit,
+    records: count,
+    pages: limit === 0 ? 0 : Math.ceil(count / limit),
+  };
+
+  return {
+    pagination,
+    data,
   };
 }

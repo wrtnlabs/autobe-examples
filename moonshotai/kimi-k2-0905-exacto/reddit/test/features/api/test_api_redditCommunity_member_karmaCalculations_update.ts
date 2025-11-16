@@ -1,0 +1,18 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import typia, { tags } from "typia";
+
+import { IRedditCommunityKarmaCalculation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityKarmaCalculation";
+
+export async function test_api_redditCommunity_member_karmaCalculations_update(
+  connection: api.IConnection,
+) {
+  const output: IRedditCommunityKarmaCalculation =
+    await api.functional.redditCommunity.member.karmaCalculations.update(
+      connection,
+      {
+        karmaCalculationId: typia.random<string & tags.Format<"uuid">>(),
+        body: typia.random<IRedditCommunityKarmaCalculation.IUpdate>(),
+      },
+    );
+  typia.assert(output);
+}

@@ -3,66 +3,64 @@ import { TypedRoute, TypedParam, TypedBody } from "@nestia/core";
 import typia, { tags } from "typia";
 
 import { IDiscussionBoardAttachment } from "../../../../../api/structures/IDiscussionBoardAttachment";
+import { IPageIDiscussionBoardAttachment } from "../../../../../api/structures/IPageIDiscussionBoardAttachment";
 
 @Controller("/discussionBoard/member/articles/:articleId/attachments")
 export class DiscussionboardMemberArticlesAttachmentsController {
   /**
-   * Upload and attach files or images to an article.
+   * Upload and create a new file or image attachment for a discussion board
+   * article.
    *
-   * Enable authenticated members to upload and attach image and document
-   * files to existing articles. This operation manages the complete file
-   * attachment workflow including validation, security scanning, storage, and
-   * metadata creation. Members can add attachments to articles they have
-   * created or to any published article (depending on permission model), with
-   * support for multiple file uploads in a single request.
+   * Create a new file or image attachment and associate it with a specific
+   * discussion board article. This operation handles the complete file upload
+   * workflow including validation, storage, and metadata persistence. The
+   * operation accepts a file upload with the original filename preserved,
+   * validates the file against security and size restrictions, stores it
+   * securely with a system-generated path pattern, extracts relevant
+   * metadata, and creates a persistent attachment record in the database.
    *
-   * The operation enforces comprehensive validation rules ensuring platform
-   * security and usability. File types are restricted to 19 supported
-   * formats: images (JPEG, PNG, GIF, WebP) and documents (PDF, Word, Excel,
-   * text, archives). File sizes are validated against limits: images maximum
-   * 10 MB, documents maximum 20 MB, archives maximum 50 MB. Total attachments
-   * per article cannot exceed 10 files, and combined size cannot exceed 100
-   * MB. Individual file validation occurs before upload completes, rejecting
-   * invalid files with specific error messages.
+   * File validation occurs at upload time to ensure security and prevent
+   * abuse. Supported file types include images (JPG, PNG, GIF, WebP with
+   * maximum 10 MB size) and documents (PDF, DOCX, TXT, XLS, XLSX, CSV, ODT,
+   * ODS, ODP, ZIP with maximum 25 MB size). All files undergo magic number
+   * verification (file header inspection) rather than relying on file
+   * extensions, ensuring MIME type accuracy. Files exceeding size limits are
+   * rejected with descriptive error messages indicating the constraint
+   * violation.
    *
-   * Security validation includes antivirus/malware scanning of uploaded files
-   * before acceptance. Files are scanned using industry-standard scanning
-   * services (ClamAV, VirusTotal API, or equivalent) with results recorded in
-   * the security_status field. Malicious files are rejected with user
-   * notification but without revealing technical threat details. File content
-   * validation verifies actual file structure matches declared type using
-   * magic byte inspection, preventing disguised malicious files with
-   * incorrect extensions.
+   * For image files, the operation automatically extracts and stores image
+   * dimensions (width and height in pixels). Images must have dimensions
+   * between 100-8000 pixels in both dimensions. These dimensions are captured
+   * and stored in the width and height fields for later use in responsive
+   * display sizing and validation purposes.
    *
-   * Successful uploads create attachment records in the
-   * discussion_board_attachments table with complete metadata: original
-   * filename, MIME type, file extension, file size in bytes, unique storage
-   * path, and security status. For images, width and height dimensions are
-   * captured during processing. For all files, upload timestamp and uploader
-   * member_id are recorded. Soft delete support allows recovery if files are
-   * accidentally removed.
+   * Attachment metadata stored includes: original filename as uploaded (max
+   * 255 characters), system-generated secure storage path using
+   * timestamp_hash_originalname pattern to prevent directory traversal
+   * attacks, file size in bytes, MIME type determined by magic number
+   * verification, SHA-256 hash of file content for integrity verification and
+   * malware scanning reference, is_image boolean flag for display method
+   * determination, and image dimensions (width/height) for image files only.
+   * When the parent article is deleted, associated attachments are
+   * automatically removed from storage through cascade operations.
    *
-   * This operation respects article ownership and moderation status. Regular
-   * members can only add attachments to articles they created or to published
-   * articles they can comment on. Moderators can add attachments to any
-   * article regardless of status. Archived articles may restrict attachment
-   * additions depending on business rules. The operation validates that the
-   * referenced article exists and is not deleted before processing
-   * attachments.
+   * Security considerations include authenticated user requirement, file
+   * ownership tracking through the article reference, rate limiting on upload
+   * frequency to prevent abuse, and secure file path generation preventing
+   * directory traversal or filename collision attacks. The operation is
+   * available only to authenticated users who have appropriate permissions to
+   * modify the article (typically the article creator or moderators).
    *
-   * Attachment processing includes image optimization where applicable:
-   * thumbnails (200x200px) and medium versions (600x600px) are generated
-   * automatically, EXIF metadata is stripped for privacy, and original files
-   * are preserved. Document and archive files are stored as-is after
-   * validation. All files are stored with unique internal identifiers
-   * (UUID-based paths) to prevent collisions while preserving original
-   * filenames for display.
+   * Related operations: Search attachments (PATCH
+   * /articles/{articleId}/attachments) to find existing attachments, Delete
+   * attachment (DELETE /articles/{articleId}/attachments/{attachmentId}) to
+   * remove specific files.
    *
    * @param connection
-   * @param articleId Unique identifier (UUID) of the target article to which
-   *   attachments are being added
-   * @param body File upload data including one or more attachment files with
-   *   metadata and validation information
+   * @param articleId Unique identifier of the target article to which the
+   *   attachment will be added
+   * @param body File data to be uploaded and attached to the article,
+   *   including the file binary content and original filename
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post()
@@ -78,57 +76,61 @@ export class DiscussionboardMemberArticlesAttachmentsController {
   }
 
   /**
-   * Delete an attachment file from an article.
+   * Search and retrieve a filtered, paginated list of attachments for a
+   * specific discussion board article.
    *
-   * This operation permanently removes an attachment file from an article.
-   * The attachment is deleted from the discussion_board_attachments table and
-   * the physical file is removed from server storage.
+   * Retrieve a filtered and paginated list of attachments associated with a
+   * specific article from the discussion board system. This operation
+   * provides advanced search capabilities for finding attachments based on
+   * multiple criteria including original filename, file type (MIME type),
+   * file size range, upload date range, image dimensions, and deletion
+   * status.
    *
-   * Ownership and permission enforcement is critical for this operation. The
-   * authenticated member can only delete attachments they personally uploaded
-   * (verified by comparing authenticated user ID with attachment's
-   * discussion_board_member_id field). Moderators can delete any attachment
-   * from any article as part of content management and moderation duties.
+   * The operation supports comprehensive pagination with configurable page
+   * sizes and sorting options. Attachments can be sorted by upload date,
+   * filename, file size, or other relevant fields in ascending or descending
+   * order. The operation integrates with the discussion_board_attachments
+   * table as defined in the Prisma schema, which stores metadata for all file
+   * and image attachments uploaded to articles and comments.
    *
-   * Guest users cannot delete any attachments - the operation returns a 401
-   * Unauthorized error for unauthenticated requests with a message directing
-   * them to log in.
+   * Attachment storage includes support for multiple file types: images (JPG,
+   * PNG, GIF, WebP) and documents (PDF, DOCX, TXT, XLS, XLSX, CSV, ODT, ODS,
+   * ODP, ZIP). Each attachment record maintains the original filename as
+   * uploaded by the user, system-generated secure storage path, file size in
+   * bytes, MIME type determined by magic number verification for security,
+   * SHA-256 hash for integrity verification, and optional image dimensions
+   * (width/height) for image files.
    *
-   * Members who are suspended or banned cannot delete attachments - their
-   * accounts have account_status of 'suspended' or 'banned' in the
-   * discussion_board_members table, restricting this action.
+   * Security considerations include soft deletion tracking via the is_deleted
+   * flag, allowing administrators to view deletion history while hiding
+   * deleted attachments from regular user views. Only authenticated users
+   * with appropriate permissions can access attachment lists for articles.
+   * The operation filters results based on article ownership and visibility
+   * permissions, returning only attachments associated with the specified
+   * article.
    *
-   * The operation validates that both the article and attachment exist before
-   * attempting deletion. If either resource is not found, a 404 error is
-   * returned. If the attachment does not belong to the specified article
-   * (discussion_board_article_id mismatch), a 400 Bad Request error is
-   * returned indicating the attachment is not part of the specified article.
-   *
-   * Upon successful deletion, the file is permanently removed from storage
-   * (storage_path location) and the attachment metadata is deleted from the
-   * database. No recovery is possible after this operation completes. The
-   * parent article may update its attachment count or display remaining
-   * attachments without the deleted file.
-   *
-   * Moderation actions that delete attachments log the action in
-   * discussion_board_moderation_logs table for audit trail purposes.
+   * Related operations: Create attachment (POST
+   * /articles/{articleId}/attachments) to upload new files, Get article (GET
+   * /articles/{articleId}) to retrieve article details with related
+   * information.
    *
    * @param connection
-   * @param articleId Unique identifier (UUID) of the article containing the
-   *   attachment to delete
-   * @param attachmentId Unique identifier (UUID) of the specific attachment
-   *   file to delete
+   * @param articleId Unique identifier of the target article whose
+   *   attachments are being retrieved
+   * @param body Search criteria and pagination parameters for filtering
+   *   attachments by filename, file type, size, upload date, and deletion
+   *   status
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
-  @TypedRoute.Delete(":attachmentId")
-  public async erase(
+  @TypedRoute.Patch()
+  public async index(
     @TypedParam("articleId")
     articleId: string & tags.Format<"uuid">,
-    @TypedParam("attachmentId")
-    attachmentId: string & tags.Format<"uuid">,
-  ): Promise<void> {
+    @TypedBody()
+    body: IDiscussionBoardAttachment.IRequest,
+  ): Promise<IPageIDiscussionBoardAttachment.ISummary> {
     articleId;
-    attachmentId;
-    return typia.random<void>();
+    body;
+    return typia.random<IPageIDiscussionBoardAttachment.ISummary>();
   }
 }

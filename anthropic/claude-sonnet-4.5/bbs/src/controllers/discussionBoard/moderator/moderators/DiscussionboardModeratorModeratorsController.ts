@@ -1,12 +1,12 @@
 import { Controller } from "@nestjs/common";
 import { TypedRoute, TypedBody, TypedParam } from "@nestia/core";
-import typia from "typia";
+import typia, { tags } from "typia";
 import { patchDiscussionBoardModeratorModerators } from "../../../../providers/patchDiscussionBoardModeratorModerators";
 import { ModeratorAuth } from "../../../../decorators/ModeratorAuth";
 import { ModeratorPayload } from "../../../../decorators/payload/ModeratorPayload";
-import { getDiscussionBoardModeratorModeratorsModeratorUsername } from "../../../../providers/getDiscussionBoardModeratorModeratorsModeratorUsername";
-import { putDiscussionBoardModeratorModeratorsModeratorUsername } from "../../../../providers/putDiscussionBoardModeratorModeratorsModeratorUsername";
-import { deleteDiscussionBoardModeratorModeratorsModeratorUsername } from "../../../../providers/deleteDiscussionBoardModeratorModeratorsModeratorUsername";
+import { getDiscussionBoardModeratorModeratorsModeratorId } from "../../../../providers/getDiscussionBoardModeratorModeratorsModeratorId";
+import { putDiscussionBoardModeratorModeratorsModeratorId } from "../../../../providers/putDiscussionBoardModeratorModeratorsModeratorId";
+import { deleteDiscussionBoardModeratorModeratorsModeratorId } from "../../../../providers/deleteDiscussionBoardModeratorModeratorsModeratorId";
 
 import { IPageIDiscussionBoardModerator } from "../../../../api/structures/IPageIDiscussionBoardModerator";
 import { IDiscussionBoardModerator } from "../../../../api/structures/IDiscussionBoardModerator";
@@ -17,37 +17,35 @@ export class DiscussionboardModeratorModeratorsController {
    * Search and retrieve a filtered, paginated list of discussion board
    * moderators.
    *
-   * Retrieve a comprehensive, filtered, and paginated list of moderators from
-   * the discussion board system. This operation provides advanced search
-   * capabilities for finding moderators based on multiple criteria including
-   * username patterns, email domains, display names, account status, email
-   * verification status, and registration date ranges.
+   * Retrieve a comprehensive, filtered, and paginated list of moderators who
+   * manage and maintain the discussion board platform.
    *
-   * The operation supports full pagination with configurable page sizes and
-   * multiple sorting options. Moderators can be sorted by registration date,
-   * last login timestamp, username alphabetically, or other relevant fields in
-   * ascending or descending order. The search functionality leverages
-   * PostgreSQL trigram indexes on display_name and bio fields for efficient
-   * partial matching and fuzzy search capabilities.
+   * This operation provides advanced search and filtering capabilities for
+   * finding moderators based on multiple criteria. It supports searching by
+   * moderator attributes such as name, email, account status, registration date
+   * ranges, and moderation permissions. The search functionality is designed
+   * for administrative oversight and moderator management purposes.
    *
-   * Security considerations include appropriate filtering of sensitive
-   * moderator information based on the requesting user's authorization level.
+   * The operation returns paginated results with configurable page sizes and
+   * comprehensive sorting options. Moderators can be sorted by registration
+   * date, name, email, last activity, or other relevant fields in ascending or
+   * descending order. The pagination system ensures efficient data retrieval
+   * even with large moderator datasets.
+   *
+   * Security and authorization: This operation is restricted to authenticated
+   * moderators with appropriate permissions to view the moderator roster. The
+   * response may filter sensitive information based on the requesting user's
+   * authorization level. Rate limiting applies to prevent abuse of the search
+   * functionality.
+   *
    * The response includes moderator summary information optimized for list
-   * displays. Email addresses and password hashes are never exposed in list
-   * operations. The operation respects profile_visibility settings where
-   * applicable, though administrative users with proper authorization can view
-   * all moderator accounts.
-   *
-   * This operation integrates with the discussion_board_moderators table as
-   * defined in the Prisma schema, incorporating all available moderator profile
-   * fields, account status tracking, and metadata. The pagination structure
-   * follows the standard IPage pattern with metadata about total count, current
-   * page, and page size, along with the data array containing moderator summary
-   * records.
+   * displays, providing essential details without overwhelming data payloads.
+   * Additional detailed moderator information can be retrieved through
+   * individual moderator detail endpoints when needed.
    *
    * @param connection
-   * @param body Search criteria, filtering parameters, sorting options, and
-   *   pagination settings for moderator retrieval
+   * @param body Search criteria, filtering parameters, pagination settings, and
+   *   sorting options for moderator retrieval
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -69,64 +67,42 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Retrieve detailed information about a specific moderator by username.
+   * Retrieve detailed information about a specific moderator.
    *
-   * Retrieve complete profile and account information for a specific moderator
-   * identified by their unique username. This operation returns detailed
-   * moderator data including account credentials metadata, profile information
-   * (display_name, bio, location, website_url, profile_picture_url), moderation
-   * permissions configuration, privacy settings (profile_visibility,
-   * activity_visibility), account status and verification state, activity
-   * tracking (last_login_at), and temporal metadata (created_at, updated_at,
-   * deleted_at).
+   * Retrieve comprehensive profile information for a specific moderator
+   * identified by their unique moderator ID.
    *
-   * The operation uses the moderator's username as the path parameter,
-   * providing clean, readable URLs and leveraging the unique constraint on the
-   * username field in the Prisma schema. This approach offers better usability
-   * compared to UUID-based identification, making URLs shareable and memorable
-   * while maintaining uniqueness guarantees.
+   * This operation returns complete moderator details including personal
+   * information such as username and email, account status, and metadata like
+   * creation and modification timestamps. Sensitive authentication fields such
+   * as password hashes are explicitly excluded from the response for security
+   * purposes.
    *
-   * Security and privacy considerations are paramount in this operation. The
-   * level of detail returned depends on the requesting user's authorization
-   * level and the target moderator's privacy settings. Public profile
-   * information (username, display_name, bio, profile_picture_url) may be
-   * visible to all users, while sensitive information (email,
-   * moderation_permissions, last_login_at) is restricted to the moderator
-   * themselves or users with administrative privileges. Email addresses and
-   * password hashes are never exposed in API responses regardless of
-   * authorization level.
+   * Security considerations: This operation is restricted to authenticated
+   * moderators. The moderator ID must be validated to ensure it exists in the
+   * system before returning data. Password hashes and other sensitive
+   * authentication credentials are never included in API responses.
    *
-   * The operation respects the moderator's profile_visibility setting, which
-   * controls whether the profile is viewable publicly, by members only, or kept
-   * private. The activity_visibility setting determines whether the moderator's
-   * contribution history is accessible. The deleted_at field indicates if the
-   * moderator account has been soft-deleted, in which case the operation
-   * returns an appropriate error for non-administrative users.
-   *
-   * This operation integrates with the discussion_board_moderators table as
-   * defined in the Prisma schema, providing access to all moderator profile
-   * fields and supporting the user profile viewing workflows described in the
-   * requirements documentation. Related API operations include the moderator
-   * list/search endpoint (PATCH /moderators) for discovering moderators, and
-   * profile management endpoints for moderators to update their own
-   * information.
+   * The response includes relevant moderator fields as defined in the
+   * discussion_board_moderators Prisma schema (excluding password_hash),
+   * providing a secure view of the moderator's profile and status within the
+   * discussion board system.
    *
    * @param connection
-   * @param moderatorUsername Unique username of the target moderator (global
-   *   scope)
+   * @param moderatorId Unique identifier of the target moderator
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":moderatorUsername")
+  @TypedRoute.Get(":moderatorId")
   public async at(
     @ModeratorAuth()
     moderator: ModeratorPayload,
-    @TypedParam("moderatorUsername")
-    moderatorUsername: string,
-  ): Promise<IDiscussionBoardModerator> {
+    @TypedParam("moderatorId")
+    moderatorId: string & tags.Format<"uuid">,
+  ): Promise<IDiscussionBoardModerator.ISummary> {
     try {
-      return await getDiscussionBoardModeratorModeratorsModeratorUsername({
+      return await getDiscussionBoardModeratorModeratorsModeratorId({
         moderator,
-        moderatorUsername,
+        moderatorId,
       });
     } catch (error) {
       console.log(error);
@@ -135,51 +111,53 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Update moderator profile and account information in
-   * discussion_board_moderators table.
+   * Update an existing moderator's profile information.
    *
-   * Updates an existing moderator's profile information and account settings
-   * within the discussion board system. This operation enables moderators to
-   * maintain their profile data including display name, biography, location,
-   * website URL, and profile picture. Additionally, it supports updating email
-   * addresses (with verification requirements) and moderation permission
-   * settings for administrative purposes.
+   * Update profile information for an existing moderator identified by their
+   * unique moderator ID.
    *
-   * The operation validates all input fields according to the business rules
-   * defined in the requirements. Display names are limited to 50 characters,
-   * biographies to 500 characters, and locations to 100 characters. Website
-   * URLs must be properly formatted HTTP/HTTPS addresses. Email changes trigger
-   * a verification workflow to confirm ownership of the new address. Profile
-   * pictures must reference valid image URLs.
+   * This operation allows modification of moderator details including personal
+   * information like username and email address, and other editable profile
+   * attributes. The update follows standard REST semantics for resource
+   * modification, requiring the complete updated representation of the
+   * moderator entity.
    *
-   * This operation requires authentication and proper authorization. Moderators
-   * can update their own profiles at any time. Administrative users with
-   * elevated privileges can update other moderators' profiles and permission
-   * settings. The system validates that the moderator account exists and is not
-   * deleted before applying updates. All changes are recorded with updated_at
-   * timestamps for audit purposes.
+   * Security considerations: This operation is restricted to authenticated
+   * moderators, typically for self-service profile updates. Proper
+   * authorization checks must verify that the requesting moderator has
+   * permission to modify the target moderator's information. Password updates
+   * should be handled through separate dedicated password change endpoints with
+   * additional security measures.
+   *
+   * Validation rules apply to ensure data integrity, including email format
+   * validation, username uniqueness constraints, required field presence, and
+   * business rule compliance. The operation returns the updated moderator
+   * entity (excluding sensitive fields like password_hash) upon successful
+   * modification, allowing the client to immediately reflect changes in the
+   * user interface.
+   *
+   * The update process maintains audit trails through automatic timestamp
+   * updates (updated_at field) and preserves data consistency across the
+   * discussion board system.
    *
    * @param connection
-   * @param moderatorUsername Unique business identifier username of the target
-   *   moderator (global scope)
-   * @param body Updated moderator profile information including optional
-   *   display name, bio, location, website, profile picture, email, and
-   *   moderation permissions
+   * @param moderatorId Unique identifier of the target moderator to update
+   * @param body Updated moderator profile information with modified fields
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":moderatorUsername")
+  @TypedRoute.Put(":moderatorId")
   public async update(
     @ModeratorAuth()
     moderator: ModeratorPayload,
-    @TypedParam("moderatorUsername")
-    moderatorUsername: string,
+    @TypedParam("moderatorId")
+    moderatorId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardModerator.IUpdate,
-  ): Promise<IDiscussionBoardModerator> {
+  ): Promise<IDiscussionBoardModerator.ISummary> {
     try {
-      return await putDiscussionBoardModeratorModeratorsModeratorUsername({
+      return await putDiscussionBoardModeratorModeratorsModeratorId({
         moderator,
-        moderatorUsername,
+        moderatorId,
         body,
       });
     } catch (error) {
@@ -189,48 +167,48 @@ export class DiscussionboardModeratorModeratorsController {
   }
 
   /**
-   * Soft delete moderator account in discussion_board_moderators table.
+   * Permanently delete a moderator account from the discussion board system.
    *
-   * Performs a soft deletion of a moderator account by setting the deleted_at
-   * timestamp, effectively deactivating the account while preserving all
-   * historical data and audit trails. This operation is critical for
-   * maintaining system accountability as it ensures that all moderation
-   * actions, user warnings, suspensions, and content modifications performed by
-   * this moderator remain traceable in the system logs.
+   * Permanently remove a moderator account from the discussion_board_moderators
+   * table using hard deletion. This operation completely erases the moderator's
+   * account data from the database, including their credentials, personal
+   * information, and all associated metadata.
    *
-   * When a moderator account is soft deleted, the system immediately
-   * invalidates all active sessions for that moderator, preventing any further
-   * access. The moderator's profile becomes inaccessible for login, but their
-   * username and profile information remain in the database to support foreign
-   * key relationships with articles, comments, moderation actions, and other
-   * entities they have interacted with.
+   * This is a destructive administrative operation that should be used with
+   * extreme caution. Once executed, the moderator account cannot be recovered.
+   * The operation is typically performed when a moderator's employment is
+   * terminated, when cleaning up test accounts, or when permanently removing
+   * inactive moderator accounts from the system.
    *
-   * This operation requires careful consideration of system integrity. If the
-   * moderator being deleted is the only active moderator in the system, the
-   * operation should be prevented to ensure continuous moderation capabilities.
-   * Additionally, all related entities such as moderation_actions,
-   * user_warnings, and user_suspensions maintain their references to the
-   * deleted moderator for complete audit trail preservation. The soft deletion
-   * approach aligns with GDPR compliance by allowing personal data removal
-   * while maintaining necessary audit records for legal and accountability
-   * purposes.
+   * Security: Only moderators with the highest level of privileges should have
+   * access to this operation. The system should log all moderator deletion
+   * operations for audit purposes. Before deletion, the system should verify
+   * that there are no active sessions or pending moderation tasks associated
+   * with this moderator account.
+   *
+   * The moderator is identified using their unique business identifier code
+   * (moderatorId parameter), not their internal UUID. This operation will fail
+   * if the specified moderator code does not exist in the system. Upon
+   * successful deletion, all related data including authentication sessions
+   * will be automatically removed through database cascade constraints defined
+   * in the Prisma schema.
    *
    * @param connection
-   * @param moderatorUsername Unique business identifier username of the target
-   *   moderator to be deleted (global scope)
+   * @param moderatorId Unique business identifier code of the target moderator
+   *   account to be permanently deleted (global scope)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":moderatorUsername")
+  @TypedRoute.Delete(":moderatorId")
   public async erase(
     @ModeratorAuth()
     moderator: ModeratorPayload,
-    @TypedParam("moderatorUsername")
-    moderatorUsername: string,
+    @TypedParam("moderatorId")
+    moderatorId: string,
   ): Promise<IDiscussionBoardModerator> {
     try {
-      return await deleteDiscussionBoardModeratorModeratorsModeratorUsername({
+      return await deleteDiscussionBoardModeratorModeratorsModeratorId({
         moderator,
-        moderatorUsername,
+        moderatorId,
       });
     } catch (error) {
       console.log(error);

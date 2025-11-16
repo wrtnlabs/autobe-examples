@@ -1,1 +1,1 @@
-export * as replies from "./replies/index";
+export * as reports from "./reports/index";

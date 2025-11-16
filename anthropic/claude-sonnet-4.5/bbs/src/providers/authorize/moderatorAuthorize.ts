@@ -18,9 +18,6 @@ export async function moderatorAuthorize(request: {
   const moderator = await MyGlobal.prisma.discussion_board_moderators.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
-      email_verified: true,
-      status: "active",
     },
   });
 

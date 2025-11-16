@@ -10,7 +10,6 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ITodoAppUserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUserSession";
 import { IPageITodoAppUserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppUserSession";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function patchTodoAppUserUsersUserIdSessions(props: {
@@ -18,105 +17,80 @@ export async function patchTodoAppUserUsersUserIdSessions(props: {
   userId: string & tags.Format<"uuid">;
   body: ITodoAppUserSession.IRequest;
 }): Promise<IPageITodoAppUserSession.ISummary> {
-  // Authorization check - user can only access their own sessions
+  // Validate that user can only access their own sessions
   if (props.user.id !== props.userId) {
-    throw new HttpException(
-      "Unauthorized: You can only access your own sessions",
-      403,
-    );
+    throw new HttpException("You can only access your own sessions", 403);
   }
 
-  const {
-    page = 1,
-    limit = 10,
-    search,
-    status,
-    created_at_start,
-    created_at_end,
-    order_by = "created_at",
-    order_direction = "desc",
-  } = props.body;
+  const { body } = props;
+  const page = body.page;
+  const limit = body.limit;
+  const skip = (page - 1) * limit;
 
-  // Build WHERE clause
-  const where = {
+  // Build WHERE conditions
+  const whereConditions: Prisma.todo_app_user_sessionsWhereInput = {
     todo_app_user_id: props.userId,
-    ...(search && {
-      OR: [
-        { ip: { contains: search } },
-        { referrer: { contains: search } },
-        { href: { contains: search } },
-      ],
-    }),
-    ...(status && {
-      expired_at: status === "active" ? null : { not: null },
-    }),
-    ...((created_at_start || created_at_end) && {
+    ...(body.status &&
+      body.status !== "all" && {
+        expired_at: body.status === "active" ? null : { not: null },
+      }),
+    ...((body.created_at_start || body.created_at_end) && {
       created_at: {
-        ...(created_at_start && { gte: created_at_start }),
-        ...(created_at_end && { lte: created_at_end }),
+        ...(body.created_at_start && { gte: body.created_at_start }),
+        ...(body.created_at_end && { lte: body.created_at_end }),
       },
+    }),
+    ...(body.ip_pattern && {
+      ip: { contains: body.ip_pattern },
+    }),
+    ...(body.href_pattern && {
+      href: { contains: body.href_pattern },
+    }),
+    ...(body.referrer_pattern && {
+      referrer: { contains: body.referrer_pattern },
     }),
   };
 
-  // Calculate pagination
-  const skip = (Number(page) - 1) * Number(limit);
-  const take = Number(limit);
+  // Build ORDER BY
+  const orderBy: Prisma.todo_app_user_sessionsOrderByWithRelationInput = {};
+  if (body.order_by) {
+    orderBy[body.order_by] = body.order_direction || "desc";
+  } else {
+    orderBy.created_at = "desc";
+  }
 
-  // Execute queries
-  const [sessions, total] = await Promise.all([
+  // Execute queries concurrently
+  const [data, total] = await Promise.all([
     MyGlobal.prisma.todo_app_user_sessions.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            status: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-          },
-        },
-      },
-      orderBy: { [order_by]: order_direction },
+      where: whereConditions,
       skip,
-      take,
+      take: limit,
+      orderBy,
     }),
-    MyGlobal.prisma.todo_app_user_sessions.count({ where }),
+    MyGlobal.prisma.todo_app_user_sessions.count({
+      where: whereConditions,
+    }),
   ]);
 
-  // Transform results - convert all Date fields to ISO strings
-  const data = sessions.map((session) => ({
+  // Convert to response format - handle expired_at null/undefined mismatch
+  const sessions = data.map((session) => ({
     id: session.id,
-    user: {
-      id: session.user.id,
-      email: session.user.email,
-      status: session.user.status,
-      created_at: toISOStringSafe(session.user.created_at),
-      updated_at: toISOStringSafe(session.user.updated_at),
-      ...(session.user.deleted_at && {
-        deleted_at: toISOStringSafe(session.user.deleted_at),
-      }),
-    },
     ip: session.ip,
     href: session.href,
     referrer: session.referrer,
     created_at: toISOStringSafe(session.created_at),
     expired_at: session.expired_at
       ? toISOStringSafe(session.expired_at)
-      : toISOStringSafe(new Date(0)), // Use epoch date instead of null
+      : toISOStringSafe(session.created_at), // Fallback to created_at for active sessions
   }));
 
-  // Build pagination with proper type conversion
-  const pagination = {
-    current: Number(page),
-    limit: Number(limit),
-    records: total,
-    pages: Math.ceil(total / Number(limit)),
-  };
-
   return {
-    pagination,
-    data,
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    },
+    data: sessions,
   };
 }

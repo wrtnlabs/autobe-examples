@@ -1,0 +1,50 @@
+/// Platform-wide configuration and placeholder for systematic board settings.
+///
+/// This model holds system-level settings, toggles, or infrastructure
+/// parameters that may affect platform-wide policy, appearance, or technical
+/// operation. It allows for minimal, future-proof configuration management,
+/// ensuring the backend can support extension or modification without schema
+/// disruption.
+///
+/// Initially designed as a placeholder, this table supports single or
+/// multiple business-defined settings through a key/value pattern. All
+/// change events (creation, updates, and deletion) are tracked for audit and
+/// rollback. The model enables admins or operators to programmatically
+/// control or audit system-wide states, without duplicating config in other
+/// domain schemas.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for the system settings entry.
+  id String @id
+  
+  /// Unique identifier for this configuration setting or policy entry. Used to
+  /// retrieve or update specific settings programmatically.
+  key String
+  
+  /// Value for this system setting. May encode raw value, serialized JSON, or
+  /// application-specific policy text.
+  value String
+  
+  /// Optional human-readable explanation or policy summary for this setting.
+  description String?
+  
+  /// Timestamp for creation of this settings entry.
+  created_at DateTime
+  
+  /// Timestamp for last update or modification.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit and rollback; null unless marked for
+  /// deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+}

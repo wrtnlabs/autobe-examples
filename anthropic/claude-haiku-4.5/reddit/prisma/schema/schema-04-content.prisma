@@ -1,9 +1,24 @@
-/// Primary content unit representing user-generated posts in communities.
-/// Posts are the foundational content type supporting text, link, and image
-/// formats. Each post belongs to exactly one community and is authored by a
-/// community member. Posts support editing within 24 hours and soft deletion
-/// with 30-day recovery window. Posts drive engagement through voting,
-/// commenting, and community participation.
+/// User-generated posts (content items) within communities.
+///
+/// Posts are the primary content units in the platform. Members create posts
+/// in specific communities, choosing from three types: text
+/// (markdown-formatted), link (external URLs with metadata), or image
+/// (uploaded images with captions).
+///
+/// Each post belongs to exactly one community and has one creator (member).
+/// Posts track engagement through vote counts and comment counts in
+/// real-time. The visibility field implements soft-delete (posts marked as
+/// deleted remain in database for audit purposes but are hidden from public
+/// view).
+///
+/// Posts support editing within 24 hours through the snapshots table.
+/// Historical versions are captured for audit trail and recovery. Vote
+/// scores are updated in real-time as community members upvote/downvote.
+/// Comments are nested replies tracked via comment_count field.
+///
+/// Soft deletion preserves post integrity: removed by moderator posts show
+/// "[removed by moderator]" placeholder to maintain thread structure with
+/// replies still visible.
 ///
 /// @namespace Content
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -14,283 +29,139 @@ model community_platform_posts {
   /// Primary Key.
   id String @id
   
-  /// Community where post is published. References {@link
-  /// community_platform_communities.id}
-  community_id String
+  /// Community where this post was published. References
+  /// community_platform_communities.id. Non-nullable - post must belong to
+  /// specific community.
+  community_platform_community_id String
   
-  /// Member who authored the post. References {@link
-  /// community_platform_members.id}
-  creator_id String
+  /// Member who created this post. References community_platform_members.id.
+  /// Non-nullable - post must have creator.
+  community_platform_member_id String
   
-  /// Type of post content: 'text' for text posts, 'link' for link posts,
-  /// 'image' for image posts
+  /// Type of post content: 'text' for markdown text posts, 'link' for external
+  /// URL posts, 'image' for image posts. Determines which content fields are
+  /// populated.
   post_type String
   
-  /// Post title (3-300 characters). Required for text and link posts; optional
-  /// for image posts
-  title String?
+  /// Post title/subject (required for all post types). 1-300 characters.
+  /// Searchable. HTML tags stripped automatically.
+  title String
   
-  /// Post content body (1-40000 characters). Required for text posts; optional
-  /// for link and image posts
-  body String?
+  /// Main text content for text posts. Supports markdown formatting. Maximum
+  /// 40,000 characters. Null for non-text posts.
+  content_text String?
   
-  /// URL destination for link posts (max 2048 characters). Required for link
-  /// posts only
-  url String?
+  /// External URL for link posts. Maximum 2,048 characters. Null for non-link
+  /// posts. Must be valid HTTP/HTTPS URL.
+  content_link_url String?
   
-  /// Post publication status: 'draft' for unpublished, 'published' for visible
-  /// posts, 'deleted' for soft-deleted posts, 'purged' for permanently deleted
-  status String
+  /// Open Graph title extracted from link preview (link posts only). Used for
+  /// display in feeds. Null for non-link posts.
+  content_link_title String?
   
-  /// ISO 8601 timestamp when post was created (server-generated, immutable)
+  /// Open Graph description extracted from link preview (link posts only).
+  /// Preview text shown in feeds. Maximum 500 characters. Null for non-link
+  /// posts.
+  content_link_description String?
+  
+  /// Open Graph image URL extracted from link preview (link posts only). Image
+  /// shown in feed preview. Null for non-link posts.
+  content_link_thumbnail_url String?
+  
+  /// Net vote count (upvotes - downvotes). Updated in real-time as votes
+  /// arrive. Initial value: 0. Must equal upvote_count - downvote_count.
+  /// Minimum value: 0.
+  vote_score Int
+  
+  /// Total upvote count. Used for sorting algorithms and statistics. Initial
+  /// value: 0. Minimum value: 0.
+  upvote_count Int
+  
+  /// Total downvote count. Used for controversial scoring. Initial value: 0.
+  /// Minimum value: 0.
+  downvote_count Int
+  
+  /// Total number of non-deleted comments on this post. Updated in real-time
+  /// when comments created/deleted. Used for sorting and display.
+  comment_count Int
+  
+  /// Post visibility state: 'public' (visible in feeds and search), 'archived'
+  /// (hidden from feeds but accessible via direct link), 'deleted'
+  /// (soft-deleted by user, visible only to author/moderators),
+  /// 'removed_by_moderator' (removed for policy violation). Default: 'public'.
+  /// When status is 'deleted' or 'removed_by_moderator', deleted_at timestamp
+  /// is set.
+  visibility_status String
+  
+  /// Whether post contains Not Safe For Work content. Default: false. When
+  /// true, content filtered from feeds of users who disable NSFW viewing.
+  is_nsfw Boolean
+  
+  /// Whether post contains spoilers. Default: false. When true, preview and
+  /// thumbnail hidden until user clicks to reveal.
+  has_spoiler Boolean
+  
+  /// Whether new comments are disabled on this post. Set by moderators for
+  /// sensitive topics or after extended discussion. Default: false.
+  is_locked Boolean
+  
+  /// Whether post is pinned to top of community feed. Set by moderators to
+  /// highlight important posts. Default: false.
+  is_pinned Boolean
+  
+  /// Post creation timestamp (UTC). Immutable after creation. Used for
+  /// chronological sorting.
   created_at DateTime
   
-  /// ISO 8601 timestamp when post was last updated (edit timestamp, different
-  /// from creation)
+  /// Last modification timestamp (UTC). Updated when post is edited. Shows
+  /// when 'edited' indicator should display.
   updated_at DateTime
   
-  /// ISO 8601 timestamp when post was soft-deleted (null if not deleted).
-  /// Enables 30-day grace period for recovery
+  /// Soft-delete timestamp (UTC). Set when post is deleted (visibility_status
+  /// becomes 'deleted' or 'removed_by_moderator'); null while active. Enables
+  /// recovery within grace period.
   deleted_at DateTime?
-  
-  /// Number of times post has been viewed (incremented on view, used for
-  /// analytics)
-  view_count Int
   
   //----
   // RELATIONS
   //----
-  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  creator community_platform_members @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  creator community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
-  community_platform_post_edits community_platform_post_edits[]
-  community_platform_comments community_platform_comments[]
   community_platform_post_images community_platform_post_images[]
-  community_platform_post_votes community_platform_post_votes[]
-  community_platform_content_reports community_platform_content_reports[]
-  community_platform_moderation_actions community_platform_moderation_actions[]
-  community_platform_content_warnings community_platform_content_warnings[]
-  community_platform_saved_posts community_platform_saved_posts[]
+  community_platform_post_snapshots community_platform_post_snapshots[]
+  community_platform_comments community_platform_comments[]
+  community_platform_reports community_platform_reports[]
+  community_platform_member_activity community_platform_member_activity[]
+  community_platform_saved_content community_platform_saved_content[]
   community_platform_search_index community_platform_search_index[]
-  community_platform_trending_posts community_platform_trending_posts[]
+  community_platform_trending_content community_platform_trending_content[]
   
-  @@index([community_id, created_at])
-  @@index([creator_id, created_at])
-  @@index([status, created_at])
-  @@index([post_type])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, visibility_status, created_at], map: "community_platform_posts_community_platform_community__864869ff")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_posts_community_platform_member_id__94e4a784")
+  @@index([created_at])
+  @@index([vote_score])
+  @@index([upvote_count])
 }
 
-/// Unpublished post drafts with separate lifecycle from published posts.
-/// Allows members to compose posts gradually, with auto-save functionality
-/// every 30 seconds. Drafts expire after 90 days of inactivity. Each draft
-/// belongs to exactly one community and is authored by one member. Enables
-/// members to save incomplete thoughts for later publication.
+/// Images attached to posts.
 ///
-/// @namespace Content
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_drafts {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Community where draft will be published. References {@link
-  /// community_platform_communities.id}
-  community_id String
-  
-  /// Member who is authoring the draft. References {@link
-  /// community_platform_members.id}
-  creator_id String
-  
-  /// Intended post type: 'text', 'link', or 'image'
-  post_type String
-  
-  /// Draft post title (3-300 characters, can be empty during composition)
-  title String?
-  
-  /// Draft post content body (1-40000 characters, can be partial during
-  /// composition)
-  body String?
-  
-  /// URL for link post draft (max 2048 characters, optional during composition)
-  url String?
-  
-  /// ISO 8601 timestamp when draft was first created
-  created_at DateTime
-  
-  /// ISO 8601 timestamp when draft was last modified (auto-save timestamp)
-  updated_at DateTime
-  
-  /// ISO 8601 timestamp when draft will be automatically deleted if not
-  /// published (90 days after updated_at)
-  expires_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  creator community_platform_members @relation(fields: [creator_id], references: [id], onDelete: Cascade)
-  
-  @@index([community_id])
-  
-  @@index([creator_id, updated_at])
-  @@index([expires_at])
-}
-
-/// Complete audit trail of all post edits, capturing before/after content
-/// for accountability. Each time a member edits their post within the
-/// 24-hour edit window, a record is created preserving the previous state.
-/// Enables members to view edit history and supports moderation review of
-/// content changes. Maintains referential integrity to the edited post.
+/// Image posts contain one or more images. Each image stored as separate
+/// record linking to parent post. Enables efficient pagination (don't fetch
+/// all image data until needed). Images displayed in gallery format with
+/// navigation.
 ///
-/// @namespace Content
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_post_edits {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Post that was edited. References {@link community_platform_posts.id}
-  post_id String
-  
-  /// Post title before this edit (preserved for audit trail)
-  previous_title String?
-  
-  /// Post body content before this edit (preserved for audit trail)
-  previous_body String?
-  
-  /// Post URL before this edit (for link posts)
-  previous_url String?
-  
-  /// ISO 8601 timestamp when this edit was made (server-generated)
-  edited_at DateTime
-  
-  /// Optional reason provided by member for the edit (up to 500 characters)
-  edit_reason String?
-  
-  //----
-  // RELATIONS
-  //----
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  
-  @@index([post_id, edited_at])
-}
-
-/// Comment system enabling nested threaded discussions with unlimited reply
-/// depth. Comments are created in response to posts or other comments,
-/// enabling recursive discussion threads. Each comment belongs to one
-/// community (inherited from parent post) and is authored by one member.
-/// Comments support editing within 24 hours and soft deletion with 30-day
-/// recovery window. Comments drive engagement and community participation.
+/// Stores image URLs (files stored in cloud S3 with CDN delivery), metadata
+/// (dimensions, alt text), and display ordering. Multiple sizes generated:
+/// thumbnail (300x300), medium (800x800), full (original up to 2000x2000).
+/// Display order is strictly unique per post - no two images can have the
+/// same display_order value.
 ///
-/// @namespace Content
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_comments {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Post that this comment belongs to. References {@link
-  /// community_platform_posts.id}
-  post_id String
-  
-  /// Parent comment if this is a reply to another comment. Null for top-level
-  /// comments on post. Enables unlimited nesting depth for reply threads.
-  /// References {@link community_platform_comments.id}
-  parent_comment_id String?
-  
-  /// Member who authored the comment. References {@link
-  /// community_platform_members.id}
-  creator_id String
-  
-  /// Comment content text (1-5000 characters). Required for all comments
-  body String
-  
-  /// Comment publication status: 'published' for visible comments, 'deleted'
-  /// for soft-deleted by author, 'removed' for moderator removal
-  status String
-  
-  /// ISO 8601 timestamp when comment was created (server-generated, immutable)
-  created_at DateTime
-  
-  /// ISO 8601 timestamp when comment was last updated (edit timestamp)
-  updated_at DateTime
-  
-  /// ISO 8601 timestamp when comment was soft-deleted (null if not deleted).
-  /// Enables 30-day grace period for recovery
-  deleted_at DateTime?
-  
-  /// Count of direct child replies to this comment (incremented/decremented as
-  /// replies added/removed)
-  reply_count Int
-  
-  //----
-  // RELATIONS
-  //----
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  parentComment community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
-  creator community_platform_members @relation(fields: [creator_id], references: [id], onDelete: Cascade)
-  
-  recursive community_platform_comments[] @relation("recursive")
-  community_platform_comment_edits community_platform_comment_edits[]
-  community_platform_comment_votes community_platform_comment_votes[]
-  community_platform_content_reports community_platform_content_reports[]
-  community_platform_moderation_actions community_platform_moderation_actions[]
-  community_platform_content_warnings community_platform_content_warnings[]
-  community_platform_search_index community_platform_search_index[]
-  
-  @@index([post_id, created_at])
-  @@index([parent_comment_id, created_at])
-  @@index([creator_id, created_at])
-  @@index([status])
-}
-
-/// Complete audit trail of all comment edits, capturing before/after content
-/// for accountability. Each time a member edits their comment within the
-/// 24-hour edit window, a record is created preserving the previous state.
-/// Enables members to view edit history and supports moderation review of
-/// content changes. Maintains referential integrity to the edited comment.
-///
-/// @namespace Content
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_comment_edits {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Comment that was edited. References {@link community_platform_comments.id}
-  comment_id String
-  
-  /// Comment body content before this edit (preserved for audit trail)
-  previous_body String
-  
-  /// ISO 8601 timestamp when this edit was made (server-generated)
-  edited_at DateTime
-  
-  /// Optional reason provided by member for the edit (up to 500 characters)
-  edit_reason String?
-  
-  //----
-  // RELATIONS
-  //----
-  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
-  
-  @@index([comment_id, edited_at])
-}
-
-/// Images associated with image-type posts, tracked separately due to
-/// distinct lifecycle from posts. Supports multiple images per post (1-10
-/// images per post, up to 100MB total). Images are processed into multiple
-/// size versions (thumbnail, medium, large) for performance optimization.
-/// Enables reordering of images before post publication. Images remain
-/// accessible even if post is deleted, within 30-day grace period.
+/// EXIF data stripped for privacy. Images validated for format, size,
+/// dimensions during upload. Accessed through post detail pages, not
+/// independently managed.
 ///
 /// @namespace Content
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -301,43 +172,275 @@ model community_platform_post_images {
   /// Primary Key.
   id String @id
   
-  /// Post that this image belongs to. References {@link
-  /// community_platform_posts.id}
-  post_id String
+  /// Post this image belongs to. References community_platform_posts.id.
+  /// Non-nullable - image must belong to post.
+  community_platform_post_id String
   
-  /// CDN URL to full-size image (1600x1600px), persisted permanently as long
-  /// as post exists
+  /// CDN URL to full-resolution image. Served from CloudFront or equivalent
+  /// CDN. Points to cloud storage.
   image_url String
   
-  /// CDN URL to thumbnail image (200x200px) for feed display
+  /// CDN URL to thumbnail version (300x300px). Used in feed previews and
+  /// galleries.
   thumbnail_url String
   
-  /// CDN URL to medium image (600x600px) for preview display in comments/feeds
+  /// CDN URL to medium version (800x800px). Used in detail page display.
   medium_url String
   
-  /// Original filename provided by member at upload (used for reference, max
-  /// 255 characters)
-  original_filename String
+  /// Alt text for accessibility. Describes image content. Optional,
+  /// user-provided. Maximum 200 characters.
+  alt_text String?
   
-  /// Original image file size in bytes (used to verify total post size doesn't
-  /// exceed 100MB)
-  file_size Int
+  /// Original image width in pixels. Used for aspect ratio calculation.
+  width_pixels Int
   
-  /// MIME type of uploaded image (e.g., 'image/jpeg', 'image/png',
-  /// 'image/gif', 'image/webp')
-  mime_type String
+  /// Original image height in pixels. Used for aspect ratio calculation.
+  height_pixels Int
   
-  /// Order in which image appears in post gallery (1-10, can be reordered
-  /// before post publication)
+  /// Original image file size in bytes. Used for storage accounting.
+  file_size_bytes Int
+  
+  /// Order of image in gallery (0-indexed). Determines display sequence in
+  /// gallery view. Must be unique per post.
   display_order Int
   
-  /// ISO 8601 timestamp when image was uploaded (server-generated)
-  uploaded_at DateTime
+  /// Image upload timestamp (UTC). Immutable.
+  created_at DateTime
   
   //----
   // RELATIONS
   //----
-  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
   
-  @@index([post_id, display_order])
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id, display_order], map: "community_platform_post_images_community_platform_post_4280834e")
+  @@index([community_platform_post_id])
+}
+
+/// Historical snapshots of post states for audit trail and recovery.
+///
+/// Captures complete post state at each edit. Enables viewing post's
+/// historical versions, identifying what changed and when. Used for edit
+/// history display to users and moderators.
+///
+/// Append-only pattern: new snapshots created on every edit, never modified
+/// or deleted (except during disaster recovery). Snapshots retained
+/// indefinitely for long-term audit trail.
+///
+/// When user edits post, system creates snapshot of current state before
+/// applying changes. Users see "(edited)" indicator with link to view edit
+/// history showing snapshot timestamps and changes.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post this snapshot captures. References community_platform_posts.id.
+  /// Non-nullable - snapshot must reference original post.
+  community_platform_post_id String
+  
+  /// Post title at time of snapshot. Frozen historical state.
+  title String
+  
+  /// Post text content at time of snapshot. Frozen historical state for text
+  /// posts.
+  content_text String?
+  
+  /// External URL at time of snapshot. Frozen historical state for link posts.
+  content_link_url String?
+  
+  /// Link preview title at time of snapshot.
+  content_link_title String?
+  
+  /// Link preview description at time of snapshot.
+  content_link_description String?
+  
+  /// NSFW flag at time of snapshot.
+  is_nsfw Boolean
+  
+  /// Spoiler flag at time of snapshot.
+  has_spoiler Boolean
+  
+  /// Visibility status at time of snapshot. Shows whether post was public,
+  /// archived, or removed.
+  visibility_status String
+  
+  /// Optional reason provided by editor when making edit. Maximum 200
+  /// characters. Helps users understand what changed.
+  edit_reason String?
+  
+  /// Snapshot capture timestamp (UTC). Represents when this historical version
+  /// was created (when post was edited).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_snapshots_community_platform_p_fff76d8e")
+}
+
+/// Comments and nested replies on posts.
+///
+/// Comments are user-generated discussion responses to posts and to other
+/// comments. Support nested threading up to 10 levels deep. Each comment has
+/// exactly one parent (either post or another comment).
+///
+/// Track vote counts and child comment count in real-time. Display sorting:
+/// best (engagement + recency), new (chronological), top (vote count),
+/// controversial (upvotes/downvotes balanced).
+///
+/// Comments edited within 24 hours of creation. Soft-delete preserves thread
+/// structure. Moderators can remove comments, removing for violations
+/// results in "[removed by moderator]" placeholder. Comments voted on
+/// independently, contributing to member karma.
+///
+/// Comments are primary entities requiring independent management: search
+/// across all posts, moderation workflows, user activity tracking, direct
+/// deletion operations. The nesting_depth field enforces a maximum of 10
+/// levels to prevent excessive thread depth.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post this comment belongs to. References community_platform_posts.id.
+  /// Non-nullable - every comment links to a post (even nested replies
+  /// ultimately trace back to post).
+  community_platform_post_id String
+  
+  /// Parent comment if this is a reply to another comment. References
+  /// community_platform_comments.id. Null for top-level comments. Enables
+  /// nested threading structure.
+  community_platform_parent_comment_id String?
+  
+  /// Member who created this comment. References
+  /// community_platform_members.id. Non-nullable - comment must have creator.
+  community_platform_member_id String
+  
+  /// Comment body text. Supports markdown formatting. 1-10,000 characters.
+  /// Searchable field.
+  content String
+  
+  /// Net vote count (upvotes - downvotes). Updated in real-time. Initial
+  /// value: 0. Must equal upvote_count - downvote_count. Minimum value: 0.
+  vote_score Int
+  
+  /// Total upvote count. Initial value: 0. Minimum value: 0.
+  upvote_count Int
+  
+  /// Total downvote count. Initial value: 0. Minimum value: 0.
+  downvote_count Int
+  
+  /// Number of direct replies to this comment. Updated in real-time. Initial:
+  /// 0.
+  child_comment_count Int
+  
+  /// Depth in comment tree (0 for top-level, 1 for replies to top-level,
+  /// etc.). Maximum depth: 10. Used for display formatting. Enforced at
+  /// application level.
+  nesting_depth Int
+  
+  /// Comment visibility: 'visible' (normal), 'deleted' (soft-deleted by
+  /// author), 'removed_by_moderator' (removed for violations). Default:
+  /// 'visible'. When 'deleted' or 'removed_by_moderator', deleted_at timestamp
+  /// is set.
+  visibility_status String
+  
+  /// Whether this comment is locked (no replies allowed). Set by moderators.
+  /// Default: false.
+  is_locked Boolean
+  
+  /// Comment creation timestamp (UTC). Immutable after creation.
+  created_at DateTime
+  
+  /// Last edit timestamp (UTC). Shows when 'edited' indicator displays.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp (UTC). Set when deleted (visibility_status becomes
+  /// 'deleted' or 'removed_by_moderator'); null while active. Enables recovery
+  /// within grace period.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  parentComment community_platform_comments? @relation("recursive", fields: [community_platform_parent_comment_id], references: [id], onDelete: Cascade)
+  creator community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  recursive community_platform_comments[] @relation("recursive")
+  community_platform_comment_snapshots community_platform_comment_snapshots[]
+  community_platform_reports community_platform_reports[]
+  community_platform_member_activity community_platform_member_activity[]
+  community_platform_saved_content community_platform_saved_content[]
+  community_platform_search_index community_platform_search_index[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comments_community_platform_member__5ac10bc6")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_parent_comment_id, created_at], map: "community_platform_comments_community_platform_parent__36f85ea7")
+  @@index([created_at])
+  @@index([vote_score])
+}
+
+/// Historical snapshots of comment edits for audit trail.
+///
+/// Captures complete comment state at each edit. Enables viewing comment
+/// edit history and identifying changes over time.
+///
+/// Append-only pattern: snapshots created on edit, never modified. Retained
+/// indefinitely for audit trail.
+///
+/// When comment edited, snapshot created preserving pre-edit state. Users
+/// see edit history with snapshots showing what changed and when.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment this snapshot captures. References
+  /// community_platform_comments.id. Non-nullable - snapshot must reference
+  /// original comment.
+  community_platform_comment_id String
+  
+  /// Comment content at time of snapshot. Frozen historical state.
+  content String
+  
+  /// Visibility status at time of snapshot.
+  visibility_status String
+  
+  /// Optional reason provided by editor. Maximum 200 characters.
+  edit_reason String?
+  
+  /// Snapshot capture timestamp (UTC). When this historical version was
+  /// captured (when comment was edited).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_snapshots_community_platfor_a4c0672a")
 }

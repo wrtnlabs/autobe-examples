@@ -6,20 +6,32 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { IRedditCommunityAdmin } from "../../../structures/IRedditCommunityAdmin";
 
 /**
- * Create new admin account and issue JWT tokens in reddit_community_admin.
+ * Register a new admin user account in the reddit_community_admins table.
  *
- * The join operation for admins creates a new administrator account. This
- * involves validating input credentials, generating the user record including
- * the email and password_hash fields in the reddit_community_user table, then
- * linking the admin actor via the user_id foreign key. This operation ensures
- * only valid and authorized admin accounts are created with proper audit
- * timestamps for created_at and updated_at fields. The response contains
- * authorization tokens following JWT security standards, and this endpoint is
- * public to allow initial registration.
+ * This API operation provides registration capabilities for an admin user in
+ * the reddit_community_admins table. It securely accepts and stores a unique
+ * email along with a hashed password, establishing credentials for system
+ * administrators who have full access to platform management features. The
+ * registration process enforces email uniqueness and ensures the admin can be
+ * authenticated in subsequent login operations.
+ *
+ * The operation is public and does not require prior authentication,
+ * facilitating new admin account creation during platform setup or user
+ * onboarding.
+ *
+ * Related operations include `login` for authenticating admin credentials and
+ * `refresh` for renewing access tokens.
+ *
+ * The operation strictly requires validation of the email uniqueness and proper
+ * hashing of the password according to the Prisma schema fields `email` and
+ * `password_hash`.
+ *
+ * Error handling covers duplicate emails and input validation failures
+ * according to underlying Prisma constraints.
  *
  * @param props.connection
- * @param props.body Payload for creating a redditCommunity admin account with
- *   credentials
+ * @param props.body Request body to create a new admin user account with
+ *   required credentials.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/join
@@ -54,7 +66,10 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Payload for creating a redditCommunity admin account with credentials */
+    /**
+     * Request body to create a new admin user account with required
+     * credentials.
+     */
     body: IRedditCommunityAdmin.ICreate;
   };
   export type Body = IRedditCommunityAdmin.ICreate;
@@ -102,16 +117,25 @@ export namespace join {
 }
 
 /**
- * Authenticate admin and issue JWT tokens in reddit_community_admin.
+ * Authenticate an admin user and issue JWT tokens using reddit_community_admins
+ * fields.
  *
- * Admin login endpoint that verifies user credentials and issues JWT access and
- * refresh tokens. It checks the email and password_hash fields from the
- * reddit_community_user table linked with reddit_community_admin. Only valid
- * credentials result in token issuance. This endpoint is public to allow admin
- * access initiation.
+ * Authenticate an admin user by validating login credentials against the
+ * reddit_community_admins table.
+ *
+ * This operation checks the unique email and hashed password, issuing JWT
+ * tokens upon successful authentication.
+ *
+ * It respects account deactivation by verifying that the `deleted_at` field is
+ * null.
+ *
+ * The operation is public and does not require a JWT.
+ *
+ * Related operations: `join`, `refresh`.
  *
  * @param props.connection
- * @param props.body Payload for admin login with email and password
+ * @param props.body Request body for admin login credentials with email and
+ *   password.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/login
@@ -146,7 +170,7 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Payload for admin login with email and password */
+    /** Request body for admin login credentials with email and password. */
     body: IRedditCommunityAdmin.ILogin;
   };
   export type Body = IRedditCommunityAdmin.ILogin;
@@ -194,15 +218,24 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for authenticated admin in reddit_community_admin.
+ * Refresh JWT tokens for authenticated admin users using
+ * reddit_community_admins fields.
  *
- * Admin token refresh endpoint that validates the provided refresh token and
- * issues new access and refresh tokens. It ensures tokens are associated with
- * the admin actor and have not expired or been revoked. This endpoint requires
- * a valid refresh token to execute.
+ * Allow authenticated admin users to refresh their access and refresh tokens
+ * using a valid token.
+ *
+ * This operation ensures session continuity and secure token lifecycle
+ * management.
+ *
+ * It requires a valid refresh token and enforces authorization.
+ *
+ * Related operations include `join` and `login`.
+ *
+ * It utilizes the reddit_community_admins table to verify token legitimacy.
  *
  * @param props.connection
- * @param props.body Payload carrying the refresh token for admin token renewal
+ * @param props.body Request body containing the refresh token for token
+ *   renewal.
  * @setHeader token.access Authorization
  *
  * @path /auth/admin/refresh
@@ -237,7 +270,7 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Payload carrying the refresh token for admin token renewal */
+    /** Request body containing the refresh token for token renewal. */
     body: IRedditCommunityAdmin.IRefresh;
   };
   export type Body = IRedditCommunityAdmin.IRefresh;

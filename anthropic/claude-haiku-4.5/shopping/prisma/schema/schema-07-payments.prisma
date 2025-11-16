@@ -1,722 +1,603 @@
-/// Core payment records for customer orders. Stores order-level payment
-/// information including customer, order reference, payment method, and
-/// final payment status. This is separate from detailed payment processor
-/// transactions to maintain clean separation of concerns between order-level
-/// payment state and gateway-level transaction details.
+/// Core payment transaction records tracking all payment processing attempts
+/// and their outcomes. Records the complete lifecycle of a customer payment
+/// from initiation through completion or failure.
+///
+/// Each transaction represents a single payment attempt for an order or
+/// partial order. Transactions are immutable once created and include
+/// complete details of the payment including amount, method, processor
+/// response, and authorization codes.
+///
+/// Transactions link to orders and payment methods, enabling tracking of
+/// which payment method was used and what order it paid for. Status field
+/// tracks workflow (pending → processing → authorized → completed or
+/// failed). Soft deletion preserves all payment history for compliance and
+/// audit purposes.
+///
+/// The transaction table is the source of truth for all financial records
+/// and integrates with seller settlements for commission calculations and
+/// payment distributions.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payments {
+model ecommerce_mall_payment_transactions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the order being paid for. {@link shopping_mall_orders.id}
-  shopping_mall_order_id String
+  /// Reference to the order being paid for. {@link ecommerce_mall_orders.id}.
+  ecommerce_mall_order_id String
   
-  /// Customer making the payment. {@link shopping_mall_customers.id}
-  shopping_mall_customer_id String
+  /// Reference to the payment method used (credit card, debit card, digital
+  /// wallet, etc.). {@link ecommerce_mall_payment_methods.id}.
+  ecommerce_mall_payment_method_id String?
   
-  /// Payment method used for this transaction. {@link
-  /// shopping_mall_payment_methods.id}
-  shopping_mall_payment_method_id String?
+  /// Reference to the customer who initiated the payment. {@link
+  /// ecommerce_mall_customers.id}.
+  ecommerce_mall_customer_id String
   
-  /// Human-readable order number for reference (e.g., ORD-20250115-ABC123)
-  order_number String
+  /// Unique transaction reference from payment processor (e.g., Stripe
+  /// transaction ID, PayPal transaction ID). Used for tracking and
+  /// reconciliation with payment processor.
+  transaction_reference_id String
   
-  /// Payment amount in platform currency (stored in cents to avoid floating
-  /// point errors)
+  /// Current transaction status. Valid values: pending (awaiting processing),
+  /// processing (payment is being processed), authorized (payment authorized
+  /// but not yet settled), completed (payment successfully completed and
+  /// settled), failed (payment failed), cancelled (transaction cancelled by
+  /// user or system), refunded (payment refunded to customer). Determines
+  /// which operations are allowed on the transaction.
+  status String
+  
+  /// Amount charged to customer in the transaction currency. Must be a
+  /// positive number with maximum 2 decimal places. This is the gross amount
+  /// including all fees.
   amount Float
   
-  /// ISO 4217 currency code (USD, EUR, INR, etc.)
-  currency String
+  /// ISO 4217 currency code for the transaction (e.g., USD, EUR, GBP).
+  /// Determines how amount is interpreted and enables multi-currency support.
+  currency_code String
   
-  /// Current payment status: pending_payment, payment_processing,
-  /// payment_confirmed, payment_failed, payment_pending, refund_processing,
-  /// refund_completed, refund_failed
-  payment_status String
-  
-  /// Type of payment method: credit_card, debit_card, paypal, bank_transfer,
-  /// digital_wallet
+  /// Type of payment method used. Valid values: credit_card, debit_card,
+  /// digital_wallet (Apple Pay, Google Pay), bank_transfer, paypal, bnpl (Buy
+  /// Now Pay Later), other. Helps categorize payments for analytics and
+  /// compliance.
   payment_method_type String
   
-  /// Last 4 digits of card (if card payment), masked for security
-  card_last_four String?
+  /// Name of the payment processor handling the transaction (e.g., Stripe,
+  /// PayPal, Square, Adyen). Identifies which processor handled the payment
+  /// for troubleshooting and reconciliation.
+  processor_name String
   
-  /// Name on the payment method
-  cardholder_name String?
+  /// Response code from payment processor indicating the authorization result.
+  /// Examples: 200 (success), 400 (bad request), 402 (payment required), 403
+  /// (forbidden), 429 (rate limited), 500 (server error). Used for error
+  /// handling and debugging.
+  processor_response_code String?
   
-  /// Billing address provided at payment time (JSON formatted for address
-  /// components)
-  billing_address String?
+  /// Human-readable response message from payment processor explaining the
+  /// result. Examples: 'Card approved', 'Insufficient funds', 'Invalid card',
+  /// 'Declined by bank'. Shown to customer to explain transaction outcome.
+  processor_response_message String?
   
-  /// Authorization code from payment processor if transaction was approved
+  /// Authorization code returned by payment processor for approved
+  /// transactions. Used to settle (capture) the payment and for processor
+  /// reconciliation. Required for completed transactions.
   authorization_code String?
   
-  /// Unique transaction ID from payment processor
-  transaction_id String?
+  /// Fraud risk score from payment processor (0-100 scale where 0=low risk,
+  /// 100=high risk). Used for fraud detection and triggering additional
+  /// verification steps. Scores above 75 may trigger manual review.
+  risk_score Int?
   
-  /// Standardized response code from payment processor (00 for success, etc.)
-  response_code String?
-  
-  /// Human-readable response message from payment processor
-  response_message String?
-  
-  /// Error code if transaction failed (insufficient funds, expired card, etc.)
-  error_code String?
-  
-  /// Detailed error explanation if transaction declined or failed
-  error_message String?
-  
-  /// Risk assessment score from payment processor (0-100, higher = more risky)
-  fraud_score Float?
-  
-  /// 3D Secure authentication status: not_applicable, authenticated,
-  /// attempted, not_enrolled
-  three_d_secure_status String?
-  
-  /// Unique key for idempotent payment processing to prevent duplicate charges
-  idempotency_key String?
-  
-  /// Customer IP address when payment was attempted
+  /// IP address of the customer making the payment. Used for fraud detection,
+  /// geographic verification, and security auditing. Stored for compliance
+  /// investigation.
   ip_address String?
   
-  /// Browser/device user agent information
-  user_agent String?
+  /// Number of times this payment has been retried by the system. Starts at 0
+  /// for first attempt. System may automatically retry failed payments up to 2
+  /// times. Helps prevent duplicate charges by tracking retry attempts.
+  retry_count Int
   
-  /// When the payment request was received
-  request_timestamp DateTime
+  /// Timestamp when the payment was settled (funds captured from customer
+  /// account). Empty for pending or failed transactions. For completed
+  /// transactions, this marks when funds actually moved.
+  settled_at DateTime?
   
-  /// When payment authorization was received from processor
-  authorization_timestamp DateTime?
-  
-  /// Payment record creation timestamp
+  /// Timestamp when the transaction was initiated. Marks the start of the
+  /// payment lifecycle.
   created_at DateTime
   
-  /// Last update timestamp for this payment record
+  /// Timestamp of the last status update or modification to the transaction.
+  /// Tracks when transaction state last changed.
   updated_at DateTime
   
-  //----
-  // RELATIONS
-  //----
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  paymentMethod shopping_mall_payment_methods? @relation(fields: [shopping_mall_payment_method_id], references: [id], onDelete: Cascade)
-  
-  shopping_mall_payment_transactions shopping_mall_payment_transactions[]
-  shopping_mall_refunds shopping_mall_refunds[]
-  
-  @@unique([shopping_mall_order_id])
-  @@index([shopping_mall_payment_method_id])
-  
-  @@unique([transaction_id])
-  @@unique([idempotency_key])
-  @@index([shopping_mall_customer_id, created_at])
-  @@index([payment_status])
-  @@index([created_at])
-}
-
-/// Detailed payment processor transaction records. Captures every
-/// interaction with the payment gateway including authorization, capture,
-/// decline, refund, reversal events. Maintains complete audit trail of
-/// payment processor responses. Separate from shopping_mall_payments to
-/// preserve immutable transaction history while allowing payment status
-/// updates.
-///
-/// @namespace Payments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payment_transactions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the parent payment record. {@link shopping_mall_payments.id}
-  shopping_mall_payment_id String
-  
-  /// Type of transaction: authorization, capture, decline, refund, reversal,
-  /// adjustment, chargeback
-  transaction_type String
-  
-  /// Status of this specific transaction: pending, successful, failed,
-  /// cancelled
-  transaction_status String
-  
-  /// Transaction amount (may differ from original payment if partial refund,
-  /// etc.)
-  amount Float
-  
-  /// Currency code for this transaction
-  currency String
-  
-  /// Transaction ID from payment processor
-  gateway_transaction_id String?
-  
-  /// Reference ID from payment processor (for linking related transactions)
-  gateway_reference_id String?
-  
-  /// Authorization code if applicable
-  authorization_code String?
-  
-  /// Response code from payment processor
-  response_code String?
-  
-  /// Response message from payment processor
-  response_message String?
-  
-  /// Error code if transaction failed
-  error_code String?
-  
-  /// Error message if transaction failed
-  error_message String?
-  
-  /// Address Verification System response (if card transaction)
-  avs_response String?
-  
-  /// CVV verification response (if card transaction)
-  cvv_response String?
-  
-  /// Full request JSON sent to payment processor (for audit trail, no
-  /// sensitive data)
-  request_payload String?
-  
-  /// Full response JSON received from payment processor (for audit trail)
-  response_payload String?
-  
-  /// When request was sent to payment processor
-  request_timestamp DateTime
-  
-  /// When response was received from payment processor
-  response_timestamp DateTime?
-  
-  /// Record creation timestamp
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
-  
-  @@unique([gateway_transaction_id])
-  // spellchecker: ignore-next-line
-  @@index([shopping_mall_payment_id, transaction_type], map: "shopping_mall_payment_transactions_shopping_mall_payme_8b97725a")
-  @@index([transaction_status])
-  @@index([created_at])
-}
-
-/// Refund request and processing records. Tracks lifecycle of refunds from
-/// initiation through completion. Separate entity (not nullable fields on
-/// payments) enables proper refund state management and audit trail. Refunds
-/// can be partial, have multiple statuses, and require approval workflows.
-///
-/// @namespace Payments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_refunds {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the original payment being refunded. {@link
-  /// shopping_mall_payments.id}
-  shopping_mall_payment_id String
-  
-  /// Reference to the order. {@link shopping_mall_orders.id}
-  shopping_mall_order_id String
-  
-  /// Unique refund identifier (REF-YYYYMMDD-XXXXXX format)
-  refund_number String
-  
-  /// Reason for refund: customer_request, payment_failure,
-  /// seller_cancellation, order_cancellation, return_accepted,
-  /// dispute_resolution, chargeback, other
-  refund_reason String
-  
-  /// Amount to be refunded (may be less than original payment for partial
-  /// refunds)
-  refund_amount Float
-  
-  /// Original payment amount (for reference)
-  original_amount Float
-  
-  /// Current refund status: initiated, approved, processing, completed,
-  /// failed, reversed, cancelled
-  refund_status String
-  
-  /// How refund will be issued: original_payment_method, store_credit,
-  /// bank_transfer, other
-  refund_method String
-  
-  /// Amount deducted from refund (restocking fee, condition deduction, etc.)
-  deduction_amount Float?
-  
-  /// Reason for deduction (e.g., item condition, restocking fee)
-  deduction_reason String?
-  
-  /// Internal notes about this refund (admin comments, investigation notes,
-  /// etc.)
-  notes String?
-  
-  /// Who initiated the refund: customer, seller, admin, system
-  initiated_by String
-  
-  /// Admin ID who approved the refund (if applicable)
-  approved_by String?
-  
-  /// When refund was initiated
-  initiation_timestamp DateTime
-  
-  /// When refund was approved for processing
-  approval_timestamp DateTime?
-  
-  /// When refund processing was initiated with payment processor
-  processing_timestamp DateTime?
-  
-  /// When refund was completed/credited to customer
-  completion_timestamp DateTime?
-  
-  /// Expected date/time refund will appear in customer account
-  expected_completion_date DateTime?
-  
-  /// Refund ID from payment processor
-  gateway_refund_id String?
-  
-  /// Record creation timestamp
-  created_at DateTime
-  
-  /// Last update timestamp
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  payment shopping_mall_payments @relation(fields: [shopping_mall_payment_id], references: [id], onDelete: Cascade)
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  
-  @@unique([refund_number])
-  @@unique([gateway_refund_id])
-  @@index([shopping_mall_payment_id])
-  @@index([shopping_mall_order_id])
-  @@index([refund_status])
-  @@index([initiation_timestamp])
-}
-
-/// Customer payment methods stored on file. Tokenized payment references for
-/// reuse, avoiding storage of complete sensitive data. Each payment method
-/// is linked to a customer and can be marked as primary or deleted. Supports
-/// credit cards, digital wallets, and bank accounts.
-///
-/// @namespace Payments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payment_methods {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Customer who owns this payment method. {@link shopping_mall_customers.id}
-  shopping_mall_customer_id String
-  
-  /// Type of payment method: credit_card, debit_card, paypal, bank_account,
-  /// digital_wallet
-  payment_method_type String
-  
-  /// Tokenized reference from payment processor (never stores actual
-  /// card/account data)
-  payment_token String
-  
-  /// Customer-friendly name for this payment method (e.g., "My VISA", "PayPal
-  /// Account")
-  display_name String?
-  
-  /// Last 4 digits of card (if card payment) for display
-  card_last_four String?
-  
-  /// Card brand for card payments: visa, mastercard, amex, discover
-  card_brand String?
-  
-  /// Expiration month (1-12) for card payments
-  expiration_month Int?
-  
-  /// Expiration year (4-digit) for card payments
-  expiration_year Int?
-  
-  /// Name on the card
-  cardholder_name String?
-  
-  /// Bank name for bank account payments
-  bank_name String?
-  
-  /// Last 4 digits of bank account
-  account_last_four String?
-  
-  /// Whether this is the customer's default payment method
-  is_primary Boolean
-  
-  /// Whether this payment method is active/available for use
-  is_active Boolean
-  
-  /// When this payment method was added
-  created_at DateTime
-  
-  /// Last update timestamp
-  updated_at DateTime
-  
-  /// Soft delete timestamp if payment method is no longer available
+  /// Soft delete timestamp. Null for active transactions. When set, indicates
+  /// transaction has been logically deleted while preserving audit trail.
+  /// Compliance requirement for 7-year payment retention.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  paymentMethod ecommerce_mall_payment_methods? @relation(fields: [ecommerce_mall_payment_method_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_payments shopping_mall_payments[]
+  ecommerce_mall_payment_failures ecommerce_mall_payment_failures[]
+  ecommerce_mall_refund_requests ecommerce_mall_refund_requests[]
+  ecommerce_mall_refunds ecommerce_mall_refunds[]
   
-  @@unique([payment_token])
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_id, is_primary], map: "shopping_mall_payment_methods_shopping_mall_customer_i_8f8ca36c")
+  @@unique([transaction_reference_id], map: "ecommerce_mall_payment_transactions_transaction_refere_25b52bc9")
+  @@index([ecommerce_mall_order_id])
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_id, is_active], map: "shopping_mall_payment_methods_shopping_mall_customer_i_0f178e28")
+  @@index([ecommerce_mall_payment_method_id], map: "ecommerce_mall_payment_transactions_ecommerce_mall_pay_58b24439")
+  @@index([status])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_payment_transactions_ecommerce_mall_cus_f7289697")
 }
 
-/// Reconciliation records comparing system payment records with payment
-/// processor settlements. Ensures all transactions are accounted for and any
-/// discrepancies are detected. Tracks daily or periodic reconciliation runs.
+/// Detailed records of payment processing failures and their error details.
+/// Tracks every failed payment attempt to enable root cause analysis, retry
+/// mechanisms, and compliance reporting.
+///
+/// When a payment transaction fails (is declined, times out, or returns an
+/// error), a failure record is created capturing the specific error code,
+/// message, and context. This enables the system to understand why payments
+/// fail and take appropriate action (retry, notify customer, escalate to
+/// support).
+///
+/// Failure records link to the associated payment transaction and maintain
+/// complete error information from the payment processor. They support the
+/// automatic retry system and fraud detection mechanisms.
+///
+/// The failure table is subsidiary to payment transactions - it exists only
+/// to supplement transaction records with failure-specific details. Failures
+/// are immutable once created and preserved for PCI compliance and audit
+/// purposes.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_transaction_reconciliation {
+model ecommerce_mall_payment_failures {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Date for which reconciliation was performed
-  reconciliation_date DateTime
+  /// Reference to the payment transaction that failed. {@link
+  /// ecommerce_mall_payment_transactions.id}.
+  ecommerce_mall_payment_transaction_id String
   
-  /// Type of reconciliation: daily, weekly, monthly, manual, processor_report
-  reconciliation_type String
+  /// Error code from payment processor identifying the type of failure.
+  /// Examples: insufficient_funds, card_declined, expired_card, invalid_cvv,
+  /// processing_error, timeout, rate_limited. Used to categorize failures for
+  /// analysis and automated remediation.
+  error_code String
   
-  /// Which payment processor this reconciliation is for
+  /// Human-readable error message from payment processor explaining the
+  /// failure. Examples: 'Your card was declined', 'Your card has expired',
+  /// 'Payment processor is temporarily unavailable'. Shown to customer to
+  /// explain payment failure.
+  error_message String
+  
+  /// Categorization of failure type: temporary (transient issue that may
+  /// succeed on retry), permanent (customer action required), processor_error
+  /// (payment processor issue). Used to determine retry strategy and customer
+  /// notification.
+  failure_category String
+  
+  /// Complete raw response from payment processor including all fields and
+  /// metadata. Stored for debugging and compliance purposes. Helps investigate
+  /// complex failures.
+  processor_raw_response String?
+  
+  /// Whether system has automatically scheduled a retry of this payment.
+  /// Temporary failures may be automatically retried. This flag indicates if
+  /// retry is planned.
+  retry_scheduled Boolean
+  
+  /// Timestamp when the payment failure was recorded. Marks when the failure
+  /// occurred.
+  created_at DateTime
+  
+  /// Soft delete timestamp. Null for active failure records. When set,
+  /// indicates failure has been logically deleted. Soft delete preserves audit
+  /// trail for compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  paymentTransaction ecommerce_mall_payment_transactions @relation(fields: [ecommerce_mall_payment_transaction_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_payment_transaction_id], map: "ecommerce_mall_payment_failures_ecommerce_mall_payment_9c80465b")
+  @@index([error_code])
+  @@index([failure_category])
+  @@index([created_at])
+}
+
+/// Customer or system-initiated refund requests for completed payments.
+/// Records the intention to refund an order or partial order and tracks the
+/// approval/denial workflow.
+///
+/// Refund requests capture the business context for why a refund is needed:
+/// customer initiated return, system-detected issue, seller non-shipment, or
+/// damage claim. They represent the customer's intent to get money back and
+/// guide the refund processing workflow.
+///
+/// Each request has independent status tracking (pending, approved,
+/// rejected, processing, completed) enabling management of the refund
+/// lifecycle separate from the original payment. Refund requests can
+/// reference the original payment transaction and associated order.
+///
+/// This is a primary table because refund requests are independently managed
+/// through a complete workflow, not merely attached to another entity.
+/// Customers can submit refund requests, they can be approved/denied, and
+/// they trigger actual payment reversals (refunds table).
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order for which refund is being requested. {@link
+  /// ecommerce_mall_orders.id}.
+  ecommerce_mall_order_id String
+  
+  /// Reference to the original payment transaction being refunded. {@link
+  /// ecommerce_mall_payment_transactions.id}.
+  ecommerce_mall_payment_transaction_id String?
+  
+  /// Reference to the customer requesting the refund. {@link
+  /// ecommerce_mall_customers.id}.
+  ecommerce_mall_customer_id String
+  
+  /// Current status of the refund request. Valid values: pending (awaiting
+  /// approval), approved (approved and ready for processing), rejected
+  /// (denied, no refund will be issued), processing (refund is being
+  /// processed), completed (refund successfully processed and paid to
+  /// customer), failed (refund processing failed). Tracks workflow progress.
+  status String
+  
+  /// Reason for the refund request from the customer or system. Valid values:
+  /// customer_initiated (customer requested refund), damaged_item (item
+  /// arrived damaged), defective_product (product doesn't work as described),
+  /// wrong_item (order contained wrong item), no_shipment (seller didn't
+  /// ship), seller_issue (seller service issue), payment_error (system charged
+  /// incorrect amount), fraud_dispute (customer disputes the charge). Used to
+  /// understand refund patterns.
+  reason String
+  
+  /// Amount customer is requesting to be refunded. Must be a positive number
+  /// not exceeding the original order amount. For partial refunds, this is
+  /// less than full order. Decimal with 2 places maximum.
+  requested_amount Float
+  
+  /// Amount actually approved for refund after review. May differ from
+  /// requested amount (e.g., restocking fee applied, partial refund approved).
+  /// Null until request is reviewed.
+  approved_amount Float?
+  
+  /// Reason for rejecting the refund request if status is rejected. Examples:
+  /// outside_return_window, item_condition_unacceptable, duplicate_request,
+  /// no_supporting_evidence. Explains why refund was denied.
+  rejection_reason String?
+  
+  /// Detailed notes from customer explaining why they want a refund. May
+  /// include description of damage, product issues, or other context
+  /// supporting the request. Max 2000 characters.
+  customer_notes String?
+  
+  /// Internal notes from admin or support team during refund review. May
+  /// include investigation findings, decision rationale, or customer
+  /// communication details. Not visible to customer.
+  admin_notes String?
+  
+  /// Timestamp when the customer submitted the refund request. Marks the start
+  /// of the refund request lifecycle.
+  requested_at DateTime
+  
+  /// Timestamp when the refund request was reviewed and approved/rejected.
+  /// Null while request is pending. Marks when decision was made.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the refund request record was created in the system.
+  /// Should match requested_at in most cases.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the refund request (approval, status
+  /// change, notes added, etc). Tracks when request state last changed.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null for active refund requests. When set,
+  /// indicates request has been logically deleted. Soft deletion preserves
+  /// audit trail for compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  paymentTransaction ecommerce_mall_payment_transactions? @relation(fields: [ecommerce_mall_payment_transaction_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  ecommerce_mall_refunds ecommerce_mall_refunds?
+  
+  @@index([ecommerce_mall_order_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_payment_transaction_id], map: "ecommerce_mall_refund_requests_ecommerce_mall_payment__64354bca")
+  @@index([status])
+  @@index([reason])
+  @@index([requested_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, requested_at], map: "ecommerce_mall_refund_requests_ecommerce_mall_customer_40f30622")
+}
+
+/// Processed refunds representing actual payment reversals to customer
+/// accounts. Records the complete lifecycle of refund transactions from
+/// approval through settlement.
+///
+/// When a refund request is approved, a refund record is created capturing
+/// the refund transaction details. The refund tracks the actual reversal of
+/// funds to the customer's original payment method (or alternative method if
+/// necessary).
+///
+/// Each refund maintains complete transaction data including amount,
+/// currency, processor reference, and status throughout the reversal
+/// process. Refunds may be processed immediately or may take several
+/// business days depending on the payment method and processor.
+///
+/// The refund table is subsidiary to refund requests - it exists to
+/// implement the approved refund through actual payment reversal. Refunds
+/// are immutable once created and preserved for complete financial audit
+/// trail and compliance with 7-year payment retention requirements.
+///
+/// @namespace Payments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the refund request that triggered this refund. {@link
+  /// ecommerce_mall_refund_requests.id}.
+  ecommerce_mall_refund_request_id String
+  
+  /// Reference to the original payment transaction being refunded. {@link
+  /// ecommerce_mall_payment_transactions.id}.
+  ecommerce_mall_payment_transaction_id String
+  
+  /// Current status of the refund processing. Valid values: processing (refund
+  /// initiated, awaiting processor confirmation), completed (refund
+  /// successfully processed and funds returned to customer), failed (refund
+  /// processing failed, requires retry or manual intervention), cancelled
+  /// (refund was cancelled before completion). Tracks refund lifecycle.
+  status String
+  
+  /// Amount being refunded to customer. Must be a positive number with maximum
+  /// 2 decimal places. May be less than original payment for partial refunds
+  /// or if restocking fees applied.
+  refund_amount Float
+  
+  /// ISO 4217 currency code for the refund (e.g., USD, EUR, GBP). Should match
+  /// the original payment transaction currency.
+  currency_code String
+  
+  /// Unique refund transaction ID from payment processor (e.g., Stripe refund
+  /// ID). Used to track refund status with processor and reconcile payments.
+  /// Critical for processor communication.
+  processor_refund_id String?
+  
+  /// Name of the payment processor handling the refund (e.g., Stripe, PayPal,
+  /// Square). Should match the original transaction processor.
   processor_name String
   
-  /// Number of transactions recorded in our system for this period
-  system_transaction_count Int
+  /// How the refund is being issued. Valid values: original_payment_method
+  /// (refunded to original card/payment method), bank_transfer (direct bank
+  /// transfer), store_credit (issued as store credit balance), check (issued
+  /// as physical check). Determines where funds go.
+  refund_method String
   
-  /// Number of transactions reported by payment processor
-  processor_transaction_count Int
+  /// Estimated date when customer will see refund in their account. Varies by
+  /// payment method (2-5 business days typical). Communicated to customer for
+  /// expectation setting.
+  expected_completion_date DateTime?
   
-  /// Total transaction amount in our system
-  system_total_amount Float
+  /// Actual date when refund was confirmed complete and funds returned to
+  /// customer. Set when processor confirms completion. Null while processing.
+  actual_completion_date DateTime?
   
-  /// Total transaction amount reported by processor
-  processor_total_amount Float
+  /// Response code from payment processor for the refund request. Examples:
+  /// 200 (success), 400 (bad request), 422 (unprocessable), 500 (server
+  /// error). Used for debugging refund failures.
+  processor_response_code String?
   
-  /// Status of reconciliation: matched, discrepancy_found,
-  /// pending_investigation, resolved
-  reconciliation_status String
+  /// Human-readable message from processor explaining the refund result.
+  /// Examples: 'Refund successfully submitted', 'Original transaction not
+  /// found', 'Refund amount exceeds original'. Helps explain refund status.
+  processor_response_message String?
   
-  /// Description of any discrepancies found
-  discrepancy_details String?
-  
-  /// JSON array of transaction IDs missing from system
-  missing_transaction_ids String?
-  
-  /// JSON array of transaction IDs in system but not in processor report
-  extra_transaction_ids String?
-  
-  /// Admin user ID who performed or approved the reconciliation
-  reconciled_by String?
-  
-  /// When reconciliation was performed
-  reconciliation_timestamp DateTime
-  
-  /// Notes on how discrepancies were resolved
-  resolution_notes String?
-  
-  /// Record creation timestamp
+  /// Timestamp when the refund was initiated. Marks when the refund processing
+  /// began.
   created_at DateTime
   
-  //----
-  // RELATIONS
-  //----
-  // spellchecker: ignore-next-line
-  @@unique([reconciliation_date, processor_name], map: "shopping_mall_transaction_reconciliation_reconciliatio_6ef316b8")
-  // spellchecker: ignore-next-line
-  @@index([reconciliation_status], map: "shopping_mall_transaction_reconciliation_reconciliatio_c4b956bc")
-  // spellchecker: ignore-next-line
-  @@index([reconciliation_date], map: "shopping_mall_transaction_reconciliation_reconciliatio_79b106b2")
-}
-
-/// Seller payment records tracking when payouts are issued to sellers.
-/// Records amount, status, and settlement details. Separate from customer
-/// refunds - this is seller compensation for successful sales.
-///
-/// @namespace Payments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_seller_payouts {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Seller receiving the payout. {@link shopping_mall_sellers.id}
-  shopping_mall_seller_id String
-  
-  /// Unique payout identifier (PAYOUT-YYYYMMDD-XXXXXX format)
-  payout_number String
-  
-  /// Start date of the period covered by this payout
-  payout_period_start DateTime
-  
-  /// End date of the period covered by this payout
-  payout_period_end DateTime
-  
-  /// Gross sales amount before commissions and fees
-  total_sales_amount Float
-  
-  /// Platform commission deducted from sales
-  commission_amount Float
-  
-  /// Total refunds processed in this period
-  refunds_amount Float
-  
-  /// Other fees deducted (payment processing, etc.)
-  fees_amount Float?
-  
-  /// Final amount to be paid to seller (gross - commissions - refunds - fees)
-  net_payout_amount Float
-  
-  /// Status of payout: pending, approved, processing, completed, failed,
-  /// cancelled
-  payout_status String
-  
-  /// How payout is issued: bank_transfer, wire, check, digital_wallet
-  payout_method String
-  
-  /// Reference to seller's saved bank account for payout (if applicable)
-  bank_account_id String?
-  
-  /// Transaction ID or reference from payment processor
-  transaction_reference String?
-  
-  /// When payout was initiated
-  initiated_timestamp DateTime
-  
-  /// When payout was completed/deposited
-  completed_timestamp DateTime?
-  
-  /// Expected date funds will appear in seller's account
-  expected_delivery_date DateTime?
-  
-  /// Reason for payout failure if applicable
-  failure_reason String?
-  
-  /// Internal notes about this payout
-  notes String?
-  
-  /// Record creation timestamp
-  created_at DateTime
-  
-  /// Last update timestamp
+  /// Timestamp of the last status update or modification to the refund. Tracks
+  /// when refund state last changed.
   updated_at DateTime
   
+  /// Soft delete timestamp. Null for active refunds. When set, indicates
+  /// refund has been logically deleted. Soft deletion preserves audit trail
+  /// for 7-year compliance requirement.
+  deleted_at DateTime?
+  
   //----
   // RELATIONS
   //----
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  refundRequest ecommerce_mall_refund_requests @relation(fields: [ecommerce_mall_refund_request_id], references: [id], onDelete: Cascade)
+  paymentTransaction ecommerce_mall_payment_transactions @relation(fields: [ecommerce_mall_payment_transaction_id], references: [id], onDelete: Cascade)
   
-  @@unique([payout_number])
+  @@unique([ecommerce_mall_refund_request_id])
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_seller_id, payout_period_start], map: "shopping_mall_seller_payouts_shopping_mall_seller_id_p_d6c288ae")
-  @@index([payout_status])
-  @@index([initiated_timestamp])
+  @@index([ecommerce_mall_payment_transaction_id], map: "ecommerce_mall_refunds_ecommerce_mall_payment_transact_a721d549")
+  @@index([status])
+  @@index([created_at])
+  @@index([actual_completion_date])
 }
 
-/// Current account balance for each seller. Tracks the amount owed to seller
-/// from completed sales, updated as orders are fulfilled and refunds
-/// processed. Enables sellers to view their current available balance for
-/// payout requests.
+/// Seller commission calculations and payment settlement records. Tracks the
+/// financial settlement between the platform and sellers for their sales.
+///
+/// Seller settlements aggregate payment transactions across a settlement
+/// period (weekly, bi-weekly, or monthly based on seller preference) and
+/// calculate the net amount owed to the seller after deducting platform
+/// commissions and fees.
+///
+/// Each settlement record captures the complete financial picture: total
+/// gross sales, commission amount deducted, any adjustments or chargebacks,
+/// and the final net settlement amount to be paid to the seller. Settlements
+/// drive the actual payments made to sellers via their configured bank
+/// accounts.
+///
+/// This is a primary table because settlements represent critical financial
+/// records independently tracked for each seller. Settlements are primary
+/// business entities that drive seller payments, require comprehensive
+/// tracking, and need detailed analytics and reporting.
+///
+/// Settlements maintain immutable records of all historical settlements for
+/// each seller, enabling complete financial audit trails and enabling
+/// sellers to understand their earnings over time.
 ///
 /// @namespace Payments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_seller_account_balances {
+model ecommerce_mall_seller_settlements {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Seller whose balance this tracks. {@link shopping_mall_sellers.id}
-  shopping_mall_seller_id String
+  /// Reference to the seller this settlement is for. {@link
+  /// ecommerce_mall_sellers.id}.
+  ecommerce_mall_seller_id String
   
-  /// Current available balance ready for payout
-  current_balance Float
+  /// Start date of the settlement period (date from which sales are included).
+  /// All transactions on or after this date are included in settlement
+  /// calculations.
+  settlement_period_start DateTime
   
-  /// Balance from orders not yet confirmed delivered
-  pending_balance Float
+  /// End date of the settlement period (last date on which sales are
+  /// included). All transactions before this date are included in settlement
+  /// calculations.
+  settlement_period_end DateTime
   
-  /// Balance held due to disputes or pending investigation
-  reserved_balance Float
+  /// Frequency of settlement for this seller. Valid values: weekly (every 7
+  /// days), biweekly (every 14 days), monthly (once per month). Set by
+  /// seller's preference and controls when settlements are calculated.
+  settlement_frequency String
   
-  /// Total cumulative earnings since seller joined platform
-  lifetime_earnings Float
+  /// Current status of the settlement. Valid values: pending (calculated but
+  /// not yet paid), processing (payment in progress), completed (payment
+  /// successfully made to seller), failed (payment failed and requires retry
+  /// or manual intervention), cancelled (settlement was cancelled without
+  /// payment). Tracks settlement lifecycle.
+  status String
   
-  /// Total cumulative payouts already processed
-  lifetime_payouts Float
+  /// Total gross sales amount before commission deduction. Sum of all
+  /// transaction amounts from the settlement period for this seller. Decimal
+  /// with 2 places maximum.
+  gross_sales_amount Float
   
-  /// Last time balance was updated
-  last_balance_update DateTime
-  
-  /// Record creation timestamp
-  created_at DateTime
-  
-  /// Last update timestamp
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([shopping_mall_seller_id], map: "shopping_mall_seller_account_balances_shopping_mall_se_7ba2e853")
-  
-  @@index([current_balance])
-}
-
-/// Commission rate configuration by product category. Defines what
-/// percentage of each sale the platform retains as commission. Supports
-/// variable rates to optimize for different categories. Historical records
-/// track rate changes over time.
-///
-/// @namespace Payments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_commission_rates {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Product category this commission rate applies to. {@link
-  /// shopping_mall_categories.id}
-  shopping_mall_category_id String
-  
-  /// Category name for reference (denormalized from category table)
-  category_name String
-  
-  /// Commission percentage (0-100) that platform retains from each sale
+  /// Commission rate applied as percentage (e.g., 15.5 for 15.5%). The rate
+  /// may vary by product category. This is the rate applied to calculate
+  /// commission_amount.
   commission_percentage Float
   
-  /// Minimum commission amount even if percentage would be less
-  minimum_commission_amount Float?
+  /// Total commission deducted from gross sales (calculated as
+  /// gross_sales_amount × commission_percentage / 100). This is the platform's
+  /// fee.
+  commission_amount Float
   
-  /// Maximum commission amount capped at this value
-  maximum_commission_amount Float?
+  /// Total amount deducted due to chargebacks, disputes, or customer
+  /// complaints. These represent costs to the seller for disputed
+  /// transactions. Default 0 if no disputes.
+  chargebacks_and_disputes Float
   
-  /// Date when this commission rate becomes effective
-  effective_date DateTime
+  /// Total amount of refunds issued during the settlement period for this
+  /// seller's products. Refunds reduce the net settlement amount owed to
+  /// seller.
+  refunds_issued Float
   
-  /// Date when this commission rate expires (null if current)
-  expiration_date DateTime?
+  /// Any other adjustments to the settlement (credits, penalties, bonuses,
+  /// etc). Can be positive (credit to seller) or negative (deduction from
+  /// seller). Includes manual adjustments made by admin.
+  other_adjustments Float
   
-  /// Description of why this rate was set (e.g., promotional rate, category
-  /// adjustment)
-  description String?
+  /// Final net amount to be paid to seller after all deductions and
+  /// adjustments. Calculated as: gross_sales_amount - commission_amount -
+  /// chargebacks_and_disputes - refunds_issued + other_adjustments. This is
+  /// what seller actually receives.
+  net_settlement_amount Float
   
-  /// Admin ID who created this rate
-  created_by String
+  /// ISO 4217 currency code for settlement amounts (e.g., USD, EUR). Should
+  /// match seller's preferred settlement currency.
+  currency_code String
   
-  /// Record creation timestamp
+  /// Method used to pay the seller. Valid values: bank_transfer (direct to
+  /// seller's bank account), check (mailed check), paypal (PayPal transfer),
+  /// cryptocurrency (crypto transfer). Determined by seller's payment
+  /// preferences.
+  payment_method String
+  
+  /// Reference ID for the actual payment transaction (e.g., bank transfer ID,
+  /// check number, PayPal transaction ID). Null until payment is completed.
+  payment_reference_id String?
+  
+  /// Timestamp when the settlement was calculated and amounts determined.
+  /// Marks when settlement figures were finalized.
+  calculated_at DateTime
+  
+  /// Timestamp when the settlement payment was actually made to the seller's
+  /// account. Null until payment completes. Marks when seller receives their
+  /// money.
+  paid_at DateTime?
+  
+  /// Timestamp when the settlement record was created in the system.
   created_at DateTime
   
-  /// Last update timestamp
+  /// Timestamp of the last update to the settlement (status change, payment
+  /// made, adjustment applied, etc). Tracks when settlement state last
+  /// changed.
   updated_at DateTime
   
+  /// Soft delete timestamp. Null for active settlements. When set, indicates
+  /// settlement has been logically deleted. Soft deletion preserves audit
+  /// trail for compliance and seller financial records.
+  deleted_at DateTime?
+  
   //----
   // RELATIONS
   //----
-  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
   
-  @@unique([shopping_mall_category_id])
-  
+  @@index([status])
+  @@index([settlement_period_start])
+  @@index([settlement_period_end])
+  @@index([calculated_at])
+  @@index([paid_at])
   // spellchecker: ignore-next-line
-  @@index([effective_date, expiration_date], map: "shopping_mall_commission_rates_effective_date_expirati_f36e0891")
-}
-
-/// General ledger tracking all financial movements: customer payments,
-/// seller payouts, refunds, commissions, adjustments. Immutable audit trail
-/// of financial transactions for accounting and compliance. Supports
-/// platform financial reporting and reconciliation.
-///
-/// @namespace Payments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_financial_ledger {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Related order if applicable. {@link shopping_mall_orders.id}
-  shopping_mall_order_id String?
-  
-  /// Date of the financial transaction
-  ledger_date DateTime
-  
-  /// Type of financial transaction: sale, refund, payout, commission,
-  /// adjustment, chargeback, fee
-  transaction_type String
-  
-  /// Account being debited (reduced) - typically customer or seller account ID
-  debit_account String?
-  
-  /// Account being credited (increased) - typically platform or seller account
-  credit_account String?
-  
-  /// Transaction amount
-  amount Float
-  
-  /// Currency code
-  currency String
-  
-  /// Description of the transaction
-  description String?
-  
-  /// Reference ID from related transaction (payment ID, refund ID, payout ID,
-  /// etc.)
-  reference_id String?
-  
-  /// Platform balance after this transaction (for reconciliation)
-  balance_after Float?
-  
-  /// System or user who initiated this transaction
-  created_by String
-  
-  /// Additional notes about this transaction
-  notes String?
-  
-  /// Record creation timestamp (immutable)
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  order shopping_mall_orders? @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  
-  @@index([shopping_mall_order_id])
-  
-  @@index([ledger_date])
-  @@index([transaction_type])
-  @@index([debit_account])
-  @@index([credit_account])
-  @@index([reference_id])
+  @@index([ecommerce_mall_seller_id, calculated_at], map: "ecommerce_mall_seller_settlements_ecommerce_mall_selle_39aa9ace")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, status], map: "ecommerce_mall_seller_settlements_ecommerce_mall_selle_9dce6a18")
 }

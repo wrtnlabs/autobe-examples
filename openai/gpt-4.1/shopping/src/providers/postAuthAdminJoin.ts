@@ -7,55 +7,65 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IShoppingAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAdmin";
-import { IShoppingAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAuthorizationToken";
+import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthAdminJoin(props: {
-  body: IShoppingAdmin.IJoin;
-}): Promise<IShoppingAdmin.IAuthorized> {
-  // Check for duplicate admin email
-  const existingAdmin = await MyGlobal.prisma.shopping_admins.findFirst({
+  body: IShoppingMallAdmin.ICreate;
+}): Promise<IShoppingMallAdmin.IAuthorized> {
+  // 1. Check for duplicate email
+  const duplicate = await MyGlobal.prisma.shopping_mall_admins.findFirst({
     where: { email: props.body.email },
   });
-  if (existingAdmin) {
-    throw new HttpException("Email already registered", 409);
+  if (duplicate) {
+    throw new HttpException("Email already registered.", 409);
   }
 
-  // Hash password (never store plain)
-  const password_hash = await PasswordUtil.hash(props.body.password);
-  // Generate UUID and timestamps
-  const id = v4();
-  const now = toISOStringSafe(new Date());
+  // 2. Hash the admin password
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // Create admin account
-  const createdAdmin = await MyGlobal.prisma.shopping_admins.create({
+  // 3. Insert new admin record into the DB
+  const now = toISOStringSafe(new Date());
+  const admin = await MyGlobal.prisma.shopping_mall_admins.create({
     data: {
-      id,
+      id: v4(),
       email: props.body.email,
-      password_hash,
+      password_hash: hashedPassword,
       name: props.body.name,
-      role: props.body.role,
-      status: props.body.status,
+      is_email_verified: false,
+      status: "active",
       created_at: now,
       updated_at: now,
-      deleted_at: null,
     },
   });
 
-  // ---
-  // Generate stub JWT tokens (in real usage would perform login/auth, but
-  // for join we can issue a valid format with dummy tokens for now)
-  // ---
-  const accessExpiresDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-  const refreshExpiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const accessExpires = toISOStringSafe(accessExpiresDate);
-  const refreshExpires = toISOStringSafe(refreshExpiresDate);
-  const token: IShoppingAuthorizationToken = {
+  // 4. Insert session record for admin login
+  const sessionId = v4();
+  const accessExpiredAt = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiredAt = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const session = await MyGlobal.prisma.shopping_mall_admin_sessions.create({
+    data: {
+      id: sessionId,
+      shopping_mall_admin_id: admin.id,
+      ip: "",
+      href: "",
+      referrer: "",
+      created_at: now,
+      expired_at: accessExpiredAt,
+    },
+  });
+
+  // 5. Issue JWT tokens as per requirements
+  const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "admin",
-        id,
-        session_id: v4(),
+        id: admin.id,
+        session_id: session.id,
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
@@ -64,30 +74,27 @@ export async function postAuthAdminJoin(props: {
     refresh: jwt.sign(
       {
         type: "admin",
-        id,
-        session_id: v4(),
-        created_at: now,
+        id: admin.id,
+        session_id: session.id,
         tokenType: "refresh",
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
+    expired_at: accessExpiredAt,
+    refreshable_until: refreshExpiredAt,
   };
 
+  // 6. Return admin authorized DTO
   return {
-    id: createdAdmin.id,
-    email: createdAdmin.email,
-    name: createdAdmin.name,
-    role: createdAdmin.role,
-    status: createdAdmin.status,
-    created_at: toISOStringSafe(createdAdmin.created_at),
-    updated_at: toISOStringSafe(createdAdmin.updated_at),
-    deleted_at:
-      createdAdmin.deleted_at === null
-        ? null
-        : toISOStringSafe(createdAdmin.deleted_at),
+    id: admin.id,
+    email: admin.email,
+    name: admin.name,
+    is_email_verified: admin.is_email_verified,
+    status: admin.status,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
     token,
   };
 }

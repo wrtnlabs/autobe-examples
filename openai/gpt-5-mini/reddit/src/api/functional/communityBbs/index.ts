@@ -1,9 +1,0 @@
-export * as communities from "./communities/index";
-export * as communityMember from "./communityMember/index";
-export * as systemAdmin from "./systemAdmin/index";
-export * as posts from "./posts/index";
-export * as comments from "./comments/index";
-export * as communityMembers from "./communityMembers/index";
-export * as search from "./search/index";
-export * as reports from "./reports/index";
-export * as categories from "./categories/index";

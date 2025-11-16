@@ -13,11 +13,10 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthAdminRefresh(props: {
   body: ITodoListAdmin.IRefresh;
 }): Promise<ITodoListAdmin.IAuthorized> {
-  // Step 1: Verify and decode the refresh token
   let decoded: {
     id: string;
     session_id: string;
-    type: string;
+    type: "admin";
   };
 
   try {
@@ -26,18 +25,16 @@ export async function postAuthAdminRefresh(props: {
     }) as {
       id: string;
       session_id: string;
-      type: string;
+      type: "admin";
     };
   } catch (error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  // Step 2: Validate type matches expected actor type
   if (decoded.type !== "admin") {
     throw new HttpException("Invalid token type", 403);
   }
 
-  // Step 3: Validate session exists and is active
   const session = await MyGlobal.prisma.todo_list_admin_sessions.findFirst({
     where: {
       id: decoded.session_id,
@@ -52,21 +49,20 @@ export async function postAuthAdminRefresh(props: {
     throw new HttpException("Session expired or revoked", 401);
   }
 
-  // Step 4: Verify admin account is active
   if (session.admin.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
 
-  // Step 5: Generate new tokens with SAME session_id
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const accessToken = jwt.sign(
     {
       type: "admin",
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: new Date().toISOString(),
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -81,7 +77,7 @@ export async function postAuthAdminRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: new Date().toISOString(),
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     {
@@ -90,7 +86,6 @@ export async function postAuthAdminRefresh(props: {
     },
   );
 
-  // Step 6: Update session expiration time
   await MyGlobal.prisma.todo_list_admin_sessions.update({
     where: {
       id: decoded.session_id,
@@ -100,7 +95,6 @@ export async function postAuthAdminRefresh(props: {
     },
   });
 
-  // Step 7: Return admin info with new tokens
   return {
     id: session.admin.id,
     email: session.admin.email,

@@ -1,0 +1,214 @@
+/// Core coupon management system for the marketplace enabling sophisticated
+/// discount and promotion logic. Customers can browse available coupons
+/// while sellers create targeted promotional offers with complex eligibility
+/// rules based on customer segments, order values, or specific product
+/// categories.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated promotion's {@link shopping_mall_promotions.id}
+  shopping_mall_promotion_id String?
+  
+  /// Creating seller's {@link shopping_mall_sellers.id}
+  shopping_seller_id String?
+  
+  /// Unique coupon code for customer redemption. Alphanumeric format with
+  /// maximum 20 characters.
+  code String
+  
+  /// Coupon name displayed to customers. Maximum 50 characters.
+  name String
+  
+  /// Detailed coupon description explaining usage terms and limitations.
+  description String
+  
+  /// Discount type: percentage, fixed_amount, free_shipping.
+  discount_type String
+  
+  /// Discount amount or percentage based on discount_type.
+  discount_value Float
+  
+  /// Minimum order value required to use coupon. Zero for no minimum.
+  minimum_order_value Float?
+  
+  /// Maximum discount amount for percentage-based coupons.
+  maximum_discount Float?
+  
+  /// Coupon activation date and time.
+  start_date DateTime
+  
+  /// Coupon expiration date and time.
+  end_date DateTime
+  
+  /// Maximum number of times this coupon can be used by all customers combined.
+  usage_limit Int?
+  
+  /// Maximum number of times individual customer can use this coupon.
+  usage_limit_per_customer Int?
+  
+  /// Number of times this coupon has been used.
+  used_count Int
+  
+  /// Whether this coupon is currently active and available for use.
+  is_active Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for promotional records management.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  promotion shopping_mall_promotions? @relation(fields: [shopping_mall_promotion_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coupon_usages shopping_mall_coupon_usages[]
+  
+  @@index([shopping_seller_id])
+  
+  @@unique([code])
+  @@unique([code, shopping_seller_id])
+  @@index([is_active, start_date, end_date])
+  @@index([shopping_mall_promotion_id])
+  @@index([created_at])
+}
+
+/// Coupon usage tracking system maintaining complete audit trail of coupon
+/// redemption activities across the marketplace. Enables comprehensive
+/// analysis of coupon performance and protects against fraudulent usage
+/// patterns while maintaining historical records for business intelligence
+/// and customer service.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_coupon_usages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Coupon used for this activity {@link shopping_mall_coupons.id}
+  shopping_mall_coupon_id String
+  
+  /// Customer using the coupon {@link shopping_mall_customers.id}
+  shopping_customer_id String?
+  
+  /// Order where coupon was applied {@link shopping_mall_orders.id}
+  shopping_order_id String
+  
+  /// Coupon issuing seller {@link shopping_mall_sellers.id}
+  shopping_seller_id String
+  
+  /// Where coupon was used: website, mobile_app, email_campaign.
+  usage_source String
+  
+  /// Order subtotal before applying coupon discount.
+  original_order_value Float
+  
+  /// Actual coupon discount applied to this order.
+  discount_amount Float
+  
+  /// Exact time when coupon was applied to the order.
+  usage_timestamp DateTime
+  
+  /// Record creation timestamp for usage tracking.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  coupon shopping_mall_coupons @relation(fields: [shopping_mall_coupon_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_order_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_coupon_id, shopping_order_id], map: "shopping_mall_coupon_usages_shopping_mall_coupon_id_sh_d52777da")
+  // spellchecker: ignore-next-line
+  @@index([shopping_customer_id, usage_timestamp], map: "shopping_mall_coupon_usages_shopping_customer_id_usage_1fbd765e")
+  // spellchecker: ignore-next-line
+  @@index([shopping_seller_id, usage_timestamp], map: "shopping_mall_coupon_usages_shopping_seller_id_usage_t_e99e6cbd")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_coupon_id, usage_timestamp], map: "shopping_mall_coupon_usages_shopping_mall_coupon_id_us_ffad4852")
+}
+
+/// Promotional management system enabling sellers to create sophisticated
+/// marketing campaigns with customizable rules. Supports multiple campaign
+/// types including seasonal promotions, loyalty programs, and targeted
+/// discount offers with comprehensive analytics tracking campaign
+/// performance across customer segments and time periods.
+///
+/// @namespace Coupons
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Running seller's {@link shopping_mall_sellers.id}
+  shopping_seller_id String
+  
+  /// Promotion title displayed to customers and sellers. Maximum 100
+  /// characters.
+  title String
+  
+  /// Detailed promotion description explaining campaign overview and benefits.
+  description String
+  
+  /// Promotion type: flash_sale, seasonal_sale, loyalty_program,
+  /// category_discount.
+  promotion_type String
+  
+  /// Promotion activation start date and time.
+  start_date DateTime
+  
+  /// Promotion expiration date and time.
+  end_date DateTime
+  
+  /// Current promotion status: scheduled, active, completed, cancelled.
+  status String
+  
+  /// Intended audience: all_customers, new_customers, repeat_customers,
+  /// specific_segment.
+  target_audience String
+  
+  /// Record creation timestamp for campaign tracking.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for campaign lifecycle management.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_coupons shopping_mall_coupons[]
+  
+  @@index([status, start_date, end_date])
+  @@index([shopping_seller_id, start_date])
+  @@index([created_at])
+}

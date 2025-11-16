@@ -3,26 +3,42 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { ITodoUser } from "../../../structures/ITodoUser";
-export * as password from "./password/index";
+import { ITodoAppUser } from "../../../structures/ITodoAppUser";
 
 /**
- * User registration for new Todo application users.
+ * Create new user account with email and password authentication for todo
+ * application access.
  *
- * Registers a new user account in the Todo application. This endpoint creates a
- * new user record in the todo_users table with the provided email and password,
- * automatically hashing the password for security. The operation validates that
- * the email is unique and properly formatted, then creates the user with
- * default security settings including mfa_enabled=false,
- * failed_login_attempts=0, and generates timestamps for account creation. This
- * is the entry point for new users to access the task management system and
- * must be completed before any todo operations can be performed. The system
- * uses industry-standard password hashing algorithms and prepares the account
- * for future authentication operations including password reset and
- * multi-factor authentication setup.
+ * Create a new user account for the todo application with email and password
+ * authentication.
+ *
+ * The operation creates a new user record in the todo_app_users database table,
+ * establishing authentication credentials that will be used for subsequent
+ * login and task management operations. User accounts are required to access
+ * personal todo functionality, with each user having their own private task
+ * list.
+ *
+ * Security requirements mandate that email addresses follow RFC 5322 format and
+ * must be unique across all users in the system. New user registrations are
+ * validated against existing accounts to prevent duplicate email addresses.
+ *
+ * Password requirements include minimum 8 characters length and must contain
+ * both letters and numbers for enhanced security. The password is hashed using
+ * bcrypt before storage in the password_hash field of the todo_app_users
+ * table.
+ *
+ * User account creation timestamps are automatically recorded in the created_at
+ * and updated_at fields, providing audit trail functionality for account
+ * management operations. These datetime fields are essential for tracking
+ * account lifecycle and supporting future analytics requirements.
+ *
+ * The successful registration process establishes the foundation for JWT-based
+ * authentication, enabling users to subsequently login and access their
+ * personal todo task management features with proper authorization tokens.
  *
  * @param props.connection
- * @param props.body User registration credentials including email and password
+ * @param props.body User registration information including email and password
+ *   credentials
  * @setHeader token.access Authorization
  *
  * @path /auth/user/join
@@ -57,11 +73,14 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** User registration credentials including email and password */
-    body: ITodoUser.IJoin;
+    /**
+     * User registration information including email and password
+     * credentials
+     */
+    body: ITodoAppUser.IJoin;
   };
-  export type Body = ITodoUser.IJoin;
-  export type Response = ITodoUser.IAuthorized;
+  export type Body = ITodoAppUser.IJoin;
+  export type Response = ITodoAppUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -77,8 +96,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/user/join";
-  export const random = (): ITodoUser.IAuthorized =>
-    typia.random<ITodoUser.IAuthorized>();
+  export const random = (): ITodoAppUser.IAuthorized =>
+    typia.random<ITodoAppUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -105,21 +124,44 @@ export namespace join {
 }
 
 /**
- * User login for existing Todo application users.
+ * Authenticate user with email and password for todo application access.
  *
- * Authenticates existing users in the Todo application. This endpoint validates
- * user credentials against the todo_users table, checking the email and
- * password hash for authentication. The operation implements security measures
- * including failed login attempt tracking, account lockout protection after 5
- * consecutive failures, and lockout expiration handling. Upon successful
- * authentication, the system issues JWT access and refresh tokens that enable
- * users to access protected todo operations. The endpoint also handles account
- * security validation including checking for expired reset tokens and MFA
- * status. This is the primary authentication flow for returning users to access
- * their personal task lists and perform todo operations.
+ * Authenticate existing user account using email and password credentials.
+ *
+ * The operation validates user credentials against the todo_app_users database
+ * table, verifying that the provided email address exists and the password
+ * matches the stored hash. Authentication follows the system's JWT-based
+ * authentication strategy with secure token generation and management.
+ *
+ * Email validation includes format verification according to RFC 5322 standards
+ * and existence checking against the email field in the todo_app_users table.
+ * Non-existent email addresses result in appropriate error responses without
+ * revealing account existence for security purposes.
+ *
+ * Password validation compares the provided password against the bcrypt hash
+ * stored in the password_hash field of the corresponding user record. The
+ * system implements secure comparison techniques to prevent timing attacks and
+ * other security vulnerabilities.
+ *
+ * Performance requirements specify that successful authentication should
+ * complete within 2 seconds, aligning with user experience standards for
+ * responsive authentication flows. The system tracks login attempts for
+ * security monitoring and potential account lockout protection.
+ *
+ * Successful authentication generates both access tokens (30-minute expiration)
+ * and refresh tokens (7-day expiration) using the system JWT implementation.
+ * These tokens enable authenticated access to personal todo task management
+ * features and support automatic session renewal through token refresh
+ * operations.
+ *
+ * The operation integrates with the todo_app_user_sessions table to maintain
+ * audit trails of login activity, tracking connection metadata including IP
+ * addresses and session establishment timestamps for security monitoring and
+ * user session management capabilities.
  *
  * @param props.connection
- * @param props.body User login credentials with email and password
+ * @param props.body User login credentials including email and password for
+ *   authentication validation
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -154,11 +196,14 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** User login credentials with email and password */
-    body: ITodoUser.ILogin;
+    /**
+     * User login credentials including email and password for
+     * authentication validation
+     */
+    body: ITodoAppUser.ILogin;
   };
-  export type Body = ITodoUser.ILogin;
-  export type Response = ITodoUser.IAuthorized;
+  export type Body = ITodoAppUser.ILogin;
+  export type Response = ITodoAppUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -174,8 +219,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/user/login";
-  export const random = (): ITodoUser.IAuthorized =>
-    typia.random<ITodoUser.IAuthorized>();
+  export const random = (): ITodoAppUser.IAuthorized =>
+    typia.random<ITodoAppUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -202,22 +247,40 @@ export namespace login {
 }
 
 /**
- * Refresh authentication tokens for authenticated users.
+ * Renew JWT access token using valid refresh token for continued
+ * authentication.
  *
- * Refreshes authentication tokens for authenticated users in the Todo
- * application. This endpoint validates the provided refresh token against the
- * user's session data and todo_user_sessions table, ensuring the token is valid
- * and not expired. The operation checks the user's account status including
- * whether the account is active (deleted_at is null) and implements proper
- * security validation. Upon successful validation, the system issues new JWT
- * access and refresh tokens, extending the user's authenticated session. This
- * allows users to maintain continuous access to their todo operations without
- * interruption due to token expiration. The refresh mechanism is essential for
- * maintaining long-running sessions while implementing proper security
- * boundaries for the task management system.
+ * Renew expired JWT access token using a valid refresh token.
+ *
+ * The operation validates the provided refresh token against the system's token
+ * storage and issues a new access token if the refresh token is valid and
+ * unexpired. Token refresh is essential for maintaining seamless authenticated
+ * sessions without requiring users to re-authenticate during short access token
+ * expirations.
+ *
+ * Refresh tokens are validated for authenticity using JWT signature
+ * verification and expiration time checks. Valid refresh tokens must correspond
+ * to an active user session recorded in the todo_app_user_sessions table, with
+ * proper session metadata and active status indicators.
+ *
+ * The refresh mechanism follows industry-standard security practices by
+ * maintaining separate access and refresh token lifecycles. Access tokens
+ * expire after 30 minutes while refresh tokens remain valid for 7 days,
+ * balancing security requirements with user convenience.
+ *
+ * Token refresh requests update session tracking information in the
+ * todo_app_user_sessions table, maintaining current connection metadata and
+ * session health indicators. This enables users to monitor active sessions and
+ * provides administrators with session management capabilities.
+ *
+ * The operation supports the system's automatic token renewal strategy,
+ * allowing seamless continuation of authenticated todo task management
+ * operations without manual re-authentication interruptions. Failed refresh
+ * attempts result in appropriate error responses that direct users to the login
+ * operation for re-authentication when necessary.
  *
  * @param props.connection
- * @param props.body Refresh token for obtaining new authentication credentials
+ * @param props.body Refresh token for renewing expired access token
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -252,11 +315,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token for obtaining new authentication credentials */
-    body: ITodoUser.IRefresh;
+    /** Refresh token for renewing expired access token */
+    body: ITodoAppUser.IRefresh;
   };
-  export type Body = ITodoUser.IRefresh;
-  export type Response = ITodoUser.IAuthorized;
+  export type Body = ITodoAppUser.IRefresh;
+  export type Response = ITodoAppUser.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -272,8 +335,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/user/refresh";
-  export const random = (): ITodoUser.IAuthorized =>
-    typia.random<ITodoUser.IAuthorized>();
+  export const random = (): ITodoAppUser.IAuthorized =>
+    typia.random<ITodoAppUser.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

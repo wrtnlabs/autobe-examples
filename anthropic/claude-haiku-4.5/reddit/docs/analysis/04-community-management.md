@@ -1,945 +1,1270 @@
-# Community Management System Requirements
+# Community Management and Governance Specification
 
-## 1. Community Creation & Setup
+## Overview
 
-### 1.1 Community Creation Requirements
+The community management system enables users to create, configure, and govern communities where content sharing and discussions occur. Communities are the fundamental organizational structure of the platform, allowing users to form groups around shared interests. This specification defines how communities are created, managed, configured, and governed through moderator and administrative actions.
 
-WHEN a member initiates community creation through the system, THE system SHALL validate the following requirements before allowing community creation:
+## 1. Community Creation and Initialization
 
-**Account Age Requirement:**
-- THE member SHALL have an account age of minimum 7 days before community creation is allowed
-- IF account age is less than 7 days, THEN the system SHALL prevent creation and display message: "Account must be at least 7 days old to create communities. Your account will be eligible on [DATE]"
+### 1.1 Who Can Create Communities
 
-**Minimum Karma Requirement:**
-- THE member SHALL have accumulated minimum 100 karma points globally before community creation
-- IF karma is below 100, THEN the system SHALL prevent creation and display message: "Minimum 100 karma required to create communities. You have [CURRENT KARMA] karma points"
+WHEN a member-level user initiates community creation, THE system SHALL display the community creation form and accept all required inputs.
 
-**Community Name Requirements:**
-- THE community name SHALL be between 3-21 characters in length
-- THE community name SHALL contain only letters, numbers, and underscores (no spaces or special characters except underscore)
-- THE community name SHALL be converted to lowercase for consistency
-- THE community name SHALL be unique across the entire platform (case-insensitive)
-- IF name already exists, THEN the system SHALL reject with message: "Community name 'r/[NAME]' already exists. Please choose another name"
-- THE system SHALL suggest available alternatives based on the requested name
+WHEN a guest user attempts to create a community, THE system SHALL deny the request with HTTP 401 Unauthorized and prompt the user to register or login.
 
-**Community Description:**
-- THE community description SHALL be optional during creation but highly recommended
-- IF provided, description SHALL be maximum 500 characters
-- THE description SHALL support plain text (no markdown or HTML for security)
-- THE system SHALL display a character counter showing remaining available characters
+WHEN a moderator or administrator initiates community creation, THE system SHALL apply the same permission checks as member users, granting them the ability to create communities with identical capabilities.
 
-**Community Category/Topic:**
-- THE creator SHALL select a primary category from predefined list: Technology, Entertainment, Sports, Gaming, News, Education, Lifestyle, Business, Other
-- THE category SHALL be required for community creation
-- THE system SHALL use category for discovery and recommendation purposes
-- THE category can be changed by community moderators after creation
+THE system SHALL require new community creators to have at least 1 karma score earned through platform activity (creating posts, receiving upvotes, or participating in communities) before allowing community creation.
 
-### 1.2 Community Creation Workflow (EARS Format)
+### 1.2 Community Creation Requirements
 
-WHEN all validation requirements are met, THE system SHALL execute the following steps:
+Community creation requires the following mandatory information:
 
-1. Create community record with:
-   - Unique community identifier (auto-generated, immutable)
-   - Community name (normalized to lowercase)
-   - Description (if provided)
-   - Category assignment
-   - Creation timestamp (server-side, stored as ISO 8601)
-   - Member count initialized to 1 (creator)
-   - Post count initialized to 0
-   - Community status set to "active"
+**Community Display Name**
+- User-readable name of the community (e.g., "Technology Trends", "Photography Tips", "Local News")
+- Length: Minimum 3 characters, maximum 100 characters
+- May include spaces, numbers, and special characters
+- NOT required to be globally unique (multiple communities can have same name)
+- Must contain at least one alphanumeric character
+- HTML tags are automatically stripped from the input
 
-2. Automatically assign creator as primary community moderator with full permissions
+**Community Identifier (Handle)**
+- Unique, URL-safe identifier for the community (e.g., "tech_trends", "photography_tips", "local_news")
+- Format: Lowercase letters (a-z), numbers (0-9), and underscores (_) only
+- Length: Minimum 3 characters, maximum 32 characters
+- MUST be globally unique across entire platform
+- Used in URLs: `communityplatform.com/r/[identifier]`
+- Cannot be changed after community creation (permanent identifier)
 
-3. Initialize default community settings:
-   - Post type restrictions: All types allowed (text, link, image)
-   - Post approval required: False
-   - Voting enabled: True
-   - Comments enabled: True
-   - Community visibility: Public (by default)
-   - NSFW flag: False
-   - Auto-moderation: Disabled
+**Community Description**
+- Detailed explanation of the community's purpose, scope, and culture
+- Length: Minimum 10 characters recommended, maximum 500 characters
+- Optional field but highly recommended for community discovery
+- Supports basic text formatting (plain text preferred)
+- Used in community search and discovery feeds
+- Should explain what topics are welcome and what the community values
 
-4. Create community icon/banner placeholder (system default provided)
+**Community Category**
+- Primary topic classification for the community
+- Mandatory field; users must select from predefined list
+- Available categories:
+  - Technology, Business, Finance, Investing
+  - Entertainment, Movies, Television, Music, Gaming
+  - Sports, Health & Fitness, Lifestyle
+  - News & Politics, Science, Education
+  - Travel, Food & Cooking, Home & Garden
+  - Hobbies & Crafts, Pets & Animals, Cars & Vehicles
+  - Community & Culture, Other
+- Category used for community discovery, trending lists, and content recommendations
+- Can be changed by community creator at any time after creation
 
-5. Log community creation event for platform analytics with creator ID and timestamp
+**Optional Community Fields**
 
-THEN the system SHALL return success confirmation, redirect creator to community management dashboard, and display welcome message: "Community r/[NAME] created successfully. You are now the primary moderator."
+THE system SHALL allow specification of optional fields at community creation time:
 
-### 1.3 Community Visibility Upon Creation
+- **Community Rules**: Initial set of community-specific guidelines
+  - Presented as numbered list
+  - Each rule up to 200 characters
+  - Maximum 10 rules per community
+  - Editable after creation
+  - Displayed to all community members on community page
 
-WHEN a community is created, THE system SHALL enforce:
-- THE community SHALL be public and discoverable immediately upon creation by default
-- THE creator SHALL be able to change visibility settings immediately after creation
-- THE creator/moderators SHALL automatically be subscribed to their own community
-- THE community SHALL appear in community discovery and search within 1 minute of creation
-- THE community SHALL be searchable by community name and description within 5 minutes of creation
+- **Community Icon/Avatar**: Optional image representing the community
+  - Accepted formats: JPEG, PNG, WebP
+  - Maximum file size: 2 MB
+  - Minimum dimensions: 100x100 pixels
+  - Recommended: Square aspect ratio (1:1)
+  - Displayed next to community name throughout platform
+
+- **Community Banner Image**: Optional large background image
+  - Accepted formats: JPEG, PNG, WebP
+  - Maximum file size: 5 MB
+  - Recommended dimensions: 1200x300 pixels (aspect ratio 4:1)
+  - Displayed at top of community page
+  - Optional; platform provides default if not specified
+
+### 1.3 Community Creation Validation and Duplicate Prevention
+
+WHEN a user submits a community creation request, THE system SHALL validate all required fields are present and properly formatted:
+
+- IF community identifier format is invalid (contains uppercase, special characters, or spaces), THEN THE system SHALL return HTTP 400 Bad Request with message "Community identifier must contain only lowercase letters, numbers, and underscores, and be 3-32 characters long"
+
+- IF community identifier is already taken, THEN THE system SHALL return HTTP 409 Conflict with message "This community identifier is not available" and suggest up to 5 similar available alternatives (e.g., if "tech_news" taken, suggest "tech_news2", "tech_news_daily", etc.)
+
+- IF display name is too short (< 3 characters) or too long (> 100 characters), THEN THE system SHALL return HTTP 400 Bad Request specifying character count requirements
+
+- IF description exceeds 500 characters, THEN THE system SHALL return HTTP 400 Bad Request "Description must not exceed 500 characters"
+
+- IF community creator's karma is below 1, THEN THE system SHALL return HTTP 403 Forbidden "You need at least 1 karma to create a community. Earn karma by posting and receiving upvotes"
+
+THE system SHALL check for near-duplicate community identifiers within the same category:
+
+- IF a community with >80% name similarity exists in the same category created within last 30 days by different user, THEN THE system SHALL display a warning "A similar community already exists: r/[existing_community]. Please verify this is a new community you want to create" but allow creation to proceed
+
+### 1.4 Community Creation Completion and Creator Assignment
+
+WHEN community creation is successfully completed, THE system SHALL:
+
+1. Create new community record with:
+   - Unique community ID (system-generated UUID)
+   - Display name as provided
+   - Identifier as provided
+   - Description as provided
+   - Category selection
+   - Creation timestamp (UTC)
+   - Creator user ID
+   - Status: "active"
+   - Default settings (public community, all members can post, no approval required)
+
+2. Assign creator role:
+   - THE creator is automatically assigned the "Community Creator" moderator role
+   - THE creator has all moderator permissions with no restriction
+   - THE creator can transfer ownership to another member at any time
+
+3. Update creator stats:
+   - Increment creator's karma by 10 points (reward for creating community)
+   - Increment creator's "communities created" count
+   - Add community to creator's moderated communities list
+
+4. Initialize default community settings:
+   - Visibility: Public (posts visible to all users)
+   - Post creation: Open to all members
+   - Moderation: No approval required for posts
+   - Comment policy: Open to all community members
+   - Voting: Enabled for all members
+
+5. Perform initialization tasks:
+   - Automatically subscribe creator to their new community
+   - Create moderation queue for the community
+   - Initialize community audit trail
+   - Store community creation in platform-wide audit log
+   - Send confirmation email to creator with community URL and moderator tips
+
+6. Return HTTP 201 Created with:
+   - Community ID
+   - Community URL (e.g., "https://communityplatform.com/r/community_identifier")
+   - Confirmation message "Community created successfully"
+   - Link to community page and settings
+
+THE system SHALL record the community creation timestamp, creator user ID, and all initial settings in an immutable audit trail that cannot be modified or deleted.
+
+## 2. Community Settings and Configuration
+
+### 2.1 Visibility and Access Control
+
+Communities can be configured with different visibility and access levels:
+
+**Public Communities**
+
+THE public community configuration means:
+- THE community and its content are visible to all users (guests, members, moderators, administrators)
+- THE community appears in community search results and discovery feeds
+- THE community's posts and comments are readable by all users without subscription requirement
+- THE community's posts and comments may be indexed by search engines
+- Guests can view public posts and comments without authentication
+- Guests cannot create posts, comments, or vote (must register first)
+
+WHEN a guest user visits a public community, THE system SHALL:
+- Display community page with posts and comments
+- Show "Subscribe" button to join community
+- Show login/registration prompts encouraging participation
+- Allow viewing of all public posts and comments without authentication
+
+**Private Communities**
+
+THE private community configuration means:
+- THE community is only visible to subscribed members
+- THE community does NOT appear in search results or discovery feeds
+- THE community's posts and comments are NOT readable by non-members or guests
+- THE community requires explicit approval for new member access
+- Only members can view community content and participate
+
+WHEN a guest or non-member user attempts to access a private community, THE system SHALL:
+- Deny access and return HTTP 403 Forbidden
+- Display message "This community is private. To join, request membership or ask the community creator for an invitation"
+- Provide option to request membership (if community allows requests)
+- NOT reveal existence of private community to non-members (404 behavior optional)
+
+WHEN a member attempts to join a private community, THE system SHALL:
+- Create membership request if auto-approval is not enabled
+- Require moderator approval before access is granted
+- Display "Pending" status while request is under review
+- Notify moderators of pending membership requests
+
+### 2.2 Community Member Posting Permissions
+
+Communities can restrict who is allowed to create posts through multiple permission levels. Community creators configure this setting in community settings:
+
+**Open to All Members** (Most permissive)
+- THE community allows all subscribed members to create posts
+- All post types (text, link, image) are allowed
+- No approval or karma requirements
+- Members can post immediately upon subscription
+- Default setting for new communities
+
+**Restricted - Moderators Only**
+- THE community restricts post creation to moderators only
+- Regular members CAN comment on existing posts
+- Regular members CANNOT create new posts
+- Moderators retain full posting privileges
+- Useful for curated news or educational communities
+
+**Restricted - Approved Members Only**
+- THE community restricts post creation to explicitly approved members
+- WHEN a member attempts to create a post, THE system SHALL queue the post for moderator approval
+- THE post is NOT visible to other members until approved
+- THE member receives notification when post is approved or rejected
+- Approved members may create multiple posts
+- Useful for preventing spam or low-quality posts
+
+**Restricted - Karma or Account Age Requirement**
+- THE community enforces minimum user karma (e.g., 100 points) OR minimum account age (e.g., 30 days)
+- Community creator can select either karma OR account age OR both
+- WHEN a member who does not meet requirement attempts to post, THE system SHALL:
+  - Display error message "You must have [100 karma] to post in this community"
+  - Show current user karma and remaining requirement
+  - Suggest ways to earn karma (posting, receiving upvotes)
+  - Reject post creation and return HTTP 403 Forbidden
+- Helpful for preventing spam from new accounts while encouraging community participation
+
+### 2.3 Community Content Restrictions
+
+Communities can restrict the types of content allowed to maintain community quality and focus:
+
+**Post Type Restrictions**
+
+Community creators configure allowed post types from these options:
+- **All Types Allowed** (default): Text posts, link posts, and image posts all permitted
+- **Text Only**: Prohibits links and images; members can only create text-based posts
+- **Text and Images**: Allows text and images but prohibits external links
+- **Text and Links**: Allows text and external links but prohibits embedded images
+- **Images Only**: Prohibits text and links; members can only post images with captions
+
+WHEN a member attempts to create a post type that is not allowed, THE system SHALL:
+- Reject the post with HTTP 400 Bad Request
+- Display error message "This community only allows [text and images] posts. [Image posts are not permitted]. Please revise your post type"
+- Return to post creation form with user's content preserved
+
+**External Link Domain Restrictions** (Advanced feature)
+
+WHERE community settings enable this, THE system SHALL restrict external links to specific domains:
+- Community creator can specify allowed domains (e.g., github.com, youtube.com)
+- Links to other domains are filtered or flagged
+- Useful for tech communities wanting only GitHub links, or video communities wanting only YouTube links
+
+WHEN a member attempts to post a link to a restricted domain, THE system SHALL:
+- IF domain is in allowlist, allow post normally
+- IF domain is NOT in allowlist, flag post for moderator review or reject based on community settings
+
+**Hashtag Requirements**
+
+WHERE community settings require tagging, THE system SHALL:
+- Require all posts include at least one tag from community-defined tag list
+- Display tag selection interface when creating post
+- Examples: #announcement, #discussion, #help, #howto, #news
+
+WHEN a member submits post without required tags, THE system SHALL:
+- Display error "Please add at least one tag to categorize your post"
+- Prevent post submission until tags are added
+
+### 2.4 Community Moderation Settings
+
+Communities can configure how moderation is performed:
+
+**Post Approval Workflow**
+
+WHERE post approval is enabled, THE system SHALL:
+- Require moderator approval before new posts are visible
+- Display posts only to post creator and moderators while pending review
+- Notify moderators of pending posts requiring review
+- Show "Pending Approval" indicator to post creator
+- Allow moderator to approve (publish immediately) or reject (permanently delete)
+
+WHEN a moderator rejects a pending post, THE system SHALL:
+- Notify member of rejection with optional reason message
+- Allow member to revise and resubmit post if desired
+- Log rejection in community moderation records
+
+**Comment Moderation Settings**
+
+Community creators can configure comment moderation:
+- **Allow All Comments**: Comments immediately visible (default)
+- **Approve All Comments**: All comments require moderator approval
+- **Smart Approval**: Auto-approve comments from high-karma members; flag others for review
+- **Strict Mode**: Aggressively filter comments for toxicity and spam
+
+WHERE smart approval is configured, THE system SHALL:
+- Auto-approve comments from members with karma above threshold (configured by creator)
+- Flag comments from lower-karma members for moderator review
+- Display flagged comments only to post creator and moderators
+
+**Toxicity and Spam Auto-flagging**
+
+THE system SHALL automatically flag content for human review if:
+- Post/comment contains excessive profanity or slurs
+- Post/comment contains suspicious external links or shortened URLs
+- Post/comment matches spam pattern signatures (repeated content, keyword stuffing)
+- Post/comment exhibits harassment patterns (aggressive tone, personal attacks)
+
+WHEN content is auto-flagged, THE system SHALL:
+- Display to moderators in moderation queue
+- Remain visible to users while under review (unless community requires pre-approval)
+- Allow moderator quick-action buttons: Approve, Remove, or Warn User
+
+### 2.5 Community Display and Default Sorting
+
+**Default Post Sort Order**
+
+WHEN members visit the community, THE system displays posts sorted by the community's configured default:
+- **Hot** (default): Shows trending posts combining engagement and recency
+- **New**: Shows most recently created posts first
+- **Top**: Shows highest-voted posts
+- **Controversial**: Shows most polarizing posts
+
+THE community creator or senior moderators can change default sort at any time. THE change applies only to future visits; users can always override default for their session.
+
+**Post Archival and Visibility Timeline**
+
+Community creator can configure post visibility timeline:
+- Posts remain prominently visible for 6 months (default, configurable 1-12 months)
+- After timeline expires, posts are archived but remain accessible via search and user history
+- Archived posts appear in "Old Posts" section with reduced visibility
+- Archived posts can still receive votes and comments
+- Useful for keeping community feed focused on recent discussions
+
+### 2.6 Community Settings Modification and Access Control
+
+**Who Can Modify Community Settings**
+
+THE community creator SHALL have full authority to modify any community settings at any time:
+- Can change community name, description, category, rules
+- Can change visibility (public/private)
+- Can change post creation permissions
+- Can enable/disable post and comment approval
+- Can transfer ownership to another member
+- Can delete the community
+
+THE senior moderator SHALL have authority to modify certain community settings:
+- Can change community description and rules
+- Can enable/disable post/comment approval and toxicity filtering
+- CANNOT change community visibility (public/private) - creator only
+- CANNOT change core posting permissions - creator only
+- CANNOT delete community - creator only
+
+THE junior moderator SHALL NOT modify community settings
+
+THE platform administrator SHALL have authority to modify any community settings if needed for:
+- Policy enforcement
+- Compliance with regulations
+- Emergency intervention (security threats, illegal content)
+- Administrator modifications trigger notifications to community creator explaining the change
+
+**Setting Change Recording and Audit**
+
+WHEN a community setting is modified, THE system SHALL:
+- Record the change in immutable audit trail with:
+  - Timestamp (UTC)
+  - User ID who made change
+  - Setting name and previous value
+  - New value
+  - Moderator role of user making change
+- Notify all senior moderators of setting changes made by community creator or admins
+- Log change in platform-wide audit log for administrator review
+
+**Cascading Effects of Settings Changes**
+
+WHEN certain settings are changed, THE system SHALL apply cascading effects:
+
+- IF visibility changes from private to public:
+  - All existing posts become visible to public
+  - Community becomes searchable
+  - Existing members remain subscribed
+  - Notification sent to all members about visibility change
+
+- IF visibility changes from public to private:
+  - Posts become hidden from public view
+  - Community removed from search results
+  - Existing members remain subscribed
+  - New members cannot join unless approved
+  - Notification sent to all members
+
+- IF post creation changes from "all members" to "moderators only":
+  - Existing member posts remain visible
+  - New posts from members are rejected
+  - Notification sent to members
+  - Posts queued for member creation are rejected
+
+- IF approval workflow is disabled:
+  - Pending posts are immediately published
+  - Members are notified of approval of pending posts
+
+## 3. Community Membership and Subscription
+
+### 3.1 Subscribe to Communities
+
+WHEN a member clicks the "Subscribe" button on a public community page, THE system SHALL:
+- Immediately create subscription relationship between member and community
+- Add community to member's subscribed communities list
+- Increment community's subscriber count by one
+- Display "Unsubscribe" button going forward
+- Send confirmation message "You have subscribed to r/[community_name]"
+
+WHEN a member subscribes to a community, THE system SHALL:
+- Add community's posts to member's personalized home feed
+- Display community in member's "My Communities" sidebar
+- Enable post and comment creation in that community (subject to community posting restrictions)
+- Allow member to configure notification preferences for that community
+
+WHEN a guest user attempts to subscribe, THE system SHALL:
+- Deny request and return HTTP 401 Unauthorized
+- Display message "You must be logged in to subscribe to communities"
+- Provide login and registration links
+
+THE system SHALL track subscription relationships for analytics:
+- Display subscriber count on community page
+- Track new subscription rate for growth metrics
+- Identify trending communities by subscription velocity
+
+### 3.2 Private Community Subscription and Membership Approval
+
+FOR private communities, THE subscription process includes approval:
+
+WHEN a member requests to join a private community, THE system SHALL:
+- Display "Request Membership" button instead of "Subscribe"
+- Create membership request when member clicks button
+- Queue request for moderator review
+
+**Membership Request Submission**
+
+THE membership request form SHALL allow:
+- Optional message from requester (up to 200 characters) explaining why they want to join
+- Display of requester's: username, join date, karma score, recent activity
+
+WHEN moderator receives membership request, THE system SHALL display:
+- Requester's full profile information
+- Join date and account age
+- Karma score and breakdown (post karma, comment karma)
+- Recent posts and comments (last 5)
+- Community rules they would be joining
+- Quick-action buttons: Approve or Deny
+
+**Membership Approval Workflow**
+
+WHEN moderator clicks "Approve", THE system SHALL:
+- Complete subscription immediately
+- Notify member "Your membership request to r/[community] was approved"
+- Remove request from queue
+- Member can now view, post, and comment in community
+
+WHEN moderator clicks "Deny", THE system SHALL:
+- Reject membership request
+- Notify member "Your membership request to r/[community] was denied"
+- Allow member to reapply after 30 days
+- Log denial reason (optional moderator note, not shown to member)
+
+**Auto-Approval Configuration**
+
+COMMUNITY creators can configure auto-approval criteria:
+- Auto-approve members with karma above threshold (e.g., auto-approve karma > 500)
+- Auto-approve accounts older than specified days (e.g., auto-approve > 30 days old)
+- Auto-approve members following specific rules (e.g., auto-approve if account is 60+ days old AND karma > 100)
+
+WHERE auto-approval is configured, THE system SHALL:
+- Immediately approve requests matching criteria
+- Notify member "Your membership request was approved automatically"
+- Queue requests NOT matching criteria for manual review
+- Display auto-approval status in community settings
+
+**Membership Request Management**
+
+WHEN membership requests accumulate, THE system SHALL:
+- Display pending request count in moderator queue
+- Sort by oldest first (fairness) or newest first (recent interest)
+- Allow batch approval/denial for efficiency
+- Show response rate analytics (percentage of requests approved/denied)
+
+### 3.3 Community Subscriber Management Interface
+
+**Subscriber List Access and Display**
+
+THE community creator and senior moderators SHALL access subscriber list through community management interface:
+- Display total subscriber count prominently
+- List all current subscribers with:
+  - Username (clickable link to profile)
+  - Join date (when they subscribed to community)
+  - Karma score (overall platform karma)
+  - Role (member, banned, etc.)
+
+**Subscriber Search and Filtering**
+
+THE system SHALL support searching and filtering subscriber list:
+- **Search by username**: Find specific subscriber
+- **Filter by join date**: Find recent or long-time members
+- **Filter by karma**: Find high-karma or low-karma members
+- **Filter by role**: Show only moderators, only members, etc.
+- **Sort options**: By join date, by karma, alphabetical
+
+**Member Removal and Banning**
+
+WHEN moderator selects subscriber to remove, THE system SHALL present options:
+- **Remove (without ban)**: Member is removed from community but can rejoin
+- **Ban (temporary)**: Member cannot access for specified duration (1 day - 6 months)
+- **Ban (permanent)**: Member is permanently removed and cannot rejoin
+
+WHEN member is removed, THE system SHALL:
+- Remove them from subscriber list immediately
+- Remove community from their subscribed communities list
+- Delete any draft posts or pending actions in community
+- IF temporary ban, set expiration date for ban
+- Notify removed member with reason (optional)
+- Log action in community audit trail
+
+### 3.4 Unsubscribe from Communities
+
+WHEN a subscribed member clicks "Unsubscribe" on community page, THE system SHALL:
+- Display confirmation dialog "Are you sure you want to unsubscribe from r/[community]? Your posts and comments will remain."
+- Upon confirmation, remove community from member's subscribed list
+- Decrement community subscriber count
+- Remove community's posts from member's home feed
+- Member can resubscribe at any time
+
+WHEN member unsubscribes, THE system SHALL:
+- Preserve their post and comment history in community (not deleted)
+- Remove community from "My Communities" list
+- Stop sending community notifications to member
+- Allow member to view community publicly if public community
+- Allow member to view their posts/comments in community history
+
+### 3.5 Subscriber Count and Community Metrics
+
+THE system SHALL maintain accurate subscriber count updated in real-time:
+- Increment when member subscribes
+- Decrement when member unsubscribes or is removed
+- Display on community page prominently
+- Use in community ranking and trending algorithms
+
+**Community Activity Metrics**
+
+THE system SHALL calculate and display:
+- **Total Subscribers**: Current count of members
+- **Monthly Active Subscribers**: Members with activity (post, comment, vote) in past 30 days
+- **New Subscribers**: Members who subscribed in past 7 days
+- **Subscriber Growth Rate**: Percentage change in subscribers week-over-week
+- **Member Retention Rate**: Percentage of members from 30 days ago still subscribed
+
+WHERE community moderators access analytics, THE system SHALL display:
+- Visual chart of subscriber growth over time
+- Breakdown of new members by source (search, recommendations, direct)
+- Activity levels of members (active, inactive, dormant)
+- Churn rate and reasons members leave (if available)
+
+## 4. Moderator Roles and Permissions
+
+### 4.1 Moderator Hierarchy and Roles
+
+The communityPlatform implements a three-tier moderator hierarchy for each community. Each tier has distinct permissions and responsibilities:
+
+**Tier 1: Community Creator (Founder)**
+
+THE community creator is the user who established the community and holds supreme authority.
+
+**Creator Responsibilities:**
+- Establish community vision, culture, and rules
+- Manage other moderators (appoint, remove, promote, demote)
+- Approve or reject major community direction changes
+- Handle appeals of moderator decisions
+- Manage community deletion and transfers
+
+**Creator Permissions:**
+- ALL permissions available to Senior Moderators
+- Appoint new senior moderators
+- Remove or demote any moderator (senior or junior)
+- Change community visibility (public/private)
+- Change community category and core settings
+- Delete the entire community
+- Transfer community ownership to another member
+- Access complete audit trail of all moderator actions
+- Override moderator decisions on content removal or user bans
+- Manage community monetization and revenue (if enabled)
+
+**Creator Permanence:**
+- Creator role is permanently tied to the user unless voluntarily transferred
+- Creator status retained even if account is inactive
+- Creator status NOT revoked even if account is suspended (can still access community via admin interface)
+
+**Tier 2: Senior Moderator**
+
+THE senior moderator is appointed by the community creator and has broad operational authority.
+
+**Senior Moderator Responsibilities:**
+- Review and resolve reports daily
+- Enforce community rules consistently
+- Manage junior moderators
+- Approve new members (for private communities)
+- Review appeal requests from users
+- Maintain moderation queue and handle urgent issues
+- Contribute to community rule enforcement strategy
+
+**Senior Moderator Permissions:**
+- Remove posts and comments for policy violations
+- Suspend members from 1 day to 30 days
+- Warn members with visible warning message
+- Appoint and remove junior moderators
+- Modify community rules and descriptions (with creator approval)
+- Enable/disable post approval and comment filtering
+- Access community audit trail (can see junior moderator actions)
+- Pin/feature high-quality posts
+- Lock posts and comments (disable replies)
+- Review and act on user reports in moderation queue
+- Change community default sorting and display settings
+- View community member analytics and activity levels
+
+**Senior Moderator Restrictions:**
+- CANNOT remove the community creator or other senior moderators
+- CANNOT permanently ban members (can suspend up to 30 days)
+- CANNOT change community visibility or category
+- CANNOT delete community
+- CANNOT access moderator actions of other senior moderators (privacy boundary)
+
+**Senior Moderator Deactivation:**
+- Community creator can remove or demote senior moderators at any time
+- Creator provides optional reason (logged in audit trail)
+- Senior moderator loses all permissions immediately upon removal
+- Moderation actions taken by removed moderator remain recorded
+
+**Tier 3: Junior Moderator**
+
+THE junior moderator is appointed by senior moderators or the creator and has limited operational authority.
+
+**Junior Moderator Responsibilities:**
+- Monitor community for policy violations
+- Flag problematic content for senior review
+- Warn users about minor violations
+- Assist with basic moderation tasks
+- Contribute to community culture through modeling good behavior
+
+**Junior Moderator Permissions:**
+- Remove posts and comments (with automatic notification to senior moderator)
+- Warn members (visible warning on profile)
+- Flag content for senior moderator review
+- Mark content as spam or off-topic
+- Provide feedback on community rule effectiveness
+
+**Junior Moderator Restrictions:**
+- CANNOT suspend or permanently ban members
+- CANNOT appoint other moderators
+- CANNOT modify community settings or rules
+- CANNOT override decisions of senior moderators or creators
+- CANNOT access full moderation audit trail
+- Can only see their own actions
+
+**Junior Moderator Deactivation:**
+- Senior moderators can remove junior moderators
+- Creator can remove any junior moderator
+- Junior moderators lose all permissions immediately upon removal
+- ALL previous actions by junior moderator remain in audit trail
+
+### 4.2 Moderator Appointment, Demotion, and Removal
+
+**Appointing New Moderators**
+
+WHEN community creator or senior moderator chooses to appoint a moderator, THE system SHALL:
+
+1. Display list of eligible members (accounts in good standing, active in community)
+2. Allow selector to choose moderator tier (Senior or Junior)
+3. Send appointment invitation to selected member
+4. Display message: "You are invited to moderate r/[community]. As [Senior/Junior] Moderator, you will [responsibilities]. Do you accept?"
+
+WHEN selected member accepts invitation, THE system SHALL:
+- Grant appropriate permissions immediately
+- Add them to moderator list
+- Send confirmation to appointing moderator
+- Notify community creator of new moderator
+- Display moderator badge on member's profile
+- Include new moderator in moderation team announcements
+- Grant access to moderation dashboard and queue
+
+WHEN selected member declines invitation, THE system SHALL:
+- Inform appointing moderator of declination
+- Allow appointing moderator to select alternative candidate
+- Remove invitation (not stored as rejection)
+
+**Moderator Demotion**
+
+WHEN senior moderator requests demotion from senior to junior, THE system SHALL:
+- Accept request immediately
+- Reduce permissions from senior to junior level
+- Notify community creator of voluntary demotion
+- Preserve complete moderation history
+
+WHEN creator or senior demotes another senior moderator to junior, THE system SHALL:
+- Reduce permissions immediately
+- Notify affected moderator of demotion
+- Log demotion in audit trail with reason
+- Preserve all previous moderation actions in history
+
+**Moderator Removal**
+
+WHEN community creator removes a moderator, THE system SHALL:
+- Immediately revoke all moderator permissions
+- Remove from moderator list and moderation dashboard access
+- Remove moderator badge from profile
+- Notify removed moderator of removal and reason (optional)
+- Preserve all actions taken by moderator in audit trail
+- Allow moderator to be reappointed later
+
+WHEN senior moderator removes a junior moderator, THE system SHALL:
+- Follow same process as creator removal
+- Senior cannot remove other senior moderators (only creator can)
+
+WHEN moderator voluntarily steps down, THE system SHALL:
+- Display resignation confirmation form asking for optional reason
+- Process resignation immediately
+- Notify community creator of resignation
+- Preserve moderator's contribution to community history
+
+### 4.3 Platform Moderator vs Community Moderator
+
+**Platform Moderator/Administrator Authority**
+
+THE platform administrator holds system-wide authority superseding community-level moderation:
+- Can take moderation actions in ANY community regardless of appointment
+- Not required to be subscribed to community
+- Actions are logged as "Platform Administrator" not "Community Moderator"
+- Can override community moderator decisions
+- Can modify community settings regardless of moderator permissions
+- Can remove communities for policy violations
+- Can remove moderators from communities
+
+WHEN platform administrator takes action in a community, THE system SHALL:
+- Notify affected community (if content removal or user action)
+- Log action in platform-wide audit trail
+- Send notice to community creator explaining administrative action
+
+**Community Moderator Scope**
+
+WHEN community moderator takes action, THE system SHALL:
+- Scope action to ONLY their assigned community
+- NOT allow action in other communities even if they're moderators there
+- Log action in community-specific audit trail
+- Label action with moderator's community role
+
+### 4.4 Moderator Action Audit Trail
+
+EVERY moderator action SHALL be recorded in an immutable audit trail capturing:
+
+**Audit Trail Content**
+
+- **Action Type**: Specific action taken (remove_post, remove_comment, suspend_user, warn_user, etc.)
+- **Actor**: User ID and username of moderator who took action
+- **Actor Role**: Moderator tier (Community Creator, Senior Moderator, Junior Moderator) of person who took action
+- **Target**: Object affected (post_id, comment_id, user_id with full context)
+- **Timestamp**: UTC datetime of action
+- **Reason**: Explanation provided by moderator (required, minimum 5 characters)
+- **Details**: Specific details about action:
+  - For removal: What rule was violated, visibility change
+  - For suspension: Duration, expiration date
+  - For warning: Type of violation, warning count for that user
+- **Previous State**: Full content or status before action (for reversal purposes)
+- **New State**: Content or status after action
+- **IP Address**: Of moderator taking action (for security)
+
+**Audit Trail Access Levels**
+
+- **Community Creator**: Can view all moderator actions in their community with full details
+- **Senior Moderator**: Can view all junior moderator actions; can see summary (not details) of other senior actions
+- **Junior Moderator**: Can only view their own actions
+- **Platform Administrator**: Can view all moderator actions in all communities
+- **Affected User**: Can view moderator actions affecting their content (what was removed, why)
+
+**Audit Trail Retention**
+
+- THE system SHALL retain moderator action audit trails indefinitely
+- Audit trails are preserved even if community is deleted
+- Audit trails used for moderator quality assurance and user appeals
+- Audit trails provided to legal/compliance teams upon request
+
+**Moderator Performance Metrics**
+
+WHERE community creator reviews moderator performance, THE system SHALL display:
+- Number of actions taken per moderator per time period
+- Breakdown of action types (removals, suspensions, warnings)
+- Average resolution time for reports
+- Appeal reversal rate (percentage of moderator decisions overturned on appeal)
+- User feedback on moderator fairness (if review system is implemented)
+
+### 4.5 Moderator Permissions Matrix
+
+The following matrix defines which operations each moderator tier and user actor can perform:
+
+| Action | Member | Creator | Senior | Junior | Admin |
+|--------|:------:|:-------:|:------:|:------:|:-----:|
+| **Content Moderation** | | | | | |
+| Remove posts | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Remove comments | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Lock posts (disable comments) | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Pin/feature posts | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Restore removed content | ❌ | ✅ | ✅ | ❌ | ✅ |
+| **Member Management** | | | | | |
+| Warn members | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Suspend members (temporary) | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Ban members (permanent) | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Remove member from community | ❌ | ✅ | ✅ | ❌ | ✅ |
+| View member moderation history | ❌ | ✅ | ✅ | ❌ | ✅ |
+| **Moderator Management** | | | | | |
+| Appoint senior moderators | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Appoint junior moderators | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Remove/demote senior moderators | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Remove junior moderators | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Access moderation dashboard | ❌ | ✅ | ✅ | ✅ | ✅ |
+| View audit trail (full) | ❌ | ✅ | Partial | Own only | ✅ |
+| **Community Settings** | | | | | |
+| Modify community description | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Modify community rules | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Enable/disable post approval | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Enable/disable comment approval | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Change post type restrictions | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Change default sorting | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Change visibility (public/private) | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Change community category | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Delete community | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Transfer ownership | ❌ | ✅ | ❌ | ❌ | ✅ |
+| View analytics | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Manage community monetization | ❌ | ✅ | ❌ | ❌ | ✅ |
+
+**Legend**:
+- ✅ = Full permission
+- ❌ = No permission
+- Partial = Limited access (can see junior mod actions, not senior mod actions)
+- Own only = Can only access their own actions
+
+## 5. Community Rules and Governance
+
+### 5.1 Community Rules Definition and Publication
+
+WHEN a community is created or rules are edited, THE system SHALL:
+- Accept up to 15 numbered rules
+- Store each rule as plain text (up to 200 characters per rule)
+- Display rules prominently on community page in numbered format
+- Show rules on sidebar of all community pages
+- Display rules to new members upon subscription with acknowledgment checkbox
+
+**Rule Examples by Community Type**
+
+Different community types typically have different rules:
+- Tech communities: Focus on on-topic discussion, no spam links, be respectful
+- News communities: No misleading titles, cite sources, no duplicate posts
+- Entertainment communities: No spoilers without warning, respect artists' work
+- Education communities: No cheating/homework solutions, be helpful, cite sources
+- Gaming communities: No harassment, spoilers require warning, no self-promotion
+
+THE system SHALL suggest rule templates based on community category when creating a community.
+
+### 5.2 Rule Violation Handling and Moderation Actions
+
+WHEN a moderator identifies content violating community rules, THE system SHALL provide graduated enforcement options:
+
+**Option 1: Issue Warning (Non-removal)**
+
+WHEN moderator chooses to warn member, THE system SHALL:
+- Not remove the content
+- Display warning message to member: "This post violates community rule #3: [rule text]. Please revise or remove."
+- Record warning in member's community moderation history
+- NOT visible to other community members
+- Optional: Moderator can send private message to member explaining violation
+- Track warning count for member in that community
+
+**Option 2: Remove Content**
+
+WHEN moderator removes post or comment, THE system SHALL:
+- Soft-delete content (remove from public view)
+- Display removal notice to community: "[Post/Comment] removed by moderators - violated rule #X: [rule text]"
+- Allow original author to view removed content and understand why
+- Notify member of removal with reason message
+- Log removal action in audit trail
+- Send email to member explaining removal
+
+**Option 3: Remove and Warn Member**
+
+WHEN moderator chooses to remove content AND warn member, THE system SHALL:
+- Follow removal process above
+- Also increment warning count for member
+- Display warning badge on member's profile in that community
+- After 3 warnings in same community, escalate to senior moderator for potential suspension
+
+**Option 4: Suspend Member from Community**
+
+WHEN moderator (senior+) suspends member, THE system SHALL:
+- Specify suspension duration: 1 day, 3 days, 7 days, 30 days, or custom
+- Prevent member from posting, commenting, voting in that community
+- Allow member to view community content (read-only)
+- Display suspension notice to member: "You are suspended from r/[community] until [date] for violating rule #X: [rule text]"
+- Send email with suspension details and appeal instructions
+- Display "Suspended" badge on member's profile in that community
+- Automatic unsuspension when duration expires
+- Log action in audit trail
+
+**Option 5: Permanently Ban Member from Community**
+
+WHEN community creator bans member permanently, THE system SHALL:
+- Prevent member from ever accessing community again
+- Member cannot view posts, create posts, or participate
+- Remove member from subscriber list
+- Display "Banned" indicator on member's profile
+- Allow member to appeal ban through formal appeal process
+- Log permanent ban in audit trail with detailed reason
+- Send email to member with ban reason and appeal instructions
+
+### 5.3 User Appeal Process for Moderation Decisions
+
+WHEN a member receives a warning, removal, suspension, or ban, THE system SHALL provide appeal option.
+
+**Appeal Submission**
+
+WHEN member selects "Appeal This Decision", THE system SHALL display:
+- Original moderation action and stated reason
+- Appeal submission form with fields:
+  - "Why do you believe this action was unjust?" (required, 50-500 characters)
+  - Supporting evidence or clarification (optional)
+  - "I have read the community rules and understand why my content may have violated them" (checkbox)
+- Submit appeal button
+
+WHEN member submits appeal, THE system SHALL:
+- Create appeal record with timestamp
+- Queue for review by senior moderator or creator
+- Notify member: "Your appeal has been received and will be reviewed"
+- Send moderator notification of pending appeal
+
+**Appeal Review Workflow**
+
+WHEN reviewing appeal, moderator/creator SHALL:
+- Re-examine original content (if removed)
+- Consider member's explanation in appeal
+- Review member's history in community and on platform
+- Make independent decision on appeal (not rubber-stamping)
+
+**Appeal Outcomes**
+
+MODERATOR can select from outcomes:
+
+1. **Appeal Denied**
+   - Original action stands
+   - Member notified: "Your appeal has been reviewed and the original action is upheld"
+   - Can view original moderator's reason and appeal decision
+
+2. **Appeal Approved - Action Reversed**
+   - Content removed? Content is restored and published
+   - Suspension? Member is immediately unsuspended, expiration cancelled
+   - Ban? Member ban is lifted, can rejoin
+   - Warning? Warning is removed from record
+   - Member notified: "Your appeal was successful and the action has been reversed"
+
+3. **Appeal Approved - Action Reduced**
+   - Suspension shortened (e.g., from 30 days to 7 days)
+   - Ban converted to suspension
+   - Warning removed (more lenient)
+   - Member notified with new status
+
+4. **Appeal Denied - with Explanation**
+   - Original action stands
+   - Moderator provides detailed explanation of why appeal was denied
+   - Member can read explanation in appeal history
+   - No further appeal possible for same action
+
+**Appeal Limitations and Fairness**
+
+- THE system allows only ONE appeal per moderation action
+- Appeals must be submitted within 60 days of action
+- Members cannot spam appeal system
+- IF member submits 5+ appeals in 30 days, account may be flagged for review
+- Platform administrator can override community moderator appeals if needed
+
+**Appeal Timeline**
+
+- Community moderators have 7 days to review appeal
+- IF 7 days pass without review, appeal automatically escalates to creator/admin
+- IF still no response after 14 days, appeal is automatically approved
+- Emergency appeals (bans) may be expedited
+
+### 5.4 Automated Rule Enforcement System
+
+THE system provides automated tools to help enforce community rules:
+
+**Spam Detection**
+
+THE system automatically detects and flags:
+- Repeated identical content from same member
+- High-frequency posting suggesting bots
+- Posts with excessive external links (>5 links)
+- Common spam phrases from database
+- Suspicious shortened URL patterns
+
+WHEN spam is detected:
+- Content is flagged (not removed)
+- Added to moderation queue
+- Moderators see confidence score
+- Moderators can quick-action: Approve, Remove, or Warn
+
+**Profanity and Toxicity Filtering**
+
+THE system flags content containing:
+- Severe profanity or slurs (can be configured per community)
+- Harassment patterns (aggressive personal attacks)
+- Threats or violent language
+- Hate speech targeting protected groups
+
+FLAGGED content:
+- Can be configured to auto-remove or flag for review
+- Hidden from community while under review (if configured)
+- Moderators see context and reason for flag
+- Community can customize sensitivity level
+
+**Link Validation**
+
+THE system validates external links in posts:
+- Checks against malware databases
+- Detects shortened URLs that may hide dangerous links
+- Flags suspicious domains
+- Prevents posting to known phishing sites
+
+WHEN suspicious link detected:
+- Post is either blocked (critical threat) or flagged (potential threat)
+- Moderators can allow or remove
+
+**Community-Specific Automation**
+
+COMMUNITY creators can configure automation rules:
+- Auto-remove posts without tags (if tagging is required)
+- Auto-flag posts that aren't from subscribed members (private community security)
+- Auto-filter words/phrases specific to community
+- Auto-approve posts from high-karma members
+- Auto-reject posts from new accounts (set age threshold)
+
+## 6. Community Discovery and Lifecycle Management
+
+### 6.1 Community Directory and Discovery
+
+**Community Discovery Methods**
+
+THE system provides multiple mechanisms for discovering communities:
+
+**Community Directory**
+
+THE community directory displays all public communities with options to browse by:
+- **Category**: Browse communities by topic (Technology, Entertainment, Sports, etc.)
+- **Trending**: Communities with fastest growth in subscribers (last week)
+- **Popular**: Communities with largest total subscriber counts
+- **New**: Recently created communities (last 7 days)
+- **Activity**: Communities with most posts/comments in last 24 hours
+
+For each community in directory, display:
+- Community name and icon
+- Brief description (first 100 characters)
+- Subscriber count
+- Average daily activity (posts/comments)
+- Category tags
+- "Subscribe" button
+
+**Search Functionality**
+
+THE system allows users to search for communities by:
+- **Community Name**: Exact and partial matches
+- **Community Identifier**: Search by "r/[identifier]"
+- **Description**: Keyword search in community descriptions
+- **Category**: Filter search by topic category
+- **Subscriber Range**: Find communities with similar size (small/medium/large)
+- **Activity Level**: Find active or quiet communities
+
+Search results sorted by:
+- Relevance (name match highest)
+- Subscriber count (more popular first)
+- Activity level (most active first)
+
+**Recommendation System**
+
+THE system provides personalized community recommendations based on:
+- Communities similar to ones member is subscribed to
+- Communities popular with members following similar topics
+- Communities relevant to member's post/comment history
+- Trending communities in member's favorite categories
+- Communities with content similar to member's liked posts
+
+Recommendations displayed on:
+- Home feed sidebar
+- Profile page
+- "Discover Communities" tab
+
+### 6.2 Community Metadata and Rankings
+
+**Community Visibility on Platform**
+
+WHEN a community is public, THE system displays:
+- In search results and directory
+- In trending/popular lists
+- In recommendations
+- Posts may be indexed by search engines
+- Appears in member's recommended communities
+
+WHEN a community is private, THE system:
+- Does NOT appear in search results or directory
+- Does NOT appear in public listings
+- Appears only to subscribed members
+- NOT indexed by search engines
+
+**Community Ranking Algorithms**
+
+THE system ranks communities in displays based on:
+
+1. **Trending Score** (last 7 days):
+   - Formula: (New_Subscribers / Total_Subscribers) × 0.4 + (Weekly_Posts / 1000) × 0.3 + (Weekly_Comments / 5000) × 0.3
+   - Identifies communities with rapid growth and activity
+
+2. **Popularity Score**:
+   - Formula: Subscriber_Count with weighted boost for active communities
+   - Identifies established, popular communities
+
+3. **Relevance Score** (for search):
+   - Formula: Name_Match_Score + Description_Match_Score + Category_Match_Score
+   - Based on user's search query
+
+4. **Activity Score**:
+   - Formula: (Posts_Per_Day + Comments_Per_Day/10) / Age_In_Days
+   - Identifies highly engaged communities
+
+### 6.3 Community Ownership Transfer and Deletion
+
+**Community Ownership Transfer**
+
+WHEN community creator chooses to transfer ownership, THE system SHALL:
+1. Display list of eligible members (senior moderators or high-karma members)
+2. Require creator to confirm transfer
+3. Send invitation to new owner: "You have been invited to own r/[community]. As owner, you will have full authority over the community. Do you accept?"
+
+WHEN new owner accepts:
+- All creator permissions transfer to new owner
+- Original creator optionally becomes senior moderator
+- Transfer is recorded in audit trail
+- Both users receive confirmation emails
+- Community settings remain unchanged
+
+WHEN new owner declines:
+- Invitation is cancelled
+- Creator can select another member
+- No rejection record created
+
+**Community Deletion**
+
+WHEN creator chooses to delete their community, THE system SHALL:
+1. Display warning: "Deleting this community is permanent. All posts and comments will be deleted. This cannot be undone."
+2. Require confirmation and password entry
+3. Provide 30-day grace period to recover deleted community
+4. After confirmation, immediately:
+   - Hide community from search and directory
+   - Remove from member subscribed lists
+   - Stop accepting new posts and comments
+   - Display "This community has been deleted" message
+   - Preserve all content in secure archive (for 30 days)
+
+**30-Day Recovery Window**
+
+DURING 30-day grace period after deletion, THE system:
+- Allows creator to restore community (recover from archive)
+- Preserves all posts, comments, subscribers, and settings
+- Displays count-down "Community will be permanently deleted in X days"
+
+AFTER 30-day period expires:
+- All community content is permanently deleted
+- Community cannot be recovered
+- Creator receives final confirmation email
+- All subscribers are notified community has been permanently deleted
+
+**Community Deletion by Administrators**
+
+WHEN platform administrator deletes community (for policy violations), THE system SHALL:
+- Immediately disable all access to community
+- Remove from directory and search
+- Archive content for investigation (retained per legal hold)
+- Notify community creator of deletion and reason
+- Log deletion in platform audit trail
+- No recovery option for administrative deletion
+
+### 6.4 Dormant Community Management
+
+**Dormancy Detection**
+
+THE system identifies dormant communities:
+- No posts created in 6 months
+- No moderator actions in 6 months
+- Monthly active subscribers dropped to zero or near-zero
+- Marked as "dormant" in admin interface
+
+**Dormancy Notifications**
+
+WHEN community is detected as dormant, THE system SHALL:
+1. Attempt to contact community creator
+   - Email notification: "r/[community] has been inactive for 6 months. If you want to keep this community, please log in by [date]"
+   - Deadline: 30 days to respond
+
+2. IF creator doesn't respond within 30 days:
+   - Notify all senior moderators
+   - Offer moderators to claim ownership
+   - Allow moderators to reactivate community
+
+3. IF no moderator responds within 30 days:
+   - Notify all members
+   - Offer highest-karma member to claim ownership
+   - Allow reactivation
+
+4. IF no one responds within 60 days total:
+   - Community is archived (moved to readonly status)
+   - Can be restored only by creator within 1 year
+   - After 1 year, can be restored only by admin
+
+**Community Reactivation**
+
+WHEN member reactivates dormant community, THE system SHALL:
+- Restore to active status
+- Re-enable post and comment creation
+- Return to search and directory
+- Notify previous subscribers community is active
+- Allow reactivator to assume ownership if different from creator
+
+### 6.5 Community Archival and Historical Access
+
+**Community Archival**
+
+WHEN a community reaches 5+ years old and has minimal activity, THE system MAY:
+- Move community to "archived" status (read-only)
+- Preserve all posts and comments in full
+- Allow members to view archived community content
+- Prevent new posts and comments
+- Display "Archived" badge on community
+
+ARCHIVED communities:
+- Remain searchable and discoverable
+- Do NOT appear in "active communities" lists
+- Receive reduced feature set
+- Can be reactivated by creator/owner anytime
 
 ---
 
-## 2. Community Hierarchy & Roles
+## Summary and Integration Points
 
-### 2.1 Community-Level Role Structure
+The community management system forms the organizational backbone of the platform. Communities provide:
+- Primary structure for content organization
+- Foundation for user engagement and participation
+- Venue for community-driven governance through moderators
+- Scope for permission boundaries and access control
+- Context for post visibility and recommendation algorithms
 
-THE community management system supports a clear hierarchical role structure:
-
-#### Primary Moderator (Community Creator)
-
-WHEN a community is created, THE system SHALL automatically assign the creator as primary moderator with these characteristics:
-- THE community creator's role is immutable by other moderators
-- THE primary moderator SHALL have all community moderator permissions (see Section 4)
-- THE primary moderator SHALL be able to add and remove other moderators
-- THE primary moderator SHALL be able to transfer community ownership to another moderator with high karma in that community
-- THE primary moderator SHALL be able to permanently delete the community (if no posts exist, or after archiving all content)
-- THE primary moderator can appoint moderators of different permission levels
-
-#### Additional Moderators
-
-WHEN the primary moderator designates additional moderators, THE system SHALL enforce:
-- THE primary moderator SHALL be able to add up to 10 additional moderators per community
-- THE primary moderator SHALL assign specific permission levels to each additional moderator (Content, User, Full levels as defined below)
-- THE primary moderator SHALL be able to remove moderators at any time by revoking moderator status
-- THE additional moderators SHALL NOT be able to remove the primary moderator or transfer ownership
-- THE additional moderators can only perform actions within their assigned permission level
-- THE system SHALL notify newly appointed moderators via notification system of their moderator assignment with permissions detail
-
-#### Moderator Permission Levels
-
-THE system SHALL support three moderator permission levels:
-
-**Level 1: Content Moderator**
-- Can remove posts and comments that violate rules
-- Can pin/unpin posts within community
-- Can issue content warnings/labels
-- Cannot ban users or manage moderators
-- Cannot restrict users or limit their posting
-- Can view all reports in their community
-- Cannot access user account information
-
-**Level 2: User Moderator**
-- Can perform all Level 1 actions
-- Can issue temporary user bans (1-30 days, customizable)
-- Can mute users (prevent commenting for 24-72 hours)
-- Cannot permanently ban users
-- Cannot manage other moderators
-- Can warn users with custom messages
-- Can view community member list
-
-**Level 3: Full Moderator**
-- Can perform all Level 1 and Level 2 actions
-- Can issue permanent user bans from community
-- Can add/remove other moderators (except primary)
-- Can modify community settings and rules
-- Can create and edit community rules
-- Can view complete moderation dashboard for community
-- Can lock posts (prevent new comments)
-
-### 2.2 Community Member Roles
-
-THE system identifies members in communities by status:
-
-**Regular Member**
-- Subscribed user with standard permissions (create posts, comment, vote, view community)
-- Can earn community-specific karma
-- Can be promoted to moderator
-
-**Suspended Member (Temporary Ban)**
-- Member with temporary ban from posting/commenting (1-30 days)
-- Can still view community content but cannot engage
-- Cannot post, comment, or vote
-- Receives notification with ban duration and appeal information
-
-**Banned Member (Permanent Ban)**
-- Member permanently removed from community
-- Cannot view, post, or comment in this community
-- Cannot re-subscribe without explicit moderator approval
-- Cannot be elevated back to membership except through appeal
-- Existing posts remain visible but marked accordingly
+The community system integrates with:
+- **User Accounts** (user profiles, karma accumulation)
+- **Content Creation** (posts, comments created within communities)
+- **Voting System** (votes determine community trends)
+- **Moderation System** (community-level and platform-level enforcement)
+- **User Profiles** (display moderator roles and community participation)
+- **Post Sorting** (hot/new/top/controversial applied per community)
 
 ---
 
-## 3. Moderator Permissions & Authority
-
-### 3.1 Complete Moderator Permission Matrix
-
-| Action | Content Mod | User Mod | Full Mod | Primary Mod | Platform Admin |
-|--------|---|---|---|---|---|
-| **Remove Posts** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Remove Comments** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Pin/Unpin Posts** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Issue Content Warning** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Lock Posts** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Temporary Ban (1-30d)** | ❌ | ✅ | ✅ | ✅ | ✅ |
-| **Mute Users (24-72h)** | ❌ | ✅ | ✅ | ✅ | ✅ |
-| **Permanent Ban** | ❌ | ❌ | ✅ | ✅ | ✅ |
-| **Add Moderators** | ❌ | ❌ | ✅ | ✅ | ✅ |
-| **Remove Moderators** | ❌ | ❌ | ✅ | ✅ | ✅ |
-| **Modify Settings** | ❌ | ❌ | ✅ | ✅ | ✅ |
-| **Create/Edit Rules** | ❌ | ❌ | ✅ | ✅ | ✅ |
-| **Transfer Ownership** | ❌ | ❌ | ❌ | ✅ | ✅ |
-| **Delete Community** | ❌ | ❌ | ❌ | ✅ | ✅ |
-| **Override Decisions** | ❌ | ❌ | ❌ | ✅ | ✅ |
-
-### 3.2 Moderator Responsibilities & Accountability
-
-THE community moderators SHALL be responsible for:
-- Enforcing community rules and policies consistently and fairly
-- Removing violating content promptly (within 48 hours for non-critical violations)
-- Responding to user reports within 24 hours (SLA target)
-- Maintaining respectful community environment
-- Communicating moderation decisions to affected users with specific reasons
-- Documenting moderation actions in the community moderation log
-
-THE system SHALL track all moderator actions with:
-- Action type (remove post, remove comment, ban user, pin post, mute, etc.)
-- Timestamp of action (ISO 8601 format)
-- Reason/justification provided by moderator
-- User ID performing action
-- Content or user ID affected by action
-- Any action reversals or appeals related to the original action
-- Whether the action was within moderator's permission level
-
----
-
-## 4. Community Settings & Configuration
-
-### 4.1 Configurable Community Settings
-
-THE community moderators (Full Moderator level or above) SHALL be able to configure:
-
-#### Display & Identity Settings
-- **Community Name**: Cannot exceed 21 characters, same validation as creation, can be changed by Full Moderator+
-- **Community Description**: Maximum 500 characters, updatable at any time, displayed on community page
-- **Community Category**: Primary category affecting discovery, can be changed, affects recommendation algorithms
-- **Community Icon**: Image upload (see image management below)
-- **Community Banner**: Image upload for header (see image management below)
-
-#### Post Type & Content Settings
-- **Post Type Restrictions**: Can restrict to specific types (text-only, link-only, image-only, or allow all types)
-- **Post Requirement**: Text posts can require minimum character count (0-5000 characters, can enforce quality standard)
-- **Link Post Domains**: Can whitelist/blacklist specific domains for link posts (security and topicality control)
-- **Image Post Requirements**: Can require image posts to include description/caption
-
-#### Engagement & Interaction Settings
-- **Allow Voting**: Enable/disable upvote/downvote functionality for community
-- **Allow Comments**: Enable/disable commenting feature (posts-only mode possible)
-- **Comment Restrictions**: Require minimum karma to comment in community (e.g., minimum 50 karma to prevent low-quality comments)
-- **Restricted Post Creation**: Require minimum karma (e.g., 100+) or account age to post in community
-- **Post Lock Duration**: Automatically lock posts after N days (optional, e.g., lock after 6 months)
-
-#### Notification & Communication Settings
-- **New Post Notifications**: Enable/disable for subscribers
-- **New Comment Notifications**: Enable/disable for post authors
-- **Community-Wide Announcements**: Allow moderator-pinned announcements on community page
-- **Welcome Message**: Custom welcome message for new members
-
-#### Moderation & Content Policy Settings
-- **Auto-Moderation**: Enable/disable automatic content filtering (profanity patterns, spam detection)
-- **Approval Queue**: Require moderator approval for first-time posts (new members)
-- **NSFW Flag**: Mark community as containing adult content
-- **Report Review Required**: Minimum reports before automated action (default 1, can increase)
-
-### 4.2 Community Icon & Banner Management
-
-WHEN moderators upload community icon or banner, THE system SHALL:
-
-1. Accept image file formats: JPEG, PNG only (maximum 5MB per file)
-2. Store images in community-specific storage location with redundancy
-3. Generate thumbnail versions for list display (200x200px for icon, 1200x300px for banner)
-4. Return CDN URL for rapid access with global distribution
-5. Support image replacement (old images automatically deleted after 30 days)
-6. IF upload fails, THEN preserve existing icon/banner and display error message
-7. IF image is malicious/malware, THEN reject silently (prevent attack probing)
-8. THE system SHALL validate image dimensions and aspect ratios
-9. THE system SHALL compress images for bandwidth optimization
-
----
-
-## 5. Community Rules & Content Policies
-
-### 5.1 Community Rules System (EARS Format)
-
-THE community moderators SHALL be able to create and enforce up to 10 community-specific rules:
-
-WHEN a moderator creates a rule, THE system SHALL require:
-- **Rule Title**: Maximum 100 characters, concise rule statement (e.g., "No Spam or Self-Promotion")
-- **Rule Description**: Maximum 1000 characters, detailed explanation of the rule with examples
-- **Rule Category**: Select from: Content, Behavior, Spam, Off-Topic, Harassment, Adult Content, Other
-- **Enforcement Action**: Select consequence tier: Warning, Remove, Temporary Ban (1-30 days), or Permanent Ban
-- **Appeal Allowable**: Boolean indicating if this rule violation allows appeals (default: true)
-
-WHEN a rule is created, THE system SHALL:
-- Display rules prominently in community sidebar
-- Display rules on community settings page
-- Show relevant rule during post/comment creation as reminder
-- Include rule option in report form when members report content
-- Display rule citation in moderation notifications to affected users
-
-### 5.2 Rule Display & User Communication
-
-WHEN NEW members access a community, THE system SHALL:
-- Display community rules acceptance checkbox during first subscription to community
-- Require members to acknowledge understanding of rules before posting
-- Display rules consistently throughout community experience
-
-WHEN a moderator removes content for rule violation, THE system SHALL:
-- Include specific rule citation in removal notice to user
-- Display the exact rule text that was violated
-- Provide link to full community rules
-- Specify appeal process and timeframe
-
-THE system SHALL track:
-- Which rules are violated most frequently
-- Which rules result in user removals most often
-- Rule enforcement consistency over time
-- Which rules result in successful appeals (too strict)
-
-### 5.3 Rule Enforcement & Evolution
-
-THE system SHALL provide moderators with enforcement analytics:
-- Heat map showing most-violated rules
-- Trends over time (e.g., spam violations increasing)
-- Recommendations to clarify rules generating confusion
-- Comparison to other communities (if feature enabled)
-
-WHEN a rule generates excessive appeals, THE system SHALL:
-- Flag rule for moderator review (e.g., >50% appeal success rate)
-- Suggest clarification or rule revision
-- Provide feedback that rule may be too subjective or unclear
-
----
-
-## 6. User Subscription Management
-
-### 6.1 Subscription Workflow & Requirements
-
-#### Subscribing to a Community
-
-WHEN an authenticated member views a public community and clicks subscribe, THE system SHALL:
-
-1. Validate member is not already subscribed (prevent duplicates)
-2. Check if member is permanently banned from this community
-3. IF member is banned, THEN deny subscription and display: "You have been banned from this community and cannot rejoin"
-4. Add member to community's subscriber list
-5. Initialize community preferences for this member (optional per-community settings)
-6. Update community member count incrementally
-7. Log subscription event with timestamp and member ID for analytics
-8. Add community posts to member's feed (from current date forward)
-9. IF auto-subscribe new communities is enabled, THEN add to member's recommended list
-
-THEN the system SHALL confirm subscription success with message: "Successfully subscribed to r/[COMMUNITY]" and update UI to show "Subscribed" status.
-
-#### Unsubscribing from a Community
-
-WHEN a member clicks unsubscribe, THE system SHALL:
-
-1. Remove member from community's subscriber list
-2. Delete community preferences for this member (resume defaults on re-subscribe)
-3. Update community member count decrementally
-4. Remove community posts from member's feed immediately
-5. Log unsubscription event with timestamp and member ID
-6. Display confirmation: "Successfully unsubscribed from r/[COMMUNITY]"
-7. Suggest similar communities (optional feature)
-
-WHEN a member who was previously unsubscribed wishes to resubscribe, THE system SHALL:
-- Treat as new subscription (no memory of previous subscription)
-- Check ban status again
-- Initialize fresh community preferences
-- Reset position in feed to current posts
-
-### 6.2 Subscription Status & Visibility
-
-THE member SHALL be able to:
-- View list of all communities they are subscribed to with subscription count for each
-- Sort subscriptions by join date, activity level, post frequency, or name
-- Search within their subscriptions (e.g., "find communities about photography")
-- Access subscribed communities from main navigation (sidebar)
-- Customize subscription settings per community (if enabled)
-
-THE community moderators SHALL be able to see:
-- Total subscriber count displayed on community page
-- New subscriptions over time period (daily, weekly, monthly trends)
-- Unsubscription rate and reasons (when available through exit surveys)
-- Top subscribed communities in platform (aggregated rankings)
-
-### 6.3 Subscription Permissions & Access Rules
-
-THE subscription status determines user permissions within community:
-- **Subscribed Member**: Can post, comment, vote, and participate fully
-- **Non-Subscribed Member**: Can view public community but cannot post or comment (can browse only)
-- **WHILE member is on temporary ban**: THE system SHALL prevent posting/commenting in community despite subscription status
-- **IF member is permanently banned**: THE system SHALL automatically unsubscribe and prevent resubscription (unless appeal approved)
-
----
-
-## 7. Community Privacy & Access Control
-
-### 7.1 Community Privacy Level Definitions
-
-THE system supports three distinct privacy levels for communities:
-
-#### Public Community (Default)
-
-THE system SHALL enforce for public communities:
-- Community is visible to all users (authenticated and guests)
-- Community appears in community discovery lists and search results
-- Non-members can view all posts and comments in the community
-- Non-members can view community sidebar (rules, description, statistics)
-- Non-members CANNOT create posts or comments (prevented with login prompt)
-- WHEN non-member attempts to post, THE system SHALL display: "You must be subscribed to post in this community. [Subscribe Button]"
-- Posts appear in platform-wide search and global feed algorithms
-- Guest users can browse community content but cannot interact
-- Public communities drive traffic and organic discovery
-
-#### Private Community
-
-THE system SHALL enforce for private communities:
-- Community is invisible to non-members and guests
-- Community does NOT appear in community discovery or public search
-- ONLY accepts subscriptions via moderator invitation (no self-subscription)
-- Moderators must manually approve each membership request
-- Private community posts are NOT visible to non-members under any circumstances
-- IF non-member attempts to access private community URL directly, THE system SHALL return 403 Forbidden: "This community is private. You do not have permission to access it"
-- Private communities cannot be discovered through search (private by definition)
-- WHEN member unsubscribes from private community, THEN member loses all access immediately
-- Member cannot view archived content after unsubscribing
-
-#### Restricted Community
-
-THE system SHALL enforce for restricted communities:
-- Community is visible in discovery and search results
-- Community description/information is visible to all users
-- Member list and post list are hidden (only titles visible)
-- Anyone can request membership (similar workflow to private)
-- Moderators review membership requests within 24 hours
-- WHEN request accepted, member gains full viewing and posting access
-- IF request rejected, THEN user is notified and can reapply after 7 days
-- Community can serve as gatekeeping mechanism while maintaining discoverability
-
-### 7.2 Access Control Implementation Levels
-
-THE system enforces access control at multiple layers:
-
-1. **Discovery Access**: Determines if community appears in search/discovery
-   - Public: Visible to all
-   - Restricted: Visible to all
-   - Private: Visible only to moderators and members
-
-2. **View Access**: Determines if user can view community details and posts
-   - Public: All users can view
-   - Restricted: Members can view
-   - Private: Members only
-
-3. **Post Access**: Determines if user can create posts
-   - Public: Subscribers can post (unless restricted by karma requirement)
-   - Restricted: Members can post
-   - Private: Members can post
-
-4. **Moderation Access**: Determines if user can perform moderation
-   - Only assigned moderators of community have access
-   - Platform admins can override any community
-
----
-
-## 8. Moderator Moderation Capabilities
-
-### 8.1 Content Removal Workflow
-
-#### Post Removal (EARS Format)
-
-WHEN a moderator removes a post from community, THE system SHALL:
-
-1. Validate moderator has "Content Moderator" permission level or higher
-2. IF moderator lacks permission, THEN deny action and display error
-3. Mark post as removed (soft delete - preserve data in database)
-4. Display removal reason selected or entered by moderator (predefined list or custom, max 500 characters)
-5. IF post had comments, THEN mark comment visibility as affected but preserve structure
-6. Remove post from community feed and search results
-7. Send notification to post author with removal reason and appeal link
-8. Track removal in moderation log: timestamp, moderator ID, reason, post ID
-9. IF post removal results in appeal request, THEN route to different moderator or admin for review
-
-THE system SHALL display removal notice at post location: "[This post was removed by community moderators for violating community rules: REASON]"
-
-#### Comment Removal (EARS Format)
-
-WHEN a moderator removes a comment, THE system SHALL:
-
-1. Validate moderator has "Content Moderator" permission level or higher
-2. Mark comment as removed (soft delete)
-3. Display removal reason to comment author with appeal information
-4. Preserve comment replies (show as orphaned to maintain thread context)
-5. Send notification to comment author explaining removal
-6. Track in moderation log: timestamp, moderator ID, reason, comment ID
-7. Update parent post's comment count to reflect removal
-
-THE system SHALL display removal notice: "[This comment was removed by community moderators]"
-
-### 8.2 Pinning & Featuring Content
-
-THE community moderators SHALL be able to:
-- Pin up to 3 posts at top of community feed
-- Each pinned post displays "📌 PINNED BY MODERATORS" badge
-- Pinned posts remain at top for specified duration (1-30 days customizable)
-- Moderators can unpin posts at any time (before duration expires)
-- Post author receives notification when post is pinned/unpinned
-- Pinned posts still appear in sorting algorithms within pinned section (secondary sort by Hot/New)
-- Community members see pinned posts as special/important content
-
-### 8.3 Content Warning System
-
-WHEN moderator issues content warning, THE system SHALL:
-
-1. Add warning label to post/comment (predefined categories: Sexual Content, Violence, Spoilers, Misinformation, Hate Speech, Other)
-2. Content displays with warning overlay (content hidden behind "Show Content" button)
-3. Post/comment remains visible but flagged
-4. User receives notification content warning was added with reason
-5. Warning reason shown to user viewing content
-6. Track in moderation log: warning type, timestamp, moderator
-7. Display warning statistics (how many warnings by category)
-
-WHEN user views content with warning, THE system SHALL:
-- Display warning message: "This content contains [warning type]. [Show Anyway Button]"
-- Require explicit user action to view content
-- User can dismiss warning with single click
-
-### 8.4 User Interaction Restrictions
-
-#### Muting Users (EARS Format)
-
-WHEN moderator mutes a user (User Moderator level or higher), THE system SHALL:
-
-1. Prevent user from commenting in community for 24-72 hour duration (moderator-specified)
-2. User CAN still view community and posts
-3. User's existing comments remain visible (mute doesn't hide past content)
-4. Send notification to user: "You are muted in r/[COMMUNITY] until [DATE TIME] for [REASON]"
-5. Display countdown in user's community view showing mute duration remaining
-6. Track mute action with: duration, expiration timestamp, reason, moderator ID
-7. WHEN mute expires, THE system SHALL automatically regain commenting ability
-8. Mute can be lifted early by Full Moderator+ or original moderator
-9. Multiple mutes stack (if muted again while already muted, duration extends)
-
-#### Post Approval Queue (EARS Format)
-
-WHEN moderator applies post approval restriction, THE system SHALL:
-
-1. Require moderator approval for all posts/comments before they appear publicly
-2. User submits post normally but receives message: "Your post is pending moderator review"
-3. Post goes into moderation queue visible only to moderators
-4. Moderators review and approve/reject within 24 hours (SLA)
-5. IF approved, THEN post appears publicly with normal distribution
-6. IF rejected, THEN user notified with reason and option to resubmit with modifications
-7. Duration: 1-30 days (moderator-specified), automatically removes when expired
-8. Applies to both posts and comments
-
----
-
-## 9. Community User Management & Banning
-
-### 9.1 Temporary Ban System
-
-WHEN Full Moderator or higher issues temporary ban, THE system SHALL:
-
-1. Specify ban duration (preset options: 3, 7, 14, 30 days, or custom range 1-90 days)
-2. Specify ban reason (predefined categories: Spam, Harassment, Rule Violation, Abuse, Other or custom text max 500 characters)
-3. Prevent user from:
-   - Creating new posts in community
-   - Creating new comments in community
-   - Voting on posts/comments
-   - Subscribing to community (if not already subscribed)
-4. Preserve user's existing posts and comments (remain visible, but user cannot edit/delete)
-5. Send ban notification: "You are temporarily banned from r/[COMMUNITY] until [DATE]. Reason: [REASON]. [APPEAL LINK]"
-6. Track ban in moderation log: start date, end date, reason, moderator ID, appeal status
-7. Display to banned user: "[You are temporarily banned from this community until DATE]" on community page
-8. WHEN ban duration expires, THE system SHALL automatically restore full access
-9. Allow early ban lifting by Full Moderator+
-
-### 9.2 Permanent Ban System
-
-WHEN Full Moderator or higher issues permanent ban, THE system SHALL:
-
-1. Require primary moderator approval if Full Moderator initiated (non-primary moderators create request)
-2. Unsubscribe user from community immediately
-3. Prevent user from:
-   - Viewing community posts and comments (403 access denied)
-   - Subscribing/resubscribing to community ever
-   - Creating any content in community
-   - Voting in community
-4. Preserve user's historical posts and comments (visible to other members with "[Posted by banned user]" indicator)
-5. Send permanent ban notification: "You are permanently banned from r/[COMMUNITY]. Reason: [REASON]. [APPEAL LINK]"
-6. Track ban in moderation log: permanent marker, timestamp, reason, moderator ID
-7. Allow appeal process (user can request review after 30 days minimum)
-
-### 9.3 Ban Appeal Process (EARS Format)
-
-WHEN banned user submits appeal, THE system SHALL:
-
-1. Display appeal form accessible even to banned users (special access)
-2. Collect appeal reason (max 500 characters, user explains why ban was unfair)
-3. Route appeal to community primary moderator (bypasses original moderator to avoid bias)
-4. Set 7-day review window SLA
-5. Send notification to primary moderator with appeal details and ban context
-6. Display appeal status to user: "Your appeal is under review. You will be notified of decision within 7 days"
-
-WHEN primary moderator reviews appeal, THE system SHALL:
-
-1. Display ban details: date, reason, content history
-2. Display user's appeal explanation and evidence provided
-3. Allow reviewer to choose:
-   - **Uphold Ban**: Appeal rejected, ban remains in effect
-   - **Reduce Duration**: Modify temporary ban to shorter duration
-   - **Overturn Completely**: Remove ban, restore user access
-4. Require moderator to provide decision reasoning (max 500 characters)
-5. Log appeal outcome: timestamp, reviewer ID, decision, reasoning
-
-WHEN appeal is decided, THE system SHALL:
-
-1. Notify user: IF upheld: "Your appeal was reviewed and the ban was upheld. You may submit one additional appeal with new evidence. Next appeal available in [DATE]."
-2. IF overturned: "Your appeal was successful. You have been unbanned from r/[COMMUNITY]. Welcome back!"
-3. For upheld appeals: Allow user to submit ONE additional appeal after 60 days
-4. For overturned appeals: Restore community access immediately, send confirmation notification
-
-### 9.4 Ban Management & Tracking
-
-THE community moderators SHALL be able to:
-- View list of all banned users (temporary and permanent, paginated)
-- See ban duration and expiration date for temporary bans
-- See ban reason and which moderator issued ban
-- Lift temporary ban early (Full Moderator+ level)
-- Reverse permanent ban (primary moderator only)
-- Search banned users by username or ban reason
-- View ban history including overturned bans
-- See appeal history and outcomes for each user
-
-THE system SHALL automatically:
-- Remove expired temporary bans from active bans list
-- Update UI to reflect active bans only
-- Track ban history (even reversed bans for pattern detection)
-- Alert moderators if user has been banned multiple times (repeat offender)
-- Flag users who appeal multiple times without success as potential appeals abuse
-
----
-
-## 10. Community Discovery & Visibility
-
-### 10.1 Community Discovery Features
-
-#### Browse Communities (EARS Format)
-
-WHEN community browser interface is accessed, THE system SHALL provide:
-- **Featured Communities**: Selected by platform admins (5-10 communities)
-- **Trending Communities**: Sorted by new subscribers, posts, activity in past 7 days (top 20)
-- **Popular Communities**: Sorted by total subscribers (top 20)
-- **New Communities**: Sorted by creation date, newest first (top 20)
-- **Communities by Category**: Organized by Technology, Entertainment, Sports, Gaming, News, Education, Lifestyle, Business
-
-FOR each community display, THE system SHALL show:
-- Community icon and name (r/[NAME])
-- Brief description (first 200 characters)
-- Subscriber count (formatted: "2.5K members")
-- Activity metric (posts per day or "High Activity")
-- Subscribe button (or "Subscribed" indicator if already member)
-
-#### Search Communities (EARS Format)
-
-WHEN user searches for communities, THE system SHALL:
-- Search across community names (exact and partial matches)
-- Search across community descriptions
-- Search across community topic tags
-- Return results ranked by relevance and size
-
-RESULTS shall display in order of:
-1. Exact community name matches
-2. Partial community name matches
-3. Description keyword matches
-4. Size and activity (larger communities ranked higher for same relevance)
-
-WHEN no results match search, THE system SHALL:
-- Display "No communities found for '[QUERY]'"
-- Suggest related search terms
-- Show popular communities in the category
-
----
-
-## 11. Community Statistics & Analytics
-
-### 11.1 Community-Level Statistics
-
-THE system SHALL track and display community statistics:
-
-**Display Statistics** (public to all members):
-- Total subscriber count (with growth trend: "+500 this week")
-- Total post count (lifetime)
-- Total comment count (lifetime)
-- Community creation date / age (display as "Created 2 years ago")
-- Average posts per day (last 30 days)
-- Most active time of day for community (e.g., "Peak activity 8-10 PM")
-- Top posts of community (all-time, this month, this week)
-- Top commenters in community (by posts)
-
-**Moderator-Level Statistics** (visible to moderators only):
-- Daily/weekly/monthly post creation trends (chart display)
-- Daily/weekly/monthly comment creation trends
-- User join trends (new subscribers over time)
-- User retention rate (churn rate, unsubscription rate)
-- Most frequently violated community rules
-- Moderation actions by type (removals, bans, warnings, mutes)
-- Average response time to reports
-- Content removal reasons breakdown
-
-**Admin-Level Statistics** (visible to platform admins only):
-- All moderator-level statistics
-- Moderator actions and decision patterns
-- Community compliance with platform policies
-- Appeal outcomes and trends
-- Banned user appeal success rate
-
----
-
-## 12. Community Moderation Workflows
-
-### 12.1 Standard Content Removal Workflow
-
-```mermaid
-graph LR
-  A["Member Reports Post<br/>for Violation"] --> B["Report Submitted<br/>Status: submitted"]
-  B --> C["System Routes to<br/>Community Queue"]
-  C --> D["Community Moderator<br/>Reviews Report"]
-  D --> E{Decision?}
-  E -->|"Approve"| F["Remove Content<br/>Send Notification"]
-  E -->|"Reject"| G["Close Report<br/>Notify Reporter"]
-  E -->|"Escalate"| H["Route to Admin<br/>Queue"]
-  F --> I["Log Moderation<br/>Action"]
-  G --> I
-  H --> I
-```
-
-### 12.2 User Ban Workflow
-
-```mermaid
-graph LR
-  A["Member Violates<br/>Rules Repeatedly"] --> B["Moderator Issues<br/>Ban"]
-  B --> C["User Receives<br/>Ban Notification"]
-  C --> D{User Action?}
-  D -->|"Accept Ban"| E["Ban Active<br/>Countdown Timer"]
-  D -->|"Appeal"| F["Appeal Submitted"]
-  E -->|"Duration Expires"| G["Auto-Remove<br/>Ban"]
-  F --> H["Moderator<br/>Reviews Appeal"]
-  H --> I{Decision?}
-  I -->|"Uphold"| J["Ban Continues"]
-  I -->|"Overturn"| K["Remove Ban<br/>Notify User"]
-```
-
-### 12.3 Escalation Workflow
-
-```mermaid
-graph LR
-  A["Community Moderator<br/>Reviews Report"] --> B{Uncertain or<br/>Critical?}
-  B -->|"Yes"| C["Select Escalate<br/>to Admin"]
-  B -->|"No"| D["Make Decision"]
-  C --> E["Report Moved<br/>to Admin Queue"]
-  E --> F["Platform Admin<br/>Reviews"]
-  F --> G["Admin Documents<br/>Decision"]
-  G --> H["All Parties<br/>Notified"]
-```
-
----
-
-## 13. Business Rules & Validation
-
-### 13.1 Community Creation Rules (EARS Format)
-
-- WHEN user attempts community creation, THE user's account SHALL be minimum 7 days old
-- WHEN user attempts community creation, THE user SHALL have minimum 100 global karma
-- WHEN community name is submitted, THE name SHALL be unique (case-insensitive) across entire platform
-- WHEN community name contains invalid characters, THE system SHALL reject and display: "Community names can only contain letters, numbers, and underscores"
-- WHEN community name submitted, THE length SHALL be between 3-21 characters
-- WHEN community name is too short (<3 chars), THE system SHALL display: "Community name must be at least 3 characters"
-- WHEN community is created, THE creator SHALL be automatically subscribed and made primary moderator
-- WHEN community is created, THE community SHALL be public by default
-- WHEN community is created, THE community post count SHALL initialize at 0
-
-### 13.2 Community Management Rules (EARS Format)
-
-- WHEN community contains posts, THE system SHALL NOT allow community deletion (archive only)
-- WHEN community is created, THE system SHALL require at least one active primary moderator at all times
-- WHEN moderator list is full (10+ moderators), THE system SHALL prevent adding additional moderators
-- WHEN community rules are created, THE system SHALL not allow more than 10 rules per community
-- WHEN pins are managed, THE system SHALL NOT allow more than 3 pinned posts simultaneously
-- WHEN community settings change, THE system SHALL log change with timestamp and moderator ID
-- WHEN community visibility changes, THE system SHALL immediately update discovery status
-
-### 13.3 User Management Rules (EARS Format)
-
-- WHEN user is banned, THE system SHALL prevent resubscription for ban duration (temporary) or indefinitely (permanent)
-- WHEN temporary ban is issued, THE duration SHALL be minimum 1 day, maximum 90 days
-- WHEN permanent ban is issued, THE system SHALL allow appeal only after 30 days of ban issuance
-- WHEN user is muted, THE system SHALL preserve their existing comment visibility (mute = future only)
-- WHEN permanent ban is issued, THE system SHALL require documented reason (not optional)
-- WHEN moderator attempts to ban other moderator, THE system SHALL deny action except for primary moderator
-
-### 13.4 Moderator Authority Boundaries
-
-- WHEN Content Moderator attempts to ban user, THE system SHALL deny with message: "Full Moderator permission required to ban users"
-- WHEN Full Moderator removes moderator, THE system SHALL ALLOW removal of other Full Moderators or lower levels
-- WHEN Full Moderator attempts to remove primary moderator, THE system SHALL deny: "Cannot remove primary moderator"
-- WHEN moderator attempts action outside their community, THE system SHALL deny: "You are not a moderator of this community"
-
----
-
-## 14. Error Handling & User Scenarios
-
-### 14.1 Community Creation Errors
-
-**Scenario 1: Account Too New**
-- User with 3-day-old account attempts community creation
-- System response: "Account must be at least 7 days old to create communities. Your account will be eligible on [DATE]. [Countdown timer showing 4 days remaining]"
-
-**Scenario 2: Insufficient Karma**
-- User with 50 karma attempts community creation
-- System response: "Minimum 100 karma required to create communities. You currently have 50 karma. Earn 50 more karma to create communities. [Link to FAQ: How to earn karma]"
-
-**Scenario 3: Community Name Exists**
-- User attempts to create "Technology" but it exists
-- System response: "Community 'r/Technology' already exists. Try one of these alternatives: [Suggested names]. [Link to existing community]"
-
-**Scenario 4: Invalid Name Characters**
-- User enters "Tech & Design" (contains space and special char)
-- System response: "Community names can only contain letters, numbers, and underscores. 'Tech & Design' contains invalid characters. Try 'Tech_Design' instead."
-
-### 14.2 Subscription Errors
-
-**Scenario 5: Previously Banned User Attempts Resubscribe After Expiration**
-- User previously temp-banned, ban expires, attempts to resubscribe
-- System allows resubscription
-- System displays: "Note: You were previously banned from this community. Please follow the community rules carefully."
-
-**Scenario 6: Permanently Banned User Attempts Resubscribe**
-- Permanently banned user attempts to subscribe
-- System denies with: "You cannot subscribe to this community. You have been permanently banned. [Appeal link]"
-
-**Scenario 7: Temporarily Banned User Attempts to Post**
-- Temporarily banned user tries to create post
-- System rejects with: "You are temporarily banned from posting in this community until [DATE, TIME]. Reason: [BAN REASON]. [Appeal link]"
-
-### 14.3 Moderator Action Errors
-
-**Scenario 8: Insufficient Permission**
-- Content Moderator attempts to permanently ban user
-- System denies: "Full Moderator level required for permanent bans. Contact a Full Moderator in this community."
-
-**Scenario 9: Primary Moderator Removal Attempt**
-- Full Moderator attempts to remove primary moderator
-- System denies: "Cannot remove primary moderator. Transfer community ownership first. [Link to ownership transfer]"
-
-**Scenario 10: Moderator Removal During Active Action**
-- Moderator removed from role while moderation action is in progress
-- System completes the action already initiated
-- System logs action completion attributed to system (not specific moderator)
-- System preserves audit trail showing original moderator who initiated
-
-### 14.4 Privacy & Access Errors
-
-**Scenario 11: Non-Member Access to Private Community**
-- Non-member tries to access private community directly
-- System returns 403 Forbidden: "This is a private community. Request membership to join. [Request Membership button]"
-
-**Scenario 12: Permanently Banned User Access Attempt**
-- Permanently banned user navigates to community
-- System displays: "You have been permanently banned from this community. [Appeal link]"
-
-### 14.5 Data Consistency Errors
-
-**Scenario 13: Member Count Discrepancy**
-- Member count becomes inconsistent with actual subscriptions
-- System runs nightly reconciliation
-- System detects discrepancy and corrects automatically
-- System logs issue for investigation
-
-**Scenario 14: Settings Conflict**
-- User has private profile but post visibility set to public
-- System applies most restrictive (private overrides)
-- System alerts user: "Your post visibility has been adjusted due to profile privacy settings"
-
----
-
-## 15. Integration with Related Systems
-
-### 15.1 Community & Authentication Integration
-
-WHEN moderator roles are assigned, THE system references [02-user-actors-authentication.md](./02-user-actors-authentication.md):
-- Community moderators are a specialized actor type within the authentication system
-- Moderator permissions are enforced through the role-based access control system
-- Moderator sessions are managed using the same JWT token system as regular members
-- Permission verification occurs on every API call affecting community content or users
-
-### 15.2 Community & Content Creation Integration
-
-WHEN posts and comments are created within communities, THE system references [05-content-creation-posting.md](./05-content-creation-posting.md) and [06-commenting-engagement.md](./06-commenting-engagement.md):
-- Posts are scoped to specific communities
-- Community settings affect post type restrictions
-- Moderation applies to all content types
-- Karma earned is tracked both globally and per-community
-
-### 15.3 Community & Moderation Integration
-
-WHEN reports are submitted in communities, THE system references [09-moderation-reporting.md](./09-moderation-reporting.md):
-- Community moderators review reports within their communities
-- Community rules are enforced through moderation actions
-- Bans and restrictions are enforced through the moderation system
-- Appeals follow the moderation system's appeal workflow
-
-### 15.4 Community & User Profiles Integration
-
-WHEN viewing user profiles, THE system references [10-user-profiles-preferences.md](./10-user-profiles-preferences.md):
-- User profiles display communities moderated
-- User profiles display community karma scores
-- Community membership is shown on user profiles
-- Moderator status is displayed as a badge on user profiles
-
-### 15.5 Community & Karma Integration
-
-WHEN karma is calculated, THE system references [07-karma-reputation-system.md](./07-karma-reputation-system.md):
-- Community-specific karma is tracked separately from global karma
-- Community karma requirements can restrict posting
-- High community karma indicates expertise in that topic area
-- Moderator selection often based on high community karma
-
----
-
-## 16. Summary of Key Requirements
-
-### Community Operations
-1. Communities created with 7-day account age and 100 karma minimum
-2. Three privacy levels (public, private, restricted)
-3. Primary moderator is immutable community creator
-4. Up to 10 additional moderators with three permission levels
-5. Community rules system (max 10 rules)
-6. Customizable settings for posts, voting, comments, and moderation
-7. Comprehensive statistics tracking
-
-### User Management
-1. Subscription system with automatic validation
-2. Temporary bans (1-90 days, auto-removal)
-3. Permanent bans (manual removal via appeal)
-4. Appeal system (primary moderator reviews)
-5. Muting, post approval, and graduated restrictions
-6. Ban history and repeat-offender detection
-
-### Moderation
-1. Content removal with soft deletion
-2. Content warnings and labeling
-3. Post pinning (max 3)
-4. User restrictions (mute, ban, approval queue)
-5. Complete audit trail of all actions
-6. SLA for report response (24 hours for non-critical)
-
-### Accountability
-1. All moderator actions logged with timestamp and reasoning
-2. Appeals process with multi-tier review
-3. Override capabilities for admins
-4. Consistency monitoring for moderators
-5. Transparency to community members about moderation
-
----
-
-> *Developer Note: This document defines **business requirements only**. All technical implementations (API design, database schema, repository patterns, caching mechanisms, etc.) are at the discretion of the development team. This document describes WHAT communities must do, not HOW to build them.*"
+> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

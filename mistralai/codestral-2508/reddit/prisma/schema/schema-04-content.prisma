@@ -1,0 +1,189 @@
+/// Community posts created by users within specific communities. Each post
+/// belongs to a community and is created by a user. Posts can have different
+/// types and can be upvoted/downvoted by other users. Posts can be pinned or
+/// locked by moderators. Posts can be reported for inappropriate content.
+/// Posts can be sorted by hot, new, top, or controversial.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who created the post. {@link reddit_like_community_users.id}
+  reddit_like_community_user_id String
+  
+  /// Community where the post was created. {@link
+  /// reddit_like_community_communities.id}
+  reddit_like_community_community_id String
+  
+  /// Type of the post. {@link reddit_like_community_post_types.id}
+  reddit_like_community_post_type_id String
+  
+  /// Title of the post.
+  title String
+  
+  /// Content of the post.
+  content String
+  
+  /// Status of the post (active, locked, pinned).
+  status String
+  
+  /// Timestamp when the post was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_community_users @relation(fields: [reddit_like_community_user_id], references: [id], onDelete: Cascade)
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  postType reddit_like_community_post_types @relation(fields: [reddit_like_community_post_type_id], references: [id], onDelete: Cascade)
+  
+  reddit_like_community_comments reddit_like_community_comments[]
+  reddit_like_community_votes reddit_like_community_votes[]
+  reddit_like_community_reports reddit_like_community_reports[]
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_type_id], map: "reddit_like_community_posts_reddit_like_community_post_69ac88a4")
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id, created_at], map: "reddit_like_community_posts_reddit_like_community_user_2d3a5a9c")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_community_id, created_at], map: "reddit_like_community_posts_reddit_like_community_comm_f0ca9a01")
+}
+
+/// Comments created by users on posts within communities. Each comment
+/// belongs to a post and is created by a user. Comments can be
+/// upvoted/downvoted by other users. Comments can be reported for
+/// inappropriate content. Comments can be nested under other comments.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who created the comment. {@link reddit_like_community_users.id}
+  reddit_like_community_user_id String
+  
+  /// Post where the comment was created. {@link reddit_like_community_posts.id}
+  reddit_like_community_post_id String
+  
+  /// Parent comment if this is a nested reply. {@link
+  /// reddit_like_community_comments.id}
+  parent_id String?
+  
+  /// Type of the comment. {@link reddit_like_community_comment_types.id}
+  reddit_like_community_comment_type_id String
+  
+  /// Content of the comment.
+  content String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_like_community_users @relation(fields: [reddit_like_community_user_id], references: [id], onDelete: Cascade)
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  parent reddit_like_community_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  commentType reddit_like_community_comment_types @relation(fields: [reddit_like_community_comment_type_id], references: [id], onDelete: Cascade)
+  
+  recursive reddit_like_community_comments[] @relation("recursive")
+  reddit_like_community_votes reddit_like_community_votes[]
+  reddit_like_community_reports reddit_like_community_reports[]
+  
+  @@index([parent_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_comment_type_id], map: "reddit_like_community_comments_reddit_like_community_c_9aa0e52b")
+  
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_user_id, created_at], map: "reddit_like_community_comments_reddit_like_community_u_44a646f1")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_id, created_at], map: "reddit_like_community_comments_reddit_like_community_p_6ef0e18f")
+}
+
+/// Types of posts that can be created within communities. Each post type has
+/// a unique identifier and a name. Post types are used to categorize posts
+/// within communities.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the post type.
+  name String
+  
+  /// Description of the post type.
+  description String
+  
+  /// Timestamp when the post type was created.
+  created_at DateTime
+  
+  /// Timestamp when the post type was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_posts reddit_like_community_posts[]
+  
+  @@unique([name])
+}
+
+/// Types of comments that can be created on posts within communities. Each
+/// comment type has a unique identifier and a name. Comment types are used
+/// to categorize comments within communities.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_comment_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the comment type.
+  name String
+  
+  /// Description of the comment type.
+  description String
+  
+  /// Timestamp when the comment type was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment type was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reddit_like_community_comments reddit_like_community_comments[]
+  
+  @@unique([name])
+}

@@ -1,9 +1,30 @@
-/// System reference table defining article categories for the discussion
-/// board platform. Provides canonical set of allowed category values
-/// (Economics, Politics) that articles must be classified under. This is a
-/// system-managed configuration table, not user-created. Categories are used
-/// throughout the platform for article organization, filtering, and
-/// discovery workflows.
+/// Predefined article categories that organize and structure all discussions
+/// on the platform.
+///
+/// Stores the fixed set of categories available for article classification:
+/// Economics, Politics, Economic Policy, Political Analysis, and Other.
+/// Categories define the organizational structure for the entire discussion
+/// board, allowing users to browse and discover discussions by topic area.
+///
+/// Categories are foundational reference data maintained by system
+/// administrators. Articles must belong to exactly one category. Members
+/// cannot create custom categories—only system administrators can add or
+/// modify the category list to ensure consistent organization.
+///
+/// Each category includes metadata for display and tracking:
+/// - name: Display name shown to users (e.g., 'Economics')
+/// - slug: URL-safe identifier for filtering and programmatic reference
+/// - description: Purpose and scope of this category
+/// - display_order: Sequence for showing categories in navigation (lower
+/// numbers appear first)
+/// - is_active: Whether category is currently available for article selection
+/// - article_count: Denormalized count of published articles in this
+/// category (updated when articles are published or archived)
+///
+/// Categories support the discovery workflow by providing a navigation path
+/// complementary to search functionality. While not directly transactional,
+/// categories are essential infrastructure supporting article organization
+/// and member navigation.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -14,42 +35,53 @@ model discussion_board_categories {
   /// Primary Key.
   id String @id
   
-  /// Unique category code/identifier used throughout the system (e.g.,
-  /// 'economics', 'politics'). This is the programmatic identifier for the
-  /// category.
-  code String
-  
-  /// Human-readable category name displayed to users (e.g., 'Economics',
-  /// 'Politics'). This is what users see when selecting or filtering by
-  /// category.
+  /// Display name of the category shown to users. Examples: 'Economics',
+  /// 'Politics', 'Economic Policy'. Maximum 50 characters for consistent
+  /// display in UI.
   name String
   
-  /// Optional detailed description of the category explaining its scope and
-  /// purpose. Helps users understand which category is appropriate for their
-  /// content.
+  /// URL-safe identifier for the category used in filtering, search, and API
+  /// endpoints. Examples: 'economics', 'political-analysis'. Lowercase
+  /// alphanumeric with hyphens only. Must be unique across all categories.
+  slug String
+  
+  /// Detailed description of the category's purpose and scope. Explains what
+  /// types of discussions belong here. Displayed to users when browsing or
+  /// creating articles. Maximum 500 characters.
   description String?
   
-  /// Numeric ordering value for displaying categories in UI. Lower numbers
-  /// appear first in lists and navigation menus. Allows flexible category
-  /// ordering without requiring alphabetical sort.
+  /// Integer sequence number determining category display order in navigation
+  /// menus. Lower numbers appear first. Categories are sorted by this field
+  /// for consistent UI presentation. Typical values: 1 (Economics), 2
+  /// (Politics), 3 (Economic Policy), 4 (Political Analysis), 5 (Other).
   display_order Int
   
-  /// Flag indicating whether the category is currently active and available
-  /// for new article creation. Inactive categories can still be queried for
-  /// existing articles but are hidden from category selection in UI.
+  /// Whether this category is currently available for article selection.
+  /// Active categories appear in the category filter dropdown and navigation.
+  /// Inactive categories hide from member selections but retain existing
+  /// articles. Allows administrators to retire unused categories without data
+  /// loss.
   is_active Boolean
   
-  /// Timestamp when the category was created or added to the system. Stored in
-  /// ISO 8601 UTC format for audit trail purposes.
+  /// Denormalized count of published articles currently in this category.
+  /// Provides quick access for display purposes (e.g., 'Economics (42
+  /// articles'). Automatically updated when articles are published or
+  /// archived. Initialized to 0 when category is created.
+  article_count Int
+  
+  /// Timestamp when category was created. Records the initial creation time of
+  /// the category in UTC timezone. Immutable after creation.
   created_at DateTime
   
-  /// Timestamp when the category was last modified. Updated whenever category
-  /// metadata changes (name, description, display order, active status).
+  /// Timestamp of the most recent modification to category properties. Updated
+  /// whenever category name, description, display order, or active status
+  /// changes. Supports audit trail and change tracking.
   updated_at DateTime
   
-  /// Timestamp when the category was soft-deleted (retired from use). Null for
-  /// active categories. Soft deletion preserves referential integrity -
-  /// articles can still reference deleted categories for historical accuracy.
+  /// Timestamp when category was soft-deleted. NULL indicates active category.
+  /// When set, category is hidden from UI but preserved in database for audit
+  /// trail and historical integrity. Allows category retirement without
+  /// breaking historical article references.
   deleted_at DateTime?
   
   //----
@@ -57,5 +89,123 @@ model discussion_board_categories {
   //----
   discussion_board_articles discussion_board_articles[]
   
-  @@unique([code])
+  @@unique([name])
+  @@unique([slug])
+  @@index([display_order])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// System-wide configuration and settings that control platform behavior and
+/// features.
+///
+/// Stores key-value pairs for application configuration, feature flags, and
+/// operational settings. Provides centralized management of system behavior
+/// without requiring code changes or redeployment. Administrators modify
+/// settings through admin panels to control platform features and behavior.
+///
+/// Common settings include:
+/// - Site metadata: site_name, site_description, support_email
+/// - Feature flags: enable_new_user_registrations, enable_comments,
+/// enable_file_uploads, enable_search
+/// - Moderation settings: require_article_approval, auto_moderate_comments,
+/// spam_detection_enabled
+/// - Rate limiting: max_articles_per_day, max_comments_per_day,
+/// max_comment_burst
+/// - System behavior: maintenance_mode, maintenance_message,
+/// session_timeout_minutes
+///
+/// Each setting consists of:
+/// - setting_key: Unique identifier for the configuration parameter (e.g.,
+/// 'maintenance_mode')
+/// - setting_value: The actual configuration value (string format, parsed by
+/// application as needed)
+/// - setting_type: Data type hint ('string', 'integer', 'boolean', 'json')
+/// helping application parse the value
+/// - description: Purpose and usage of this setting for administrator reference
+/// - is_active: Whether this setting is currently applied; inactive settings
+/// are ignored
+/// - updated_by: Moderator or admin who last modified this setting (for
+/// audit trail)
+/// - updated_at: When setting was last changed
+///
+/// The system_settings table is the single source of truth for
+/// configuration, eliminating the need to modify environment variables or
+/// restart the application. Changes are applied immediately or on next
+/// request depending on setting type and system design.
+///
+/// All settings are immutable once set—modifications create new entries with
+/// updated timestamps rather than overwriting previous values. This
+/// preserves configuration history and supports audit trail requirements.
+///
+/// Settings support the operational requirements of the platform by allowing
+/// administrators to control feature availability, user behavior
+/// constraints, and system maintenance without technical intervention.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the configuration setting. Examples:
+  /// 'maintenance_mode', 'max_articles_per_day', 'site_name',
+  /// 'enable_user_registrations'. Used by application code to retrieve
+  /// specific configuration values. Maximum 100 characters. Must be unique
+  /// combined with category.
+  setting_key String
+  
+  /// The actual configuration value as string. Format depends on setting_type:
+  /// boolean settings stored as 'true'/'false', integer settings as numeric
+  /// strings (e.g., '30'), JSON settings as serialized JSON. Application code
+  /// is responsible for parsing based on setting_type. Maximum 10,000
+  /// characters for complex values.
+  setting_value String
+  
+  /// Data type hint for parsing the setting_value. Allowed values: 'string',
+  /// 'integer', 'boolean', 'json'. Helps application correctly interpret the
+  /// stored value. For example, 'true' string interpreted as boolean true when
+  /// type is 'boolean'.
+  setting_type String
+  
+  /// Human-readable description of the setting's purpose, usage, and impact.
+  /// Displayed to administrators in settings management UI to explain what
+  /// each configuration controls. Helps administrators understand
+  /// configuration consequences. Maximum 500 characters.
+  description String?
+  
+  /// Whether this setting is currently active and applied by the system.
+  /// Active settings (true) are retrieved and used by application code.
+  /// Inactive settings (false) are stored but ignored by the application.
+  /// Allows administrators to disable specific settings without deleting
+  /// configuration history.
+  is_active Boolean
+  
+  /// Identifier of the moderator or administrator who last modified this
+  /// setting. Used for audit trail to track who made configuration changes and
+  /// when. Supports accountability and troubleshooting of configuration
+  /// issues.
+  updated_by String?
+  
+  /// Timestamp when this setting was initially created or first recorded.
+  /// Marks the beginning of this configuration entry for audit purposes.
+  /// Immutable after creation.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this setting's value or
+  /// active status. Updated whenever the setting_value, is_active, or other
+  /// properties change. Helps identify recently modified settings and track
+  /// configuration changes over time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([setting_key])
+  @@index([is_active])
+  @@index([setting_type])
+  @@index([updated_at])
 }

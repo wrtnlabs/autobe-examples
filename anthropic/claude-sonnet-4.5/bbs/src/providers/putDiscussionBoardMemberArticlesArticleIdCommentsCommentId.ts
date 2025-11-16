@@ -9,7 +9,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
-import { IDiscussionBoardModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModerator";
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 
 export async function putDiscussionBoardMemberArticlesArticleIdCommentsCommentId(props: {
@@ -18,106 +18,83 @@ export async function putDiscussionBoardMemberArticlesArticleIdCommentsCommentId
   commentId: string & tags.Format<"uuid">;
   body: IDiscussionBoardComment.IUpdate;
 }): Promise<IDiscussionBoardComment> {
-  const { member, articleId, commentId, body } = props;
+  const existing = await MyGlobal.prisma.discussion_board_comments.findUnique({
+    where: { id: props.commentId },
+  });
 
-  const comment =
-    await MyGlobal.prisma.discussion_board_comments.findUniqueOrThrow({
-      where: { id: commentId },
-    });
+  if (!existing) {
+    throw new HttpException("Comment not found", 404);
+  }
 
-  if (comment.discussion_board_article_id !== articleId) {
+  if (existing.discussion_board_article_id !== props.articleId) {
     throw new HttpException(
       "Comment does not belong to the specified article",
       404,
     );
   }
 
-  if (comment.discussion_board_member_id !== member.id) {
+  if (existing.discussion_board_member_id !== props.member.id) {
     throw new HttpException(
-      "Unauthorized: You can only update your own comments",
+      "You are not authorized to update this comment",
       403,
     );
   }
 
-  const now = toISOStringSafe(new Date());
-
   const updated = await MyGlobal.prisma.discussion_board_comments.update({
-    where: { id: commentId },
+    where: { id: props.commentId },
     data: {
-      content: body.content ?? undefined,
-      updated_at: now,
+      ...(props.body.content !== undefined && { content: props.body.content }),
+      updated_at: new Date(),
     },
   });
 
-  await MyGlobal.prisma.discussion_board_comment_snapshots.create({
-    data: {
-      id: v4(),
-      discussion_board_comment_id: commentId,
-      content: updated.content,
-      created_at: now,
-    },
-  });
-
-  const result =
-    await MyGlobal.prisma.discussion_board_comments.findUniqueOrThrow({
-      where: { id: commentId },
-      include: {
-        memberAuthor: true,
-        moderatorAuthor: true,
-      },
+  const commentMember =
+    await MyGlobal.prisma.discussion_board_members.findUnique({
+      where: { id: updated.discussion_board_member_id },
     });
 
-  const memberAuthor: IDiscussionBoardMember.ISummary | null | undefined =
-    result.memberAuthor
-      ? {
-          id: result.memberAuthor.id,
-          username: result.memberAuthor.username,
-          display_name: result.memberAuthor.display_name ?? undefined,
-          profile_picture_url:
-            result.memberAuthor.profile_picture_url ?? undefined,
-        }
-      : undefined;
+  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: { id: updated.discussion_board_article_id },
+  });
 
-  const moderatorAuthor: IDiscussionBoardModerator.ISummary | null | undefined =
-    result.moderatorAuthor
-      ? {
-          id: result.moderatorAuthor.id,
-          username: result.moderatorAuthor.username,
-          display_name: result.moderatorAuthor.display_name,
-          profile_picture_url: result.moderatorAuthor.profile_picture_url,
-          email_verified: result.moderatorAuthor.email_verified,
-          status: result.moderatorAuthor.status,
-          moderation_permissions: result.moderatorAuthor.moderation_permissions,
-          profile_visibility: result.moderatorAuthor.profile_visibility,
-          activity_visibility: result.moderatorAuthor.activity_visibility,
-          bio: result.moderatorAuthor.bio ?? undefined,
-          location: result.moderatorAuthor.location ?? undefined,
-          website_url: result.moderatorAuthor.website_url ?? undefined,
-          last_login_at: result.moderatorAuthor.last_login_at
-            ? toISOStringSafe(result.moderatorAuthor.last_login_at)
-            : undefined,
-          created_at: toISOStringSafe(result.moderatorAuthor.created_at),
-          updated_at: toISOStringSafe(result.moderatorAuthor.updated_at),
-          deleted_at: result.moderatorAuthor.deleted_at
-            ? toISOStringSafe(result.moderatorAuthor.deleted_at)
-            : undefined,
-        }
-      : undefined;
+  const articleAuthor =
+    await MyGlobal.prisma.discussion_board_members.findUnique({
+      where: { id: article!.discussion_board_member_id },
+    });
 
   return {
-    id: result.id,
-    discussion_board_article_id: result.discussion_board_article_id,
-    discussion_board_parent_comment_id:
-      result.discussion_board_parent_comment_id ?? undefined,
-    discussion_board_member_id: result.discussion_board_member_id ?? undefined,
-    discussion_board_moderator_id:
-      result.discussion_board_moderator_id ?? undefined,
-    author_type: result.author_type,
-    content: result.content,
-    created_at: toISOStringSafe(result.created_at),
-    updated_at: toISOStringSafe(result.updated_at),
-    deleted_at: result.deleted_at ? toISOStringSafe(result.deleted_at) : null,
-    memberAuthor,
-    moderatorAuthor,
+    id: updated.id,
+    discussion_board_article_id: updated.discussion_board_article_id,
+    member_id: updated.discussion_board_member_id,
+    content: updated.content,
+    created_at: toISOStringSafe(updated.created_at),
+    updated_at: toISOStringSafe(updated.updated_at),
+    deleted_at:
+      updated.deleted_at === null
+        ? undefined
+        : toISOStringSafe(updated.deleted_at),
+    member: {
+      id: commentMember!.id,
+      username: commentMember!.username,
+      email: commentMember!.email,
+      status: commentMember!.status,
+      email_verified: commentMember!.email_verified,
+      created_at: toISOStringSafe(commentMember!.created_at),
+    },
+    article: {
+      id: article!.id,
+      title: article!.title,
+      view_count: article!.view_count,
+      created_at: toISOStringSafe(article!.created_at),
+      updated_at: toISOStringSafe(article!.updated_at),
+      author: {
+        id: articleAuthor!.id,
+        username: articleAuthor!.username,
+        email: articleAuthor!.email,
+        status: articleAuthor!.status,
+        email_verified: articleAuthor!.email_verified,
+        created_at: toISOStringSafe(articleAuthor!.created_at),
+      },
+    },
   };
 }

@@ -1,0 +1,30 @@
+/// Manages alerts for users.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link users.id}
+  user_id String
+  
+  /// Notification title.
+  title String
+  
+  /// Notification content.
+  content String
+  
+  /// Timestamp when the notification was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+}

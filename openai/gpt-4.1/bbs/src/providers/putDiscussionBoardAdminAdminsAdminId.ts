@@ -15,57 +15,60 @@ export async function putDiscussionBoardAdminAdminsAdminId(props: {
   adminId: string & tags.Format<"uuid">;
   body: IDiscussionBoardAdmin.IUpdate;
 }): Promise<IDiscussionBoardAdmin> {
-  const { admin, adminId, body } = props;
-
-  // Check that the target admin exists
+  // Step 1: Retrieve existing admin
   const existing = await MyGlobal.prisma.discussion_board_admins.findUnique({
-    where: { id: adminId },
+    where: { id: props.adminId },
   });
-  if (!existing) {
-    throw new HttpException("Administrator not found", 404);
+  if (!existing || existing.deleted_at !== null) {
+    throw new HttpException("Admin not found", 404);
   }
 
-  // Update admin fields, handle all optionals and nullables per DTO
-  let updated;
-  try {
-    updated = await MyGlobal.prisma.discussion_board_admins.update({
-      where: { id: adminId },
-      data: {
-        email: body.email,
-        display_name: body.display_name,
-        password_hash: body.password_hash,
-        is_locked: body.is_locked,
-        avatar_url: body.avatar_url !== undefined ? body.avatar_url : undefined,
-        deleted_at: body.deleted_at !== undefined ? body.deleted_at : undefined,
-        updated_at: toISOStringSafe(new Date()),
-      },
-    });
-  } catch (err) {
-    if (
-      typeof err === "object" &&
-      err &&
-      "code" in err &&
-      (err as { code: string }).code === "P2002"
-    ) {
-      throw new HttpException("Email address already in use", 409);
-    }
-    throw err;
+  // Step 2: Enforce business logic
+  // Cannot have both active and blocked set to true
+  if (props.body.is_active && props.body.is_blocked) {
+    throw new HttpException("Account cannot be both active and blocked", 400);
   }
+
+  // Email must be unique (ignore this record)
+  const duplicate = await MyGlobal.prisma.discussion_board_admins.findFirst({
+    where: {
+      email: props.body.email,
+      id: { not: props.adminId },
+      deleted_at: null,
+    },
+  });
+  if (duplicate) {
+    throw new HttpException("Email already in use by another admin", 409);
+  }
+
+  // Step 3: Hash new password
+  const password_hash = await PasswordUtil.hash(props.body.password);
+
+  // Step 4: Update record
+  const now = toISOStringSafe(new Date());
+  const updated = await MyGlobal.prisma.discussion_board_admins.update({
+    where: { id: props.adminId },
+    data: {
+      email: props.body.email,
+      password_hash,
+      is_email_verified: props.body.is_email_verified,
+      is_active: props.body.is_active,
+      is_blocked: props.body.is_blocked,
+      updated_at: now,
+    },
+  });
 
   return {
     id: updated.id,
     email: updated.email,
-    display_name: updated.display_name,
-    avatar_url:
-      updated.avatar_url !== undefined ? updated.avatar_url : undefined,
-    is_locked: updated.is_locked,
-    deleted_at:
-      updated.deleted_at !== undefined
-        ? updated.deleted_at === null
-          ? null
-          : toISOStringSafe(updated.deleted_at)
-        : undefined,
+    is_email_verified: updated.is_email_verified,
+    is_active: updated.is_active,
+    is_blocked: updated.is_blocked,
     created_at: toISOStringSafe(updated.created_at),
     updated_at: toISOStringSafe(updated.updated_at),
+    deleted_at:
+      updated.deleted_at === null
+        ? undefined
+        : toISOStringSafe(updated.deleted_at),
   };
 }

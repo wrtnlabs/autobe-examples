@@ -6,10 +6,16 @@ import { memberAuthorize } from "../providers/authorize/memberAuthorize";
 
 export const MemberAuth =
   (): ParameterDecorator =>
-  (target: object, propertyKey: string | symbol | undefined, parameterIndex: number): void => {
-    SwaggerCustomizer(props => {
+  (
+    target: object,
+    propertyKey: string | symbol | undefined,
+    parameterIndex: number,
+  ): void => {
+    SwaggerCustomizer((props) => {
       props.route.security ??= [];
-      props.route.security.push({ bearer: [] });
+      props.route.security.push({
+        bearer: [],
+      });
     })(target, propertyKey as string, undefined!);
     singleton.get()(target, propertyKey, parameterIndex);
   };

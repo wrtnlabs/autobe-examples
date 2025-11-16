@@ -3,42 +3,40 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IShoppingCustomer } from "../../../structures/IShoppingCustomer";
-export * as password from "./password/index";
+import { IShoppingMallCustomer } from "../../../structures/IShoppingMallCustomer";
 
 /**
- * Register a new customer (shopping_customers table) and create JWT tokens.
+ * Registers a new customer by creating a member account in
+ * shopping_mall_customers and returning JWT tokens.
  *
- * This API operation enables the registration of a new customer account by
- * accepting required fields defined in the 'shopping_customers' Prisma schema,
- * including email, password_hash, name, and phone. The operation enforces
- * uniqueness validation on the email field as described in the schema and
- * implemented in database constraints. Upon creation, the system issues JWT
- * access and refresh tokens for session management, utilizing the related
- * session and token infrastructure. Account registration is subject to business
- * logic requirements, including password complexity, real name verification,
- * and phone number validation, all of which must conform to schema formats and
- * constraints.
+ * This operation registers a new customer account based on user-supplied
+ * credentials, storing key identity fields in the shopping_mall_customers
+ * table. Email uniqueness is enforced per schema constraints. Successful
+ * registration returns JWT tokens for immediate use, transforming an
+ * unauthenticated visitor into a full 'member' actor as defined in platform
+ * requirements.
  *
- * Integration with the shopping_customer_sessions table occurs
- * post-registration to track session information, as customers receive tokens
- * for immediate authenticated use. All validation of input data—such as proper
- * email format and phone structure—relies on the schema-defined field
- * properties and system-enforced rules for the 'customer' actor. Security best
- * practices, including password hashing and audit trail generation, are
- * employed by this endpoint.
+ * During execution, input is validated for essential fields including email and
+ * password, referencing the schema's unique and required constraints. Password
+ * is securely hashed prior to storage, and email must be unique; duplicate
+ * attempts trigger appropriate error responses.
  *
- * Registrations resulting in errors, such as attempted duplicate emails
- * (violating the '@@unique([email])' constraint), are handled gracefully by
- * returning informative error messages referencing the violating schema field.
- * Related operations include subsequent login or token-refresh, both of which
- * consume the tokens issued here. All registration attempts are audited for
- * compliance with platform and regulatory requirements, ensuring accountability
- * as reflected in the schema's audit relations.
+ * Account is created inside a transaction to ensure data integrity. The
+ * operation does not assign additional roles or permissions at this stage, but
+ * it does activate the core customer identity in the system.
+ *
+ * Security is a priority: passwords are never exposed, and JWT is returned in
+ * the expected API response structure—see requirements for security and
+ * compliance details. The join flow is the gateway for future login or refresh
+ * actions.
+ *
+ * Related endpoints include login (credential verification post-registration)
+ * and token refresh (session renewal), both forming the rest of the customer
+ * authentication lifecycle and requiring this registration as a prerequisite.
  *
  * @param props.connection
- * @param props.body Customer registration data, strictly matching
- *   'shopping_customers' schema fields required for account creation.
+ * @param props.body Registration details for new customer account. Schema
+ *   fields must match shopping_mall_customers model (e.g., email, password).
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/join
@@ -74,13 +72,13 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Customer registration data, strictly matching 'shopping_customers'
-     * schema fields required for account creation.
+     * Registration details for new customer account. Schema fields must
+     * match shopping_mall_customers model (e.g., email, password).
      */
-    body: IShoppingCustomer.ICreate;
+    body: IShoppingMallCustomer.ICreate;
   };
-  export type Body = IShoppingCustomer.ICreate;
-  export type Response = IShoppingCustomer.IAuthorized;
+  export type Body = IShoppingMallCustomer.ICreate;
+  export type Response = IShoppingMallCustomer.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -96,8 +94,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/customer/join";
-  export const random = (): IShoppingCustomer.IAuthorized =>
-    typia.random<IShoppingCustomer.IAuthorized>();
+  export const random = (): IShoppingMallCustomer.IAuthorized =>
+    typia.random<IShoppingMallCustomer.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -124,30 +122,35 @@ export namespace join {
 }
 
 /**
- * Authenticate customer and issue tokens using 'shopping_customers' schema.
+ * Authenticates customer credentials against shopping_mall_customers and
+ * returns a new JWT token set.
  *
- * This API endpoint authenticates a customer using 'email' and 'password_hash'
- * fields as defined in the 'shopping_customers' schema. If the credentials
- * match an active account, new JWT tokens are generated for session management.
- * The operation references the schema's is_active and deleted_at fields to
- * ensure only eligible accounts can access the system. Audit log and session
- * creation are triggered in the 'shopping_customer_sessions' related table,
- * using metadata such as IP address stored at authentication time.
+ * This operation enables customer login via email and password authentication,
+ * referencing required fields in the shopping_mall_customers schema. Provided
+ * credentials are verified; correct input issues fresh JWT access and refresh
+ * tokens. Unsuccessful attempts, such as invalid credentials or locked-out
+ * accounts, use schema constraints and requirements-driven error messaging.
  *
- * Security is handled according to platform guidelines—hashing passwords on
- * comparison and strictly matching the schema column formats. If the email is
- * not found, the password is incorrect, or the account is marked deleted
- * (deleted_at not null) or inactive (is_active false), the endpoint returns
- * detailed authentication errors linked to schema field constraints.
+ * Authentication logic enforces password hashing and secure comparison methods
+ * per platform security requirements. If login attempt limits or lockout states
+ * exist in schema, these are handled as described, returning errors for
+ * exceeded limits or inactive accounts.
  *
- * Post-login, the endpoint issues JWT access and refresh tokens containing the
- * customer ID, role, and permissions, drawing from the session management
- * infrastructure described in the schema. Security, audit, and compliance
- * requirements are enforced throughout.
+ * Login is the principal mechanism for customers to authenticate to protected
+ * endpoints, re-using their registration identity. The process never returns
+ * password hashes and all error messages are generic to avoid information
+ * leakage.
+ *
+ * Tied directly to the registration (join) and refresh endpoints, this
+ * completes the authentication cycle required for secure platform access. Only
+ * registered users with valid credentials are authenticated.
+ *
+ * The schema explicitly provides both 'email' and 'password' fields, required
+ * for any customer login, and implementation uses these without assumption.
  *
  * @param props.connection
- * @param props.body Customer login credentials ('email' and 'password_hash')
- *   referencing the 'shopping_customers' schema.
+ * @param props.body Customer login credentials—must match required fields in
+ *   shopping_mall_customers (e.g., email, password).
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/login
@@ -183,13 +186,13 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Customer login credentials ('email' and 'password_hash') referencing
-     * the 'shopping_customers' schema.
+     * Customer login credentials—must match required fields in
+     * shopping_mall_customers (e.g., email, password).
      */
-    body: IShoppingCustomer.ILogin;
+    body: IShoppingMallCustomer.ILogin;
   };
-  export type Body = IShoppingCustomer.ILogin;
-  export type Response = IShoppingCustomer.IAuthorized;
+  export type Body = IShoppingMallCustomer.ILogin;
+  export type Response = IShoppingMallCustomer.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -205,8 +208,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/customer/login";
-  export const random = (): IShoppingCustomer.IAuthorized =>
-    typia.random<IShoppingCustomer.IAuthorized>();
+  export const random = (): IShoppingMallCustomer.IAuthorized =>
+    typia.random<IShoppingMallCustomer.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -233,33 +236,32 @@ export namespace login {
 }
 
 /**
- * Refresh JWT tokens for a customer session using session and
- * 'shopping_customers' schema.
+ * Refreshes a customer's JWT tokens upon receipt of valid refresh token, using
+ * shopping_mall_customer_sessions.
  *
- * This endpoint handles the secure renewal of customer JWT tokens by validating
- * an existing refresh token. It leverages the 'shopping_customer_sessions' and
- * 'shopping_customers' schema to verify token validity, session state, and
- * account activity. Upon validation, new access and refresh JWTs are generated
- * and returned, with the session metadata updated accordingly in the schema.
- * The operation enforces token expiration, revocation, and account validity,
- * referring to is_active and deleted_at fields in the 'shopping_customers'
- * schema for eligibility.
+ * This operation allows a customer to refresh JWT access and refresh tokens,
+ * using the session tracking and token rotation logic keyed to
+ * shopping_mall_customer_sessions. A valid refresh token must be provided, and
+ * token validity is checked against session records for expiration or
+ * revocation.
  *
- * If validation fails due to token expiration, revocation, or customer
- * inactivity or deletion, a detailed error message referencing the relevant
- * schema constraint is returned. Security and traceability are prioritized, as
- * audit logs are created for all successful and failed token refreshes
- * according to the relationships laid out in the schema.
+ * The schema includes mechanisms for recording and managing sessions, which are
+ * leveraged here for compliance and audit. Expired or invalid tokens generate
+ * specific error responses without revealing information that could aid
+ * attackers.
  *
- * This endpoint is a critical component of the customer authentication flow,
- * working closely with the login and join operations, and must be used after
- * those endpoints have completed. The operation references all necessary schema
- * fields and relationships for a complete and compliant token rotation
- * infrastructure.
+ * The endpoint is critical in allowing customers to seamlessly maintain
+ * authenticated sessions in accordance with platform security requirements.
+ *
+ * The process is fully integrated with authentication workflows established in
+ * requirements, using both join and login as prerequisites for having issued
+ * refresh tokens in the first place.
+ *
+ * All token management operations are based on schema-supported session
+ * structures, ensuring correctness of the refresh logic and recordkeeping.
  *
  * @param props.connection
- * @param props.body Refresh token and session data, based on schema for session
- *   and 'shopping_customers' actor.
+ * @param props.body Refresh token object as per session schema for customer.
  * @setHeader token.access Authorization
  *
  * @path /auth/customer/refresh
@@ -294,14 +296,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /**
-     * Refresh token and session data, based on schema for session and
-     * 'shopping_customers' actor.
-     */
-    body: IShoppingCustomer.IRefresh;
+    /** Refresh token object as per session schema for customer. */
+    body: IShoppingMallCustomer.IRefresh;
   };
-  export type Body = IShoppingCustomer.IRefresh;
-  export type Response = IShoppingCustomer.IAuthorized;
+  export type Body = IShoppingMallCustomer.IRefresh;
+  export type Response = IShoppingMallCustomer.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -317,8 +316,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/customer/refresh";
-  export const random = (): IShoppingCustomer.IAuthorized =>
-    typia.random<IShoppingCustomer.IAuthorized>();
+  export const random = (): IShoppingMallCustomer.IAuthorized =>
+    typia.random<IShoppingMallCustomer.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

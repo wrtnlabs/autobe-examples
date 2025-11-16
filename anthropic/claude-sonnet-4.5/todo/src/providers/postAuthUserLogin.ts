@@ -13,19 +13,14 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthUserLogin(props: {
   body: ITodoListUser.ILogin;
 }): Promise<ITodoListUser.IAuthorized> {
-  // Phase 1: Validate Actor Credentials
   const user = await MyGlobal.prisma.todo_list_users.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
   });
 
   if (!user) {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Verify password using PasswordUtil
   const isValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
@@ -35,34 +30,33 @@ export async function postAuthUserLogin(props: {
     throw new HttpException("Invalid credentials", 401);
   }
 
-  // Phase 2: Create NEW Session Record
-  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const session = await MyGlobal.prisma.todo_list_user_sessions.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
       todo_list_user_id: user.id,
       ip: props.body.ip ?? "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: toISOStringSafe(new Date()),
-      expired_at: null,
+      created_at: toISOStringSafe(now),
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
 
-  // Phase 3: Generate JWT Tokens
   const token = {
     access: jwt.sign(
       {
         type: "user",
         id: user.id,
         session_id: session.id,
-        created_at: toISOStringSafe(new Date()),
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
-        expiresIn: "15m",
+        expiresIn: "1h",
         issuer: "autobe",
       },
     ),
@@ -72,7 +66,7 @@ export async function postAuthUserLogin(props: {
         id: user.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(new Date()),
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       {
@@ -84,13 +78,14 @@ export async function postAuthUserLogin(props: {
     refreshable_until: toISOStringSafe(refreshExpires),
   };
 
-  // Return authenticated user profile
   return {
     id: user.id,
     email: user.email,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : undefined,
+    email_verified: user.email_verified,
+    deleted_at:
+      user.deleted_at === null ? undefined : toISOStringSafe(user.deleted_at),
     token,
   };
 }

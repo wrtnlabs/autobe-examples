@@ -1,0 +1,95 @@
+/// Hierarchical product category taxonomy for organizing the marketplace
+/// product catalog.
+///
+/// Categories form a tree structure enabling buyers to browse products by
+/// classification and sellers to organize their listings.
+/// Each category can have a parent category, creating unlimited nesting
+/// depth for flexible taxonomy management.
+///
+/// Admins create and manage the category hierarchy, defining the
+/// organizational structure that all products reference.
+/// Categories can be active or inactive, allowing admins to temporarily hide
+/// categories without deleting historical relationships.
+///
+/// The display order field enables precise control over category
+/// presentation in navigation menus and browsing interfaces.
+/// Soft deletion preserves category references in historical product data
+/// while removing categories from active use.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for hierarchical organization. {@link
+  /// shopping_mall_categories.id}. Null for root-level categories.
+  parent_id String?
+  
+  /// Category name displayed to buyers and sellers. Must be between 2 and 100
+  /// characters. Examples: Electronics, Men's Clothing, Laptops, Gaming
+  /// Laptops.
+  name String
+  
+  /// URL-friendly identifier generated from category name. Used for
+  /// SEO-friendly category URLs. Must be unique globally across all
+  /// categories.
+  slug String
+  
+  /// Detailed category description explaining the types of products included.
+  /// Maximum 1000 characters. Helps buyers understand category scope and
+  /// assists sellers in correct categorization.
+  description String?
+  
+  /// Category banner or icon image URL. Used in category navigation and
+  /// browsing interfaces. Optional for leaf categories, recommended for
+  /// top-level categories.
+  image_url String?
+  
+  /// Numeric ordering value controlling category display sequence within the
+  /// same parent level. Lower values appear first. Allows admin-controlled
+  /// category positioning in navigation menus.
+  display_order Int
+  
+  /// Category visibility status. Values: active (visible to buyers and
+  /// sellers), inactive (hidden from public display but preserved for
+  /// historical product references). Inactive categories prevent new product
+  /// assignments.
+  status String
+  
+  /// Cached count of active products directly assigned to this category.
+  /// Updated when products are added, removed, or status changes. Used for
+  /// displaying product counts in category browsing without expensive
+  /// real-time queries.
+  product_count Int
+  
+  /// Timestamp when the category was created by an admin.
+  created_at DateTime
+  
+  /// Timestamp when the category information was last modified. Updated on any
+  /// field change including name, description, parent reassignment, or status
+  /// change.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When set, category is archived and hidden from
+  /// active use while preserving historical product categorization data. Null
+  /// for active categories.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  recursive shopping_mall_categories[] @relation("recursive")
+  shopping_mall_sales shopping_mall_sales[]
+  shopping_mall_sale_snapshots shopping_mall_sale_snapshots[]
+  
+  @@unique([slug])
+  @@unique([parent_id, name])
+  @@index([parent_id, display_order])
+  @@index([status, deleted_at])
+}

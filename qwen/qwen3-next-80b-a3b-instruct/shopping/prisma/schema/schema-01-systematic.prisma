@@ -1,181 +1,404 @@
-/// System channels for organizing content and features. Represents distinct
-/// sections or areas of the platform like primary shopping, seller
-/// marketplace, admin portal, etc. This is a reference table used by other
-/// components to route functionality. Must maintain active/inactive states
-/// for management.
+/// Core system configuration settings that control platform behavior and
+/// feature flags.
 ///
-/// @link shopping_mall_sections (1:N) - channels contain multiple sections
-/// - 'active' status determines whether channel is visible to users
-/// - 'code' is the internal identifier used in configuration
+/// Contains global configuration parameters that determine how the
+/// shoppingMall platform operates. These settings are managed exclusively by
+/// administrators through the admin dashboard and affect the entire system.
+///
+/// Examples: payment processing timeout, maximum cart items per user, review
+/// moderation rules, and system-wide feature toggles.
+///
+/// This table serves as the central configuration hub. All other components
+/// read from this table to determine their operational parameters. Changes
+/// here are global and immediate. This table is not managed by customers or
+/// sellers - only admins can modify its values.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_channels {
+model shopping_mall_system_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Internal identifier code used in configuration files and system
-  /// references. Must be unique and snake_case format. Examples: 'sales',
-  /// 'sellerHub', 'adminDashboard'.
-  code String
+  /// Unique identifier for the configuration setting. Must be unique across
+  /// all system settings. Examples: 'payment_timeout_seconds',
+  /// 'max_cart_items'.
+  key String
   
-  /// Human-readable name of the channel displayed in admin interface.
-  /// Examples: 'Sales Channel', 'Seller Hub', 'Admin Dashboard'.
-  name String
-  
-  /// Detailed description of the channel's purpose and scope. Used for admin
-  /// documentation.
-  description String?
-  
-  /// Active/inactive state of the channel. Only active channels are available
-  /// for assignment to sections and features. Values: 'active', 'inactive'.
-  status String
-  
-  /// Timestamp when this channel was created. Standard temporal field for
-  /// audit trails.
-  created_at DateTime
-  
-  /// Timestamp when this channel was last updated. Standard temporal field for
-  /// audit trails.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. Used for audit purposes when channels are
-  /// deactivated permanently. Null if not deleted.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_sections shopping_mall_sections[]
-  
-  @@unique([code])
-  @@index([status])
-  @@index([created_at])
-}
-
-/// Content sections within channels, providing organization for user
-/// interfaces and system navigation. Each section belongs to exactly one
-/// channel and can be organized hierarchically. Used by frontend routing and
-/// admin configuration.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sections {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Section's parent channel. {@link shopping_mall_channels.id}.
-  shopping_mall_channel_id String
-  
-  /// Internal identifier code used in configuration files and system
-  /// references. Must be unique across all sections and follow snake_case
-  /// format. Examples: 'productList', 'cartSummary', 'checkoutProcess'.
-  code String
-  
-  /// Human-readable name of the section displayed in admin interface.
-  /// Examples: 'Product List', 'Cart Summary', 'Checkout Process'.
-  name String
-  
-  /// Detailed description of the section's purpose and scope. Used for admin
-  /// documentation.
-  description String?
-  
-  /// Active/inactive state of the section. Only active sections are rendered
-  /// to users. Values: 'active', 'inactive'.
-  status String
-  
-  /// Timestamp when this section was created. Standard temporal field for
-  /// audit trails.
-  created_at DateTime
-  
-  /// Timestamp when this section was last updated. Standard temporal field for
-  /// audit trails.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. Used for audit purposes when sections are
-  /// deactivated permanently. Null if not deleted.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
-  
-  @@unique([code])
-  @@unique([shopping_mall_channel_id, code])
-  @@index([shopping_mall_channel_id])
-  @@index([status])
-  @@index([created_at])
-}
-
-/// Global platform configuration settings that control behavior across the
-/// system. These are key-value pairs that determine feature flags, business
-/// rules, and operational parameters. No semantic structure assumed -
-/// maintains flexibility for future configurations.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique business key identifying this configuration setting. Follows
-  /// snake_case format with domain-specific prefixes. Examples:
-  /// 'platform_transaction_fee', 'payment_gateway_default',
-  /// 'max_items_in_cart'.
-  code String
-  
-  /// Human-readable name for this configuration, shown in admin UI. Examples:
-  /// 'Platform Transaction Fee Percentage', 'Default Payment Gateway',
-  /// 'Maximum Items Allowed in Cart'.
-  name String
-  
-  /// Configuration value as a string. Can represent JSON, boolean, number, or
-  /// text strings depending on context. Examples: '0.05', 'true', '{"enabled":
-  /// true}', 'stripe'.
+  /// The configuration value as a string representation. Can be JSON for
+  /// complex configurations, boolean as 'true'/'false', or numeric values as
+  /// strings.
   value String
   
-  /// Data type of the configuration value. Used by admin interface for proper
-  /// rendering and parsing. Values: 'string', 'number', 'boolean', 'json'.
-  type String
+  /// Human-readable explanation of what this setting controls and its expected
+  /// values. Used by administrators for configuration guidance.
+  description String
   
-  /// Detailed description of the configuration's purpose, usage, and
-  /// acceptable values. Used for admin documentation.
-  description String?
-  
-  /// Timestamp when this configuration was created. Standard temporal field
-  /// for audit trails.
+  /// Timestamp when this configuration setting was created.
   created_at DateTime
   
-  /// Timestamp when this configuration was last updated. Standard temporal
-  /// field for audit trails.
+  /// Timestamp when this configuration setting was last modified.
   updated_at DateTime
   
-  /// Soft delete timestamp. Used for audit purposes when configurations are
-  /// deactivated permanently. Null if not deleted.
+  /// Timestamp when this configuration setting was logically deleted (soft
+  /// delete). NULL means active. Used for audit trails when settings are
+  /// removed.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([code])
-  @@index([type])
-  @@index([created_at])
+  @@unique([key])
 }
 
-/// Supported payment gateway configurations for processing transactions.
-/// Defines which payment methods are available to customers and how they
-/// integrate with the system. Used by checkout process to determine
-/// available payment options.
+/// Top-level product categories that organize the shopping mall product
+/// catalog.
+///
+/// Represents hierarchical category structure for organizing products into
+/// logical groupings. Categories are managed exclusively by administrators
+/// and serve as the foundation for product classification and search
+/// filtering.
+///
+/// Each category can have multiple subcategories, forming a tree structure.
+/// Categories are referenced by products to determine their classification.
+/// Category names must be unique to prevent ambiguity in product
+/// classification.
+///
+/// This is a taxonomic control table - content is curated by admin to ensure
+/// consistent product organization across the platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The display name of the category, such as 'Electronics', 'Fashion', 'Home
+  /// & Garden'. Must be unique across all top-level categories.
+  name String
+  
+  /// URL-friendly version of the category name. Used in product URLs for SEO
+  /// purposes. Example: 'electronics'. Must be unique.
+  slug String
+  
+  /// Detailed description of what types of products belong in this category.
+  /// Used for admin guidance and potentially in public category pages.
+  description String
+  
+  /// Ordering position for display in the category navigation menu. Lower
+  /// numbers appear first. Ensures consistent ordering regardless of
+  /// alphabetical naming.
+  position Int
+  
+  /// Timestamp when this category was created.
+  created_at DateTime
+  
+  /// Timestamp when this category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this category was logically deleted (soft delete). NULL
+  /// means active. When deleted, subcategories remain but product placement is
+  /// maintained for audit.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_subcategories shopping_mall_subcategories[]
+  
+  @@unique([name])
+  @@unique([slug])
+  @@index([position])
+}
+
+/// Hierarchical subcategories nested under parent categories for detailed
+/// product classification.
+///
+/// Represents the second level of the product taxonomy, providing more
+/// granular organization beneath top-level categories. Subcategories link
+/// directly to a parent category and are referenced by products for precise
+/// classification.
+///
+/// This structure enables multi-level navigation (e.g., Electronics >
+/// Computers > Laptops) while maintaining a clean category hierarchy.
+/// Subcategories are managed exclusively by administrators to ensure
+/// taxonomy consistency.
+///
+/// The combination of category_id and name must be unique to prevent
+/// duplicate subcategories under the same parent.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_subcategories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent category that this subcategory belongs to. {@link
+  /// shopping_mall_categories.id}.
+  shopping_mall_category_id String
+  
+  /// The display name of the subcategory, such as 'Laptops', 'Smartphones',
+  /// 'T-Shirts'. Must be unique within its parent category.
+  name String
+  
+  /// URL-friendly version of the subcategory name. Used in product URLs for
+  /// SEO purposes. Example: 'laptops'. Must be unique within parent category.
+  slug String
+  
+  /// Detailed description of what types of products belong in this
+  /// subcategory. Used for admin guidance and potentially in public
+  /// subcategory pages.
+  description String
+  
+  /// Ordering position for display in the subcategory navigation menu under
+  /// its parent. Lower numbers appear first. Ensures consistent ordering
+  /// regardless of alphabetical naming.
+  position Int
+  
+  /// Timestamp when this subcategory was created.
+  created_at DateTime
+  
+  /// Timestamp when this subcategory was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this subcategory was logically deleted (soft delete). NULL
+  /// means active. When deleted, products remain assigned but are inaccessible
+  /// through this subcategory path.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([shopping_mall_category_id, name])
+  @@unique([shopping_mall_category_id, slug])
+  @@index([shopping_mall_category_id])
+  @@index([position])
+}
+
+/// Geographic zones used for shipping cost calculation, tax jurisdiction,
+/// and delivery window definition.
+///
+/// Represents administrative or shipping zones that group multiple countries
+/// or regions together for operational efficiency. These zones are used by
+/// the system to determine shipping fees, tax rates, and delivery time
+/// estimates based on destination.
+///
+/// Examples: 'North America', 'European Union', 'Asia-Pacific'. Zones
+/// eliminate the need to configure individual countries and simplify complex
+/// international fulfillment rules.
+///
+/// This is a critical component for international shipping functionality.
+/// Shipping and tax systems reference zone records to apply the correct
+/// rules automatically.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_zones {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Descriptive name of the geographic zone, such as 'North America' or
+  /// 'Southeast Asia'. Must be unique to avoid ambiguity.
+  name String
+  
+  /// A standardized code for this zone. Favored formats: ISO 3166 region codes
+  /// or custom codes like 'NA-1', 'EU-EU'. Used internally for API
+  /// integrations and system references.
+  code String
+  
+  /// Explanation of which countries or regions belong to this zone and the
+  /// operational rationale for grouping them together.
+  description String
+  
+  /// Timestamp when this zone was created.
+  created_at DateTime
+  
+  /// Timestamp when this zone was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this zone was logically deleted (soft delete). NULL means
+  /// active. Deletion does not affect existing orders, but prevents new use in
+  /// fulfillment rules.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_countries shopping_mall_countries[]
+  shopping_mall_order_shippings shopping_mall_order_shippings[]
+  order_shippings order_shippings[]
+  
+  @@unique([name])
+  @@unique([code])
+}
+
+/// List of countries supported for shipping and tax computation in the
+/// shoppingMall platform.
+///
+/// Contains the complete set of sovereign states and territories where the
+/// platform offers shipping and tax services. This table enables system-wide
+/// lookup of country information for user address validation, tax
+/// calculation, and international shipping zone assignment.
+///
+/// Each country is associated with a specific zone for operational handling.
+/// Country data is standardized according to ISO 3166-1 alpha-2 and alpha-3
+/// standards. This table is managed by admin-only and serves as the
+/// authoritative source of country information.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_countries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the geographic zone this country belongs to, used for
+  /// shipping and tax rule grouping. {@link shopping_mall_zones.id}.
+  shopping_mall_zone_id String
+  
+  /// Full official name of the country, such as 'United States'. Used for
+  /// display and user-facing forms.
+  name String
+  
+  /// Two-character ISO 3166-1 alpha-2 country code, such as 'US' for United
+  /// States. Must be unique and standardized.
+  iso_alpha2 String
+  
+  /// Three-character ISO 3166-1 alpha-3 country code, such as 'USA' for United
+  /// States. Must be unique and standardized.
+  iso_alpha3 String
+  
+  /// International dialing code for the country, such as '+1' for United
+  /// States. Used for phone number formatting in user accounts.
+  phone_code String
+  
+  /// ISO 4217 currency code for the country's primary currency, such as 'USD'
+  /// or 'EUR'. Used for default currency selection for users in that country.
+  currency String
+  
+  /// Timestamp when this country was added to the platform.
+  created_at DateTime
+  
+  /// Timestamp when this country record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this country was logically deleted (soft delete). NULL
+  /// means active. Deletion does not affect existing orders, but prevents new
+  /// shipping addresses in this country.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  zone shopping_mall_zones @relation(fields: [shopping_mall_zone_id], references: [id], onDelete: Cascade)
+  
+  @@unique([iso_alpha2])
+  @@unique([iso_alpha3])
+  @@index([shopping_mall_zone_id])
+  @@index([currency])
+}
+
+/// Supported currencies for financial transactions on the shoppingMall
+/// platform.
+///
+/// Defines all currencies accepted for pricing, payments, and settlement in
+/// the platform. This table enables currency conversion, price display in
+/// user-preferred currency, and financial reporting in multiple currencies.
+///
+/// Each currency includes exchange rate data, symbol, and formatting rules.
+/// Admins can enable/disable currencies to match business operations in
+/// different regions. This is the authoritative source for all monetary
+/// values across the system.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_currencies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ISO 4217 three-letter currency code, such as 'USD', 'EUR', 'JPY'. Must be
+  /// unique and standardized.
+  code String
+  
+  /// Full official name of the currency, such as 'United States Dollar' or
+  /// 'Euro'. Used for display purposes and reporting.
+  name String
+  
+  /// Currency symbol for display, such as '$' for USD or '€' for EUR. Used in
+  /// product pricing and transaction displays.
+  symbol String
+  
+  /// Number of decimal places the currency uses, typically 2 for major
+  /// currencies, 0 for Japanese Yen, etc. Used for price formatting and
+  /// calculations.
+  decimal_places Int
+  
+  /// Current exchange rate relative to USD (1 USD = this value). Used for
+  /// dynamic currency conversion. Value is updated by automated currency
+  /// service.
+  exchange_rate Float
+  
+  /// Whether this currency is currently enabled for use in transactions.
+  /// Disabled currencies can still appear in historical data but cannot be
+  /// selected for new transactions.
+  is_active Boolean
+  
+  /// Timestamp when this currency was added to the platform.
+  created_at DateTime
+  
+  /// Timestamp when this currency record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this currency was logically deleted (soft delete). NULL
+  /// means active. Deletion does not affect historical transactions but
+  /// prevents future use.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shopping_mall_payment_gateways shopping_mall_payment_gateways[]
+  
+  @@unique([code])
+  @@index([is_active])
+}
+
+/// Integration configurations for external payment processing services used
+/// by the shoppingMall platform.
+///
+/// Contains configuration details for all third-party payment processors
+/// that the platform uses to handle customer payments. This includes
+/// credentials, API endpoints, supported currencies, and feature
+/// capabilities.
+///
+/// Each gateway configuration includes environment-specific settings (test
+/// vs production) and enables the platform to support multiple payment
+/// methods like credit cards, Apple Pay, PayPal, and BNPL services.
+///
+/// Administrators use this table to enable/disable gateways and configure
+/// new payment providers. Payment processing systems reference this table to
+/// initiate transactions.
+///
+/// This table is critical for financial operations and must be secured with
+/// proper access controls.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -186,168 +409,71 @@ model shopping_mall_payment_gateways {
   /// Primary Key.
   id String @id
   
-  /// Internal identifier code used in configuration. Follows snake_case
-  /// format. Examples: 'stripe', 'paypal', 'bank_transfer'.
-  code String
+  /// Reference to the primary currency used with this payment gateway. {@link
+  /// shopping_mall_currencies.id}. Used for default currency mapping.
+  shopping_mall_currency_code String
   
-  /// Human-readable name of the payment gateway displayed to users. Examples:
-  /// 'Credit/Debit Card', 'PayPal', 'Bank Transfer'.
+  /// Readable name of the payment service provider, such as 'Stripe',
+  /// 'PayPal', or 'Klarna'. Used in admin interface and user-facing payment
+  /// options.
   name String
   
-  /// Detailed description of the payment gateway's functionality and usage
-  /// notes for administrators and customers.
-  description String?
+  /// The category or class of payment gateway. Valid values: 'card_processor',
+  /// 'digital_wallet', 'bnpl'. Used for system routing and feature flags.
+  type String
   
-  /// Enabled/disabled state of the payment gateway. Only 'active' gateways are
-  /// shown to customers during checkout. Values: 'active', 'inactive'.
-  status String
+  /// Deployment environment where this configuration is active. Valid values:
+  /// 'production' or 'test'. Different credentials and endpoints for each
+  /// environment.
+  environment String
   
-  /// Display priority for payment methods in the UI. Higher values appear
-  /// first in the list. Range: 1-100.
-  priority Int
+  /// API client identifier provided by the payment service. Sensitive data
+  /// stored encrypted at rest. Used for API authentication.
+  client_id String?
   
-  /// Timestamp when this payment gateway was configured. Standard temporal
-  /// field for audit trails.
+  /// API client secret provided by the payment service. Sensitive data stored
+  /// encrypted at rest. Used for API authentication.
+  client_secret String?
+  
+  /// Secret API key for authentication with the payment service. Sensitive
+  /// data stored encrypted at rest.
+  api_key String?
+  
+  /// Secret used to verify authenticity of incoming webhooks from the payment
+  /// service. Sensitive data stored encrypted at rest.
+  webhook_secret String?
+  
+  /// Base API endpoint URL for the payment service integration. Must be a
+  /// valid HTTP/HTTPS URI.
+  endpoint String
+  
+  /// Whether this payment gateway is currently enabled and available for
+  /// customer transactions. When false, customers cannot select this payment
+  /// method.
+  is_active Boolean
+  
+  /// Timestamp when this payment gateway configuration was added to the
+  /// platform.
   created_at DateTime
   
-  /// Timestamp when this payment gateway was last updated. Standard temporal
-  /// field for audit trails.
+  /// Timestamp when this payment gateway configuration was last modified.
   updated_at DateTime
   
-  /// Soft delete timestamp. Used for audit purposes when payment gateways are
-  /// deactivated permanently. Null if not deleted.
+  /// Timestamp when this payment gateway configuration was logically deleted
+  /// (soft delete). NULL means active. Deletion does not affect historical
+  /// transactions but prevents future use.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  shopping_mall_refund_payments shopping_mall_refund_payments[]
+  currency shopping_mall_currencies @relation(fields: [shopping_mall_currency_code], references: [id], onDelete: Cascade)
   
-  @@unique([code])
-  @@index([status])
-  @@index([priority])
-  @@index([created_at])
-}
-
-/// Categorized dispute types for customer-seller conflicts, used to
-/// standardize resolution processes. Each dispute type defines the category
-/// and typical handling procedures. This is reference data used by the
-/// dispute resolution system.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_dispute_types {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
+  shopping_mall_order_payments shopping_mall_order_payments[]
+  order_payments order_payments[]
   
-  /// System identifier code for the dispute type. Follows snake_case format.
-  /// Examples: 'product_damaged', 'wrong_item_received', 'not_delivered'.
-  code String
-  
-  /// Human-readable name of the dispute category displayed in admin interface
-  /// and customer forms. Examples: 'Product Damaged', 'Wrong Item Received',
-  /// 'Item Not Delivered'.
-  name String
-  
-  /// Detailed explanation of the dispute type, criteria for categorization,
-  /// and typical resolution steps. Used for admin training and customer
-  /// guidance.
-  description String?
-  
-  /// Whether this dispute type typically qualifies for refund processing. True
-  /// for cases where customer is entitled to full or partial refund.
-  refund_eligible Boolean
-  
-  /// Whether this dispute type typically requires the customer to return the
-  /// product. True for physical goods that must be returned for resolution.
-  return_required Boolean
-  
-  /// Timestamp when this dispute type was added to the system. Standard
-  /// temporal field for audit trails.
-  created_at DateTime
-  
-  /// Timestamp when this dispute type was last updated. Standard temporal
-  /// field for audit trails.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. Used for audit purposes when dispute types are
-  /// deactivated permanently. Null if not deleted.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_admin_disputes shopping_mall_admin_disputes[]
-  
-  @@unique([code])
-  @@index([refund_eligible])
-  @@index([return_required])
-  @@index([created_at])
-}
-
-/// Supported shipping carriers for order fulfillment. Defines courier
-/// partners that the platform integrates with for shipment tracking and
-/// logistics management. Used by sellers to select shipping options and by
-/// system to parse tracking data.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shipping_carriers {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Internal identifier code used in configuration and API integrations.
-  /// Follows snake_case format. Examples: 'fedex', 'ups', 'dhl', 'usps',
-  /// 'local_courier'.
-  code String
-  
-  /// Human-readable name of the shipping carrier displayed to sellers and
-  /// customers. Examples: 'FedEx', 'UPS', 'DHL', 'USPS', 'Local Courier'.
-  name String
-  
-  /// Detailed description of the carrier's service coverage, delivery times,
-  /// and integration requirements.
-  description String?
-  
-  /// Active/inactive state of the carrier integration. Only 'active' carriers
-  /// are available for selection during shipping. Values: 'active',
-  /// 'inactive'.
-  status String
-  
-  /// URL template for generating tracking links using tracking numbers. Use
-  /// {tracking_number} as placeholder. Examples:
-  /// 'https://www.fedex.com/tracking?trackingnumber={tracking_number}'
-  tracking_url_format String
-  
-  /// Regular expression pattern for validating tracking numbers format for
-  /// this carrier. Examples: '^[0-9]{12}$' for FedEx, '1Z[0-9A-Z]{16}$' for
-  /// UPS.
-  tracking_number_pattern String
-  
-  /// Timestamp when this carrier was added to the system. Standard temporal
-  /// field for audit trails.
-  created_at DateTime
-  
-  /// Timestamp when this carrier was last updated. Standard temporal field for
-  /// audit trails.
-  updated_at DateTime
-  
-  /// Soft delete timestamp. Used for audit purposes when carriers are
-  /// deactivated permanently. Null if not deleted.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  shopping_mall_refund_return_labels shopping_mall_refund_return_labels[]
-  
-  @@unique([code])
-  @@index([status])
-  @@index([created_at])
+  @@unique([name, environment])
+  @@index([shopping_mall_currency_code])
+  @@index([type])
+  @@index([is_active])
 }

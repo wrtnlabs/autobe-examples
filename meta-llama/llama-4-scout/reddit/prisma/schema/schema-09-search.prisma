@@ -1,0 +1,11 @@
+/// Search index for community posts and comments.
+///
+/// @namespace Search
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_search_index {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+}

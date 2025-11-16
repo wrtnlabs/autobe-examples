@@ -1,0 +1,370 @@
+/// Generic audit trail entries capturing security-sensitive and
+/// business-critical events across the platform.
+///
+/// This table records a wide range of actions such as logins, account status
+/// changes, community configuration changes, content lifecycle transitions,
+/// and other operations that must be traceable for compliance and
+/// investigation.
+///
+/// Each row represents a single immutable event with optional references to
+/// the actor (guest, member, moderator, or admin) and the primary business
+/// entity affected (community, post, comment, report, moderation action,
+/// sanction, or appeal).
+///
+/// The table is optimized for querying by time, event type, and actor,
+/// allowing platformAdmin and security staff to reconstruct sequences of
+/// actions during audits or incident response.
+///
+/// @namespace AuditLogs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the audit log entry. Uniquely identifies each recorded
+  /// event.
+  id String @id
+  
+  /// Optional reference to the guest user involved in the event, when the
+  /// actor is unauthenticated. {@link community_platform_guestusers.id}.
+  guestuser_id String?
+  
+  /// Optional reference to the authenticated member user who triggered the
+  /// event. {@link community_platform_memberusers.id}.
+  memberuser_id String?
+  
+  /// Optional reference to the community moderator acting in this event, if
+  /// the action is performed with moderator role. {@link
+  /// community_platform_communitymoderators.id}.
+  communitymoderator_id String?
+  
+  /// Optional reference to the platform administrator acting in this event,
+  /// for platform-level operations. {@link
+  /// community_platform_platformadmins.id}.
+  platformadmin_id String?
+  
+  /// Optional reference to the community that is the primary target of the
+  /// event, such as creation, configuration changes, or visibility updates.
+  /// {@link community_platform_communities.id}.
+  community_id String?
+  
+  /// Optional reference to the post affected by this event, such as creation,
+  /// editing, locking, or removal. {@link community_platform_posts.id}.
+  post_id String?
+  
+  /// Optional reference to the comment affected by this event, like creation,
+  /// editing, or moderation removal. {@link community_platform_comments.id}.
+  comment_id String?
+  
+  /// Optional reference to a report associated with this event, for example
+  /// when reports are created, updated, or resolved. {@link
+  /// community_platform_reports.id}.
+  report_id String?
+  
+  /// Optional reference to a moderation action that this audit entry
+  /// describes, such as content removal or user sanctioning. {@link
+  /// community_platform_moderation_actions.id}.
+  moderation_action_id String?
+  
+  /// Optional reference to a user sanction entity, capturing sanctions applied
+  /// or lifted as part of this event. {@link
+  /// community_platform_user_sanctions.id}.
+  user_sanction_id String?
+  
+  /// Optional reference to an appeal associated with this audit event, such as
+  /// appeal submission or resolution. {@link community_platform_appeals.id}.
+  appeal_id String?
+  
+  /// Machine-readable classification of the event, such as "login",
+  /// "community_created", "post_removed", or "account_status_changed".
+  event_type String
+  
+  /// High-level category grouping for the event, such as "authentication",
+  /// "community", "content", "moderation", or "security".
+  event_category String
+  
+  /// Identifier of the backend component or service that produced this audit
+  /// entry, used to trace which subsystem generated the log.
+  source_component String
+  
+  /// Optional correlation identifier linking this audit entry to a specific
+  /// request or trace in the application layer.
+  request_id String?
+  
+  /// Optional IP address of the actor at the time of the event, used for
+  /// security investigation and anomaly detection.
+  actor_ip String?
+  
+  /// Optional user agent string of the actor client, captured for security
+  /// analysis and debugging.
+  actor_user_agent String?
+  
+  /// Short human-readable summary of the event suitable for list views in
+  /// audit tools.
+  summary String
+  
+  /// Optional detailed description or structured data encoded as text,
+  /// capturing additional context that does not fit into dedicated columns.
+  details String?
+  
+  /// Timestamp when this audit event was recorded in the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  guestuser community_platform_guestusers? @relation(fields: [guestuser_id], references: [id], onDelete: Cascade)
+  memberuser community_platform_memberusers? @relation(fields: [memberuser_id], references: [id], onDelete: Cascade)
+  communityModerator community_platform_communitymoderators? @relation(fields: [communitymoderator_id], references: [id], onDelete: Cascade)
+  platformAdmin community_platform_platformadmins? @relation(fields: [platformadmin_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  report community_platform_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  moderationAction community_platform_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  userSanction community_platform_user_sanctions? @relation(fields: [user_sanction_id], references: [id], onDelete: Cascade)
+  appeal community_platform_appeals? @relation(fields: [appeal_id], references: [id], onDelete: Cascade)
+  
+  @@index([guestuser_id])
+  @@index([communitymoderator_id])
+  @@index([platformadmin_id])
+  @@index([post_id])
+  @@index([comment_id])
+  @@index([report_id])
+  @@index([moderation_action_id])
+  @@index([user_sanction_id])
+  @@index([appeal_id])
+  
+  @@index([created_at, event_type])
+  @@index([memberuser_id, created_at])
+  @@index([community_id, created_at])
+}
+
+/// Application error and failure log entries for backend operations across
+/// the platform.
+///
+/// This table stores structured information about errors such as failed
+/// requests, exceptions, timeouts, and integration failures. It is optimized
+/// for operations, reliability engineering, and debugging.
+///
+/// Each row represents a single error occurrence, optionally linked to a
+/// user, community, post, comment, or report and correlated to higher-level
+/// audit or tracing identifiers. Severity, source component, and stack trace
+/// details enable efficient filtering and root cause analysis.
+///
+/// @namespace AuditLogs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_error_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the error log entry. Uniquely identifies each recorded
+  /// error.
+  id String @id
+  
+  /// Optional reference to the authenticated member user affected by or
+  /// triggering the error, when known. {@link
+  /// community_platform_memberusers.id}.
+  memberuser_id String?
+  
+  /// Optional reference to the community context in which the error occurred,
+  /// such as community feed loading or configuration changes. {@link
+  /// community_platform_communities.id}.
+  community_id String?
+  
+  /// Optional reference to the post involved in the failing operation, for
+  /// example during posting, editing, or loading. {@link
+  /// community_platform_posts.id}.
+  post_id String?
+  
+  /// Optional reference to the comment associated with the error, such as
+  /// failures when creating or editing a comment. {@link
+  /// community_platform_comments.id}.
+  comment_id String?
+  
+  /// Optional reference to a report in case the error occurred in reporting or
+  /// moderation workflows. {@link community_platform_reports.id}.
+  report_id String?
+  
+  /// Severity level of the error, such as "info", "warning", "error", or
+  /// "critical" according to operational policy.
+  error_severity String
+  
+  /// Identifier of the service, module, or process where the error occurred,
+  /// used for routing incidents to the correct owners.
+  source_component String
+  
+  /// Optional stable error code or symbolic identifier, used to group similar
+  /// error conditions across occurrences.
+  error_code String?
+  
+  /// Short human-readable explanation of the error condition.
+  message String
+  
+  /// Optional stack trace or diagnostic details captured as text, used mainly
+  /// by developers and operators during debugging.
+  stack_trace String?
+  
+  /// Optional correlation identifier for the request or trace in which this
+  /// error was raised, allowing cross-table correlation with audit entries.
+  request_id String?
+  
+  /// Optional HTTP method involved in the failing request, such as GET, POST,
+  /// or DELETE, if applicable.
+  http_method String?
+  
+  /// Optional HTTP path or route template where the error occurred, used for
+  /// routing and analytics.
+  http_path String?
+  
+  /// Optional IP address of the client associated with this error occurrence.
+  actor_ip String?
+  
+  /// Timestamp when this error was recorded in the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  memberuser community_platform_memberusers? @relation(fields: [memberuser_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  report community_platform_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  @@index([memberuser_id])
+  @@index([community_id])
+  @@index([post_id])
+  @@index([comment_id])
+  @@index([report_id])
+  
+  @@index([created_at, error_severity])
+  @@index([source_component, created_at])
+}
+
+/// Detailed audit trail for moderation and safety-related actions performed
+/// by moderators and platform administrators.
+///
+/// This table captures high-value events in the moderation workflow, such as
+/// handling reports, applying or lifting sanctions, changing content states,
+/// moving items between moderation queues, and resolving appeals.
+///
+/// Each row is an immutable record describing who acted, what moderation
+/// entities were involved (report, moderation action, sanction, appeal, or
+/// queue), and a structured summary of the decision and rationale. It is
+/// used by safety teams and platformAdmin to reconstruct moderation
+/// histories and demonstrate consistent policy enforcement.
+///
+/// @namespace AuditLogs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the moderation audit log entry. Uniquely identifies each
+  /// moderation event record.
+  id String @id
+  
+  /// Optional reference to the community moderator who performed the
+  /// moderation action, if the actor is a moderator. {@link
+  /// community_platform_communitymoderators.id}.
+  communitymoderator_id String?
+  
+  /// Optional reference to the platform administrator who performed the
+  /// moderation action, for platform-level enforcement. {@link
+  /// community_platform_platformadmins.id}.
+  platformadmin_id String?
+  
+  /// Optional reference to the community within which the moderation event
+  /// took place. {@link community_platform_communities.id}.
+  community_id String?
+  
+  /// Optional reference to the post that is the subject of the moderation
+  /// action, such as removal, locking, or labeling. {@link
+  /// community_platform_posts.id}.
+  post_id String?
+  
+  /// Optional reference to the comment that is the subject of the moderation
+  /// action. {@link community_platform_comments.id}.
+  comment_id String?
+  
+  /// Optional reference to the report that triggered or is associated with
+  /// this moderation event. {@link community_platform_reports.id}.
+  report_id String?
+  
+  /// Optional reference to the moderation action entity representing the core
+  /// action taken, such as remove, lock, warn, or ban. {@link
+  /// community_platform_moderation_actions.id}.
+  moderation_action_id String?
+  
+  /// Optional reference to a user sanction applied, changed, or lifted as part
+  /// of this moderation event. {@link community_platform_user_sanctions.id}.
+  user_sanction_id String?
+  
+  /// Optional reference to an appeal entity that is being created, reviewed,
+  /// or resolved. {@link community_platform_appeals.id}.
+  appeal_id String?
+  
+  /// Optional reference to the moderation queue involved, for example when
+  /// moving an item into or out of a queue. {@link
+  /// community_platform_moderation_queues.id}.
+  moderation_queue_id String?
+  
+  /// Machine-readable classification of the moderation action, such as
+  /// "report_reviewed", "content_removed", "content_locked", "warning_issued",
+  /// or "user_banned".
+  action_type String
+  
+  /// Short label describing the outcome of the moderation event, for example
+  /// "no_action", "removed", "locked", "sanction_applied", or
+  /// "sanction_lifted".
+  outcome String
+  
+  /// Optional high-level reason category applied during moderation, aligned
+  /// with policy taxonomies such as spam, harassment, or illegal content.
+  reason_category String?
+  
+  /// Optional free-form notes entered by the moderator or admin, explaining
+  /// context or rationale for the decision in more detail.
+  notes String?
+  
+  /// Optional correlation identifier linking this moderation event to an
+  /// underlying request or workflow execution.
+  request_id String?
+  
+  /// Timestamp when this moderation audit entry was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  communityModerator community_platform_communitymoderators? @relation(fields: [communitymoderator_id], references: [id], onDelete: Cascade)
+  platformAdmin community_platform_platformadmins? @relation(fields: [platformadmin_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  report community_platform_reports? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  moderationAction community_platform_moderation_actions? @relation(fields: [moderation_action_id], references: [id], onDelete: Cascade)
+  userSanction community_platform_user_sanctions? @relation(fields: [user_sanction_id], references: [id], onDelete: Cascade)
+  appeal community_platform_appeals? @relation(fields: [appeal_id], references: [id], onDelete: Cascade)
+  moderationQueue community_platform_moderation_queues? @relation(fields: [moderation_queue_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([communitymoderator_id], map: "community_platform_moderation_audit_logs_communitymode_88b65415")
+  @@index([platformadmin_id])
+  @@index([post_id])
+  @@index([comment_id])
+  // spellchecker: ignore-next-line
+  @@index([moderation_action_id], map: "community_platform_moderation_audit_logs_moderation_ac_04da59c5")
+  @@index([user_sanction_id])
+  @@index([appeal_id])
+  // spellchecker: ignore-next-line
+  @@index([moderation_queue_id], map: "community_platform_moderation_audit_logs_moderation_qu_6ad3f9e1")
+  
+  // spellchecker: ignore-next-line
+  @@index([created_at, action_type], map: "community_platform_moderation_audit_logs_created_at_ac_97b230c4")
+  // spellchecker: ignore-next-line
+  @@index([report_id, created_at], map: "community_platform_moderation_audit_logs_report_id_cre_e613eb67")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_moderation_audit_logs_community_id__4756fc1e")
+}

@@ -4,12 +4,10 @@
 
 - [Systematic](#systematic)
 - [Actors](#actors)
-- [Content](#content)
+- [Articles](#articles)
+- [Attachments](#attachments)
+- [Interactions](#interactions)
 - [Moderation](#moderation)
-- [Profiles](#profiles)
-- [Files](#files)
-- [Discovery](#discovery)
-- [Analytics](#analytics)
 
 ## Systematic
 
@@ -19,33 +17,20 @@ erDiagram
   String id PK
   String name UK
   String description "nullable"
-  String code UK
-  Boolean is_active
-  Int sort_order
+  String status
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"discussion_board_sections" {
+"discussion_board_categories" {
   String id PK
   String discussion_board_channel_id FK
   String name
   String description "nullable"
-  String code
-  Boolean is_active
-  Int sort_order
+  String status
   DateTime created_at
   DateTime updated_at
-}
-"discussion_board_categories" {
-  String id PK
-  String name UK
-  String description "nullable"
-  String code UK
-  String color "nullable"
-  Boolean is_active
-  Int sort_order
-  DateTime created_at
-  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 "discussion_board_configurations" {
   String id PK
@@ -54,99 +39,108 @@ erDiagram
   String data_type
   String description "nullable"
   String category
-  Boolean is_active
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"discussion_board_sections" }o--|| "discussion_board_channels" : channel
+"discussion_board_categories" }o--|| "discussion_board_channels" : channel
 ```
 
 ### `discussion_board_channels`
 
-Defines discussion channels for organizing content by economic/political
-topics. Each channel represents a distinct discussion area with specific
-configuration settings and content organization rules. Channels serve as
-the top-level organizational structure for the platform.
+Discussion board channels that organize content by broad topic areas.
+
+Channels represent the highest level of content organization, grouping
+related discussions under common themes like Economics, Politics, or
+Policy. Each channel can contain multiple categories and serves as the
+primary navigation structure for users browsing content.
+
+Channels support activation/deactivation status to allow administrators
+to manage platform content organization without deleting historical data.
+Users can browse channels independently and need to filter discussions by
+channel when searching or browsing.
+
+Soft deletion is supported through the deleted_at field, allowing
+channels to be removed from user view while maintaining referential
+integrity for historical data.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `name`
-  > Unique name of the discussion channel (e.g., 'Economic Policy',
-  > 'Political Analysis').
-- `description`: Detailed description explaining the channel's purpose and focus area.
-- `code`: Unique code identifier for the channel used in URLs and API references.
-- `is_active`
-  > Indicates whether the channel is currently active and accepting new
-  > content.
-- `sort_order`: Numerical order for displaying channels in lists and navigation.
+- `name`: Channel name displayed to users. Must be unique across all channels.
+- `description`: Optional description explaining the channel's purpose and content focus.
+- `status`
+  > Channel status indicating whether it's active or inactive. Valid values:
+  > 'active', 'inactive', 'archived'. Controls visibility to users.
 - `created_at`: Timestamp when the channel was created.
 - `updated_at`: Timestamp when the channel was last updated.
+- `deleted_at`
+  > Timestamp when the channel was soft deleted. Null indicates active
+  > channel.
 
-### `discussion_board_sections`
+### `discussion_board_categories`
 
-Represents organizational sections within discussion channels. Sections
-provide hierarchical organization for content within channels, allowing
-for sub-categorization of economic/political topics. Each section belongs
-to a specific channel.
+Discussion board categories that organize content within channels.
+
+Categories provide secondary organization within channels, allowing
+finer-grained content classification. For example, an Economics channel
+might have categories like Macroeconomic Policy, Market Analysis, and
+Personal Finance.
+
+Categories are managed independently from channels and require their own
+API endpoints for creation, editing, and management. Users need to browse
+and filter by categories across the platform.
+
+Soft deletion is supported to maintain referential integrity while
+allowing content reorganization.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_channel_id`
-  > Parent channel that contains this section. {@link
+  > Parent channel that contains this category. {@link
   > discussion_board_channels.id}
-- `name`: Name of the section within the channel.
-- `description`: Description explaining the section's specific focus area.
-- `code`: Unique code identifier for the section within its channel.
-- `is_active`: Indicates whether the section is currently active.
-- `sort_order`: Order for displaying sections within their parent channel.
-- `created_at`: Timestamp when the section was created.
-- `updated_at`: Timestamp when the section was last updated.
-
-### `discussion_board_categories`
-
-Defines content categorization system for organizing posts and
-discussions. Categories provide thematic grouping across the platform,
-allowing users to filter and discover content by specific
-economic/political topics.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `name`
-  > Category name (e.g., 'Economic Policy', 'Market Discussions', 'Policy
-  > Debates').
-- `description`: Detailed description of the category's scope and focus.
-- `code`: Unique code identifier for the category used in content filtering.
-- `color`: Color code for visual representation of the category.
-- `is_active`: Indicates whether the category is available for content assignment.
-- `sort_order`: Display order for category lists and selection interfaces.
+- `name`: Category name displayed to users. Must be unique within the same channel.
+- `description`: Optional description explaining the category's purpose and content scope.
+- `status`
+  > Category status indicating whether it's active or inactive. Valid values:
+  > 'active', 'inactive', 'archived'. Controls visibility to users.
 - `created_at`: Timestamp when the category was created.
 - `updated_at`: Timestamp when the category was last updated.
+- `deleted_at`
+  > Timestamp when the category was soft deleted. Null indicates active
+  > category.
 
 ### `discussion_board_configurations`
 
-Stores platform-wide configuration settings and system parameters. This
-table contains all configurable options that control platform behavior,
-appearance, and functionality. Configuration changes affect the entire
-discussion board environment.
+System-wide configuration settings for the discussion board platform.
+
+Stores platform configuration values that control system behavior,
+feature flags, and operational parameters. These settings are managed
+through administrative interfaces rather than direct user interaction.
+
+Configuration values support different data types and are organized by
+functional areas. Changes to configuration settings may require system
+restarts or cache invalidation to take effect.
+
+Soft deletion allows configuration settings to be disabled without
+removing historical audit data.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `key`
-  > Unique configuration key identifier (e.g., 'max_post_length',
-  > 'file_upload_limit').
-- `value`: Configuration value stored as string (may represent various data types).
-- `data_type`: Data type of the configuration value (string, number, boolean, json).
-- `description`: Human-readable description of the configuration setting's purpose.
-- `category`
-  > Configuration category for organizational grouping (e.g., 'posting',
-  > 'moderation', 'ui').
-- `is_active`: Indicates whether this configuration setting is currently active.
+- `key`: Unique configuration key used to identify the setting.
+- `value`
+  > Configuration value stored as string. May represent different data types
+  > when parsed.
+- `data_type`: Data type of the configuration value (string, boolean, number, json).
+- `description`: Human-readable description explaining the configuration setting's purpose.
+- `category`: Functional category grouping related configuration settings.
 - `created_at`: Timestamp when the configuration was created.
-- `updated_at`: Timestamp when the configuration was last modified.
+- `updated_at`: Timestamp when the configuration was last updated.
+- `deleted_at`
+  > Timestamp when the configuration was soft deleted. Null indicates active
+  > setting.
 
 ## Actors
 
@@ -154,25 +148,49 @@ Properties as follows:
 erDiagram
 "discussion_board_guests" {
   String id PK
-  String ip_address
-  String user_agent
-  DateTime last_active
-  Int session_count
+  String email UK
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "discussion_board_members" {
   String id PK
-  String username UK
   String email UK
   String password_hash
-  String display_name
+  String username UK
   String status
-  DateTime last_login "nullable"
-  Int login_count
+  String mfa_secret "nullable"
+  String mfa_backup_codes "nullable"
+  Boolean mfa_enabled
+  Boolean email_verified
+  String password_reset_token "nullable"
+  DateTime password_reset_expires "nullable"
+  DateTime last_login_at "nullable"
   Int failed_login_attempts
-  Boolean account_verified
+  Boolean gdpr_consent_given
+  DateTime gdpr_consent_date "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_moderators" {
+  String id PK
+  String email UK
+  String password_hash
+  String username UK
+  String moderator_level
+  String status
+  String mfa_secret "nullable"
+  String mfa_backup_codes "nullable"
+  Boolean mfa_enabled
+  Boolean email_verified
+  String password_reset_token "nullable"
+  DateTime password_reset_expires "nullable"
+  DateTime last_login_at "nullable"
+  Int failed_login_attempts
+  String permission_scope "nullable"
+  Boolean gdpr_consent_given
+  DateTime gdpr_consent_date "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
@@ -183,25 +201,11 @@ erDiagram
   String ip
   String href
   String referrer
+  String user_agent "nullable"
+  Boolean is_active
+  DateTime last_activity_at
   DateTime created_at
   DateTime expired_at "nullable"
-}
-"discussion_board_moderators" {
-  String id PK
-  String username UK
-  String email UK
-  String password_hash
-  String display_name
-  String moderator_level
-  String permissions
-  String status
-  DateTime last_login "nullable"
-  Int login_count
-  Int failed_login_attempts
-  Boolean account_verified
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
 }
 "discussion_board_moderator_sessions" {
   String id PK
@@ -209,6 +213,10 @@ erDiagram
   String ip
   String href
   String referrer
+  String user_agent "nullable"
+  Boolean is_active
+  DateTime last_activity_at
+  String security_level
   DateTime created_at
   DateTime expired_at "nullable"
 }
@@ -218,133 +226,449 @@ erDiagram
 
 ### `discussion_board_guests`
 
-Guest users who can browse content without authentication. Guests have
-limited access rights and are tracked for analytics purposes. {@link
-discussion_board_members.id} for comparison with authenticated users.
+Guest users who can browse content without authentication.
+
+Represents unauthenticated users who have limited access to the
+discussion board. Guests can view public content but cannot create posts,
+upload attachments, or participate in discussions. This entity tracks
+guest interactions for analytics and potential conversion to member
+status.
+
+Guest accounts are temporary and may be converted to member accounts
+through the registration process. Each guest has a unique identifier and
+tracking information for session management and user experience
+optimization.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `ip_address`: IP address of the guest user for tracking and analytics.
-- `user_agent`: Browser user agent string for device identification.
-- `last_active`: Timestamp of the guest's last activity on the platform.
-- `session_count`: Number of sessions initiated by this guest.
+- `email`
+  > Guest email address for identification and potential conversion to member
+  > account.
 - `created_at`: Timestamp when the guest record was created.
 - `updated_at`: Timestamp when the guest record was last updated.
 - `deleted_at`: Timestamp when the guest record was soft deleted.
 
 ### `discussion_board_members`
 
-Registered member users who can create posts, comment, and participate in
-discussions. Members require authentication and have full participation
-rights. [discussion_board_moderators.id](#discussion_board_moderators) for administrative
-hierarchy.
+Authenticated member users with full discussion participation rights.
+
+Represents registered members who can create posts, upload attachments,
+comment on discussions, and participate fully in the community. Members
+have complete access to discussion board features and can manage their
+content and profile.
+
+Each member has authentication credentials and profile information.
+Members can be promoted to moderator status based on community
+participation and trustworthiness. The system tracks member activity for
+engagement analytics and community management.
+
+**Security Enhancements:**
+- Multi-factor authentication (MFA) support with secret storage and
+backup codes
+- Email verification status tracking for account security
+- Password reset token and expiration tracking
+- Last login timestamp for security monitoring
+- Failed login attempt tracking for brute force protection
+
+**Compliance Features:**
+- GDPR consent tracking for data processing
+- Account activity logging for audit trails
+- Data retention policy support
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `username`: Unique username for public identification.
-- `email`: Email address for account verification and communication.
-- `password_hash`: Hashed password for authentication security.
-- `display_name`: Public display name shown to other users.
-- `status`: Account status: active, pending, suspended, or banned.
-- `last_login`: Timestamp of the member's last successful login.
-- `login_count`: Total number of successful logins.
-- `failed_login_attempts`: Number of consecutive failed login attempts.
-- `account_verified`: Whether the account has been verified via email.
+- `email`
+  > Member email address used for authentication and communication. Must be
+  > unique across all members.
+- `password_hash`
+  > Hashed password for secure authentication using industry-standard
+  > algorithms.
+- `username`
+  > Display name used for member identification in discussions. Must be
+  > unique across all members.
+- `status`: Member account status (active, suspended, banned, pending_verification).
+- `mfa_secret`: Encrypted multi-factor authentication secret for enhanced security.
+- `mfa_backup_codes`: JSON array of backup codes for MFA recovery scenarios.
+- `mfa_enabled`: Whether multi-factor authentication is enabled for this account.
+- `email_verified`: Whether the member's email address has been verified.
+- `password_reset_token`: Temporary token for password reset requests.
+- `password_reset_expires`: Expiration timestamp for password reset token.
+- `last_login_at`: Timestamp of the member's last successful login.
+- `failed_login_attempts`: Count of consecutive failed login attempts for brute force protection.
+- `gdpr_consent_given`: Whether the member has given GDPR consent for data processing.
+- `gdpr_consent_date`: Timestamp when GDPR consent was given.
 - `created_at`: Timestamp when the member account was created.
 - `updated_at`: Timestamp when the member account was last updated.
 - `deleted_at`: Timestamp when the member account was soft deleted.
 
-### `discussion_board_member_sessions`
-
-Authentication sessions for member users. Tracks login sessions for
-security and audit purposes. [discussion_board_members.id](#discussion_board_members) for
-member relationship.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_member_id`: Member's session relationship. [discussion_board_members.id](#discussion_board_members)
-- `ip`: IP address of the connection.
-- `href`: Connection URL.
-- `referrer`: Referrer URL.
-- `created_at`: Session creation time.
-- `expired_at`: Session end time.
-
 ### `discussion_board_moderators`
 
-Administrative moderator users with enhanced permissions for content
-management and user administration. Moderators have all member
-capabilities plus administrative tools. {@link
-discussion_board_members.id} for comparison with regular members.
+Administrative users responsible for content moderation and community
+management.
+
+Represents trusted users with elevated permissions for maintaining
+community standards and ensuring respectful discourse. Moderators can
+review reported content, manage user accounts, and enforce platform
+policies.
+
+Moderators are typically promoted from active, trusted members. Each
+moderator has additional permissions and responsibilities beyond regular
+members. The system tracks moderator actions for accountability and audit
+purposes.
+
+**Security Enhancements:**
+- Multi-factor authentication (MFA) support with enhanced security
+requirements
+- Administrative session tracking with additional security measures
+- Permission level granularity for different moderator roles
+- Enhanced audit trail capabilities
+
+**Administrative Features:**
+- Permission scope definitions for different moderator levels
+- Action logging for accountability and compliance
+- Enhanced security requirements for administrative access
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `username`: Unique username for moderator identification.
-- `email`: Email address for administrative communications.
-- `password_hash`: Hashed password for authentication security.
-- `display_name`: Public display name shown to users.
-- `moderator_level`: Moderator permission level: junior, senior, or admin.
-- `permissions`: JSON string of specific moderator permissions.
-- `status`: Account status: active, suspended, or inactive.
-- `last_login`: Timestamp of the moderator's last successful login.
-- `login_count`: Total number of successful logins.
-- `failed_login_attempts`: Number of consecutive failed login attempts.
-- `account_verified`: Whether the moderator account has been verified.
+- `email`
+  > Moderator email address for authentication and official communications.
+  > Must be unique across all moderators.
+- `password_hash`
+  > Hashed password for secure authentication using enhanced security
+  > standards.
+- `username`
+  > Display name used for moderator identification. Must be unique across all
+  > moderators.
+- `moderator_level`
+  > Moderator permission level (junior, senior, admin) with defined scope
+  > boundaries.
+- `status`: Moderator account status (active, suspended, inactive, pending_review).
+- `mfa_secret`
+  > Encrypted multi-factor authentication secret with enhanced security
+  > requirements.
+- `mfa_backup_codes`: JSON array of backup codes for MFA recovery scenarios.
+- `mfa_enabled`
+  > Whether multi-factor authentication is enabled for this account. Required
+  > for administrative access.
+- `email_verified`
+  > Whether the moderator's email address has been verified. Required for
+  > administrative privileges.
+- `password_reset_token`
+  > Temporary token for password reset requests with enhanced security
+  > validation.
+- `password_reset_expires`: Expiration timestamp for password reset token.
+- `last_login_at`
+  > Timestamp of the moderator's last successful login. Used for security
+  > monitoring.
+- `failed_login_attempts`
+  > Count of consecutive failed login attempts with lower thresholds for
+  > administrative accounts.
+- `permission_scope`: JSON definition of specific permissions granted to this moderator level.
+- `gdpr_consent_given`: Whether the moderator has given GDPR consent for data processing.
+- `gdpr_consent_date`: Timestamp when GDPR consent was given.
 - `created_at`: Timestamp when the moderator account was created.
 - `updated_at`: Timestamp when the moderator account was last updated.
 - `deleted_at`: Timestamp when the moderator account was soft deleted.
 
-### `discussion_board_moderator_sessions`
+### `discussion_board_member_sessions`
 
-Authentication sessions for moderator users. Tracks administrative login
-sessions for security auditing. [discussion_board_moderators.id](#discussion_board_moderators)
-for moderator relationship.
+Authentication sessions for member users.
+
+Tracks active login sessions for member accounts, providing security and
+session management capabilities. Each session records connection context
+including IP address, access time, and session expiration.
+
+Sessions are used for audit tracing of member actions and authentication
+state management. Multiple concurrent sessions are supported per member
+account. Session data helps maintain secure authentication and provides
+insights into user engagement patterns.
+
+**Performance Enhancements:**
+- Additional indexes for session cleanup and management operations
+- Enhanced security tracking for suspicious activity detection
+- Improved query performance for session validation workflows
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_moderator_id`: Moderator's session relationship. [discussion_board_moderators.id](#discussion_board_moderators)
-- `ip`: IP address of the connection.
-- `href`: Connection URL.
-- `referrer`: Referrer URL.
+- `discussion_board_member_id`: Reference to the member account. [discussion_board_members.id](#discussion_board_members)
+- `ip`: IP address of the connection for security and geographic tracking.
+- `href`: Connection URL for session context and analytics.
+- `referrer`: Referrer URL for traffic source analysis.
+- `user_agent`: Client user agent string for device and browser identification.
+- `is_active`: Whether the session is currently active for quick status checks.
+- `last_activity_at`: Timestamp of last activity within this session for timeout management.
 - `created_at`: Session creation time.
-- `expired_at`: Session end time.
+- `expired_at`: Session end time for automatic cleanup operations.
 
-## Content
+### `discussion_board_moderator_sessions`
+
+Authentication sessions for moderator users.
+
+Tracks active login sessions for moderator accounts, providing enhanced
+security and session management for administrative users. Each session
+records connection context including IP address, access time, and session
+expiration.
+
+Moderator sessions include additional security considerations due to
+elevated permissions. Session data helps maintain accountability for
+moderator actions and provides audit trails for administrative
+activities.
+
+**Security Enhancements:**
+- Enhanced security tracking for administrative sessions
+- Additional audit trail capabilities for moderator actions
+- Improved performance for session management operations
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_moderator_id`: Reference to the moderator account. [discussion_board_moderators.id](#discussion_board_moderators)
+- `ip`: IP address of the connection for enhanced security monitoring.
+- `href`: Connection URL for administrative session context.
+- `referrer`: Referrer URL for administrative access tracking.
+- `user_agent`: Client user agent string for security auditing.
+- `is_active`: Whether the session is currently active for administrative monitoring.
+- `last_activity_at`
+  > Timestamp of last activity within this session for security timeout
+  > management.
+- `security_level`: Security level assigned to this session (standard, elevated, critical).
+- `created_at`: Session creation time.
+- `expired_at`: Session end time for administrative session management.
+
+## Articles
 
 ```mermaid
 erDiagram
-"discussion_board_posts" {
+"discussion_board_articles" {
   String id PK
-  String discussion_board_member_id FK "nullable"
-  String discussion_board_moderator_id FK "nullable"
   String discussion_board_channel_id FK
-  String discussion_board_section_id FK "nullable"
+  String discussion_board_category_id FK
+  String actor_type
   String title
-  String body
+  String content
   String status
+  String business_status
+  Int view_count
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_post_attachments" {
+"discussion_board_article_snapshots" {
   String id PK
-  String discussion_board_post_id FK
-  String discussion_board_file_upload_id FK
+  String discussion_board_article_id FK
+  String actor_type
+  String title
+  String content
+  String status
+  String business_status
+  Int view_count
+  String snapshot_reason
   DateTime created_at
+}
+"discussion_board_article_of_members" {
+  String id PK
+  String discussion_board_article_id FK,UK
+  String discussion_board_member_id FK
+  String discussion_board_member_session_id FK
+  DateTime created_at
+}
+"discussion_board_article_of_moderators" {
+  String id PK
+  String discussion_board_article_id FK,UK
+  String discussion_board_moderator_id FK
+  String discussion_board_moderator_session_id FK
+  DateTime created_at
+}
+"discussion_board_article_snapshots" }o--|| "discussion_board_articles" : article
+"discussion_board_article_of_members" |o--|| "discussion_board_articles" : article
+"discussion_board_article_of_moderators" |o--|| "discussion_board_articles" : article
+```
+
+### `discussion_board_articles`
+
+Core discussion articles representing the main content of the
+economic/political discussion board.
+
+Stores the primary discussion posts created by authenticated members and
+moderators. Each article contains the main discussion content, title, and
+metadata required for platform functionality. Articles support
+categorization through relationships with existing category tables and
+can be moderated based on community guidelines.
+
+The article lifecycle includes creation, editing, voting, commenting, and
+potential moderation actions. Articles maintain relationships with
+authors, categories, attachments, and comments while supporting the
+platform's core discussion functionality.
+
+Soft deletion is supported through the deleted_at field to maintain audit
+trails while allowing content moderation. Articles can have multiple
+snapshots for version history and audit purposes.
+
+**CRITICAL UPDATE**: Implemented proper polymorphic ownership pattern
+with actor_type field and removed nullable author FKs to maintain
+normalization compliance.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_channel_id`
+  > Channel where the article is published. {@link
+  > discussion_board_channels.id}
+- `discussion_board_category_id`
+  > Category classification for the article. {@link
+  > discussion_board_categories.id}
+- `actor_type`
+  > Type of author who created the article. Valid values: 'member',
+  > 'moderator'. Used for efficient filtering and polymorphic relationship
+  > management.
+- `title`
+  > Article title that summarizes the discussion topic. Must be between
+  > 10-200 characters as per requirements.
+- `content`
+  > Main article content containing the discussion text. Supports rich text
+  > formatting and must meet minimum length requirements.
+- `status`
+  > Current article status indicating publication state. Valid values: draft,
+  > published, archived, moderated.
+- `business_status`
+  > Business-specific workflow status for advanced state management. Tracks
+  > article progression through moderation, review, and publication
+  > workflows.
+- `view_count`
+  > Number of times the article has been viewed by users. Incremented on each
+  > view for popularity tracking.
+- `created_at`: Timestamp when the article was initially created.
+- `updated_at`: Timestamp when the article was last modified.
+- `deleted_at`
+  > Timestamp when the article was soft deleted. Null indicates active
+  > article.
+
+### `discussion_board_article_snapshots`
+
+Historical snapshots of discussion articles for audit trails and version
+control.
+
+Captures point-in-time states of articles whenever significant changes
+occur, such as content edits, status updates, or moderation actions. Each
+snapshot preserves the complete article state at the moment of capture,
+enabling historical tracking and audit compliance.
+
+Snapshots maintain relationships to the original article and capture all
+relevant metadata including content, status, and authorship information.
+This supports version comparison, rollback capabilities, and compliance
+with data retention requirements.
+
+The snapshot pattern ensures that historical article states remain
+accessible even after subsequent edits or deletions, providing essential
+audit functionality for the discussion platform.
+
+**CRITICAL UPDATE**: Added actor_type field to maintain consistency with
+main article table and support historical author tracking.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`
+  > Original article that this snapshot captures. {@link
+  > discussion_board_articles.id}
+- `actor_type`
+  > Type of author who created the article at snapshot time. Valid values:
+  > 'member', 'moderator'.
+- `title`: Article title at the time of snapshot creation.
+- `content`: Article content at the time of snapshot creation.
+- `status`: Article status at the time of snapshot creation.
+- `business_status`: Business workflow status at the time of snapshot creation.
+- `view_count`: View count at the time of snapshot creation.
+- `snapshot_reason`: Reason for creating this snapshot (edit, moderation, archive, etc.).
+- `created_at`: Timestamp when the snapshot was created.
+
+### `discussion_board_article_of_members`
+
+Subtype entity for articles created by member users.
+
+Stores member-specific authorship information including the member
+reference and session context. This table implements the proper
+polymorphic ownership pattern by separating member-created articles from
+moderator-created articles.
+
+Each record maintains a 1:1 relationship with the main article entity and
+includes the member's session information for audit trail purposes. This
+design ensures referential integrity and enables efficient querying of
+member-authored content.
+
+The subtype pattern allows for member-specific metadata extension while
+maintaining clean separation of concerns between different author types.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`
+  > Main article entity that this subtype represents. {@link
+  > discussion_board_articles.id}
+- `discussion_board_member_id`: Member author who created the article. [discussion_board_members.id](#discussion_board_members)
+- `discussion_board_member_session_id`
+  > Member session context when the article was created. {@link
+  > discussion_board_member_sessions.id}
+- `created_at`: Timestamp when the member authorship record was created.
+
+### `discussion_board_article_of_moderators`
+
+Subtype entity for articles created by moderator users.
+
+Stores moderator-specific authorship information including the moderator
+reference and session context. This table implements the proper
+polymorphic ownership pattern by separating moderator-created articles
+from member-created articles.
+
+Each record maintains a 1:1 relationship with the main article entity and
+includes the moderator's session information for audit trail purposes.
+This design ensures referential integrity and enables efficient querying
+of moderator-authored content.
+
+The subtype pattern allows for moderator-specific metadata extension
+while maintaining clean separation of concerns between different author
+types.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`
+  > Main article entity that this subtype represents. {@link
+  > discussion_board_articles.id}
+- `discussion_board_moderator_id`
+  > Moderator author who created the article. {@link
+  > discussion_board_moderators.id}
+- `discussion_board_moderator_session_id`
+  > Moderator session context when the article was created. {@link
+  > discussion_board_moderator_sessions.id}
+- `created_at`: Timestamp when the moderator authorship record was created.
+
+## Attachments
+
+```mermaid
+erDiagram
+"discussion_board_attachments" {
+  String id PK
+  String file_name
+  Int file_size
+  String mime_type
+  String file_hash UK
+  String storage_path
+  String security_status
+  DateTime created_at
+  DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_comments" {
+"discussion_board_article_attachments" {
   String id PK
-  String discussion_board_post_id FK
-  String discussion_board_member_id FK "nullable"
-  String discussion_board_moderator_id FK "nullable"
-  String parent_id FK "nullable"
-  String body
-  String status
+  String discussion_board_article_id FK
+  String discussion_board_attachment_id FK
+  String description "nullable"
+  Int display_order
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
@@ -352,96 +676,305 @@ erDiagram
 "discussion_board_comment_attachments" {
   String id PK
   String discussion_board_comment_id FK
-  String discussion_board_file_upload_id FK
+  String discussion_board_attachment_id FK
+  String description "nullable"
+  Int display_order
   DateTime created_at
+  DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_post_attachments" }o--|| "discussion_board_posts" : post
-"discussion_board_comments" }o--|| "discussion_board_posts" : post
-"discussion_board_comments" }o--o| "discussion_board_comments" : parent
-"discussion_board_comment_attachments" }o--|| "discussion_board_comments" : comment
+"discussion_board_article_attachments" }o--|| "discussion_board_attachments" : attachment
+"discussion_board_comment_attachments" }o--|| "discussion_board_attachments" : attachment
 ```
 
-### `discussion_board_posts`
+### `discussion_board_attachments`
 
-Main discussion posts created by members or moderators. Contains the core
-content of economic/political discussions including titles, bodies, and
-status information. Posts can be created in specific channels and
-sections for organized content management. {@link
-discussion_board_members.id} [discussion_board_moderators.id](#discussion_board_moderators)
-[discussion_board_channels.id](#discussion_board_channels)
+Central repository for all file attachments uploaded to the discussion
+board.
 
-Properties as follows:
+Stores metadata and properties for files attached to articles and
+comments, including file information, upload details, and security
+validation status. Each attachment can be referenced by multiple articles
+or comments through junction tables.
 
-- `id`: Primary Key.
-- `discussion_board_member_id`: Member who created the post. [discussion_board_members.id](#discussion_board_members)
-- `discussion_board_moderator_id`: Moderator who created the post. [discussion_board_moderators.id](#discussion_board_moderators)
-- `discussion_board_channel_id`: Channel where the post is published. [discussion_board_channels.id](#discussion_board_channels)
-- `discussion_board_section_id`: Section within the channel. [discussion_board_sections.id](#discussion_board_sections)
-- `title`: Post title summarizing the discussion topic.
-- `body`: Main content of the post with discussion details.
-- `status`: Current status of the post (draft, published, locked, archived).
-- `created_at`: Timestamp when the post was created.
-- `updated_at`: Timestamp when the post was last updated.
-- `deleted_at`: Timestamp when the post was soft deleted.
+Attachments undergo security scanning and validation before being made
+available for use. The system supports various file types including
+images (JPG, PNG, GIF) and documents (PDF, DOC, TXT) with size limits
+enforced during upload.
 
-### `discussion_board_post_attachments`
-
-Files and images attached to discussion posts. Supports evidence-based
-discussions with document uploads including PDFs, images, and data files.
-Each attachment is linked to a specific post and includes file metadata.
-[discussion_board_posts.id](#discussion_board_posts) {@link
-discussion_board_file_uploads.id}
+Soft deletion is supported to maintain audit trails while allowing
+content moderation.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_post_id`: Post that this attachment belongs to. [discussion_board_posts.id](#discussion_board_posts)
-- `discussion_board_file_upload_id`
-  > File upload record containing the actual file data. {@link
-  > discussion_board_file_uploads.id}
-- `created_at`: Timestamp when the attachment was linked to the post.
-- `deleted_at`: Timestamp when the attachment was removed from the post.
+- `file_name`: Original filename of the uploaded attachment.
+- `file_size`: Size of the file in bytes.
+- `mime_type`: MIME type of the uploaded file.
+- `file_hash`: SHA-256 hash of the file content for duplicate detection.
+- `storage_path`: Path to the file in the storage system.
+- `security_status`: Security validation status (pending, approved, rejected).
+- `created_at`: Timestamp when the attachment was uploaded.
+- `updated_at`: Timestamp when the attachment was last modified.
+- `deleted_at`: Timestamp when the attachment was soft deleted.
 
-### `discussion_board_comments`
+### `discussion_board_article_attachments`
 
-Comments made on discussion posts. Supports threaded conversations with
-reply functionality and engagement tracking. Comments can be created by
-members or moderators and support the discussion lifecycle. {@link
-discussion_board_posts.id} [discussion_board_members.id](#discussion_board_members) {@link
-discussion_board_moderators.id}
+Junction table managing the many-to-many relationship between articles
+and attachments.
+
+Links discussion board articles to their associated file attachments,
+allowing multiple attachments per article and multiple articles to
+reference the same attachment. This junction table enables flexible
+attachment sharing while maintaining proper referential integrity.
+
+Each relationship includes metadata about when the attachment was added
+to the article and optional description text for context. The system
+tracks attachment usage across articles for proper lifecycle management.
+
+Managed through parent article operations with no independent API
+endpoints required.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_post_id`: Post that this comment belongs to. [discussion_board_posts.id](#discussion_board_posts)
-- `discussion_board_member_id`: Member who created the comment. [discussion_board_members.id](#discussion_board_members)
-- `discussion_board_moderator_id`: Moderator who created the comment. [discussion_board_moderators.id](#discussion_board_moderators)
-- `parent_id`: Parent comment for threaded replies. [discussion_board_comments.id](#discussion_board_comments)
-- `body`: Content of the comment.
-- `status`: Current status of the comment (published, hidden, deleted).
-- `created_at`: Timestamp when the comment was created.
-- `updated_at`: Timestamp when the comment was last updated.
-- `deleted_at`: Timestamp when the comment was soft deleted.
+- `discussion_board_article_id`: Target article's [discussion_board_articles.id](#discussion_board_articles).
+- `discussion_board_attachment_id`: Target attachment's [discussion_board_attachments.id](#discussion_board_attachments).
+- `description`: Optional description of the attachment's relevance to the article.
+- `display_order`: Order in which attachments should be displayed for the article.
+- `created_at`: Timestamp when the attachment was linked to the article.
+- `updated_at`: Timestamp when the relationship was last modified.
+- `deleted_at`: Timestamp when the relationship was soft deleted.
 
 ### `discussion_board_comment_attachments`
 
-Files and images attached to discussion comments. Enables evidence-based
-commenting with supporting documents and images. Each attachment is
-linked to a specific comment and includes file metadata. {@link
-discussion_board_comments.id} [discussion_board_file_uploads.id](#discussion_board_file_uploads)
+Junction table managing the many-to-many relationship between comments
+and attachments.
+
+Links discussion board comments to their associated file attachments,
+supporting multiple attachments per comment and attachment reuse across
+comments. This design enables rich comment content with supporting
+evidence while maintaining data integrity.
+
+Each relationship includes metadata about attachment usage context and
+display ordering. The system ensures proper attachment lifecycle
+management when comments are modified or deleted.
+
+Managed through parent comment operations with no independent user-facing
+functionality.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_id`: Target comment's [discussion_board_comments.id](#discussion_board_comments).
+- `discussion_board_attachment_id`: Target attachment's [discussion_board_attachments.id](#discussion_board_attachments).
+- `description`: Optional description of the attachment's relevance to the comment.
+- `display_order`: Order in which attachments should be displayed for the comment.
+- `created_at`: Timestamp when the attachment was linked to the comment.
+- `updated_at`: Timestamp when the relationship was last modified.
+- `deleted_at`: Timestamp when the relationship was soft deleted.
+
+## Interactions
+
+```mermaid
+erDiagram
+"discussion_board_comments" {
+  String id PK
+  String discussion_board_article_id FK
+  String parent_id FK "nullable"
+  String actor_type
+  String body
+  String status
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_comments_of_members" {
+  String id PK
+  String discussion_board_comment_id FK,UK
+  String discussion_board_member_id FK
+  String discussion_board_member_session_id FK
+  DateTime created_at
+}
+"discussion_board_comments_of_moderators" {
+  String id PK
+  String discussion_board_comment_id FK,UK
+  String discussion_board_moderator_id FK
+  String discussion_board_moderator_session_id FK
+  DateTime created_at
+}
+"discussion_board_comment_votes" {
+  String id PK
+  String discussion_board_comment_id FK
+  String discussion_board_member_id FK
+  String discussion_board_member_session_id FK
+  String vote_type
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_article_votes" {
+  String id PK
+  String discussion_board_article_id FK
+  String discussion_board_member_id FK
+  String discussion_board_member_session_id FK
+  String vote_type
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_comments" }o--o| "discussion_board_comments" : parent
+"discussion_board_comments_of_members" |o--|| "discussion_board_comments" : comment
+"discussion_board_comments_of_moderators" |o--|| "discussion_board_comments" : comment
+"discussion_board_comment_votes" }o--|| "discussion_board_comments" : comment
+```
+
+### `discussion_board_comments`
+
+Main entity representing user comments on discussion board articles.
+
+Stores the core content of comments made by members and moderators on
+articles. Each comment contains the actual text content, references to
+the parent article, and maintains relationships with voting and
+attachment entities.
+
+Comments support nested replies through parent-child relationships,
+allowing for threaded conversations. The entity tracks creation and
+modification timestamps for audit purposes and supports soft deletion for
+content moderation.
+
+Comments are independently manageable entities that require search and
+filtering capabilities across all articles, justifying primary stance
+classification. The actor_type field enables routing to appropriate
+subtype entities for member and moderator creation contexts.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`
+  > Reference to the parent article where this comment is posted. {@link
+  > discussion_board_articles.id}
+- `parent_id`
+  > Self-referencing foreign key for nested comment replies. Points to the
+  > parent comment if this is a reply. [discussion_board_comments.id](#discussion_board_comments)
+- `actor_type`
+  > Type of actor who created the comment. Valid values: 'member',
+  > 'moderator'. Used for routing to appropriate subtype entity.
+- `body`
+  > The actual content of the comment. Supports rich text formatting and must
+  > contain substantive discussion content.
+- `status`
+  > Current moderation status of the comment. Valid values: 'pending',
+  > 'approved', 'rejected', 'flagged'.
+- `created_at`: Timestamp when the comment was originally created.
+- `updated_at`: Timestamp when the comment was last modified.
+- `deleted_at`: Timestamp when the comment was soft deleted. Null if comment is active.
+
+### `discussion_board_comments_of_members`
+
+Subtype entity for comments created by member users.
+
+Stores member-specific context for comments created by authenticated
+members. Each record maintains the relationship between a comment and the
+member who created it, including the session context for audit purposes.
+
+This entity ensures referential integrity for member-created comments and
+enables efficient querying of comments by member. The 1:1 relationship
+with the main comments entity prevents orphaned subtype records.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_id`: Reference to the main comment entity. [discussion_board_comments.id](#discussion_board_comments)
+- `discussion_board_member_id`
+  > Reference to the member who created the comment. {@link
+  > discussion_board_members.id}
+- `discussion_board_member_session_id`
+  > Reference to the member session when the comment was created. {@link
+  > discussion_board_member_sessions.id}
+- `created_at`: Timestamp when the member-specific comment context was created.
+
+### `discussion_board_comments_of_moderators`
+
+Subtype entity for comments created by moderator users.
+
+Stores moderator-specific context for comments created by administrative
+moderators. Each record maintains the relationship between a comment and
+the moderator who created it, including the session context for audit
+purposes.
+
+This entity ensures referential integrity for moderator-created comments
+and enables efficient querying of comments by moderator. The 1:1
+relationship with the main comments entity prevents orphaned subtype
+records.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_id`: Reference to the main comment entity. [discussion_board_comments.id](#discussion_board_comments)
+- `discussion_board_moderator_id`
+  > Reference to the moderator who created the comment. {@link
+  > discussion_board_moderators.id}
+- `discussion_board_moderator_session_id`
+  > Reference to the moderator session when the comment was created. {@link
+  > discussion_board_moderator_sessions.id}
+- `created_at`: Timestamp when the moderator-specific comment context was created.
+
+### `discussion_board_comment_votes`
+
+Voting records for individual comments on the discussion board.
+
+Tracks upvotes and downvotes cast by members on comments to indicate
+agreement, appreciation, or disagreement. Each vote record represents a
+single voting action by a member on a specific comment.
+
+The entity prevents duplicate voting through unique constraints and
+maintains vote integrity by tracking the voting member and session
+context. Votes are subsidiary entities managed through comment
+operations.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_comment_id`
-  > Comment that this attachment belongs to. {@link
+  > Reference to the comment being voted on. {@link
   > discussion_board_comments.id}
-- `discussion_board_file_upload_id`
-  > File upload record containing the actual file data. {@link
-  > discussion_board_file_uploads.id}
-- `created_at`: Timestamp when the attachment was linked to the comment.
-- `deleted_at`: Timestamp when the attachment was removed from the comment.
+- `discussion_board_member_id`
+  > Reference to the member who cast the vote. {@link
+  > discussion_board_members.id}
+- `discussion_board_member_session_id`
+  > Reference to the member session when the vote was cast. {@link
+  > discussion_board_member_sessions.id}
+- `vote_type`: Type of vote cast. Valid values: 'upvote', 'downvote'.
+- `created_at`: Timestamp when the vote was cast.
+- `updated_at`: Timestamp when the vote was last updated (if changed).
+
+### `discussion_board_article_votes`
+
+Voting records for discussion board articles.
+
+Tracks upvotes and downvotes cast by members on articles to indicate
+content quality, relevance, or agreement. Each vote record represents a
+single voting action by a member on a specific article.
+
+The entity prevents duplicate voting through unique constraints and
+maintains vote integrity by tracking the voting member and session
+context. Votes are subsidiary entities managed through article
+operations.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`
+  > Reference to the article being voted on. {@link
+  > discussion_board_articles.id}
+- `discussion_board_member_id`
+  > Reference to the member who cast the vote. {@link
+  > discussion_board_members.id}
+- `discussion_board_member_session_id`
+  > Reference to the member session when the vote was cast. {@link
+  > discussion_board_member_sessions.id}
+- `vote_type`: Type of vote cast. Valid values: 'upvote', 'downvote'.
+- `created_at`: Timestamp when the vote was cast.
+- `updated_at`: Timestamp when the vote was last updated (if changed).
 
 ## Moderation
 
@@ -450,811 +983,254 @@ erDiagram
 "discussion_board_content_reports" {
   String id PK
   String discussion_board_member_id FK
-  String discussion_board_moderator_id FK "nullable"
-  String actor_type
-  String report_reason
-  String description "nullable"
+  String discussion_board_article_id FK "nullable"
+  String discussion_board_comment_id FK "nullable"
+  String report_type
+  String description
   String status
+  String priority
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-}
-"discussion_board_content_report_of_posts" {
-  String id PK
-  String discussion_board_content_report_id FK,UK
-  String discussion_board_post_id FK
-  DateTime created_at
-}
-"discussion_board_content_report_of_comments" {
-  String id PK
-  String discussion_board_content_report_id FK,UK
-  String discussion_board_comment_id FK
-  DateTime created_at
 }
 "discussion_board_moderation_actions" {
   String id PK
   String discussion_board_moderator_id FK
-  String actor_type
+  String discussion_board_content_report_id FK "nullable"
+  String discussion_board_user_violation_id FK "nullable"
   String action_type
   String reason
-  Int duration_hours "nullable"
+  String duration "nullable"
   String status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_moderation_action_of_posts" {
+"discussion_board_user_violations" {
+  String id PK
+  String discussion_board_member_id FK
+  String discussion_board_moderator_id FK
+  String violation_type
+  String severity
+  String description
+  String action_taken
+  String status
+  DateTime expires_at "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_moderation_action_of_articles" {
   String id PK
   String discussion_board_moderation_action_id FK,UK
-  String discussion_board_post_id FK
+  String discussion_board_article_id FK
+  String article_snapshot_id "nullable"
+  String moderation_notes "nullable"
   DateTime created_at
 }
 "discussion_board_moderation_action_of_comments" {
   String id PK
   String discussion_board_moderation_action_id FK,UK
   String discussion_board_comment_id FK
+  String comment_snapshot_id "nullable"
+  String moderation_notes "nullable"
   DateTime created_at
 }
-"discussion_board_user_warnings" {
+"discussion_board_moderation_action_of_users" {
   String id PK
+  String discussion_board_moderation_action_id FK,UK
   String discussion_board_member_id FK
-  String discussion_board_moderator_id FK
-  String warning_level
-  String reason
-  String guidance "nullable"
-  DateTime expires_at "nullable"
-  String status
+  String moderation_notes "nullable"
+  Int previous_violation_count
   DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"discussion_board_suspensions" {
-  String id PK
-  String discussion_board_member_id FK
-  String discussion_board_moderator_id FK
-  String suspension_type
-  String reason
-  Int duration_days "nullable"
-  String appeal_status
-  String appeal_reason "nullable"
-  DateTime appeal_reviewed_at "nullable"
-  String status
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_content_report_of_posts" |o--|| "discussion_board_content_reports" : contentReport
-"discussion_board_content_report_of_comments" |o--|| "discussion_board_content_reports" : contentReport
-"discussion_board_moderation_action_of_posts" |o--|| "discussion_board_moderation_actions" : moderationAction
+"discussion_board_moderation_actions" }o--o| "discussion_board_content_reports" : contentReport
+"discussion_board_moderation_actions" }o--o| "discussion_board_user_violations" : userViolation
+"discussion_board_moderation_action_of_articles" |o--|| "discussion_board_moderation_actions" : moderationAction
 "discussion_board_moderation_action_of_comments" |o--|| "discussion_board_moderation_actions" : moderationAction
+"discussion_board_moderation_action_of_users" |o--|| "discussion_board_moderation_actions" : moderationAction
 ```
 
 ### `discussion_board_content_reports`
 
-Content reports submitted by users for moderator review. Users can report
-posts or comments that violate community guidelines. Each report captures
-the reason for reporting and the specific content being reported. {@link
-discussion_board_members.id} for reporting users.
+User-generated reports for content requiring moderation review.
+
+Stores reports submitted by users flagging inappropriate content, policy
+violations, or other issues requiring moderator attention. Each report
+captures the specific content being reported, the reporting user, and
+detailed information about the violation type and context.
+
+Reports follow a workflow from submission through review to resolution,
+with status tracking and audit trails. Moderators use these reports to
+identify and address content that violates community guidelines.
+
+The system supports multiple report categories including spam,
+harassment, misinformation, and other violation types as defined in the
+content policy.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_member_id`: Reporting member's [discussion_board_members.id](#discussion_board_members).
-- `discussion_board_moderator_id`
-  > Moderator assigned to review this report. {@link
-  > discussion_board_moderators.id}.
-- `actor_type`: Type of content being reported (post, comment).
-- `report_reason`: Reason for reporting the content.
-- `description`: Additional details provided by the reporter.
-- `status`: Current status of the report (pending, reviewed, dismissed).
-- `created_at`: Timestamp when the report was created.
-- `updated_at`: Timestamp when the report was last updated.
-- `deleted_at`: Timestamp when the report was soft deleted.
-
-### `discussion_board_content_report_of_posts`
-
-Subtype entity for content reports targeting posts. Links reports to
-specific post content. [discussion_board_content_reports.id](#discussion_board_content_reports) and
-[discussion_board_posts.id](#discussion_board_posts).
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_content_report_id`: Parent content report. [discussion_board_content_reports.id](#discussion_board_content_reports).
-- `discussion_board_post_id`: Reported post. [discussion_board_posts.id](#discussion_board_posts).
-- `created_at`: Timestamp when the report subtype was created.
-
-### `discussion_board_content_report_of_comments`
-
-Subtype entity for content reports targeting comments. Links reports to
-specific comment content. [discussion_board_content_reports.id](#discussion_board_content_reports) and
-[discussion_board_comments.id](#discussion_board_comments).
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_content_report_id`: Parent content report. [discussion_board_content_reports.id](#discussion_board_content_reports).
-- `discussion_board_comment_id`: Reported comment. [discussion_board_comments.id](#discussion_board_comments).
-- `created_at`: Timestamp when the report subtype was created.
+- `discussion_board_article_id`: Reported article's [discussion_board_articles.id](#discussion_board_articles).
+- `discussion_board_comment_id`: Reported comment's [discussion_board_comments.id](#discussion_board_comments).
+- `report_type`
+  > Category of violation being reported (spam, harassment, misinformation,
+  > etc.).
+- `description`: Detailed explanation of the reported violation with specific concerns.
+- `status`: Current status of the report (pending, under_review, resolved, dismissed).
+- `priority`: Priority level based on violation severity (low, medium, high, critical).
+- `created_at`: Timestamp when the report was initially submitted.
+- `updated_at`: Timestamp of the last update to the report status or information.
+- `deleted_at`: Timestamp when the report was soft deleted, if applicable.
 
 ### `discussion_board_moderation_actions`
 
-Moderation actions performed by moderators on content or users. Captures
-actions like content removal, user warnings, suspensions, etc. {@link
-discussion_board_moderators.id} for acting moderator.
+Records of moderation actions taken by moderators on platform content.
+
+Serves as the main entity for all moderation activities, capturing the
+core action details while delegating target-specific information to
+subtype entities. This design replaces the problematic polymorphic
+target_id pattern with explicit, normalized relationships.
+
+Each action records the moderator responsible, the action type, and
+general metadata. Target-specific details are managed through dedicated
+subtype tables (articles, comments, users) to maintain referential
+integrity and proper normalization.
+
+The system supports comprehensive audit trails for transparency and
+accountability in content moderation decisions.
 
 Properties as follows:
 
 - `id`: Primary Key.
+- `discussion_board_moderator_id`: Moderator who performed the action [discussion_board_moderators.id](#discussion_board_moderators).
+- `discussion_board_content_report_id`: Associated content report [discussion_board_content_reports.id](#discussion_board_content_reports).
+- `discussion_board_user_violation_id`: Associated user violation [discussion_board_user_violations.id](#discussion_board_user_violations).
+- `action_type`
+  > Type of moderation action performed (approve, remove, warn, suspend, ban,
+  > etc.).
+- `reason`: Detailed explanation of the moderation decision and policy rationale.
+- `duration`: Duration of temporary actions like suspensions (e.g., '24h', '7d', '30d').
+- `status`
+  > Current status of the moderation action (active, completed, cancelled,
+  > appealed).
+- `created_at`: Timestamp when the moderation action was performed.
+- `updated_at`: Timestamp of the last update to the action record.
+- `deleted_at`: Timestamp when the action record was soft deleted, if applicable.
+
+### `discussion_board_user_violations`
+
+Records of user violations and associated disciplinary actions.
+
+Tracks violations of community guidelines by users, documenting the
+specific infractions, violation severity, and resulting disciplinary
+measures. Each violation record serves as the basis for progressive
+discipline and user behavior monitoring.
+
+Violations are categorized by type and severity, with corresponding
+actions ranging from warnings to temporary suspensions or permanent bans.
+The system maintains comprehensive violation histories to ensure
+consistent enforcement and support user rehabilitation.
+
+This table provides the foundation for user accountability, moderation
+consistency, and community standards enforcement across the platform.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_member_id`: User who committed the violation [discussion_board_members.id](#discussion_board_members).
 - `discussion_board_moderator_id`
-  > Moderator who performed the action. {@link
+  > Moderator who recorded the violation {@link
   > discussion_board_moderators.id}.
-- `actor_type`: Type of content being moderated (post, comment, user).
-- `action_type`: Type of moderation action performed.
-- `reason`: Reason for the moderation action.
-- `duration_hours`: Duration of action in hours (for temporary actions).
-- `status`: Current status of the action (active, expired, revoked).
-- `created_at`: Timestamp when the action was performed.
-- `updated_at`: Timestamp when the action was last updated.
-- `deleted_at`: Timestamp when the action was soft deleted.
+- `violation_type`: Category of violation committed (spam, harassment, hate_speech, etc.).
+- `severity`: Severity level of the violation (minor, moderate, severe, critical).
+- `description`: Detailed description of the violation with specific evidence and context.
+- `action_taken`: Disciplinary action applied (warning, suspension, ban, etc.).
+- `status`
+  > Current status of the violation record (active, resolved, appealed,
+  > expired).
+- `expires_at`: Timestamp when temporary actions like suspensions expire.
+- `created_at`: Timestamp when the violation was initially recorded.
+- `updated_at`: Timestamp of the last update to the violation record.
+- `deleted_at`: Timestamp when the violation record was soft deleted, if applicable.
 
-### `discussion_board_moderation_action_of_posts`
+### `discussion_board_moderation_action_of_articles`
 
-Subtype entity for moderation actions targeting posts. Links actions to
-specific post content. [discussion_board_moderation_actions.id](#discussion_board_moderation_actions) and
-[discussion_board_posts.id](#discussion_board_posts).
+Subtype entity for moderation actions specifically targeting discussion
+board articles.
+
+Captures article-specific moderation details while maintaining proper
+normalization through explicit foreign key relationships. Each record
+represents a moderation action applied to a specific article, with the
+main action entity handling common metadata.
+
+This design replaces the problematic polymorphic target_id pattern with
+proper referential integrity. Articles can be approved, removed, or have
+other moderation actions applied while maintaining clear audit trails.
+
+The relationship ensures that article moderation actions are properly
+tracked and can be efficiently queried without the performance issues of
+polymorphic relationships.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_moderation_action_id`: Parent moderation action. [discussion_board_moderation_actions.id](#discussion_board_moderation_actions).
-- `discussion_board_post_id`: Targeted post. [discussion_board_posts.id](#discussion_board_posts).
-- `created_at`: Timestamp when the action subtype was created.
+- `discussion_board_moderation_action_id`: Parent moderation action [discussion_board_moderation_actions.id](#discussion_board_moderation_actions).
+- `discussion_board_article_id`: Target article being moderated [discussion_board_articles.id](#discussion_board_articles).
+- `article_snapshot_id`
+  > Snapshot of the article at the time of moderation {@link
+  > discussion_board_article_snapshots.id}.
+- `moderation_notes`: Article-specific moderation notes and context.
+- `created_at`: Timestamp when the article moderation action was recorded.
 
 ### `discussion_board_moderation_action_of_comments`
 
-Subtype entity for moderation actions targeting comments. Links actions
-to specific comment content. {@link
-discussion_board_moderation_actions.id} and {@link
-discussion_board_comments.id}.
+Subtype entity for moderation actions specifically targeting discussion
+board comments.
+
+Manages comment-specific moderation details through proper normalized
+relationships. Each record represents a moderation action applied to a
+specific comment, with the main action entity handling common metadata.
+
+This design eliminates the polymorphic relationship anti-pattern by
+providing explicit foreign key constraints. Comments can be approved,
+removed, or have warnings applied while maintaining clear audit trails.
+
+The explicit relationship ensures efficient querying and proper
+referential integrity for comment moderation workflows.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_moderation_action_id`: Parent moderation action. [discussion_board_moderation_actions.id](#discussion_board_moderation_actions).
-- `discussion_board_comment_id`: Targeted comment. [discussion_board_comments.id](#discussion_board_comments).
-- `created_at`: Timestamp when the action subtype was created.
+- `discussion_board_moderation_action_id`: Parent moderation action [discussion_board_moderation_actions.id](#discussion_board_moderation_actions).
+- `discussion_board_comment_id`: Target comment being moderated [discussion_board_comments.id](#discussion_board_comments).
+- `comment_snapshot_id`
+  > Snapshot of the comment at the time of moderation {@link
+  > discussion_board_comment_snapshots.id}.
+- `moderation_notes`: Comment-specific moderation notes and context.
+- `created_at`: Timestamp when the comment moderation action was recorded.
 
-### `discussion_board_user_warnings`
+### `discussion_board_moderation_action_of_users`
 
-Warning records issued to users for guideline violations. Each warning
-includes the reason, severity, and educational guidance. {@link
-discussion_board_members.id} for warned user.
+Subtype entity for moderation actions specifically targeting platform users.
 
-Properties as follows:
+Handles user-specific moderation details through proper normalized
+relationships. Each record represents a moderation action applied to a
+specific user, such as warnings, suspensions, or bans.
 
-- `id`: Primary Key.
-- `discussion_board_member_id`: Warned member. [discussion_board_members.id](#discussion_board_members).
-- `discussion_board_moderator_id`: Moderator who issued the warning. [discussion_board_moderators.id](#discussion_board_moderators).
-- `warning_level`: Severity level of the warning (low, medium, high).
-- `reason`: Detailed reason for the warning.
-- `guidance`: Educational guidance provided to the user.
-- `expires_at`: Timestamp when the warning expires.
-- `status`: Current status of the warning (active, expired, revoked).
-- `created_at`: Timestamp when the warning was issued.
-- `updated_at`: Timestamp when the warning was last updated.
-- `deleted_at`: Timestamp when the warning was soft deleted.
+This design replaces the problematic polymorphic pattern with explicit
+foreign key constraints. User moderation actions are properly tracked
+with clear relationships to both the action and the target user.
 
-### `discussion_board_suspensions`
-
-User suspension records for temporary or permanent account restrictions.
-Captures suspension details, duration, and appeal information. {@link
-discussion_board_members.id} for suspended user.
+The explicit relationship ensures efficient user moderation workflows and
+proper audit trails for user disciplinary actions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_member_id`: Suspended member. [discussion_board_members.id](#discussion_board_members).
-- `discussion_board_moderator_id`
-  > Moderator who issued the suspension. {@link
-  > discussion_board_moderators.id}.
-- `suspension_type`: Type of suspension (temporary, permanent).
-- `reason`: Detailed reason for the suspension.
-- `duration_days`: Duration in days for temporary suspensions.
-- `appeal_status`: Current appeal status (none, pending, approved, denied).
-- `appeal_reason`: User's appeal explanation.
-- `appeal_reviewed_at`: Timestamp when appeal was reviewed.
-- `status`: Current status of the suspension (active, expired, revoked).
-- `created_at`: Timestamp when the suspension was issued.
-- `updated_at`: Timestamp when the suspension was last updated.
-- `deleted_at`: Timestamp when the suspension was soft deleted.
-
-## Profiles
-
-```mermaid
-erDiagram
-"discussion_board_user_profiles" {
-  String id PK
-  String discussion_board_member_id FK,UK
-  String biography "nullable"
-  String location "nullable"
-  String professional_background "nullable"
-  String areas_of_interest "nullable"
-  String(80000) avatar_url "nullable"
-  String profile_visibility
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_user_preferences" {
-  String id PK
-  String discussion_board_user_profile_id FK,UK
-  Boolean email_notifications
-  String comment_sorting
-  String theme_preference
-  String font_size
-  String content_density
-  String image_display
-  Boolean controversial_content_filter
-  Boolean auto_save_drafts
-  String digest_frequency
-  String language_preference
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_activity_history" {
-  String id PK
-  String discussion_board_user_profile_id FK
-  String activity_type
-  String activity_details "nullable"
-  String engagement_metrics "nullable"
-  String search_query "nullable"
-  String topic_categories "nullable"
-  Int duration_seconds "nullable"
-  String device_type "nullable"
-  DateTime created_at
-}
-"discussion_board_saved_content" {
-  String id PK
-  String discussion_board_user_profile_id FK
-  String custom_tags "nullable"
-  String notes "nullable"
-  String privacy_setting
-  DateTime saved_at
-  DateTime last_accessed
-  Int access_count
-  Boolean is_archived
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_user_preferences" |o--|| "discussion_board_user_profiles" : userProfile
-"discussion_board_activity_history" }o--|| "discussion_board_user_profiles" : userProfile
-"discussion_board_saved_content" }o--|| "discussion_board_user_profiles" : userProfile
-```
-
-### `discussion_board_user_profiles`
-
-Extended user profile information beyond basic authentication data.
-Contains personal details, biography, and customization preferences that
-enhance user identity for economic/political discussion participation.
-[discussion_board_members.id](#discussion_board_members)
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_member_id`
-  > Reference to the member who owns this profile. {@link
-  > discussion_board_members.id}
-- `biography`
-  > User's personal introduction and background relevant to
-  > economic/political discussions. Maximum 500 characters.
-- `location`: Geographic location at country/region level for discussion context.
-- `professional_background`: User's professional experience or expertise relevant to discussion topics.
-- `areas_of_interest`: Specific economic/political topics the user is most interested in.
-- `avatar_url`: URL to user's profile avatar image.
-- `profile_visibility`
-  > Privacy setting controlling who can view the profile (public,
-  > registered_users, private).
-- `created_at`: Timestamp when the profile was created.
-- `updated_at`: Timestamp when the profile was last updated.
-- `deleted_at`: Timestamp when the profile was soft-deleted for privacy.
-
-### `discussion_board_user_preferences`
-
-User-specific settings and preferences for platform customization.
-Controls notification behavior, display options, and discussion
-participation preferences. [discussion_board_user_profiles.id](#discussion_board_user_profiles)
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_user_profile_id`
-  > Reference to the user profile these preferences belong to. {@link
-  > discussion_board_user_profiles.id}
-- `email_notifications`
-  > Whether the user wants to receive email notifications for replies and
-  > updates.
-- `comment_sorting`
-  > Default comment sorting preference (newest_first, oldest_first,
-  > most_popular).
-- `theme_preference`: Display theme preference (light, dark, system).
-- `font_size`: Preferred font size for content display (small, medium, large).
-- `content_density`: Content display density preference (compact, standard, expanded).
-- `image_display`: Image display preference (always_show, hide, thumbnail_only).
-- `controversial_content_filter`: Whether to filter out controversial content by default.
-- `auto_save_drafts`: Whether to automatically save post and comment drafts.
-- `digest_frequency`: Frequency for receiving discussion digests (daily, weekly, never).
-- `language_preference`: Preferred language for content display.
-- `created_at`: Timestamp when the preferences were created.
-- `updated_at`: Timestamp when the preferences were last updated.
-
-### `discussion_board_activity_history`
-
-Comprehensive record of user activity including posts created, comments
-made, content viewed, and engagement patterns. Used for personalization
-and analytics. [discussion_board_user_profiles.id](#discussion_board_user_profiles)
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_user_profile_id`
-  > Reference to the user profile this activity belongs to. {@link
-  > discussion_board_user_profiles.id}
-- `activity_type`
-  > Type of activity recorded (post_created, comment_made, content_viewed,
-  > search_performed, preference_changed).
-- `activity_details`: JSON string containing detailed information about the activity.
-- `engagement_metrics`
-  > JSON string containing engagement metrics like view count, reply count,
-  > etc.
-- `search_query`: Search query performed by the user, if activity type is search.
-- `topic_categories`: Economic/political topic categories involved in this activity.
-- `duration_seconds`: Time spent on the activity in seconds, for content viewing.
-- `device_type`: Type of device used for the activity (desktop, mobile, tablet).
-- `created_at`: Timestamp when the activity occurred.
-
-### `discussion_board_saved_content`
-
-User's personal collection of saved posts and comments for later
-reference. Supports bookmarking and content organization features. {@link
-discussion_board_user_profiles.id}
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_user_profile_id`
-  > Reference to the user profile that saved this content. {@link
-  > discussion_board_user_profiles.id}
-- `custom_tags`: User-defined tags for organizing saved content.
-- `notes`: Personal notes added by the user about the saved content.
-- `privacy_setting`: Privacy level for the saved content (private, shared).
-- `saved_at`: Timestamp when the content was saved.
-- `last_accessed`: Timestamp when the saved content was last viewed.
-- `access_count`: Number of times the user has accessed this saved content.
-- `is_archived`: Whether the saved content has been archived by the user.
-- `created_at`: Timestamp when the save record was created.
-- `updated_at`: Timestamp when the save record was last updated.
-- `deleted_at`: Timestamp when the save record was soft-deleted.
-
-## Files
-
-```mermaid
-erDiagram
-"discussion_board_file_uploads" {
-  String id PK
-  String discussion_board_member_id FK "nullable"
-  String discussion_board_moderator_id FK "nullable"
-  String discussion_board_member_session_id FK "nullable"
-  String discussion_board_moderator_session_id FK "nullable"
-  String actor_type
-  String file_name
-  Int file_size
-  String mime_type
-  String storage_path
-  String upload_status
-  String scan_status
-  Boolean is_public
-  String access_key UK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_file_metadata" {
-  String id PK
-  String discussion_board_file_upload_id FK,UK
-  String title "nullable"
-  String description "nullable"
-  String file_type_category
-  String dimensions "nullable"
-  Int page_count "nullable"
-  String language "nullable"
-  String author "nullable"
-  String copyright_info "nullable"
-  String tags "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_file_scans" {
-  String id PK
-  String discussion_board_file_upload_id FK
-  String scan_engine
-  String scan_version
-  String scan_result
-  String threat_name "nullable"
-  String threat_type "nullable"
-  Int scan_duration
-  String file_hash
-  DateTime scan_timestamp
-  Boolean is_quarantined
-  String quarantine_reason "nullable"
-  DateTime created_at
-}
-"discussion_board_file_metadata" |o--|| "discussion_board_file_uploads" : fileUpload
-"discussion_board_file_scans" }o--|| "discussion_board_file_uploads" : fileUpload
-```
-
-### `discussion_board_file_uploads`
-
-Core file upload entity tracking the lifecycle of uploaded files
-including processing status, storage information, and access controls.
-Files are uploaded by members or moderators and undergo security scanning
-before being made available for attachment to posts and comments.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_member_id`: Member who uploaded the file. [discussion_board_members.id](#discussion_board_members)
-- `discussion_board_moderator_id`: Moderator who uploaded the file. [discussion_board_moderators.id](#discussion_board_moderators)
-- `discussion_board_member_session_id`
-  > Session context for member uploads. {@link
-  > discussion_board_member_sessions.id}
-- `discussion_board_moderator_session_id`
-  > Session context for moderator uploads. {@link
-  > discussion_board_moderator_sessions.id}
-- `actor_type`: Type of actor who uploaded the file (member or moderator).
-- `file_name`: Original filename as uploaded by the user.
-- `file_size`: File size in bytes.
-- `mime_type`: MIME type of the uploaded file.
-- `storage_path`: Path to the file in storage system.
-- `upload_status`
-  > Current status of the upload process (pending, processing, completed,
-  > failed).
-- `scan_status`: Security scan status (pending, clean, infected, failed).
-- `is_public`: Whether the file is publicly accessible.
-- `access_key`: Unique access key for secure file retrieval.
-- `created_at`: Timestamp when the file upload was initiated.
-- `updated_at`: Timestamp when the file upload was last updated.
-- `deleted_at`: Timestamp when the file was soft-deleted.
-
-### `discussion_board_file_metadata`
-
-Metadata and descriptive information for uploaded files. Contains
-additional file properties, descriptions, and categorization information
-that supplements the core file upload record.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_file_upload_id`
-  > Reference to the file upload record. {@link
-  > discussion_board_file_uploads.id}
-- `title`: Descriptive title for the file.
-- `description`: Detailed description of the file content.
-- `file_type_category`: Category of file type (image, document, data, etc.).
-- `dimensions`: Image dimensions for visual files (width x height).
-- `page_count`: Number of pages for document files.
-- `language`: Language of the file content.
-- `author`: Author or creator of the file content.
-- `copyright_info`: Copyright or licensing information.
-- `tags`: Comma-separated tags for content categorization.
-- `created_at`: Timestamp when the metadata was created.
-- `updated_at`: Timestamp when the metadata was last updated.
-
-### `discussion_board_file_scans`
-
-Security scanning results and audit trail for file uploads. Records virus
-scan outcomes, security assessments, and scanning history to ensure
-uploaded files meet platform security standards.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_file_upload_id`
-  > Reference to the file upload record. {@link
-  > discussion_board_file_uploads.id}
-- `scan_engine`: Name of the antivirus/security scanning engine used.
-- `scan_version`: Version of the scanning engine.
-- `scan_result`: Result of the security scan (clean, infected, suspicious, error).
-- `threat_name`: Name of detected threat if file is infected.
-- `threat_type`: Type of security threat detected.
-- `scan_duration`: Duration of scan in milliseconds.
-- `file_hash`: Hash of the file content for integrity verification.
-- `scan_timestamp`: Timestamp when the scan was performed.
-- `is_quarantined`: Whether the file was quarantined due to security concerns.
-- `quarantine_reason`: Reason for quarantine if applicable.
-- `created_at`: Timestamp when the scan record was created.
-
-## Discovery
-
-```mermaid
-erDiagram
-"discussion_board_search_index" {
-  String id PK
-  String discussion_board_post_id FK "nullable"
-  String discussion_board_comment_id FK "nullable"
-  String search_terms
-  Float relevance_score
-  Int term_frequency
-  DateTime last_indexed_at
-  DateTime created_at
-}
-"discussion_board_trending_content" {
-  String id PK
-  String discussion_board_post_id FK "nullable"
-  String discussion_board_comment_id FK "nullable"
-  Float trend_score
-  Int engagement_count
-  String trend_period
-  DateTime calculated_at
-  DateTime created_at
-}
-"discussion_board_user_following" {
-  String id PK
-  String follower_member_id FK
-  String followed_member_id FK
-  Boolean notifications_enabled
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_content_views" {
-  String id PK
-  String discussion_board_post_id FK "nullable"
-  String discussion_board_comment_id FK "nullable"
-  String viewer_member_id FK "nullable"
-  Int view_count
-  DateTime viewed_at
-  String session_id "nullable"
-  DateTime created_at
-}
-```
-
-### `discussion_board_search_index`
-
-Search index for efficient content discovery and retrieval. Contains
-pre-processed search terms from posts and comments to enable fast
-text-based searching across the discussion board. Maintains search
-relevance scores and term frequency data for ranking search results.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_post_id`: Reference to the indexed post. [discussion_board_posts.id](#discussion_board_posts)
-- `discussion_board_comment_id`: Reference to the indexed comment. [discussion_board_comments.id](#discussion_board_comments)
-- `search_terms`: Pre-processed search terms extracted from content for efficient searching.
-- `relevance_score`: Calculated relevance score for search result ranking.
-- `term_frequency`: Frequency of search terms within the content for ranking purposes.
-- `last_indexed_at`: Timestamp when this search index entry was last updated.
-- `created_at`: Timestamp when this search index entry was created.
-
-### `discussion_board_trending_content`
-
-Tracks trending posts and comments based on recent engagement metrics.
-Used to surface popular content to users and identify discussions gaining
-momentum. Updated periodically based on view counts, comment activity,
-and engagement patterns.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_post_id`: Reference to the trending post. [discussion_board_posts.id](#discussion_board_posts)
-- `discussion_board_comment_id`: Reference to the trending comment. [discussion_board_comments.id](#discussion_board_comments)
-- `trend_score`: Calculated trend score based on engagement metrics and recency.
-- `engagement_count`: Total engagement count including views, comments, and interactions.
-- `trend_period`: Time period for which this trend is calculated (e.g., '24h', '7d').
-- `calculated_at`: Timestamp when this trend calculation was performed.
-- `created_at`: Timestamp when this trend record was created.
-
-### `discussion_board_user_following`
-
-Tracks user following relationships for personalized content discovery.
-Allows users to follow other members and receive prioritized content from
-followed users in their discovery feeds.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `follower_member_id`
-  > Reference to the member who is following. {@link
-  > discussion_board_members.id}
-- `followed_member_id`
-  > Reference to the member being followed. {@link
-  > discussion_board_members.id}
-- `notifications_enabled`
-  > Whether the follower wants to receive notifications for followed user's
-  > activity.
-- `created_at`: Timestamp when this following relationship was established.
-- `updated_at`: Timestamp when this following relationship was last updated.
-
-### `discussion_board_content_views`
-
-Tracks content view counts for discovery and analytics purposes. Records
-individual views of posts and comments to measure engagement and
-popularity for content discovery features.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_post_id`: Reference to the viewed post. [discussion_board_posts.id](#discussion_board_posts)
-- `discussion_board_comment_id`: Reference to the viewed comment. [discussion_board_comments.id](#discussion_board_comments)
-- `viewer_member_id`
-  > Reference to the member who viewed the content. {@link
-  > discussion_board_members.id}
-- `view_count`: Incremental view count for aggregation purposes.
-- `viewed_at`: Timestamp when the content was viewed.
-- `session_id`: Session identifier for tracking view sessions.
-- `created_at`: Timestamp when this view record was created.
-
-## Analytics
-
-```mermaid
-erDiagram
-"discussion_board_platform_metrics" {
-  String id PK
-  DateTime metric_date UK
-  Int total_users
-  Int active_users
-  Int new_posts
-  Int total_posts
-  Int new_comments
-  Int total_comments
-  Int page_views
-  Int attachment_uploads
-  Int report_count
-  Float avg_response_time
-  Float uptime_percentage
-  Float error_rate
-  Float user_satisfaction_score "nullable"
-  DateTime created_at
-}
-"discussion_board_user_engagement" {
-  String id PK
-  String discussion_board_member_id FK
-  DateTime tracking_date
-  Int session_count
-  Int session_duration
-  Int posts_created
-  Int comments_made
-  Int content_viewed
-  Int attachments_uploaded
-  Int reports_submitted
-  Int follows_added
-  Int saved_content
-  Float engagement_score
-  Boolean retention_indicator
-  DateTime created_at
-}
-"discussion_board_performance_logs" {
-  String id PK
-  DateTime log_timestamp
-  String metric_type
-  Float metric_value
-  String endpoint "nullable"
-  Int http_status "nullable"
-  Int response_time "nullable"
-  String user_agent "nullable"
-  String ip_address "nullable"
-  String error_message "nullable"
-  String server_id "nullable"
-  String severity_level
-  DateTime created_at
-}
-```
-
-### `discussion_board_platform_metrics`
-
-Enhanced daily snapshots of platform-wide metrics with improved indexing
-and data integrity. Tracks overall system health, user growth, content
-creation rates, and engagement patterns over time with optimized query
-performance for business intelligence and capacity planning.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `metric_date`
-  > Date for which the metrics snapshot was recorded. Used for time-series
-  > analysis and trend tracking.
-- `total_users`: Total number of registered users on the platform as of the metric date.
-- `active_users`
-  > Number of users who were active during the metric period (logged in or
-  > performed actions).
-- `new_posts`: Number of new discussion posts created during the metric period.
-- `total_posts`: Total number of posts available on the platform as of the metric date.
-- `new_comments`: Number of new comments added during the metric period.
-- `total_comments`: Total number of comments available on the platform as of the metric date.
-- `page_views`: Total number of page views recorded during the metric period.
-- `attachment_uploads`: Number of file attachments uploaded during the metric period.
-- `report_count`: Number of content reports submitted during the metric period.
-- `avg_response_time`
-  > Average system response time in milliseconds for user interactions during
-  > the period.
-- `uptime_percentage`
-  > Platform uptime percentage for the metric period, calculated from
-  > monitoring data.
-- `error_rate`: System error rate percentage for the metric period.
-- `user_satisfaction_score`
-  > Aggregated user satisfaction score based on feedback and engagement
-  > patterns.
-- `created_at`: Timestamp when this metric snapshot was recorded and stored.
-
-### `discussion_board_user_engagement`
-
-Enhanced tracking of individual user engagement patterns with proper
-referential integrity. Captures user-level statistics including session
-duration, content creation frequency, interaction patterns, and platform
-usage intensity with optimized performance for user retention analysis.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_member_id`
-  > Reference to the specific member whose engagement is being tracked.
-  > [discussion_board_members.id](#discussion_board_members)
-- `tracking_date`: Date for which the user engagement metrics are recorded and analyzed.
-- `session_count`: Number of user sessions initiated during the tracking period.
-- `session_duration`
-  > Total time spent on platform in seconds across all sessions during the
-  > period.
-- `posts_created`: Number of discussion posts created by the user during the tracking period.
-- `comments_made`: Number of comments posted by the user during the tracking period.
-- `content_viewed`: Number of posts and comments viewed by the user during the period.
-- `attachments_uploaded`: Number of file attachments uploaded by the user during the period.
-- `reports_submitted`: Number of content reports submitted by the user during the period.
-- `follows_added`: Number of new users followed by the member during the tracking period.
-- `saved_content`
-  > Number of posts or comments saved/bookmarked by the user during the
-  > period.
-- `engagement_score`
-  > Calculated engagement score based on weighted activity metrics for the
-  > period.
-- `retention_indicator`
-  > Indicator of whether the user is likely to return based on engagement
-  > patterns.
-- `created_at`: Timestamp when this engagement record was created and stored.
-
-### `discussion_board_performance_logs`
-
-Enhanced performance logging with proper data typing and optimized
-indexing. Records technical performance metrics, system errors, and
-operational data for platform optimization and reliability monitoring
-with improved query performance for troubleshooting and analysis.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `log_timestamp`: Precise timestamp when the performance event or metric was recorded.
-- `metric_type`
-  > Type of performance metric being logged (response_time, error_rate,
-  > cpu_usage, memory_usage, database_queries, cache_hit_rate).
-- `metric_value`
-  > Numeric value of the performance metric recorded at the specified
-  > timestamp.
-- `endpoint`
-  > Specific API endpoint or page that generated the performance metric, if
-  > applicable.
-- `http_status`
-  > HTTP status code associated with the performance event, for error
-  > tracking.
-- `response_time`: Response time in milliseconds for the recorded transaction or request.
-- `user_agent`
-  > User agent string from the client making the request, for performance
-  > analysis.
-- `ip_address`
-  > IP address of the client for geographic performance analysis and
-  > troubleshooting.
-- `error_message`
-  > Error message or exception details if the log entry represents an error
-  > condition.
-- `server_id`: Identifier for the server instance that recorded the performance metric.
-- `severity_level`: Severity level of the performance event (info, warning, error, critical).
-- `created_at`: Timestamp when this performance log entry was stored in the database.
+- `discussion_board_moderation_action_id`: Parent moderation action [discussion_board_moderation_actions.id](#discussion_board_moderation_actions).
+- `discussion_board_member_id`: Target user being moderated [discussion_board_members.id](#discussion_board_members).
+- `moderation_notes`: User-specific moderation notes and behavioral context.
+- `previous_violation_count`: Count of previous violations by the user at the time of action.
+- `created_at`: Timestamp when the user moderation action was recorded.

@@ -1,0 +1,238 @@
+/// Main discussion posts submitted by citizens, subject to moderation.
+///
+/// Represents the primary content entities on the economic/political board.
+/// Posts are created by authenticated citizens and must pass moderation
+/// review before becoming publicly visible.
+///
+/// Each post has a lifecycle: initially "pending" (invisible to citizens),
+/// then either "published" (publicly visible) or "rejected" (archived).
+/// Moderators can delete published posts, which sets the deleted_at
+/// timestamp.
+///
+/// The 24-hour editing window is enforced via the post_revisions table. A
+/// post can only be edited within 24 hours of creation and edits are tracked
+/// separately to preserve original content.
+///
+/// Post status directly controls visibility: only published posts appear in
+/// feeds, search results, and category filters. Rejected posts are never
+/// shown.
+///
+/// Related to citizens via the citizen_id foreign key and to post_revisions
+/// via one-to-many relationship. Attachments are managed via
+/// economic_board_attachment_logs referencing this post's ID.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who created this post. {@link economic_board_citizens.id}.
+  citizen_id String
+  
+  /// The moderator who approved this post. Nullable if not yet approved or if
+  /// rejected. {@link economic_board_moderators.id}.
+  moderator_approved_id String?
+  
+  /// The moderator who rejected this post. Nullable if not rejected. {@link
+  /// economic_board_moderators.id}.
+  moderator_rejected_id String?
+  
+  /// The moderator who permanently deleted this post. Nullable unless deleted.
+  /// {@link economic_board_moderators.id}.
+  moderator_deleted_id String?
+  
+  /// The category tag assigned to this post for search and filtering. {@link
+  /// economic_board_categories.id}.
+  category_id String?
+  
+  /// The title of the discussion post, up to 10,000 characters. Mandatory
+  /// field.
+  title String
+  
+  /// The main content of the discussion post, up to 10,000 characters.
+  /// Mandatory field.
+  body String
+  
+  /// Current visibility state of the post. Valid values: 'pending',
+  /// 'published', 'rejected'. Initially defaulting to 'pending' upon creation.
+  status String
+  
+  /// Timestamp when the post was originally created and submitted by the
+  /// citizen. Always set by system in UTC.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the post's metadata (status, moderation
+  /// decisions). Does not include edits tracked in post_revisions table.
+  updated_at DateTime
+  
+  /// Timestamp when the post was permanently deleted by a moderator. If null,
+  /// the post is not deleted. For audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen economic_board_citizens @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  moderatorApproved economic_board_moderators? @relation("economic_board_posts_of_moderator_approved_id", fields: [moderator_approved_id], references: [id], onDelete: Cascade)
+  moderatorRejected economic_board_moderators? @relation("economic_board_posts_of_moderator_rejected_id", fields: [moderator_rejected_id], references: [id], onDelete: Cascade)
+  moderatorDeleted economic_board_moderators? @relation("economic_board_posts_of_moderator_deleted_id", fields: [moderator_deleted_id], references: [id], onDelete: Cascade)
+  category economic_board_categories? @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  economic_board_post_revisions economic_board_post_revisions[]
+  economic_board_comments economic_board_comments[]
+  economic_board_attachments economic_board_attachments[]
+  economic_board_search_metadata economic_board_search_metadata?
+  economic_board_search_index economic_board_search_index?
+  
+  @@index([moderator_approved_id])
+  @@index([moderator_rejected_id])
+  @@index([moderator_deleted_id])
+  
+  @@index([status])
+  @@index([created_at])
+  @@index([citizen_id, created_at])
+  @@index([category_id, status, created_at])
+}
+
+/// Historical record of post edits made within the 24-hour editing window.
+///
+/// Records each edit a citizen makes to their post within 24 hours of its
+/// initial submission. Used to preserve original content and enable "edited"
+/// labels.
+///
+/// Each revision is immutable and stored as a complete snapshot. Only
+/// citizens can create revisions, and only within the 24-hour window. After
+/// this window, no revisions are created.
+///
+/// Completes the 24-hour editing capability for posts. The system uses this
+/// table to display "Edited" indicators without modifying the main
+/// economic_board_posts.record.
+///
+/// This table is subsidiary - it cannot exist without a corresponding post,
+/// and is never accessed directly by UI clients.
+///
+/// Linked to economic_board_posts by post_id.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_post_revisions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The parent post being revised. Must exist. {@link
+  /// economic_board_posts.id}.
+  post_id String
+  
+  /// The citizen who made this revision. {@link economic_board_citizens.id}.
+  citizen_id String
+  
+  /// Title version at the time of this edit. Same as post.title if unchanged.
+  title String
+  
+  /// Content version at the time of this edit. Same as post.body if unchanged.
+  body String
+  
+  /// Timestamp when this revision was saved. Must be within 24 hours of the
+  /// post's created_at timestamp.
+  edited_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post economic_board_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  citizen economic_board_citizens @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  
+  @@index([citizen_id])
+  
+  @@index([post_id, edited_at])
+}
+
+/// User comments attached to published discussion posts.
+///
+/// Allows citizens to respond directly to published posts. Comments appear
+/// immediately upon submission and are visible to all users.
+///
+/// Comments are primary entities: citizens need to manage them independently
+/// (edit within 24 hours, delete their own, view all comments they've made).
+/// Posts can have many comments, and comments can be moderated independently
+/// of their parent post.
+///
+/// Comments have their own 24-hour editing window, separate from the post's
+/// window. After 24 hours, comments cannot be edited.
+///
+/// Comments cannot be posted on pending or rejected posts. Only published
+/// posts are commentable.
+///
+/// Comments respect thread integrity: if a post is deleted, comments remain
+/// visible with "[Original post removed]" indicator.
+///
+/// Subject to character limits: each comment is limited to 500 characters
+/// (enforced at application layer).
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The published post this comment replies to. Must reference a post with
+  /// status 'published'. {@link economic_board_posts.id}.
+  post_id String
+  
+  /// The citizen who wrote this comment. {@link economic_board_citizens.id}.
+  citizen_id String
+  
+  /// If this is a reply to another comment, references the parent comment. For
+  /// thread nesting. {@link economic_board_comments.id}.
+  parent_comment_id String?
+  
+  /// The moderator who deleted this comment. Nullable unless deleted. {@link
+  /// economic_board_moderators.id}.
+  moderator_deleted_id String?
+  
+  /// The content of the comment, up to 500 characters. Required and
+  /// non-nullable.
+  body String
+  
+  /// Timestamp when the comment was submitted. Always set by system in UTC.
+  created_at DateTime
+  
+  /// Timestamp of the last edit to the comment (within 24-hour window), or
+  /// field update. Does not include deletion time.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was permanently deleted by a moderator. If
+  /// null, the comment is not deleted. For audit and thread integrity.
+  deleted_at DateTime?
+  
+  /// Current visibility state of the comment. Valid values: 'published',
+  /// 'deleted'. Initially 'published'. Moderators set to 'deleted'.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  post economic_board_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  citizen economic_board_citizens @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  parentComment economic_board_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  moderatorDeleted economic_board_moderators? @relation(fields: [moderator_deleted_id], references: [id], onDelete: Cascade)
+  
+  recursive economic_board_comments[] @relation("recursive")
+  
+  @@index([moderator_deleted_id])
+  
+  @@index([post_id, created_at])
+  @@index([citizen_id, created_at])
+  @@index([parent_comment_id])
+  @@index([status])
+}

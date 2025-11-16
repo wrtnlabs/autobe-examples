@@ -1,0 +1,280 @@
+/// Core discussion articles representing the main content of the
+/// economic/political discussion board.
+///
+/// Stores the primary discussion posts created by authenticated members and
+/// moderators. Each article contains the main discussion content, title, and
+/// metadata required for platform functionality. Articles support
+/// categorization through relationships with existing category tables and
+/// can be moderated based on community guidelines.
+///
+/// The article lifecycle includes creation, editing, voting, commenting, and
+/// potential moderation actions. Articles maintain relationships with
+/// authors, categories, attachments, and comments while supporting the
+/// platform's core discussion functionality.
+///
+/// Soft deletion is supported through the deleted_at field to maintain audit
+/// trails while allowing content moderation. Articles can have multiple
+/// snapshots for version history and audit purposes.
+///
+/// **CRITICAL UPDATE**: Implemented proper polymorphic ownership pattern
+/// with actor_type field and removed nullable author FKs to maintain
+/// normalization compliance.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel where the article is published. {@link
+  /// discussion_board_channels.id}
+  discussion_board_channel_id String
+  
+  /// Category classification for the article. {@link
+  /// discussion_board_categories.id}
+  discussion_board_category_id String
+  
+  /// Type of author who created the article. Valid values: 'member',
+  /// 'moderator'. Used for efficient filtering and polymorphic relationship
+  /// management.
+  actor_type String
+  
+  /// Article title that summarizes the discussion topic. Must be between
+  /// 10-200 characters as per requirements.
+  title String
+  
+  /// Main article content containing the discussion text. Supports rich text
+  /// formatting and must meet minimum length requirements.
+  content String
+  
+  /// Current article status indicating publication state. Valid values: draft,
+  /// published, archived, moderated.
+  status String
+  
+  /// Business-specific workflow status for advanced state management. Tracks
+  /// article progression through moderation, review, and publication
+  /// workflows.
+  business_status String
+  
+  /// Number of times the article has been viewed by users. Incremented on each
+  /// view for popularity tracking.
+  view_count Int
+  
+  /// Timestamp when the article was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the article was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the article was soft deleted. Null indicates active
+  /// article.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel discussion_board_channels @relation(fields: [discussion_board_channel_id], references: [id], onDelete: Cascade)
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_article_snapshots discussion_board_article_snapshots[]
+  discussion_board_article_of_members discussion_board_article_of_members?
+  discussion_board_article_of_moderators discussion_board_article_of_moderators?
+  discussion_board_article_attachments discussion_board_article_attachments[]
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_article_votes discussion_board_article_votes[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  discussion_board_moderation_action_of_articles discussion_board_moderation_action_of_articles[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_channel_id, created_at], map: "discussion_board_articles_discussion_board_channel_id__14048a92")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_category_id, created_at], map: "discussion_board_articles_discussion_board_category_id_1c67473a")
+  @@index([status, created_at])
+  @@index([actor_type, created_at])
+  @@index([actor_type, status, created_at])
+  @@index([created_at])
+}
+
+/// Historical snapshots of discussion articles for audit trails and version
+/// control.
+///
+/// Captures point-in-time states of articles whenever significant changes
+/// occur, such as content edits, status updates, or moderation actions. Each
+/// snapshot preserves the complete article state at the moment of capture,
+/// enabling historical tracking and audit compliance.
+///
+/// Snapshots maintain relationships to the original article and capture all
+/// relevant metadata including content, status, and authorship information.
+/// This supports version comparison, rollback capabilities, and compliance
+/// with data retention requirements.
+///
+/// The snapshot pattern ensures that historical article states remain
+/// accessible even after subsequent edits or deletions, providing essential
+/// audit functionality for the discussion platform.
+///
+/// **CRITICAL UPDATE**: Added actor_type field to maintain consistency with
+/// main article table and support historical author tracking.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original article that this snapshot captures. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Type of author who created the article at snapshot time. Valid values:
+  /// 'member', 'moderator'.
+  actor_type String
+  
+  /// Article title at the time of snapshot creation.
+  title String
+  
+  /// Article content at the time of snapshot creation.
+  content String
+  
+  /// Article status at the time of snapshot creation.
+  status String
+  
+  /// Business workflow status at the time of snapshot creation.
+  business_status String
+  
+  /// View count at the time of snapshot creation.
+  view_count Int
+  
+  /// Reason for creating this snapshot (edit, moderation, archive, etc.).
+  snapshot_reason String
+  
+  /// Timestamp when the snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_snapshots_discussion_board_ar_12be945f")
+  @@index([actor_type, created_at])
+  @@index([created_at])
+}
+
+/// Subtype entity for articles created by member users.
+///
+/// Stores member-specific authorship information including the member
+/// reference and session context. This table implements the proper
+/// polymorphic ownership pattern by separating member-created articles from
+/// moderator-created articles.
+///
+/// Each record maintains a 1:1 relationship with the main article entity and
+/// includes the member's session information for audit trail purposes. This
+/// design ensures referential integrity and enables efficient querying of
+/// member-authored content.
+///
+/// The subtype pattern allows for member-specific metadata extension while
+/// maintaining clean separation of concerns between different author types.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main article entity that this subtype represents. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Member author who created the article. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Member session context when the article was created. {@link
+  /// discussion_board_member_sessions.id}
+  discussion_board_member_session_id String
+  
+  /// Timestamp when the member authorship record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession discussion_board_member_sessions @relation(fields: [discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_session_id], map: "discussion_board_article_of_members_discussion_board_m_9f3336de")
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id], map: "discussion_board_article_of_members_discussion_board_a_fd0c5e05")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_article_of_members_discussion_board_m_4d7b5a63")
+  @@index([created_at])
+}
+
+/// Subtype entity for articles created by moderator users.
+///
+/// Stores moderator-specific authorship information including the moderator
+/// reference and session context. This table implements the proper
+/// polymorphic ownership pattern by separating moderator-created articles
+/// from member-created articles.
+///
+/// Each record maintains a 1:1 relationship with the main article entity and
+/// includes the moderator's session information for audit trail purposes.
+/// This design ensures referential integrity and enables efficient querying
+/// of moderator-authored content.
+///
+/// The subtype pattern allows for moderator-specific metadata extension
+/// while maintaining clean separation of concerns between different author
+/// types.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main article entity that this subtype represents. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Moderator author who created the article. {@link
+  /// discussion_board_moderators.id}
+  discussion_board_moderator_id String
+  
+  /// Moderator session context when the article was created. {@link
+  /// discussion_board_moderator_sessions.id}
+  discussion_board_moderator_session_id String
+  
+  /// Timestamp when the moderator authorship record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  moderator discussion_board_moderators @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
+  moderatorSession discussion_board_moderator_sessions @relation(fields: [discussion_board_moderator_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_session_id], map: "discussion_board_article_of_moderators_discussion_boar_5f737fd5")
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id], map: "discussion_board_article_of_moderators_discussion_boar_69679293")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_article_of_moderators_discussion_boar_4874b3ea")
+  @@index([created_at])
+}

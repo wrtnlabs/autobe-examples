@@ -9,469 +9,334 @@
 - [Shopping](#shopping)
 - [Orders](#orders)
 - [Payments](#payments)
-- [Shipping](#shipping)
 - [Reviews](#reviews)
-- [Returns](#returns)
-- [Disputes](#disputes)
-- [default](#default)
+- [Support](#support)
+- [Analytics](#analytics)
+- [Audit](#audit)
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"shopping_mall_channels" {
-  String id PK
-  String channel_code UK
-  String channel_name
-  String description "nullable"
-  Float base_commission_rate
-  Float min_order_value
-  Boolean is_active
-  Int display_order
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_sections" {
-  String id PK
-  String shopping_mall_channel_id FK
-  String section_code
-  String section_name
-  String description "nullable"
-  String(80000) section_image_url "nullable"
-  Int display_order
-  Boolean is_active
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_categories" {
+"ecommerce_mall_categories" {
   String id PK
   String parent_category_id FK "nullable"
-  String category_code UK
-  String category_name
-  String category_slug UK
+  String name UK
+  String slug UK
   String description "nullable"
-  String(80000) category_image_url "nullable"
+  String(80000) icon_url "nullable"
   Int display_order
-  Int product_count
   Boolean is_active
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"shopping_mall_category_attributes" {
+"ecommerce_mall_category_attributes" {
   String id PK
-  String shopping_mall_category_id FK
-  String attribute_code
-  String attribute_name
+  String ecommerce_mall_category_id FK
+  String name
   String attribute_type
-  String attribute_values "nullable"
-  Boolean is_required_for_variant
-  Boolean is_filterable
+  Boolean is_required
   Int display_order
   DateTime created_at
   DateTime updated_at
 }
-"shopping_mall_configurations" {
+"ecommerce_mall_platform_settings" {
   String id PK
-  String config_key UK
-  String config_value
-  String config_type
+  String setting_key UK
+  String setting_value
   String description "nullable"
+  String setting_type
   Boolean is_editable
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"shopping_mall_system_settings" {
+"ecommerce_mall_regions" {
   String id PK
-  String setting_name UK
-  String setting_value
-  String setting_unit "nullable"
-  String description "nullable"
-  Float min_value "nullable"
-  Float max_value "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_supported_countries" {
-  String id PK
-  String country_code UK
-  String country_name
-  String currency_code
-  Float tax_rate
-  String postal_code_format "nullable"
-  Boolean is_shipping_available
-  Boolean is_seller_registration_allowed
+  String name UK
+  String code UK
+  String region_type
+  String parent_region_code "nullable"
   Boolean is_active
   DateTime created_at
   DateTime updated_at
 }
-"shopping_mall_shipping_carriers" {
+"ecommerce_mall_currencies" {
   String id PK
-  String carrier_code UK
-  String carrier_name
-  String(80000) api_endpoint "nullable"
-  String api_key "nullable"
-  String tracking_url_format "nullable"
-  String supported_countries_json
-  String service_types "nullable"
+  String code UK
+  String name
+  String symbol
+  Int decimal_places
   Boolean is_active
-  Boolean is_api_integrated
-  Int sync_interval_minutes
   DateTime created_at
   DateTime updated_at
 }
-"shopping_mall_sections" }o--|| "shopping_mall_channels" : channel
-"shopping_mall_categories" }o--o| "shopping_mall_categories" : parentCategory
-"shopping_mall_category_attributes" }o--|| "shopping_mall_categories" : category
+"ecommerce_mall_tax_rules" {
+  String id PK
+  String region_code
+  String category_name "nullable"
+  Float tax_percentage
+  String tax_basis
+  Boolean is_active
+  DateTime effective_from
+  DateTime effective_until "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"ecommerce_mall_categories" }o--o| "ecommerce_mall_categories" : parent
+"ecommerce_mall_category_attributes" }o--|| "ecommerce_mall_categories" : category
 ```
 
-### `shopping_mall_channels`
+### `ecommerce_mall_categories`
 
-Core system channels representing different seller communities or market
-segments. Channels organize the overall marketplace structure and enable
-multiple independent market communities to operate within the platform.
-Each channel has its own configuration for commission rates, policies,
-and branding.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `channel_code`
-  > Unique channel identifier code in format like CHANNEL_PRIMARY,
-  > CHANNEL_LUXURY, etc. Used in URLs and system references. Maximum 50
-  > characters.
-- `channel_name`
-  > Display name for the channel shown to customers and sellers. Example:
-  > 'Primary Marketplace', 'Premium Store', 'Local Sellers'. Maximum 100
-  > characters.
-- `description`
-  > Detailed description of the channel's purpose and positioning. Helps
-  > sellers understand which channel suits their business. Maximum 1000
-  > characters.
-- `base_commission_rate`
-  > Default commission percentage (0-100) charged to sellers in this channel.
-  > Example: 10.5 means 10.5% commission. Specific product categories can
-  > override this.
-- `min_order_value`
-  > Minimum order value in platform currency required for orders in this
-  > channel. Prevents very small orders. Example: 100.00
-- `is_active`
-  > Whether this channel is currently active and accepting new sellers and
-  > orders. Inactive channels may have read-only access.
-- `display_order`
-  > Sort order for displaying channels in user interfaces. Lower numbers
-  > appear first. Used for UI ordering, not business logic.
-- `created_at`
-  > Timestamp when this channel was created in the system. ISO 8601 format
-  > with timezone.
-- `updated_at`
-  > Timestamp when this channel was last updated. Updated whenever any
-  > channel field changes. ISO 8601 format with timezone.
-
-### `shopping_mall_sections`
-
-Organizational sections within channels that group related product
-categories. Sections provide a second-level organization hierarchy
-between channels and specific product categories. Enables structured
-navigation for customers browsing products. Example sections:
-Electronics, Clothing, Home & Garden.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_channel_id`
-  > Reference to the parent channel this section belongs to. {@link
-  > shopping_mall_channels.id}
-- `section_code`
-  > Unique section identifier code within a channel. Format:
-  > SECTION_ELECTRONICS, SECTION_FASHION. Maximum 50 characters.
-- `section_name`
-  > Display name for the section shown in navigation and category browsing.
-  > Example: 'Electronics & Gadgets'. Maximum 100 characters.
-- `description`
-  > Detailed description of the section's scope and types of products
-  > included. Helps customers understand what products are in this section.
-  > Maximum 500 characters.
-- `section_image_url`
-  > URL to an image/icon representing this section for visual display in
-  > category navigation. Optional visual identifier.
-- `display_order`
-  > Sort order for displaying sections within parent channel. Lower numbers
-  > appear first in UI navigation.
-- `is_active`
-  > Whether this section is currently active. Inactive sections are hidden
-  > from customer view but preserved for historical data.
-- `created_at`: Timestamp when this section was created. ISO 8601 format with timezone.
-- `updated_at`
-  > Timestamp when this section was last updated. ISO 8601 format with
-  > timezone.
-
-### `shopping_mall_categories`
-
-Product categories that organize the product catalog into hierarchical
-browsing structure. Categories enable customers to navigate and discover
-products. Categories can be nested in a tree structure where each
-category may have a parent category. Examples: Smartphones, Laptops,
-Clothing, Shoes, Accessories. Used for both customer browsing and seller
-product organization.
+Product category taxonomy and hierarchical structure for organizing
+products. Categories provide the foundational organization system that
+sellers use to classify products and customers use for browsing and
+navigation. The category system supports multi-level hierarchies where
+categories can have parent categories, enabling flexible organizational
+structures from broad top-level categories down to specific product
+types. Each category defines attributes that products in that category
+must or optionally provide, ensuring consistent product information at
+the database level.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `parent_category_id`
-  > Reference to parent category in hierarchical structure for nested
-  > categories. Null if this is a top-level category. {@link
-  > shopping_mall_categories.id}
-- `category_code`
-  > Unique category identifier code used internally. Format: CAT_ELECTRONICS,
-  > CAT_SMARTPHONES, etc. Maximum 50 characters.
-- `category_name`
-  > Display name for the category shown in navigation and product listings.
-  > Example: 'Smartphones', 'Laptop Computers'. Maximum 100 characters.
-- `category_slug`
-  > URL-friendly slug for SEO and navigation URLs. Lowercase alphanumeric
-  > with hyphens. Example: 'smartphones', 'laptop-computers'. Maximum 100
-  > characters.
+  > Optional parent category for hierarchical organization. Enables
+  > multi-level category structure where each category can have a parent
+  > category. Self-referencing relationship to ecommerce_mall_categories.
+  > Null for top-level categories.
+- `name`
+  > Category name displayed to customers and sellers. Must be unique within
+  > the platform. Examples: Electronics, Clothing, Home & Garden.
+- `slug`
+  > URL-friendly slug for the category used in category pages. Generated from
+  > category name, lowercase with hyphens. Example: home-and-garden.
 - `description`
-  > Detailed description of products in this category. Displayed on category
-  > landing page. Maximum 1000 characters.
-- `category_image_url`
-  > URL to an image/icon representing this category for visual display in
-  > navigation and category pages.
+  > Detailed description of the category explaining what products it
+  > contains. Displayed on category pages to help customers understand
+  > category scope.
+- `icon_url`
+  > URL to icon or image representing the category. Displayed in category
+  > navigation and category pages for visual identification.
 - `display_order`
-  > Sort order for displaying categories at same hierarchy level. Lower
-  > numbers appear first in navigation.
-- `product_count`
-  > Denormalized count of active products in this category (includes products
-  > in subcategories). Updated when products are added/removed from category.
-  > Used for display efficiency.
+  > Sort order for displaying categories in navigation menus and category
+  > lists. Lower numbers appear first. Allows admins to customize category
+  > display order.
 - `is_active`
-  > Whether this category is currently visible to customers. Inactive
-  > categories are hidden but preserved for historical data and existing
-  > product references.
-- `created_at`: Timestamp when this category was created. ISO 8601 format with timezone.
+  > Whether the category is visible to customers. Inactive categories are
+  > hidden from browsing but existing products remain in the system. Allows
+  > temporarily disabling categories without data deletion.
+- `created_at`
+  > Timestamp when the category was created. Used for audit trail and
+  > category age tracking.
 - `updated_at`
-  > Timestamp when this category was last updated. ISO 8601 format with
-  > timezone.
+  > Timestamp of the last update to the category. Tracks when category
+  > information was last modified.
+- `deleted_at`
+  > Soft delete timestamp. When set, category is considered deleted but data
+  > is retained for compliance and historical purposes. Used for soft
+  > deletion allowing data recovery.
 
-### `shopping_mall_category_attributes`
+### `ecommerce_mall_category_attributes`
 
-Configurable attributes that products in a specific category can have.
-Attributes define the possible variants (colors, sizes, materials, etc.)
-that products in a category can use. Enables structured product variant
-management and customer filtering. Example: In Clothing category,
-attributes might be Color, Size, Material, Style.
+Attribute specifications for product categories. Each category can define
+required and optional attributes that products must provide (e.g.,
+apparel requires size, color; electronics requires specifications,
+warranty). Category attributes establish consistency expectations for
+products in each category, enabling structured product information
+capture and display. Attributes defined here are enforced when sellers
+create products in these categories.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_category_id`
-  > Reference to the category these attributes are available for. {@link
-  > shopping_mall_categories.id}
-- `attribute_code`
-  > Unique identifier for this attribute within the category. Format:
-  > ATTR_COLOR, ATTR_SIZE, ATTR_MATERIAL. Maximum 50 characters.
-- `attribute_name`
-  > Display name for the attribute. Example: 'Color', 'Size', 'Material'.
-  > Maximum 100 characters.
+- `ecommerce_mall_category_id`
+  > The category this attribute belongs to. Links to
+  > ecommerce_mall_categories.id. Cannot be changed after creation.
+- `name`
+  > Attribute name that sellers provide values for. Examples: Color, Size,
+  > Material, Warranty Period, Specifications.
 - `attribute_type`
-  > Data type of attribute values: 'text' (free text), 'number' (numeric
-  > values), 'selection' (predefined options from attribute_values),
-  > 'boolean' (true/false toggle). Determines how attribute values are
-  > managed and displayed.
-- `attribute_values`
-  > JSON array of predefined values for selection-type attributes. Example:
-  > ["Red", "Blue", "Green"] for color. Null for text/number types. Stored as
-  > JSON string.
-- `is_required_for_variant`
-  > Whether products in this category MUST specify a value for this attribute
-  > when creating variants. Mandatory attributes for variant definition.
-- `is_filterable`
-  > Whether customers can filter products by this attribute in category view.
-  > Affects customer-facing filtering options.
+  > Data type for the attribute value: text (free text input), select
+  > (predefined options), multiselect (multiple options), number, boolean.
+  > Determines how sellers input values for this attribute.
+- `is_required`
+  > Whether sellers must provide a value for this attribute when creating
+  > products in this category. Required attributes must have values; optional
+  > attributes can be left empty.
 - `display_order`
-  > Sort order for displaying attributes in variant selector and product
-  > forms. Lower numbers appear first.
-- `created_at`: Timestamp when this attribute was created. ISO 8601 format with timezone.
-- `updated_at`
-  > Timestamp when this attribute was last updated. ISO 8601 format with
-  > timezone.
+  > Display order for attributes in the product creation form. Lower numbers
+  > appear first, organizing the form for better user experience.
+- `created_at`: Timestamp when the attribute was defined. Used for audit trail.
+- `updated_at`: Timestamp of last update to the attribute definition.
 
-### `shopping_mall_configurations`
+### `ecommerce_mall_platform_settings`
 
-Global platform configuration settings for feature toggles, system
-behavior, and operational policies. Single-purpose configuration table
-storing key-value pairs that control platform-wide behavior. Examples:
-enable/disable review system, enable/disable wishlist feature, maximum
-cart items, etc.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `config_key`
-  > Unique configuration key identifier. Format: 'feature_reviews_enabled',
-  > 'feature_wishlist_enabled', 'max_cart_items',
-  > 'default_order_timeout_minutes'. Maximum 100 characters. Used as primary
-  > identifier for lookups.
-- `config_value`
-  > Configuration value as string. Interpretations: 'true'/'false' for
-  > boolean flags, numeric strings for numbers, JSON for complex objects.
-  > Stored as text for flexibility. Maximum 5000 characters.
-- `config_type`
-  > Data type indicator: 'boolean', 'integer', 'decimal', 'string', 'json'.
-  > Helps with value interpretation and validation.
-- `description`
-  > Human-readable description of this configuration's purpose and expected
-  > values. Helps admins understand what each setting controls. Maximum 500
-  > characters.
-- `is_editable`
-  > Whether admins can modify this configuration from the admin panel. Some
-  > system-critical configs may be read-only. Controls admin UI visibility.
-- `created_at`
-  > Timestamp when this configuration was created. ISO 8601 format with
-  > timezone.
-- `updated_at`
-  > Timestamp when this configuration was last updated. ISO 8601 format with
-  > timezone.
-
-### `shopping_mall_system_settings`
-
-System-wide operational settings for business rules, policies, and
-limits. Stores global business settings like minimum order values,
-maximum product price, commission structures, default timeouts, and
-policy parameters. Unlike configurations which are feature toggles,
-settings are business rule values.
+System-wide configuration settings that control platform behavior and
+policies. Platform settings define defaults for commissions, return
+windows, payment methods, notification preferences, feature flags, and
+other system-wide parameters. Admin users modify these settings to
+configure platform behavior without code changes. Settings are referenced
+by multiple systems (order processing, refund handling, payment
+processing) to enforce consistent policies across the platform.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `setting_name`
-  > Identifier for this setting. Format: 'minimum_order_value',
-  > 'maximum_product_price', 'default_commission_rate',
-  > 'payment_timeout_minutes', 'order_cancellation_window_hours'. Maximum 100
-  > characters.
+- `setting_key`
+  > Unique identifier for the setting. Examples: default_commission_rate,
+  > return_window_days, payment_retry_attempts, platform_name, support_email.
+  > Used as lookup key when retrieving setting values.
 - `setting_value`
-  > Value for this setting as string. Numeric settings stored as numeric
-  > strings, currency amounts include decimal point. Maximum 1000 characters.
-- `setting_unit`
-  > Unit of measurement if applicable. Examples: 'currency', 'minutes',
-  > 'hours', 'days', 'percentage', 'units'. Helps interpret numeric values.
-  > Maximum 50 characters.
+  > The configuration value for the setting. Stored as string and converted
+  > to appropriate type (number, boolean, etc.) by application code.
+  > Examples: 15, 30, 5, ecommercemall@company.com.
 - `description`
-  > Explanation of what this setting controls and why it matters. Helps
-  > admins understand business impact. Maximum 500 characters.
-- `min_value`
-  > Minimum allowed value for this setting if numeric. Used for validation
-  > when setting is updated. Null for non-numeric settings.
-- `max_value`
-  > Maximum allowed value for this setting if numeric. Used for validation
-  > when setting is updated. Null for non-numeric settings.
-- `created_at`: Timestamp when this setting was created. ISO 8601 format with timezone.
+  > Human-readable description explaining what this setting controls and how
+  > it affects platform behavior. Displayed in admin configuration UI to
+  > guide admins in setting values.
+- `setting_type`
+  > Data type for the setting: string, integer, decimal, boolean, email, url.
+  > Indicates how the value should be interpreted and validated by the
+  > application.
+- `is_editable`
+  > Whether admins can modify this setting through the admin panel. Core
+  > system settings may be read-only to prevent misconfiguration. Editable
+  > settings can be changed by authorized admins.
+- `created_at`: Timestamp when the setting was created. Used for audit trail.
 - `updated_at`
-  > Timestamp when this setting was last updated. ISO 8601 format with
-  > timezone.
+  > Timestamp of last update to the setting value. Tracks when configuration
+  > was last changed.
+- `deleted_at`
+  > Soft delete timestamp. Allows settings to be archived without deletion.
+  > Deleted settings are not used but data is retained for compliance.
 
-### `shopping_mall_supported_countries`
+### `ecommerce_mall_regions`
 
-Registry of countries supported by the platform for shipping, tax, and
-regulatory purposes. Defines which countries are available for customer
-addresses, seller registration, and shipping destinations. Each country
-entry includes tax rates, shipping info, and operational flags.
+Geographic regions supported by the platform for shipping, tax, and
+currency operations. Regions represent distinct geographic areas
+(countries, states, provinces) where the platform operates and where
+specific shipping methods, tax rules, and currencies apply. Regions are
+referenced when calculating shipping costs, applying taxes, and
+displaying region-specific information. The platform uses regions to
+determine which shipping carriers serve an address and which tax rules
+apply.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `country_code`
-  > ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB', 'IN', 'JP'). Used for
-  > all country references throughout the system. Exactly 2 uppercase
-  > letters.
-- `country_name`
-  > Full country name as displayed to users (e.g., 'United States', 'United
-  > Kingdom', 'India'). Maximum 100 characters.
-- `currency_code`
-  > ISO 4217 currency code for this country (e.g., 'USD', 'GBP', 'INR'). Used
-  > for pricing and financial transactions. Exactly 3 uppercase letters.
-- `tax_rate`
-  > Default VAT/sales tax rate as percentage (0-100). Example: 15.5 for 15.5%
-  > tax. Applied to orders shipping to this country unless category-specific
-  > rate exists.
-- `postal_code_format`
-  > Regular expression pattern for validating postal codes in this country.
-  > Example: '^[0-9]{5}(-[0-9]{4})?$' for US zip codes. Used in address
-  > validation.
-- `is_shipping_available`
-  > Whether the platform can ship orders to this country. Used to determine
-  > available shipping destinations for customers.
-- `is_seller_registration_allowed`
-  > Whether sellers can register and operate from this country. May be false
-  > for countries with regulatory restrictions.
+- `name`
+  > Region name displayed in dropdowns and configuration. Examples: United
+  > States, California, United Kingdom, Japan. Unique within the platform.
+- `code`
+  > Standardized code for the region. Uses ISO 3166-1 alpha-2 for countries
+  > (US, GB, JP) or ISO 3166-2 for states (US-CA, US-TX). Used for lookups
+  > and integrations.
+- `region_type`
+  > Type of region: country or state/province. Indicates the hierarchical
+  > level. Used for organizing regions and determining shipping zone
+  > calculations.
+- `parent_region_code`
+  > For states/provinces, the country code of the parent country. Enables
+  > hierarchical organization (e.g., CA region's parent is US). For
+  > countries, null.
 - `is_active`
-  > Whether this country is currently active on the platform. Inactive
-  > countries are hidden from selection but historical data is preserved.
-- `created_at`
-  > Timestamp when this country was added to the system. ISO 8601 format with
-  > timezone.
-- `updated_at`
-  > Timestamp when this country configuration was last updated. ISO 8601
-  > format with timezone.
+  > Whether the region is available for operations (shipping, tax
+  > calculations). Inactive regions are not presented to customers as
+  > shipping destinations or tax jurisdictions.
+- `created_at`: Timestamp when the region was added to the system. Used for audit trail.
+- `updated_at`: Timestamp of last update to region configuration.
 
-### `shopping_mall_shipping_carriers`
+### `ecommerce_mall_currencies`
 
-Shipping carriers available on the platform for order fulfillment.
-Registry of carrier integrations including courier services, postal
-services, and logistics providers. Stores carrier information, API
-endpoints, tracking URL formats, and operational details for carrier
-integration.
+Currencies supported by the platform for pricing and payment processing.
+Each currency represents a specific monetary unit (USD, EUR, GBP, JPY,
+etc.) that the platform uses for displaying prices, calculating totals,
+and processing payments. Currencies are associated with regions (USD for
+US, EUR for EU countries, GBP for UK) to determine which currencies
+customers see when shopping. The platform uses currency records to format
+prices correctly and convert between currencies for international orders.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `carrier_code`
-  > Unique identifier for this carrier used in system references. Format:
-  > 'CARRIER_FEDEX', 'CARRIER_UPS', 'CARRIER_DHL'. Maximum 50 characters.
-  > Used for internal references, not display.
-- `carrier_name`
-  > Display name of the shipping carrier shown to customers and sellers.
-  > Example: 'FedEx', 'UPS', 'DHL Express'. Maximum 100 characters.
-- `api_endpoint`
-  > API endpoint URL for carrier tracking and rate queries. Used by system to
-  > integrate with carrier systems. Example: 'https://api.fedex.com/v1/'. May
-  > be null for manual carriers.
-- `api_key`
-  > Encrypted API key or credentials for carrier API authentication. Stored
-  > encrypted in database. Decrypted only when needed for API calls. Null if
-  > no API integration.
-- `tracking_url_format`
-  > URL template for customer tracking pages. Format:
-  > 'https://tracking.fedex.com/tracking?tracknumbers={TRACKING_NUMBER}'.
-  > {TRACKING_NUMBER} is placeholder for actual tracking number.
-- `supported_countries_json`
-  > JSON array of ISO country codes this carrier operates in. Example:
-  > '["US", "CA", "MX"]'. Used to filter available carriers by destination.
-- `service_types`
-  > JSON array of service types offered (Standard, Express, Overnight, etc.).
-  > Format: '["Standard", "Express", "Overnight"]'. Used for service
-  > selection during shipping.
+- `code`
+  > ISO 4217 currency code (3 characters). Examples: USD (US Dollar), EUR
+  > (Euro), GBP (British Pound), JPY (Japanese Yen). Unique identifier for
+  > the currency.
+- `name`
+  > Full currency name for display in user interfaces. Examples: US Dollar,
+  > Euro, British Pound, Japanese Yen.
+- `symbol`
+  > Currency symbol for displaying prices. Examples: $ for USD, € for EUR, £
+  > for GBP, ¥ for JPY. Used in price formatting for customer display.
+- `decimal_places`
+  > Number of decimal places for this currency. Most currencies use 2 (USD,
+  > EUR = $19.99), some use 0 (JPY = ¥1999), some use 3 (KWD = د.ك 19.999).
+  > Used for price rounding and formatting.
 - `is_active`
-  > Whether this carrier is currently available for shipping. Inactive
-  > carriers are hidden from seller selections.
-- `is_api_integrated`
-  > Whether carrier has active API integration for tracking and rate quotes.
-  > False means manual tracking number entry required.
-- `sync_interval_minutes`
-  > Frequency (in minutes) to poll carrier API for tracking updates. Example:
-  > 120 = check every 2 hours. Null or 0 means no automatic syncing.
+  > Whether the currency is currently available for transactions and display.
+  > Inactive currencies are not presented to customers but existing prices in
+  > that currency are preserved for historical records.
 - `created_at`
-  > Timestamp when this carrier was added to the system. ISO 8601 format with
-  > timezone.
-- `updated_at`
-  > Timestamp when this carrier configuration was last updated. ISO 8601
-  > format with timezone.
+  > Timestamp when the currency was added to the platform. Used for audit
+  > trail.
+- `updated_at`: Timestamp of last update to currency configuration.
+
+### `ecommerce_mall_tax_rules`
+
+Tax calculation rules that apply to orders based on shipping destination
+and product category. Tax rules define the percentage of tax to apply and
+the conditions under which they apply (which region, which product
+category, base amount calculation). The platform uses tax rules to
+automatically calculate tax amounts during checkout based on the
+customer's shipping address and the products they're purchasing. Tax
+rules can be region-specific (different tax rates for different
+countries/states) and may vary by product category.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `region_code`
+  > Region code (e.g., US, US-CA, GB) that this tax rule applies to. The tax
+  > rate specified applies when the customer's shipping address is in this
+  > region. Must match a region code in ecommerce_mall_regions table.
+- `category_name`
+  > Product category this tax rule applies to. If null, the rule applies to
+  > all categories (default tax rate). If specified, applies only to products
+  > in that category. Enables category-specific tax rates (e.g., groceries
+  > may be tax-exempt).
+- `tax_percentage`
+  > The tax rate as a percentage (0-100). Examples: 8.5 for 8.5%, 0 for
+  > tax-exempt, 20 for 20% VAT. Stored as decimal for accurate calculations.
+- `tax_basis`
+  > What the tax percentage applies to: subtotal (merchandise only),
+  > subtotal_with_shipping (includes shipping cost), or gross (after
+  > discounts). Determines how tax is calculated for orders in this
+  > jurisdiction.
+- `is_active`
+  > Whether this tax rule is currently applied during tax calculations.
+  > Inactive rules are not used but are retained for historical reference and
+  > potential reactivation.
+- `effective_from`
+  > Date when this tax rule becomes effective. Used for tracking tax law
+  > changes. Orders after this date use this rule; orders before may use
+  > older rules.
+- `effective_until`
+  > Date when this tax rule expires. When set, the rule is no longer used
+  > after this date. Used for temporary tax changes or seasonal variations.
+  > Null means rule has no end date.
+- `created_at`: Timestamp when the tax rule was created. Used for audit trail.
+- `updated_at`: Timestamp of last update to the tax rule.
 
 ## Actors
 
 ```mermaid
 erDiagram
-"shopping_mall_customers" {
+"ecommerce_mall_customers" {
   String id PK
   String email UK
   String password_hash
@@ -480,4015 +345,4770 @@ erDiagram
   String phone_number "nullable"
   Boolean email_verified
   String account_status
-  Int failed_login_attempts
-  DateTime locked_until "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_customer_sessions" {
+"ecommerce_mall_customer_sessions" {
   String id PK
-  String shopping_mall_customer_id FK
+  String ecommerce_mall_customer_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"shopping_mall_customer_addresses" {
-  String id PK
-  String shopping_mall_customer_id FK
-  String label
-  String recipient_name
-  String street_address_line_1
-  String street_address_line_2 "nullable"
-  String city
-  String state_province
-  String postal_code
-  String country_code
-  String phone_number
-  Boolean is_default_shipping
-  Boolean is_default_billing
-  String address_type
-  Boolean is_verified
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_sellers" {
+"ecommerce_mall_sellers" {
   String id PK
   String email UK
   String password_hash
   String business_name
   String business_registration_number UK
-  String tax_identification_number
-  String primary_contact_name
-  String primary_contact_phone
+  String business_email
+  String business_phone
   String business_address
-  String correspondence_address
-  String business_description
-  String store_name
-  String verification_status
+  String bank_account_holder_name
+  String bank_name
+  String bank_routing_number "nullable"
+  String bank_account_number
+  String tax_id
   String account_status
-  Int failed_login_attempts
-  DateTime locked_until "nullable"
+  Boolean email_verified
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_seller_sessions" {
+"ecommerce_mall_seller_sessions" {
   String id PK
-  String shopping_mall_seller_id FK
+  String ecommerce_mall_seller_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"shopping_mall_seller_profiles" {
-  String id PK
-  String shopping_mall_seller_id FK,UK
-  String store_url_slug UK
-  String(80000) store_logo_url "nullable"
-  String(80000) store_banner_url "nullable"
-  String store_description "nullable"
-  String return_policy "nullable"
-  String shipping_policy "nullable"
-  String cancellation_policy "nullable"
-  String contact_email "nullable"
-  String contact_phone "nullable"
-  String business_hours "nullable"
-  String(80000) website_url "nullable"
-  String social_media_links "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_seller_verification_documents" {
-  String id PK
-  String shopping_mall_seller_id FK
-  String document_type
-  String(80000) document_url
-  String document_name
-  String issuing_country
-  String document_number "nullable"
-  DateTime issue_date "nullable"
-  DateTime expiration_date "nullable"
-  String verification_status
-  String verification_notes "nullable"
-  String verified_by_admin_id "nullable"
-  DateTime verified_at "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_admins" {
+"ecommerce_mall_admins" {
   String id PK
   String email UK
   String password_hash
   String full_name
-  String admin_level
-  String department "nullable"
-  Boolean is_mfa_enabled
-  String mfa_method "nullable"
+  String role
+  Boolean mfa_enabled
   String mfa_secret "nullable"
   String account_status
-  Int failed_login_attempts
-  DateTime locked_until "nullable"
-  DateTime last_login_at "nullable"
-  String last_login_ip "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_admin_sessions" {
+"ecommerce_mall_admin_sessions" {
   String id PK
-  String shopping_mall_admin_id FK
+  String ecommerce_mall_admin_id FK
   String ip
   String href
   String referrer
-  Boolean mfa_verified
   DateTime created_at
   DateTime expired_at "nullable"
 }
-"shopping_mall_admin_roles" {
+"ecommerce_mall_customer_addresses" {
   String id PK
-  String role_name UK
-  String display_name
-  String description
-  String permission_scope
-  Boolean can_manage_admins
-  Boolean can_modify_settings
-  Boolean can_override_decisions
+  String ecommerce_mall_customer_id FK
+  String recipient_name
+  String street_address_line_1
+  String street_address_line_2 "nullable"
+  String city
+  String state_or_province
+  String postal_code
+  String country
+  String phone_number
+  Boolean is_default
+  String address_label "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"ecommerce_mall_seller_profiles" {
+  String id PK
+  String ecommerce_mall_seller_id FK,UK
+  String store_name
+  String store_description "nullable"
+  String(80000) logo_image_url "nullable"
+  String(80000) banner_image_url "nullable"
+  String contact_phone "nullable"
+  String contact_email "nullable"
+  String return_policy "nullable"
+  String shipping_policy "nullable"
+  String business_hours "nullable"
   DateTime created_at
   DateTime updated_at
 }
-"shopping_mall_admin_permissions" {
+"ecommerce_mall_payment_methods" {
   String id PK
-  String permission_name UK
-  String display_name
-  String description
-  String category
-  String risk_level
-  String required_admin_level
+  String ecommerce_mall_customer_id FK
+  String payment_type
+  String payment_token
+  String card_last_four "nullable"
+  String card_brand "nullable"
+  Int expiration_month "nullable"
+  Int expiration_year "nullable"
+  String cardholder_name "nullable"
+  String billing_address "nullable"
+  Boolean is_default
+  String payment_method_label "nullable"
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"shopping_mall_customer_sessions" }o--|| "shopping_mall_customers" : customer
-"shopping_mall_customer_addresses" }o--|| "shopping_mall_customers" : customer
-"shopping_mall_seller_sessions" }o--|| "shopping_mall_sellers" : seller
-"shopping_mall_seller_profiles" |o--|| "shopping_mall_sellers" : seller
-"shopping_mall_seller_verification_documents" }o--|| "shopping_mall_sellers" : seller
-"shopping_mall_admin_sessions" }o--|| "shopping_mall_admins" : admin
+"ecommerce_mall_customer_sessions" }o--|| "ecommerce_mall_customers" : customer
+"ecommerce_mall_seller_sessions" }o--|| "ecommerce_mall_sellers" : seller
+"ecommerce_mall_admin_sessions" }o--|| "ecommerce_mall_admins" : admin
+"ecommerce_mall_customer_addresses" }o--|| "ecommerce_mall_customers" : customer
+"ecommerce_mall_seller_profiles" |o--|| "ecommerce_mall_sellers" : seller
+"ecommerce_mall_payment_methods" }o--|| "ecommerce_mall_customers" : customer
 ```
 
-### `shopping_mall_customers`
+### `ecommerce_mall_customers`
 
-Core customer entity representing end-user shoppers. Stores essential
-customer account information including authentication credentials, email
-verification status, and account lifecycle management. Customers can
-browse products, manage shopping carts, place orders, and leave product
-reviews.
+Registered customer accounts for the e-commerce platform. Customers are
+authenticated users who can browse products, manage shopping carts, place
+orders, and interact with the marketplace through reviews and wishlists.
+
+Each customer account is created through self-registration with email
+verification. The account stores authentication credentials (hashed
+password), profile information, and account status tracking. Customer
+accounts are linked to multiple addresses, payment methods, orders, and
+sessions for multi-device support.
+
+Soft deletion is supported to maintain audit trails while allowing
+account recovery. Account status transitions from pending_verification →
+active → suspended/deactivated as needed.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Customer's unique email address used for account login and communication.
-  > RFC 5322 format validated. Serves as the primary authentication
-  > identifier.
+  > Customer's email address used for authentication and communication. Must
+  > be unique across all customers. Email verification required before
+  > account activation.
 - `password_hash`
-  > Securely hashed customer password using bcrypt with minimum 10 salt
-  > rounds. Never stored in plain text. Used for login authentication.
+  > Hashed password using bcrypt (work factor 12). Never stores plain text
+  > passwords. Used for login authentication and password reset
+  > functionality.
 - `first_name`
-  > Customer's first name (1-100 characters). Used for personalization in
-  > communications and order confirmations.
+  > Customer's first name. Minimum 2 characters, maximum 50 characters. Used
+  > for personalization and order communication.
 - `last_name`
-  > Customer's last name (1-100 characters). Used for personalization in
-  > communications and order confirmations.
+  > Customer's last name. Minimum 2 characters, maximum 50 characters. Used
+  > for personalization and order communication.
 - `phone_number`
-  > Customer's phone number in international or local format. Optional
-  > contact method for delivery and customer service purposes.
+  > Customer's phone number for order coordination and customer support.
+  > Optional field, customer can add/update during account setup or checkout.
 - `email_verified`
-  > Flag indicating whether the customer's email address has been verified.
-  > Required to be true before customer can place orders. Email verification
-  > prevents unauthorized account creation.
+  > Whether the customer's email address has been verified. Customers must
+  > verify email before placing orders. Set to true only after clicking
+  > verification link.
 - `account_status`
-  > Current customer account status: 'active', 'email_unverified',
-  > 'suspended', or 'deactivated'. Determines account access level and order
-  > placement eligibility.
-- `failed_login_attempts`
-  > Count of consecutive failed login attempts. Used for security lockout
-  > mechanism. Resets to 0 on successful login. Triggers 15-minute lockout
-  > after 5 failures.
-- `locked_until`
-  > Timestamp indicating when account lockout expires after excessive failed
-  > login attempts. Null if account is not currently locked. Used to enforce
-  > 15-minute security lockout period.
+  > Current account status. Valid values: pending_verification (awaiting
+  > email verification), active (verified and able to purchase), suspended
+  > (temporarily disabled by admin), deactivated (voluntarily paused by
+  > customer). Defaults to pending_verification.
 - `created_at`
-  > Account creation timestamp in UTC timezone. Records when the customer
-  > registered on the platform.
+  > Timestamp of account creation. Set when customer completes initial
+  > registration form.
 - `updated_at`
-  > Timestamp of last account modification (profile update, password change,
-  > etc.). Updated whenever customer information is modified.
+  > Timestamp of last account modification. Updated whenever customer
+  > profile, password, or settings are changed.
 - `deleted_at`
-  > Soft deletion timestamp. When set, indicates customer account has been
-  > deactivated. Null for active accounts. Enables account recovery and audit
-  > trail maintenance.
+  > Soft delete timestamp. Set when customer requests account deletion. NULL
+  > means account is active. Allows account recovery and maintains audit
+  > trail.
 
-### `shopping_mall_customer_sessions`
+### `ecommerce_mall_customer_sessions`
 
-Authentication sessions for customers. One session per active
-device/browser. Records connection context (IP, URL, referrer) for
-security tracking and fraud detection. Session expires after 30 days of
-inactivity. Enables stateless authentication via JWT tokens while
-maintaining optional server-side session records.
+Authentication sessions for customer users. Each session represents a
+login instance on a specific device/browser. Sessions store connection
+context (IP, URL, referrer) and track session lifecycle from creation to
+expiration.
+
+Customers can maintain multiple concurrent sessions across different
+devices. Each session is identified by a unique ID and tracks the
+authenticated customer. Sessions expire after extended inactivity,
+forcing re-authentication. Session creation automatically occurs on
+successful login. Session expiration can be triggered by logout, browser
+close, or inactivity timeout.
+
+Session data is used for security monitoring (detect unusual access
+patterns), audit logging (track user actions per session), and device
+management (customers can view and revoke sessions from specific
+devices).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_customer_id`
-  > Foreign key reference to customer's [shopping_mall_customers.id](#shopping_mall_customers).
-  > Links session to the authenticated customer.
+- `ecommerce_mall_customer_id`
+  > Foreign key referencing the authenticated customer. Each session belongs
+  > to exactly one customer. Relationship is many-to-one (customer can have
+  > multiple sessions). [ecommerce_mall_customers.id](#ecommerce_mall_customers)
 - `ip`
-  > IP address from which the session was initiated. Used for security
-  > tracking, anomaly detection, and fraud prevention.
+  > IP address of the device/network creating this session. Used for security
+  > monitoring (detect suspicious geographic changes, multiple simultaneous
+  > logins from different IPs).
 - `href`
-  > Connection URL (HTTP referrer) indicating the page or service from which
-  > authentication occurred. Stored for security audit and access pattern
-  > analysis.
+  > URL/href where the session was created. Captures the entry point to the
+  > application (homepage, product page, checkout, etc.).
 - `referrer`
-  > HTTP referrer header value indicating the source page that initiated the
-  > session. Used for tracking where customers came from during
-  > authentication.
+  > HTTP referrer URL indicating how customer arrived at the platform
+  > (direct, search engine, social media, email link, etc.). Used for
+  > marketing attribution and traffic analysis.
 - `created_at`
-  > Session creation timestamp in UTC timezone. Records when authentication
-  > session was established.
+  > Session creation timestamp (when customer logged in). UTC timezone. Used
+  > for session age tracking and SLA monitoring.
 - `expired_at`
-  > Session expiration timestamp indicating when the session ended (either
-  > due to timeout, logout, or explicit termination). Null for active
-  > sessions. Sessions default to 30-day expiration.
+  > Session expiration timestamp (when customer logged out or session was
+  > terminated). NULL means session is still active. Set to current timestamp
+  > when session expires due to inactivity or explicit logout.
 
-### `shopping_mall_customer_addresses`
+### `ecommerce_mall_sellers`
 
-Customer delivery and billing addresses. Customers can save multiple
-addresses (maximum 10) for convenient checkout. Each address includes
-recipient name, complete address details, and delivery/billing
-designation. Addresses are profile-related data essential for order
-fulfillment and customer convenience.
+Registered seller/merchant accounts on the marketplace. Sellers are
+independent business entities that create stores, manage product
+catalogs, process orders, and track sales performance.
 
-Properties as follows:
+Each seller account is created through business registration requiring
+business information (name, registration number), contact details, and
+banking information for commission settlements. Sellers must complete
+verification (typically 5 business days) before they can list products.
 
-- `id`: Primary Key.
-- `shopping_mall_customer_id`
-  > Foreign key reference to customer's [shopping_mall_customers.id](#shopping_mall_customers).
-  > Associates address with the customer account.
-- `label`
-  > User-friendly address label (e.g., 'Home', 'Work', 'Apartment'). Max 50
-  > characters. Helps customer identify which address to use during checkout.
-- `recipient_name`
-  > Full name of the person to receive the delivery. 2-100 characters. Used
-  > on shipping labels and delivery confirmation.
-- `street_address_line_1`
-  > Primary street address line. 5-200 characters. Includes street number,
-  > name, and building/unit details as needed.
-- `street_address_line_2`
-  > Secondary address line for apartment, suite, or additional location
-  > details. Optional. Max 200 characters.
-- `city`
-  > City or municipality name. 2-100 characters. Validated against known
-  > cities in the selected country.
-- `state_province`
-  > State, province, or regional subdivision code/name. 2-50 characters.
-  > Format validated per country requirements.
-- `postal_code`
-  > Postal/ZIP code. Format varies by country (5-20 characters). Validated
-  > against country's postal system requirements for accurate delivery.
-- `country_code`
-  > ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB', 'JP'). Determines tax
-  > jurisdiction, shipping options, and address format validation rules.
-- `phone_number`
-  > Contact phone number for delivery. Validated international or local
-  > format. Used by carrier for delivery coordination and customer contact.
-- `is_default_shipping`
-  > Flag indicating this is the customer's default shipping address. Used to
-  > pre-populate checkout shipping field. Only one address per customer can
-  > have this set to true.
-- `is_default_billing`
-  > Flag indicating this is the customer's default billing address. Used to
-  > pre-populate checkout billing field. Only one address per customer can
-  > have this set to true.
-- `address_type`
-  > Address type classification: 'shipping', 'billing', or 'both'. Determines
-  > whether address is used for delivery, payment, or both purposes.
-- `is_verified`
-  > Flag indicating address has been validated against address verification
-  > service. Verified addresses are more reliable for delivery success.
-- `created_at`
-  > Address creation timestamp in UTC timezone. Records when customer saved
-  > this address.
-- `updated_at`
-  > Timestamp of last address modification. Updated when customer edits
-  > address details or changes default designation.
-- `deleted_at`
-  > Soft deletion timestamp. When set, indicates address has been deleted by
-  > customer. Null for active addresses. Preserves historical order
-  > references.
-
-### `shopping_mall_sellers`
-
-Core seller entity representing merchants/vendors operating on the
-platform. Stores seller business identity, authentication credentials,
-verification status, and account lifecycle. Sellers list products, manage
-inventory, fulfill orders, and receive payments. Must complete
-verification before selling.
+Seller accounts track account status (pending_verification, active,
+suspended, deactivated, rejected) and support soft deletion. Sellers have
+their own authentication sessions, separate store profiles, and linked
+payment settlement records. Seller ratings are calculated from customer
+feedback across all their orders.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
   > Seller's business email address used for authentication and official
-  > communications. RFC 5322 format validated. Unique across all seller
-  > accounts.
+  > communication. Must be unique across all sellers. Email verification
+  > required during registration process.
 - `password_hash`
-  > Securely hashed seller password using bcrypt with minimum 10 salt rounds.
-  > Never stored in plain text. Used for seller dashboard login
-  > authentication.
+  > Hashed password using bcrypt (work factor 12). Used for seller dashboard
+  > login. Never stored in plain text.
 - `business_name`
-  > Seller's legal business name (2-200 characters). Used for business
-  > identification and displayed to customers on seller profile and product
-  > listings.
+  > Official business name for the seller. Used for store branding and legal
+  > identification. Displayed prominently on seller's storefront.
 - `business_registration_number`
-  > Official business registration/license number from relevant government
-  > authority. Used for seller verification and compliance purposes. Format
-  > varies by jurisdiction.
-- `tax_identification_number`
-  > Tax ID, VAT number, or equivalent tax identifier. Required for commission
-  > calculation and regulatory compliance. Format varies by country.
-- `primary_contact_name`
-  > Name of primary contact person for the seller business. Used for
-  > verification and communication purposes.
-- `primary_contact_phone`
-  > Primary contact phone number in valid international or local format. Used
-  > for seller verification and urgent business communications.
+  > Business registration or tax identification number from business
+  > registration authority. Verified during seller application. Used for
+  > legal compliance and commission calculations.
+- `business_email`
+  > Official business email address (may differ from login email). Used for
+  > formal communications, notifications, and official documents.
+- `business_phone`
+  > Business phone number for platform communication and order coordination.
+  > Required for contacting seller regarding account, operations, or
+  > disputes.
 - `business_address`
-  > Complete business address matching registration documents. 5-200
-  > characters. Used for seller verification and official correspondence.
-- `correspondence_address`
-  > Official correspondence address for legal communications. May differ from
-  > business address. Used for formal notices and regulatory correspondence.
-- `business_description`
-  > Description of seller's business and products (50-500 characters).
-  > Displayed on seller profile to help customers understand the business.
-- `store_name`
-  > Store/brand name for display (2-100 characters). Shown to customers on
-  > product listings and seller profile. May differ from legal business name.
-- `verification_status`
-  > Seller verification lifecycle state: 'pending_email_verification',
-  > 'pending_approval', 'active', 'verification_rejected',
-  > 'permanently_banned'. Controls seller dashboard access and product
-  > listing ability.
+  > Physical business address (street, city, postal code, country). Used for
+  > verification, compliance, and legal identification.
+- `bank_account_holder_name`
+  > Name on bank account for commission payments. Must match bank records
+  > exactly for settlement transfers to succeed.
+- `bank_name`
+  > Name of the bank where seller's account is held. Used for identifying
+  > bank for international transfers and verification.
+- `bank_routing_number`
+  > Routing number for bank transfers (US format) or equivalent for other
+  > countries. Required for direct deposit settlement payments.
+- `bank_account_number`
+  > Bank account number for receiving commission payments. Encrypted before
+  > storage. Used for automated settlement transfers.
+- `tax_id`
+  > Tax identification number for the seller's jurisdiction. Used for
+  > compliance, tax reporting, and 1099 form generation.
 - `account_status`
-  > Current account status: 'active', 'suspended', 'deactivated',
-  > 'terminated'. Determines if seller can list products and fulfill orders.
-- `failed_login_attempts`
-  > Count of consecutive failed login attempts. Resets to 0 on successful
-  > login. Triggers 15-minute lockout after 5 failures for security.
-- `locked_until`
-  > Timestamp when login lockout expires after excessive failures. Null if
-  > account not locked. Used to enforce 15-minute security lockout.
+  > Current seller account status. Valid values: pending_verification
+  > (awaiting business verification), active (verified and can list
+  > products), suspended (temporarily disabled by admin, no new listings or
+  > orders), deactivated (voluntarily paused by seller), rejected
+  > (application rejected). Defaults to pending_verification.
+- `email_verified`
+  > Whether the seller's email has been verified. Required before seller can
+  > list products. Set to true after email verification link is clicked.
 - `created_at`
-  > Account creation timestamp in UTC timezone. Records when seller applied
-  > to the platform.
+  > Timestamp when seller application was submitted. Marks the start of
+  > verification process.
 - `updated_at`
-  > Timestamp of last account modification (profile update, status change,
-  > verification, etc.).
+  > Timestamp of last account modification (status changes, banking info
+  > updates, profile changes).
 - `deleted_at`
-  > Soft deletion timestamp. When set, indicates seller account has been
-  > deactivated or terminated. Null for active accounts. Preserves seller
-  > history and order records.
+  > Soft delete timestamp. Set when seller requests account closure. NULL
+  > means account is active. Allows account recovery and maintains
+  > order/transaction history.
 
-### `shopping_mall_seller_sessions`
+### `ecommerce_mall_seller_sessions`
 
-Authentication sessions for sellers. One session per active
-device/browser. Records connection context (IP, URL, referrer) for
-security monitoring. Sessions expire after 30 days of inactivity. Enables
-secure seller dashboard access while maintaining audit trail of login
-activity.
+Authentication sessions for seller users. Each session represents a login
+instance from a seller on a specific device/browser. Sessions store
+connection context (IP address, URL, referrer) and track session state.
+
+Sellers can maintain multiple concurrent sessions across different
+devices and browsers. Each session tracks the authenticated seller and
+records connection metadata for security monitoring and audit purposes.
+
+Session data enables: security monitoring (detect unusual access patterns
+from unexpected locations), device management (sellers can view active
+sessions and revoke access from specific devices), and audit logging
+(track seller actions per session for compliance).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_seller_id`
-  > Foreign key reference to seller's [shopping_mall_sellers.id](#shopping_mall_sellers). Links
-  > session to the authenticated seller.
+- `ecommerce_mall_seller_id`
+  > Foreign key referencing the authenticated seller. Each session belongs to
+  > exactly one seller. Relationship is many-to-one (seller can have multiple
+  > concurrent sessions). [ecommerce_mall_sellers.id](#ecommerce_mall_sellers)
 - `ip`
-  > IP address from which the session was initiated. Used for seller security
-  > tracking and suspicious activity detection.
+  > IP address of the device/network initiating this session. Used for
+  > security monitoring (detect logins from unusual locations or multiple
+  > concurrent locations).
 - `href`
-  > Connection URL indicating the seller dashboard or service endpoint where
-  > authentication occurred. Stored for security audit.
+  > URL/href where the session was created. Captures the entry point
+  > (dashboard, product management, orders, analytics, etc.).
 - `referrer`
-  > HTTP referrer header value indicating source page for the session. Used
-  > for tracking seller access patterns.
+  > HTTP referrer URL showing how seller arrived at the platform (direct
+  > access, email link, bookmark, etc.).
 - `created_at`
-  > Session creation timestamp in UTC timezone. Records when seller
-  > authenticated and session was established.
+  > Session creation timestamp (when seller logged in). UTC timezone. Used
+  > for session age tracking and SLA monitoring.
 - `expired_at`
-  > Session expiration timestamp. When set, indicates session has ended
-  > (logout or timeout). Null for active sessions. Default 30-day expiration.
+  > Session expiration timestamp (when seller logged out or session was
+  > terminated). NULL means session is still active. Set to current timestamp
+  > when session expires.
 
-### `shopping_mall_seller_profiles`
+### `ecommerce_mall_admins`
 
-Extended seller profile information including store branding, policies,
-and business metadata. Stores seller customization options like logo,
-banner images, return policy, shipping policy, and business hours.
-Enables sellers to personalize their storefront and communicate their
-policies to customers.
+System administrator accounts with elevated permissions for platform
+oversight and management. Admins have full access to user management,
+order management, product oversight, dispute resolution, analytics, and
+system configuration.
 
-Properties as follows:
+Unlike customer and seller accounts which are created through public
+registration, admin accounts are created internally by system owners or
+existing admins. Admin accounts require multi-factor authentication (MFA)
+for enhanced security due to elevated privileges.
 
-- `id`: Primary Key.
-- `shopping_mall_seller_id`
-  > Foreign key reference to seller's [shopping_mall_sellers.id](#shopping_mall_sellers).
-  > Associates profile with the seller account. 1:1 relationship.
-- `store_url_slug`
-  > URL-friendly identifier for seller's store (alphanumeric with hyphens,
-  > max 50 characters). Used to create seller storefront URL:
-  > store.com/seller/{slug}. Must be unique.
-- `store_logo_url`
-  > URL to seller's store logo image for display on storefront. Image should
-  > be 2MB max, JPEG or PNG format with minimum 200x200 pixels resolution.
-- `store_banner_url`
-  > URL to seller's store banner image displayed at top of storefront. Image
-  > should be 5MB max, JPEG or PNG format, recommended dimensions 1200x300
-  > pixels.
-- `store_description`
-  > Seller's store description for public display (max 500 characters). Shown
-  > on seller profile to help customers understand the business.
-- `return_policy`
-  > Seller's return and refund policy text (max 2000 characters). Displayed
-  > to customers during checkout and on seller profile. Communicates return
-  > window and conditions.
-- `shipping_policy`
-  > Seller's shipping policy and carrier information (max 2000 characters).
-  > Displayed to customers explaining shipping methods, costs, and delivery
-  > timeframes.
-- `cancellation_policy`
-  > Seller's order cancellation policy (max 2000 characters). Explains
-  > conditions under which orders can be cancelled and any associated fees or
-  > restrictions.
-- `contact_email`
-  > Seller's public contact email for customer inquiries. May differ from
-  > account email. Used for customer communications through the platform.
-- `contact_phone`
-  > Seller's public contact phone number for customer support. Used when
-  > customers need to reach seller directly for urgent issues.
-- `business_hours`
-  > Seller's customer service business hours (formatted text, max 500
-  > characters). Helps customers understand when seller is available for
-  > support.
-- `website_url`
-  > Link to seller's external business website if they have one. Provides
-  > additional information about the seller's operations.
-- `social_media_links`
-  > JSON-formatted social media profile links (e.g., Facebook, Instagram,
-  > Twitter). Enables customers to follow and verify seller's presence.
-- `created_at`
-  > Profile creation timestamp in UTC timezone. Records when seller profile
-  > was first created.
-- `updated_at`
-  > Timestamp of last profile modification. Updated whenever seller updates
-  > policies, images, or business information.
-
-### `shopping_mall_seller_verification_documents`
-
-Documents submitted by sellers for identity and business verification
-during onboarding. Stores references to uploaded documentation (business
-license, tax certificates, ID proofs, address verification). Enables
-platform to verify seller legitimacy and comply with regulatory
-requirements.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_seller_id`
-  > Foreign key reference to seller's [shopping_mall_sellers.id](#shopping_mall_sellers).
-  > Associates verification documents with the seller account.
-- `document_type`
-  > Type of verification document submitted: 'business_license',
-  > 'tax_certificate', 'identity_proof', 'address_verification',
-  > 'bank_verification'. Determines what the document proves.
-- `document_url`
-  > URL to the uploaded document file. Image or PDF format (JPEG, PNG, PDF).
-  > Maximum 10MB. Stored in secure cloud storage with access control.
-- `document_name`
-  > Original filename or descriptive name of the document (max 200
-  > characters). Helps identify which specific document this is.
-- `issuing_country`
-  > ISO 3166-1 alpha-2 country code indicating where the document was issued.
-  > Used for validation rules and compliance checking.
-- `document_number`
-  > Official document number (e.g., business registration number, license
-  > number, passport number, tax ID). Used for verification and
-  > cross-checking.
-- `issue_date`
-  > Date when the document was issued. Used to verify document is not expired
-  > or suspiciously recent.
-- `expiration_date`
-  > Document expiration date if applicable. Null if document has no
-  > expiration. Used to verify document is still valid.
-- `verification_status`
-  > Verification status of this document: 'pending_review', 'approved',
-  > 'rejected'. Indicates whether admin has reviewed and validated the
-  > document.
-- `verification_notes`
-  > Admin notes regarding verification (max 1000 characters). Explains reason
-  > for approval/rejection or requests for specific clarifications.
-- `verified_by_admin_id`
-  > Admin user ID who reviewed and verified the document. Null if not yet
-  > verified. Used for audit trail of verification decisions.
-- `verified_at`
-  > Timestamp when document was verified by admin. Null if pending
-  > verification. Used to track verification workflow timing.
-- `created_at`
-  > Document upload timestamp in UTC timezone. Records when seller submitted
-  > the document.
-- `updated_at`: Timestamp of last modification (status change, notes update, etc.).
-
-### `shopping_mall_admins`
-
-Platform administrator accounts with system-wide access and control
-capabilities. Administrators manage users, moderate content, handle
-disputes, process refunds, and oversee platform operations. Require
-strong authentication with multi-factor authentication support and
-comprehensive audit logging.
+Admin authentication uses separate admin-only sessions. Admins cannot
+simultaneously operate as customers or sellers (separate account types).
+All admin actions are fully logged in audit trails for compliance and
+security purposes.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Admin's unique email address used for authentication and administrative
-  > notifications. RFC 5322 format validated. Must be unique across all admin
-  > accounts.
+  > Admin's email address used for authentication and official communication.
+  > Must be unique across all admins. Verified during admin account creation.
 - `password_hash`
-  > Securely hashed admin password using bcrypt with minimum 10 salt rounds.
-  > Never stored in plain text. Used for admin dashboard login
-  > authentication.
+  > Hashed password using bcrypt (work factor 12). Admin passwords must meet
+  > high complexity requirements (minimum 16 characters with mixed case,
+  > numbers, special characters). Never stored in plain text.
 - `full_name`
-  > Admin's full name (2-100 characters). Used for identification in audit
-  > logs and admin interface.
-- `admin_level`
-  > Admin permission level: 'super_admin', 'operations_admin',
-  > 'content_admin', 'financial_admin', 'support_admin'. Determines feature
-  > access and operational scope.
-- `department`
-  > Admin's department or team assignment (max 100 characters). Used for
-  > organizational tracking and access control scoping.
-- `is_mfa_enabled`
-  > Flag indicating whether multi-factor authentication is enabled for this
-  > admin. Required for enhanced security. Super admins must have MFA
-  > enabled.
-- `mfa_method`
-  > MFA method preference: 'email_otp', 'authenticator_app', or null if MFA
-  > not enabled. Admin can authenticate via selected method.
+  > Admin's full name. Used for admin action logging and audit trails to
+  > identify who performed each action.
+- `role`
+  > Admin role designation. Valid values: super_admin (full platform access),
+  > operations_admin (order/customer management), product_admin (product
+  > catalog oversight), seller_admin (seller account management),
+  > analytics_admin (reporting only). Defines permission scope.
+- `mfa_enabled`
+  > Whether multi-factor authentication is enabled for this admin account.
+  > Required for all admin accounts. Admin must provide MFA code (TOTP) in
+  > addition to password during login.
 - `mfa_secret`
-  > Encrypted MFA secret key for TOTP authenticator app (if using
-  > authenticator). Never displayed to admin. Used for OTP code generation.
+  > Encrypted TOTP secret for multi-factor authentication. Used to generate
+  > time-based one-time passwords for login. Encrypted before storage for
+  > security.
 - `account_status`
-  > Current account status: 'active', 'inactive', 'suspended', 'deactivated'.
-  > Determines if admin can access the platform.
-- `failed_login_attempts`
-  > Count of consecutive failed login attempts. Resets to 0 on successful
-  > login. Triggers 15-minute lockout after 5 failures for security.
-- `locked_until`
-  > Timestamp when login lockout expires. Null if account not locked. Used to
-  > enforce 15-minute security lockout for excessive failures.
-- `last_login_at`
-  > Timestamp of most recent successful admin login. Used for security
-  > monitoring and activity tracking. Null if admin never logged in.
-- `last_login_ip`
-  > IP address from the most recent login. Used for suspicious activity
-  > detection and security investigations.
+  > Current account status. Valid values: active (can login), deactivated
+  > (disabled by system owner). Admins cannot suspend their own accounts
+  > (prevents accidental lockout).
 - `created_at`
-  > Admin account creation timestamp in UTC timezone. Records when the admin
-  > account was first created by existing admin.
+  > Timestamp when admin account was created. Set by system owner or existing
+  > admin during account creation.
 - `updated_at`
-  > Timestamp of last account modification (role change, MFA setup, status
-  > update, etc.).
+  > Timestamp of last account modification (password changes, role changes,
+  > MFA updates).
 - `deleted_at`
-  > Soft deletion timestamp. When set, indicates admin account has been
-  > deactivated. Null for active accounts. Preserves admin action audit
-  > trail.
+  > Soft delete timestamp. Set when admin account is deactivated. NULL means
+  > account is active. Allows account recovery.
 
-### `shopping_mall_admin_sessions`
+### `ecommerce_mall_admin_sessions`
 
-Authentication sessions for administrators. Records admin login sessions
-with connection context for security monitoring. Sessions expire after 8
-hours (shorter than customer/seller for security). Multi-factor
-authentication required. Complete audit trail of all admin access.
+Authentication sessions for admin users. Each session represents an
+authenticated admin login on a specific device/browser. Sessions store
+connection context (IP, URL, referrer) and track session lifecycle.
+
+Admin sessions are monitored more strictly than regular user sessions for
+security. Unusual access patterns (logins from unexpected locations,
+multiple simultaneous logins from different countries, unusual times)
+trigger security alerts and may require additional verification.
+
+Each admin session is tied to a specific admin user and records
+connection metadata for comprehensive audit logging of all admin
+activities on the platform.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_admin_id`
-  > Foreign key reference to admin's [shopping_mall_admins.id](#shopping_mall_admins). Links
-  > session to the authenticated administrator.
+- `ecommerce_mall_admin_id`
+  > Foreign key referencing the authenticated admin. Each session belongs to
+  > exactly one admin. Relationship is many-to-one (admin can have multiple
+  > concurrent sessions). [ecommerce_mall_admins.id](#ecommerce_mall_admins)
 - `ip`
-  > IP address from which the session was initiated. Critical for admin
-  > security monitoring and unusual access detection.
+  > IP address of the device/network accessing the admin panel. Used for
+  > security monitoring (detect unusual geographic locations, rate limiting,
+  > suspicious access patterns).
 - `href`
-  > Connection URL indicating the admin dashboard endpoint where
-  > authentication occurred. Used for access pattern audit.
+  > URL/href where the admin panel session was initiated. Captures entry
+  > point to admin system.
 - `referrer`
-  > HTTP referrer header value indicating source of authentication request.
-  > Used for security tracking and anomaly detection.
-- `mfa_verified`
-  > Flag indicating whether MFA was successfully completed for this session.
-  > Must be true for session to be valid. Required security measure for
-  > admins.
+  > HTTP referrer URL showing how admin accessed the platform (direct link,
+  > bookmark, email notification, etc.).
 - `created_at`
-  > Session creation timestamp in UTC timezone. Records when admin
-  > authenticated and session was established.
+  > Session creation timestamp (when admin logged into admin panel). UTC
+  > timezone. Used for session age tracking and security monitoring.
 - `expired_at`
-  > Session expiration timestamp. When set, indicates session has ended
-  > (logout, timeout, or forced termination). Null for active sessions.
-  > Default 8-hour expiration.
+  > Session expiration timestamp (when admin logged out or session was
+  > terminated). NULL means session is still active. Admin sessions have
+  > shorter timeout (30 minutes) than customer sessions.
 
-### `shopping_mall_admin_roles`
+### `ecommerce_mall_customer_addresses`
 
-Role definitions for admin access control and permission management.
-Defines available roles (Super Admin, Operations Admin, Content Admin,
-Financial Admin, Support Admin) with descriptions. Enables role-based
-access control for fine-grained permission management and organizational
-structure.
+Delivery addresses associated with customer accounts. Customers can save
+multiple addresses and select one during checkout for order delivery.
+
+Each address is linked to a specific customer and includes complete
+delivery information (street, city, postal code, country) plus contact
+details (phone number). Addresses are not independently managed - they
+are managed through the customer's account address management interface.
+
+One address can be marked as the customer's default address for faster
+checkout. Addresses cannot be deleted if currently associated with active
+orders (awaiting fulfillment or delivery). Soft deletion preserves
+address history after completion of all associated orders.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `role_name`
-  > Unique role identifier (max 50 characters, lowercase with underscores).
-  > Examples: 'super_admin', 'operations_admin', 'content_admin',
-  > 'financial_admin', 'support_admin'.
-- `display_name`
-  > Human-friendly role display name (max 100 characters). Shown in admin
-  > interface for easy identification. Example: 'Super Administrator',
-  > 'Operations Manager'.
-- `description`
-  > Role description explaining responsibilities and scope (max 1000
-  > characters). Helps administrators understand what each role can do.
-- `permission_scope`
-  > Comma-separated list of permission scopes this role has access to.
-  > Examples: 'users,sellers,products,orders,payments,disputes,system'. Used
-  > for authorization checks.
-- `can_manage_admins`
-  > Flag indicating if this role can create, modify, or delete other admin
-  > accounts. Only super admin should have this enabled.
-- `can_modify_settings`
-  > Flag indicating if this role can modify platform-wide settings and
-  > policies. Typically only super admin.
-- `can_override_decisions`
-  > Flag indicating if this role can override system decisions (force refund,
-  > suspend accounts, etc.). Only higher-level admins should have this.
-- `created_at`: Role definition creation timestamp in UTC timezone.
+- `ecommerce_mall_customer_id`
+  > Foreign key referencing the customer who owns this address. Each address
+  > belongs to exactly one customer. Relationship is many-to-one (customer
+  > can have multiple addresses). [ecommerce_mall_customers.id](#ecommerce_mall_customers)
+- `recipient_name`
+  > Name of the person receiving the delivery at this address. Used on
+  > shipping labels and delivery instructions.
+- `street_address_line_1`
+  > Primary street address (house number and street name). Required for all
+  > addresses.
+- `street_address_line_2`
+  > Secondary street address information (apartment number, suite, building
+  > name, etc.). Optional for addresses that don't have additional location
+  > information.
+- `city`: City or municipality name where the address is located.
+- `state_or_province`
+  > State, province, or region name. Used for tax calculation and shipping
+  > routing.
+- `postal_code`
+  > Postal code or ZIP code. Format varies by country. Validated for correct
+  > format based on selected country.
+- `country`
+  > Country name or country code. Determines tax rules, shipping options, and
+  > currency. Validates that seller ships to this country.
+- `phone_number`
+  > Contact phone number for the delivery address. Used by shipping carrier
+  > for delivery coordination if needed (e.g., to confirm door access).
+- `is_default`
+  > Whether this is the customer's default address for checkout. Only one
+  > address per customer can be marked as default. When customer places
+  > order, default address is pre-selected for speed.
+- `address_label`
+  > Customer-defined label for this address (e.g., 'Home', 'Work', 'Parent's
+  > House'). Helps customer identify addresses quickly when managing multiple
+  > saved addresses.
+- `created_at`: Timestamp when address was added to customer's account.
 - `updated_at`
-  > Timestamp of last role modification (description update, permission scope
-  > change, etc.).
+  > Timestamp of last address modification (correcting typo, updating
+  > apartment number, etc.).
+- `deleted_at`
+  > Soft delete timestamp. Set when customer deletes address from their
+  > account. NULL means address is active. Allows recovery if customer needs
+  > address back.
 
-### `shopping_mall_admin_permissions`
+### `ecommerce_mall_seller_profiles`
 
-Individual permission definitions for granular access control. Maps
-specific actions (e.g., 'approve_sellers', 'process_refunds') to
-permission names. Enables flexible role-based access control by assigning
-permissions to roles.
+Store profile information for sellers. Each seller has exactly one
+profile storing their storefront branding, description, and
+store-specific policies.
+
+The seller profile contains the public-facing information displayed to
+customers visiting the seller's store page, including store name,
+description, logo/banner images, and contact information. Store policies
+(return policy, refund policy, shipping policy) are stored here and
+displayed to customers before purchase.
+
+Profile information is managed by the seller through their dashboard and
+updated immediately (within 2 minutes) for customer visibility.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `permission_name`
-  > Unique permission identifier (max 50 characters, lowercase with
-  > underscores). Examples: 'approve_sellers', 'manage_products',
-  > 'process_refunds', 'view_analytics', 'manage_admins'.
-- `display_name`
-  > Human-friendly permission display name (max 100 characters). Shown in
-  > permission management interface.
-- `description`
-  > Permission description explaining what action/resource it controls (max
-  > 500 characters). Helps admins understand the scope of the permission.
-- `category`
-  > Permission category for organization: 'users', 'sellers', 'products',
-  > 'orders', 'payments', 'disputes', 'reporting', 'system'. Used for
-  > grouping related permissions.
-- `risk_level`
-  > Risk level of this permission: 'low', 'medium', 'high', 'critical'.
-  > Critical permissions (system config, financial) require higher admin
-  > level.
-- `required_admin_level`
-  > Minimum admin level required for this permission. Examples:
-  > 'support_admin', 'operations_admin', 'super_admin'. Limits who can
-  > perform the action.
-- `created_at`: Permission definition creation timestamp in UTC timezone.
-- `updated_at`: Timestamp of last permission modification.
+- `ecommerce_mall_seller_id`
+  > Foreign key referencing the seller who owns this profile. Each seller has
+  > exactly one profile. One-to-one relationship with ecommerce_mall_sellers.
+  > [ecommerce_mall_sellers.id](#ecommerce_mall_sellers)
+- `store_name`
+  > Public display name for the seller's store. Used on storefront, in search
+  > results, and in product listings. Can differ from business legal name for
+  > branding purposes.
+- `store_description`
+  > Detailed description of the store, products, and seller's business.
+  > Displayed on store homepage. 500-2000 characters. Optional field allowing
+  > seller to tell their story.
+- `logo_image_url`
+  > URL to store logo image (200x200px recommended, max 2MB). Displayed in
+  > store header and in product listings. Optional - store can operate
+  > without logo.
+- `banner_image_url`
+  > URL to store banner/header image (1200x300px recommended, max 5MB).
+  > Displayed at top of store page for branding. Optional field.
+- `contact_phone`
+  > Public phone number for customers to contact the seller. Optional -
+  > seller may prefer email/messaging only.
+- `contact_email`
+  > Public email address for customer inquiries. Can differ from business
+  > email for customer-facing communications.
+- `return_policy`
+  > Seller's return and refund policy displayed to customers. Specifies
+  > return window (days), restocking fees if any, condition requirements, and
+  > exclusions. 500-2000 characters.
+- `shipping_policy`
+  > Seller's shipping policy including processing time, available shipping
+  > methods, and any regional restrictions. Displayed during checkout.
+  > 500-2000 characters.
+- `business_hours`
+  > Seller's operating hours (e.g., 'Mon-Fri 9am-5pm EST'). Displayed on
+  > store page and helps set customer expectations for response times.
+- `created_at`
+  > Timestamp when seller profile was created (typically when seller account
+  > was created).
+- `updated_at`: Timestamp of last profile update (when seller edited store information).
+
+### `ecommerce_mall_payment_methods`
+
+Saved payment methods (credit cards, debit cards, digital wallets) for
+customer accounts. Customers can save multiple payment methods and select
+one during checkout for transaction processing.
+
+Payment method information is tokenized - the system never stores full
+credit card numbers, CVV codes, or complete payment card data. Instead,
+tokenized references are stored for compliance with PCI DSS requirements.
+Customers can manage their saved payment methods, set a default method
+for faster checkout, and delete methods they no longer use.
+
+Payment methods are primary entities requiring independent CRUD
+operations since customers directly manage them from their account
+settings.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_customer_id`
+  > Foreign key referencing the customer who owns this payment method. Each
+  > payment method belongs to exactly one customer. Relationship is
+  > many-to-one (customer can have multiple payment methods). {@link
+  > ecommerce_mall_customers.id}
+- `payment_type`
+  > Type of payment method. Valid values: credit_card, debit_card,
+  > digital_wallet (Apple Pay, Google Pay), bank_transfer. Determines how
+  > payment is processed and displayed to customer.
+- `payment_token`
+  > Tokenized reference to the actual payment method from payment processor.
+  > This is a unique, non-reversible token representing the saved payment
+  > method. Never exposes actual card/account numbers.
+- `card_last_four`
+  > Last four digits of credit/debit card number (e.g., '4242'). Displayed to
+  > customer for identification. Only these digits are stored; full card
+  > number is never stored.
+- `card_brand`
+  > Brand/issuer of the card. Valid values: visa, mastercard, amex, discover,
+  > diners. Displayed in payment method list. NULL for non-card payment
+  > types.
+- `expiration_month`
+  > Card expiration month (1-12). Used for determining if card is expired.
+  > NULL for non-card payment types.
+- `expiration_year`
+  > Card expiration year (4-digit format, e.g., 2025). Used for determining
+  > if card is expired. NULL for non-card payment types.
+- `cardholder_name`
+  > Name printed on the payment card. Used for verification during checkout.
+  > NULL for non-card payment types.
+- `billing_address`
+  > Street address associated with this payment method for fraud
+  > verification. Optional - some payment processors don't require this.
+- `is_default`
+  > Whether this is the customer's default payment method. When customer
+  > checks out without explicitly selecting a payment method, the default is
+  > pre-selected. Only one payment method per customer can be default.
+- `payment_method_label`
+  > Customer-defined label for this payment method (e.g., 'My Visa', 'Work
+  > Card'). Helps customer identify methods when multiple are saved.
+- `created_at`: Timestamp when payment method was added to customer's saved methods.
+- `updated_at`
+  > Timestamp of last modification (label change, default status change,
+  > etc.).
+- `deleted_at`
+  > Soft delete timestamp. Set when customer removes payment method from
+  > their account. NULL means payment method is active and available for
+  > checkout.
 
 ## Products
 
 ```mermaid
 erDiagram
-"shopping_mall_products" {
+"ecommerce_mall_products" {
   String id PK
-  String shopping_mall_seller_id FK
-  String shopping_mall_category_id FK
+  String ecommerce_mall_seller_id FK
   String code
   String name
-  String short_description "nullable"
-  String description "nullable"
+  String description
   String brand "nullable"
-  String country_of_origin "nullable"
   String status
-  Float base_price "nullable"
+  String condition "nullable"
   Float weight "nullable"
-  String warranty_info "nullable"
+  Float length "nullable"
+  Float width "nullable"
+  Float height "nullable"
+  String material "nullable"
+  String care_instructions "nullable"
+  Int warranty_months "nullable"
+  String manufacturing_country "nullable"
+  Boolean is_configurable
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_product_variants" {
+"ecommerce_mall_product_variants" {
   String id PK
-  String shopping_mall_product_id FK
-  String sku UK
-  String name
-  String attributes_json "nullable"
-  Float price "nullable"
-  Float cost_price "nullable"
-  Int quantity_on_hand
-  Float weight "nullable"
-  String status
+  String ecommerce_mall_product_id FK
+  String sku_code
+  String attribute_combination
+  String display_name "nullable"
+  Float base_price
+  Float cost_of_goods "nullable"
+  String(80000) image_url "nullable"
+  String description_override "nullable"
+  Boolean is_available
+  Int sort_order "nullable"
   DateTime created_at
   DateTime updated_at
 }
-"shopping_mall_product_images" {
+"ecommerce_mall_product_skus" {
   String id PK
-  String shopping_mall_product_id FK
-  String(80000) image_url
-  String(80000) thumbnail_url "nullable"
-  Int display_order
-  String alt_text "nullable"
-  DateTime uploaded_at
-}
-"shopping_mall_product_specifications" {
-  String id PK
-  String shopping_mall_product_id FK
-  String spec_key
-  String spec_value
-  String spec_type "nullable"
-  Int display_order
-}
-"shopping_mall_product_categories_mapping" {
-  String id PK
-  String shopping_mall_product_id FK
-  String shopping_mall_category_id FK
-  Boolean is_primary
-  Int display_order
-}
-"shopping_mall_product_pricing_history" {
-  String id PK
-  String shopping_mall_product_id FK
-  String shopping_mall_product_variant_id FK "nullable"
-  Float previous_price "nullable"
-  Float new_price
-  String change_reason "nullable"
-  String changed_by
-  DateTime changed_at
-}
-"shopping_mall_product_snapshots" {
-  String id PK
-  String shopping_mall_product_id FK
-  String product_name
-  String product_description "nullable"
-  Float base_price "nullable"
-  String status
-  String product_data_json "nullable"
-  String snapshot_reason "nullable"
+  String ecommerce_mall_product_variant_id FK,UK
+  String sku_code UK
+  Int total_stock
+  Int reserved_stock
+  Int available_stock
+  Int damaged_stock "nullable"
+  Int low_stock_threshold "nullable"
+  Int reorder_point "nullable"
+  DateTime last_stock_audit_date "nullable"
+  String last_audit_result "nullable"
   DateTime created_at
+  DateTime updated_at
 }
-"shopping_mall_product_variants" }o--|| "shopping_mall_products" : product
-"shopping_mall_product_images" }o--|| "shopping_mall_products" : product
-"shopping_mall_product_specifications" }o--|| "shopping_mall_products" : product
-"shopping_mall_product_categories_mapping" }o--|| "shopping_mall_products" : product
-"shopping_mall_product_pricing_history" }o--|| "shopping_mall_products" : product
-"shopping_mall_product_pricing_history" }o--o| "shopping_mall_product_variants" : variant
-"shopping_mall_product_snapshots" }o--|| "shopping_mall_products" : product
+"ecommerce_mall_product_options" {
+  String id PK
+  String ecommerce_mall_product_id FK
+  String name
+  String display_name "nullable"
+  String description "nullable"
+  Boolean is_required
+  String input_type "nullable"
+  Int display_order "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"ecommerce_mall_product_option_values" {
+  String id PK
+  String ecommerce_mall_product_option_id FK
+  String value_name
+  String value_code
+  String color_code "nullable"
+  String(80000) image_url "nullable"
+  Float additional_cost "nullable"
+  Int display_order "nullable"
+  Boolean is_available
+  DateTime created_at
+  DateTime updated_at
+}
+"ecommerce_mall_product_images" {
+  String id PK
+  String ecommerce_mall_product_id FK
+  String ecommerce_mall_product_variant_id FK "nullable"
+  String(80000) image_url
+  String image_type "nullable"
+  String alt_text "nullable"
+  Int display_order
+  Boolean is_primary
+  Int file_size_kb "nullable"
+  Int image_width "nullable"
+  Int image_height "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"ecommerce_mall_product_attributes" {
+  String id PK
+  String ecommerce_mall_product_id FK
+  String attribute_name
+  String attribute_value
+  String value_type "nullable"
+  Int display_order "nullable"
+  Boolean is_searchable
+  Boolean is_comparable
+  DateTime created_at
+  DateTime updated_at
+}
+"ecommerce_mall_product_variants" }o--|| "ecommerce_mall_products" : product
+"ecommerce_mall_product_skus" |o--|| "ecommerce_mall_product_variants" : variant
+"ecommerce_mall_product_options" }o--|| "ecommerce_mall_products" : product
+"ecommerce_mall_product_option_values" }o--|| "ecommerce_mall_product_options" : option
+"ecommerce_mall_product_images" }o--|| "ecommerce_mall_products" : product
+"ecommerce_mall_product_images" }o--o| "ecommerce_mall_product_variants" : variant
+"ecommerce_mall_product_attributes" }o--|| "ecommerce_mall_products" : product
 ```
 
-### `shopping_mall_products`
+### `ecommerce_mall_products`
 
-Core product entity representing items listed for sale. Contains
-product-level information including name, description, category
-assignment, and seller ownership. Each product can have multiple variants
-(SKUs) with different prices, colors, sizes, and other options. Products
-are the primary discovery unit for customers and serve as containers for
-variant-specific inventory and pricing management.
+Core product catalog entities representing logical product groupings.
+
+Products serve as the parent entity for all product variants and contain
+general product information shared across all configurations. Each
+product is owned and managed by exactly one seller and belongs to one or
+more product categories. Products maintain complete lifecycle management
+through status tracking (draft, published, unpublished, archived)
+enabling sellers to control visibility and availability.
+
+The product entity stores product-level information that applies
+uniformly across all variants, including descriptions, manufacturer
+details, and general specifications. Product-specific images and
+attributes are linked through separate related tables, enabling granular
+media and specification management.
+
+Soft deletion is supported through the deleted_at timestamp, preserving
+product history for compliance and analytics while removing products from
+active visibility. Products are indexed by seller for efficient dashboard
+operations and by category for catalog organization.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_seller_id`
-  > Reference to the seller who owns and manages this product. {@link
-  > shopping_mall_sellers.id}
-- `shopping_mall_category_id`
-  > Reference to the primary product category. {@link
-  > shopping_mall_categories.id}
+- `ecommerce_mall_seller_id`
+  > Seller who owns and manages this product. {@link
+  > ecommerce_mall_sellers.id}
 - `code`
-  > Unique product code identifier assigned by seller (business identifier,
-  > not same as SKU which is variant-specific)
-- `name`: Product name or title displayed to customers (3-200 characters)
-- `short_description`: Brief product summary displayed in listings (up to 255 characters)
-- `description`
-  > Complete product description with detailed information (up to 5000
-  > characters)
-- `brand`: Manufacturer or brand name (up to 100 characters)
-- `country_of_origin`: ISO 3166-1 alpha-2 country code where product is manufactured
-- `status`
-  > Product status: active (visible to customers), inactive (hidden), draft
-  > (not yet published), discontinued (permanently removed from sale)
-- `base_price`
-  > Base product price in platform currency (can be overridden by
-  > variant-specific pricing)
-- `weight`: Product weight in kilograms (for shipping calculations)
-- `warranty_info`
-  > Warranty or guarantee information provided by seller (up to 500
-  > characters)
-- `created_at`: Timestamp when product was created
-- `updated_at`: Timestamp when product information was last modified
-- `deleted_at`
-  > Soft delete timestamp - product can be restored if deleted within grace
-  > period
-
-### `shopping_mall_product_variants`
-
-Product variant (SKU) entities representing specific product options like
-color, size, material combinations. Each variant has its own price,
-inventory tracking, and unique SKU identifier. Variants enable customers
-to select specific product configurations while maintaining normalized
-data structure (prevents nullable field explosion in main product table).
-Each product can have multiple variants with independent pricing and
-inventory.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_id`
-  > Reference to parent product containing this variant. {@link
-  > shopping_mall_products.id}
-- `sku`
-  > Unique Stock Keeping Unit identifier (6-50 alphanumeric characters with
-  > hyphens/underscores, globally unique across all sellers)
+  > Seller-defined product SKU code for inventory reference. Unique per
+  > seller within category.
 - `name`
-  > Variant descriptive name (e.g., 'Red - Size M' or 'Blue - 256GB', 3-100
-  > characters)
-- `attributes_json`
-  > JSON object storing variant attribute key-value pairs (e.g., {"color":
-  > "Red", "size": "M", "material": "Cotton"})
-- `price`: Variant-specific price (overrides product base_price if set)
-- `cost_price`
-  > Seller's cost for this variant (for profitability tracking, not displayed
-  > to customers)
-- `quantity_on_hand`
-  > Current inventory quantity available for this variant (non-negative
-  > integer)
-- `weight`: Variant-specific weight in kilograms (overrides product weight if set)
+  > Product name displayed to customers. 100-255 characters, unique per
+  > seller per category.
+- `description`
+  > Detailed product description with formatting support (500-5000
+  > characters). Includes features, benefits, care instructions, and
+  > specifications.
+- `brand`: Product brand or manufacturer name for categorization and filtering.
 - `status`
-  > Variant status: active (available for sale), inactive (hidden),
-  > discontinued (no longer sold)
-- `created_at`: Timestamp when variant was created
-- `updated_at`: Timestamp when variant was last modified
+  > Product lifecycle status: draft (unpublished), published (visible),
+  > unpublished (hidden temporarily), archived (retired). Controls customer
+  > visibility and purchase availability.
+- `condition`
+  > Product condition: New, Like New, Refurbished, Used. Indicates product
+  > quality and origin.
+- `weight`
+  > Product weight in kilograms for shipping calculations. Required for
+  > accurate rate quotes.
+- `length`: Product length in centimeters for shipping and packaging dimensions.
+- `width`: Product width in centimeters for shipping and packaging dimensions.
+- `height`: Product height in centimeters for shipping and packaging dimensions.
+- `material`
+  > Primary material composition (textile, plastic, metal, wood, etc.). Used
+  > for filtering and category-specific requirements.
+- `care_instructions`
+  > Detailed care and maintenance instructions for the product. Helps
+  > customers properly use and maintain purchased items.
+- `warranty_months`
+  > Warranty coverage period in months (0 means no warranty). Used for seller
+  > differentiation and customer confidence.
+- `manufacturing_country`
+  > Country where product is manufactured. Required for international
+  > shipping and compliance documentation.
+- `is_configurable`
+  > Whether product has variants with selectable options (true) or is a
+  > single-item product (false). Determines variant hierarchy.
+- `created_at`: Timestamp when product was created by seller.
+- `updated_at`: Timestamp when product information was last modified.
+- `deleted_at`
+  > Soft deletion timestamp. When set, product is hidden from customers but
+  > preserved for compliance and historical reference.
 
-### `shopping_mall_product_images`
+### `ecommerce_mall_product_variants`
 
-Product image metadata and references for display in product catalogs and
-detail pages. Stores image URLs, metadata, and display order. Multiple
-images per product enable comprehensive product visualization from
-different angles and contexts. Images are essential for customer product
-discovery and decision-making.
+Specific product configurations defined by attribute combinations.
+
+Variants represent distinct combinations of product attributes (such as
+color, size, material, or custom options) that constitute separate
+purchasable items. Each variant is uniquely identified by its attribute
+combination and linked to exactly one SKU for inventory tracking.
+Variants enable sellers to offer products in multiple configurations
+while maintaining a unified product identity.
+
+Variants inherit product-level information (name, description, images)
+from their parent product but can have variant-specific pricing, images,
+and descriptions. This separation allows flexible product management
+where base information is shared but configuration-specific details can
+be customized.
+
+Variants support the core e-commerce requirement of allowing customers to
+select product configurations during checkout. The variant structure
+enables precise inventory tracking at the SKU level while maintaining
+logical product grouping.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_product_id`
-  > Reference to the product this image belongs to. {@link
-  > shopping_mall_products.id}
-- `image_url`: URL or path to the product image file (stored in CDN or cloud storage)
-- `thumbnail_url`: URL to optimized thumbnail version of the image for listings
+- `ecommerce_mall_product_id`: Parent product this variant belongs to. [ecommerce_mall_products.id](#ecommerce_mall_products)
+- `sku_code`
+  > System-generated or seller-provided SKU code uniquely identifying this
+  > variant. Used for inventory tracking and order fulfillment.
+- `attribute_combination`
+  > JSON string encoding the attribute combination defining this variant
+  > (e.g., {"color": "Red", "size": "Large"}). Used to identify and group
+  > variants by configuration.
+- `display_name`
+  > Human-readable variant name shown to customers (e.g., "Red, Size Large").
+  > Generated from attributes or manually set by seller.
+- `base_price`
+  > Base price in the platform's default currency (USD or regional
+  > equivalent). Variant-specific pricing allows different costs for
+  > different configurations.
+- `cost_of_goods`
+  > Seller's cost to source this variant (not visible to customers). Used for
+  > margin calculations and seller analytics.
+- `image_url`
+  > URL to variant-specific product image. If empty, variant uses parent
+  > product images. Allows showing actual color/configuration to customers.
+- `description_override`
+  > Variant-specific description override (e.g., "This version includes extra
+  > padding"). Supplements parent product description with
+  > configuration-specific details.
+- `is_available`
+  > Whether this variant is currently available for purchase. Can be false
+  > while product is published (e.g., out of stock, discontinued specific
+  > configuration).
+- `sort_order`
+  > Display order for variant in customer selection interface. Lower numbers
+  > display first.
+- `created_at`: Timestamp when variant was created.
+- `updated_at`: Timestamp when variant was last modified.
+
+### `ecommerce_mall_product_skus`
+
+Stock-keeping units tracking inventory at the variant level.
+
+SKUs represent the atomic unit for inventory management, linking each
+product variant to a unique inventory tracking identifier. Each SKU
+maintains a 1:1 relationship with a product variant, enabling precise
+stock tracking for specific configurations. SKUs serve as the
+authoritative record for inventory quantities, reservations, and
+historical stock data.
+
+The SKU record stores inventory state information required for accurate
+stock management, including current available quantity, reserved
+inventory for pending orders, and low-stock thresholds. SKUs are
+referenced during order placement to verify availability and allocate
+inventory, ensuring accurate inventory counts and preventing overselling.
+
+SKU records integrate with the inventory management system, linking to
+stock level records, reservations, and adjustment history. This
+separation of inventory tracking from variant definition enables
+efficient inventory operations without coupling product configuration
+management to stock management.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_product_variant_id`
+  > Product variant this SKU represents. 1:1 relationship with variant.
+  > [ecommerce_mall_product_variants.id](#ecommerce_mall_product_variants)
+- `sku_code`
+  > Unique SKU identifier matching variant's sku_code. Redundant copy for
+  > inventory system efficiency and denormalization.
+- `total_stock`
+  > Total physical inventory quantity available. Sum of available plus
+  > reserved plus damaged units.
+- `reserved_stock`
+  > Inventory quantity allocated to confirmed but unfulfilled orders.
+  > Calculated as sum of inventory reservations for pending orders.
+- `available_stock`
+  > Calculated available quantity for purchase (total_stock - reserved_stock
+  > - damaged). Used for checkout validation and display.
+- `damaged_stock`
+  > Inventory quantity determined to be defective or unsaleable. Tracked
+  > separately for inventory accuracy and loss analysis.
+- `low_stock_threshold`
+  > Seller-configured quantity threshold triggering low-stock alerts.
+  > Defaults based on product price tier. When available_stock <= threshold,
+  > alerts are sent.
+- `reorder_point`
+  > Calculated quantity suggesting when seller should reorder based on sales
+  > velocity. Future feature for demand planning.
+- `last_stock_audit_date`
+  > Timestamp of most recent physical inventory count verification. Used to
+  > assess inventory accuracy and identify discrepancies.
+- `last_audit_result`
+  > Result of last inventory audit: Pass (matched), Fail (discrepancy), or
+  > Pending (not yet audited).
+- `created_at`: Timestamp when SKU record was created.
+- `updated_at`: Timestamp when SKU inventory quantities were last modified.
+
+### `ecommerce_mall_product_options`
+
+Configurable product attributes enabling variant definition.
+
+Product options represent the attributes that can be selected when
+configuring product variants (such as color, size, material, or custom
+options). Each option defines a set of possible values that customers can
+choose from when purchasing. Options are product-level configuration
+templates that define what attributes are available for selection.
+
+Options are typically drawn from a standard set (Color, Size, Material)
+but sellers can also define custom options for specialized products. Each
+option has a name, description, and a set of associated option values
+representing the specific choices available for that option.
+
+The product options table serves as a configuration registry, defining
+what variant attributes are configurable for each product. This
+separation enables efficient management of variant possibilities without
+requiring variant records to store attribute metadata, supporting
+scalable product variant management.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_product_id`: Product this option applies to. [ecommerce_mall_products.id](#ecommerce_mall_products)
+- `name`
+  > Option name (e.g., "Color", "Size", "Material"). Standard values include
+  > Color, Size, Style, Capacity, Width, Length. Supports custom options for
+  > specialized products.
+- `display_name`
+  > Customer-facing option label (e.g., "Available Colors", "Size Options").
+  > Used in variant selection interface.
+- `description`
+  > Description of what this option represents and how customer selection
+  > affects the product. Helps customers understand option impact.
+- `is_required`
+  > Whether customer must select this option to complete product
+  > configuration (true) or if it's optional (false). Controls variant
+  > selection requirements.
+- `input_type`
+  > How option values are presented to customers: dropdown (select from
+  > list), color_swatch (visual color selection), size_chart (size
+  > selection), text_input (customer enters custom value), numeric (numeric
+  > input with range).
 - `display_order`
-  > Sequence order for displaying images (primary image is typically
-  > display_order = 1)
-- `alt_text`: Alternative text for accessibility and SEO (describes image content)
-- `uploaded_at`: Timestamp when image was uploaded
+  > Order in which options appear in variant selection interface. Lower
+  > numbers display first.
+- `created_at`: Timestamp when option was created.
+- `updated_at`: Timestamp when option was last modified.
 
-### `shopping_mall_product_specifications`
+### `ecommerce_mall_product_option_values`
 
-Flexible key-value product specifications storing technical and
-functional details (e.g., processor type, RAM, color options, materials).
-Enables products with diverse attributes without schema modification.
-Specifications are displayed on product detail pages to help customers
-understand detailed product features and make informed purchasing
-decisions.
+Specific values available for product options.
 
-Properties as follows:
+Option values represent the distinct choices available for each product
+option. For example, a Color option might have values like Red, Blue,
+Green, etc., while a Size option might have S, M, L, XL. Option values
+are the concrete selections customers make when configuring product
+variants.
 
-- `id`: Primary Key.
-- `shopping_mall_product_id`
-  > Reference to the product these specifications belong to. {@link
-  > shopping_mall_products.id}
-- `spec_key`
-  > Specification name/key (e.g., 'Color', 'Material', 'Processor', 'Memory',
-  > 'Resolution')
-- `spec_value`
-  > Specification value (e.g., 'Red', 'Cotton', 'Intel i7', '16GB',
-  > '1920x1080')
-- `spec_type`
-  > Data type of specification: text, number, boolean, selection (for
-  > filtering and display purposes)
-- `display_order`: Order in which specification is displayed on product detail page
+Each option value stores its display information, including the value
+name, color code (for color options), and sort order. Option values can
+be standard predefined values (from platform color palette or size
+charts) or custom values defined by the seller for specialty items.
 
-### `shopping_mall_product_categories_mapping`
-
-Junction table managing many-to-many relationship between products and
-categories. Enables a product to belong to multiple categories for
-improved discoverability (primary category + up to 4 secondary
-categories). Supports category hierarchy navigation and advanced
-filtering in product search and browse experiences.
+Option values are linked to product options, creating the complete option
+configuration template. When sellers define variant attributes, they
+specify which option values are available for each option, and the system
+automatically generates all possible variant combinations from the
+selected option values.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_product_id`
-  > Reference to the product in this category mapping. {@link
-  > shopping_mall_products.id}
-- `shopping_mall_category_id`
-  > Reference to the category this product is assigned to. {@link
-  > shopping_mall_categories.id}
+- `ecommerce_mall_product_option_id`
+  > Product option this value belongs to. {@link
+  > ecommerce_mall_product_options.id}
+- `value_name`
+  > Display name of this option value (e.g., "Red", "Large", "Cotton"). Shown
+  > to customers during variant selection.
+- `value_code`
+  > Internal code for the value (e.g., "red", "lg", "cotton"). Used in
+  > attribute_combination JSON and system processing.
+- `color_code`
+  > Hex color code for color-type options (e.g., "#FF0000" for red). Used for
+  > visual color swatches in UI.
+- `image_url`
+  > Image URL showing this option value (e.g., shoe in this color). Used for
+  > visual representation in variant selection.
+- `additional_cost`
+  > Additional price for this option value (e.g., larger sizes might cost
+  > more). Allows price variation based on selected options.
+- `display_order`
+  > Display order of this value within the option. Lower numbers display
+  > first.
+- `is_available`
+  > Whether this option value is currently available for new variant
+  > creation. Can be false for discontinued options.
+- `created_at`: Timestamp when option value was created.
+- `updated_at`: Timestamp when option value was last modified.
+
+### `ecommerce_mall_product_images`
+
+Product and variant-specific images for customer viewing.
+
+Product images represent the visual media assets associated with products
+and variants, enabling customers to see what they're purchasing. Images
+can be attached at the product level (applying to all variants) or at the
+variant level (showing specific configurations like a product in a
+particular color).
+
+Each image record stores the image URL, image type (main, detail,
+lifestyle, size_chart), display order, and variant-specific association.
+The system automatically generates optimized versions for different
+device sizes (mobile, tablet, desktop) and formats (WebP, PNG) to ensure
+fast loading and proper display across platforms.
+
+Images are critical for e-commerce conversion, allowing customers to
+evaluate products visually before purchase. Variant-specific images
+showing the actual color or configuration help reduce returns and
+increase customer satisfaction by eliminating ambiguity about product
+appearance.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_product_id`: Product these images belong to. [ecommerce_mall_products.id](#ecommerce_mall_products)
+- `ecommerce_mall_product_variant_id`
+  > Specific variant this image applies to (if variant-specific). If null,
+  > image applies to all variants. [ecommerce_mall_product_variants.id](#ecommerce_mall_product_variants)
+- `image_url`
+  > URL to the product image hosted on CDN. Optimized for web delivery with
+  > format conversion and responsive sizing.
+- `image_type`
+  > Image purpose/type: main (primary product view), detail (close-up of
+  > features), lifestyle (product in use), size_chart (size reference),
+  > comparison (comparison to similar items), other.
+- `alt_text`
+  > Accessibility alt text describing image content. Used for SEO and screen
+  > readers. Example: "Blue Nike Running Shoe, lateral view showing
+  > cushioning detail".
+- `display_order`
+  > Display order of image in product gallery. Lower numbers show first. Main
+  > image typically has order 1.
 - `is_primary`
-  > Flag indicating if this is the product's primary category (only one
-  > primary per product)
+  > Whether this is the primary/featured image shown in search results and
+  > product thumbnails. Only one per product should be primary.
+- `file_size_kb`
+  > Original uploaded image file size in kilobytes. Helps track optimization
+  > effectiveness and storage usage.
+- `image_width`
+  > Original image width in pixels. Used for responsive sizing and aspect
+  > ratio calculations.
+- `image_height`
+  > Original image height in pixels. Used for responsive sizing and aspect
+  > ratio calculations.
+- `created_at`: Timestamp when image was uploaded.
+- `updated_at`: Timestamp when image metadata was last updated (alt text, order, etc.).
+
+### `ecommerce_mall_product_attributes`
+
+Product specifications and detailed attribute information.
+
+Product attributes represent detailed product characteristics and
+specifications beyond variant-defining options. Attributes provide
+structured, searchable information about product properties such as
+material composition, care instructions, safety certifications, and
+technical specifications.
+
+Unlike options which define variant configurations, attributes are fixed
+product specifications that apply uniformly across all variants (or can
+vary by variant if needed). Attributes enable rich product information
+presentation and support category-specific attribute requirements,
+allowing customers to compare products based on detailed specifications.
+
+Attributes are commonly used for filtering and search refinement, helping
+customers find products matching their specific needs (e.g., filter
+shirts by material = cotton). The attribute structure supports both
+predefined category-specific attributes and custom seller-defined
+attributes for specialized product types.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_product_id`: Product this attribute describes. [ecommerce_mall_products.id](#ecommerce_mall_products)
+- `attribute_name`
+  > Name of the attribute (e.g., "Material", "Care Instructions", "Water
+  > Resistance", "Warranty"). Maps to category-defined attribute templates.
+- `attribute_value`
+  > Specific value for this attribute (e.g., "Cotton", "Machine wash cold",
+  > "IP67 waterproof"). Can be predefined or free-form text depending on
+  > attribute type.
+- `value_type`
+  > Data type of the attribute value: text (free text), predefined (from
+  > standard list), numeric (number with unit), boolean (yes/no), list
+  > (comma-separated values).
 - `display_order`
-  > Order in which category should be displayed in category
-  > navigation/breadcrumbs
-
-### `shopping_mall_product_pricing_history`
-
-Historical audit trail of all product price changes tracking when prices
-were modified, what they changed to, and who initiated the change.
-Enables price trend analysis, seller pricing behavior tracking, and
-dispute resolution by providing complete pricing history. Supports
-business intelligence on pricing strategies and market dynamics.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_id`
-  > Reference to the product whose price changed. {@link
-  > shopping_mall_products.id}
-- `shopping_mall_product_variant_id`
-  > Reference to specific variant if price change is variant-specific
-  > (optional, null if product-level change). {@link
-  > shopping_mall_product_variants.id}
-- `previous_price`: Price before the change
-- `new_price`: Price after the change
-- `change_reason`
-  > Reason for price change (e.g., 'promotion', 'cost_adjustment',
-  > 'competitor_response', 'manual_adjustment')
-- `changed_by`: Identity of who initiated the price change ('seller', 'admin', 'system')
-- `changed_at`: Timestamp when price change was applied
-
-### `shopping_mall_product_snapshots`
-
-Point-in-time historical snapshots of complete product state capturing
-product details, prices, specifications, and variant information at
-specific moments. Used for audit trails, price history tracking, and
-dispute resolution. Enables reconstruction of exact product state at any
-past date. Snapshots preserve product data even after product is modified
-or deleted.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_id`
-  > Reference to the product this snapshot captures. {@link
-  > shopping_mall_products.id}
-- `product_name`: Product name at snapshot time
-- `product_description`: Product description at snapshot time
-- `base_price`: Product base price at snapshot time
-- `status`: Product status at snapshot time (active, inactive, draft, discontinued)
-- `product_data_json`
-  > Complete product data serialized as JSON (includes all details, variants,
-  > specifications) for historical preservation
-- `snapshot_reason`
-  > Reason snapshot was created (e.g., 'price_change', 'description_update',
-  > 'status_change', 'pre_order', 'dispute_evidence')
-- `created_at`
-  > Timestamp when snapshot was captured (represents the moment in time this
-  > snapshot documents)
+  > Display order of attribute in product detail page. Lower numbers display
+  > first.
+- `is_searchable`
+  > Whether customers can filter products by this attribute in search/browse.
+  > Used to optimize search facets.
+- `is_comparable`
+  > Whether this attribute should appear in product comparison tools. Helps
+  > customers compare similar products side-by-side.
+- `created_at`: Timestamp when attribute was assigned to product.
+- `updated_at`: Timestamp when attribute value was last modified.
 
 ## Inventory
 
 ```mermaid
 erDiagram
-"shopping_mall_inventory_skus" {
+"ecommerce_mall_stock_levels" {
   String id PK
-  String shopping_mall_product_variant_id FK,UK
-  String shopping_mall_seller_id FK
-  String sku_code UK
-  Int quantity_on_hand
-  Int quantity_reserved
-  Int quantity_committed
-  Int quantity_available
-  Int reorder_level
-  Int reorder_quantity
-  String warehouse_location "nullable"
-  String status
-  DateTime last_inventory_count_date "nullable"
-  DateTime last_updated
+  String product_sku_id FK,UK
+  String seller_id FK
+  Int total_stock
+  Int reserved_stock
+  String stock_status
+  Int low_stock_threshold
+  DateTime last_updated_timestamp
+  Int inventory_version
   DateTime created_at
+  DateTime updated_at
 }
-"shopping_mall_inventory_reservations" {
+"ecommerce_mall_stock_reservations" {
   String id PK
-  String shopping_mall_inventory_sku_id FK
-  String shopping_mall_customer_id FK
-  String shopping_mall_shopping_cart_id FK "nullable"
-  Int quantity_reserved
-  DateTime reserved_at
-  DateTime expires_at
-  String status
+  String product_sku_id FK
+  String order_id FK "nullable"
+  String cart_session_id FK "nullable"
+  String seller_id FK
+  Int reserved_quantity
+  String reservation_type
+  DateTime created_at
+  DateTime expires_at "nullable"
+  DateTime confirmed_at "nullable"
+  DateTime released_at "nullable"
 }
-"shopping_mall_inventory_movements" {
+"ecommerce_mall_stock_adjustments" {
   String id PK
-  String shopping_mall_inventory_sku_id FK
-  String shopping_mall_seller_id FK
-  String shopping_mall_order_id FK "nullable"
-  String movement_type
-  Int quantity_change
+  String product_sku_id FK
+  String seller_id FK
+  String order_id FK "nullable"
+  String admin_approver_id FK "nullable"
+  Int original_quantity
+  Int adjusted_quantity
+  Int adjustment_amount
+  String adjustment_reason
+  String detailed_notes "nullable"
+  String approval_status
+  String approval_reason "nullable"
+  DateTime created_at
+  DateTime approved_at "nullable"
+  DateTime applied_at "nullable"
+}
+"ecommerce_mall_stock_history" {
+  String id PK
+  String product_sku_id FK
+  String seller_id FK
+  String order_id FK "nullable"
+  String event_type
   Int quantity_before
   Int quantity_after
-  String reason
-  String initiated_by_actor_type
-  String initiated_by_actor_id "nullable"
+  Int quantity_changed
+  Int reserved_before
+  Int reserved_after
+  String event_source
   String reference_id "nullable"
-  DateTime timestamp
   String notes "nullable"
+  DateTime created_at
 }
-"shopping_mall_stock_levels_by_location" {
+"ecommerce_mall_low_stock_alerts" {
   String id PK
-  String shopping_mall_inventory_sku_id FK
-  String shopping_mall_seller_id FK
-  String location_code
-  String location_name
-  String location_address "nullable"
-  Int quantity_on_hand
-  Int quantity_reserved
-  DateTime last_inventory_sync "nullable"
-  Boolean is_active
-}
-"shopping_mall_inventory_alerts" {
-  String id PK
-  String shopping_mall_inventory_sku_id FK
-  String shopping_mall_seller_id FK
-  String alert_type
-  String alert_level
-  Int current_quantity
-  Int threshold_quantity
-  String message
+  String product_sku_id FK
+  String seller_id FK
+  Int current_stock
+  Int threshold_level
+  String alert_status
+  Int notifications_sent
   DateTime created_at
   DateTime acknowledged_at "nullable"
-  Boolean is_active
-  DateTime notification_sent_at "nullable"
+  DateTime resolved_at "nullable"
+  DateTime last_notification_sent_at "nullable"
 }
-"shopping_mall_inventory_reservations" }o--|| "shopping_mall_inventory_skus" : inventorySku
-"shopping_mall_inventory_movements" }o--|| "shopping_mall_inventory_skus" : inventorySku
-"shopping_mall_stock_levels_by_location" }o--|| "shopping_mall_inventory_skus" : inventorySku
-"shopping_mall_inventory_alerts" }o--|| "shopping_mall_inventory_skus" : inventorySku
 ```
 
-### `shopping_mall_inventory_skus`
+### `ecommerce_mall_stock_levels`
 
-Current inventory state tracking at the SKU (Stock Keeping Unit) level.
-This table maintains the latest inventory counts for each product
-variant, including on-hand quantity, reserved units, and committed sales.
-The SKU-level approach enables precise tracking of variant-specific
-availability without aggregating across different colors, sizes, or
-configurations. This table is the authoritative source for real-time
-inventory status displayed to customers and sellers.
+Real-time inventory tracking at the individual SKU level. This table
+maintains the authoritative source of truth for product variant stock
+quantities, preventing overselling and providing immediate visibility to
+customers and sellers.
 
-Properties as follows:
+Each SKU (Stock-Keeping Unit) represents a unique product variant
+combination (base product + color + size + options). This table tracks
+the current state: total available inventory, quantities reserved for
+pending orders, and stock status classification.
 
-- `id`: Primary Key.
-- `shopping_mall_product_variant_id`
-  > Reference to product variant being tracked. {@link
-  > shopping_mall_product_variants.id}
-- `shopping_mall_seller_id`
-  > Reference to seller who owns this SKU inventory. {@link
-  > shopping_mall_sellers.id}
-- `sku_code`
-  > Unique SKU identifier for this variant (e.g., SHIRT-BLUE-M-001). Maximum
-  > 50 characters, alphanumeric with hyphens and underscores allowed.
-- `quantity_on_hand`
-  > Current physical inventory count available in warehouse. Non-negative
-  > integer representing units physically in stock.
-- `quantity_reserved`
-  > Units temporarily held for active customer shopping carts. These units
-  > are unavailable for other customers but not yet committed to orders.
-- `quantity_committed`
-  > Units allocated to confirmed orders awaiting fulfillment. These represent
-  > sold inventory in the fulfillment pipeline.
-- `quantity_available`
-  > Calculated field: quantity_on_hand minus quantity_reserved minus
-  > quantity_committed. Represents units available for immediate purchase.
-- `reorder_level`
-  > Inventory threshold that triggers low-stock alerts to seller. When
-  > quantity_on_hand falls to or below this level, seller receives
-  > notification. Default value 10 units.
-- `reorder_quantity`
-  > Suggested reorder amount when stock falls below reorder level. Calculated
-  > based on sales velocity and storage capacity. Default 50 units.
-- `warehouse_location`
-  > Physical warehouse or storage location for this SKU (e.g., 'Warehouse A -
-  > Shelf 3-B'). Optional field for sellers with multiple fulfillment
-  > locations.
-- `status`
-  > Inventory status: 'on_hand' (in stock and available), 'back_order'
-  > (temporarily out, reorder pending), 'discontinued' (no longer stocked).
-  > Determines product availability to customers.
-- `last_inventory_count_date`
-  > Timestamp of most recent physical inventory count or audit for this SKU.
-  > Used to identify stale inventory data.
-- `last_updated`
-  > Timestamp when any inventory field was last modified. Updated on every
-  > inventory change (purchase, restock, adjustment).
-- `created_at`: Timestamp when this SKU inventory record was first created.
+The system guarantees inventory accuracy through atomic transactions and
+prevents double-booking of inventory to multiple customers. Stock levels
+are updated in real-time when orders are placed, cancelled, or fulfilled,
+and when sellers manually adjust inventory.
 
-### `shopping_mall_inventory_reservations`
-
-Tracks temporary inventory holds for items in customer shopping carts.
-When a customer adds items to cart, inventory is reserved to prevent
-overselling during the checkout window. Reservations are automatically
-released after inactivity timeout (15 minutes default) or converted to
-committed sales when order is placed. This table enables accurate
-real-time availability display to multiple concurrent customers.
+Integration with order management ensures inventory reservations are
+created at checkout and confirmed at payment. Integration with product
+catalog displays current availability to customers. Sellers access this
+table through their inventory management dashboard.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_inventory_sku_id`
-  > Reference to the SKU being reserved. {@link
-  > shopping_mall_inventory_skus.id}
-- `shopping_mall_customer_id`
-  > Reference to customer who created the reservation. {@link
-  > shopping_mall_customers.id}
-- `shopping_mall_shopping_cart_id`
-  > Reference to shopping cart containing this reservation. {@link
-  > shopping_mall_shopping_carts.id}
-- `quantity_reserved`
-  > Number of units reserved for this customer's cart. Positive integer
-  > representing held inventory.
-- `reserved_at`: Timestamp when inventory was reserved (when customer added item to cart).
+- `product_sku_id`
+  > Link to the specific product variant's {@link
+  > ecommerce_mall_product_skus.id}. Each SKU has independent inventory
+  > tracking.
+- `seller_id`
+  > Link to the seller who owns this product and manages this inventory.
+  > Enforces complete inventory isolation between sellers. Seller ID is
+  > inherited from the product_skus relationship's parent product.
+- `total_stock`
+  > Total physical inventory quantity currently held. This is the complete
+  > count of all units available. Must be non-negative. Updated when orders
+  > are placed (decrease), cancelled (increase), or seller adjusts inventory.
+- `reserved_stock`
+  > Quantity allocated to orders that are confirmed or processing but not yet
+  > shipped. Reserved inventory is unavailable for new customer purchases.
+  > Released back to available when orders are cancelled. Becomes sold
+  > inventory when orders are fulfilled and shipped.
+- `stock_status`
+  > Current classification of this SKU's inventory status. Valid values: 'In
+  > Stock' (above low stock threshold), 'Low Stock' (at or below threshold
+  > but above zero), 'Out of Stock' (zero units available), 'Discontinued'
+  > (seller no longer offering this variant). Status determines customer
+  > visibility and add-to-cart availability.
+- `low_stock_threshold`
+  > Seller-configured quantity that triggers low stock alerts. When available
+  > inventory equals or falls below this threshold, the system generates low
+  > stock alert notifications. Default thresholds: 5 for products <$50, 3 for
+  > products $50-$500, 1 for products >$500.
+- `last_updated_timestamp`
+  > UTC timestamp of the most recent inventory change. Updated whenever
+  > total_stock, reserved_stock, or stock_status changes. Provides audit
+  > trail of inventory modifications. Precision to the second.
+- `inventory_version`
+  > Version number incremented with each inventory change. Prevents stale
+  > update conflicts in high-concurrency scenarios where multiple processes
+  > attempt simultaneous inventory modifications. Enables optimistic locking
+  > for data consistency.
+- `created_at`
+  > Timestamp when this stock level record was initially created (typically
+  > when seller creates the product variant). Used for audit trail and
+  > historical reference.
+- `updated_at`
+  > Timestamp of the most recent update to any field in this record. Updated
+  > whenever any inventory change occurs including stock quantity changes,
+  > status changes, or threshold adjustments.
+
+### `ecommerce_mall_stock_reservations`
+
+Temporary inventory holds during the checkout and order placement
+process. This table manages the inventory lifecycle from cart through
+order confirmation, preventing overselling when multiple customers
+purchase the same limited-stock item simultaneously.
+
+Reservations are created when customers initiate checkout (soft
+reservation for 30 minutes), validated at payment time, and converted to
+permanent allocations when orders are confirmed. Reservations are
+released if checkout is abandoned, payment fails, or order is cancelled.
+
+The system uses reservations to enable the customer experience of
+protecting their cart items through the checkout process while still
+making inventory available if customers abandon their carts. Automatic
+expiration of aged reservations returns inventory to available stock.
+
+Reservations are strictly managed by the system and not directly visible
+to end users. They enable the atomic all-or-nothing order creation:
+either the entire order reserves inventory and is created, or nothing is
+reserved and order creation fails with specific error message.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `product_sku_id`
+  > Link to the specific product variant being reserved. References {@link
+  > ecommerce_mall_product_skus.id}. Each SKU can have multiple reservations
+  > from different customers or carts.
+- `order_id`
+  > Link to the order that this inventory reservation belongs to. References
+  > [ecommerce_mall_orders.id](#ecommerce_mall_orders). When order is confirmed, reservation is
+  > converted to permanent allocation. When order is cancelled, reservation
+  > is released.
+- `cart_session_id`
+  > Link to the shopping cart session. References {@link
+  > ecommerce_mall_shopping_carts.id}. During checkout, inventory is
+  > soft-reserved for the cart. If checkout completes, order_id is set and
+  > cart_session_id is cleared. If checkout abandoned, reservation expires.
+- `seller_id`
+  > Link to the seller who owns this inventory. References {@link
+  > ecommerce_mall_sellers.id}. Enables seller-specific reservation tracking
+  > and isolation of inventory across sellers.
+- `reserved_quantity`
+  > Number of units of this SKU that are being held by this reservation. Must
+  > be positive integer. Exactly matches the quantity the customer is
+  > attempting to purchase (no partial reservations allowed).
+- `reservation_type`
+  > Classification of reservation lifecycle stage. Valid values:
+  > 'soft_reservation' (temporary hold during checkout, expires after 30
+  > minutes), 'hard_reservation' (confirmed for confirmed orders, released
+  > when order shipped), 'expired' (aged soft reservation, inventory released
+  > back to available).
+- `created_at`
+  > UTC timestamp when this reservation was created. For soft reservations,
+  > this is when customer initiated checkout. For hard reservations, this is
+  > when order was confirmed and payment succeeded.
 - `expires_at`
-  > Timestamp when reservation automatically expires if not converted to
-  > order. Typically 15 minutes after reserved_at. After this time, inventory
-  > is automatically released.
-- `status`
-  > Reservation status: 'active' (currently reserved), 'expired' (reservation
-  > timed out), 'released' (customer removed from cart), 'converted'
-  > (converted to committed sales). Used to track reservation lifecycle.
+  > UTC timestamp when soft reservation automatically expires and inventory
+  > is released. Calculated as created_at + 30 minutes for soft reservations.
+  > NULL for hard reservations (no expiration).
+- `confirmed_at`
+  > UTC timestamp when soft reservation was confirmed/converted to hard
+  > reservation (order payment succeeded). NULL for soft reservations that
+  > haven't yet been confirmed.
+- `released_at`
+  > UTC timestamp when this reservation was released/cancelled. Set when
+  > order is cancelled, checkout abandoned, or soft reservation expires. NULL
+  > for active reservations.
 
-### `shopping_mall_inventory_movements`
+### `ecommerce_mall_stock_adjustments`
 
-Immutable audit trail of every inventory change (purchase, restock,
-return, adjustment, damage). Each movement record captures the complete
-context of the inventory change including reason, actor, and before/after
-quantities. This append-only table prevents data loss and enables
-complete compliance reporting and historical analysis. Movements are
-never updated, only added; inventory corrections are recorded as new
-movements.
+Record of inventory adjustments made by sellers and system processes.
+This table tracks all modifications to inventory quantities beyond normal
+order-based changes, providing complete audit trail for inventory
+reconciliation and compliance.
+
+Adjustments capture manual seller corrections (damaged goods discovered,
+inventory count discrepancies), automatic system adjustments (order
+cancellations restoring stock, returns processed), and administrative
+corrections. Each adjustment includes detailed reason codes and optional
+notes for investigation.
+
+Small adjustments (0-5 units) are applied immediately. Medium adjustments
+(5-25 units) require admin approval within 24 hours. Large adjustments
+(25+ units) require priority admin review within 4 hours. The approval
+workflow prevents fraud and ensures data integrity.
+
+All adjustments are immutable once recorded (cannot be edited),
+maintaining strict audit trail. Adjustment history is available for 3+
+years for compliance and forensic analysis.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_inventory_sku_id`
-  > Reference to SKU affected by this movement. {@link
-  > shopping_mall_inventory_skus.id}
-- `shopping_mall_seller_id`
-  > Reference to seller owning the inventory affected by this movement.
-  > [shopping_mall_sellers.id](#shopping_mall_sellers)
-- `shopping_mall_order_id`
-  > Reference to order if movement is purchase-related. {@link
-  > shopping_mall_orders.id}
-- `movement_type`
-  > Type of inventory movement: 'sale' (customer purchase), 'restock' (new
-  > inventory received), 'return' (customer returned item), 'adjustment'
-  > (manual correction), 'damage' (damaged items removed), 'loss' (inventory
-  > loss/theft), 'correction' (system correction)
-- `quantity_change`
-  > Quantity affected by movement. Positive for increases (restock), negative
-  > for decreases (sale, damage). Can be zero for no-op movements.
+- `product_sku_id`
+  > Link to the specific product variant being adjusted. References {@link
+  > ecommerce_mall_product_skus.id}. Each adjustment applies to one SKU only
+  > (no bulk adjustments in single record).
+- `seller_id`
+  > Link to the seller who requested or initiated this adjustment. References
+  > [ecommerce_mall_sellers.id](#ecommerce_mall_sellers). Records which seller's inventory is
+  > being adjusted (audit trail).
+- `order_id`
+  > Link to related order if adjustment is order-related (cancellation,
+  > return, fulfillment). References [ecommerce_mall_orders.id](#ecommerce_mall_orders). NULL
+  > for non-order adjustments (damage, count correction, loss). Enables
+  > tracing adjustments back to specific orders.
+- `admin_approver_id`
+  > Link to the admin user who approved this adjustment (if approval was
+  > required). References [ecommerce_mall_admins.id](#ecommerce_mall_admins). NULL for
+  > adjustments that didn't require approval (small amounts, automatic system
+  > adjustments) or those pending approval.
+- `original_quantity`
+  > Inventory quantity before this adjustment was applied. Captured for audit
+  > trail and to enable reversal if needed. Used to calculate the adjustment
+  > delta (original - new = change amount).
+- `adjusted_quantity`
+  > Inventory quantity after this adjustment is applied. New quantity that
+  > replaces the original quantity. Must be non-negative (system prevents
+  > negative inventory).
+- `adjustment_amount`
+  > Calculated delta of the adjustment (adjusted_quantity -
+  > original_quantity). Positive for inventory increases, negative for
+  > decreases. Used for analytics and trend analysis (which adjustments
+  > reduce inventory most frequently).
+- `adjustment_reason`
+  > Reason code for this adjustment from predefined list. Valid values:
+  > 'damage_discovered', 'inventory_count_correction', 'loss_or_theft',
+  > 'order_cancellation_restore', 'order_fulfillment_complete',
+  > 'return_item_received', 'restock_received', 'system_correction',
+  > 'supplier_error_correction', 'other'. Enables tracking patterns (which
+  > reasons cause most adjustments).
+- `detailed_notes`
+  > Optional detailed explanation of the adjustment. Up to 1000 characters.
+  > Used for context beyond the reason code (e.g., 'Physical count was 15,
+  > system showed 10. Count performed by: John Smith on 2024-01-15'). Helps
+  > with investigation and prevents future discrepancies.
+- `approval_status`
+  > Status of the adjustment in the approval workflow. Valid values:
+  > 'applied' (no approval required, already in effect), 'pending_approval'
+  > (waiting for admin review), 'approved' (admin approved, now applied),
+  > 'denied' (admin rejected, not applied), 'cancelled' (was pending or
+  > approved, now cancelled).
+- `approval_reason`
+  > If approval_status is 'denied' or 'cancelled', this explains why. Helps
+  > seller understand rejection and prevents resubmission of same adjustment.
+- `created_at`
+  > UTC timestamp when this adjustment request was submitted. For
+  > seller-initiated adjustments, this is when seller requested the
+  > adjustment. For system-initiated adjustments, this is when system created
+  > the adjustment.
+- `approved_at`
+  > UTC timestamp when this adjustment was approved by admin (if approval was
+  > required). NULL if adjustment didn't require approval or is still pending
+  > approval.
+- `applied_at`
+  > UTC timestamp when this adjustment was actually applied to the
+  > stock_levels table. For small adjustments, same as created_at. For
+  > approved adjustments, same as approved_at. For denied adjustments, NULL
+  > (never applied).
+
+### `ecommerce_mall_stock_history`
+
+Complete immutable audit trail of all inventory movements and changes.
+This append-only table records every inventory adjustment with full
+context, enabling reconciliation, forensic analysis, and compliance
+reporting.
+
+Unlike stock_levels which stores only current state, stock_history
+preserves all historical inventory states. Each entry represents a single
+inventory event: order placed (reduction), order cancelled (restoration),
+order fulfilled (permanent decrease), seller adjustment (manual change),
+return processed (increase), etc.
+
+The historical record enables reconstruction of inventory state at any
+point in time (point-in-time recovery), investigation of discrepancies,
+trend analysis of inventory movements, and audit trail compliance.
+Entries are never deleted or modified (immutable log).
+
+Daily reconciliation compares current recorded inventory against
+historical events to detect data corruption or unauthorized
+modifications. Historical data retained for 7+ years per compliance
+requirements.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `product_sku_id`
+  > Link to the product variant whose inventory changed. References {@link
+  > ecommerce_mall_product_skus.id}. Each history entry tracks changes for
+  > one SKU.
+- `seller_id`
+  > Link to the seller who owns this inventory. References {@link
+  > ecommerce_mall_sellers.id}. Enables seller-specific history queries and
+  > inventory isolation verification.
+- `order_id`
+  > Link to related order if inventory change is order-related (placed,
+  > cancelled, fulfilled, return). References {@link
+  > ecommerce_mall_orders.id}. NULL for non-order changes (manual
+  > adjustments, damage).
+- `event_type`
+  > Classification of the inventory event that triggered this history entry.
+  > Valid values: 'order_placed' (inventory reserved), 'order_cancelled'
+  > (inventory released), 'order_fulfilled' (inventory marked sold),
+  > 'manual_adjustment' (seller or admin adjusted), 'damage_recorded' (items
+  > found damaged), 'return_received' (customer returned items),
+  > 'return_rejected' (return not accepted), 'inventory_count_correction'
+  > (count discrepancy fixed), 'system_correction' (system error corrected),
+  > 'restock' (new inventory received).
 - `quantity_before`
-  > Inventory on-hand quantity before this movement. Snapshot of the state
-  > before change.
+  > Total available inventory immediately before this event. Used to
+  > reconstruct historical inventory state at any point in time. Combined
+  > with quantity_after, shows the exact change.
 - `quantity_after`
-  > Inventory on-hand quantity after this movement. Should equal
-  > quantity_before + quantity_change.
-- `reason`
-  > Explanation for the inventory movement (e.g., 'Customer order placed',
-  > 'Damaged in warehouse', 'Supplier restock received', 'Inventory count
-  > discrepancy'). Maximum 500 characters.
-- `initiated_by_actor_type`
-  > Who initiated the movement: 'customer' (via purchase), 'seller' (via
-  > restock upload), 'admin' (manual adjustment), 'system' (automatic process
-  > like failed payment release)
-- `initiated_by_actor_id`
-  > ID of the actor (customer/seller/admin user) who initiated the movement.
-  > NULL for system-initiated movements.
+  > Total available inventory immediately after this event. The new inventory
+  > state after this event completed.
+- `quantity_changed`
+  > Change amount (quantity_after - quantity_before). Positive for increases,
+  > negative for decreases. Enables quick analysis of inventory trends
+  > without calculation.
+- `reserved_before`
+  > Reserved inventory quantity before this event. Tracks both available and
+  > reserved changes during order lifecycle.
+- `reserved_after`
+  > Reserved inventory quantity after this event. Shows how this event
+  > affected reservations (orders placed create reservations, cancellations
+  > remove reservations).
+- `event_source`
+  > Who or what triggered this inventory event. Valid values:
+  > 'customer_order' (customer placed order), 'seller_adjustment' (seller
+  > manually adjusted), 'admin_adjustment' (admin corrected),
+  > 'system_process' (automatic system process), 'return_process' (return
+  > fulfillment), 'order_cancellation' (automated cancellation).
 - `reference_id`
-  > External reference for tracing the movement to source (e.g., order ID,
-  > return authorization number, receipt number). Optional context for audit
-  > purposes.
-- `timestamp`
-  > Exact timestamp when inventory movement occurred. Used for complete audit
-  > trail and chronological ordering.
+  > Reference identifier for tracking the event source. For order events,
+  > this is the order ID. For adjustments, this is the adjustment ID. For
+  > system processes, this is the process/job ID. Enables drilling down to
+  > specific business event.
 - `notes`
-  > Additional notes about the movement (e.g., 'Items received in damaged
-  > condition', 'Partial return accepted'). Maximum 1000 characters,
-  > optional.
+  > Optional contextual notes about this inventory event. For example:
+  > 'Return received from customer, condition acceptable', 'Damage discovered
+  > during restock count', 'System correction after payment reversal'. Helps
+  > with investigation and troubleshooting.
+- `created_at`
+  > UTC timestamp when this inventory event occurred and was recorded.
+  > Precise to the second. Enables timeline reconstruction and temporal
+  > queries.
 
-### `shopping_mall_stock_levels_by_location`
+### `ecommerce_mall_low_stock_alerts`
 
-Optional multi-location inventory tracking for sellers with multiple
-warehouses or fulfillment centers. Tracks inventory quantities at
-specific geographic locations or facilities. Enables sellers to manage
-stock across warehouses and make location-based fulfillment decisions.
-Only used if seller has multiple locations; single-location sellers use
-main inventory_skus table.
+Alerts generated when product inventory falls below seller-configured
+thresholds. This table tracks low stock events and enables the
+notification system to alert sellers of depleting inventory.
 
-Properties as follows:
+When a product's available inventory decreases to or below the seller's
+configured low_stock_threshold, the system creates an alert record.
+Alerts trigger notifications to sellers via email, SMS, and in-app
+messaging to encourage timely reordering.
 
-- `id`: Primary Key.
-- `shopping_mall_inventory_sku_id`
-  > Reference to SKU tracked at this location. {@link
-  > shopping_mall_inventory_skus.id}
-- `shopping_mall_seller_id`
-  > Reference to seller who owns this location inventory. {@link
-  > shopping_mall_sellers.id}
-- `location_code`
-  > Unique identifier for warehouse/fulfillment location (e.g.,
-  > 'WAREHOUSE_NYC', 'WAREHOUSE_LA', 'FULFILLMENT_CENTER_1'). Maximum 50
-  > characters.
-- `location_name`
-  > Human-readable location name (e.g., 'New York Warehouse', 'Los Angeles
-  > Distribution Center'). Maximum 200 characters.
-- `location_address`
-  > Physical address of the warehouse location for reference and shipping
-  > purposes. Maximum 500 characters.
-- `quantity_on_hand`
-  > Physical inventory quantity at this specific location. Non-negative
-  > integer.
-- `quantity_reserved`
-  > Units reserved for orders at this location (should sum to
-  > quantity_on_hand across all locations).
-- `last_inventory_sync`
-  > Timestamp when inventory was last synchronized across locations. Used to
-  > identify stale data.
-- `is_active`
-  > Whether this location is currently active for fulfillment. Inactive
-  > locations may be archived or temporarily closed.
+The table prevents alert fatigue by tracking alert history and limiting
+notification frequency (maximum one alert per SKU per day). It also
+tracks alert acknowledgment (when seller marks they're aware and
+reordering) and resolution (when inventory is restocked above threshold).
 
-### `shopping_mall_inventory_alerts`
-
-Notifications triggered when inventory reaches threshold conditions (low
-stock, stockout, overstock). Tracks alert generation and acknowledgment
-status. Helps sellers proactively manage inventory before stockouts
-occur. Supports both automatic threshold-based alerts and manual alerts
-for inventory issues.
+Low stock alerts are system-generated based on inventory changes, not
+created manually. Each alert is immutable once created (represents a
+point-in-time event). Alert history enables analysis of which products
+frequently run low on stock, indicating demand patterns or inventory
+planning issues.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_inventory_sku_id`
-  > Reference to SKU that triggered the alert. {@link
-  > shopping_mall_inventory_skus.id}
-- `shopping_mall_seller_id`
-  > Reference to seller who owns the SKU and receives the alert. {@link
-  > shopping_mall_sellers.id}
-- `alert_type`
-  > Type of inventory condition triggering alert: 'low_stock' (below reorder
-  > level), 'stockout' (zero available), 'overstock' (exceeds warehouse
-  > capacity), 'slow_moving' (high inventory but low sales), 'discrepancy'
-  > (inventory mismatch)
-- `alert_level`
-  > Severity level: 'info' (informational only), 'warning' (action
-  > recommended), 'critical' (immediate action required). Determines
-  > notification urgency.
-- `current_quantity`: Current inventory level when alert was triggered. Snapshot for reference.
-- `threshold_quantity`
-  > Threshold that was crossed to trigger this alert (e.g., reorder level,
-  > zero for stockout, warehouse capacity limit).
-- `message`
-  > Alert message description (e.g., 'Stock level fell below reorder
-  > threshold of 10 units'). Maximum 500 characters.
-- `created_at`: Timestamp when alert was generated.
+- `product_sku_id`
+  > Link to the product variant with low inventory. References {@link
+  > ecommerce_mall_product_skus.id}. Each alert is specific to one SKU.
+- `seller_id`
+  > Link to the seller who owns this inventory and will receive the low stock
+  > alert. References [ecommerce_mall_sellers.id](#ecommerce_mall_sellers). Enables
+  > seller-specific alert tracking and notification delivery.
+- `current_stock`
+  > Actual available inventory quantity when this low stock alert was
+  > created. The quantity that triggered the alert. Snapshot of inventory
+  > state at alert time (used for historical reference).
+- `threshold_level`
+  > The seller's configured low stock threshold that was breached to trigger
+  > this alert. Recorded for audit trail (threshold may be changed by seller
+  > later).
+- `alert_status`
+  > Current status of this alert. Valid values: 'active' (alert triggered,
+  > notifications sent, awaiting action), 'acknowledged' (seller confirmed
+  > aware and is reordering), 'resolved' (inventory restocked above
+  > threshold), 'snoozed' (seller temporarily suppressed alerts for 24
+  > hours), 'dismissed' (seller marked as not concerning).
+- `notifications_sent`
+  > Count of notifications sent for this alert (email, SMS, push, etc.).
+  > Tracks notification delivery volume. Limited to 1 notification per
+  > 24-hour period to prevent alert fatigue.
+- `created_at`
+  > UTC timestamp when this low stock alert was automatically generated by
+  > the system (when inventory dropped to/below threshold).
 - `acknowledged_at`
-  > Timestamp when seller acknowledged/dismissed the alert. NULL if not yet
-  > acknowledged.
-- `is_active`
-  > Whether alert is still active or has been resolved. Alert becomes
-  > inactive when inventory recovers to normal levels.
-- `notification_sent_at`
-  > Timestamp when notification was sent to seller (email, SMS, in-app). Used
-  > to track notification delivery.
+  > UTC timestamp when seller acknowledged this alert (if acknowledged). NULL
+  > if still awaiting acknowledgment. Used to track seller response time to
+  > alerts.
+- `resolved_at`
+  > UTC timestamp when this alert was resolved (inventory restocked above
+  > threshold or alert manually resolved). NULL if still active or
+  > unresolved.
+- `last_notification_sent_at`
+  > UTC timestamp of most recent notification sent for this alert. Used to
+  > enforce 24-hour notification frequency limit (don't spam seller with
+  > duplicate alerts for same SKU).
 
 ## Shopping
 
 ```mermaid
 erDiagram
-"shopping_mall_shopping_carts" {
+"ecommerce_mall_shopping_carts" {
   String id PK
-  String shopping_customer_id FK,UK
-  String cart_status
-  Int total_items_count
-  Int total_quantity
+  String ecommerce_mall_customer_id FK,UK
   Float subtotal_amount
-  Float estimated_total_amount "nullable"
+  Float discount_amount
+  Float estimated_shipping_amount "nullable"
+  Float estimated_tax_amount "nullable"
+  Float grand_total_amount "nullable"
+  Int item_count
+  String status
+  String promo_code_applied "nullable"
+  String selected_address_id "nullable"
+  String selected_shipping_method "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"shopping_mall_shopping_cart_items" {
+"ecommerce_mall_cart_items" {
   String id PK
-  String shopping_cart_id FK
-  String shopping_product_id FK
-  String shopping_product_variant_id FK
+  String ecommerce_mall_shopping_cart_id FK
+  String ecommerce_mall_product_sku_id FK
+  String ecommerce_mall_seller_id FK
   Int quantity
   Float unit_price
   Float line_total
-  String variant_attributes_snapshot "nullable"
-  DateTime added_at
+  String variant_details "nullable"
+  DateTime created_at
   DateTime updated_at
 }
-"shopping_mall_wishlists" {
+"ecommerce_mall_wishlists" {
   String id PK
-  String shopping_customer_id FK,UK
-  Int total_items_count
-  Float total_value
+  String ecommerce_mall_customer_id FK
+  String name
+  String description "nullable"
+  Boolean is_public
+  Int item_count
+  DateTime created_at
+  DateTime updated_at
+}
+"ecommerce_mall_wishlist_items" {
+  String id PK
+  String ecommerce_mall_wishlist_id FK
+  String ecommerce_mall_product_sku_id FK
+  String ecommerce_mall_seller_id FK
+  Float price_at_add
+  String availability_at_add "nullable"
+  String variant_details "nullable"
+  Boolean notify_price_drop
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_wishlist_items" {
-  String id PK
-  String shopping_wishlist_id FK
-  String shopping_product_id FK
-  String shopping_product_variant_id FK
-  Float price_snapshot
-  Float current_price
-  String variant_attributes_snapshot "nullable"
-  String seller_name_snapshot
-  String priority_level
-  DateTime added_at
-  DateTime updated_at
-  DateTime price_drop_notified_at "nullable"
-}
-"shopping_mall_cart_recovery_emails" {
-  String id PK
-  String shopping_cart_id FK
-  String shopping_customer_id FK
-  String email_address
-  String email_template_type
-  Float cart_value_at_send
-  DateTime sent_at
-  String delivery_status
-  DateTime opened_at "nullable"
-  DateTime clicked_at "nullable"
-  String cart_recovered_order_id "nullable"
-  Boolean recovery_success_flag
-  DateTime created_at
-}
-"shopping_mall_shopping_cart_items" }o--|| "shopping_mall_shopping_carts" : cart
-"shopping_mall_wishlist_items" }o--|| "shopping_mall_wishlists" : wishlist
-"shopping_mall_cart_recovery_emails" }o--|| "shopping_mall_shopping_carts" : cart
+"ecommerce_mall_cart_items" }o--|| "ecommerce_mall_shopping_carts" : cart
+"ecommerce_mall_wishlist_items" }o--|| "ecommerce_mall_wishlists" : wishlist
 ```
 
-### `shopping_mall_shopping_carts`
+### `ecommerce_mall_shopping_carts`
 
-Shopping cart metadata for customers. Maintains persistent shopping carts
-per customer across sessions and devices. Each customer has their active
-shopping cart that persists independently from orders. The cart
-represents pre-purchase state and serves as the staging area before
-checkout. Relates to [shopping_mall_shopping_cart_items](#shopping_mall_shopping_cart_items) containing
-individual items and to [shopping_mall_customers](#shopping_mall_customers) for ownership.
+Shopping cart storage for authenticated customers, maintaining temporary
+collections of products before checkout.
+
+Stores the customer's current shopping cart with aggregated totals
+including subtotal, discounts, shipping estimates, and tax calculations.
+Each customer maintains one active cart that persists across sessions and
+devices. Cart state includes metadata for checkout flow such as selected
+shipping address, shipping method preference, and applied promotional
+codes.
+
+Carts are not converted to orders in this table; instead, successful
+checkouts create separate order records in the order management system.
+Abandoned carts may exist indefinitely in the system but are marked with
+last_modified timestamps for analytics and recovery email campaigns.
+
+Includes comprehensive totals for display (subtotal, estimated shipping,
+estimated tax, discount amount, grand total) and state tracking (whether
+address and shipping selections are finalized).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_customer_id`
-  > Reference to the customer who owns this cart. {@link
-  > shopping_mall_customers.id}
-- `cart_status`
-  > Current cart status tracking: 'active' (in use), 'abandoned' (inactive
-  > 30+ days), 'converted' (order placed from this cart). Used for cart
-  > recovery analytics and cleanup.
-- `total_items_count`
-  > Denormalized count of distinct items (SKUs) in cart. Updated when items
-  > are added/removed. Used for quick display without querying items table.
-- `total_quantity`
-  > Denormalized sum of all item quantities in cart. Total units across all
-  > line items. Updated whenever cart items change.
+- `ecommerce_mall_customer_id`
+  > Reference to the customer who owns this cart. Each customer has exactly
+  > one active cart. [ecommerce_mall_customers.id](#ecommerce_mall_customers)
 - `subtotal_amount`
-  > Denormalized subtotal of all items (sum of unit_price × quantity for all
-  > items). Calculated value updated when items are modified. Does not
-  > include taxes or shipping.
-- `estimated_total_amount`
-  > Estimated total with taxes and shipping. Recalculated based on shipping
-  > address and method. Used for display purposes before final checkout
-  > calculation.
+  > Sum of all line item subtotals (item price × quantity) before taxes,
+  > shipping, and discounts. Recalculated when cart items change.
+- `discount_amount`
+  > Total discount amount applied through promotional codes or platform
+  > promotions. Stored separately for transparency.
+- `estimated_shipping_amount`
+  > Estimated shipping cost based on selected shipping address and shipping
+  > method. Recalculated if address or method changes.
+- `estimated_tax_amount`
+  > Estimated tax calculated based on shipping destination address. Updated
+  > if address changes during checkout.
+- `grand_total_amount`
+  > Final total including subtotal, discount, shipping, and tax. Used for
+  > display during checkout and payment authorization.
+- `item_count`
+  > Denormalized count of cart items for quick display (shows number of
+  > products in cart). Incremented/decremented when items added/removed.
+- `status`
+  > Cart status indicating its lifecycle state. Values: ACTIVE (customer
+  > shopping), ABANDONED (inactive 30+ days), CONVERTED (order placed). Used
+  > for analytics and recovery campaigns.
+- `promo_code_applied`
+  > Promotional code or coupon code currently applied to this cart, if any.
+  > Stored for tracking and validation.
+- `selected_address_id`
+  > UUID reference to the selected shipping address for this cart
+  > (denormalized for performance). Optional field; address may not be
+  > selected until checkout.
+- `selected_shipping_method`
+  > Selected shipping method name (Standard, Express, Overnight, etc.). Null
+  > if not yet selected during checkout.
 - `created_at`
-  > Timestamp when this cart was created for this customer. Records cart
-  > creation time for analytics.
+  > Timestamp when the shopping cart was created or first accessed by the
+  > customer.
 - `updated_at`
-  > Timestamp of most recent modification to cart (item
-  > added/removed/quantity changed). Tracks last activity for abandonment
-  > detection and idle timeout.
-- `deleted_at`
-  > Soft delete timestamp. Null if cart is active, populated when cart is
-  > archived. Enables cart recovery and historical analysis.
+  > Timestamp of the most recent modification to the cart (items
+  > added/removed, address/shipping updated).
 
-### `shopping_mall_shopping_cart_items`
+### `ecommerce_mall_cart_items`
 
-Individual line items within shopping carts. Represents selected products
-with chosen variants (color, size, etc.) and quantities. Each cart item
-is a specific product variant with customer's quantity selection. Relates
-to [shopping_mall_shopping_carts](#shopping_mall_shopping_carts) (parent cart), {@link
-shopping_mall_products} (product reference), and {@link
-shopping_mall_product_variants} (specific SKU chosen). Tracks selected
-options and timestamps for each item.
+Individual line items stored within a shopping cart, representing
+specific product variants with quantity and pricing.
+
+Each cart item represents one specific product variant (SKU) with
+denormalized price, quantity, and seller information captured at the time
+of addition to cart. Cart items maintain independent pricing records so
+that if a seller changes their product price after the item was added,
+the customer still sees the original price.
+
+Cart items link to product_skus for inventory validation during checkout.
+Seller information is stored for display and multi-seller cart
+organization. When customers modify quantity or remove items, cart items
+are deleted entirely (no soft delete needed for ephemeral cart data).
+
+Prices and totals are recalculated when quantities change, and line item
+subtotals are aggregated up to the parent cart's subtotal.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_cart_id`
-  > Reference to the parent shopping cart. {@link
-  > shopping_mall_shopping_carts.id}
-- `shopping_product_id`
-  > Reference to the product being added to cart. {@link
-  > shopping_mall_products.id}
-- `shopping_product_variant_id`
-  > Reference to the specific product variant (SKU) selected. Customer chose
-  > this specific color/size/option combination. {@link
-  > shopping_mall_product_variants.id}
+- `ecommerce_mall_shopping_cart_id`
+  > Reference to the parent shopping cart that contains this item. {@link
+  > ecommerce_mall_shopping_carts.id}
+- `ecommerce_mall_product_sku_id`
+  > Reference to the specific product variant (SKU) being added to cart.
+  > Links to inventory for stock validation. {@link
+  > ecommerce_mall_product_skus.id}
+- `ecommerce_mall_seller_id`
+  > Reference to the seller offering this product variant. Stored for
+  > multi-seller cart organization and fulfillment. {@link
+  > ecommerce_mall_sellers.id}
 - `quantity`
-  > Number of units of this variant in the cart. Must be positive integer.
-  > Customer can have multiple units of same variant in cart.
+  > Number of units of this product variant in the cart. Must be positive
+  > integer. Limited to maximum 100 to prevent bulk buying abuse.
 - `unit_price`
-  > Price per unit at time item was added to cart. Snapshot of price to show
-  > customer what they will pay. May differ from current product price if
-  > product was repriced.
+  > Price per unit captured at the time the item was added to cart. Frozen
+  > price independent of future seller price changes.
 - `line_total`
-  > Denormalized line item total: unit_price × quantity. Cached value for
-  > quick display. Should match calculated value.
-- `variant_attributes_snapshot`
-  > JSON snapshot of variant attributes selected (e.g., {"color": "Red",
-  > "size": "M"}). Preserves the exact configuration customer selected in
-  > case variant options change later.
-- `added_at`
-  > Timestamp when this item was added to the cart. Tracks item addition
-  > order for analytics.
+  > Calculated subtotal for this line item (unit_price × quantity).
+  > Recalculated when quantity changes.
+- `variant_details`
+  > Denormalized description of selected variant attributes (e.g., 'Color:
+  > Blue, Size: Large, Width: Standard'). Used for display in cart.
+- `created_at`: Timestamp when this item was added to the shopping cart.
 - `updated_at`
   > Timestamp of most recent modification to this cart item (quantity
-  > changed, etc.). Tracks item-level activity.
+  > changed).
 
-### `shopping_mall_wishlists`
+### `ecommerce_mall_wishlists`
 
-Wishlist metadata for customers. Maintains wish lists for future purchase
-tracking and price tracking. Each customer has one wishlist for tracking
-products of interest. Similar structure to carts but for aspirational
-rather than committed purchases. Relates to {@link
-shopping_mall_wishlist_items} containing individual wish list items and
-to [shopping_mall_customers](#shopping_mall_customers) for ownership.
+Wishlist collections where customers save products they are interested in
+purchasing later, separate from shopping carts.
+
+Allows customers to maintain one or more named wishlists (e.g., 'Summer
+Clothes', 'Gifts for Mom') for organizing products of interest. Wishlists
+are persistent across sessions and customer logins, used for price
+tracking, demand signals, and notifications when items are back in stock.
+
+Wishlists can be marked as public to share with other customers via
+shareable links, or kept private for personal use only. Wishlist metadata
+includes whether it's public/private and visibility status. Multiple
+wishlists per customer enable organization by theme or recipient.
+
+Contains aggregated count of items in the wishlist for display and
+reference. Timestamps track creation date and recent modifications.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_customer_id`
-  > Reference to the customer who owns this wishlist. {@link
-  > shopping_mall_customers.id}
-- `total_items_count`
-  > Denormalized count of distinct items (SKUs) in wishlist. Updated when
-  > items are added/removed. Used for quick display of wishlist size.
-- `total_value`
-  > Denormalized sum of all item prices in wishlist. Represents total value
-  > if all items were purchased at current prices. Used for analytics and
-  > feature display.
-- `created_at`
-  > Timestamp when this wishlist was created (typically at customer
-  > registration). Records wishlist creation time.
+- `ecommerce_mall_customer_id`
+  > Reference to the customer who owns this wishlist. Customer can have
+  > multiple wishlists. [ecommerce_mall_customers.id](#ecommerce_mall_customers)
+- `name`
+  > User-friendly name for the wishlist (e.g., 'Summer Clothes', 'Birthday
+  > Gifts'). Max 255 characters for display in UI.
+- `description`
+  > Optional description of the wishlist's purpose or context. Helps customer
+  > organize and remember why items are grouped together.
+- `is_public`
+  > Whether this wishlist is publicly shareable via link or kept private.
+  > Default false (private).
+- `item_count`
+  > Denormalized count of items in this wishlist for quick display.
+  > Incremented/decremented when items added/removed.
+- `created_at`: Timestamp when the wishlist was created by the customer.
 - `updated_at`
-  > Timestamp of most recent modification to wishlist (item
-  > added/removed/price changed). Tracks activity for engagement metrics.
+  > Timestamp of most recent modification to the wishlist (items
+  > added/removed, visibility changed).
+
+### `ecommerce_mall_wishlist_items`
+
+Individual items saved in a customer's wishlist, representing product
+variants they are interested in for potential future purchase.
+
+Each wishlist item represents one specific product variant (SKU) added to
+a wishlist without quantity selection (wishlists save single units of
+each variant, not quantities). Wishlist items store denormalized pricing
+and availability information captured at the time of addition for display
+purposes.
+
+Wishlist items maintain independent reference to product SKUs for
+tracking availability and detecting when items come back in stock
+(triggering optional customer notifications). Seller information is
+stored to display which seller offers each wishlist item and their
+ratings.
+
+Unlike cart items, wishlist items can be soft-deleted (marked with
+deleted_at) to preserve history while hiding items from active wishlist
+display. This supports recovery if customer wishes to restore
+accidentally removed items.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_wishlist_id`
+  > Reference to the parent wishlist that contains this item. {@link
+  > ecommerce_mall_wishlists.id}
+- `ecommerce_mall_product_sku_id`
+  > Reference to the specific product variant (SKU) saved in the wishlist.
+  > Used for availability and price tracking. {@link
+  > ecommerce_mall_product_skus.id}
+- `ecommerce_mall_seller_id`
+  > Reference to the seller offering this product variant. Stored for display
+  > of seller information and ratings. [ecommerce_mall_sellers.id](#ecommerce_mall_sellers)
+- `price_at_add`
+  > Product price captured at the time the item was added to the wishlist.
+  > Stored to show customer price changes (if current price differs).
+- `availability_at_add`
+  > Availability status captured when item was added (In Stock, Low Stock,
+  > Out of Stock). Stored to detect availability changes.
+- `variant_details`
+  > Denormalized description of the product variant attributes (e.g., 'Color:
+  > Blue, Size: Large'). Used for display in wishlist.
+- `notify_price_drop`
+  > Whether customer wants to be notified if the price drops for this
+  > wishlist item. Default false (no notification).
+- `created_at`: Timestamp when this item was added to the wishlist.
+- `updated_at`
+  > Timestamp of most recent modification to this wishlist item (notification
+  > preference changed).
 - `deleted_at`
-  > Soft delete timestamp. Null if wishlist is active, populated if wishlist
-  > was archived. Enables historical tracking.
-
-### `shopping_mall_wishlist_items`
-
-Individual items within customer wishlists. Represents products (with
-specific variants) that customers are interested in purchasing. Each
-wishlist item is a specific product variant with price snapshot and
-metadata. Relates to [shopping_mall_wishlists](#shopping_mall_wishlists) (parent wishlist),
-[shopping_mall_products](#shopping_mall_products) (product reference), and {@link
-shopping_mall_product_variants} (specific SKU). Tracks when item was
-added and any price changes for notification purposes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_wishlist_id`: Reference to the parent wishlist. [shopping_mall_wishlists.id](#shopping_mall_wishlists)
-- `shopping_product_id`: Reference to the product in wishlist. [shopping_mall_products.id](#shopping_mall_products)
-- `shopping_product_variant_id`
-  > Reference to the specific product variant (SKU) in wishlist. Customer
-  > wishlist-added this specific variant. {@link
-  > shopping_mall_product_variants.id}
-- `price_snapshot`
-  > Price of the variant when item was added to wishlist. Snapshot to track
-  > price changes and notify customer of drops. Allows comparison with
-  > current price.
-- `current_price`
-  > Current price of the variant. Updated periodically from product pricing.
-  > Compared to price_snapshot to detect price drops and trigger
-  > notifications.
-- `variant_attributes_snapshot`
-  > JSON snapshot of variant attributes (e.g., {"color": "Blue", "size":
-  > "L"}). Preserves exact variant configuration customer selected.
-- `seller_name_snapshot`
-  > Seller name at time of wishlist addition. Stores seller information for
-  > tracking without requiring FK query. May differ if seller name changes.
-- `priority_level`
-  > Priority level for this wishlist item: 'low', 'medium', 'high'. Helps
-  > customer organize wishlist importance. Default is 'medium'.
-- `added_at`
-  > Timestamp when this item was added to wishlist. Tracks when customer
-  > expressed interest in product.
-- `updated_at`
-  > Timestamp of most recent change to this wishlist item (price updated,
-  > priority changed). Tracks item-level modifications.
-- `price_drop_notified_at`
-  > Timestamp when customer was last notified of price drop for this item.
-  > Prevents duplicate notifications. Null if not yet notified.
-
-### `shopping_mall_cart_recovery_emails`
-
-Tracks abandoned cart recovery email notifications sent to customers.
-Records when recovery emails are sent, delivery status, and customer
-interactions. Supports abandoned cart recovery marketing campaigns to
-re-engage customers with carts left incomplete. Relates to {@link
-shopping_mall_shopping_carts} and [shopping_mall_customers](#shopping_mall_customers). Used
-for email campaign analytics and effectiveness tracking.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_cart_id`
-  > Reference to the abandoned shopping cart. {@link
-  > shopping_mall_shopping_carts.id}
-- `shopping_customer_id`
-  > Reference to the customer receiving recovery email. {@link
-  > shopping_mall_customers.id}
-- `email_address`
-  > Email address to which recovery email was sent. Stored as snapshot in
-  > case customer changes email after recovery is sent.
-- `email_template_type`
-  > Type of recovery email template used: 'first_reminder' (sent after 1 day
-  > idle), 'second_reminder' (sent after 3 days idle), 'final_offer' (sent
-  > after 7 days with special discount). Tracks which campaign variant was
-  > used.
-- `cart_value_at_send`
-  > Cart total value at time recovery email was sent. Snapshot for tracking
-  > email effectiveness and value recovery metrics.
-- `sent_at`
-  > Timestamp when recovery email was sent to customer. Records email
-  > dispatch time.
-- `delivery_status`
-  > Email delivery status: 'pending' (awaiting send), 'sent' (dispatched),
-  > 'delivered' (confirmed by email provider), 'bounced' (rejected), 'opened'
-  > (customer opened), 'clicked' (customer clicked link). Tracks email
-  > campaign performance.
-- `opened_at`
-  > Timestamp when customer opened the recovery email (if tracked by email
-  > provider). Null if email not opened. Used for engagement analytics.
-- `clicked_at`
-  > Timestamp when customer clicked a link in recovery email. Null if link
-  > not clicked. Indicates high engagement with recovery campaign.
-- `cart_recovered_order_id`
-  > Order ID if customer completed purchase from this recovered cart. Links
-  > recovery email to successful conversion. Null if recovery unsuccessful
-  > (cart abandoned without purchase).
-- `recovery_success_flag`
-  > Whether recovery was successful (cart_recovered_order_id is not null).
-  > True if recovery email led to order completion, false otherwise. Used for
-  > campaign effectiveness metrics.
-- `created_at`
-  > Timestamp when this recovery email record was created. Records when
-  > recovery campaign entry was made.
+  > Soft delete timestamp. Null if item is active in wishlist, set to
+  > deletion time if item was removed.
 
 ## Orders
 
 ```mermaid
 erDiagram
-"shopping_mall_orders" {
+"ecommerce_mall_orders" {
   String id PK
-  String shopping_mall_customer_id FK
+  String ecommerce_mall_customer_id FK
+  String ecommerce_mall_customer_address_id FK
   String order_number UK
-  String order_status
-  String payment_status
-  String fulfillment_status
-  Float subtotal
+  String status
+  Float subtotal_amount
   Float discount_amount
   Float tax_amount
   Float shipping_cost
-  Float total_amount
+  Float grand_total_amount
   String currency_code
-  String shipping_address
-  String billing_address "nullable"
   String shipping_method
   DateTime estimated_delivery_date "nullable"
-  String customer_special_instructions "nullable"
-  String internal_notes "nullable"
+  DateTime actual_delivery_date "nullable"
+  String special_instructions "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime cancelled_at "nullable"
+  DateTime deleted_at "nullable"
 }
-"shopping_mall_order_line_items" {
+"ecommerce_mall_order_items" {
   String id PK
-  String shopping_mall_order_id FK
-  String shopping_mall_product_id FK
-  String shopping_mall_product_variant_id FK
-  String shopping_mall_seller_id FK
-  String sku
+  String ecommerce_mall_order_id FK
+  String ecommerce_mall_product_sku_id FK
+  String ecommerce_mall_seller_id FK
+  String ecommerce_mall_stock_reservation_id FK "nullable"
   String product_name
-  String variant_details "nullable"
-  Float unit_price
+  String variant_description "nullable"
   Int quantity
-  Float line_subtotal
-  Float line_discount
+  Float unit_price
   Float line_total
-  String item_status
+  DateTime created_at
+}
+"ecommerce_mall_order_fulfillments" {
+  String id PK
+  String ecommerce_mall_order_id FK
+  String ecommerce_mall_seller_id FK
+  String status
+  Int item_count
+  DateTime fulfillment_deadline "nullable"
+  DateTime shipped_date "nullable"
+  DateTime delivered_date "nullable"
   DateTime created_at
   DateTime updated_at
 }
-"shopping_mall_order_status_history" {
+"ecommerce_mall_shipments" {
   String id PK
-  String shopping_mall_order_id FK
+  String ecommerce_mall_order_fulfillment_id FK
+  String tracking_number
+  String carrier_name
+  DateTime estimated_delivery_date "nullable"
+  DateTime actual_delivery_date "nullable"
+  DateTime last_tracking_update "nullable"
+  String status
+  DateTime created_at
+  DateTime updated_at
+}
+"ecommerce_mall_shipment_tracking" {
+  String id PK
+  String ecommerce_mall_shipment_id FK
+  String event_type
+  DateTime event_timestamp
+  String location "nullable"
+  String description "nullable"
+  String exception_reason "nullable"
+  DateTime created_at
+}
+"ecommerce_mall_order_status_history" {
+  String id PK
+  String ecommerce_mall_order_id FK
   String previous_status "nullable"
   String new_status
-  String status_transition_reason "nullable"
-  String triggered_by
-  String triggered_by_id "nullable"
-  Int duration_in_previous_status "nullable"
+  String reason "nullable"
+  String initiated_by "nullable"
+  String notes "nullable"
   DateTime created_at
 }
-"shopping_mall_order_shipment_mappings" {
-  String id PK
-  String shopping_mall_order_id FK
-  String shopping_mall_shipment_id FK
-  Int mapping_sequence
-  DateTime created_at
-}
-"shopping_mall_order_tracking" {
-  String id PK
-  String shopping_mall_order_id FK,UK
-  String tracking_number "nullable"
-  String carrier_name "nullable"
-  String carrier_service "nullable"
-  String current_tracking_status "nullable"
-  DateTime last_tracking_update "nullable"
-  String current_location "nullable"
-  DateTime estimated_delivery "nullable"
-  DateTime delivery_confirmed_at "nullable"
-  String delivery_exception_reason "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_customer_order_preferences" {
-  String id PK
-  String shopping_mall_customer_id FK,UK
-  String preferred_shipping_method "nullable"
-  String preferred_payment_method_id "nullable"
-  Boolean use_billing_address
-  Boolean order_notifications_enabled
-  Boolean newsletter_opted_in
-  String gift_preferences "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_order_line_items" }o--|| "shopping_mall_orders" : order
-"shopping_mall_order_status_history" }o--|| "shopping_mall_orders" : order
-"shopping_mall_order_shipment_mappings" }o--|| "shopping_mall_orders" : order
-"shopping_mall_order_tracking" |o--|| "shopping_mall_orders" : order
+"ecommerce_mall_order_items" }o--|| "ecommerce_mall_orders" : order
+"ecommerce_mall_order_fulfillments" }o--|| "ecommerce_mall_orders" : order
+"ecommerce_mall_shipments" }o--|| "ecommerce_mall_order_fulfillments" : fulfillment
+"ecommerce_mall_shipment_tracking" }o--|| "ecommerce_mall_shipments" : shipment
+"ecommerce_mall_order_status_history" }o--|| "ecommerce_mall_orders" : order
 ```
 
-### `shopping_mall_orders`
+### `ecommerce_mall_orders`
 
-Core order records representing customer purchases. Contains order-level
-data including customer reference, total amount, payment and fulfillment
-status, shipping address, and order timestamps. This is the primary
-entity for order management on the platform. Each order may contain items
-from multiple sellers (multi-seller orders handled through
-order_line_items). Links to customer, payment system, and fulfillment
-infrastructure. Historical record retention is indefinite for compliance
-and financial auditing purposes.
+Core order records representing committed customer purchases containing
+items from one or multiple sellers.
+
+Each order captures a complete transaction from a customer including
+delivery address, shipping method selected, payment details, and overall
+order status. Orders are created when payment is successfully authorized
+and serve as the primary reference point for fulfillment, shipping, and
+customer order tracking.
+
+Multi-seller orders are supported - a single order can contain items from
+different sellers, with each seller's items tracked separately in
+order_items table and fulfillment managed independently through
+order_fulfillments table.
+
+Order status transitions through a defined lifecycle: pending → confirmed
+→ processing → shipped → delivered → complete, with optional cancellation
+or refund states. Complete audit trail of all status changes is
+maintained in order_status_history table.
 
 Properties as follows:
 
-- `id`: Primary Key
-- `shopping_mall_customer_id`
-  > Customer who placed this order. Reference to {@link
-  > shopping_mall_customers.id}
+- `id`: Primary Key.
+- `ecommerce_mall_customer_id`
+  > Customer who placed the order. References {@link
+  > ecommerce_mall_customers.id}.
+- `ecommerce_mall_customer_address_id`
+  > Delivery address for the order. References {@link
+  > ecommerce_mall_customer_addresses.id}.
 - `order_number`
-  > Unique human-readable order number in format ORD-YYYYMMDDHHMMSS-XXXXXX.
-  > Used for customer and seller references.
-- `order_status`
-  > Current order status: pending_payment, payment_confirmed,
-  > order_confirmed, preparing_shipment, shipped, in_transit,
-  > out_for_delivery, delivered, cancelled, payment_failed. Status
-  > transitions tracked in order_status_history table.
-- `payment_status`
-  > Payment processing state: pending, processing, authorized, captured,
-  > failed, refunded, partially_refunded. Independent of order_status for
-  > detailed payment tracking.
-- `fulfillment_status`
-  > Overall fulfillment progress: not_started, in_progress,
-  > partially_shipped, fully_shipped, delivered, cancelled. Aggregated from
-  > individual line items.
-- `subtotal`
-  > Order subtotal before discounts, in base currency. Sum of all line item
-  > prices. Stored in cents precision.
+  > Human-readable order identifier (e.g., ORD-2024-001234). Unique and
+  > displayed to customers for reference. This is the order number customers
+  > use to track and reference their order.
+- `status`
+  > Current order status in lifecycle. Valid values: pending,
+  > payment_processing, payment_failed, confirmed, processing, shipped,
+  > delivered, in_refund, refunded, complete, cancellation_pending,
+  > cancelled. Status determines what actions customers and sellers can take.
+- `subtotal_amount`
+  > Sum of all order item prices before discounts, taxes, and shipping.
+  > Stored as precise decimal value in order currency.
 - `discount_amount`
-  > Total discount amount applied to order from all sources (promotional
-  > codes, platform promotions, seller discounts). Stored in cents precision.
+  > Total discount applied from promo codes or promotions. Subtracted from
+  > subtotal to get discounted subtotal. Value is zero if no discount
+  > applied.
 - `tax_amount`
-  > Total tax amount calculated based on destination address and applicable
-  > tax rates. Stored in cents precision. Tax rate is locked at order time
-  > and not recalculated.
+  > Calculated sales tax based on delivery address and applicable tax
+  > jurisdiction. Included in final order total.
 - `shipping_cost`
-  > Shipping cost for this order based on selected shipping method and
-  > destination. Stored in cents precision.
-- `total_amount`
-  > Final order total = subtotal - discount_amount + tax_amount +
-  > shipping_cost. This is the amount charged to customer. Stored in cents
-  > precision.
+  > Shipping cost for the order. Locked in at checkout and not changed after
+  > order placement. May include regional surcharges or promotional free
+  > shipping.
+- `grand_total_amount`
+  > Final order total: (subtotal - discount) + tax + shipping. This is the
+  > amount charged to customer. Calculation: subtotal_amount -
+  > discount_amount + tax_amount + shipping_cost.
 - `currency_code`
-  > ISO 4217 currency code for order (e.g., USD, EUR, INR). All monetary
-  > amounts in this order use this currency.
-- `shipping_address`
-  > Shipping address as structured JSON containing: street_line_1,
-  > street_line_2, city, state, postal_code, country, recipient_name, phone.
-  > Snapshot of customer's selected address at order time.
-- `billing_address`
-  > Billing address as structured JSON. May differ from shipping address.
-  > Snapshot at order time.
+  > ISO 4217 currency code for all monetary amounts in this order (e.g., USD,
+  > EUR, JPY). All prices recorded in this currency.
 - `shipping_method`
-  > Selected shipping method (e.g., standard, express, overnight). Determines
-  > shipping cost and estimated delivery time.
+  > Shipping method selected by customer during checkout (e.g., standard,
+  > express, overnight). Determines delivery timeline and cost.
 - `estimated_delivery_date`
-  > Estimated delivery date calculated at order creation based on shipping
-  > method and destination. May be updated as carrier provides new estimates.
-- `customer_special_instructions`
-  > Special instructions or notes provided by customer during checkout (max
-  > 500 characters). Examples: 'leave at door', 'ring doorbell twice',
-  > 'fragile items'.
-- `internal_notes`
-  > Internal notes visible only to admin and seller. Used for flagging
-  > special circumstances, investigation notes, or order-specific context
-  > (max 1000 characters).
+  > Estimated delivery date based on shipping method selected. Calculated at
+  > order time. Updated with actual delivery date when order is delivered.
+- `actual_delivery_date`
+  > Actual delivery date when carrier confirms delivery. Set when order
+  > transitions to delivered status. Null until order is actually delivered.
+- `special_instructions`
+  > Special delivery instructions from customer (e.g., leave at front door,
+  > ring doorbell twice). Optional customer notes for delivery handler.
 - `created_at`
-  > Timestamp when order was placed (ISO 8601 format with timezone).
-  > Immutable after creation.
+  > Timestamp when order was created (payment confirmed). Represents the
+  > point in time the order was placed and committed.
 - `updated_at`
-  > Timestamp of last order update (status change, notes added, etc.).
-  > Updated on any order modification.
-- `cancelled_at`
-  > Timestamp when order was cancelled (if applicable). Null for
-  > non-cancelled orders. Enables tracking cancellation timing.
+  > Timestamp of most recent order update. Updated whenever order status,
+  > items, or details change.
+- `deleted_at`
+  > Soft delete timestamp. Null for active orders. Set when order is deleted
+  > (for compliance, historical orders are soft-deleted not permanently
+  > removed).
 
-### `shopping_mall_order_line_items`
+### `ecommerce_mall_order_items`
 
-Individual items within an order. Each line item represents one product
-variant (SKU) from one seller. Orders can contain multiple line items
-from different sellers (multi-seller orders). Maintains 1:many
-relationship with orders table. Stores line-item-specific pricing,
-quantity, fulfillment status, and seller reference. Enables proper
-normalization by separating item-level data from order-level data.
+Individual items within an order, representing specific product variants
+(SKUs) and quantities ordered.
+
+When customers place orders containing items from multiple sellers, each
+item is a separate record in this table. This allows proper tracking of
+which items come from which sellers, enabling independent fulfillment by
+each seller.
+
+Each order item captures the product details at time of order (price,
+variant specifications, seller information) to maintain historical
+accuracy. If product details change after order is placed, the order item
+retains the original details from order time.
+
+Order items are referenced by fulfillment records which track
+seller-specific fulfillment status, allowing multiple sellers to
+independently manage their portion of the order.
 
 Properties as follows:
 
-- `id`: Primary Key
-- `shopping_mall_order_id`
-  > Parent order containing this line item. Reference to {@link
-  > shopping_mall_orders.id}
-- `shopping_mall_product_id`
-  > Product being purchased. Reference to [shopping_mall_products.id](#shopping_mall_products).
-  > Stored for historical reference (product may be updated or deleted
-  > later).
-- `shopping_mall_product_variant_id`
-  > Specific product variant (SKU) purchased. Reference to {@link
-  > shopping_mall_product_variants.id}. Captures exact variant at time of
-  > order.
-- `shopping_mall_seller_id`
-  > Seller fulfilling this line item. Reference to {@link
-  > shopping_mall_sellers.id}. Multi-seller orders have multiple line items
-  > with different sellers.
-- `sku`
-  > Stock Keeping Unit identifier for this specific product variant. Snapshot
-  > of SKU at order time.
+- `id`: Primary Key.
+- `ecommerce_mall_order_id`: Order this item belongs to. References [ecommerce_mall_orders.id](#ecommerce_mall_orders).
+- `ecommerce_mall_product_sku_id`
+  > Specific product variant (SKU) ordered. References {@link
+  > ecommerce_mall_product_skus.id}.
+- `ecommerce_mall_seller_id`
+  > Seller providing this item. References [ecommerce_mall_sellers.id](#ecommerce_mall_sellers).
+  > Allows identifying which seller fulfills this item.
+- `ecommerce_mall_stock_reservation_id`
+  > Inventory reservation for this item. References {@link
+  > ecommerce_mall_stock_reservations.id}. Links to reserved stock tracking.
 - `product_name`
-  > Product name snapshot at time of order (product may be renamed or deleted
-  > later). Used for customer-facing receipts and order history.
-- `variant_details`
-  > JSON snapshot of variant attributes (color, size, options, etc.) at time
-  > of order. Enables customers to remember exact variant purchased.
+  > Product name at time of order (denormalized for historical accuracy).
+  > Stored in case product details are changed after order is placed.
+- `variant_description`
+  > Description of product variant (color, size, options) selected for this
+  > item. Documents what specific variant was ordered.
+- `quantity`
+  > Quantity of this item ordered. Positive integer, minimum 1 unit per order
+  > item.
 - `unit_price`
-  > Price per unit at time of order in order's currency. Locked in at order
-  > creation, not affected by later price changes. Stored in cents precision.
-- `quantity`: Number of units ordered for this line item. Must be positive integer.
-- `line_subtotal`
-  > Line item subtotal = unit_price × quantity before line-item-specific
-  > discounts. Stored in cents precision.
-- `line_discount`
-  > Discount applied to this specific line item (if any). Stored in cents
-  > precision. Used for items with quantity-based discounts.
+  > Price per unit at time of order (locked in). Quantity multiplied by
+  > unit_price equals line subtotal.
 - `line_total`
-  > Line item total = line_subtotal - line_discount. This is the amount for
-  > this item in the order. Stored in cents precision.
-- `item_status`
-  > Fulfillment status of this specific line item: pending, confirmed,
-  > picked, packed, shipped, in_transit, out_for_delivery, delivered,
-  > cancelled, returned. Enables tracking individual items in multi-seller
-  > orders.
+  > Total for this line item: quantity × unit_price. Contribution to order
+  > subtotal.
 - `created_at`
-  > Timestamp when line item was added to order. Normally same as
-  > order.created_at but may differ if order items are added asynchronously.
-- `updated_at`
-  > Timestamp of last line item update (status change, etc.). Enables
-  > tracking item-level changes.
+  > Timestamp when item was added to order. Matches order creation time
+  > (items created with order).
 
-### `shopping_mall_order_status_history`
+### `ecommerce_mall_order_fulfillments`
 
-Immutable append-only audit trail of all order status transitions.
-Captures point-in-time snapshots of status changes with exact timestamp
-and triggering actor. Enables complete visibility into order lifecycle
-for customers, sellers, and admins. Each status change creates a new
-record (never updated or deleted). Used for compliance auditing, dispute
-resolution, and performance analytics.
+Seller-specific fulfillment tracking for orders containing items from
+multiple sellers.
+
+When an order contains items from multiple sellers, a separate
+fulfillment record is created for each seller. This allows each seller to
+independently manage their portion of the order - tracking items they
+need to fulfill, managing shipment, and updating delivery status.
+
+Fulfillment records maintain seller-specific status (processing, shipped,
+delivered) independent from the main order status. This enables one
+seller to ship while another is still processing, with complete
+transparency to customer on per-seller fulfillment progress.
+
+Each fulfillment contains all order items from that specific seller,
+referenced through order_items table. Shipment information is tracked
+through shipments table linked to fulfillments.
 
 Properties as follows:
 
-- `id`: Primary Key
-- `shopping_mall_order_id`
-  > Order for which status changed. Reference to {@link
-  > shopping_mall_orders.id}
-- `previous_status`
-  > Order status before this transition. Null if this is the initial status
-  > at order creation.
-- `new_status`
-  > Order status after this transition. The current status of the order at
-  > this point in time.
-- `status_transition_reason`
-  > Reason or context for status change (e.g., 'payment authorized', 'seller
-  > confirmed', 'carrier pickup', 'delivered by carrier'). Helps understand
-  > why transition occurred.
-- `triggered_by`
-  > Actor who triggered the status change: 'customer', 'seller', 'admin',
-  > 'system', 'payment_processor', 'carrier'. Identifies source of the
-  > transition.
-- `triggered_by_id`
-  > ID of actor who triggered change (customer_id, seller_id, admin_id, or
-  > 'system'). Enables audit trail of specific users.
-- `duration_in_previous_status`
-  > Number of seconds order spent in previous status before transitioning.
-  > Null if first status. Used for SLA tracking and performance analytics.
+- `id`: Primary Key.
+- `ecommerce_mall_order_id`
+  > Order this fulfillment is part of. References {@link
+  > ecommerce_mall_orders.id}.
+- `ecommerce_mall_seller_id`
+  > Seller responsible for fulfilling their items. References {@link
+  > ecommerce_mall_sellers.id}.
+- `status`
+  > Fulfillment status from seller perspective. Valid values: pending,
+  > confirmed, preparing, ready_to_ship, shipped, delivered, cancelled.
+  > Tracks seller's progress fulfilling their items.
+- `item_count`
+  > Number of order items from this seller in the order. Denormalized for
+  > quick reference of how many items seller needs to fulfill.
+- `fulfillment_deadline`
+  > Expected date seller should ship order items. Based on order placement
+  > plus seller's configured processing time. Used to track SLA compliance.
+- `shipped_date`
+  > Timestamp when seller marked items as shipped. Set when seller confirms
+  > shipment and provides tracking number.
+- `delivered_date`
+  > Timestamp when order items from this seller were confirmed delivered. Set
+  > from shipment tracking when carrier confirms delivery.
 - `created_at`
-  > Timestamp when status transition occurred. ISO 8601 format with timezone.
-  > Immutable after creation - defines exact moment of transition.
+  > Timestamp when fulfillment record was created (when order was confirmed).
+  > Marks when fulfillment begins for this seller.
+- `updated_at`: Timestamp of most recent fulfillment status update.
 
-### `shopping_mall_order_shipment_mappings`
+### `ecommerce_mall_shipments`
 
-Junction table linking orders to shipments. Enables mapping between
-orders and their corresponding shipment records. Supports multi-shipment
-orders (order split across multiple packages) and multi-order shipments
-(consolidation). Maintains relationship between order fulfillment and
-shipping infrastructure.
+Shipping records representing physical shipments of order fulfillments
+from sellers to customers.
+
+Each shipment represents one physical package being sent by a seller
+(fulfillment). Shipments contain tracking information provided by the
+carrier and link to the shipping carrier's tracking system for real-time
+updates.
+
+Multiple shipments can exist for a single order if different sellers ship
+from different locations or at different times. Each shipment has
+independent tracking and delivery status.
+
+Shipment information is captured at time of shipment creation (carrier,
+tracking number, estimated delivery) and updated as carrier provides
+tracking events through shipment_tracking records.
 
 Properties as follows:
 
-- `id`: Primary Key
-- `shopping_mall_order_id`: Order being shipped. Reference to [shopping_mall_orders.id](#shopping_mall_orders)
-- `shopping_mall_shipment_id`
-  > Shipment record for this order. Reference to {@link
-  > shopping_mall_shipments.id}. One order may have multiple shipments.
-- `mapping_sequence`
-  > Sequence number if order has multiple shipments. First shipment = 1,
-  > second = 2, etc. Enables ordering of multiple packages.
-- `created_at`
-  > Timestamp when mapping was created (when shipment was assigned to order).
-  > Records when relationship was established.
-
-### `shopping_mall_order_tracking`
-
-Order-specific tracking information and details. Maintains current
-tracking state for orders including tracking number, carrier, estimated
-delivery, and tracking status. Enables customers to monitor order
-progress through fulfillment and delivery. Links orders to carrier
-tracking systems.
-
-Properties as follows:
-
-- `id`: Primary Key
-- `shopping_mall_order_id`: Order being tracked. Reference to [shopping_mall_orders.id](#shopping_mall_orders)
+- `id`: Primary Key.
+- `ecommerce_mall_order_fulfillment_id`
+  > Order fulfillment this shipment is for. References {@link
+  > ecommerce_mall_order_fulfillments.id}.
 - `tracking_number`
-  > Carrier-provided tracking number for this shipment. May be multiple
-  > numbers if order split across packages (stored as comma-separated list).
+  > Carrier's tracking number for this shipment. Used to retrieve tracking
+  > information from carrier's system. Unique per carrier but not globally
+  > unique.
 - `carrier_name`
-  > Shipping carrier name (e.g., 'FedEx', 'UPS', 'DHL', 'USPS'). Enables
-  > linking to carrier tracking systems.
-- `carrier_service`
-  > Carrier service type (e.g., 'Ground', 'Express', 'Priority'). Indicates
-  > service level selected.
-- `current_tracking_status`
-  > Latest tracking status from carrier: 'pending_pickup', 'picked_up',
-  > 'in_transit', 'out_for_delivery', 'delivered', 'failed_delivery',
-  > 'returned'. Current state of shipment.
+  > Name of shipping carrier (FedEx, UPS, USPS, DHL, regional carriers,
+  > etc.). Identifies which carrier's tracking system to query.
+- `estimated_delivery_date`
+  > Estimated delivery date provided by carrier at shipment time. Based on
+  > carrier's service level and destination. Updated as carrier provides new
+  > estimates.
+- `actual_delivery_date`
+  > Actual delivery confirmation date from carrier tracking. Set when carrier
+  > confirms delivery. Null until item is delivered.
 - `last_tracking_update`
-  > Timestamp of most recent carrier tracking update. Enables detection of
-  > stale tracking data.
-- `current_location`
-  > Current location of shipment if provided by carrier (city, country, or
-  > facility name). JSON format if detailed coordinates available.
-- `estimated_delivery`
-  > Current carrier estimate for delivery (may differ from order's original
-  > estimate). Updated as carrier provides new information.
-- `delivery_confirmed_at`
-  > Timestamp when delivery was confirmed by carrier or customer signature.
-  > Marks completion of shipping phase.
-- `delivery_exception_reason`
-  > If delivery failed, reason provided by carrier (address invalid,
-  > recipient unavailable, refused, weather delay, etc.).
+  > Timestamp of most recent tracking event from carrier. Indicates freshness
+  > of tracking information.
+- `status`
+  > Current shipment status from carrier. Values: in_transit,
+  > out_for_delivery, delivered, exception, lost, returned. Reflects
+  > carrier's last reported status.
 - `created_at`
-  > Timestamp when tracking record was created (when shipment was assigned).
-  > Marks start of tracking.
+  > Timestamp when shipment record was created (when seller marked items as
+  > shipped).
 - `updated_at`
-  > Timestamp of last tracking update. Updated whenever carrier provides new
-  > tracking information.
+  > Timestamp of most recent shipment update. Updated as tracking information
+  > is received from carrier.
 
-### `shopping_mall_customer_order_preferences`
+### `ecommerce_mall_shipment_tracking`
 
-Customer-specific preferences and settings for their orders. Captures
-customer's default choices and order-related preferences (shipping method
-preference, notification settings, etc.). Enables personalization of
-order experience. Subsidiary table managed through customer account
-settings.
+Historical tracking events for shipments, capturing each status update
+from carrier.
+
+As shipments move through the carrier's system, they generate tracking
+events (picked up, in transit, out for delivery, delivered, etc.). Each
+event is recorded here with timestamp and event details for complete
+visibility into shipment journey.
+
+Tracking events are received from carrier APIs or webhooks and stored
+chronologically. This creates audit trail of shipment progression and
+enables reconstructing complete delivery timeline.
+
+Each tracking event includes carrier-provided information such as
+location, status, and any delivery exceptions or special events.
 
 Properties as follows:
 
-- `id`: Primary Key
-- `shopping_mall_customer_id`
-  > Customer whose preferences are stored. Reference to {@link
-  > shopping_mall_customers.id}. One-to-one relationship per customer.
-- `preferred_shipping_method`
-  > Customer's preferred shipping method (standard, express, overnight,
-  > etc.). Pre-selected in checkout for convenience.
-- `preferred_payment_method_id`
-  > Customer's preferred payment method ID (reference to payment method in
-  > payment system). Pre-selected in checkout.
-- `use_billing_address`
-  > Whether customer prefers to use billing address same as shipping address.
-  > Simplifies checkout.
-- `order_notifications_enabled`
-  > Whether customer wants order status notifications (email, SMS, push).
-  > Controls notification delivery.
-- `newsletter_opted_in`
-  > Whether customer opted into promotional newsletter. Used for marketing
-  > communications.
-- `gift_preferences`
-  > Gift preferences JSON (gift wrap preference, gift message, delivery
-  > timing, etc.). Enables gift order personalization.
+- `id`: Primary Key.
+- `ecommerce_mall_shipment_id`
+  > Shipment this tracking event is for. References {@link
+  > ecommerce_mall_shipments.id}.
+- `event_type`
+  > Type of tracking event (picked_up, in_transit, arrival_at_facility,
+  > out_for_delivery, delivery_attempted, delivered, exception, returned).
+  > Indicates what happened to shipment.
+- `event_timestamp`
+  > When the tracking event occurred according to carrier. This is the actual
+  > event time, not when it was reported to our system.
+- `location`
+  > Location where event occurred (city, facility name, or address).
+  > Optional, not all carriers provide detailed location info.
+- `description`
+  > Human-readable description of tracking event from carrier. Example:
+  > 'Package picked up' or 'Out for delivery today'.
+- `exception_reason`
+  > If event type is exception, reason for exception (address issue, delivery
+  > failed, weather delay, etc.). Null for non-exception events.
 - `created_at`
-  > Timestamp when preferences were first created. Marks when customer set up
-  > preferences.
-- `updated_at`
-  > Timestamp of last preference update. Tracks when customer last modified
-  > settings.
+  > Timestamp when this tracking event was recorded in our system (when we
+  > received update from carrier).
+
+### `ecommerce_mall_order_status_history`
+
+Audit trail recording all order status transitions throughout order
+lifecycle.
+
+Every time an order's status changes, a history record is created
+documenting the transition. This maintains complete history of how order
+progressed from creation through completion or cancellation.
+
+Status history enables reconstructing the complete order timeline,
+investigating why orders are in particular states, and tracking when key
+milestones occurred (when payment was confirmed, when seller started
+processing, when order was shipped, when delivered).
+
+Each history record includes the status change, timestamp, and
+reason/notes explaining why the change occurred (automatic system
+transition, customer cancellation request, seller action, admin
+intervention, etc.).
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_order_id`: Order whose status changed. References [ecommerce_mall_orders.id](#ecommerce_mall_orders).
+- `previous_status`
+  > Status before this transition. Null for initial order creation (no
+  > previous status).
+- `new_status`: Status after this transition. The status the order moved to.
+- `reason`
+  > Reason for status change. Examples: 'Payment authorized', 'Customer
+  > cancellation request', 'Seller marked shipped', 'Carrier delivered',
+  > 'Return approved'.
+- `initiated_by`
+  > Who/what initiated the status change. Values: 'system' (automatic
+  > transition), 'customer', 'seller', 'admin', 'carrier' (tracking update).
+- `notes`
+  > Additional context or notes about the status change. Optional field for
+  > capturing extra information about transition.
+- `created_at`: Timestamp when status transition occurred.
 
 ## Payments
 
 ```mermaid
 erDiagram
-"shopping_mall_payments" {
+"ecommerce_mall_payment_transactions" {
   String id PK
-  String shopping_mall_order_id FK,UK
-  String shopping_mall_customer_id FK
-  String shopping_mall_payment_method_id FK "nullable"
-  String order_number
+  String ecommerce_mall_order_id FK
+  String ecommerce_mall_payment_method_id FK "nullable"
+  String ecommerce_mall_customer_id FK
+  String transaction_reference_id UK
+  String status
   Float amount
-  String currency
-  String payment_status
+  String currency_code
   String payment_method_type
-  String card_last_four "nullable"
-  String cardholder_name "nullable"
-  String billing_address "nullable"
+  String processor_name
+  String processor_response_code "nullable"
+  String processor_response_message "nullable"
   String authorization_code "nullable"
-  String transaction_id UK "nullable"
-  String response_code "nullable"
-  String response_message "nullable"
-  String error_code "nullable"
-  String error_message "nullable"
-  Float fraud_score "nullable"
-  String three_d_secure_status "nullable"
-  String idempotency_key UK "nullable"
+  Int risk_score "nullable"
   String ip_address "nullable"
-  String user_agent "nullable"
-  DateTime request_timestamp
-  DateTime authorization_timestamp "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_payment_transactions" {
-  String id PK
-  String shopping_mall_payment_id FK
-  String transaction_type
-  String transaction_status
-  Float amount
-  String currency
-  String gateway_transaction_id UK "nullable"
-  String gateway_reference_id "nullable"
-  String authorization_code "nullable"
-  String response_code "nullable"
-  String response_message "nullable"
-  String error_code "nullable"
-  String error_message "nullable"
-  String avs_response "nullable"
-  String cvv_response "nullable"
-  String request_payload "nullable"
-  String response_payload "nullable"
-  DateTime request_timestamp
-  DateTime response_timestamp "nullable"
-  DateTime created_at
-}
-"shopping_mall_refunds" {
-  String id PK
-  String shopping_mall_payment_id FK
-  String shopping_mall_order_id FK
-  String refund_number UK
-  String refund_reason
-  Float refund_amount
-  Float original_amount
-  String refund_status
-  String refund_method
-  Float deduction_amount "nullable"
-  String deduction_reason "nullable"
-  String notes "nullable"
-  String initiated_by
-  String approved_by "nullable"
-  DateTime initiation_timestamp
-  DateTime approval_timestamp "nullable"
-  DateTime processing_timestamp "nullable"
-  DateTime completion_timestamp "nullable"
-  DateTime expected_completion_date "nullable"
-  String gateway_refund_id UK "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_payment_methods" {
-  String id PK
-  String shopping_mall_customer_id FK
-  String payment_method_type
-  String payment_token UK
-  String display_name "nullable"
-  String card_last_four "nullable"
-  String card_brand "nullable"
-  Int expiration_month "nullable"
-  Int expiration_year "nullable"
-  String cardholder_name "nullable"
-  String bank_name "nullable"
-  String account_last_four "nullable"
-  Boolean is_primary
-  Boolean is_active
+  Int retry_count
+  DateTime settled_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_transaction_reconciliation" {
+"ecommerce_mall_payment_failures" {
   String id PK
-  DateTime reconciliation_date
-  String reconciliation_type
+  String ecommerce_mall_payment_transaction_id FK
+  String error_code
+  String error_message
+  String failure_category
+  String processor_raw_response "nullable"
+  Boolean retry_scheduled
+  DateTime created_at
+  DateTime deleted_at "nullable"
+}
+"ecommerce_mall_refund_requests" {
+  String id PK
+  String ecommerce_mall_order_id FK
+  String ecommerce_mall_payment_transaction_id FK "nullable"
+  String ecommerce_mall_customer_id FK
+  String status
+  String reason
+  Float requested_amount
+  Float approved_amount "nullable"
+  String rejection_reason "nullable"
+  String customer_notes "nullable"
+  String admin_notes "nullable"
+  DateTime requested_at
+  DateTime reviewed_at "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"ecommerce_mall_refunds" {
+  String id PK
+  String ecommerce_mall_refund_request_id FK,UK
+  String ecommerce_mall_payment_transaction_id FK
+  String status
+  Float refund_amount
+  String currency_code
+  String processor_refund_id "nullable"
   String processor_name
-  Int system_transaction_count
-  Int processor_transaction_count
-  Float system_total_amount
-  Float processor_total_amount
-  String reconciliation_status
-  String discrepancy_details "nullable"
-  String missing_transaction_ids "nullable"
-  String extra_transaction_ids "nullable"
-  String reconciled_by "nullable"
-  DateTime reconciliation_timestamp
-  String resolution_notes "nullable"
-  DateTime created_at
-}
-"shopping_mall_seller_payouts" {
-  String id PK
-  String shopping_mall_seller_id FK
-  String payout_number UK
-  DateTime payout_period_start
-  DateTime payout_period_end
-  Float total_sales_amount
-  Float commission_amount
-  Float refunds_amount
-  Float fees_amount "nullable"
-  Float net_payout_amount
-  String payout_status
-  String payout_method
-  String bank_account_id "nullable"
-  String transaction_reference "nullable"
-  DateTime initiated_timestamp
-  DateTime completed_timestamp "nullable"
-  DateTime expected_delivery_date "nullable"
-  String failure_reason "nullable"
-  String notes "nullable"
+  String refund_method
+  DateTime expected_completion_date "nullable"
+  DateTime actual_completion_date "nullable"
+  String processor_response_code "nullable"
+  String processor_response_message "nullable"
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"shopping_mall_seller_account_balances" {
+"ecommerce_mall_seller_settlements" {
   String id PK
-  String shopping_mall_seller_id FK,UK
-  Float current_balance
-  Float pending_balance
-  Float reserved_balance
-  Float lifetime_earnings
-  Float lifetime_payouts
-  DateTime last_balance_update
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_commission_rates" {
-  String id PK
-  String shopping_mall_category_id FK,UK
-  String category_name
+  String ecommerce_mall_seller_id FK
+  DateTime settlement_period_start
+  DateTime settlement_period_end
+  String settlement_frequency
+  String status
+  Float gross_sales_amount
   Float commission_percentage
-  Float minimum_commission_amount "nullable"
-  Float maximum_commission_amount "nullable"
-  DateTime effective_date
-  DateTime expiration_date "nullable"
-  String description "nullable"
-  String created_by
+  Float commission_amount
+  Float chargebacks_and_disputes
+  Float refunds_issued
+  Float other_adjustments
+  Float net_settlement_amount
+  String currency_code
+  String payment_method
+  String payment_reference_id "nullable"
+  DateTime calculated_at
+  DateTime paid_at "nullable"
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"shopping_mall_financial_ledger" {
-  String id PK
-  String shopping_mall_order_id FK "nullable"
-  DateTime ledger_date
-  String transaction_type
-  String debit_account "nullable"
-  String credit_account "nullable"
-  Float amount
-  String currency
-  String description "nullable"
-  String reference_id "nullable"
-  Float balance_after "nullable"
-  String created_by
-  String notes "nullable"
-  DateTime created_at
-}
-"shopping_mall_payments" }o--o| "shopping_mall_payment_methods" : paymentMethod
-"shopping_mall_payment_transactions" }o--|| "shopping_mall_payments" : payment
-"shopping_mall_refunds" }o--|| "shopping_mall_payments" : payment
+"ecommerce_mall_payment_failures" }o--|| "ecommerce_mall_payment_transactions" : paymentTransaction
+"ecommerce_mall_refund_requests" }o--o| "ecommerce_mall_payment_transactions" : paymentTransaction
+"ecommerce_mall_refunds" |o--|| "ecommerce_mall_refund_requests" : refundRequest
+"ecommerce_mall_refunds" }o--|| "ecommerce_mall_payment_transactions" : paymentTransaction
 ```
 
-### `shopping_mall_payments`
+### `ecommerce_mall_payment_transactions`
 
-Core payment records for customer orders. Stores order-level payment
-information including customer, order reference, payment method, and
-final payment status. This is separate from detailed payment processor
-transactions to maintain clean separation of concerns between order-level
-payment state and gateway-level transaction details.
+Core payment transaction records tracking all payment processing attempts
+and their outcomes. Records the complete lifecycle of a customer payment
+from initiation through completion or failure.
 
-Properties as follows:
+Each transaction represents a single payment attempt for an order or
+partial order. Transactions are immutable once created and include
+complete details of the payment including amount, method, processor
+response, and authorization codes.
 
-- `id`: Primary Key.
-- `shopping_mall_order_id`: Reference to the order being paid for. [shopping_mall_orders.id](#shopping_mall_orders)
-- `shopping_mall_customer_id`: Customer making the payment. [shopping_mall_customers.id](#shopping_mall_customers)
-- `shopping_mall_payment_method_id`
-  > Payment method used for this transaction. {@link
-  > shopping_mall_payment_methods.id}
-- `order_number`: Human-readable order number for reference (e.g., ORD-20250115-ABC123)
-- `amount`
-  > Payment amount in platform currency (stored in cents to avoid floating
-  > point errors)
-- `currency`: ISO 4217 currency code (USD, EUR, INR, etc.)
-- `payment_status`
-  > Current payment status: pending_payment, payment_processing,
-  > payment_confirmed, payment_failed, payment_pending, refund_processing,
-  > refund_completed, refund_failed
-- `payment_method_type`
-  > Type of payment method: credit_card, debit_card, paypal, bank_transfer,
-  > digital_wallet
-- `card_last_four`: Last 4 digits of card (if card payment), masked for security
-- `cardholder_name`: Name on the payment method
-- `billing_address`
-  > Billing address provided at payment time (JSON formatted for address
-  > components)
-- `authorization_code`: Authorization code from payment processor if transaction was approved
-- `transaction_id`: Unique transaction ID from payment processor
-- `response_code`: Standardized response code from payment processor (00 for success, etc.)
-- `response_message`: Human-readable response message from payment processor
-- `error_code`: Error code if transaction failed (insufficient funds, expired card, etc.)
-- `error_message`: Detailed error explanation if transaction declined or failed
-- `fraud_score`: Risk assessment score from payment processor (0-100, higher = more risky)
-- `three_d_secure_status`
-  > 3D Secure authentication status: not_applicable, authenticated,
-  > attempted, not_enrolled
-- `idempotency_key`: Unique key for idempotent payment processing to prevent duplicate charges
-- `ip_address`: Customer IP address when payment was attempted
-- `user_agent`: Browser/device user agent information
-- `request_timestamp`: When the payment request was received
-- `authorization_timestamp`: When payment authorization was received from processor
-- `created_at`: Payment record creation timestamp
-- `updated_at`: Last update timestamp for this payment record
+Transactions link to orders and payment methods, enabling tracking of
+which payment method was used and what order it paid for. Status field
+tracks workflow (pending → processing → authorized → completed or
+failed). Soft deletion preserves all payment history for compliance and
+audit purposes.
 
-### `shopping_mall_payment_transactions`
-
-Detailed payment processor transaction records. Captures every
-interaction with the payment gateway including authorization, capture,
-decline, refund, reversal events. Maintains complete audit trail of
-payment processor responses. Separate from shopping_mall_payments to
-preserve immutable transaction history while allowing payment status
-updates.
+The transaction table is the source of truth for all financial records
+and integrates with seller settlements for commission calculations and
+payment distributions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_payment_id`: Reference to the parent payment record. [shopping_mall_payments.id](#shopping_mall_payments)
-- `transaction_type`
-  > Type of transaction: authorization, capture, decline, refund, reversal,
-  > adjustment, chargeback
-- `transaction_status`
-  > Status of this specific transaction: pending, successful, failed,
-  > cancelled
-- `amount`
-  > Transaction amount (may differ from original payment if partial refund,
-  > etc.)
-- `currency`: Currency code for this transaction
-- `gateway_transaction_id`: Transaction ID from payment processor
-- `gateway_reference_id`: Reference ID from payment processor (for linking related transactions)
-- `authorization_code`: Authorization code if applicable
-- `response_code`: Response code from payment processor
-- `response_message`: Response message from payment processor
-- `error_code`: Error code if transaction failed
-- `error_message`: Error message if transaction failed
-- `avs_response`: Address Verification System response (if card transaction)
-- `cvv_response`: CVV verification response (if card transaction)
-- `request_payload`
-  > Full request JSON sent to payment processor (for audit trail, no
-  > sensitive data)
-- `response_payload`: Full response JSON received from payment processor (for audit trail)
-- `request_timestamp`: When request was sent to payment processor
-- `response_timestamp`: When response was received from payment processor
-- `created_at`: Record creation timestamp
-
-### `shopping_mall_refunds`
-
-Refund request and processing records. Tracks lifecycle of refunds from
-initiation through completion. Separate entity (not nullable fields on
-payments) enables proper refund state management and audit trail. Refunds
-can be partial, have multiple statuses, and require approval workflows.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_payment_id`
-  > Reference to the original payment being refunded. {@link
-  > shopping_mall_payments.id}
-- `shopping_mall_order_id`: Reference to the order. [shopping_mall_orders.id](#shopping_mall_orders)
-- `refund_number`: Unique refund identifier (REF-YYYYMMDD-XXXXXX format)
-- `refund_reason`
-  > Reason for refund: customer_request, payment_failure,
-  > seller_cancellation, order_cancellation, return_accepted,
-  > dispute_resolution, chargeback, other
-- `refund_amount`
-  > Amount to be refunded (may be less than original payment for partial
-  > refunds)
-- `original_amount`: Original payment amount (for reference)
-- `refund_status`
-  > Current refund status: initiated, approved, processing, completed,
-  > failed, reversed, cancelled
-- `refund_method`
-  > How refund will be issued: original_payment_method, store_credit,
-  > bank_transfer, other
-- `deduction_amount`: Amount deducted from refund (restocking fee, condition deduction, etc.)
-- `deduction_reason`: Reason for deduction (e.g., item condition, restocking fee)
-- `notes`
-  > Internal notes about this refund (admin comments, investigation notes,
-  > etc.)
-- `initiated_by`: Who initiated the refund: customer, seller, admin, system
-- `approved_by`: Admin ID who approved the refund (if applicable)
-- `initiation_timestamp`: When refund was initiated
-- `approval_timestamp`: When refund was approved for processing
-- `processing_timestamp`: When refund processing was initiated with payment processor
-- `completion_timestamp`: When refund was completed/credited to customer
-- `expected_completion_date`: Expected date/time refund will appear in customer account
-- `gateway_refund_id`: Refund ID from payment processor
-- `created_at`: Record creation timestamp
-- `updated_at`: Last update timestamp
-
-### `shopping_mall_payment_methods`
-
-Customer payment methods stored on file. Tokenized payment references for
-reuse, avoiding storage of complete sensitive data. Each payment method
-is linked to a customer and can be marked as primary or deleted. Supports
-credit cards, digital wallets, and bank accounts.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_customer_id`: Customer who owns this payment method. [shopping_mall_customers.id](#shopping_mall_customers)
-- `payment_method_type`
-  > Type of payment method: credit_card, debit_card, paypal, bank_account,
-  > digital_wallet
-- `payment_token`
-  > Tokenized reference from payment processor (never stores actual
-  > card/account data)
-- `display_name`
-  > Customer-friendly name for this payment method (e.g., "My VISA", "PayPal
-  > Account")
-- `card_last_four`: Last 4 digits of card (if card payment) for display
-- `card_brand`: Card brand for card payments: visa, mastercard, amex, discover
-- `expiration_month`: Expiration month (1-12) for card payments
-- `expiration_year`: Expiration year (4-digit) for card payments
-- `cardholder_name`: Name on the card
-- `bank_name`: Bank name for bank account payments
-- `account_last_four`: Last 4 digits of bank account
-- `is_primary`: Whether this is the customer's default payment method
-- `is_active`: Whether this payment method is active/available for use
-- `created_at`: When this payment method was added
-- `updated_at`: Last update timestamp
-- `deleted_at`: Soft delete timestamp if payment method is no longer available
-
-### `shopping_mall_transaction_reconciliation`
-
-Reconciliation records comparing system payment records with payment
-processor settlements. Ensures all transactions are accounted for and any
-discrepancies are detected. Tracks daily or periodic reconciliation runs.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reconciliation_date`: Date for which reconciliation was performed
-- `reconciliation_type`: Type of reconciliation: daily, weekly, monthly, manual, processor_report
-- `processor_name`: Which payment processor this reconciliation is for
-- `system_transaction_count`: Number of transactions recorded in our system for this period
-- `processor_transaction_count`: Number of transactions reported by payment processor
-- `system_total_amount`: Total transaction amount in our system
-- `processor_total_amount`: Total transaction amount reported by processor
-- `reconciliation_status`
-  > Status of reconciliation: matched, discrepancy_found,
-  > pending_investigation, resolved
-- `discrepancy_details`: Description of any discrepancies found
-- `missing_transaction_ids`: JSON array of transaction IDs missing from system
-- `extra_transaction_ids`: JSON array of transaction IDs in system but not in processor report
-- `reconciled_by`: Admin user ID who performed or approved the reconciliation
-- `reconciliation_timestamp`: When reconciliation was performed
-- `resolution_notes`: Notes on how discrepancies were resolved
-- `created_at`: Record creation timestamp
-
-### `shopping_mall_seller_payouts`
-
-Seller payment records tracking when payouts are issued to sellers.
-Records amount, status, and settlement details. Separate from customer
-refunds - this is seller compensation for successful sales.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_seller_id`: Seller receiving the payout. [shopping_mall_sellers.id](#shopping_mall_sellers)
-- `payout_number`: Unique payout identifier (PAYOUT-YYYYMMDD-XXXXXX format)
-- `payout_period_start`: Start date of the period covered by this payout
-- `payout_period_end`: End date of the period covered by this payout
-- `total_sales_amount`: Gross sales amount before commissions and fees
-- `commission_amount`: Platform commission deducted from sales
-- `refunds_amount`: Total refunds processed in this period
-- `fees_amount`: Other fees deducted (payment processing, etc.)
-- `net_payout_amount`: Final amount to be paid to seller (gross - commissions - refunds - fees)
-- `payout_status`
-  > Status of payout: pending, approved, processing, completed, failed,
-  > cancelled
-- `payout_method`: How payout is issued: bank_transfer, wire, check, digital_wallet
-- `bank_account_id`: Reference to seller's saved bank account for payout (if applicable)
-- `transaction_reference`: Transaction ID or reference from payment processor
-- `initiated_timestamp`: When payout was initiated
-- `completed_timestamp`: When payout was completed/deposited
-- `expected_delivery_date`: Expected date funds will appear in seller's account
-- `failure_reason`: Reason for payout failure if applicable
-- `notes`: Internal notes about this payout
-- `created_at`: Record creation timestamp
-- `updated_at`: Last update timestamp
-
-### `shopping_mall_seller_account_balances`
-
-Current account balance for each seller. Tracks the amount owed to seller
-from completed sales, updated as orders are fulfilled and refunds
-processed. Enables sellers to view their current available balance for
-payout requests.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_seller_id`: Seller whose balance this tracks. [shopping_mall_sellers.id](#shopping_mall_sellers)
-- `current_balance`: Current available balance ready for payout
-- `pending_balance`: Balance from orders not yet confirmed delivered
-- `reserved_balance`: Balance held due to disputes or pending investigation
-- `lifetime_earnings`: Total cumulative earnings since seller joined platform
-- `lifetime_payouts`: Total cumulative payouts already processed
-- `last_balance_update`: Last time balance was updated
-- `created_at`: Record creation timestamp
-- `updated_at`: Last update timestamp
-
-### `shopping_mall_commission_rates`
-
-Commission rate configuration by product category. Defines what
-percentage of each sale the platform retains as commission. Supports
-variable rates to optimize for different categories. Historical records
-track rate changes over time.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_category_id`
-  > Product category this commission rate applies to. {@link
-  > shopping_mall_categories.id}
-- `category_name`: Category name for reference (denormalized from category table)
-- `commission_percentage`: Commission percentage (0-100) that platform retains from each sale
-- `minimum_commission_amount`: Minimum commission amount even if percentage would be less
-- `maximum_commission_amount`: Maximum commission amount capped at this value
-- `effective_date`: Date when this commission rate becomes effective
-- `expiration_date`: Date when this commission rate expires (null if current)
-- `description`
-  > Description of why this rate was set (e.g., promotional rate, category
-  > adjustment)
-- `created_by`: Admin ID who created this rate
-- `created_at`: Record creation timestamp
-- `updated_at`: Last update timestamp
-
-### `shopping_mall_financial_ledger`
-
-General ledger tracking all financial movements: customer payments,
-seller payouts, refunds, commissions, adjustments. Immutable audit trail
-of financial transactions for accounting and compliance. Supports
-platform financial reporting and reconciliation.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_order_id`: Related order if applicable. [shopping_mall_orders.id](#shopping_mall_orders)
-- `ledger_date`: Date of the financial transaction
-- `transaction_type`
-  > Type of financial transaction: sale, refund, payout, commission,
-  > adjustment, chargeback, fee
-- `debit_account`: Account being debited (reduced) - typically customer or seller account ID
-- `credit_account`: Account being credited (increased) - typically platform or seller account
-- `amount`: Transaction amount
-- `currency`: Currency code
-- `description`: Description of the transaction
-- `reference_id`
-  > Reference ID from related transaction (payment ID, refund ID, payout ID,
-  > etc.)
-- `balance_after`: Platform balance after this transaction (for reconciliation)
-- `created_by`: System or user who initiated this transaction
-- `notes`: Additional notes about this transaction
-- `created_at`: Record creation timestamp (immutable)
-
-## Shipping
-
-```mermaid
-erDiagram
-"shopping_mall_shipments" {
-  String id PK
-  String shopping_mall_order_id FK
-  String shopping_mall_seller_id FK
-  String shopping_mall_shipping_carrier_id FK "nullable"
-  String shipment_number UK
-  String tracking_number "nullable"
-  String status
-  String shipping_address
-  Float weight_kg "nullable"
-  DateTime estimated_delivery_date "nullable"
-  DateTime actual_delivery_date "nullable"
-  DateTime shipped_at "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_shipment_items" {
-  String id PK
-  String shopping_mall_shipment_id FK
-  String shopping_mall_product_variant_id FK
-  Int quantity
-  String item_status
-  DateTime created_at
-}
-"shopping_mall_shipment_tracking" {
-  String id PK
-  String shopping_mall_shipment_id FK
-  String tracking_event
-  String carrier_status "nullable"
-  String location "nullable"
-  DateTime event_timestamp "nullable"
-  String description "nullable"
-  DateTime created_at
-}
-"shopping_mall_shipping_labels" {
-  String id PK
-  String shopping_mall_shipment_id FK,UK
-  String shopping_mall_shipping_carrier_id FK
-  String label_data
-  String barcode
-  String label_format
-  DateTime generated_at
-  DateTime created_at
-}
-"shopping_mall_delivery_notifications" {
-  String id PK
-  String shopping_mall_shipment_id FK
-  String shopping_mall_customer_id FK
-  String notification_type
-  String notification_channel
-  String status
-  String recipient_address
-  DateTime sent_at
-  DateTime delivered_at "nullable"
-  String failed_reason "nullable"
-  DateTime created_at
-}
-"shopping_mall_delivery_exceptions" {
-  String id PK
-  String shopping_mall_shipment_id FK
-  String exception_type
-  String severity
-  String description
-  String carrier_message "nullable"
-  String resolution_action "nullable"
-  DateTime detected_at
-  DateTime resolved_at "nullable"
-  DateTime created_at
-}
-"shopping_mall_carrier_integrations" {
-  String id PK
-  String shopping_mall_shipping_carrier_id FK,UK
-  String(80000) api_endpoint
-  String authentication_type
-  String api_key_encrypted "nullable"
-  String api_secret_encrypted "nullable"
-  String(80000) webhook_url "nullable"
-  String rate_table_id "nullable"
-  String account_number "nullable"
-  String status
-  DateTime last_sync_at "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_tracking_updates" {
-  String id PK
-  String shopping_mall_shipment_id FK
-  String shopping_mall_shipping_carrier_id FK "nullable"
-  String carrier_response_raw
-  String response_type
-  DateTime received_at
-  DateTime processed_at "nullable"
-  String processing_status
-  String processing_error "nullable"
-  DateTime created_at
-}
-"shopping_mall_shipment_items" }o--|| "shopping_mall_shipments" : shipment
-"shopping_mall_shipment_tracking" }o--|| "shopping_mall_shipments" : shipment
-"shopping_mall_shipping_labels" |o--|| "shopping_mall_shipments" : shipment
-"shopping_mall_delivery_notifications" }o--|| "shopping_mall_shipments" : shipment
-"shopping_mall_delivery_exceptions" }o--|| "shopping_mall_shipments" : shipment
-"shopping_mall_tracking_updates" }o--|| "shopping_mall_shipments" : shipment
-```
-
-### `shopping_mall_shipments`
-
-Represents physical shipments/packages. One order can have multiple
-shipments if split across sellers or inventory locations. Core
-fulfillment entity tracking the journey from seller warehouse to customer
-delivery. Links logical orders to physical package fulfillment.
-Integrates with carrier systems for tracking.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_order_id`
-  > Reference to the order being fulfilled. The {@link
-  > shopping_mall_orders.id}.
-- `shopping_mall_seller_id`
-  > Reference to the seller fulfilling this shipment. The {@link
-  > shopping_mall_sellers.id}.
-- `shopping_mall_shipping_carrier_id`
-  > Reference to the carrier transporting this shipment. The {@link
-  > shopping_mall_shipping_carriers.id}.
-- `shipment_number`
-  > Human-readable shipment identifier (e.g., SHP-20250115-001). Unique
-  > format for easy tracking reference.
-- `tracking_number`
-  > Carrier tracking number for this shipment. Used by customers and carriers
-  > to track package. May be NULL until carrier assignment.
+- `ecommerce_mall_order_id`: Reference to the order being paid for. [ecommerce_mall_orders.id](#ecommerce_mall_orders).
+- `ecommerce_mall_payment_method_id`
+  > Reference to the payment method used (credit card, debit card, digital
+  > wallet, etc.). [ecommerce_mall_payment_methods.id](#ecommerce_mall_payment_methods).
+- `ecommerce_mall_customer_id`
+  > Reference to the customer who initiated the payment. {@link
+  > ecommerce_mall_customers.id}.
+- `transaction_reference_id`
+  > Unique transaction reference from payment processor (e.g., Stripe
+  > transaction ID, PayPal transaction ID). Used for tracking and
+  > reconciliation with payment processor.
 - `status`
-  > Current shipment status: pending, confirmed, picked, packed, shipped,
-  > in_transit, out_for_delivery, delivered, failed_delivery, returned.
-  > Indicates fulfillment stage.
-- `shipping_address`
-  > Full shipping address for this shipment (snapshot from order at shipment
-  > time). Stored as JSON or formatted string with street, city, state,
-  > postal code, country.
-- `weight_kg`
-  > Total weight of shipment in kilograms. Used for shipping cost calculation
-  > and carrier requirements.
-- `estimated_delivery_date`
-  > Estimated delivery date calculated from carrier service level and
-  > origin-to-destination route. Updated when carrier provides revised
-  > estimate.
-- `actual_delivery_date`
-  > Actual delivery date when carrier confirms successful delivery. NULL
-  > until delivery is confirmed.
-- `shipped_at`
-  > Date and time when shipment was picked up by carrier or left seller's
-  > warehouse. Marks beginning of transit phase.
+  > Current transaction status. Valid values: pending (awaiting processing),
+  > processing (payment is being processed), authorized (payment authorized
+  > but not yet settled), completed (payment successfully completed and
+  > settled), failed (payment failed), cancelled (transaction cancelled by
+  > user or system), refunded (payment refunded to customer). Determines
+  > which operations are allowed on the transaction.
+- `amount`
+  > Amount charged to customer in the transaction currency. Must be a
+  > positive number with maximum 2 decimal places. This is the gross amount
+  > including all fees.
+- `currency_code`
+  > ISO 4217 currency code for the transaction (e.g., USD, EUR, GBP).
+  > Determines how amount is interpreted and enables multi-currency support.
+- `payment_method_type`
+  > Type of payment method used. Valid values: credit_card, debit_card,
+  > digital_wallet (Apple Pay, Google Pay), bank_transfer, paypal, bnpl (Buy
+  > Now Pay Later), other. Helps categorize payments for analytics and
+  > compliance.
+- `processor_name`
+  > Name of the payment processor handling the transaction (e.g., Stripe,
+  > PayPal, Square, Adyen). Identifies which processor handled the payment
+  > for troubleshooting and reconciliation.
+- `processor_response_code`
+  > Response code from payment processor indicating the authorization result.
+  > Examples: 200 (success), 400 (bad request), 402 (payment required), 403
+  > (forbidden), 429 (rate limited), 500 (server error). Used for error
+  > handling and debugging.
+- `processor_response_message`
+  > Human-readable response message from payment processor explaining the
+  > result. Examples: 'Card approved', 'Insufficient funds', 'Invalid card',
+  > 'Declined by bank'. Shown to customer to explain transaction outcome.
+- `authorization_code`
+  > Authorization code returned by payment processor for approved
+  > transactions. Used to settle (capture) the payment and for processor
+  > reconciliation. Required for completed transactions.
+- `risk_score`
+  > Fraud risk score from payment processor (0-100 scale where 0=low risk,
+  > 100=high risk). Used for fraud detection and triggering additional
+  > verification steps. Scores above 75 may trigger manual review.
+- `ip_address`
+  > IP address of the customer making the payment. Used for fraud detection,
+  > geographic verification, and security auditing. Stored for compliance
+  > investigation.
+- `retry_count`
+  > Number of times this payment has been retried by the system. Starts at 0
+  > for first attempt. System may automatically retry failed payments up to 2
+  > times. Helps prevent duplicate charges by tracking retry attempts.
+- `settled_at`
+  > Timestamp when the payment was settled (funds captured from customer
+  > account). Empty for pending or failed transactions. For completed
+  > transactions, this marks when funds actually moved.
 - `created_at`
-  > Timestamp when shipment record was created (when order was confirmed and
-  > shipment reserved).
+  > Timestamp when the transaction was initiated. Marks the start of the
+  > payment lifecycle.
 - `updated_at`
-  > Timestamp of most recent update to shipment record (status change,
-  > delivery update, etc.).
+  > Timestamp of the last status update or modification to the transaction.
+  > Tracks when transaction state last changed.
+- `deleted_at`
+  > Soft delete timestamp. Null for active transactions. When set, indicates
+  > transaction has been logically deleted while preserving audit trail.
+  > Compliance requirement for 7-year payment retention.
 
-### `shopping_mall_shipment_items`
+### `ecommerce_mall_payment_failures`
 
-Maps products/variants to shipments. Records which items from an order
-are included in each physical package. Enables independent tracking of
-items within a shipment and item-level fulfillment status. Subsidiary to
-shipment management.
+Detailed records of payment processing failures and their error details.
+Tracks every failed payment attempt to enable root cause analysis, retry
+mechanisms, and compliance reporting.
 
-Properties as follows:
+When a payment transaction fails (is declined, times out, or returns an
+error), a failure record is created capturing the specific error code,
+message, and context. This enables the system to understand why payments
+fail and take appropriate action (retry, notify customer, escalate to
+support).
 
-- `id`: Primary Key.
-- `shopping_mall_shipment_id`
-  > Reference to the shipment containing this item. The {@link
-  > shopping_mall_shipments.id}.
-- `shopping_mall_product_variant_id`
-  > Reference to the product variant being shipped. The {@link
-  > shopping_mall_product_variants.id}.
-- `quantity`
-  > Number of units of this variant in the shipment. Positive integer
-  > representing items packed.
-- `item_status`
-  > Status of this specific item in the shipment: pending, picked, packed,
-  > shipped, in_transit, delivered, damaged. Tracks individual item
-  > fulfillment.
-- `created_at`: Timestamp when this item was added to the shipment.
+Failure records link to the associated payment transaction and maintain
+complete error information from the payment processor. They support the
+automatic retry system and fraud detection mechanisms.
 
-### `shopping_mall_shipment_tracking`
-
-Real-time tracking events from carrier APIs and webhooks. Records all
-status updates as shipment moves through carrier network. Append-only
-audit trail of shipment journey. Enables customer visibility and delivery
-management. Updates received from carrier systems at regular intervals.
+The failure table is subsidiary to payment transactions - it exists only
+to supplement transaction records with failure-specific details. Failures
+are immutable once created and preserved for PCI compliance and audit
+purposes.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_shipment_id`
-  > Reference to the shipment being tracked. The {@link
-  > shopping_mall_shipments.id}.
-- `tracking_event`
-  > Type of tracking event: picked_up, in_transit, at_facility,
-  > out_for_delivery, delivered, delivery_failed, returned. Describes what
-  > happened to the package.
-- `carrier_status`
-  > Raw status string from carrier (e.g., 'EN' for FedEx, 'P' for UPS). May
-  > differ from standardized tracking_event for integration purposes.
-- `location`
-  > Location description from carrier (city, facility name, etc.). May
-  > include latitude/longitude if carrier provides it.
-- `event_timestamp`
-  > When the carrier reported this event (timestamp from carrier, may differ
-  > from when we received it).
-- `description`
-  > Human-readable description of the tracking event. Example: 'Package
-  > picked up from sender' or 'Out for delivery'.
+- `ecommerce_mall_payment_transaction_id`
+  > Reference to the payment transaction that failed. {@link
+  > ecommerce_mall_payment_transactions.id}.
+- `error_code`
+  > Error code from payment processor identifying the type of failure.
+  > Examples: insufficient_funds, card_declined, expired_card, invalid_cvv,
+  > processing_error, timeout, rate_limited. Used to categorize failures for
+  > analysis and automated remediation.
+- `error_message`
+  > Human-readable error message from payment processor explaining the
+  > failure. Examples: 'Your card was declined', 'Your card has expired',
+  > 'Payment processor is temporarily unavailable'. Shown to customer to
+  > explain payment failure.
+- `failure_category`
+  > Categorization of failure type: temporary (transient issue that may
+  > succeed on retry), permanent (customer action required), processor_error
+  > (payment processor issue). Used to determine retry strategy and customer
+  > notification.
+- `processor_raw_response`
+  > Complete raw response from payment processor including all fields and
+  > metadata. Stored for debugging and compliance purposes. Helps investigate
+  > complex failures.
+- `retry_scheduled`
+  > Whether system has automatically scheduled a retry of this payment.
+  > Temporary failures may be automatically retried. This flag indicates if
+  > retry is planned.
 - `created_at`
-  > Timestamp when this tracking event was recorded in the system (when we
-  > received the update).
+  > Timestamp when the payment failure was recorded. Marks when the failure
+  > occurred.
+- `deleted_at`
+  > Soft delete timestamp. Null for active failure records. When set,
+  > indicates failure has been logically deleted. Soft delete preserves audit
+  > trail for compliance.
 
-### `shopping_mall_shipping_labels`
+### `ecommerce_mall_refund_requests`
 
-Generated shipping labels for carrier fulfillment. Stores barcode, label
-data, and carrier-specific formatting. Created when shipment is ready to
-be handed to carrier. May be regenerated if label is lost or damaged.
-Subsidiary to shipment fulfillment.
+Customer or system-initiated refund requests for completed payments.
+Records the intention to refund an order or partial order and tracks the
+approval/denial workflow.
 
-Properties as follows:
+Refund requests capture the business context for why a refund is needed:
+customer initiated return, system-detected issue, seller non-shipment, or
+damage claim. They represent the customer's intent to get money back and
+guide the refund processing workflow.
 
-- `id`: Primary Key.
-- `shopping_mall_shipment_id`
-  > Reference to the shipment this label is for. The {@link
-  > shopping_mall_shipments.id}.
-- `shopping_mall_shipping_carrier_id`
-  > Reference to the carrier this label was generated for. The {@link
-  > shopping_mall_shipping_carriers.id}.
-- `label_data`
-  > Raw label data (PDF content, ZPL format, or other carrier format). Stored
-  > as base64 encoded or reference to file storage location.
-- `barcode`
-  > Barcode/tracking number embedded in label. Should match shipment tracking
-  > number.
-- `label_format`
-  > Format of label data: pdf, zpl, espl, image. Indicates how label should
-  > be displayed or printed.
-- `generated_at`
-  > Timestamp when label was generated. Used to determine if label needs to
-  > be regenerated.
-- `created_at`: Timestamp when label record was created in system.
+Each request has independent status tracking (pending, approved,
+rejected, processing, completed) enabling management of the refund
+lifecycle separate from the original payment. Refund requests can
+reference the original payment transaction and associated order.
 
-### `shopping_mall_delivery_notifications`
-
-Tracks all notifications sent to customers about their shipments. Records
-what was sent, when, to whom, via which channel (email, SMS, push).
-Enables notification history, resend capability, and communication
-compliance tracking. Subsidiary to shipment management.
+This is a primary table because refund requests are independently managed
+through a complete workflow, not merely attached to another entity.
+Customers can submit refund requests, they can be approved/denied, and
+they trigger actual payment reversals (refunds table).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_shipment_id`
-  > Reference to the shipment this notification is about. The {@link
-  > shopping_mall_shipments.id}.
-- `shopping_mall_customer_id`
-  > Reference to the customer who received this notification. The {@link
-  > shopping_mall_customers.id}.
-- `notification_type`
-  > Type of notification: order_confirmed, order_shipped, out_for_delivery,
-  > delivery_attempted, delivered, delivery_failed. Indicates what stage of
-  > delivery the notification is about.
-- `notification_channel`
-  > Channel used to send notification: email, sms, push, in_app. Records how
-  > notification was delivered to customer.
+- `ecommerce_mall_order_id`
+  > Reference to the order for which refund is being requested. {@link
+  > ecommerce_mall_orders.id}.
+- `ecommerce_mall_payment_transaction_id`
+  > Reference to the original payment transaction being refunded. {@link
+  > ecommerce_mall_payment_transactions.id}.
+- `ecommerce_mall_customer_id`
+  > Reference to the customer requesting the refund. {@link
+  > ecommerce_mall_customers.id}.
 - `status`
-  > Notification delivery status: pending, sent, delivered, failed, bounced.
-  > Tracks if notification reached customer successfully.
-- `recipient_address`
-  > Destination address (email, phone, push token). Records where
-  > notification was sent.
-- `sent_at`: Timestamp when notification was sent to customer (or queued for sending).
-- `delivered_at`
-  > Timestamp when delivery was confirmed (if available from provider). NULL
-  > if not yet delivered or not trackable.
-- `failed_reason`
-  > Reason for notification failure if status is 'failed' (invalid address,
-  > provider error, etc.).
-- `created_at`: Timestamp when this notification record was created.
+  > Current status of the refund request. Valid values: pending (awaiting
+  > approval), approved (approved and ready for processing), rejected
+  > (denied, no refund will be issued), processing (refund is being
+  > processed), completed (refund successfully processed and paid to
+  > customer), failed (refund processing failed). Tracks workflow progress.
+- `reason`
+  > Reason for the refund request from the customer or system. Valid values:
+  > customer_initiated (customer requested refund), damaged_item (item
+  > arrived damaged), defective_product (product doesn't work as described),
+  > wrong_item (order contained wrong item), no_shipment (seller didn't
+  > ship), seller_issue (seller service issue), payment_error (system charged
+  > incorrect amount), fraud_dispute (customer disputes the charge). Used to
+  > understand refund patterns.
+- `requested_amount`
+  > Amount customer is requesting to be refunded. Must be a positive number
+  > not exceeding the original order amount. For partial refunds, this is
+  > less than full order. Decimal with 2 places maximum.
+- `approved_amount`
+  > Amount actually approved for refund after review. May differ from
+  > requested amount (e.g., restocking fee applied, partial refund approved).
+  > Null until request is reviewed.
+- `rejection_reason`
+  > Reason for rejecting the refund request if status is rejected. Examples:
+  > outside_return_window, item_condition_unacceptable, duplicate_request,
+  > no_supporting_evidence. Explains why refund was denied.
+- `customer_notes`
+  > Detailed notes from customer explaining why they want a refund. May
+  > include description of damage, product issues, or other context
+  > supporting the request. Max 2000 characters.
+- `admin_notes`
+  > Internal notes from admin or support team during refund review. May
+  > include investigation findings, decision rationale, or customer
+  > communication details. Not visible to customer.
+- `requested_at`
+  > Timestamp when the customer submitted the refund request. Marks the start
+  > of the refund request lifecycle.
+- `reviewed_at`
+  > Timestamp when the refund request was reviewed and approved/rejected.
+  > Null while request is pending. Marks when decision was made.
+- `created_at`
+  > Timestamp when the refund request record was created in the system.
+  > Should match requested_at in most cases.
+- `updated_at`
+  > Timestamp of the last update to the refund request (approval, status
+  > change, notes added, etc). Tracks when request state last changed.
+- `deleted_at`
+  > Soft delete timestamp. Null for active refund requests. When set,
+  > indicates request has been logically deleted. Soft deletion preserves
+  > audit trail for compliance.
 
-### `shopping_mall_delivery_exceptions`
+### `ecommerce_mall_refunds`
 
-Exceptional situations and problems during delivery. Records failed
-delivery attempts, address issues, delays, customer contact failures, and
-other delivery exceptions. Enables exception management and escalation
-workflows. Subsidiary to shipment fulfillment.
+Processed refunds representing actual payment reversals to customer
+accounts. Records the complete lifecycle of refund transactions from
+approval through settlement.
+
+When a refund request is approved, a refund record is created capturing
+the refund transaction details. The refund tracks the actual reversal of
+funds to the customer's original payment method (or alternative method if
+necessary).
+
+Each refund maintains complete transaction data including amount,
+currency, processor reference, and status throughout the reversal
+process. Refunds may be processed immediately or may take several
+business days depending on the payment method and processor.
+
+The refund table is subsidiary to refund requests - it exists to
+implement the approved refund through actual payment reversal. Refunds
+are immutable once created and preserved for complete financial audit
+trail and compliance with 7-year payment retention requirements.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_shipment_id`
-  > Reference to the shipment with the delivery exception. The {@link
-  > shopping_mall_shipments.id}.
-- `exception_type`
-  > Type of exception: failed_delivery, address_invalid,
-  > recipient_unavailable, package_damaged, weather_delay, customs_issue,
-  > returned_to_sender, lost_package. Categorizes the problem.
-- `severity`
-  > Severity level: low (minor delays), medium (delivery issue requiring
-  > customer contact), high (package lost/damaged). Determines escalation
-  > priority.
-- `description`
-  > Detailed description of the exception. Provides context for problem
-  > resolution.
-- `carrier_message`: Message or note from carrier about the exception (from tracking update).
-- `resolution_action`
-  > Action taken to resolve: retry_delivery, return_to_sender,
-  > refund_initiated, replacement_sent, pending_action. Records what's being
-  > done.
-- `detected_at`
-  > Timestamp when exception was first detected (from carrier update or
-  > manual report).
-- `resolved_at`: Timestamp when exception was resolved or closed. NULL if still open.
-- `created_at`: Timestamp when exception record was created in system.
-
-### `shopping_mall_carrier_integrations`
-
-Carrier-specific API integration configurations and credentials. Stores
-connection details for each carrier (endpoint, authentication method, API
-key). Separate from carrier master data. Enables integration with
-multiple carriers for real-time tracking and rate queries. Primary entity
-for admin carrier configuration management.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_shipping_carrier_id`
-  > Reference to the carrier this integration is for. The {@link
-  > shopping_mall_shipping_carriers.id}.
-- `api_endpoint`
-  > Base URL for carrier's API endpoint. Example:
-  > https://api.fedex.com/shipping or https://onlinetools.ups.com/track.
-- `authentication_type`
-  > Type of authentication: api_key, oauth2, basic_auth, certificate.
-  > Indicates how to authenticate with carrier API.
-- `api_key_encrypted`
-  > Encrypted API key or authentication credential. Stored encrypted per
-  > security requirements. Never logged or displayed in plain text.
-- `api_secret_encrypted`
-  > Encrypted API secret or password (if needed for authentication). Stored
-  > encrypted.
-- `webhook_url`
-  > URL for carrier to send webhook notifications about tracking updates. Our
-  > endpoint that receives real-time updates.
-- `rate_table_id`
-  > Carrier account identifier or rate table ID for looking up shipping
-  > rates. Used for rating shipments.
-- `account_number`
-  > Carrier account number (may be different from API key). Used in shipment
-  > labels and requests.
+- `ecommerce_mall_refund_request_id`
+  > Reference to the refund request that triggered this refund. {@link
+  > ecommerce_mall_refund_requests.id}.
+- `ecommerce_mall_payment_transaction_id`
+  > Reference to the original payment transaction being refunded. {@link
+  > ecommerce_mall_payment_transactions.id}.
 - `status`
-  > Integration status: active, inactive, testing, deprecated. Controls
-  > whether integration is used for production shipments.
-- `last_sync_at`
-  > Timestamp of last successful API sync/connection test with carrier. Used
-  > to detect connectivity issues.
-- `created_at`: Timestamp when integration was configured.
-- `updated_at`: Timestamp of last configuration update.
+  > Current status of the refund processing. Valid values: processing (refund
+  > initiated, awaiting processor confirmation), completed (refund
+  > successfully processed and funds returned to customer), failed (refund
+  > processing failed, requires retry or manual intervention), cancelled
+  > (refund was cancelled before completion). Tracks refund lifecycle.
+- `refund_amount`
+  > Amount being refunded to customer. Must be a positive number with maximum
+  > 2 decimal places. May be less than original payment for partial refunds
+  > or if restocking fees applied.
+- `currency_code`
+  > ISO 4217 currency code for the refund (e.g., USD, EUR, GBP). Should match
+  > the original payment transaction currency.
+- `processor_refund_id`
+  > Unique refund transaction ID from payment processor (e.g., Stripe refund
+  > ID). Used to track refund status with processor and reconcile payments.
+  > Critical for processor communication.
+- `processor_name`
+  > Name of the payment processor handling the refund (e.g., Stripe, PayPal,
+  > Square). Should match the original transaction processor.
+- `refund_method`
+  > How the refund is being issued. Valid values: original_payment_method
+  > (refunded to original card/payment method), bank_transfer (direct bank
+  > transfer), store_credit (issued as store credit balance), check (issued
+  > as physical check). Determines where funds go.
+- `expected_completion_date`
+  > Estimated date when customer will see refund in their account. Varies by
+  > payment method (2-5 business days typical). Communicated to customer for
+  > expectation setting.
+- `actual_completion_date`
+  > Actual date when refund was confirmed complete and funds returned to
+  > customer. Set when processor confirms completion. Null while processing.
+- `processor_response_code`
+  > Response code from payment processor for the refund request. Examples:
+  > 200 (success), 400 (bad request), 422 (unprocessable), 500 (server
+  > error). Used for debugging refund failures.
+- `processor_response_message`
+  > Human-readable message from processor explaining the refund result.
+  > Examples: 'Refund successfully submitted', 'Original transaction not
+  > found', 'Refund amount exceeds original'. Helps explain refund status.
+- `created_at`
+  > Timestamp when the refund was initiated. Marks when the refund processing
+  > began.
+- `updated_at`
+  > Timestamp of the last status update or modification to the refund. Tracks
+  > when refund state last changed.
+- `deleted_at`
+  > Soft delete timestamp. Null for active refunds. When set, indicates
+  > refund has been logically deleted. Soft deletion preserves audit trail
+  > for 7-year compliance requirement.
 
-### `shopping_mall_tracking_updates`
+### `ecommerce_mall_seller_settlements`
 
-Raw historical record of all tracking data received from carriers. Stores
-complete raw API responses and webhook payloads. Enables audit trail,
-system debugging, and carrier response analysis. Append-only record for
-compliance. Subsidiary to carrier integration management.
+Seller commission calculations and payment settlement records. Tracks the
+financial settlement between the platform and sellers for their sales.
+
+Seller settlements aggregate payment transactions across a settlement
+period (weekly, bi-weekly, or monthly based on seller preference) and
+calculate the net amount owed to the seller after deducting platform
+commissions and fees.
+
+Each settlement record captures the complete financial picture: total
+gross sales, commission amount deducted, any adjustments or chargebacks,
+and the final net settlement amount to be paid to the seller. Settlements
+drive the actual payments made to sellers via their configured bank
+accounts.
+
+This is a primary table because settlements represent critical financial
+records independently tracked for each seller. Settlements are primary
+business entities that drive seller payments, require comprehensive
+tracking, and need detailed analytics and reporting.
+
+Settlements maintain immutable records of all historical settlements for
+each seller, enabling complete financial audit trails and enabling
+sellers to understand their earnings over time.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_shipment_id`
-  > Reference to the shipment this tracking data is for. The {@link
-  > shopping_mall_shipments.id}.
-- `shopping_mall_shipping_carrier_id`
-  > Reference to the carrier that sent this tracking update. The {@link
-  > shopping_mall_shipping_carriers.id}.
-- `carrier_response_raw`
-  > Raw JSON or XML response from carrier API/webhook. Stored as-is for
-  > debugging and audit purposes. May contain full tracking event details.
-- `response_type`
-  > Type of response: webhook_payload, api_query_response, batch_update.
-  > Indicates source of the tracking data.
-- `received_at`: Timestamp when tracking data was received from carrier.
-- `processed_at`
-  > Timestamp when tracking data was processed and parsed into
-  > shipment_tracking. NULL if not yet processed.
-- `processing_status`
-  > Processing status: pending, processed, failed, skipped. Indicates if raw
-  > data was successfully parsed.
-- `processing_error`
-  > Error message if processing failed. Records why raw data couldn't be
-  > parsed.
-- `created_at`: Timestamp when this record was created (when we received the data).
+- `ecommerce_mall_seller_id`
+  > Reference to the seller this settlement is for. {@link
+  > ecommerce_mall_sellers.id}.
+- `settlement_period_start`
+  > Start date of the settlement period (date from which sales are included).
+  > All transactions on or after this date are included in settlement
+  > calculations.
+- `settlement_period_end`
+  > End date of the settlement period (last date on which sales are
+  > included). All transactions before this date are included in settlement
+  > calculations.
+- `settlement_frequency`
+  > Frequency of settlement for this seller. Valid values: weekly (every 7
+  > days), biweekly (every 14 days), monthly (once per month). Set by
+  > seller's preference and controls when settlements are calculated.
+- `status`
+  > Current status of the settlement. Valid values: pending (calculated but
+  > not yet paid), processing (payment in progress), completed (payment
+  > successfully made to seller), failed (payment failed and requires retry
+  > or manual intervention), cancelled (settlement was cancelled without
+  > payment). Tracks settlement lifecycle.
+- `gross_sales_amount`
+  > Total gross sales amount before commission deduction. Sum of all
+  > transaction amounts from the settlement period for this seller. Decimal
+  > with 2 places maximum.
+- `commission_percentage`
+  > Commission rate applied as percentage (e.g., 15.5 for 15.5%). The rate
+  > may vary by product category. This is the rate applied to calculate
+  > commission_amount.
+- `commission_amount`
+  > Total commission deducted from gross sales (calculated as
+  > gross_sales_amount × commission_percentage / 100). This is the platform's
+  > fee.
+- `chargebacks_and_disputes`
+  > Total amount deducted due to chargebacks, disputes, or customer
+  > complaints. These represent costs to the seller for disputed
+  > transactions. Default 0 if no disputes.
+- `refunds_issued`
+  > Total amount of refunds issued during the settlement period for this
+  > seller's products. Refunds reduce the net settlement amount owed to
+  > seller.
+- `other_adjustments`
+  > Any other adjustments to the settlement (credits, penalties, bonuses,
+  > etc). Can be positive (credit to seller) or negative (deduction from
+  > seller). Includes manual adjustments made by admin.
+- `net_settlement_amount`
+  > Final net amount to be paid to seller after all deductions and
+  > adjustments. Calculated as: gross_sales_amount - commission_amount -
+  > chargebacks_and_disputes - refunds_issued + other_adjustments. This is
+  > what seller actually receives.
+- `currency_code`
+  > ISO 4217 currency code for settlement amounts (e.g., USD, EUR). Should
+  > match seller's preferred settlement currency.
+- `payment_method`
+  > Method used to pay the seller. Valid values: bank_transfer (direct to
+  > seller's bank account), check (mailed check), paypal (PayPal transfer),
+  > cryptocurrency (crypto transfer). Determined by seller's payment
+  > preferences.
+- `payment_reference_id`
+  > Reference ID for the actual payment transaction (e.g., bank transfer ID,
+  > check number, PayPal transaction ID). Null until payment is completed.
+- `calculated_at`
+  > Timestamp when the settlement was calculated and amounts determined.
+  > Marks when settlement figures were finalized.
+- `paid_at`
+  > Timestamp when the settlement payment was actually made to the seller's
+  > account. Null until payment completes. Marks when seller receives their
+  > money.
+- `created_at`: Timestamp when the settlement record was created in the system.
+- `updated_at`
+  > Timestamp of the last update to the settlement (status change, payment
+  > made, adjustment applied, etc). Tracks when settlement state last
+  > changed.
+- `deleted_at`
+  > Soft delete timestamp. Null for active settlements. When set, indicates
+  > settlement has been logically deleted. Soft deletion preserves audit
+  > trail for compliance and seller financial records.
 
 ## Reviews
 
 ```mermaid
 erDiagram
-"shopping_mall_product_reviews" {
+"ecommerce_mall_product_reviews" {
   String id PK
-  String shopping_mall_product_variant_id FK
-  String shopping_mall_customer_id FK
-  String shopping_mall_order_id FK
-  String shopping_mall_seller_id FK
+  String ecommerce_mall_customer_id FK
+  String ecommerce_mall_product_id FK
+  String ecommerce_mall_order_id FK
+  String ecommerce_mall_product_sku_id FK
   Int rating
-  String review_title "nullable"
-  String review_content "nullable"
-  Int helpful_count
-  Int unhelpful_count
-  String seller_response "nullable"
-  DateTime seller_response_at "nullable"
-  String review_status
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_review_moderation_queue" {
-  String id PK
-  String shopping_mall_product_variant_id FK
-  String shopping_mall_customer_id FK
-  String shopping_mall_seller_id FK
-  Int rating
-  String review_title "nullable"
-  String review_content "nullable"
-  String moderation_reason "nullable"
-  String moderation_priority
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_review_moderation_history" {
-  String id PK
-  String shopping_mall_product_review_id FK "nullable"
-  String shopping_mall_admin_id FK
-  String moderation_action
-  Int original_rating
-  String original_title "nullable"
-  String original_content "nullable"
-  String moderation_notes "nullable"
-  String rejection_reason "nullable"
-  Boolean can_resubmit
-  DateTime created_at
-}
-"shopping_mall_review_helpful_votes" {
-  String id PK
-  String shopping_mall_product_review_id FK
-  String shopping_mall_customer_id FK
-  String vote_type
-  DateTime created_at
-}
-"shopping_mall_review_flags" {
-  String id PK
-  String shopping_mall_product_review_id FK
-  String shopping_mall_customer_id FK "nullable"
-  String flag_type
-  String flag_reason
-  String flag_source
-  String flag_status
-  String resolution_notes "nullable"
-  DateTime created_at
-  DateTime resolved_at "nullable"
-}
-"shopping_mall_review_moderation_history" }o--o| "shopping_mall_product_reviews" : review
-"shopping_mall_review_helpful_votes" }o--|| "shopping_mall_product_reviews" : review
-"shopping_mall_review_flags" }o--|| "shopping_mall_product_reviews" : review
-```
-
-### `shopping_mall_product_reviews`
-
-Customer product reviews with ratings and written feedback. Contains
-approved reviews from verified purchasers. Reviews are immutable once
-approved. Separated from moderation queue to maintain proper
-normalization - each review exists in only one state (approved or
-pending, never both). Enables independent search, filtering, and
-management of reviews across articles and customers.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_variant_id`
-  > Reference to the specific product variant (SKU) being reviewed. Links to
-  > [shopping_mall_product_variants.id](#shopping_mall_product_variants).
-- `shopping_mall_customer_id`
-  > Reference to the customer who submitted the review. Links to {@link
-  > shopping_mall_customers.id}. Must be verified purchaser.
-- `shopping_mall_order_id`
-  > Reference to the order proving customer purchased this product. Links to
-  > [shopping_mall_orders.id](#shopping_mall_orders). Establishes verified purchase.
-- `shopping_mall_seller_id`
-  > Reference to the seller who sold this product variant. Links to {@link
-  > shopping_mall_sellers.id}. Enables seller-specific review tracking.
-- `rating`
-  > Star rating from 1-5 representing customer satisfaction. 1=Poor, 2=Fair,
-  > 3=Average, 4=Good, 5=Excellent. Required field, must be integer value.
-- `review_title`
-  > Brief headline summarizing the review. Optional field, maximum 100
-  > characters. Provides quick context for review content.
-- `review_content`
-  > Main review text with detailed product feedback. Optional field, maximum
-  > 1000 characters. Contains customer's specific comments about product
-  > quality, usage, condition.
-- `helpful_count`
-  > Number of customers who found this review helpful. Calculated from
-  > helpful votes table. Used for review ranking and relevance.
-- `unhelpful_count`
-  > Number of customers who found this review not helpful. Calculated from
-  > helpful votes table. Used for review quality assessment.
-- `seller_response`
-  > Optional public response from the seller addressing the review. Maximum
-  > 500 characters. Seller can respond to customer feedback.
-- `seller_response_at`
-  > Timestamp when seller submitted their response to this review. ISO 8601
-  > format with timezone.
-- `review_status`
-  > Status of the review. Values: 'approved' (visible to customers),
-  > 'rejected' (removed due to policy violation), 'deleted' (customer
-  > removed), 'archived' (product removed but review preserved). Only
-  > approved reviews count toward ratings.
-- `created_at`
-  > Timestamp when customer submitted the review. ISO 8601 format. Used for
-  > sorting reviews chronologically.
-- `updated_at`
-  > Timestamp when review was last modified (edited by customer or response
-  > added). Updated on every change.
-- `deleted_at`
-  > Timestamp when review was deleted by customer or admin. Null if review is
-  > not deleted. Enables soft delete and historical tracking.
-
-### `shopping_mall_review_moderation_queue`
-
-Pending product reviews awaiting moderation before approval. Contains
-newly submitted reviews with 'pending_moderation' status. Separate from
-approved reviews to maintain proper normalization - review exists in
-moderation queue OR approved reviews, never both. Enables review
-moderation workflow and audit trail.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_variant_id`
-  > Reference to the product variant being reviewed. Links to {@link
-  > shopping_mall_product_variants.id}.
-- `shopping_mall_customer_id`
-  > Reference to customer who submitted the review. Links to {@link
-  > shopping_mall_customers.id}.
-- `shopping_mall_seller_id`: Reference to the seller. Links to [shopping_mall_sellers.id](#shopping_mall_sellers).
-- `rating`: Star rating from 1-5 submitted by customer pending approval.
-- `review_title`: Review title pending moderation. Maximum 100 characters.
-- `review_content`
-  > Review text pending moderation. Maximum 1000 characters. Will be
-  > sanitized and checked for policy violations.
-- `moderation_reason`
-  > Reason why this review was flagged for moderation. Examples:
-  > 'spam_detected', 'external_links', 'profanity', 'policy_violation',
-  > 'routine_review'. Helps moderator prioritize.
-- `moderation_priority`
-  > Priority level for moderation. Values: 'low' (routine review), 'medium'
-  > (minor flags), 'high' (policy violations), 'critical' (severe issues).
-  > Higher priority reviewed first.
-- `created_at`
-  > Timestamp when review was submitted. ISO 8601 format. Used to track
-  > moderation SLA (24-hour target).
-- `updated_at`: Timestamp when moderation record was last updated.
-
-### `shopping_mall_review_moderation_history`
-
-Audit trail recording all review moderation decisions and actions.
-Captures every approval, rejection, and modification of reviews.
-Immutable snapshot of moderation workflow. Enables tracking of moderation
-patterns, compliance auditing, and decision transparency.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_review_id`
-  > Reference to the review being moderated. Links to {@link
-  > shopping_mall_product_reviews.id} or null if review was rejected and
-  > never published.
-- `shopping_mall_admin_id`
-  > Reference to the admin who made this moderation decision. Links to {@link
-  > shopping_mall_admins.id}.
-- `moderation_action`
-  > Action taken during moderation. Values: 'approved' (made visible to
-  > customers), 'rejected' (hidden due to violations), 'flagged_for_review'
-  > (needs additional review), 'removed' (deleted after approval), 'edited'
-  > (content modified during moderation). Tracks complete decision.
-- `original_rating`
-  > Star rating from submitted review. Captured for audit trail to track if
-  > rating changed.
-- `original_title`: Original review title as submitted. Captured before any edits.
-- `original_content`
-  > Original review content as submitted. Captured before any edits or
-  > sanitization.
-- `moderation_notes`
-  > Detailed notes from moderator explaining their decision. Maximum 1000
-  > characters. May reference policy violations, content issues, or special
-  > circumstances.
-- `rejection_reason`
-  > If action was 'rejected', the specific reason. Values: 'spam',
-  > 'profanity', 'harassment', 'misleading', 'external_links',
-  > 'policy_violation', 'other'. Helps customer understand why review was
-  > rejected.
-- `can_resubmit`
-  > Whether customer can resubmit a modified version after rejection. False
-  > if severe policy violation (prevents repeated violations).
-- `created_at`
-  > Timestamp when this moderation decision was recorded. ISO 8601 format.
-  > Captures when moderator took action.
-
-### `shopping_mall_review_helpful_votes`
-
-Customer votes on whether reviews were helpful. Tracks which customers
-voted on which reviews to prevent duplicate voting. Separate table
-enables one-vote-per-customer-per-review constraint. Used to rank reviews
-by helpfulness and identify valuable feedback.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_review_id`
-  > Reference to the review being voted on. Links to {@link
-  > shopping_mall_product_reviews.id}.
-- `shopping_mall_customer_id`
-  > Reference to the customer voting on review. Links to {@link
-  > shopping_mall_customers.id}. Prevents same customer voting multiple
-  > times.
-- `vote_type`
-  > Type of vote: 'helpful' (found review useful) or 'unhelpful' (did not
-  > find review useful). Determines if vote increments helpful or unhelpful
-  > count.
-- `created_at`
-  > Timestamp when customer submitted their vote. ISO 8601 format. Records
-  > when vote was cast.
-
-### `shopping_mall_review_flags`
-
-Flags on reviews indicating content issues or community reports. Tracks
-customer-reported inappropriate reviews and system-detected violations.
-Enables review moderation queue management and content policy
-enforcement.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_review_id`
-  > Reference to the flagged review. Links to {@link
-  > shopping_mall_product_reviews.id}.
-- `shopping_mall_customer_id`
-  > Reference to customer who reported the flag (if user-reported). Links to
-  > [shopping_mall_customers.id](#shopping_mall_customers). Null if system-generated flag.
-- `flag_type`
-  > Category of flag. Values: 'spam' (promotional/irrelevant), 'abusive'
-  > (offensive language/harassment), 'misleading' (false claims),
-  > 'external_links' (promotional URLs), 'policy_violation' (other
-  > violations), 'system_detected' (automated scan). Used for prioritization.
-- `flag_reason`
-  > Detailed explanation of why review was flagged. Maximum 500 characters.
-  > Provides context for moderation team.
-- `flag_source`
-  > Source of flag. Values: 'customer_report' (customer reported),
-  > 'system_scan' (automated detection), 'admin_manual' (admin flagged
-  > manually). Indicates trustworthiness.
-- `flag_status`
-  > Current status of flag. Values: 'open' (awaiting action), 'investigating'
-  > (under review), 'resolved' (action taken), 'dismissed' (not a violation).
-  > Tracks moderation workflow.
-- `resolution_notes`
-  > Notes from moderator about how flag was resolved. Maximum 500 characters.
-  > Documents decision and rationale.
-- `created_at`
-  > Timestamp when flag was created. ISO 8601 format. Indicates when issue
-  > was first reported.
-- `resolved_at`
-  > Timestamp when flag was resolved. ISO 8601 format. Null if flag still
-  > open.
-
-## Returns
-
-```mermaid
-erDiagram
-"shopping_mall_return_requests" {
-  String id PK
-  String shopping_mall_order_id FK
-  String shopping_mall_customer_id FK
-  String shopping_mall_order_line_item_id FK "nullable"
-  String return_request_number UK
-  String return_reason
-  String additional_details "nullable"
-  String requested_resolution "nullable"
-  Int quantity_to_return
-  String evidence_urls "nullable"
+  Int overall_quality_rating
+  Int matches_description_rating
+  Int value_for_money_rating
+  Int overall_satisfaction_rating
+  Int category_specific_rating "nullable"
+  String title
+  String body
   String status
+  Int quality_score "nullable"
+  Int authenticity_score "nullable"
+  Int helpful_votes_up
+  Int helpful_votes_down
+  DateTime published_at "nullable"
+  Int days_since_purchase "nullable"
+  String reviewer_name_display "nullable"
+  Boolean is_verified_purchase
+  Boolean is_anonymous
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_return_authorizations" {
+"ecommerce_mall_review_responses" {
   String id PK
-  String shopping_mall_return_request_id FK,UK
-  String shopping_mall_seller_id FK
-  String authorization_decision
-  String decision_reason "nullable"
-  String requested_information "nullable"
-  DateTime information_deadline "nullable"
-  String return_shipping_address "nullable"
-  String prepaid_label_tracking_number "nullable"
-  DateTime authorized_at
+  String ecommerce_mall_product_review_id FK,UK
+  String ecommerce_mall_seller_id FK
+  String response_text
+  String status
+  String response_type "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"ecommerce_mall_review_moderation" {
+  String id PK
+  String ecommerce_mall_product_review_id FK,UK
+  String moderated_by_admin_id FK "nullable"
+  String risk_level
+  String moderation_decision
+  String rejection_reason "nullable"
+  String moderation_notes "nullable"
+  String content_flags "nullable"
+  Int flag_spam_score "nullable"
+  Int flag_fraud_score "nullable"
+  Boolean appeal_submitted
+  String appeal_notes "nullable"
+  String appeal_decision "nullable"
+  DateTime moderation_timestamp
+  DateTime appeal_timestamp "nullable"
+  DateTime appeal_resolved_timestamp "nullable"
   DateTime created_at
   DateTime updated_at
 }
-"shopping_mall_return_shipments" {
+"ecommerce_mall_review_media" {
   String id PK
-  String shopping_mall_return_request_id FK
-  String shopping_mall_return_authorization_id FK,UK "nullable"
-  String shopping_mall_customer_id FK
-  String shopping_mall_shipping_carrier_id FK "nullable"
-  String return_tracking_number "nullable"
-  String carrier_name "nullable"
-  String origin_address
-  String destination_address
-  String shipment_status
-  DateTime shipped_at "nullable"
-  DateTime received_at "nullable"
-  DateTime expected_receipt_date "nullable"
+  String ecommerce_mall_product_review_id FK
+  String media_type
+  String(80000) media_url
+  String(80000) thumbnail_url "nullable"
+  String original_filename "nullable"
+  Int file_size_bytes "nullable"
+  Int width_pixels "nullable"
+  Int height_pixels "nullable"
+  Int display_order "nullable"
+  Boolean is_moderated
+  String moderation_status
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"ecommerce_mall_seller_ratings" {
+  String id PK
+  String ecommerce_mall_seller_id FK,UK
+  Float composite_rating
+  Float seller_communication_rating
+  Float shipping_speed_rating
+  Float seller_accuracy_rating
+  Float item_description_accuracy_rating
+  Int review_count
+  Float positive_feedback_percentage
+  Float return_rate_percentage
+  Float on_time_delivery_percentage
+  String seller_badge "nullable"
+  Int days_on_platform
+  Int total_orders_sold
+  Int total_reviews_received
+  Float average_response_hours "nullable"
+  DateTime last_rating_update
   DateTime created_at
   DateTime updated_at
 }
-"shopping_mall_return_inspections" {
+"ecommerce_mall_seller_rating_metrics" {
   String id PK
-  String shopping_mall_return_shipment_id FK,UK
-  String shopping_mall_seller_id FK
-  String inspection_status
-  String item_condition_assessment
-  String condition_details "nullable"
-  String sku_verification
-  Boolean all_accessories_present
-  String missing_items "nullable"
-  Int refund_deduction_percentage
-  String deduction_reason "nullable"
-  String inspection_notes "nullable"
-  String inspection_evidence_urls "nullable"
-  DateTime inspected_at
+  String ecommerce_mall_seller_id FK
+  DateTime metric_date
+  Float composite_rating
+  Float seller_communication_rating
+  Float shipping_speed_rating
+  Float seller_accuracy_rating
+  Float item_description_accuracy_rating
+  Int review_count
+  Float positive_feedback_percentage
+  Float return_rate_percentage
+  Float on_time_delivery_percentage
+  Int total_orders_sold
+  Float average_response_hours "nullable"
   DateTime created_at
-  DateTime updated_at
 }
-"shopping_mall_return_decisions" {
-  String id PK
-  String shopping_mall_return_request_id FK
-  String shopping_mall_return_inspection_id FK "nullable"
-  String shopping_mall_order_id FK
-  String shopping_mall_seller_id FK "nullable"
-  String decision_status
-  Float original_order_amount
-  Float refund_amount
-  String deductions "nullable"
-  String decision_reason
-  Boolean appeal_eligible
-  DateTime decided_at
-  String decision_made_by
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_refund_processing" {
-  String id PK
-  String shopping_mall_return_decision_id FK,UK
-  String shopping_mall_order_id FK
-  String shopping_mall_customer_id FK
-  String shopping_mall_seller_id FK
-  String refund_number UK
-  Float refund_amount
-  String refund_method
-  String refund_status
-  String payment_processor_transaction_id "nullable"
-  DateTime refund_initiated_at "nullable"
-  DateTime refund_completed_at "nullable"
-  DateTime expected_arrival_date "nullable"
-  String failure_reason "nullable"
-  Int retry_count
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_restocking_inventory" {
-  String id PK
-  String shopping_mall_return_inspection_id FK "nullable"
-  String shopping_mall_product_variant_id FK
-  String shopping_mall_seller_id FK
-  String shopping_mall_return_request_id FK
-  Int quantity_restocked
-  String restock_condition
-  String restock_status
-  String restock_reason
-  String inventory_movement_id "nullable"
-  Boolean resale_permission
-  String notes "nullable"
-  DateTime restocked_at "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_return_authorizations" |o--|| "shopping_mall_return_requests" : returnRequest
-"shopping_mall_return_shipments" }o--|| "shopping_mall_return_requests" : returnRequest
-"shopping_mall_return_shipments" |o--o| "shopping_mall_return_authorizations" : authorization
-"shopping_mall_return_inspections" |o--|| "shopping_mall_return_shipments" : returnShipment
-"shopping_mall_return_decisions" }o--|| "shopping_mall_return_requests" : returnRequest
-"shopping_mall_return_decisions" }o--o| "shopping_mall_return_inspections" : inspection
-"shopping_mall_refund_processing" |o--|| "shopping_mall_return_decisions" : returnDecision
-"shopping_mall_restocking_inventory" }o--o| "shopping_mall_return_inspections" : inspection
-"shopping_mall_restocking_inventory" }o--|| "shopping_mall_return_requests" : returnRequest
+"ecommerce_mall_review_responses" |o--|| "ecommerce_mall_product_reviews" : review
+"ecommerce_mall_review_moderation" |o--|| "ecommerce_mall_product_reviews" : review
+"ecommerce_mall_review_media" }o--|| "ecommerce_mall_product_reviews" : review
 ```
 
-### `shopping_mall_return_requests`
+### `ecommerce_mall_product_reviews`
 
-Customer-initiated return requests for delivered orders. Stores the
-initial return request with customer reason, optional evidence (photos),
-and desired resolution. This is the first stage of the return lifecycle
-where customers express intent to return a product.
+Customer product reviews and ratings system.
+
+Stores product reviews submitted by customers who have verified
+purchases. Each review contains a rating (1-5 stars), detailed review
+text, and category-specific dimension ratings. Reviews go through
+moderation workflow before publication and can be edited or deleted by
+the reviewer. Soft deletion is supported for moderation needs.
+
+Reviews are independently managed - customers can search reviews across
+products, moderate reviews across the platform, and engage in review
+moderation workflows independent of the products themselves. This makes
+reviews a primary entity requiring direct CRUD operations.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_order_id`: Reference to the order being returned. [shopping_mall_orders.id](#shopping_mall_orders)
-- `shopping_mall_customer_id`
-  > Customer who initiated the return request. {@link
-  > shopping_mall_customers.id}
-- `shopping_mall_order_line_item_id`
-  > Specific line item being returned (if partial return). {@link
-  > shopping_mall_order_line_items.id}
-- `return_request_number`
-  > Human-readable return request number in format RR-YYYYMMDD-XXXXXX for
-  > customer reference
-- `return_reason`
-  > Customer-selected reason for return: Item not as described, Item arrived
-  > defective, Wrong item received, Item arrived damaged, Changed mind, Not
-  > needed, Other reason
-- `additional_details`: Customer's detailed explanation of return reason (up to 500 characters)
-- `requested_resolution`
-  > Customer's desired outcome: Full refund, Replacement, Store credit,
-  > Partial refund
-- `quantity_to_return`: Number of units customer wants to return (for multi-unit orders)
-- `evidence_urls`
-  > JSON array of uploaded evidence image URLs (max 3 images) for
-  > damaged/defective items
+- `ecommerce_mall_customer_id`
+  > Verified customer who submitted the review. Reference to {@link
+  > ecommerce_mall_customers.id}.
+- `ecommerce_mall_product_id`: Product being reviewed. Reference to [ecommerce_mall_products.id](#ecommerce_mall_products).
+- `ecommerce_mall_order_id`
+  > Order containing the purchased product being reviewed. Reference to
+  > [ecommerce_mall_orders.id](#ecommerce_mall_orders). Establishes verified purchase
+  > connection.
+- `ecommerce_mall_product_sku_id`
+  > Specific product variant (SKU) being reviewed. Reference to {@link
+  > ecommerce_mall_product_skus.id}. Enables SKU-specific feedback.
+- `rating`
+  > Overall product rating on 1-5 star scale. Range: 1 (poor) to 5
+  > (excellent). Mandatory for all reviews.
+- `overall_quality_rating`
+  > Rating for overall product quality on 1-5 scale. Part of
+  > dimension-specific ratings for analytics.
+- `matches_description_rating`
+  > Rating for product matching seller's description on 1-5 scale. Critical
+  > for identifying misleading listings.
+- `value_for_money_rating`
+  > Rating for product value relative to price on 1-5 scale. Helps customers
+  > assess pricing fairness.
+- `overall_satisfaction_rating`
+  > Overall satisfaction rating on 1-5 scale. General customer satisfaction
+  > metric.
+- `category_specific_rating`
+  > Category-specific dimension rating (e.g., fit for apparel, performance
+  > for electronics) on 1-5 scale. Varies by product category.
+- `title`
+  > Review title summarizing the review in 50-150 characters. Appears in
+  > search results and review lists.
+- `body`
+  > Detailed review text (minimum 20 characters, maximum 5000 characters).
+  > Contains customer's detailed experience and assessment.
 - `status`
-  > Return request status: pending, authorized, rejected, dispute_opened,
-  > withdrawn. Controls workflow progression.
-- `created_at`: Timestamp when return request was initiated by customer
-- `updated_at`: Last update timestamp for return request
-- `deleted_at`: Soft delete timestamp if return request is withdrawn
+  > Review moderation status. Valid values: pending (awaiting moderation),
+  > approved (published), rejected (not published), unlisted (hidden after
+  > publishing). Controls review visibility to customers.
+- `quality_score`
+  > Automated quality score (0-100) based on completeness, authenticity, and
+  > relevance. Used for moderation prioritization and fraud detection.
+- `authenticity_score`
+  > Authenticity score (0-100) calculated from verified purchase status,
+  > reviewer history, and fraud indicators. Identifies potentially fraudulent
+  > reviews.
+- `helpful_votes_up`
+  > Number of customers who marked review as helpful. Starts at 0,
+  > incremented as customers vote. Used for review ranking.
+- `helpful_votes_down`
+  > Number of customers who marked review as not helpful. Starts at 0. If
+  > significantly exceeds helpful votes, review may be delisted.
+- `published_at`
+  > Timestamp when review was published/approved. Null if review not yet
+  > approved. Enables review freshness tracking.
+- `days_since_purchase`
+  > Number of days between order delivery and review submission. Used for
+  > authenticity scoring (ideal: 7-180 days).
+- `reviewer_name_display`
+  > Display name for reviewer (customer's name or 'Anonymous'). Allows
+  > customers to hide identity while maintaining verified purchase badge.
+- `is_verified_purchase`
+  > Whether review is from verified customer purchase. True if customer
+  > actually purchased the product. Critical for authenticity.
+- `is_anonymous`
+  > Whether reviewer chose to post anonymously. True hides reviewer name but
+  > keeps verified purchase badge.
+- `created_at`
+  > Review submission timestamp. Used for sorting (most recent first) and
+  > calculating review age.
+- `updated_at`
+  > Last update timestamp (edit, status change, moderation action). Tracks
+  > review modification history.
+- `deleted_at`
+  > Soft deletion timestamp for reviews removed by moderator or author. Null
+  > if review not deleted. Preserves review history.
 
-### `shopping_mall_return_authorizations`
+### `ecommerce_mall_review_responses`
 
-Seller's authorization decision on customer return requests. Records
-whether seller approves or rejects the return, with reason and timestamp.
-This is the authorization stage where seller determines if return is
-eligible.
+Seller responses to customer product reviews.
 
-Properties as follows:
+Allows sellers to respond to customer reviews with contextual
+information, problem resolution, or clarification. Each review can have
+maximum one seller response, implementing 1:1 relationship via unique
+constraint on review_id. Response goes through basic moderation to
+prevent abuse. Responses help sellers engage with customer feedback and
+address concerns.
 
-- `id`: Primary Key.
-- `shopping_mall_return_request_id`
-  > Associated return request being authorized. {@link
-  > shopping_mall_return_requests.id}
-- `shopping_mall_seller_id`: Seller making the authorization decision. [shopping_mall_sellers.id](#shopping_mall_sellers)
-- `authorization_decision`
-  > Seller's decision: approved, rejected, more_information_requested.
-  > Controls next workflow step.
-- `decision_reason`: Seller's explanation for approval or rejection of return
-- `requested_information`
-  > If decision is 'more_information_requested', details about what
-  > information customer should provide
-- `information_deadline`
-  > Deadline for customer to provide additional information (typically 7 days
-  > from authorization)
-- `return_shipping_address`: Full return shipping address seller will accept returns to
-- `prepaid_label_tracking_number`: Tracking number if prepaid return shipping label was provided by seller
-- `authorized_at`: Timestamp when seller made the authorization decision
-- `created_at`: Timestamp when authorization record was created
-- `updated_at`: Last update timestamp for authorization
-
-### `shopping_mall_return_shipments`
-
-Tracks the physical return shipment journey from customer back to seller.
-Records carrier, tracking number, and shipping status as return moves
-through logistics. This is the shipment stage of the return lifecycle.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_return_request_id`
-  > Associated return request being shipped. {@link
-  > shopping_mall_return_requests.id}
-- `shopping_mall_return_authorization_id`
-  > Associated return authorization approval. {@link
-  > shopping_mall_return_authorizations.id}
-- `shopping_mall_customer_id`
-  > Customer initiating the return shipment. {@link
-  > shopping_mall_customers.id}
-- `shopping_mall_shipping_carrier_id`
-  > Carrier handling the return shipment (optional). {@link
-  > shopping_mall_shipping_carriers.id}
-- `return_tracking_number`: Carrier tracking number for outbound return shipment provided by customer
-- `carrier_name`: Shipping carrier name (FedEx, UPS, DHL, etc.) for the return
-- `origin_address`: Customer's address from which return is being shipped
-- `destination_address`: Seller's return receiving address (typically seller's warehouse)
-- `shipment_status`
-  > Return shipment status: not_shipped, in_transit, received_by_seller,
-  > returned_to_customer. Tracks physical journey.
-- `shipped_at`: Timestamp when customer shipped the return (based on carrier pickup)
-- `received_at`: Timestamp when seller confirmed receipt of return shipment
-- `expected_receipt_date`: Estimated date seller expects to receive return based on carrier estimate
-- `created_at`: Timestamp when return shipment record was created
-- `updated_at`: Last update timestamp for return shipment
-
-### `shopping_mall_return_inspections`
-
-Records seller's inspection of received return item. Documents item
-condition, whether condition is acceptable for refund, and any deductions
-(restocking fees, condition issues). This is the inspection stage after
-return is received.
+Responses are subsidiary - managed through parent review and not
+independently searched or managed by customers. Sellers access responses
+through their product reviews.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_return_shipment_id`: Return shipment being inspected. [shopping_mall_return_shipments.id](#shopping_mall_return_shipments)
-- `shopping_mall_seller_id`: Seller performing the inspection. [shopping_mall_sellers.id](#shopping_mall_sellers)
-- `inspection_status`
-  > Inspection outcome: pending, approved, rejected, partial_approval.
-  > Determines if refund proceeds.
-- `item_condition_assessment`
-  > Seller's assessment of returned item condition: new, like_new, good,
-  > fair, poor, damaged_unsaleable
-- `condition_details`
-  > Detailed description of item condition, visible wear, damage, missing
-  > components, etc.
-- `sku_verification`
-  > Verification that returned item matches ordered SKU: verified_match,
-  > mismatch, unable_to_verify
-- `all_accessories_present`
-  > Whether all original accessories, documentation, and components are
-  > included
-- `missing_items`: List of missing accessories or components if not all present
-- `refund_deduction_percentage`
-  > Percentage deduction from refund for condition issues (0, 10, 25, 50, 100
-  > for no refund)
-- `deduction_reason`: Reason for any refund deduction applied
-- `inspection_notes`: Seller's detailed inspection notes and findings
-- `inspection_evidence_urls`: JSON array of photos taken during inspection showing item condition
-- `inspected_at`: Timestamp when inspection was completed
-- `created_at`: Timestamp when inspection record was created
-- `updated_at`: Last update timestamp for inspection
+- `ecommerce_mall_product_review_id`
+  > Parent review being responded to. Reference to {@link
+  > ecommerce_mall_product_reviews.id}. Establishes 1:1 relationship.
+- `ecommerce_mall_seller_id`
+  > Seller providing the response. Reference to {@link
+  > ecommerce_mall_sellers.id}. Enables seller management of responses.
+- `response_text`
+  > Seller's response to the review (maximum 1000 characters). Professional,
+  > factual response addressing customer concerns or providing context.
+- `status`
+  > Response moderation status. Valid values: pending (awaiting moderation),
+  > approved (published), rejected (not published). Prevents abusive
+  > responses.
+- `response_type`
+  > Type of response: acknowledgment (thank you), clarification (additional
+  > context), resolution (problem solved), apology (acknowledgment of issue).
+  > Helps categorize seller engagement.
+- `created_at`: Response submission timestamp. Used for sorting responses chronologically.
+- `updated_at`: Last update timestamp for response edits. Tracks modification history.
+- `deleted_at`
+  > Soft deletion timestamp if response is removed. Null if response not
+  > deleted. Preserves history.
 
-### `shopping_mall_return_decisions`
+### `ecommerce_mall_review_moderation`
 
-Final decision on return and refund eligibility after inspection.
-Documents whether return is approved for full/partial/no refund, with
-calculated refund amount and reasoning. This synthesizes return request
-through inspection into final decision.
+Review moderation workflow tracking and decision records.
 
-Properties as follows:
+Tracks the complete moderation lifecycle for each review including
+submission, manual review, approval/rejection decisions, and appeals.
+Each review has one moderation record controlling its visibility to
+customers. Records moderator decisions with reasons and timestamps for
+compliance and audit purposes.
 
-- `id`: Primary Key.
-- `shopping_mall_return_request_id`
-  > Original return request being decided upon. {@link
-  > shopping_mall_return_requests.id}
-- `shopping_mall_return_inspection_id`
-  > Associated inspection findings (if applicable). {@link
-  > shopping_mall_return_inspections.id}
-- `shopping_mall_order_id`: Original order being returned. [shopping_mall_orders.id](#shopping_mall_orders)
-- `shopping_mall_seller_id`
-  > Seller providing final decision (or admin if escalated). {@link
-  > shopping_mall_sellers.id}
-- `decision_status`
-  > Final decision: approved_full_refund, approved_partial_refund, rejected,
-  > disputed, admin_override
-- `original_order_amount`: Original order total amount in base currency
-- `refund_amount`
-  > Amount to be refunded to customer (may be less than original due to
-  > deductions)
-- `deductions`
-  > JSON object documenting all deductions: restocking_fee,
-  > condition_deduction, shipping_cost_retained, etc.
-- `decision_reason`: Explanation for the decision (why full/partial/no refund)
-- `appeal_eligible`
-  > Whether customer can appeal this decision (typically true unless fraud
-  > detected)
-- `decided_at`: Timestamp when decision was finalized
-- `decision_made_by`: Who made the decision: seller, admin, system_auto, dispute_resolution
-- `created_at`: Timestamp when decision record was created
-- `updated_at`: Last update timestamp for decision
-
-### `shopping_mall_refund_processing`
-
-Tracks refund processing workflow from approval through completion.
-Records refund payment method, status, and timeline. This is the
-financial execution stage where refund is actually paid to customer.
+Moderation is subsidiary - system-maintained through reviews with no
+independent customer management. Supports admin oversight of content
+quality.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_return_decision_id`
-  > Associated return decision authorizing the refund. {@link
-  > shopping_mall_return_decisions.id}
-- `shopping_mall_order_id`: Original order being refunded. [shopping_mall_orders.id](#shopping_mall_orders)
-- `shopping_mall_customer_id`: Customer receiving the refund. [shopping_mall_customers.id](#shopping_mall_customers)
-- `shopping_mall_seller_id`
-  > Seller responsible for refund (usually product seller). {@link
-  > shopping_mall_sellers.id}
-- `refund_number`: Unique refund identifier in format REF-YYYYMMDD-XXXXXX
-- `refund_amount`: Amount being refunded to customer in base currency
-- `refund_method`
-  > Refund destination: original_card, original_account, store_credit,
-  > bank_transfer, check
-- `refund_status`
-  > Refund processing status: pending, initiated, processing, completed,
-  > failed, reversed. Controls payment state.
-- `payment_processor_transaction_id`: Transaction ID from payment processor for the refund (if applicable)
-- `refund_initiated_at`: Timestamp when refund processing was initiated
-- `refund_completed_at`
-  > Timestamp when refund was successfully completed (appeared in customer
-  > account)
-- `expected_arrival_date`
-  > Estimated date refund will appear in customer's account (typically 3-5
-  > business days)
-- `failure_reason`
-  > If refund failed, reason for failure (invalid payment method, account
-  > closed, etc.)
-- `retry_count`
-  > Number of times refund has been attempted (max 3 retries before
-  > escalation)
-- `created_at`: Timestamp when refund record was created
-- `updated_at`: Last update timestamp for refund
+- `ecommerce_mall_product_review_id`
+  > Review being moderated. Reference to {@link
+  > ecommerce_mall_product_reviews.id}. One moderation record per review.
+- `moderated_by_admin_id`
+  > Admin who moderated the review. Reference to {@link
+  > ecommerce_mall_admins.id}. Null if auto-approved. Tracks human
+  > moderation.
+- `risk_level`
+  > Moderation risk classification: low (auto-approved), medium (manual
+  > review), high (priority review). Determines moderation priority.
+- `moderation_decision`
+  > Moderation outcome: auto_approved (automated approval), approved (manual
+  > approval), rejected (not published), unlisted (hidden after publish).
+  > Controls review visibility.
+- `rejection_reason`
+  > Reason for rejection if moderation_decision is 'rejected'. Values:
+  > policy_violation, offensive_content, spam, fraudulent, off_topic,
+  > low_quality, duplicate. Guides reviewer correction.
+- `moderation_notes`
+  > Moderator's internal notes about the review (maximum 1000 characters).
+  > Additional context or flags for future review.
+- `content_flags`
+  > Comma-separated flags detected in review: profanity, spam_patterns,
+  > fraud_indicators, contact_info, competitor_ref. Used for automated
+  > flagging.
+- `flag_spam_score`
+  > Spam detection score (0-100). Higher indicates more likely spam. Used for
+  > automated flagging.
+- `flag_fraud_score`
+  > Fraud detection score (0-100). Higher indicates more likely fraudulent
+  > review. Used for authenticity assessment.
+- `appeal_submitted`
+  > Whether reviewer appealed moderation decision. True if appeal exists.
+  > Enables appeal workflow.
+- `appeal_notes`
+  > Reviewer's appeal explanation (maximum 1000 characters). Justification
+  > for why decision should be reversed.
+- `appeal_decision`
+  > Appeal outcome: pending (awaiting review), approved (appeal accepted),
+  > denied (appeal rejected). Null if no appeal submitted.
+- `moderation_timestamp`: When moderation decision was made. Used for SLA tracking and audit.
+- `appeal_timestamp`: When appeal was submitted. Null if no appeal. Tracks appeal timing.
+- `appeal_resolved_timestamp`
+  > When appeal was resolved. Null if appeal pending or not submitted. Tracks
+  > appeal completion.
+- `created_at`: Moderation record creation timestamp. Set when review is submitted.
+- `updated_at`
+  > Last update timestamp for moderation record. Changes when decision made
+  > or appeal resolved.
 
-### `shopping_mall_restocking_inventory`
+### `ecommerce_mall_review_media`
 
-Records when returned items are restocked into seller's inventory. Tracks
-whether returned item is marked as new, open-box, or used, and the
-inventory restoration process. This links returns back to inventory
-system for stock replenishment.
+Images and media attached to customer product reviews.
+
+Stores references to photos and videos customers attach to reviews for
+visual evidence (product condition, quality, usage). Supports up to 5
+images per review. Images are stored on CDN and referenced by URL.
+Enables visual feedback that helps other customers understand product
+quality.
+
+Review media is subsidiary - managed through parent review and not
+independently managed by customers.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_return_inspection_id`
-  > Associated inspection confirming item acceptable for restocking. {@link
-  > shopping_mall_return_inspections.id}
-- `shopping_mall_product_variant_id`
-  > Product variant (SKU) being restocked. {@link
-  > shopping_mall_product_variants.id}
-- `shopping_mall_seller_id`
-  > Seller whose inventory is being replenished. {@link
-  > shopping_mall_sellers.id}
-- `shopping_mall_return_request_id`
-  > Associated return request that triggered restocking. {@link
-  > shopping_mall_return_requests.id}
-- `quantity_restocked`: Number of units being added back to inventory
-- `restock_condition`
-  > Condition of restocked item: new, open_box, used, refurbished. Determines
-  > how it can be sold.
-- `restock_status`
-  > Restock processing status: pending, approved, failed_no_inventory_slot,
-  > completed
-- `restock_reason`
-  > Why item is being restocked: return_approved, quality_check_passed,
-  > inventory_correction
-- `inventory_movement_id`
-  > Reference to corresponding inventory movement record in inventory system
-  > (if synchronized)
-- `resale_permission`
-  > Whether this item can be resold to other customers (false if item is
-  > defective/unsaleable)
-- `notes`: Additional notes about restock condition or handling requirements
-- `restocked_at`: Timestamp when item was added back to inventory
-- `created_at`: Timestamp when restocking record was created
-- `updated_at`: Last update timestamp for restocking
+- `ecommerce_mall_product_review_id`
+  > Parent review containing this media. Reference to {@link
+  > ecommerce_mall_product_reviews.id}. Multiple media items per review
+  > allowed.
+- `media_type`
+  > Type of media: image (JPEG/PNG), video. Determines how media is displayed
+  > and processed.
+- `media_url`
+  > URL to media stored on CDN. https:// URL pointing to optimized media.
+  > Enables fast delivery from global CDN.
+- `thumbnail_url`
+  > URL to thumbnail version for display in lists. Smaller version for faster
+  > loading in review listings.
+- `original_filename`
+  > Original filename uploaded by customer. Preserved for audit trail and
+  > debugging.
+- `file_size_bytes`
+  > Size of original media file in bytes. Used for bandwidth tracking and
+  > quota management.
+- `width_pixels`: Image width in pixels. Used for responsive display and CDN optimization.
+- `height_pixels`: Image height in pixels. Used for responsive display.
+- `display_order`
+  > Order of display in review (1, 2, 3, etc.). Allows customers to control
+  > image sequence.
+- `is_moderated`
+  > Whether media was reviewed by moderator. True if image passed content
+  > filtering (no violation). Tracks moderation status.
+- `moderation_status`
+  > Media moderation status: pending (awaiting review), approved (no issues),
+  > rejected (violates policy). Controls display.
+- `created_at`: Media upload timestamp. Used for sorting media chronologically.
+- `updated_at`
+  > Last update timestamp for media metadata. Changes when moderation status
+  > updates.
+- `deleted_at`
+  > Soft deletion timestamp if media removed. Null if media not deleted.
+  > Preserves history.
 
-## Disputes
+### `ecommerce_mall_seller_ratings`
+
+Aggregated seller performance ratings across all orders.
+
+Calculates composite seller rating based on customer feedback dimensions:
+seller communication, shipping speed, accuracy, and overall satisfaction.
+One rating record per seller aggregating all customer feedback for that
+seller. Ratings determine seller badges (Top Seller, Trusted Seller) and
+influence search ranking.
+
+Seller ratings are subsidiary - computed from reviews and displayed
+read-only to customers. Sellers cannot directly manage ratings.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_seller_id`
+  > Seller being rated. Reference to [ecommerce_mall_sellers.id](#ecommerce_mall_sellers). One
+  > rating record per seller.
+- `composite_rating`
+  > Overall seller rating on 1-5 scale with 1 decimal precision (e.g., 4.3).
+  > Calculated from weighted average of dimension ratings. Displayed
+  > prominently on seller profile.
+- `seller_communication_rating`
+  > Average communication responsiveness rating (1-5 scale). How quickly
+  > seller responds to customer inquiries.
+- `shipping_speed_rating`
+  > Average shipping speed rating (1-5 scale). How quickly seller ships
+  > orders from confirmation.
+- `seller_accuracy_rating`
+  > Average accuracy rating (1-5 scale). How accurately seller fulfills
+  > orders (correct items, quantity, condition).
+- `item_description_accuracy_rating`
+  > Average description accuracy rating (1-5 scale). How well product
+  > descriptions match actual items received.
+- `review_count`
+  > Total number of customer reviews for this seller. Higher count = more
+  > reliable rating. Used for badge qualification.
+- `positive_feedback_percentage`
+  > Percentage of orders with positive customer feedback (4-5 stars). Target:
+  > 90%+. Indicates customer satisfaction.
+- `return_rate_percentage`
+  > Percentage of seller's orders that were returned. Lower is better.
+  > Target: <5%. Indicates product quality.
+- `on_time_delivery_percentage`
+  > Percentage of orders delivered on or before estimated date. Target: 95%+.
+  > Indicates reliability.
+- `seller_badge`
+  > Seller quality badge: top_seller (4.6+★, 200+ reviews, 95%+ positive),
+  > trusted_seller (4.3+★, 100+ reviews, 90%+ positive), verified_seller
+  > (email verified), new_seller (< 30 days), none. Displayed on store and
+  > products.
+- `days_on_platform`
+  > Number of days since seller joined platform. Used for new seller
+  > identification and trust assessment.
+- `total_orders_sold`
+  > Cumulative number of orders fulfilled by this seller. High count
+  > indicates experience and scale.
+- `total_reviews_received`
+  > Total number of distinct customer reviews. Higher count makes rating more
+  > statistically significant.
+- `average_response_hours`
+  > Average hours for seller to respond to customer inquiries. Lower is
+  > better. Used for communication rating.
+- `last_rating_update`
+  > Timestamp of most recent rating calculation. Updated daily. Ensures
+  > freshness of displayed ratings.
+- `created_at`
+  > Seller rating record creation timestamp. Set when seller first gets a
+  > review.
+- `updated_at`
+  > Last update timestamp for rating record. Updates when new reviews are
+  > published or calculation occurs.
+
+### `ecommerce_mall_seller_rating_metrics`
+
+Time-series seller rating metrics for trend analysis and historical
+tracking.
+
+Stores daily snapshots of seller ratings to track rating trends over time
+(improving, declining, stable). Enables identification of sudden rating
+changes and long-term performance trends. Supports seller performance
+analytics and business intelligence reporting.
+
+Rating metrics are subsidiary - calculated from reviews and used for
+analytics only. Not directly managed by users.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_seller_id`
+  > Seller whose metrics are recorded. Reference to {@link
+  > ecommerce_mall_sellers.id}. Multiple time-series records per seller.
+- `metric_date`
+  > Date of metric snapshot (typically daily at midnight UTC). Enables
+  > time-series charting.
+- `composite_rating`
+  > Seller's composite rating on this date (1-5 scale). Captured for trend
+  > tracking.
+- `seller_communication_rating`
+  > Communication rating on this date. Tracks trend in communication
+  > responsiveness.
+- `shipping_speed_rating`: Shipping speed rating on this date. Tracks trend in fulfillment speed.
+- `seller_accuracy_rating`: Accuracy rating on this date. Tracks trend in order accuracy.
+- `item_description_accuracy_rating`: Description accuracy rating on this date. Tracks trend in listing quality.
+- `review_count`: Total reviews on this date. Tracks how review volume grows.
+- `positive_feedback_percentage`: Positive feedback percentage on this date. Tracks satisfaction trend.
+- `return_rate_percentage`: Return rate on this date. Tracks quality trend.
+- `on_time_delivery_percentage`: On-time delivery percentage on this date. Tracks reliability trend.
+- `total_orders_sold`: Cumulative orders on this date. Tracks seller growth.
+- `average_response_hours`: Average response time on this date. Tracks communication speed trend.
+- `created_at`
+  > Record creation timestamp (when snapshot was taken). Set at metric
+  > calculation time.
+
+## Support
 
 ```mermaid
 erDiagram
-"shopping_mall_disputes" {
+"ecommerce_mall_support_categories" {
   String id PK
-  String shopping_mall_order_id FK
-  String shopping_mall_customer_id FK
-  String shopping_mall_seller_id FK
-  String dispute_id UK
-  String dispute_type
-  String reason_description
+  String parent_id FK "nullable"
+  String name
+  String slug UK
+  String description "nullable"
+  Int display_order
+  Boolean is_active
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"ecommerce_mall_support_tickets" {
+  String id PK
+  String ecommerce_mall_customer_id FK
+  String ecommerce_mall_order_id FK "nullable"
+  String ecommerce_mall_support_category_id FK
+  String assigned_admin_id FK "nullable"
+  String ticket_number UK
+  String subject
+  String description
   String status
   String priority
-  String initiator_type
-  String assigned_admin_id "nullable"
+  Boolean is_internal_note
+  String resolution_notes "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime resolved_at "nullable"
-  DateTime estimated_resolution_date "nullable"
+  DateTime closed_at "nullable"
+  DateTime deleted_at "nullable"
 }
-"shopping_mall_dispute_evidence" {
+"ecommerce_mall_support_ticket_messages" {
   String id PK
-  String shopping_mall_dispute_id FK
-  String evidence_type
-  String submitted_by_type
-  String submitted_by_id
-  String title
-  String description
-  String(80000) file_url "nullable"
-  String file_name "nullable"
-  Int file_size_bytes "nullable"
-  String file_mime_type "nullable"
-  Boolean is_public
+  String ecommerce_mall_support_ticket_id FK
+  String created_by_customer_id FK "nullable"
+  String created_by_admin_id FK "nullable"
+  String message_text
+  Boolean is_internal
   DateTime created_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_dispute_communications" {
+"ecommerce_mall_knowledge_base_articles" {
   String id PK
-  String shopping_mall_dispute_id FK
-  String message_type
-  String sender_type
-  String sender_id
-  String recipient_type
-  String subject
-  String message_body
-  Boolean is_internal_note
-  Boolean is_automated
-  DateTime created_at
-  DateTime read_at "nullable"
-}
-"shopping_mall_dispute_resolutions" {
-  String id PK
-  String shopping_mall_dispute_id FK,UK
-  String resolution_type
-  String resolved_by_admin_id
-  Float refund_amount
-  String resolution_reason
-  String resolution_details "nullable"
-  Boolean customer_accepts_resolution "nullable"
-  Boolean seller_acknowledges_resolution "nullable"
-  String enforcement_action_required "nullable"
-  String enforcement_status "nullable"
-  DateTime created_at
-  DateTime enforcement_completed_at "nullable"
-}
-"shopping_mall_dispute_appeals" {
-  String id PK
-  String shopping_mall_dispute_id FK
-  Int appeal_number
-  String appealing_party_type
-  String appealing_party_id
-  String appeal_reason
-  Boolean new_evidence_provided
+  String ecommerce_mall_support_category_id FK
+  String title
+  String slug UK
+  String content
+  String summary "nullable"
+  String meta_description "nullable"
+  String meta_keywords "nullable"
   String status
-  String reviewed_by_admin_id "nullable"
-  String appeal_decision "nullable"
-  String appeal_decision_reason "nullable"
+  Int view_count
+  Int helpful_count
+  Int unhelpful_count
   DateTime created_at
-  DateTime reviewed_at "nullable"
+  DateTime updated_at
+  DateTime published_at "nullable"
+  DateTime deleted_at "nullable"
 }
-"shopping_mall_dispute_audit_trail" {
+"ecommerce_mall_faq_items" {
   String id PK
-  String shopping_mall_dispute_id FK
-  String action_type
-  String actor_type
-  String actor_id
-  String previous_state "nullable"
-  String new_state "nullable"
-  String change_description
-  String ip_address "nullable"
-  String user_agent "nullable"
+  String ecommerce_mall_support_category_id FK
+  String question
+  String answer
+  String status
+  Int display_order
+  Int view_count
+  Int helpful_count
+  Int unhelpful_count
   DateTime created_at
+  DateTime updated_at
+  DateTime published_at "nullable"
+  DateTime deleted_at "nullable"
 }
-"shopping_mall_dispute_evidence" }o--|| "shopping_mall_disputes" : dispute
-"shopping_mall_dispute_communications" }o--|| "shopping_mall_disputes" : dispute
-"shopping_mall_dispute_resolutions" |o--|| "shopping_mall_disputes" : dispute
-"shopping_mall_dispute_appeals" }o--|| "shopping_mall_disputes" : dispute
-"shopping_mall_dispute_audit_trail" }o--|| "shopping_mall_disputes" : dispute
+"ecommerce_mall_support_categories" }o--o| "ecommerce_mall_support_categories" : parent
+"ecommerce_mall_support_tickets" }o--|| "ecommerce_mall_support_categories" : category
+"ecommerce_mall_support_ticket_messages" }o--|| "ecommerce_mall_support_tickets" : ticket
+"ecommerce_mall_knowledge_base_articles" }o--|| "ecommerce_mall_support_categories" : category
+"ecommerce_mall_faq_items" }o--|| "ecommerce_mall_support_categories" : category
 ```
 
-### `shopping_mall_disputes`
+### `ecommerce_mall_support_categories`
 
-Core dispute entity representing a customer-seller dispute or complaint.
-Stores the central dispute record with all metadata but not the detailed
-evidence, communications, or resolutions (those are in separate tables).
-This is the primary entity that other dispute-related tables reference.
+Support ticket and knowledge base article categories for organizing
+support content.
 
-Properties as follows:
+Provides hierarchical categorization system for support tickets,
+knowledge base articles, and FAQ items. Enables customers and support
+agents to browse and filter support content by topic areas such as
+shipping, returns, product quality, payment issues, etc.
 
-- `id`: Primary Key.
-- `shopping_mall_order_id`
-  > Reference to the order involved in this dispute. {@link
-  > shopping_mall_orders.id}.
-- `shopping_mall_customer_id`
-  > Reference to the customer who initiated the dispute. {@link
-  > shopping_mall_customers.id}.
-- `shopping_mall_seller_id`
-  > Reference to the seller involved in the dispute. {@link
-  > shopping_mall_sellers.id}.
-- `dispute_id`
-  > Unique human-readable dispute identifier in format
-  > DIS-YYYYMMDDHHMMSS-XXXXXX for easy reference by users.
-- `dispute_type`
-  > Type of dispute: quality_issue, delivery_issue, seller_communication,
-  > payment_issue, other. Categorizes the nature of the complaint.
-- `reason_description`
-  > Detailed description of the dispute reason provided by the customer when
-  > initiating the dispute (up to 2000 characters).
-- `status`
-  > Current dispute status: open, under_review, pending_resolution, resolved,
-  > closed, appealed. Reflects the current stage of dispute resolution.
-- `priority`
-  > Dispute priority level: low, medium, high, critical. Used for triage and
-  > admin review ordering.
-- `initiator_type`
-  > Who initiated the dispute: customer, seller, admin, system. Tracks the
-  > originating actor.
-- `assigned_admin_id`
-  > ID of the admin assigned to review/resolve this dispute (optional until
-  > assignment).
-- `created_at`: Timestamp when dispute was created (ISO 8601 format with timezone).
-- `updated_at`: Timestamp of the most recent update to the dispute record.
-- `resolved_at`: Timestamp when dispute was marked as resolved (null if not yet resolved).
-- `estimated_resolution_date`
-  > Expected date when dispute should be resolved (based on SLA - typically 5
-  > business days from creation).
-
-### `shopping_mall_dispute_evidence`
-
-Stores evidence and supporting documentation provided by dispute parties
-(customer, seller, witnesses). Each evidence record is immutable once
-created. Separate from dispute table to prevent nullable fields and
-ensure evidence integrity.
+Categories can be nested (parent-child hierarchy) for detailed
+organization. Each category tracks creation timestamps and supports soft
+deletion for audit compliance. Categories remain available even after
+soft deletion to maintain historical integrity of categorized items.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_dispute_id`
-  > Reference to the parent dispute this evidence belongs to. {@link
-  > shopping_mall_disputes.id}.
-- `evidence_type`
-  > Type of evidence: photo, message, receipt, tracking, description,
-  > document, other. Categorizes the evidence kind.
-- `submitted_by_type`
-  > Who submitted this evidence: customer, seller, admin, system. Identifies
-  > the evidence source.
-- `submitted_by_id`: ID of the user or system entity that submitted the evidence.
-- `title`: Brief title or description of the evidence (up to 255 characters).
+- `parent_id`
+  > Parent category for hierarchical organization. Allows self-referencing
+  > for nested category structures. {@link
+  > ecommerce_mall_support_categories.id}.
+- `name`
+  > Category name displayed to customers and support staff. Examples:
+  > 'Shipping & Delivery', 'Returns & Refunds', 'Product Quality', 'Payment
+  > Issues'. Unique within each category level.
+- `slug`
+  > URL-friendly slug for category identification. Used in support portal
+  > URLs. Examples: 'shipping-delivery', 'returns-refunds'. Lowercase with
+  > hyphens.
 - `description`
-  > Detailed description of the evidence and its relevance to the dispute (up
-  > to 2000 characters).
-- `file_url`
-  > URL to the evidence file if uploaded (photo, document, etc.). Null if
-  > evidence is text-only.
-- `file_name`: Original file name if file was uploaded (up to 255 characters).
-- `file_size_bytes`: Size of uploaded file in bytes (null if no file uploaded).
-- `file_mime_type`
-  > MIME type of uploaded file (e.g., image/jpeg, application/pdf). Null if
-  > text-only.
-- `is_public`
-  > Whether this evidence is visible to all dispute parties or only to
-  > admins/submitter. Sensitive evidence may be admin-only.
-- `created_at`: Timestamp when evidence was submitted (ISO 8601 format).
+  > Detailed description of the support category explaining what types of
+  > issues it covers. Displayed to customers when browsing support topics.
+- `display_order`
+  > Sort order for displaying categories to users. Lower numbers appear first
+  > in category listings.
+- `is_active`
+  > Whether this category is active and visible to customers. Inactive
+  > categories are hidden from support portals but historical associations
+  > are preserved.
+- `created_at`: Timestamp when the support category was created.
+- `updated_at`: Timestamp when the support category was last updated.
 - `deleted_at`
-  > Soft delete timestamp if evidence was removed (null if active). Evidence
-  > is not hard-deleted for audit purposes.
+  > Soft delete timestamp. When set, category is marked as deleted but
+  > retained in database for audit trail and historical reference.
 
-### `shopping_mall_dispute_communications`
+### `ecommerce_mall_support_tickets`
 
-Tracks all communications between dispute parties (customer, seller,
-admin) related to the dispute. Creates audit trail of all messages,
-responses, and interactions throughout dispute lifecycle.
+Customer support tickets capturing inquiries, issues, and service requests.
 
-Properties as follows:
+Core entity for the support system. Customers create tickets when they
+need assistance with orders, products, shipping, returns, or general
+platform issues. Each ticket is assigned a unique ticket number for
+customer reference and tracking.
 
-- `id`: Primary Key.
-- `shopping_mall_dispute_id`
-  > Reference to the parent dispute this communication relates to. {@link
-  > shopping_mall_disputes.id}.
-- `message_type`
-  > Type of message: customer_message, seller_response, admin_communication,
-  > system_notification, status_update. Categorizes message purpose.
-- `sender_type`
-  > Type of sender: customer, seller, admin, system. Identifies who sent the
-  > message.
-- `sender_id`: ID of the user or system that sent the message.
-- `recipient_type`
-  > Who receives this message: customer, seller, admin, all_parties, system.
-  > Determines visibility.
-- `subject`: Subject line of the message (up to 255 characters).
-- `message_body`
-  > Full message content (up to 5000 characters). The actual communication
-  > text.
-- `is_internal_note`
-  > Whether this is an internal admin note (only visible to admins) or
-  > party-facing communication (visible to relevant parties).
-- `is_automated`
-  > Whether this is an automated system message (e.g., status update
-  > notification) or manually written message.
-- `created_at`: Timestamp when message was sent/created (ISO 8601 format).
-- `read_at`: Timestamp when recipient first read the message (null if unread).
+Tickets progress through status workflow: open → in_progress → resolved →
+closed. Support agents are assigned to tickets and can leave messages and
+internal notes. Tickets are categorized by support category and linked to
+relevant orders when applicable. System tracks priority level, allowing
+urgent issues to be addressed first.
 
-### `shopping_mall_dispute_resolutions`
-
-Stores the final resolution/decision for a dispute including the decision
-made, reasoning, and outcome. Separate from dispute table (not nullable
-in dispute record) to preserve immutability and complete resolution
-history.
+Tickets support full soft deletion for compliance while maintaining
+historical records. Created and updated timestamps enable SLA tracking
+and support performance monitoring.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_dispute_id`
-  > Reference to the dispute this resolution applies to. {@link
-  > shopping_mall_disputes.id}.
-- `resolution_type`
-  > Type of resolution: favor_customer, favor_seller, partial_refund,
-  > replacement, compensation, compromise, other. Indicates the decision
-  > outcome.
-- `resolved_by_admin_id`: ID of the admin who made the resolution decision.
-- `refund_amount`
-  > Amount to be refunded to customer (if applicable, in platform currency).
-  > Zero if no refund.
-- `resolution_reason`
-  > Detailed explanation of the resolution decision and reasoning (up to 2000
-  > characters). Justifies the outcome based on evidence.
-- `resolution_details`
-  > Specific details about the resolution implementation (e.g., refund
-  > method, replacement SKU, compensation method). Up to 1000 characters.
-- `customer_accepts_resolution`
-  > Whether customer has accepted and acknowledged the resolution decision
-  > (null if still pending acknowledgment).
-- `seller_acknowledges_resolution`
-  > Whether seller has acknowledged the resolution decision (null if still
-  > pending acknowledgment).
-- `enforcement_action_required`
-  > Type of enforcement action needed: none, refund_processing,
-  > inventory_restore, seller_compensation, suspension, other. Null if no
-  > action needed.
-- `enforcement_status`
-  > Status of enforcement action: pending, in_progress, completed, failed.
-  > Tracks implementation of the resolution.
-- `created_at`: Timestamp when resolution was recorded (ISO 8601 format).
-- `enforcement_completed_at`
-  > Timestamp when enforcement action was completed (null if not yet
-  > completed).
-
-### `shopping_mall_dispute_appeals`
-
-Tracks appeals submitted by dispute parties who disagree with the
-resolution decision. Creates audit trail of appeals and appeal decisions.
-Allows one-time appeal escalation for disputes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_dispute_id`
-  > Reference to the dispute being appealed. {@link
-  > shopping_mall_disputes.id}.
-- `appeal_number`
-  > Sequential appeal number for this dispute (1st appeal, 2nd appeal, etc.).
-  > System only allows 1 appeal per dispute.
-- `appealing_party_type`
-  > Who is appealing: customer or seller. Identifies which party disagrees
-  > with the resolution.
-- `appealing_party_id`: ID of the customer or seller submitting the appeal.
-- `appeal_reason`
-  > Detailed explanation of why appealing party disagrees with the resolution
-  > (up to 2000 characters).
-- `new_evidence_provided`
-  > Whether appeal includes new evidence not previously considered in
-  > original dispute resolution.
+- `ecommerce_mall_customer_id`
+  > Customer who created this support ticket. {@link
+  > ecommerce_mall_customers.id}.
+- `ecommerce_mall_order_id`
+  > Associated order if ticket is related to a specific order. May be null
+  > for general inquiries. [ecommerce_mall_orders.id](#ecommerce_mall_orders).
+- `ecommerce_mall_support_category_id`
+  > Support category this ticket belongs to. Enables routing to appropriate
+  > support team. [ecommerce_mall_support_categories.id](#ecommerce_mall_support_categories).
+- `assigned_admin_id`
+  > Admin user assigned to handle this ticket. Null if unassigned. {@link
+  > ecommerce_mall_admins.id}.
+- `ticket_number`
+  > Unique human-readable ticket identifier for customer reference. Format:
+  > TICKET-YYYYMMDD-NNNN. Example: TICKET-20240115-0042.
+- `subject`
+  > Brief subject line summarizing the customer's issue. Examples: 'Order not
+  > received', 'Wrong item shipped', 'Quality concern with product'.
+- `description`
+  > Detailed description of the customer's issue or inquiry. May include
+  > problem context, screenshots, or specific details needed for resolution.
 - `status`
-  > Appeal status: pending, under_review, upheld, overturned, rejected.
-  > Tracks appeal processing state.
-- `reviewed_by_admin_id`
-  > ID of the admin reviewing the appeal (different admin than original
-  > resolution reviewer).
-- `appeal_decision`
-  > Final decision on appeal: uphold_original_resolution,
-  > overturn_and_reverse, overturn_and_modify, reject_appeal. Null if not yet
-  > decided.
-- `appeal_decision_reason`
-  > Detailed reasoning for appeal decision (up to 2000 characters). Explains
-  > why appeal was upheld or overturned.
-- `created_at`: Timestamp when appeal was submitted (ISO 8601 format).
-- `reviewed_at`
-  > Timestamp when appeal was reviewed and decision made (null if not yet
-  > decided).
+  > Current ticket status. Values: open (new, unassigned), in_progress (being
+  > handled), resolved (solution provided), closed (completed). Drives
+  > workflow routing.
+- `priority`
+  > Priority level affecting response time. Values: low, normal, high,
+  > urgent. Urgent issues get immediate attention. Supports SLA tracking.
+- `is_internal_note`
+  > Flag indicating if this ticket contains internal notes/communication.
+  > Internal tickets are not visible to customers in their support portal.
+- `resolution_notes`
+  > Notes from support agent describing how the ticket was resolved.
+  > Populated when status changes to resolved or closed.
+- `created_at`: Timestamp when the support ticket was created by customer.
+- `updated_at`
+  > Timestamp when the support ticket was last updated (message added, status
+  > changed, reassigned).
+- `resolved_at`
+  > Timestamp when ticket was marked as resolved. Used for SLA tracking and
+  > response time metrics.
+- `closed_at`
+  > Timestamp when ticket was closed. After closure, no new messages can be
+  > added unless ticket is reopened.
+- `deleted_at`
+  > Soft delete timestamp. When set, ticket is marked as deleted but retained
+  > in database for historical reference and compliance.
 
-### `shopping_mall_dispute_audit_trail`
+### `ecommerce_mall_support_ticket_messages`
 
-Immutable audit log of all significant actions and state changes on
-disputes. Records every operation performed on dispute records by any
-actor (customer, seller, admin, system). Essential for compliance and
-investigation.
+Conversation messages within support tickets creating communication thread.
+
+Captures all communication between customer and support agents on a
+specific ticket. Each message is timestamped and attributed to the
+creator (customer or admin). Messages form the conversation history and
+context for ticket resolution.
+
+Supports both customer-visible messages and internal support team notes
+marked as internal. Messages cannot be edited after creation (immutable
+for audit compliance) but can be soft-deleted if inappropriate or
+accidental.
+
+Messages are essential for maintaining complete audit trail of support
+interactions and providing customer with documented resolution process.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_dispute_id`: Reference to the dispute being audited. [shopping_mall_disputes.id](#shopping_mall_disputes).
-- `action_type`
-  > Type of action performed: created, status_changed, evidence_added,
-  > communication_sent, resolution_recorded, appeal_submitted,
-  > appeal_decided, assigned_to_admin, reassigned, closed. Categorizes the
-  > audit entry.
-- `actor_type`
-  > Type of actor performing the action: customer, seller, admin, system.
-  > Identifies who made the change.
-- `actor_id`: ID of the user or system performing the action.
-- `previous_state`
-  > JSON-serialized previous state (for status changes or modifications).
-  > Null if action created new record or has no prior state.
-- `new_state`
-  > JSON-serialized new state after action. Stores the resulting state for
-  > audit comparison.
-- `change_description`
-  > Human-readable description of what changed (up to 1000 characters).
-  > Explains the action in business terms.
-- `ip_address`: IP address from which action was initiated (for security auditing).
-- `user_agent`
-  > User agent string from client device (browser/device information). Helps
-  > identify device used for action.
+- `ecommerce_mall_support_ticket_id`
+  > Parent support ticket this message belongs to. {@link
+  > ecommerce_mall_support_tickets.id}.
+- `created_by_customer_id`
+  > Customer who created this message (if message from customer). Null if
+  > message from support agent. [ecommerce_mall_customers.id](#ecommerce_mall_customers).
+- `created_by_admin_id`
+  > Admin who created this message (if message from support agent). Null if
+  > message from customer. [ecommerce_mall_admins.id](#ecommerce_mall_admins).
+- `message_text`
+  > Content of the support message. Supports formatted text and basic
+  > markdown for emphasis and links.
+- `is_internal`
+  > Flag indicating if this is an internal note visible only to support team,
+  > not to customer. Allows private team discussion.
 - `created_at`
-  > Timestamp when action was performed (ISO 8601 format, UTC). Immutable
-  > record timestamp.
+  > Timestamp when the message was created. Messages are immutable after
+  > creation.
+- `deleted_at`
+  > Soft delete timestamp. When set, message is hidden but retained for audit
+  > trail and historical reference.
 
-## default
+### `ecommerce_mall_knowledge_base_articles`
+
+Self-service support articles providing detailed help content and guides.
+
+Comprehensive knowledge base for customer self-service support. Articles
+cover topics like how-to guides, troubleshooting steps, policy
+explanations, product specifications, and common solutions. Customers can
+search and browse articles to resolve issues independently without
+contacting support.
+
+Articles are organized by support category and tagged for searchability.
+Each article tracks view counts, helpfulness ratings, and search engine
+optimization metadata (SEO). Articles support draft and published states,
+allowing content creators to prepare articles before making them public.
+
+Articles include detailed content with formatted text support for better
+readability and understanding. Publishing metadata enables content
+freshness tracking and automatic archival of outdated articles.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_support_category_id`
+  > Support category this knowledge base article belongs to. Enables browsing
+  > articles by topic. [ecommerce_mall_support_categories.id](#ecommerce_mall_support_categories).
+- `title`
+  > Article title as displayed to customers. Should be clear and descriptive
+  > of article content. Examples: 'How to Track Your Order', 'Understanding
+  > Our Return Policy'.
+- `slug`
+  > URL-friendly slug for article identification. Used in knowledge base
+  > URLs. Lowercase with hyphens. Example: 'how-to-track-order'.
+- `content`
+  > Full article content with detailed explanation, steps, images, or
+  > examples. Supports formatted text (bold, italic, lists, links) for rich
+  > content presentation.
+- `summary`
+  > Brief summary of article content for search results and preview displays.
+  > Maximum 200 characters.
+- `meta_description`
+  > SEO meta description for search engine result snippets. Helps with search
+  > visibility and click-through rates.
+- `meta_keywords`
+  > Comma-separated keywords for article search engine optimization. Improves
+  > article discoverability in searches.
+- `status`
+  > Publication status: draft (not visible), published (visible to
+  > customers), archived (hidden but preserved). Enables content versioning
+  > and scheduling.
+- `view_count`
+  > Number of times this article has been viewed by customers. Used for
+  > popularity metrics and content effectiveness analysis.
+- `helpful_count`
+  > Number of times customers marked this article as helpful. Used to
+  > identify high-quality, effective content.
+- `unhelpful_count`
+  > Number of times customers marked this article as not helpful. Indicates
+  > articles needing review or updating.
+- `created_at`: Timestamp when the knowledge base article was created.
+- `updated_at`
+  > Timestamp when the knowledge base article was last updated with new
+  > content or corrections.
+- `published_at`
+  > Timestamp when article was published and made visible to customers. Null
+  > if article is still in draft status.
+- `deleted_at`
+  > Soft delete timestamp. When set, article is archived and removed from
+  > search results but retained for historical reference.
+
+### `ecommerce_mall_faq_items`
+
+Frequently asked questions providing quick answers to common customer
+inquiries.
+
+Curated collection of frequently asked questions and their concise
+answers. FAQs provide quick reference for common issues, policies, and
+procedures. Customers can quickly search FAQs for answers before
+submitting support tickets.
+
+Each FAQ item consists of a question and answer pair. FAQs are organized
+by support category for easy navigation. Items track view counts and
+helpful votes to identify most valuable content and guide content
+curation.
+
+FAQs are simpler and more concise than full knowledge base articles,
+providing quick answers rather than detailed guides. Published FAQs are
+visible to customers; draft FAQs are used for preparation. Soft deletion
+enables content management while preserving historical records.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_support_category_id`
+  > Support category this FAQ item belongs to. Enables browsing FAQs by topic
+  > area. [ecommerce_mall_support_categories.id](#ecommerce_mall_support_categories).
+- `question`
+  > The frequently asked question. Should be phrased as customer would ask
+  > it. Examples: 'How long does shipping take?', 'What is your return
+  > policy?'.
+- `answer`
+  > Concise answer to the question. Should be brief but complete, providing
+  > the information needed without excessive detail. Supports formatted text.
+- `status`
+  > Publication status: draft (not visible), published (visible to
+  > customers), archived (hidden). Enables content management and versioning.
+- `display_order`
+  > Sort order for displaying FAQ items. Lower numbers appear first in
+  > category FAQ lists.
+- `view_count`
+  > Number of times this FAQ has been viewed by customers. Used for
+  > popularity and engagement metrics.
+- `helpful_count`
+  > Number of times customers marked this FAQ as helpful. Indicates
+  > high-quality, useful FAQs.
+- `unhelpful_count`
+  > Number of times customers marked this FAQ as not helpful. Indicates FAQs
+  > needing review or updating.
+- `created_at`: Timestamp when the FAQ item was created.
+- `updated_at`
+  > Timestamp when the FAQ item was last updated with new content or
+  > corrections.
+- `published_at`
+  > Timestamp when FAQ was published and made visible to customers. Null if
+  > FAQ is still in draft status.
+- `deleted_at`
+  > Soft delete timestamp. When set, FAQ is archived and removed from
+  > listings but retained for historical reference.
+
+## Analytics
 
 ```mermaid
 erDiagram
-"shopping_mall_product_ratings_summary" {
+"ecommerce_mall_event_log" {
   String id PK
-  String shopping_mall_product_variant_id FK,UK
-  Float average_rating
-  Int total_reviews
-  Int rating_1_count
-  Int rating_2_count
-  Int rating_3_count
-  Int rating_4_count
-  Int rating_5_count
-  DateTime updated_at
+  String ecommerce_mall_customer_id FK "nullable"
+  String ecommerce_mall_seller_id FK "nullable"
+  String ecommerce_mall_product_id FK "nullable"
+  String ecommerce_mall_order_id FK "nullable"
+  String event_type
+  String event_category
+  String actor_type
+  String ip_address "nullable"
+  String user_agent "nullable"
+  String event_data "nullable"
+  String session_id "nullable"
+  DateTime created_at
 }
-"shopping_mall_seller_ratings_summary" {
+"ecommerce_mall_daily_metrics" {
   String id PK
-  String shopping_mall_seller_id FK,UK
+  DateTime metric_date UK
+  Int total_orders
+  Float total_revenue
+  Float total_refunds
+  Int active_customers
+  Int active_sellers
+  Int new_customer_registrations
+  Int new_seller_registrations
+  Int page_views
+  Int product_views
+  Int search_queries
+  Int cart_additions
+  Int checkout_initiations
+  Float payment_success_rate
+  Float order_cancellation_rate
+  Int reviews_submitted
+  Float average_order_value
+  DateTime created_at
+}
+"ecommerce_mall_monthly_metrics" {
+  String id PK
+  Int year
+  Int month
+  Int total_orders
+  Float total_revenue
+  Float total_refunds
+  Float net_revenue
+  Int unique_customers
+  Int unique_sellers
+  Int new_customer_registrations
+  Int new_seller_registrations
+  Int total_page_views
+  Int total_product_views
+  Int total_search_queries
+  Int total_reviews_submitted
+  Float average_order_value
+  Float average_payment_success_rate
+  Float average_order_cancellation_rate
+  Float customer_retention_rate
+  DateTime created_at
+}
+"ecommerce_mall_product_metrics" {
+  String id PK
+  String ecommerce_mall_product_id FK
+  String ecommerce_mall_seller_id FK
+  DateTime metric_date
+  Int units_sold
+  Float revenue
+  Int page_views
+  Int add_to_cart_count
+  Float conversion_rate
   Float average_rating
-  Int total_reviews
-  Float on_time_delivery_rate
-  Float return_rate
+  Int review_count
+  Int new_reviews
+  Int refund_count
+  Int stock_level
+  DateTime created_at
+}
+"ecommerce_mall_seller_metrics" {
+  String id PK
+  String ecommerce_mall_seller_id FK
+  DateTime metric_date
+  Int total_orders
+  Float total_revenue
+  Float average_order_value
+  Int customer_count
+  Int new_customers
+  Int repeat_customers
+  Float fulfillment_rate
+  Float average_shipping_speed_hours
+  Int refund_count
+  Float refund_rate
+  Float average_rating
+  Int new_reviews
   Float customer_satisfaction_score
-  String rating_trend_30_days
-  DateTime updated_at
+  Int cancellation_count
+  Float cancellation_rate
+  DateTime created_at
+}
+"ecommerce_mall_customer_segments" {
+  String id PK
+  String ecommerce_mall_customer_id FK,UK
+  Int cohort_month
+  Int cohort_year
+  String value_segment
+  String engagement_segment
+  String acquisition_channel "nullable"
+  Float lifetime_spend
+  Int lifetime_orders
+  Float repeat_purchase_rate
+  Float average_order_value
+  DateTime last_purchase_date "nullable"
+  Int days_since_last_purchase "nullable"
+  String churn_risk
+  DateTime segment_updated_at
+  DateTime created_at
+}
+"ecommerce_mall_performance_metrics" {
+  String id PK
+  DateTime metric_hour UK
+  Float api_response_time_p95
+  Float api_response_time_p99
+  Float search_response_time_p95
+  Float database_query_time_p95
+  Float error_rate
+  Float payment_processor_availability
+  Float shipping_provider_availability
+  Float server_cpu_usage_percent
+  Float server_memory_usage_percent
+  Float database_cpu_usage_percent
+  Int database_connection_count
+  Float requests_per_second
+  Int concurrent_users
+  Float uptime_percent
+  Float cache_hit_rate
+  Float payment_success_rate
+  DateTime created_at
 }
 ```
 
-### `shopping_mall_product_ratings_summary`
+### `ecommerce_mall_event_log`
 
-Denormalized materialized view aggregating product ratings.
-Pre-calculates average rating, total review count, and rating
-distribution for each product. Provides fast access to rating data
-without expensive aggregation queries. Read-only table updated via batch
-job.
+Raw event tracking for user behavior and system activities. Captures
+granular, time-series events including page views, purchases, reviews,
+errors, and platform actions. This table serves as the authoritative
+source for all business activity analytics and user behavior patterns.
 
-Properties as follows:
+Each event record contains a timestamp, event type classification, actor
+information (customer or seller), and flexible event data stored as JSON
+to accommodate diverse event types without schema modifications. This
+append-only, immutable log enables comprehensive historical analysis and
+reconstructing user journeys.
 
-- `id`: Primary Key.
-- `shopping_mall_product_variant_id`
-  > Reference to the product variant these ratings summarize. Links to {@link
-  > shopping_mall_product_variants.id}. Aggregates all reviews for this
-  > variant.
-- `average_rating`
-  > Calculated average star rating (1-5 scale). Rounded to 1 decimal place.
-  > Only includes approved reviews. Used for product ranking and display.
-- `total_reviews`
-  > Total count of approved reviews for this product. Zero if no reviews
-  > exist. Used for confidence indicator.
-- `rating_1_count`: Count of 1-star reviews. Used for rating distribution display.
-- `rating_2_count`: Count of 2-star reviews.
-- `rating_3_count`: Count of 3-star reviews.
-- `rating_4_count`: Count of 4-star reviews.
-- `rating_5_count`: Count of 5-star reviews.
-- `updated_at`
-  > Timestamp when this materialized view was last calculated/refreshed. ISO
-  > 8601 format. Indicates freshness of aggregated data.
-
-### `shopping_mall_seller_ratings_summary`
-
-Denormalized materialized view aggregating seller performance ratings.
-Pre-calculates seller's average rating across all their products, review
-count, and performance trends. Used for seller ranking, storefront
-display, and performance monitoring. Read-only table updated via batch
-job.
+The event_log is optimized for high-volume ingestion and time-range
+queries, with indexes supporting efficient filtering by timestamp, event
+type, and actor. Events are retained for 12 months with older events
+archived to cold storage for compliance and historical analysis.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_seller_id`
-  > Reference to the seller these ratings summarize. Links to {@link
-  > shopping_mall_sellers.id}. Aggregates all reviews for seller's products.
+- `ecommerce_mall_customer_id`
+  > Reference to customer who triggered the event. Nullable for guest events
+  > or seller-initiated events. [ecommerce_mall_customers.id](#ecommerce_mall_customers)
+- `ecommerce_mall_seller_id`
+  > Reference to seller who triggered the event. Nullable for customer or
+  > guest events. [ecommerce_mall_sellers.id](#ecommerce_mall_sellers)
+- `ecommerce_mall_product_id`
+  > Reference to product involved in the event. Nullable for non-product
+  > events. [ecommerce_mall_products.id](#ecommerce_mall_products)
+- `ecommerce_mall_order_id`
+  > Reference to order involved in the event. Nullable for non-order events.
+  > [ecommerce_mall_orders.id](#ecommerce_mall_orders)
+- `event_type`
+  > Classification of the event. Examples: product_view, product_add_to_cart,
+  > checkout_initiated, order_placed, payment_processed, shipment_created,
+  > delivery_confirmed, review_submitted, seller_product_created,
+  > seller_order_fulfilled. Used for event filtering and categorization.
+- `event_category`
+  > Higher-level grouping of event types. Values: customer_activity,
+  > seller_activity, product_activity, order_activity, payment_activity,
+  > shipping_activity, review_activity, system_activity, error_activity.
+  > Enables broad event filtering and dashboard segmentation.
+- `actor_type`
+  > Type of actor triggering the event. Values: guest, customer, seller,
+  > admin, system. Determines which IDs are populated and how event is
+  > attributed.
+- `ip_address`
+  > IP address from which event originated. Used for geographic analysis,
+  > fraud detection, and user behavior tracking. Stored for compliance with
+  > up to 12 months retention.
+- `user_agent`
+  > HTTP User-Agent header identifying browser, device, and operating system.
+  > Enables device-type segmentation and OS analysis for platform
+  > optimization.
+- `event_data`
+  > Flexible JSON object containing event-specific data. Structure varies by
+  > event_type. Examples: {product_id, quantity, price} for purchase events;
+  > {review_rating, review_length} for review events. Enables extensibility
+  > without schema changes.
+- `session_id`
+  > Session identifier for grouping related events from same user session.
+  > Enables session-based analytics and user journey reconstruction.
+- `created_at`
+  > Timestamp when event occurred, in UTC. Critical for time-series analysis
+  > and temporal queries. Events are immutable after creation.
+
+### `ecommerce_mall_daily_metrics`
+
+Daily aggregated performance metrics calculated from event_log. Provides
+pre-calculated key metrics by date for efficient dashboard and report
+generation. Each record represents a single day's aggregated data across
+the entire platform.
+
+Metrics captured include total orders, revenue, active users (customers
+and sellers), page views, search queries, product views, cart additions,
+conversion rates, payment success rate, and order cancellation rate.
+These daily snapshots enable trend analysis and performance monitoring
+without requiring real-time aggregation of millions of events.
+
+Daily metrics are recalculated each day at off-peak hours (2 AM UTC) and
+immutable once calculated. Historical daily metrics enable week-over-week
+and year-over-year comparisons for business intelligence.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `metric_date`
+  > Date for which metrics are calculated (UTC midnight). One record per day.
+  > Format: YYYY-MM-DD 00:00:00 UTC. Used as identifier for daily metrics.
+- `total_orders`
+  > Total number of orders placed on this date. Includes all order types
+  > (single seller, multi-seller). Orders only counted if payment was
+  > successfully authorized.
+- `total_revenue`
+  > Total gross revenue from all orders placed on this date. Includes product
+  > prices, shipping, taxes. Does not deduct refunds (captured separately).
+  > In primary currency (USD equivalent).
+- `total_refunds`
+  > Total refund amount issued on this date (when refund was processed, not
+  > when requested). Enables net revenue calculation.
+- `active_customers`
+  > Number of unique customers who generated at least one event on this date.
+  > Includes page views, clicks, purchases, reviews, etc.
+- `active_sellers`
+  > Number of unique sellers who generated at least one event on this date.
+  > Includes product uploads, order fulfillments, etc.
+- `new_customer_registrations`
+  > Number of new customer accounts created on this date. Tracks customer
+  > acquisition rate.
+- `new_seller_registrations`
+  > Number of new seller accounts created on this date. Tracks seller
+  > acquisition rate.
+- `page_views`
+  > Total number of page views across the platform on this date. Includes
+  > product pages, category pages, seller stores, etc.
+- `product_views`
+  > Number of product detail page views on this date. Indicates product
+  > discovery activity.
+- `search_queries`
+  > Number of search queries executed on this date. Tracks search volume and
+  > product discovery patterns.
+- `cart_additions`
+  > Number of items added to shopping carts on this date. Indicates purchase
+  > intent.
+- `checkout_initiations`
+  > Number of checkouts started on this date. Excludes completions (see
+  > total_orders). Enables cart abandonment analysis.
+- `payment_success_rate`
+  > Percentage of payment attempts that succeeded on this date. Range: 0.0 to
+  > 100.0. Calculated as (successful_payments / total_payment_attempts) *
+  > 100.
+- `order_cancellation_rate`
+  > Percentage of orders that were cancelled on this date. Range: 0.0 to
+  > 100.0. Calculated as (cancelled_orders / total_orders) * 100.
+- `reviews_submitted`
+  > Number of product reviews submitted on this date. Tracks customer
+  > engagement and feedback volume.
+- `average_order_value`
+  > Average revenue per order on this date. Calculated as total_revenue /
+  > total_orders. Indicates customer spending patterns.
+- `created_at`
+  > Timestamp when daily metrics were calculated. Typically 2 AM UTC on the
+  > day following metric_date.
+
+### `ecommerce_mall_monthly_metrics`
+
+Monthly aggregated performance metrics calculated from daily_metrics or
+event_log. Provides high-level monthly summaries for executive reporting
+and year-over-year comparisons. Each record represents all aggregated
+activity for a calendar month.
+
+Monthly metrics include total orders, revenue, customer acquisition,
+seller acquisition, average metrics, and trend indicators. These monthly
+rollups enable executive dashboards to track business growth, seasonal
+patterns, and performance trends without needing to aggregate raw events.
+
+Monthly metrics are immutable once calculated (first day of following
+month). Historical monthly data supports strategic planning and business
+intelligence for growth analysis.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `year`
+  > Calendar year for which metrics are calculated. Examples: 2024, 2025.
+  > Used with month to identify metric period.
+- `month`
+  > Calendar month (1-12) for which metrics are calculated. Combined with
+  > year to identify month. Range: 1 (January) to 12 (December).
+- `total_orders`
+  > Total number of orders placed during the month. Sum of
+  > daily_metrics.total_orders for the month.
+- `total_revenue`
+  > Total gross revenue from all orders in the month. Sum of
+  > daily_metrics.total_revenue for the month. In USD equivalent.
+- `total_refunds`
+  > Total refunds issued in the month. Sum of daily_metrics.total_refunds for
+  > the month.
+- `net_revenue`
+  > Net revenue after refunds. Calculated as total_revenue - total_refunds.
+  > True economic value in the month.
+- `unique_customers`
+  > Total number of unique customers who had at least one event during the
+  > month. Distinct count from daily active_customers.
+- `unique_sellers`
+  > Total number of unique sellers who had at least one event during the
+  > month. Distinct count from daily active_sellers.
+- `new_customer_registrations`
+  > Number of new customer accounts created during the month. Sum of daily
+  > new_customer_registrations.
+- `new_seller_registrations`
+  > Number of new seller accounts created during the month. Sum of daily
+  > new_seller_registrations.
+- `total_page_views`
+  > Total page views across platform during the month. Sum of daily
+  > page_views.
+- `total_product_views`
+  > Total product detail page views during the month. Sum of daily
+  > product_views.
+- `total_search_queries`
+  > Total search queries executed during the month. Sum of daily
+  > search_queries.
+- `total_reviews_submitted`
+  > Total product reviews submitted during the month. Sum of daily
+  > reviews_submitted.
+- `average_order_value`
+  > Average order value for the month. Calculated as total_revenue /
+  > total_orders. Indicates customer spending level.
+- `average_payment_success_rate`
+  > Average daily payment success rate for the month. Calculated as average
+  > of daily_metrics.payment_success_rate for the month.
+- `average_order_cancellation_rate`
+  > Average daily order cancellation rate for the month. Calculated as
+  > average of daily_metrics.order_cancellation_rate for the month.
+- `customer_retention_rate`
+  > Percentage of customers from previous month who made a purchase in this
+  > month. Indicates customer retention. Range: 0.0 to 100.0.
+- `created_at`
+  > Timestamp when monthly metrics were calculated. Typically first day of
+  > following month.
+
+### `ecommerce_mall_product_metrics`
+
+Product-level performance metrics tracking individual product sales,
+popularity, and customer satisfaction. Aggregated daily from event_log
+capturing product-specific activity. Each record represents performance
+metrics for a specific product on a specific date.
+
+Metrics include units sold, revenue, page views, click-through rate,
+conversion rate, customer rating, and review count. These product metrics
+enable sellers to understand which products perform well, which
+underperform, and identify optimization opportunities.
+
+Daily product metrics are calculated each day at off-peak hours and
+support seller dashboards, product search ranking optimization, and
+inventory management decision-making.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_product_id`: Reference to the product being tracked. [ecommerce_mall_products.id](#ecommerce_mall_products)
+- `ecommerce_mall_seller_id`
+  > Reference to the seller who owns the product. Enables seller-level
+  > product analytics. [ecommerce_mall_sellers.id](#ecommerce_mall_sellers)
+- `metric_date`
+  > Date for which product metrics are calculated (UTC midnight). One record
+  > per product per day. Format: YYYY-MM-DD 00:00:00 UTC.
+- `units_sold`
+  > Number of units of this product sold on this date. Aggregated from order
+  > items.
+- `revenue`
+  > Total revenue from this product on this date. Calculated as sum of
+  > (unit_price × quantity) for all orders containing this product.
+- `page_views`
+  > Number of times the product detail page was viewed on this date.
+  > Indicates product visibility and interest.
+- `add_to_cart_count`
+  > Number of times this product was added to shopping carts on this date.
+  > Indicates purchase intent.
+- `conversion_rate`
+  > Percentage of product page views that resulted in purchase on this date.
+  > Calculated as (units_sold / page_views) * 100. Range: 0.0 to 100.0+.
 - `average_rating`
-  > Calculated average seller rating (1-5 scale). Rounded to 1 decimal place.
-  > Aggregates across all seller's products. Used for seller ranking.
-- `total_reviews`
-  > Total count of reviews across all seller's products. Used for seller
-  > credibility indication.
-- `on_time_delivery_rate`
-  > Percentage of orders delivered on or before estimated delivery date.
-  > 0-100 scale. Calculated from order fulfillment data.
-- `return_rate`
-  > Percentage of orders returned by customers. 0-100 scale. Indicates
-  > product quality satisfaction.
+  > Current average rating for this product (as of this date). Captured daily
+  > to track rating changes over time. Range: 1.0 to 5.0.
+- `review_count`
+  > Total number of reviews/ratings for this product (as of this date).
+  > Tracked daily to monitor review accumulation.
+- `new_reviews`
+  > Number of new reviews submitted for this product on this date. Indicates
+  > feedback velocity.
+- `refund_count`
+  > Number of orders containing this product that were refunded on this date.
+  > Indicates product quality or satisfaction issues.
+- `stock_level`
+  > Current available inventory level for this product (as of end of this
+  > date). Tracked daily to monitor stock depletion.
+- `created_at`
+  > Timestamp when product metrics were calculated. Typically 2 AM UTC on the
+  > day following metric_date.
+
+### `ecommerce_mall_seller_metrics`
+
+Seller-level performance metrics aggregated daily from order and review
+data. Tracks individual seller sales performance, customer satisfaction,
+fulfillment quality, and operational efficiency. Each record represents
+aggregated metrics for a specific seller on a specific date.
+
+Metrics include total orders, revenue, average order value, shipping
+speed, refund rate, customer satisfaction ratings, and fulfillment
+performance. Sellers use these metrics to monitor their store performance
+and understand customer satisfaction.
+
+Daily seller metrics support seller dashboards, performance badges,
+search ranking optimization, and business intelligence. Metrics are
+recalculated daily at off-peak hours.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_seller_id`: Reference to the seller being tracked. [ecommerce_mall_sellers.id](#ecommerce_mall_sellers)
+- `metric_date`
+  > Date for which seller metrics are calculated (UTC midnight). One record
+  > per seller per day. Format: YYYY-MM-DD 00:00:00 UTC.
+- `total_orders`
+  > Number of orders placed from this seller on this date. Includes
+  > completed, pending, and cancelled orders.
+- `total_revenue`
+  > Total gross revenue from orders placed with this seller on this date.
+  > Does not deduct refunds.
+- `average_order_value`
+  > Average order value for orders from this seller on this date. Calculated
+  > as total_revenue / total_orders.
+- `customer_count`: Number of unique customers who purchased from this seller on this date.
+- `new_customers`
+  > Number of first-time customers of this seller on this date. Indicates new
+  > customer acquisition.
+- `repeat_customers`
+  > Number of returning customers who purchased again from this seller on
+  > this date. Indicates customer loyalty.
+- `fulfillment_rate`
+  > Percentage of orders from this seller that were fulfilled (shipped) on
+  > time during this date range. Range: 0.0 to 100.0.
+- `average_shipping_speed_hours`
+  > Average hours from order confirmation to shipment dispatch for this
+  > seller on this date. Lower is better. Indicates fulfillment speed.
+- `refund_count`: Number of refunds issued for orders from this seller on this date.
+- `refund_rate`
+  > Percentage of this seller's orders that were refunded. Calculated as
+  > (refund_count / total_orders) * 100. Range: 0.0 to 100.0. High rates
+  > indicate quality issues.
+- `average_rating`
+  > Current average rating for this seller (as of this date). Calculated from
+  > all customer reviews. Range: 1.0 to 5.0.
+- `new_reviews`: Number of new reviews/ratings for this seller on this date.
 - `customer_satisfaction_score`
-  > Composite score combining ratings, return rate, and on-time delivery.
-  > 0-100 scale. Used for seller tier calculation and visibility.
-- `rating_trend_30_days`
-  > Trend of seller rating over last 30 days. Values: 'improving', 'stable',
-  > 'declining'. Indicates recent performance direction.
-- `updated_at`
-  > Timestamp when this materialized view was last calculated/refreshed. ISO
-  > 8601 format.
+  > Overall customer satisfaction metric for this seller on this date.
+  > Calculated from average rating and review sentiment. Range: 0.0 to 100.0.
+- `cancellation_count`: Number of orders from this seller that were cancelled on this date.
+- `cancellation_rate`
+  > Percentage of this seller's orders that were cancelled on this date.
+  > Calculated as (cancellation_count / total_orders) * 100. Range: 0.0 to
+  > 100.0.
+- `created_at`
+  > Timestamp when seller metrics were calculated. Typically 2 AM UTC on the
+  > day following metric_date.
+
+### `ecommerce_mall_customer_segments`
+
+Customer cohort analysis and segmentation data for targeted marketing and
+business intelligence. Captures customer groupings by acquisition date
+(cohorts), spending patterns, and engagement levels. Enables cohort-based
+retention analysis and customer lifetime value (CLV) calculations.
+
+Segmentation includes customer cohorts (grouped by registration month),
+customer value segments (high/medium/low value based on lifetime spend),
+engagement segments (active/moderate/inactive based on purchase
+frequency), and acquisition channel segments (organic/paid/referral).
+
+Customer segments are recalculated monthly to reflect changing customer
+status and value. Segments enable targeted retention campaigns and help
+identify at-risk customers for proactive engagement.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ecommerce_mall_customer_id`
+  > Reference to the customer being segmented. {@link
+  > ecommerce_mall_customers.id}
+- `cohort_month`
+  > Registration month (1-12) of the customer's cohort. Customers registered
+  > in same month are grouped into same cohort.
+- `cohort_year`
+  > Registration year of the customer's cohort. Combined with cohort_month to
+  > identify the cohort period.
+- `value_segment`
+  > Customer value classification based on lifetime spend and purchase
+  > frequency. Values: high_value (>90th percentile spending), medium_value
+  > (40-90th percentile), low_value (<40th percentile). Enables targeted
+  > retention strategies.
+- `engagement_segment`
+  > Customer engagement level based on purchase frequency and recent
+  > activity. Values: active (purchased in last 30 days), moderate (purchased
+  > in last 90 days), inactive (no purchases in 90+ days). Identifies at-risk
+  > customers.
+- `acquisition_channel`
+  > How customer was acquired to the platform. Values: organic
+  > (direct/search), paid (advertising), referral (referred by existing
+  > customer), affiliate (partner program). Enables marketing ROI analysis.
+- `lifetime_spend`
+  > Total lifetime spending by this customer across all orders. Enables CLV
+  > analysis and value segmentation.
+- `lifetime_orders`
+  > Total number of orders placed by this customer. Indicates purchase
+  > frequency and engagement.
+- `repeat_purchase_rate`
+  > Percentage of customers in this cohort who made repeat purchases (2+
+  > orders). Calculated as (repeat_customers / cohort_size) * 100. Range: 0.0
+  > to 100.0. Indicates cohort retention.
+- `average_order_value`
+  > Average order value for this customer. Calculated as lifetime_spend /
+  > lifetime_orders. Indicates customer spending capacity.
+- `last_purchase_date`
+  > Date of this customer's most recent order. Used to identify at-risk
+  > customers (no recent purchases).
+- `days_since_last_purchase`
+  > Number of days since this customer's last purchase. Calculated daily.
+  > Used to determine engagement_segment.
+- `churn_risk`
+  > Assessment of likelihood customer will churn (stop purchasing). Values:
+  > high (inactive 90+ days), medium (inactive 30-90 days), low (active
+  > purchase within 30 days). Identifies customers for retention campaigns.
+- `segment_updated_at`
+  > Timestamp when customer segment was last calculated or updated. Typically
+  > monthly recalculation.
+- `created_at`
+  > Timestamp when customer segment record was created (when customer segment
+  > analysis started).
+
+### `ecommerce_mall_performance_metrics`
+
+System and platform performance tracking metrics capturing infrastructure
+health, API performance, and operational status. Metrics include server
+response times, database performance, error rates, payment processor
+performance, and external service integrations. Enables operational
+monitoring and SLA (Service Level Agreement) compliance tracking.
+
+Performance metrics are collected and aggregated hourly from multiple
+monitoring sources (application logs, infrastructure monitoring,
+third-party integrations). These metrics feed into operational dashboards
+and trigger alerts when performance falls below targets.
+
+Metrics support incident response (understanding performance during
+issues), performance optimization (identifying bottlenecks), and capacity
+planning (understanding growth trends). Performance data is retained for
+1 year.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `metric_hour`
+  > Hour for which performance metrics are collected (UTC rounded to hour
+  > boundary). Format: YYYY-MM-DD HH:00:00 UTC. One record per hour.
+- `api_response_time_p95`
+  > 95th percentile API response time in milliseconds for this hour.
+  > Indicates response time for most (95%) of API requests. Target: <500ms.
+- `api_response_time_p99`
+  > 99th percentile API response time in milliseconds for this hour.
+  > Indicates slowest acceptable response times. Target: <2000ms.
+- `search_response_time_p95`: 95th percentile search API response time in milliseconds. Target: <1000ms.
+- `database_query_time_p95`
+  > 95th percentile database query execution time in milliseconds. Target:
+  > <100ms.
+- `error_rate`
+  > Percentage of API requests that resulted in error (5xx response codes)
+  > during this hour. Range: 0.0 to 100.0. Target: <0.1%.
+- `payment_processor_availability`
+  > Percentage of time payment processor API was available during this hour.
+  > Range: 0.0 to 100.0. Target: >99.9%.
+- `shipping_provider_availability`
+  > Percentage of time shipping provider APIs were available during this
+  > hour. Range: 0.0 to 100.0. Target: >99%.
+- `server_cpu_usage_percent`
+  > Average CPU usage percentage across all application servers during this
+  > hour. Range: 0.0 to 100.0. Alert threshold: >80%.
+- `server_memory_usage_percent`
+  > Average memory usage percentage across all application servers during
+  > this hour. Range: 0.0 to 100.0. Alert threshold: >85%.
+- `database_cpu_usage_percent`
+  > Database server CPU usage during this hour. Range: 0.0 to 100.0. Alert
+  > threshold: >80%.
+- `database_connection_count`
+  > Average number of active database connections during this hour. Alert
+  > threshold: >80% of pool size.
+- `requests_per_second`
+  > Average number of API requests per second handled during this hour.
+  > Indicates traffic volume.
+- `concurrent_users`: Peak number of concurrent users on the platform during this hour.
+- `uptime_percent`
+  > Percentage of time platform was available during this hour. Range: 0.0 to
+  > 100.0. Target: >99.9%.
+- `cache_hit_rate`
+  > Percentage of cache requests that hit cache (vs going to database) during
+  > this hour. Range: 0.0 to 100.0. Higher is better (less DB load).
+- `payment_success_rate`
+  > Percentage of payment attempts that succeeded during this hour. Range:
+  > 0.0 to 100.0. Target: >99.5%.
+- `created_at`: Timestamp when performance metrics were collected/calculated.
+
+## Audit
+
+```mermaid
+erDiagram
+"ecommerce_mall_audit_log" {
+  String id PK
+  String actor_type
+  String actor_id "nullable"
+  String action_type
+  String resource_type
+  String resource_id "nullable"
+  String description
+  String changes "nullable"
+  String metadata "nullable"
+  DateTime created_at
+}
+"ecommerce_mall_admin_actions" {
+  String id PK
+  String admin_id FK
+  String approved_by_id FK "nullable"
+  String action_type
+  String resource_type
+  String resource_id
+  String old_value "nullable"
+  String new_value "nullable"
+  String reason
+  DateTime created_at
+}
+"ecommerce_mall_data_access_log" {
+  String id PK
+  String actor_type
+  String actor_id
+  String data_category
+  String resource_type
+  String resource_id
+  String ip_address
+  String purpose
+  Int row_count
+  Int duration_ms
+  DateTime created_at
+}
+"ecommerce_mall_inventory_adjustments_audit" {
+  String id PK
+  String product_sku_id FK
+  String order_id FK "nullable"
+  String approver_id FK "nullable"
+  String adjustment_type
+  Int quantity_before
+  Int quantity_adjusted
+  Int quantity_after
+  String reason
+  String actor_type
+  String actor_id
+  DateTime created_at
+}
+"ecommerce_mall_payment_audit_log" {
+  String id PK
+  String order_id FK
+  String customer_id FK
+  String payment_method_type
+  String transaction_id UK
+  Float amount
+  String currency
+  String status
+  String processor_name
+  String response_code
+  String error_message "nullable"
+  String ip_address
+  String merchant_reference
+  DateTime created_at
+}
+"ecommerce_mall_security_events" {
+  String id PK
+  String ticket_id FK "nullable"
+  String event_type
+  String severity
+  String actor_type "nullable"
+  String actor_id "nullable"
+  String ip_address
+  String user_agent "nullable"
+  String description
+  String remediation_taken "nullable"
+  String investigation_notes "nullable"
+  DateTime created_at
+}
+```
+
+### `ecommerce_mall_audit_log`
+
+Complete system-wide audit trail of all significant platform events.
+
+This table captures every meaningful action across the platform including
+user activities, system changes, administrative operations, and automated
+processes. It serves as the authoritative record for compliance,
+investigation, and troubleshooting.
+
+The audit log is immutable (append-only) and designed to support GDPR
+compliance, financial auditing, security investigations, and regulatory
+requirements. All records include who performed the action, what was
+affected, when it occurred, and relevant context.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `actor_type`
+  > Type of actor who performed the action. Valid values: admin, system,
+  > automation, customer, seller. Identifies the source/origin of the action
+  > for filtering and investigation.
+- `actor_id`
+  > ID of the actor who performed the action. References admin, customer, or
+  > seller account. Nullable for system-initiated events with no specific
+  > actor.
+- `action_type`
+  > Categorizes the specific action performed. Examples: create, update,
+  > delete, access, approve, suspend, payment_processed. Used for filtering
+  > events by action category in compliance reports.
+- `resource_type`
+  > Identifies the type of resource affected by the action. Examples: order,
+  > product, customer, seller, payment, inventory. Enables finding all events
+  > related to specific resource types.
+- `resource_id`
+  > ID of the specific resource affected by the action. Links audit event to
+  > the affected entity for investigation and correlation. Nullable for
+  > system-wide events not tied to specific resource.
+- `description`
+  > Detailed natural-language description of what happened, why it happened,
+  > and the outcome. Provides human-readable context for audit investigators
+  > reviewing compliance reports.
+- `changes`
+  > JSON object containing before/after values for modification events.
+  > Captures what changed during update operations. Format: {"field_name":
+  > {"old": value, "new": value}}. Null for non-modification events.
+- `metadata`
+  > JSON object with additional contextual information. May include: IP
+  > address, HTTP method, request path, user agent, session ID, geographic
+  > location, error codes. Used for security investigations and trend
+  > analysis.
+- `created_at`
+  > UTC timestamp when the audit event was recorded. Defines event ordering
+  > and enables time-range queries for compliance reports and investigations.
+  > No update_at field (immutable append-only log).
+
+### `ecommerce_mall_admin_actions`
+
+Audit trail of all administrative actions and changes made by platform
+administrators.
+
+Tracks every action taken by admins including user management
+(suspension, approval), configuration changes, commission adjustments,
+dispute resolutions, and operational decisions. This is the authoritative
+record for admin accountability and oversight.
+
+Each record documents the admin who took the action, what was changed,
+old and new values, the business reason for the action, and approval
+chain for sensitive operations. Designed for admin accountability,
+compliance review, and operational investigation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `admin_id`
+  > References the admin who performed the action. Links to {@link
+  > ecommerce_mall_admins.id} to identify accountability. Enables tracking
+  > all actions by specific admin.
+- `approved_by_id`
+  > References the admin who approved this action if dual-approval was
+  > required. Links to [ecommerce_mall_admins.id](#ecommerce_mall_admins). Null for actions not
+  > requiring secondary approval. Documents approval chain.
+- `action_type`
+  > Specific admin action performed. Examples: create_user, approve_seller,
+  > suspend_account, adjust_commission, update_category, resolve_dispute,
+  > delete_product, update_settings. Enables filtering admin actions by type.
+- `resource_type`
+  > Type of resource affected by admin action. Examples: customer, seller,
+  > product, category, setting, configuration, commission_rate. Identifies
+  > what was being managed.
+- `resource_id`
+  > ID of the specific resource that was affected by the admin action. Links
+  > to the resource being managed (customer ID, product ID, seller ID, etc.)
+  > for investigation and correlation.
+- `old_value`
+  > JSON representation of the resource's state before the admin action. Null
+  > if action was creation (no previous state). Enables before/after
+  > comparison for change analysis.
+- `new_value`
+  > JSON representation of the resource's state after the admin action.
+  > Contains the actual values that were set/changed. May be null if action
+  > was deletion.
+- `reason`
+  > Business reason for the admin action. Examples: 'Seller violated quality
+  > standards', 'Customer fraud detected', 'Platform maintenance',
+  > 'Commission adjustment per agreement'. Required for all admin actions for
+  > accountability.
+- `created_at`
+  > UTC timestamp when the admin action was executed. Defines action ordering
+  > and enables investigation of admin decisions in chronological order. No
+  > update_at (immutable record).
+
+### `ecommerce_mall_data_access_log`
+
+Comprehensive log of all access to sensitive customer and business data
+for GDPR and privacy compliance.
+
+Tracks every query, export, or access to personally identifiable
+information (PII) and sensitive business data. This is critical for GDPR
+Subject Access Requests, privacy audits, and detecting unauthorized
+access patterns.
+
+Records identify who accessed what data, when, from where, and for what
+purpose. Enables investigation of data breaches, compliance with data
+retention policies, and validation that access controls are working
+properly.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `actor_type`
+  > Type of entity accessing data. Valid values: admin, system, customer,
+  > seller. Identifies the class of user accessing sensitive data for access
+  > control verification.
+- `actor_id`
+  > ID of the specific user/admin/system accessing the data. Links to
+  > customer, seller, or admin account. Enables tracking all data accessed by
+  > specific user for GDPR subject access requests.
+- `data_category`
+  > Category of sensitive data accessed. Examples: customer_pii,
+  > customer_email, customer_address, payment_data, order_history,
+  > seller_bank_info, admin_config. Enables filtering access by data
+  > sensitivity level.
+- `resource_type`
+  > Type of resource containing the data. Examples: customer, seller, order,
+  > payment, product, support_ticket. Identifies entity type being accessed.
+- `resource_id`
+  > ID of the specific resource whose data was accessed. Links to customer,
+  > seller, order, etc. Enables finding all data access for specific subject
+  > in compliance investigations.
+- `ip_address`
+  > Source IP address from which data was accessed. Identifies location of
+  > access for geographic anomaly detection and investigating unauthorized
+  > access from unexpected locations.
+- `purpose`
+  > Stated purpose for accessing data. Examples: customer_support,
+  > fraud_investigation, billing_verification, analytics, compliance_audit.
+  > Validates that access has legitimate business reason.
+- `row_count`
+  > Number of data rows/records accessed in this access event. Helps identify
+  > suspicious large-scale data exports or queries. High counts may indicate
+  > data breach attempt.
+- `duration_ms`
+  > Duration of the data access operation in milliseconds. Helps identify
+  > slow queries that might indicate performance issues or suspicious
+  > activity. Typical query 50-500ms.
+- `created_at`
+  > UTC timestamp when the data access occurred. Enables time-range queries
+  > for investigating data access patterns around specific incidents.
+  > Immutable record.
+
+### `ecommerce_mall_inventory_adjustments_audit`
+
+Immutable audit trail of all inventory quantity adjustments for
+accountability and discrepancy investigation.
+
+Records every change to inventory levels including system-generated
+adjustments from orders, manual corrections by sellers, damage/loss
+adjustments, and admin interventions. Enables complete reconstruction of
+inventory history and investigation of discrepancies.
+
+Each adjustment includes quantity before/after, reason for change, who
+made the adjustment, and approval chain for large adjustments. Supports
+inventory audits, detects anomalies, and proves accountability for
+inventory accuracy.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `product_sku_id`
+  > References the specific product SKU whose inventory was adjusted. Links
+  > to [ecommerce_mall_product_skus.id](#ecommerce_mall_product_skus). Enables finding all
+  > adjustments for specific product variant.
+- `order_id`
+  > References the order related to this inventory adjustment (if
+  > applicable). Links to [ecommerce_mall_orders.id](#ecommerce_mall_orders). Null for
+  > non-order-related adjustments (damage, loss, correction). For
+  > returns/fulfillments.
+- `approver_id`
+  > References the admin who approved this adjustment (for large adjustments
+  > requiring approval). Links to [ecommerce_mall_admins.id](#ecommerce_mall_admins). Null for
+  > small adjustments not requiring approval. Documents approval chain.
+- `adjustment_type`
+  > Type of inventory adjustment performed. Valid values: increase
+  > (restocking), decrease (sold/lost), correction (physical count
+  > correction), return (customer return received), loss (damage/theft).
+  > Categorizes adjustment purpose.
+- `quantity_before`
+  > Inventory quantity before the adjustment. Enables verification of
+  > before-state. Zero or positive integer representing available units.
+- `quantity_adjusted`
+  > Quantity changed by the adjustment. Can be positive (increase) or
+  > negative (decrease). Allows recalculating: quantity_after =
+  > quantity_before + quantity_adjusted.
+- `quantity_after`
+  > Inventory quantity after the adjustment. Enables verification of
+  > after-state. Must be non-negative. System enforces: quantity_after >= 0.
+- `reason`
+  > Business reason for the inventory adjustment. Examples: 'Restock received
+  > from supplier', 'Physical count discrepancy (actual 15 vs system 12)',
+  > 'Customer return received', '3 units damaged in transit'. Required for
+  > all adjustments.
+- `actor_type`
+  > Type of actor making the adjustment. Valid values: seller, admin, system.
+  > Identifies who is responsible for this inventory change.
+- `actor_id`
+  > ID of the actor (seller or admin) who requested/performed the adjustment.
+  > Links to seller or admin account for accountability.
+- `created_at`
+  > UTC timestamp when the inventory adjustment was recorded. Enables
+  > chronological reconstruction of inventory history. Immutable audit
+  > record.
+
+### `ecommerce_mall_payment_audit_log`
+
+Comprehensive PCI DSS-compliant audit trail of all payment transactions
+and processing events.
+
+Records every payment interaction including authorization requests,
+capture, refunds, and failures. This is the authoritative record for
+payment compliance, chargeback disputes, and financial auditing. Critical
+for PCI DSS Level 1 compliance.
+
+Documents payment method type, processor response codes, transaction
+success/failure, associated customer and order, and source IP. Does NOT
+store sensitive payment data (card numbers, CVV) - only references tokens
+from payment processors. Enables investigation of payment issues, fraud
+detection, and regulatory compliance.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `order_id`
+  > References the order associated with this payment. Links to {@link
+  > ecommerce_mall_orders.id}. Enables finding payment history for specific
+  > order and correlating payment with fulfillment.
+- `customer_id`
+  > References the customer who made the payment. Links to {@link
+  > ecommerce_mall_customers.id}. Enables finding all payments by customer
+  > and detecting fraud patterns.
+- `payment_method_type`
+  > Type of payment method used. Valid values: credit_card, debit_card,
+  > digital_wallet, bank_transfer, other. Identifies payment method for
+  > analysis and compliance reporting.
+- `transaction_id`
+  > External transaction ID from payment processor (Stripe charge ID, PayPal
+  > transaction ID, etc.). Unique identifier for payment processor's
+  > transaction for reconciliation and dispute resolution.
+- `amount`
+  > Transaction amount in specified currency. Positive number representing
+  > funds transferred. Used for financial reconciliation and sales reporting.
+- `currency`
+  > Currency code for the transaction (USD, EUR, GBP, JPY, etc.).
+  > Three-letter ISO 4217 code. Used for multi-currency financial reporting.
+- `status`
+  > Payment transaction status. Valid values: authorized, captured, failed,
+  > refunded, disputed, pending. Indicates outcome of payment processing.
+  > Critical for order reconciliation.
+- `processor_name`
+  > Name of the payment processor handling the transaction. Examples: Stripe,
+  > PayPal, Square, Authorize.net. Identifies which service processed the
+  > payment.
+- `response_code`
+  > Response code returned by payment processor. Examples: '100' (success),
+  > '201' (unsuccessful), '202' (error). Provides detailed reason for
+  > transaction outcome.
+- `error_message`
+  > Error message from processor if transaction failed. Examples:
+  > 'Insufficient funds', 'Card expired', 'CVV mismatch'. Null for successful
+  > transactions. Helps diagnose payment issues.
+- `ip_address`
+  > Source IP address from which payment was initiated. Used for fraud
+  > detection (comparing against historical customer IPs). Identifies
+  > geographic location of payment.
+- `merchant_reference`
+  > Internal merchant reference/order number for this transaction. Links
+  > payment processor's records to our system. Used for reconciliation
+  > between systems.
+- `created_at`
+  > UTC timestamp when payment was processed. Enables time-based queries for
+  > financial reporting and chargeback investigations. Immutable audit record
+  > per PCI DSS requirements.
+
+### `ecommerce_mall_security_events`
+
+Comprehensive security incident and anomaly log for breach detection,
+investigation, and forensics.
+
+Tracks all security-related events including suspicious login attempts,
+rate limit violations, fraud detections, policy violations, and account
+lockouts. Critical for security monitoring, incident response, and
+post-breach forensics.
+
+Each event is classified by type and severity, includes the affected
+account and source IP, documents remediation taken, and links to related
+support investigations. Enables identifying security patterns, detecting
+coordinated attacks, and proving security posture to regulators and
+stakeholders.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `ticket_id`
+  > References related support ticket if security event required
+  > investigation. Links to [ecommerce_mall_support_tickets.id](#ecommerce_mall_support_tickets). Null
+  > if event was automatically remediated without ticket. Links security
+  > events to support system.
+- `event_type`
+  > Classification of security event. Valid values: suspicious_login,
+  > rate_limit_exceeded, fraud_detected, breach_attempt, policy_violation,
+  > account_locked, unusual_activity. Categorizes security incident type.
+- `severity`
+  > Severity level of security event. Valid values: critical, high, medium,
+  > low, info. Determines response priority and escalation. Critical events
+  > require immediate action.
+- `actor_type`
+  > Type of account involved in security event. Valid values: customer,
+  > seller, admin, anonymous. Null for events not tied to specific actor
+  > type. Identifies who was affected.
+- `actor_id`
+  > ID of the account involved in security event. References customer,
+  > seller, or admin account. Null for anonymous events (external breach
+  > attempts, etc.). Identifies affected user.
+- `ip_address`
+  > Source IP address of security event. Used for geographic anomaly
+  > detection and identifying attack sources. Enables blocking malicious IPs
+  > and trend analysis.
+- `user_agent`
+  > Browser/client user agent string from security event. Identifies device
+  > type and software making the suspicious request. Null for non-web events.
+  > Helps identify automated attacks.
+- `description`
+  > Detailed description of the security incident. Examples: 'Failed login
+  > attempt from unusual country (China) for US-based customer', '50 requests
+  > per second from IP 192.168.1.1', 'Credit card fraud pattern detected'.
+  > Provides context for investigation.
+- `remediation_taken`
+  > Description of remediation actions taken in response to security event.
+  > Examples: 'Account temporarily locked and password reset required', 'IP
+  > address blocked', 'Transaction reversed'. Null if no automatic
+  > remediation. Documents response actions.
+- `investigation_notes`
+  > JSON object containing detailed investigation notes and findings. May
+  > include: analyst name, analysis date, root cause, impact assessment,
+  > recommendations. Null until investigation completes. Captures
+  > investigation results.
+- `created_at`
+  > UTC timestamp when security event was recorded. Defines event sequence
+  > for forensics. Enables time-based queries for breach investigations and
+  > timeline reconstruction. Immutable record.

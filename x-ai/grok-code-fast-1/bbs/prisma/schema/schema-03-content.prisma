@@ -1,0 +1,305 @@
+/// Main article entities containing user-created content on economic and
+/// political topics.
+///
+/// This table stores the core article data including titles, content, and
+/// metadata. Articles serve as the primary content units that users create
+/// to share analysis and opinions on economic trends and political events,
+/// forming the foundation of the discussion ecosystem.
+///
+/// Each article is authored by a registered member and can be organized into
+/// categories for topic organization. The table supports the complete
+/// article lifecycle with rich text content and file attachments support.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who authored the article. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Category classification for the article. {@link
+  /// discussion_board_categories.id}
+  discussion_board_category_id String?
+  
+  /// Article title for clear topic identification.
+  title String
+  
+  /// Article main content in rich text format.
+  content String
+  
+  /// Unique business identifier for stable referencing.
+  code String
+  
+  /// Publication status of the article. Valid values: draft, published.
+  status String
+  
+  /// Article creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  category discussion_board_categories? @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_article_snapshots discussion_board_article_snapshots[]
+  discussion_board_article_attachments discussion_board_article_attachments[]
+  discussion_board_comments discussion_board_comments[]
+  
+  @@index([discussion_board_member_id])
+  @@index([discussion_board_category_id])
+  
+  @@unique([code])
+  @@index([created_at])
+}
+
+/// Historical snapshots of article states for audit trails and change tracking.
+///
+/// This table captures point-in-time versions of articles whenever they are
+/// modified, preserving the complete state including title, content,
+/// category assignments, and all associated metadata for transparency in
+/// content evolution.
+///
+/// Snapshots are created automatically during edits, maintaining an
+/// immutable record of changes that supports moderation and historical
+/// analysis of economic and political discussions.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article being snapshotted. {@link discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Snapshot of article title at point in time.
+  title String
+  
+  /// Snapshot of article content at point in time.
+  content String
+  
+  /// Business identifier as in snapshot.
+  code String
+  
+  /// Original article creation time.
+  created_at DateTime
+  
+  /// Snapshot creation timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id], map: "discussion_board_article_snapshots_discussion_board_ar_a8473bda")
+  @@index([updated_at])
+}
+
+/// Supporting files attached to articles for comprehensive content
+/// presentation.
+///
+/// This table manages file attachments that accompany articles, storing
+/// metadata about uploaded files while keeping actual files in separate
+/// storage for scalability.
+///
+/// Attachments are subsidiary to articles and include various file types as
+/// specified in requirements, supporting the enrichment of economic and
+/// political analyses with documents and media.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Attached article. {@link discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Original file name for user identification.
+  name String
+  
+  /// Secure access URI for file downloading.
+  uri String
+  
+  /// File MIME type for proper handling.
+  type String
+  
+  /// File size in bytes for display.
+  size Int
+  
+  /// Attachment upload timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id], map: "discussion_board_article_attachments_discussion_board__4921e646")
+  
+  @@index([created_at])
+}
+
+/// Primary discussion entities for threaded conversations on articles.
+///
+/// This table stores user comments and replies that form the discussion
+/// ecosystem beneath articles, enabling structured dialogue on economic and
+/// political topics.
+///
+/// Comments are authored by members and can form threaded reply structures,
+/// supporting nested conversations with optional attachments for
+/// comprehensive discussion contributions.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment author. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Article this comment belongs to. {@link discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Parent comment for reply threading. {@link discussion_board_comments.id}
+  parent_discussion_board_comment_id String?
+  
+  /// Comment text content.
+  content String
+  
+  /// Comment creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  parent discussion_board_comments? @relation("recursive", fields: [parent_discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  recursive discussion_board_comments[] @relation("recursive")
+  discussion_board_comment_snapshots discussion_board_comment_snapshots[]
+  discussion_board_comment_attachments discussion_board_comment_attachments[]
+  
+  @@index([discussion_board_member_id])
+  // spellchecker: ignore-next-line
+  @@index([parent_discussion_board_comment_id], map: "discussion_board_comments_parent_discussion_board_comm_fb1246a3")
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
+  @@index([created_at])
+}
+
+/// Historical snapshots of comment states for change tracking in discussions.
+///
+/// This table captures point-in-time versions of comments during edits,
+/// preserving content evolution and supporting moderation of threaded
+/// conversations.
+///
+/// Snapshots maintain the integrity of discussion threads by tracking
+/// changes to individual comments and their reply structures within the
+/// economic and political discourse.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent comment being snapshotted. {@link discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// Snapshot of comment content at point in time.
+  content String
+  
+  /// Original comment creation time.
+  created_at DateTime
+  
+  /// Snapshot creation timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id], map: "discussion_board_comment_snapshots_discussion_board_co_217f4e04")
+  @@index([updated_at])
+}
+
+/// Supporting files attached to comments for enhanced discussion contributions.
+///
+/// This table manages file attachments that accompany individual comments,
+/// storing metadata for uploaded files while enabling richer discussion
+/// interactions.
+///
+/// Comment attachments are subsidiary to comments and support the same file
+/// types as article attachments, allowing members to include relevant
+/// documents in their discussion points.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Attached comment. {@link discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// Original file name for user identification.
+  name String
+  
+  /// Secure access URI for file downloading.
+  uri String
+  
+  /// File MIME type for proper handling.
+  type String
+  
+  /// File size in bytes for display.
+  size Int
+  
+  /// Attachment upload timestamp.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id], map: "discussion_board_comment_attachments_discussion_board__2ada848a")
+  
+  @@index([created_at])
+}

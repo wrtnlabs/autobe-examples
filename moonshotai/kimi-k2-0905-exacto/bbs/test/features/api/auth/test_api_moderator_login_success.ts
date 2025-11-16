@@ -4,134 +4,84 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IPoliticsBbsModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IPoliticsBbsModerator";
+import type { IEconomicDiscussionModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicDiscussionModerator";
 
 export async function test_api_moderator_login_success(
   connection: api.IConnection,
-): Promise<void> {
-  // Step 1: Generate realistic moderator registration data
-  const username = `mod_${RandomGenerator.name(1)}${RandomGenerator.alphaNumeric(8)}`;
-  const email = `moderator.${RandomGenerator.alphaNumeric(8)}@example.com`;
-  const password = `ModPass123`;
+) {
+  // Generate valid moderator login credentials with proper constraints
+  const moderatorLogin: IEconomicDiscussionModerator.ILogin = {
+    username: RandomGenerator.alphaNumeric(10),
+    password: RandomGenerator.alphaNumeric(15),
+    ip: typia.random<string & tags.Format<"ipv4">>(),
+    href: "https://ediscussion.example.com/login",
+    referrer: "https://ediscussion.example.com/home",
+  } satisfies IEconomicDiscussionModerator.ILogin;
 
-  // Step 2: Create new moderator account
-  const moderator = await api.functional.auth.moderator.join(connection, {
-    body: {
-      username: username,
-      email: email,
-      password: password,
-    } satisfies IPoliticsBbsModerator.ICreate,
-  });
-  typia.assert(moderator);
+  // Perform moderator login authentication
+  const response: IEconomicDiscussionModerator.IAuthorized =
+    await api.functional.auth.moderator.login(connection, {
+      body: moderatorLogin,
+    });
 
-  // Step 3: Verify moderator profile was created successfully
-  TestValidator.equals(
-    "moderator username matches",
-    moderator.username,
-    username,
-  );
-  TestValidator.equals("moderator email matches", moderator.email, email);
+  // Validate response structure and moderator profile data
+  typia.assert(response);
+
+  // Verify authentication token is properly set
   TestValidator.predicate(
-    "moderator has valid ID",
-    moderator.id !== null && moderator.id.length > 0,
-  );
-
-  // Step 4: Test login with username
-  const loggedInModerator = await api.functional.auth.moderator.login(
-    connection,
-    {
-      body: {
-        username_or_email: username,
-        password: password,
-        href: "https://example.com/auth/moderator/login",
-        referrer: "https://example.com/auth/moderator/register",
-        ip: "192.168.1.100",
-      } satisfies IPoliticsBbsModerator.ILogin,
-    },
-  );
-  typia.assert(loggedInModerator);
-
-  // Step 5: Verify successful login response
-  TestValidator.equals(
-    "logged in username matches",
-    loggedInModerator.username,
-    username,
-  );
-  TestValidator.equals(
-    "logged in email matches",
-    loggedInModerator.email,
-    email,
-  );
-  TestValidator.equals(
-    "logged in ID matches moderator ID",
-    loggedInModerator.id,
-    moderator.id,
-  );
-
-  // Step 6: Validate JWT tokens were issued
-  TestValidator.predicate(
-    "has access token",
-    loggedInModerator.token.access.length > 0,
+    "Authentication token exists",
+    response.token?.access.length > 0,
   );
   TestValidator.predicate(
-    "has refresh token",
-    loggedInModerator.token.refresh.length > 0,
+    "Refresh token exists",
+    response.token?.refresh.length > 0,
   );
   TestValidator.predicate(
-    "token not expired",
-    new Date(loggedInModerator.token.expired_at) > new Date(),
+    "Token expiration set",
+    response.token?.expired_at.length > 0,
   );
   TestValidator.predicate(
-    "refresh token valid",
-    new Date(loggedInModerator.token.refreshable_until) > new Date(),
+    "Token refreshable until set",
+    response.token?.refreshable_until.length > 0,
   );
 
-  // Step 7: Test login with email instead of username
-  const emailLoggedInModerator = await api.functional.auth.moderator.login(
-    connection,
-    {
-      body: {
-        username_or_email: email,
-        password: password,
-        href: "https://example.com/auth/moderator/login",
-        referrer: "https://example.com/auth/moderator/login",
-        ip: "192.168.1.101",
-      } satisfies IPoliticsBbsModerator.ILogin,
-    },
+  // Validate moderator profile information
+  TestValidator.predicate(
+    "Moderator ID is valid UUID",
+    typia.is<string & tags.Format<"uuid">>(response.id),
   );
-  typia.assert(emailLoggedInModerator);
+  TestValidator.predicate(
+    "Username matches input",
+    response.username === moderatorLogin.username,
+  );
+  TestValidator.predicate(
+    "Email follows proper format",
+    typia.is<string & tags.Format<"email">>(response.email),
+  );
+  TestValidator.predicate(
+    "Email verification status is boolean",
+    typeof response.email_verified === "boolean",
+  );
+  TestValidator.predicate(
+    "2FA status is boolean",
+    typeof response.two_factor_enabled === "boolean",
+  );
+  TestValidator.predicate(
+    "Moderation level is string",
+    typeof response.moderation_level === "string",
+  );
+  TestValidator.predicate(
+    "Created at timestamp formatted correctly",
+    typia.is<string & tags.Format<"date-time">>(response.created_at),
+  );
+  TestValidator.predicate(
+    "Updated at timestamp formatted correctly",
+    typia.is<string & tags.Format<"date-time">>(response.updated_at),
+  );
 
-  // Step 8: Verify email login worked correctly
-  TestValidator.equals(
-    "email login username matches",
-    emailLoggedInModerator.username,
-    username,
-  );
-  TestValidator.equals(
-    "email login email matches",
-    emailLoggedInModerator.email,
-    email,
-  );
-  TestValidator.equals(
-    "email login ID matches moderator ID",
-    emailLoggedInModerator.id,
-    moderator.id,
-  );
-
-  // Step 9: Validate tokens are different but for same user
-  TestValidator.notEquals(
-    "access tokens are different",
-    loggedInModerator.token.access,
-    emailLoggedInModerator.token.access,
-  );
-  TestValidator.notEquals(
-    "refresh tokens are different",
-    loggedInModerator.token.refresh,
-    emailLoggedInModerator.token.refresh,
-  );
-  TestValidator.equals(
-    "both authenticated same user",
-    loggedInModerator.id,
-    emailLoggedInModerator.id,
+  // Verify connection headers are updated with authorization
+  TestValidator.predicate(
+    "Authorization header set",
+    connection.headers?.Authorization === response.token.access,
   );
 }

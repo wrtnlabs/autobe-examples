@@ -4,31 +4,36 @@ import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
 import { ITodoAppUser } from "../../../structures/ITodoAppUser";
-export * as password from "./password/index";
 
 /**
  * Register a new user account for the Todo application.
  *
- * This endpoint allows new users to register for the Todo application by
- * creating a user account with email and password credentials. The operation
- * validates that the email format is correct and that the email is not already
- * registered in the system. It enforces password complexity requirements
- * including minimum length and character diversity. Upon successful
- * registration, the system creates a new user record in the todo_app_users
- * table with initial status set to 'active' and generates authentication tokens
- * for immediate access.
+ * This API operation handles user registration by creating new accounts in the
+ * todo_app_users table. The operation validates the provided email address to
+ * ensure uniqueness across all users and securely hashes the password before
+ * storage. Upon successful registration, the user account is created with
+ * 'pending' status and appropriate timestamps are set for creation and update
+ * tracking.
  *
- * The operation uses the email field for unique identification and stores the
- * password securely using bcrypt hashing in the password_hash field. The
- * created_at timestamp is automatically set to record the registration time.
- * This endpoint is publicly accessible and does not require authentication,
- * serving as the entry point for new users to join the Todo application.
+ * The registration process includes comprehensive validation checks to prevent
+ * duplicate accounts and ensure data integrity. The email field is validated
+ * for format and uniqueness, while the password undergoes secure hashing using
+ * industry-standard algorithms before being stored in the password_hash field.
+ * This approach ensures that sensitive authentication credentials are never
+ * stored in plain text.
  *
- * Security considerations include preventing duplicate email registrations and
- * ensuring proper password hashing before storage. The operation integrates
- * with the authentication system to provide seamless transition from
- * registration to authenticated session. Related operations include login for
- * existing users and password reset functionality for account recovery.
+ * After successful account creation, users receive an email verification link
+ * to activate their account. The system maintains audit trails through the
+ * created_at and updated_at timestamps, providing clear visibility into account
+ * lifecycle events. This operation integrates with the todo management system
+ * by establishing the foundational user entity that will own and manage
+ * personal todo items.
+ *
+ * Security considerations include rate limiting to prevent abuse, input
+ * validation to prevent injection attacks, and proper error handling to avoid
+ * information leakage. The operation returns appropriate HTTP status codes and
+ * error messages to guide users through the registration process while
+ * maintaining system security.
  *
  * @param props.connection
  * @param props.body User registration information including email and password
@@ -114,29 +119,36 @@ export namespace join {
 }
 
 /**
- * Authenticate an existing user and establish a secure session.
+ * Authenticate user credentials and establish session.
  *
- * This endpoint authenticates existing users by validating their email and
- * password credentials against the stored records in the todo_app_users table.
- * The operation checks the email existence and verifies the provided password
- * against the stored password_hash using bcrypt comparison. Upon successful
- * authentication, it creates a new session record in todo_app_user_sessions
- * with the user's IP address, connection URL, and referrer information.
+ * This API operation handles user authentication by validating email and
+ * password credentials against the todo_app_users table. The operation performs
+ * secure password verification by comparing the provided password with the
+ * stored password_hash using industry-standard hashing algorithms. Only active
+ * user accounts can authenticate successfully, while pending or suspended
+ * accounts receive appropriate error responses.
  *
- * The operation validates that the user account has an 'active' status in the
- * status field before allowing login. It generates JWT access and refresh
- * tokens with appropriate expiration times for secure session management. The
- * created_at timestamp in the session record captures the login time, while the
- * expired_at field remains null until session termination.
+ * Upon successful authentication, the operation creates a session record in the
+ * todo_app_user_sessions table to track the login event. The session includes
+ * connection context information such as IP address, URL, and referrer for
+ * security monitoring purposes. This audit trail helps maintain security
+ * visibility and supports investigation of suspicious activities.
  *
- * Security measures include rate limiting to prevent brute force attacks and
- * proper error handling that doesn't reveal whether the email or password was
- * incorrect. The operation integrates with the token refresh system to maintain
- * continuous session management. Users who successfully authenticate gain
- * access to their personal todo management functionality.
+ * The authentication process includes comprehensive security measures such as
+ * rate limiting to prevent brute force attacks, account lockout mechanisms
+ * after multiple failed attempts, and proper session expiration management. The
+ * operation validates that the user account exists, is in active status, and
+ * that the provided credentials match the stored authentication data.
+ *
+ * Successful authentication grants the user access to their personal todo
+ * management features. The operation returns authentication tokens that can be
+ * used for subsequent API calls, along with user profile information. Session
+ * management includes automatic expiration handling and supports multiple
+ * concurrent sessions across different devices.
  *
  * @param props.connection
- * @param props.body User login credentials including email and password
+ * @param props.body User authentication credentials including email and
+ *   password
  * @setHeader token.access Authorization
  *
  * @path /auth/user/login
@@ -171,10 +183,10 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** User login credentials including email and password */
-    body: ITodoAppUser.ILogin;
+    /** User authentication credentials including email and password */
+    body: ITodoAppUser.ICredentials;
   };
-  export type Body = ITodoAppUser.ILogin;
+  export type Body = ITodoAppUser.ICredentials;
   export type Response = ITodoAppUser.IAuthorized;
 
   export const METADATA = {
@@ -219,28 +231,34 @@ export namespace login {
 }
 
 /**
- * Refresh authentication tokens to extend user session.
+ * Refresh authentication tokens for active user session.
  *
- * This endpoint allows authenticated users to refresh their access tokens using
- * a valid refresh token, extending their session without requiring full
- * re-authentication. The operation validates the refresh token against the
- * user's active session records in the todo_app_user_sessions table, ensuring
- * it hasn't expired based on the expired_at field.
+ * This API operation handles token refresh for authenticated user sessions. The
+ * operation validates the provided refresh token to ensure it belongs to an
+ * active session in the todo_app_user_sessions table. Upon successful
+ * validation, new access and refresh tokens are issued while maintaining the
+ * existing session context.
  *
- * Upon successful validation, the system issues a new access token with updated
- * expiration while maintaining the same user context. This operation helps
- * maintain seamless user experience by preventing frequent login interruptions.
- * The session record's created_at timestamp is used to track session duration
- * for security monitoring.
+ * The refresh mechanism supports seamless user experience by allowing
+ * continuous access to the todo management system without requiring
+ * re-authentication. The operation checks session validity by verifying that
+ * the session has not expired (expired_at is null) and that the user account
+ * remains in active status. This ensures that only valid, active sessions can
+ * refresh their tokens.
  *
- * Security considerations include proper token validation, prevention of token
- * reuse, and session expiration enforcement. The operation supports the
- * JWT-based authentication system by providing continuous access while
- * maintaining security standards. It requires a valid refresh token from a
- * previous successful authentication operation.
+ * Security considerations include token rotation to prevent replay attacks,
+ * proper expiration handling to limit token lifetime, and session audit trail
+ * maintenance. The operation updates session timestamps as needed and maintains
+ * the connection context information for security monitoring purposes.
+ *
+ * This operation is essential for maintaining user productivity with the todo
+ * application, as it allows extended session durations while maintaining
+ * security controls. The refresh process includes validation of the user's
+ * account status to ensure that suspended or deleted accounts cannot refresh
+ * their tokens.
  *
  * @param props.connection
- * @param props.body Refresh token for authentication renewal
+ * @param props.body Refresh token for renewing authentication session
  * @setHeader token.access Authorization
  *
  * @path /auth/user/refresh
@@ -275,10 +293,10 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token for authentication renewal */
-    body: ITodoAppUser.IRefresh;
+    /** Refresh token for renewing authentication session */
+    body: ITodoAppUser.IRefreshToken;
   };
-  export type Body = ITodoAppUser.IRefresh;
+  export type Body = ITodoAppUser.IRefreshToken;
   export type Response = ITodoAppUser.IAuthorized;
 
   export const METADATA = {

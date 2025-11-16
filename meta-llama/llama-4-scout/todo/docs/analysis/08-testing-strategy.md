@@ -1,0 +1,1 @@
+The document outlines the requirements for a Todo list application, including user actors, functional requirements, non-functional requirements, and security requirements.

@@ -15,18 +15,24 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
-  // Query using appropriate field based on schema structure
-  const user = await MyGlobal.prisma.todo_app_users.findFirst({
+  // Verify user existence and session validity
+  const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
     where: {
-      id: payload.id,  // ← Use primary key as todo_app_users is the top-level user table
-      deleted_at: null,
-      status: "active",
+      id: payload.session_id,
+      todo_app_user_id: payload.id,
+      expired_at: null,
+      user: {
+        deleted_at: null,
+        status: "active"
+      }
     },
+    include: {
+      user: true
+    }
   });
 
-  if (user === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (session === null || session.user === null) {
+    throw new ForbiddenException("Invalid session or user not active");
   }
 
   return payload;

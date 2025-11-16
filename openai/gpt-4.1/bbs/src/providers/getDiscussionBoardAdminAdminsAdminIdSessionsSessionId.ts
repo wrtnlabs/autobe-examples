@@ -15,31 +15,36 @@ export async function getDiscussionBoardAdminAdminsAdminIdSessionsSessionId(prop
   adminId: string & tags.Format<"uuid">;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardAdminSession> {
-  const { admin, adminId, sessionId } = props;
-  // Authorize only admin owner (no super-admin role defined in system)
-  if (admin.id !== adminId) {
+  // 1. Authorization: Must only allow access to own adminId
+  if (props.admin.id !== props.adminId) {
     throw new HttpException(
-      "Forbidden: You may only access your own admin session records.",
+      "Forbidden: Cannot access sessions of another admin.",
       403,
     );
   }
-  const session =
-    await MyGlobal.prisma.discussion_board_admin_sessions.findFirst({
+
+  // 2. Query the session with both admin and session IDs
+  const record =
+    await MyGlobal.prisma.discussion_board_admin_sessions.findUnique({
       where: {
-        id: sessionId,
-        discussion_board_admin_id: adminId,
+        id: props.sessionId,
+        discussion_board_admin_id: props.adminId,
       },
     });
-  if (!session) {
-    throw new HttpException("Session not found for this admin.", 404);
+
+  if (!record) {
+    throw new HttpException("Admin session not found.", 404);
   }
+
   return {
-    id: session.id,
-    discussion_board_admin_id: session.discussion_board_admin_id,
-    ip: session.ip,
-    href: session.href,
-    referrer: session.referrer,
-    created_at: toISOStringSafe(session.created_at),
-    expired_at: session.expired_at ? toISOStringSafe(session.expired_at) : null,
+    id: record.id,
+    discussion_board_admin_id: record.discussion_board_admin_id,
+    ip: record.ip,
+    href: record.href,
+    referrer: record.referrer,
+    created_at: toISOStringSafe(record.created_at),
+    expired_at: record.expired_at
+      ? toISOStringSafe(record.expired_at)
+      : undefined,
   };
 }

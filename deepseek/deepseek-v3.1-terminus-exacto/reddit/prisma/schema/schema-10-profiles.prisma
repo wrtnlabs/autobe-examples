@@ -1,0 +1,453 @@
+/// Comprehensive user profile information storing identity, preferences, and
+/// reputation data.
+///
+/// Serves as the central hub for user identity presentation across the
+/// platform, containing both public-facing information and private user
+/// preferences. Each profile is linked to a specific user account through
+/// polymorphic ownership pattern using actor_type field.
+///
+/// Profiles support rich customization including avatar management, bio
+/// content with markdown support, and theme preferences. The profile system
+/// integrates with karma tracking to display current reputation tiers and
+/// achievement badges earned through platform participation.
+///
+/// Soft deletion is supported to maintain audit trails while allowing users
+/// to manage their digital identity. Profiles maintain comprehensive
+/// activity statistics and community engagement metrics as specified in
+/// business requirements.
+///
+/// **Business Requirements Implementation:**
+/// - Username validation (3-20 alphanumeric characters)
+/// - Email authentication integration
+/// - Account status tracking (active/suspended/banned)
+/// - Karma score and reputation tier display
+/// - Community subscription management
+/// - Activity statistics aggregation
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique username identifier (3-20 alphanumeric characters). Must be unique
+  /// across the entire platform and validated for format compliance.
+  username String
+  
+  /// User's preferred display name shown across the platform. Optional
+  /// alternative to username for identity presentation.
+  display_name String?
+  
+  /// Verified email address for authentication and communication. Must be
+  /// unique and validated for email format.
+  email String
+  
+  /// User biography supporting rich text formatting with markdown. Maximum
+  /// 5000 characters for detailed self-expression.
+  bio String?
+  
+  /// URL pointing to user's profile avatar image. Supports multiple
+  /// resolutions for optimal display across devices.
+  avatar_url String?
+  
+  /// URL for profile banner image displayed at the top of profile pages.
+  /// Optional customization element.
+  banner_url String?
+  
+  /// Current account status: active, suspended, or banned. Controls platform
+  /// access and visibility.
+  account_status String
+  
+  /// Current karma score representing user reputation. Integrated with karma
+  /// calculation system.
+  karma_score Int
+  
+  /// Reputation tier level (1-5) based on karma thresholds. Determines
+  /// platform privileges.
+  reputation_tier Int
+  
+  /// User interface theme preference: light, dark, or auto (system default).
+  /// Controls visual appearance of the platform.
+  theme_preference String
+  
+  /// Preferred content display density: compact, normal, or detailed. Affects
+  /// information presentation layout.
+  content_density String
+  
+  /// Preferred language for platform interface and content. Supports
+  /// internationalization features.
+  language_preference String
+  
+  /// User's timezone for proper timestamp display and scheduling. Uses IANA
+  /// timezone database format.
+  timezone String
+  
+  /// Global setting controlling email notification preferences. Can be
+  /// overridden by specific notification types.
+  email_notifications Boolean
+  
+  /// Global setting for push notification delivery. Manages mobile and browser
+  /// notification preferences.
+  push_notifications Boolean
+  
+  /// Overall profile visibility setting: public, followers_only, or private.
+  /// Controls who can view profile information.
+  profile_visibility String
+  
+  /// Activity history visibility: public, followers_only, or private.
+  /// Determines which activities are publicly visible.
+  activity_visibility String
+  
+  /// Total number of posts created by the user across all communities.
+  /// Activity statistic.
+  total_posts_count Int
+  
+  /// Total number of comments written by the user across all communities.
+  /// Engagement metric.
+  total_comments_count Int
+  
+  /// Lifetime karma earned through content creation and community
+  /// participation. Reputation metric.
+  total_karma_earned Int
+  
+  /// Average score of user's posts calculated from upvotes/downvotes. Content
+  /// quality indicator.
+  average_post_score Float
+  
+  /// Timestamp of user's last platform activity. Used for engagement tracking
+  /// and presence indicators.
+  last_active_at DateTime
+  
+  /// Timestamp of user's last authentication/login event. Security and
+  /// activity tracking.
+  last_login_at DateTime
+  
+  /// Total number of times the profile has been viewed by other users. Public
+  /// metric for profile popularity.
+  profile_views_count Int
+  
+  /// Profile creation timestamp. Records when the user first set up their
+  /// profile identity.
+  created_at DateTime
+  
+  /// Last profile modification timestamp. Tracks when profile information was
+  /// last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Records when profile was deleted while
+  /// maintaining audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community_platform_profile_customizations community_platform_profile_customizations[]
+  community_platform_privacy_settings community_platform_privacy_settings[]
+  community_platform_profile_achievements community_platform_profile_achievements[]
+  
+  @@unique([username])
+  @@unique([email])
+  @@index([display_name])
+  @@index([account_status])
+  @@index([karma_score])
+  @@index([reputation_tier])
+  @@index([theme_preference])
+  @@index([profile_visibility])
+  @@index([last_active_at])
+  @@index([created_at])
+}
+
+/// Advanced profile customization options and user interface preferences.
+///
+/// Stores granular customization settings that allow users to personalize
+/// their platform experience beyond basic profile information. These
+/// settings control visual presentation, interaction patterns, and display
+/// preferences specific to individual user preferences.
+///
+/// Customizations include layout configurations, color scheme adjustments,
+/// and specialized display options for different content types. The system
+/// supports progressive customization where users can start with defaults
+/// and gradually refine their experience based on usage patterns.
+///
+/// All customization changes are tracked with timestamps to support
+/// preference evolution analysis and potential rollback capabilities.
+/// Customizations require independent API management as users need direct
+/// control over these settings.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_customizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent user profile owning these customizations. {@link
+  /// community_platform_user_profiles.id}
+  community_platform_user_profile_id String
+  
+  /// Preferred layout style: card, compact, or detailed. Controls how content
+  /// is organized and displayed.
+  layout_preference String
+  
+  /// Custom color scheme preferences beyond basic theme. Allows personalized
+  /// visual branding.
+  color_scheme String?
+  
+  /// Preferred font size scaling: small, medium, or large. Supports
+  /// accessibility requirements.
+  font_size String
+  
+  /// UI animation preferences: full, reduced, or none. Accommodates motion
+  /// sensitivity.
+  animation_preference String
+  
+  /// Whether to show content previews on hover or click. Controls information
+  /// disclosure timing.
+  content_preview Boolean
+  
+  /// Automatically expand comment threads or require manual expansion. Affects
+  /// reading flow.
+  auto_expand_comments Boolean
+  
+  /// Display Not Safe For Work content with warnings or hide completely.
+  /// Content safety control.
+  show_nsfw_content Boolean
+  
+  /// Autoplay embedded videos or require manual activation. Bandwidth and
+  /// preference consideration.
+  video_autoplay Boolean
+  
+  /// Default content sorting method: hot, new, top, or controversial. Personal
+  /// discovery preference.
+  default_sort_method String
+  
+  /// Feed content density: minimal, standard, or maximum. Controls information
+  /// density in feeds.
+  feed_density String
+  
+  /// Custom CSS rules for advanced users to modify appearance. Limited to
+  /// approved safe properties.
+  custom_css String?
+  
+  /// Enable keyboard navigation shortcuts for power users. Accessibility and
+  /// efficiency feature.
+  keyboard_shortcuts Boolean
+  
+  /// Customization creation timestamp. Records when preferences were first
+  /// established.
+  created_at DateTime
+  
+  /// Last customization modification timestamp. Tracks preference evolution
+  /// over time.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Maintains history of customization changes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile community_platform_user_profiles @relation(fields: [community_platform_user_profile_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_profile_id], map: "community_platform_profile_customizations_community_pl_4b4e58d6")
+  @@index([layout_preference])
+  // spellchecker: ignore-next-line
+  @@index([default_sort_method], map: "community_platform_profile_customizations_default_sort_e0873508")
+  @@index([created_at])
+}
+
+/// Granular privacy controls and data sharing preferences for user profiles.
+///
+/// Provides detailed control over what profile information is visible to
+/// different audience types (public, followers, private). Each setting
+/// allows users to balance personal privacy with community engagement based
+/// on individual comfort levels.
+///
+/// Privacy settings cover multiple aspects including profile visibility,
+/// activity tracking, message permissions, and data sharing preferences. The
+/// system supports different privacy levels for various profile elements,
+/// allowing fine-tuned control over digital identity presentation.
+///
+/// Changes to privacy settings are logged for transparency and users receive
+/// confirmation when sensitive privacy options are modified. Privacy
+/// settings require independent API endpoints for proper user management.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_privacy_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User profile owning these privacy settings. {@link
+  /// community_platform_user_profiles.id}
+  community_platform_user_profile_id String
+  
+  /// Overall profile visibility level: public, followers_only, or private.
+  /// Base privacy control.
+  profile_visibility String
+  
+  /// Email address visibility: private, moderators_only, or trusted_users.
+  /// Contact information privacy.
+  email_visibility String
+  
+  /// Activity history visibility: public, followers_only, or private. Controls
+  /// activity tracking display.
+  activity_visibility String
+  
+  /// Karma score display: public, hidden, or approximate. Reputation privacy
+  /// control.
+  karma_visibility String
+  
+  /// Online status indicator: show_to_all, show_to_followers, or hidden.
+  /// Presence privacy.
+  online_status_visibility String
+  
+  /// Allow search engines to index profile content. Controls external
+  /// visibility.
+  search_engine_indexing Boolean
+  
+  /// Data sharing for analytics: none, anonymized, or full. GDPR compliance
+  /// setting.
+  data_sharing_preferences String
+  
+  /// Direct message permissions: everyone, followers_only, or nobody.
+  /// Communication control.
+  allow_direct_messages String
+  
+  /// Permit other users to share profile links. Social sharing control.
+  allow_profile_sharing Boolean
+  
+  /// Display recent search history on profile. Search privacy setting.
+  show_recent_searches Boolean
+  
+  /// Geographic location sharing: country, region, or disabled. Geographic
+  /// privacy.
+  location_sharing String
+  
+  /// Advertising targeting: personalized, category_only, or disabled. Ad
+  /// privacy control.
+  ad_targeting_preferences String
+  
+  /// Privacy settings creation timestamp. Records initial privacy
+  /// configuration.
+  created_at DateTime
+  
+  /// Last privacy settings modification. Tracks privacy preference changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Maintains privacy setting history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile community_platform_user_profiles @relation(fields: [community_platform_user_profile_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_profile_id], map: "community_platform_privacy_settings_community_platform_2f62391f")
+  @@index([profile_visibility])
+  @@index([activity_visibility])
+  @@index([allow_direct_messages])
+  @@index([created_at])
+}
+
+/// User achievement tracking and milestone recognition system.
+///
+/// Records and displays user accomplishments, badges, and milestones earned
+/// through platform participation. Achievements serve as gamification
+/// elements that encourage positive engagement and reward quality
+/// contributions to the community.
+///
+/// Each achievement represents a specific accomplishment such as karma
+/// milestones, content creation benchmarks, community participation levels,
+/// or special recognition awards. The system supports both automated
+/// achievement granting based on platform metrics and manual awards from
+/// moderators for exceptional contributions.
+///
+/// Achievement data integrates with user profiles to display accomplishment
+/// badges and provides motivation for continued platform engagement through
+/// visible recognition of user contributions. Achievements require
+/// independent API management for proper awarding and display control.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_achievements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User profile earning these achievements. {@link
+  /// community_platform_user_profiles.id}
+  community_platform_user_profile_id String
+  
+  /// Type of achievement: karma_milestone, content_creation,
+  /// community_contribution, or special_award.
+  achievement_type String
+  
+  /// Display name of the achievement for user recognition. Example: 'First
+  /// Post' or 'Karma Master'.
+  achievement_name String
+  
+  /// Detailed description explaining how the achievement was earned and its
+  /// significance.
+  achievement_description String
+  
+  /// URL to achievement badge icon displayed on user profile. Visual
+  /// recognition element.
+  badge_icon_url String?
+  
+  /// Numerical value associated with the achievement, such as karma threshold
+  /// reached.
+  achievement_value Int?
+  
+  /// Entity that granted the achievement: system, moderator, or community_vote.
+  awarded_by String
+  
+  /// Whether this achievement should be prominently displayed on the user
+  /// profile.
+  is_featured Boolean
+  
+  /// Sorting order for achievement display on profile. Lower numbers appear
+  /// first.
+  display_order Int
+  
+  /// Timestamp when the achievement was earned by the user. Milestone
+  /// recording.
+  earned_at DateTime
+  
+  /// Optional expiration date for time-limited achievements. Null for
+  /// permanent achievements.
+  expires_at DateTime?
+  
+  /// Achievement record creation timestamp. System tracking field.
+  created_at DateTime
+  
+  /// Last achievement modification timestamp. Update tracking.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Maintains achievement history.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userProfile community_platform_user_profiles @relation(fields: [community_platform_user_profile_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_profile_id, achievement_type], map: "community_platform_profile_achievements_community_plat_2b7c1705")
+  @@index([achievement_type])
+  @@index([earned_at])
+  @@index([is_featured])
+  @@index([display_order])
+}

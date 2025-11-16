@@ -1,0 +1,197 @@
+/// Platform-wide configuration settings and system parameters that control
+/// the behavior of the discussion board service.
+///
+/// This table stores key-value configuration pairs that define how the
+/// economic and political discussion platform operates globally.
+/// Configurations include settings for article limits, attachment sizes,
+/// notification preferences, moderation policies, and other system-wide
+/// parameters that influence platform behavior.
+///
+/// Configuration entries are referenced by system components but not
+/// directly queried by users. Changes to configurations require
+/// administrative approval and may trigger platform-wide updates for
+/// immediate or delayed application.
+///
+/// The configuration system supports different data types (strings, numbers,
+/// booleans) stored as string values with appropriate parsing when
+/// retrieved, allowing flexible system administration without database
+/// migrations for new settings.
+///
+/// Soft deletion is supported to maintain audit trails when configuration
+/// values change over time.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_platform_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Configuration key identifier, used to lookup specific settings throughout
+  /// the platform.
+  key String
+  
+  /// Configuration value content, stored as string but may represent different
+  /// data types when interpreted.
+  value String
+  
+  /// Human-readable description explaining the purpose and format of this
+  /// configuration setting.
+  description String?
+  
+  /// Current status of the configuration, either active for live use or
+  /// inactive for deprecated settings.
+  status String
+  
+  /// Timestamp when this configuration was initially created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit trails, allowing recovery of historical
+  /// configurations.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key])
+}
+
+/// Primary categorization system for organizing economic and political
+/// discussion content within the platform.
+///
+/// Categories represent the top-level organizational structure that users
+/// interact with directly when creating and browsing articles. They provide
+/// clear segmentation between economic topics (finance, markets, policy) and
+/// political topics (legislation, international relations, current events),
+/// helping users find relevant content and encouraging focused discussions.
+///
+/// Categories are prominently displayed in navigation menus and search
+/// filters, serving as primary entry points for content discovery. Each
+/// category can contain multiple sections for further subdivision while
+/// maintaining meaningful boundaries.
+///
+/// Category definitions include display names, descriptions, and unique
+/// codes for internationalization support. Status management allows for
+/// seasonal or contextual category activation/deactivation without data
+/// loss.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the category for user interface presentation.
+  name String
+  
+  /// Detailed description explaining the category's scope and what type of
+  /// content belongs here.
+  description String?
+  
+  /// Unique identifier code used for URL routing and internationalization key
+  /// mapping.
+  code String
+  
+  /// Display ordering for navigation menus, with lower numbers appearing first.
+  order Int
+  
+  /// Current operational status of the category, either active for user access
+  /// or inactive for archival.
+  status String
+  
+  /// Timestamp when this category was initially created.
+  created_at DateTime
+  
+  /// Timestamp when this category was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for archival categories that are no longer active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_sections discussion_board_sections[]
+  discussion_board_articles discussion_board_articles[]
+  
+  @@unique([code])
+  @@index([status])
+  @@index([order])
+}
+
+/// Subsidiary organizational units that provide finer-grained grouping
+/// within discussion categories.
+///
+/// Sections exist to support the primary categorization system by allowing
+/// sub-divisions within broader topics. For example, an 'Economy' category
+/// might contain sections for 'Stock Markets', 'Cryptocurrency', 'Fiscal
+/// Policy', and 'Labor Markets', enabling users to dive deeper into specific
+/// sub-topics while still maintaining connection to the parent category.
+///
+/// Sections are managed through their parent categories and provide
+/// additional search and filtering granularity. They help balance between
+/// having too few broad categories and too many unwieldy small ones,
+/// improving content discoverability.
+///
+/// While sections are subsidiary to categories, they still require unique
+/// identification for proper referencing by articles and maintaining
+/// consistent organization throughout discussion threads.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged category's discussion_board_categories.id.
+  discussion_board_category_id String
+  
+  /// Display name of the section for user interface presentation.
+  name String
+  
+  /// Detailed description explaining the section's scope and content
+  /// boundaries.
+  description String?
+  
+  /// Unique identifier code within the parent category for URL routing and
+  /// reference.
+  code String
+  
+  /// Display ordering within the parent category, with lower numbers appearing
+  /// first.
+  order Int
+  
+  /// Current operational status of the section, either active or inactive.
+  status String
+  
+  /// Timestamp when this section was initially created.
+  created_at DateTime
+  
+  /// Timestamp when this section was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for archival sections that are no longer active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category discussion_board_categories @relation(fields: [discussion_board_category_id], references: [id], onDelete: Cascade)
+  
+  @@unique([discussion_board_category_id, code])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_category_id, status], map: "discussion_board_sections_discussion_board_category_id_95239218")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_category_id, order], map: "discussion_board_sections_discussion_board_category_id_b04c0f26")
+}

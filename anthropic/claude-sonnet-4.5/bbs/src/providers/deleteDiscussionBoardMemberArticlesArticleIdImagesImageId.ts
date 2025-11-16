@@ -7,57 +7,67 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+import { IDiscussionBoardArticleImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleImage";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 
 export async function deleteDiscussionBoardMemberArticlesArticleIdImagesImageId(props: {
   member: MemberPayload;
   articleId: string & tags.Format<"uuid">;
   imageId: string & tags.Format<"uuid">;
-}): Promise<void> {
-  const { member, articleId, imageId } = props;
-
-  // Verify the image exists and belongs to the specified article
+}): Promise<IDiscussionBoardArticleImage> {
   const image = await MyGlobal.prisma.discussion_board_article_images.findFirst(
     {
       where: {
-        id: imageId,
-        discussion_board_article_id: articleId,
-        deleted_at: null,
+        id: props.imageId,
+        discussion_board_article_id: props.articleId,
       },
     },
   );
 
   if (!image) {
-    throw new HttpException("Image not found or already deleted", 404);
+    throw new HttpException(
+      "Image not found or does not belong to the specified article",
+      404,
+    );
   }
 
-  // Fetch the parent article to verify ownership
-  const article = await MyGlobal.prisma.discussion_board_articles.findFirst({
-    where: {
-      id: articleId,
-      deleted_at: null,
-    },
+  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: { id: props.articleId },
   });
 
   if (!article) {
     throw new HttpException("Article not found", 404);
   }
 
-  // Authorization check - only article author can delete images
-  if (article.discussion_board_member_id !== member.id) {
+  if (article.discussion_board_member_id !== props.member.id) {
     throw new HttpException(
-      "Unauthorized: You can only delete images from your own articles",
+      "You do not have permission to delete images from this article",
       403,
     );
   }
 
-  // Perform soft delete by setting deleted_at timestamp
-  await MyGlobal.prisma.discussion_board_article_images.update({
-    where: {
-      id: imageId,
-    },
-    data: {
-      deleted_at: toISOStringSafe(new Date()),
-    },
-  });
+  const deletedImage =
+    await MyGlobal.prisma.discussion_board_article_images.update({
+      where: { id: props.imageId },
+      data: {
+        deleted_at: new Date(),
+      },
+    });
+
+  return {
+    id: deletedImage.id as string & tags.Format<"uuid">,
+    discussion_board_article_id:
+      deletedImage.discussion_board_article_id as string & tags.Format<"uuid">,
+    original_filename: deletedImage.original_filename,
+    file_size: deletedImage.file_size,
+    content_type: deletedImage.content_type,
+    storage_url: deletedImage.storage_url as string & tags.Format<"uri">,
+    width: deletedImage.width !== null ? deletedImage.width : null,
+    height: deletedImage.height !== null ? deletedImage.height : null,
+    created_at: toISOStringSafe(deletedImage.created_at),
+    deleted_at:
+      deletedImage.deleted_at !== null
+        ? toISOStringSafe(deletedImage.deleted_at)
+        : null,
+  };
 }

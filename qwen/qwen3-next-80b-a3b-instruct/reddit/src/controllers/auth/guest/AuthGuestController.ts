@@ -1,106 +1,121 @@
 import { Controller } from "@nestjs/common";
-import { TypedRoute } from "@nestia/core";
+import { TypedRoute, TypedBody } from "@nestia/core";
 import typia from "typia";
 
 import { ICommunityPlatformGuest } from "../../../api/structures/ICommunityPlatformGuest";
+import { IGuest } from "../../../api/structures/IGuest";
 
 @Controller("/auth/guest")
 export class AuthGuestController {
   /**
-   * Register guest user to enable anonymous browsing of platform content.
+   * Register a new member account from a guest profile using email and
+   * password_hash fields in guest table.
    *
-   * This API operation enables unauthenticated guest users to register and
-   * receive a temporary account for browsing the community platform. When a
-   * guest accesses the platform without authentication, this endpoint
-   * initializes a new guest record in the 'community_platform_guest' table
-   * with a unique identifier.
+   * This API operation enables anonymous guests to register for a full member
+   * account on the CommunityPlatform, transitioning from temporary
+   * unauthenticated access to a persistent authenticated identity.
    *
-   * The operation leverages the existing 'community_platform_guest' model
-   * schema, which is designed to track unauthenticated users. The guest
-   * record contains essential fields like 'id', 'createdAt', and
-   * 'lastAccessedAt' to maintain session context, but deliberately omits
-   * authentication fields like 'email', 'password', or 'verifiedAt' since
-   * guest users do not provide credentials. This design ensures the system
-   * does not attempt to enforce email verification or password validation for
-   * guest accounts.
+   * Guest users browse content without authentication but require a
+   * registration process to gain the ability to create content, vote,
+   * comment, and interact with communities. The operation creates a new
+   * membership record by converting the guest profile (stored in the guest
+   * table) into a full member account (member table). This conversion
+   * requires email verification and password establishment, utilizing the
+   * 'email' and 'password_hash' fields which are explicitly defined in the
+   * guest table schema. Without these fields in the database, registration
+   * would be impossible.
    *
-   * As a guest actor with limited privileges, this registration flow is
-   * intentionally simplified to lower the barrier for initial exploration.
-   * The guest's session is maintained using a temporary JWT token, which
-   * expires shortly after creation to encourage users to register as members
-   * if they wish to interact with the platform. The token does not include
-   * any user-specific permissions beyond read-only access to publicly
-   * available content.
+   * The guest-to-member conversion is the primary business mechanism for user
+   * acquisition on the CommunityPlatform. This operation explicitly supports
+   * the business requirement that guests can eventually become members by
+   * completing registration. The registration flow requires the user to
+   * provide a valid email address and password, which are stored in the guest
+   * schema. The system validates the uniqueness of the email address and
+   * securely hashes the password before creating the member account.
    *
-   * Security considerations are prioritized in the guest registration design.
-   * The guest 'id' field is a cryptographically secure UUID, preventing
-   * enumeration attacks. The lack of any persistent authentication
-   * credentials means guest accounts cannot be compromised through password
-   * theft or credential reuse. Guest sessions are automatically terminated
-   * after a short period of inactivity, and no permanent data is retained
-   * after session expiration.
+   * Security considerations are embedded in the implementation, leveraging
+   * the 'password_hash' field that ensures passwords are never stored in
+   * plain text. The email field enables secure account recovery and
+   * communication. This operation integrates with the session management
+   * system that creates a member_session record after successful
+   * registration, establishing the authentication state.
    *
-   * This registration flow is complementary to the member registration flow.
-   * Guests who wish to convert to full members must use the
-   * '/auth/member/join' endpoint to provide their email and password for
-   * permanent account creation. The guest registration is designed to be a
-   * frictionless introduction to the platform's content before committing to
-   * a full registration process.
+   * This registration operation is the first step in the user journey that
+   * transforms temporary visitors into active community participants. It's
+   * distinct from login operations which authenticate existing members, while
+   * this operation creates a new identity. This transition is critical to the
+   * platform's business model which relies on converting anonymous visitors
+   * to registered members to drive content creation and engagement.
    *
    * @param connection
+   * @param body Request body for guest registration containing email and
+   *   password for account creation.
    * @setHeader token.access Authorization
    *
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post("join")
-  public async join(): Promise<ICommunityPlatformGuest.IAuthorized> {
+  public async join(
+    @TypedBody()
+    body: IGuest.ICreate,
+  ): Promise<ICommunityPlatformGuest.IAuthorized> {
+    body;
     return typia.random<ICommunityPlatformGuest.IAuthorized>();
   }
 
   /**
-   * Refresh access token to extend temporary guest browsing session.
+   * Refresh authentication tokens for a registered guest user using tokens
+   * stored in guest_sessions table.
    *
-   * This API operation allows guest users to refresh their temporary
-   * authentication token to continue browsing the platform without
-   * re-registering. When a guest's session is nearing expiration, this
-   * endpoint validates the existing guest session by checking the
-   * 'community_platform_guest' table for the associated guest record
-   * identified by the refresh token.
+   * This API operation allows guest users who have completed registration to
+   * refresh their authentication tokens on the CommunityPlatform, maintaining
+   * continuous access to protected resources without requiring
+   * re-authentication.
    *
-   * The authentication mechanism depends on the existing
-   * 'community_platform_guest' model schema, specifically the 'id' and
-   * 'lastAccessedAt' fields to validate the guest's identity and session
-   * state. The system uses these fields to ensure the guest record still
-   * exists and has not been marked inactive. Since guest users do not have
-   * authentication credentials like passwords or email verification, the
-   * refresh operation relies entirely on session-based authentication using
-   * token validation.
+   * After initial registration, guests receive both access and refresh tokens
+   * that are stored in the guest_sessions table. The access token is used for
+   * immediate API authentication and has a short expiration time (typically
+   * 15-30 minutes), while the refresh token has a longer validity (typically
+   * 7 days) and is stored securely. The refresh operation uses the refresh
+   * token from guest_sessions table to issue new access and refresh tokens,
+   * ensuring uninterrupted user experience. This protects against token theft
+   * by limiting access token validity and requiring periodic renewal. The
+   * 'token' and 'expires_at' fields in the guest_sessions table are essential
+   * to this mechanism.
    *
-   * The operation maintains continuity of the guest's temporary account by
-   * preserving the same guest identifier while extending the session
-   * lifetime. This approach ensures users can return to the platform without
-   * losing their browsing context, while still enforcing that guest sessions
-   * remain temporary and are not intended to be permanent.
+   * The refresh operation implements a security pattern that balances
+   * convenience and protection. By not allowing users to stay permanently
+   * logged in, it reduces the risk of unauthorized access if a device is lost
+   * or compromised. The refresh token system enables seamless authentication
+   * while maintaining security. This technique is directly supported by the
+   * guest_sessions model in our Prisma schema.
    *
-   * Security considerations are critical for refresh operations. The refresh
-   * token must be provided in the authorization header and is validated
-   * against the server-side session state stored in the database. Temporarily
-   * extended sessions do not increase permission levels; guests retain the
-   * same read-only access capabilities throughout their session.
+   * This operation is critical for user experience on the platform. Without a
+   * refresh mechanism, users would be forced to manually re-authenticate
+   * every 15-30 minutes, which would be disruptive and lead to high user
+   * attrition. The refresh endpoint enables the platform to maintain
+   * persistent user sessions with appropriate security controls.
    *
-   * This refresh flow is intended for guests who wish to continue browsing
-   * the platform. If a guest wishes to gain full access to post, comment,
-   * vote, or interact with the system, they must complete registration via
-   * the '/auth/member/join' endpoint, which transitions them from guest to
-   * member status.
+   * Implementation is specifically designed around the guest_sessions table's
+   * structure, with validation of the refresh token's signature, expiration
+   * status, and existence. The refresh operation is the only allowed
+   * mechanism for token renewal on the platform. The guest_sessions table's
+   * design restricts this operation to only registered guests who have
+   * completed the join process, ensuring security boundaries are maintained.
    *
    * @param connection
+   * @param body Request body containing the valid refresh token to be
+   *   renewed.
    * @setHeader token.access Authorization
    *
    * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
    */
   @TypedRoute.Post("refresh")
-  public async refresh(): Promise<ICommunityPlatformGuest.IAuthorized> {
+  public async refresh(
+    @TypedBody()
+    body: IGuest.IRequest,
+  ): Promise<ICommunityPlatformGuest.IAuthorized> {
+    body;
     return typia.random<ICommunityPlatformGuest.IAuthorized>();
   }
 }

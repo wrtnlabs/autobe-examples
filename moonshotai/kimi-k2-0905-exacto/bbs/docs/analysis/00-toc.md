@@ -1,154 +1,140 @@
-# Table of Contents - PoliticsBbs Discussion Board
+# Functional Requirements: Economic/Political Discussion Board
 
-## Document Overview
+## Service Overview
+THE Economic/Political Discussion Board SHALL provide a simple, focused platform for discussing economic and political topics with file attachment support. THE system SHALL prioritize simplicity and essential functionality over complex features, making it accessible to users without technical knowledge.
 
-This documentation set provides complete requirements and specifications for the **politicsBbs** discussion board system - a simple, focused platform designed for economic and political discourse. The documentation is organized into 8 interconnected documents that progress from high-level vision to detailed technical requirements, enabling backend developers to implement a complete TypeScript + NestJS + Prisma application with zero ambiguity.
+## Authentication Requirements
 
-## Project Context
+### User Registration Process
+WHEN a new user visits the discussion board, THE system SHALL provide a registration form requiring username, email address, and password. THE username SHALL be unique across the system and contain 3-30 characters including letters, numbers, and underscores only. THE email address SHALL follow standard email format validation and be unique in the system. THE password SHALL require minimum 8 characters including at least one uppercase letter, one lowercase letter, and one number.
 
-**politicsBbs** is a streamlined discussion board system aimed at fostering intellectual discourse on economic and political topics. The system supports:
-- Article creation with image and file attachments (up to 10 images at 5MB each, up to 5 files at 10MB each)
-- Comment system for threaded discussions (3 levels deep)
-- Content moderation with approval workflows
-- Three user roles: Visitor (read-only), Member (content creators), Moderator (content managers)
-- Simple categorization focused on economic and political content
-- Basic search and discovery functionality
+WHEN registration details are submitted, THE system SHALL validate all fields within 3 seconds and display specific error messages for any validation failures. IF the username already exists, THEN THE system SHALL suggest available alternatives. IF the email is already registered, THEN THE system SHALL offer password recovery options.
 
-The platform addresses the market gap between social media noise and academic complexity, providing a dedicated space for substantive economic and political discourse.
+THE system SHALL send a verification email within 2 minutes of successful registration. WHEN the user clicks the verification link, THE system SHALL activate their account within 5 seconds. IF verification is not completed within 24 hours, THEN THE registration SHALL expire and the user must re-register.
 
-## Document Structure
+### Login Authentication
+WHEN a registered user attempts to log in, THE system SHALL accept email and password credentials. THE system SHALL validate credentials within 2 seconds and create a JWT session token valid for 24 hours. THE refresh token SHALL expire after 7 days.
 
-### 1. [Service Overview Document](./01-service-overview.md)
-**Purpose**: High-level introduction and business vision  
-**Audience**: General stakeholders and business teams  
-**Content**: Vision, problem statements, target users (policy enthusiasts, students, professionals, citizen advocates), success criteria, business model with premium tiers, and revenue projections. Explains WHY this service exists in the market.
+IF a user enters incorrect password 5 times within 1 hour, THEN THE system SHALL lock the account for 30 minutes. THE system SHALL send an email notification about the lockout with unlock instructions. WHEN logging in from a new device, THE system SHALL invalidate previous sessions to maintain single active session per user.
 
-### 2. [Functional Requirements Document](./02-functional-requirements.md)
-**Purpose**: Detailed business requirements specification  
-**Audience**: Development and product teams  
-**Content**: Complete system functions using EARS format (WHEN/THE/IF/THEN patterns), user functions, content management, article lifecycle, file attachments (images: JPEG/PNG/GIF, documents: PDF/DOC/DOCX), content moderation workflows, search functionality, performance targets, and error handling requirements.
+### Guest User Access
+GUESTS SHALL browse all public articles and comments without registration. GUESTS SHALL download public file attachments within daily limits. GUESTS SHALL search for discussions using basic search functionality. GUESTS SHALL NOT create articles, post comments, or upload files.
 
-### 3. [User Actors and Authentication Document](./03-user-actors.md)
-**Purpose**: User roles, permissions, and authentication systems  
-**Audience**: Development team and system architects  
-**Content**: JWT-based authentication, Visitor (read-only access), Member (create articles, upload attachments, manage own content within 24 hours), Moderator (full content control), permission matrix, user lifecycle management, and security requirements including rate limiting and session management.
+## Article Management System
 
-### 4. [User Scenarios Document](./04-user-scenarios.md)
-**Purpose**: Real-world user journeys and interaction flows  
-**Audience**: Product managers and UX designers  
-**Content**: Browsing articles (with filtering and search), creating new articles (with validation), participating in discussions (threaded comments), uploading attachments (images and files), content moderation workflow, error recovery scenarios, and mobile responsiveness requirements.
+### Creating New Articles
+MEMBERS SHALL create articles by providing title, content, category selection, and optional file attachments. THE article title SHALL contain 10-200 characters. THE article content SHALL contain minimum 100 characters and maximum 10,000 characters. THE category SHALL be selected from predefined options: Economics, Politics, Policy Discussion, Market Analysis, International Affairs.
 
-### 5. [Business Rules Document](./05-business-rules.md)
-**Purpose**: Constraints, policies, and validation rules  
-**Audience**: Development team and domain experts  
-**Content**: Content rules (50+ words required, economic/political focus), attachment guidelines (5MB max images, 10MB max files), user conduct standards, moderation policies (2-hour response targets), technical constraints (200ms validation time), graduated response system for violations, and privacy requirements.
+WHEN creating an article, MEMBERS can attach up to 5 files with total size not exceeding 15MB. THE system SHALL accept image files (JPG, PNG, GIF, WebP) up to 5MB each and document files (PDF, DOC, DOCX, TXT) up to 10MB each. THE system SHALL scan uploaded files for malware within 30 seconds.
 
-### 6. [Technical Requirements Document](./06-technical-requirements.md)
-**Purpose**: Non-functional requirements and system constraints  
-**Audience**: Development and operations teams  
-**Content**: Performance requirements (2-second page loads, 500 concurrent users), security measures (XSS protection, malware scanning), scalability (10,000 users support), data retention (indefinite article retention, 30-day audit logs), disaster recovery (4-hour recovery time), and operational metrics.
+THE article creation process SHALL complete within 5 seconds. IF the content contains potentially inappropriate material, THEN THE system SHALL place the article in pending status for moderator review. THE author SHALL receive notification that their article is awaiting moderation.
 
-### 7. [Deployment and Operations Document](./07-deployment-operations.md)
-**Purpose**: Deployment procedures and operational guidelines  
-**Audience**: DevOps and system administrators  
-**Content**: Deployment requirements, monitoring needs, maintenance tasks, backup procedures, and scalability guidelines with focus on cloud-native architecture and automated operations.
+### Article Categories and Organization
+THE system SHALL organize articles into categories for easy discovery. USERS can filter articles by single or multiple categories. THE category filter updates shall complete within 2 seconds. Each category displays article count updated every 60 seconds.
 
-### 8. [This Table of Contents Document](./00-toc.md)
-**Purpose**: Complete documentation navigation and structure overview  
-**Audience**: All stakeholders  
-**Content**: Document roadmap, reading order, project context, and guidance for different user types navigating the documentation set.
+THE homepage displays articles sorted by newest first by default. USERS can sort articles by most commented, most viewed (past 7 days), or oldest first. Articles display with title, author name, publication date, category tags, comment count, and view count.
 
-## Reading Order
+### Editing Existing Articles
+MEMBERS SHALL edit their own articles within 1 hour of creation. WHEN editing, MEMBERS can modify title, content, add or remove attachments. THE system SHALL increment the article version number and store edit history with timestamps.
 
-The recommended reading sequence follows a natural progression from vision to implementation:
+AFTER the 1-hour edit window expires, ONLY MODERATORS can edit articles. WHEN an article is edited, THE system displays an "Edited" indicator showing the last edit timestamp and editor name.
 
-1. **Start Here** → This Table of Contents document
-2. **[Service Overview](./01-service-overview.md)** → Understanding the "why" and "what"
-3. **[User Actors](./03-user-actors.md)** → Understanding "who" will use the system
-4. **[Functional Requirements](./02-functional-requirements.md)** → Understanding "what" the system must do
-5. **[User Scenarios](./04-user-scenarios.md)** → Understanding "how" users interact
-6. **[Business Rules](./05-business-rules.md)** → Understanding constraints and policies
-7. **[Technical Requirements](./06-technical-requirements.md)** → Understanding technical constraints
-8. **[Deployment Operations](./07-deployment-operations.md)** → Understanding implementation and operations
+### Article Display Formatting
+THE system preserves user formatting including paragraphs, lists, and quotes with readable spacing. Articles display with 1.5 line spacing and 14px font size for optimal readability. View counts increment each time the article page loads, with session-based rate limiting to prevent artificial inflation.
 
-## Document Interdependencies
+## Comment System
 
-- **Service Overview** builds foundation for understanding the market need that drives all functional requirements
-- **Functional Requirements** references user actors defined in User Actors document (Member permissions for article creation, Moderator permissions for content review)
-- **User Actors** document implements authentication mechanisms described in Technical Requirements (JWT tokens, session management)
-- **User Scenarios** validates functional requirements by showing real-world examples of moderation workflows, attachment uploads, and error recovery
-- **Business Rules** enforces content standards that functional requirements implement (50-character minimum for articles, 100-character minimum for comments)
-- **Technical Requirements** sets performance targets that functional requirements must meet (2-second response times during article creation and editing)
-- All documents reference each other to maintain consistency and avoid duplication
+### Adding Comments to Articles
+REGISTERED users SHALL comment on articles within 30 days of article creation. Comments require minimum 10 characters and maximum 1,000 characters. EACH comment is associated with the specific article and contains author ID, timestamp, and original article reference.
 
-### Example Interconnection:
-WHEN a Member uploads an image (User Scenarios), THE Functional Requirements require size validation (5MB max), THE Business Rules specify accepted formats (JPEG/PNG/GIF), THE Technical Requirements set performance constraints (200ms validation), and THE User Actors define authentication boundaries (Member role) - creating a complete requirement specification without ambiguity.
+Comments appear immediately to the comment author while being marked as "pending" for other users until moderator review for new users or flagged content. Established users with good standing have their comments appear immediately to all users.
 
-## Target Audience
+THE comment creation process completes within 2 seconds. IF a user posts multiple comments rapidly (within 30 seconds), THEN THE system requires a 3-second delay before accepting the next comment to prevent spam.
 
-### Business Stakeholders
-**Read**: Table of Contents, Service Overview, Deployment Operations  
-**Use**: High-level understanding and decision-making about market opportunity, revenue potential, and operational requirements. Focus on market analysis from Service Overview showing 10,000 user growth potential within first year.
+### Comment Thread Organization
+Comments display chronologically with oldest first by default. THE system allows 3 levels of nested replies maximum to prevent deep threading complexity. THE comment thread loads within 3 seconds for up to 100 comments.
 
-### Product Managers
-**Read**: Service Overview, User Scenarios, Business Rules, User Actors  
-**Use**: Product planning and feature prioritization. Focus on user journey documentation showing complete pathways for article creation, content engagement, and moderation workflows. Understand content policies for economic/political discussions and attachment handling.
+WHILE loading comments, THE system displays a loading indicator. USERS can expand or collapse comment threads to manage discussion flow. New comments since the user's last visit are highlighted for easy identification.
 
-### Development Team (Primary Audience)
-**Read**: All documents, with focus on Functional Requirements (primary reference), User Actors (authentication), Business Rules (validation), Technical Requirements (constraints)  
-**Use**: System design and implementation. Use Functional Requirements as primary implementation reference with EARS format requirements. Understand authentication flows, permission matrices, content validation rules, and technical performance targets.
+### Editing and Managing Comments
+USERS shall edit their comments within 10 minutes of posting. WHEN editing, THE system stores both original and edited versions with timestamps. Edited comments display an "Edited" indicator to other users.
 
-### System Administrators
-**Read**: Technical Requirements, Deployment Operations, Business Rules  
-**Use**: Infrastructure planning and system maintenance. Focus on performance targets (500 concurrent users, 2-second response times), security requirements (XSS protection, malware scanning), backup procedures, and scalability guidelines.
+After the 10-minute window expires, ONLY MODERATORS can edit comments for community management purposes. THE system maintains edit history showing all modifications with editor information and timestamps.
 
-### Quality Assurance
-**Read**: All documents, focus on Functional Requirements and Business Rules  **Use**: Test planning and validation. Use EARS formatted requirements for test case creation. Focus on edge cases defined in Business Rules (content rules, moderation policies) and User Scenarios (error recovery, upload failures).
+## File Attachment System
 
-### Community Managers
-**Read**: Business Rules, User Scenarios, Functional Requirements  
-**Use**: Community guideline enforcement and user support. Focus on content policies, moderation workflows, user conduct standards, and escalation procedures for handling violations.
+### Image Attachment Support
+USERS can attach common image formats: JPG, JPEG, PNG, GIF, WebP with maximum file size 5MB each. THE system automatically resizes attached images to maximum width 1920px for display optimization while preserving original files for download.
 
-## Document Philosophy
+UP TO 10 images can be attached per article. WHILE uploading, THE system displays real-time progress percentage and validates file types before upload completion. Images create automatic thumbnail versions at 150x150px and 400x400px within 5 seconds of upload.
 
-This documentation set follows a requirements-first approach, where:
-- Business needs drive technical decisions, not the other way around
-- User experience guides system design choices
-- Simplicity guides implementation decisions (explicit request from stakeholder)
-- Technical teams maintain implementation autonomy within defined business requirements
-- Complete requirements avoid ambiguous "should" statements through EARS format
+### Document File Attachments
+ALLOWED document formats include PDF, DOCX, XLSX, PPTX, TXT with maximum file size 10MB each. USERS can attach up to 5 document files per article combined with image attachments. THE combined total attachment size per article shall not exceed 15MB.
 
-### Requirements-First vs Implementation-First
-Unlike typical development projects that start with technology choices, this project begins with complete business requirements that allow TypeScript/NestJS/Prisma implementation without revisiting functional decisions. The requirements specify WHAT the system must do, leaving HOW to the technical team's expertise.
+WHEN documents exceed size limits, THE system displays clear error messages specifying maximum allowed sizes. ALL attachments are scanned for viruses during upload with maximum processing time of 30 seconds. Attachments are automatically removed when the parent article is deleted.
 
-### Philosophy Benefits:
-- Prevents technology selection from limiting business functionality
-- Enables single-pass development without iterative requirement gathering
-- Allows technical team to optimize implementation within clear constraints
-- Provides complete specification for cost and timeline estimation
-- Eliminates ambiguity that causes project delays or scope creep
+### Attachment Security and Access
+ATTACHED files inherit the same visibility permissions as the associated article. IF an article is public, THEN attachments are accessible to guests and members. IF an article is member-only, THEN attachments require member authentication for access.
 
-## Documentation Standards
+THE system generates unique secure URLs for file downloads with 24-hour expiration for download links. WHEN files are accessed, THE system logs access information with timestamp, user ID, and file reference for security auditing while respecting user privacy.
 
-- **EARS Format**: All requirements use EARS format (When/The/If/Then) for unambiguous specification
-- **Cross-References**: All documents cross-reference related requirements through specific section references
-- **Business Language**: Technical constraints are expressed in business terms (response times, user counts) rather than technical specifications
-- **Complete Coverage**: Every feature includes validation rules, error handling, and user feedback requirements
-- **Implementation Independence**: Requirements specify what users experience, not technical implementation details
+### Attachment Management Interface
+USERS see attached files listed in articles with file name, size, type icon, and upload timestamp. WHILE editing articles within the 1-hour window, USERS can add or remove attachments without restriction. THE attachment list updates automatically without page refresh when attachments are modified.
 
-## Quick Reference for Different Users
+## User Permissions and Roles
 
-### For New Team Members
-Start with Service Overview → User Actors → Functional Requirements. This sequence provides context, actors, then actions in logical progression.
+### Guest User Permissions
+GUESTS have read-only access to all public articles, comments, and file attachments. GUESTS can search for discussions using basic search functionality and browse content by categories. THE system displays download counts for attachments but does not require guest registration for file downloads.
 
-### For Feature Planning
-Reference User Scenarios for real-world usage patterns, validate against Business Rules for constraints, check Functional Requirements for implementation scope.
+When guests attempt member-only actions (creating articles, commenting, uploading), THE system displays clear messages about registration benefits and provides prominent registration call-to-action buttons. THE system does not collect personal information from guests beyond technical browsing data required for functionality.
 
-### For Technical Debt Prioritization
-Technical Requirements provides performance targets, User Actors shows authentication complexity, Business Rules reveals content processing requirements that may need optimization.
+### Member User Privileges
+MEMBERS have full community access including creating articles, posting comments, uploading files, and managing their own content. MEMBERS can edit their articles and comments within time limits and delete their content with appropriate confirmation prompts.
 
-This table of contents serves as the entry point for understanding the politicsBbs requirements documentation, where business requirements drive technical decisions and ensure successful implementation of a focused economic/political discussion platform.
+MEMBERS can bookmark articles for later reading, follow discussion categories for notifications, and manage their notification preferences. THE system maintains a single active session per member, automatically logging out previous sessions when logging in from new devices.
 
----
+### Moderator User Capabilities
+MODERATORS have elevated permissions to maintain community standards including editing any content, deleting inappropriate content, suspending user accounts, managing article categories, and reviewing flagged content. MODERATOR actions are logged with detailed audit trails including reason codes and affected content references.
 
-> *Developer Note: This document defines business requirements only. All technical implementations (architecture, APIs, database design) are at the discretion of the development team. This documentation is WHAT to build, not HOW to build it.*
+WHEN MODERATORS take disciplinary actions, THE system automatically notifies affected users with brief explanations and appeal instructions. MODERATORS require two-factor authentication for login to protect their elevated privileges and maintain account security.
+
+## Search and Discovery
+
+### Basic Search Functionality
+THE system provides search across all text content in article titles, content, and author names. Search results return within 5 seconds maximum with results ranked by relevance. THE search supports phrase matching using quotation marks to find exact phrases and highlights search terms within results.
+
+Search results display 20 items per page with pagination for additional results. THE system stores search history for logged-in users with the last 10 searches retained for 30 days. USERS can clear their search history at any time through account settings.
+
+### Filtering and Sorting Options
+GUEST users can filter articles by category, date range, and content tags. MEMBERS have additional filter options including bookmarked content, followed topics, and saved searches. Articles can be sorted by newest first, most commented, most viewed (past 7 days), or oldest first.
+
+THE filtering system allows combining up to 5 filter conditions simultaneously. Filter results update within 2 seconds when conditions change. Each filter displays the number of matching results to help users understand the impact of their selections.
+
+### Content Discovery Features
+THE homepage displays trending discussions based on articles receiving the most comments and views in the past 24 hours. A sidebar shows popular tags updated every 2 hours based on recent activity across all discussions.
+
+THE system suggests related articles based on the current article's categories and tags to encourage continued engagement. RECENTLY viewed articles are tracked for logged-in users up to 20 articles retained for 90 days for easy return to interesting discussions.
+
+### Search Result Display
+Search results display article title, author information, category, relevance score, excerpt with highlighted search terms, and publication date. Results include the total number of matches found and the time taken for the search to complete.
+
+When no results match the query, THE system displays helpful suggestions including search term corrections, related topic suggestions, and guidance for improving search terms. THE system also suggests browsing by categories or popular tags as alternative discovery methods.
+
+## System Limits and Performance
+
+### Content Volume Restrictions
+USERS can create maximum 5 new articles per day to prevent spam while allowing active participation. THERE are no limits on comments per article, but comments must be relevant to the discussion topic. USERS can mention up to 3 distinct users per comment to prevent notification spam.
+
+External links in articles are limited to 10 per article with required descriptions for context. Comments can include maximum 3 external links with descriptions. THE system automatically verifies link safety against known malicious domains before display.
+
+### Performance Standards
+THE system maintains page load times under 3 seconds for search results and under 1 second for content viewing. File upload processing completes within 10 seconds for files up to 15MB total. Search functionality returns results within 1 second for common queries.
+
+THE system maintains 99% uptime for reading operations and prioritizes content availability during high-traffic periods. All user actions receive appropriate feedback within 2 seconds with loading indicators for longer operations.
+
+### Resource Usage Monitoring
+THE system monitors individual user resource usage and applies automatic limitations when thresholds are exceeded. USERS uploading more than 100MB total attachments within 24 hours trigger automatic review with moderator notification. API rate limiting reduces from standard 100 requests per minute to 10 per minute for flagged accounts.
+
+Individual user storage allocation for file attachments is 500MB with automatic notifications when approaching limits. THE system maintains maximum 10 simultaneous sessions per user account, automatically terminating the oldest session when limits are reached.
+
+This comprehensive functional requirements document provides backend developers with specific, testable requirements using EARS format throughout. The requirements define clear boundaries for a simple discussion board while including all essential features for economic and political discourse with file attachment support.

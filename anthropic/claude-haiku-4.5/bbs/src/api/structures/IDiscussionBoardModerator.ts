@@ -4,279 +4,382 @@ import { IAuthorizationToken } from "./IAuthorizationToken";
 
 export namespace IDiscussionBoardModerator {
   /**
-   * Moderator login request payload containing email, password, and session
-   * context information for administrator authentication.
+   * Request body for creating a new moderator account. Moderators are
+   * administrative users who perform content moderation and user management
+   * tasks.
    *
-   * This DTO defines the complete set of credentials and session context
-   * required for moderator authentication. The email and password fields are
-   * used to verify the moderator's identity against the
-   * discussion_board_moderators table, while the href and referrer fields
-   * provide connection context for audit logging and security tracking.
+   * The registration process validates that email and username are unique
+   * across all moderators (as enforced by unique constraints in the
+   * discussion_board_moderators table). The password is securely hashed using
+   * bcrypt with minimum 12 rounds before being stored in the password_hash
+   * field. The display_name captures the moderator's identification that
+   * appears in audit logs and moderation actions.
    *
-   * When a moderator submits this payload via the POST /auth/moderator/login
-   * endpoint, the backend validates the email exists in the
-   * discussion_board_moderators table, verifies the provided password matches
-   * the stored password_hash using secure comparison, confirms the
-   * moderator's account_status is 'active' (not 'inactive' or 'removed'), and
-   * creates a new session record in discussion_board_moderator_sessions.
+   * The backend automatically initializes the moderator account with
+   * account_status set to 'active', granting full moderator privileges
+   * immediately upon creation. Session context information (IP address, HTTP
+   * referrer, entry URL) is captured by the backend from HTTP request headers
+   * and is not included in this DTO to maintain proper separation of concerns
+   * between entity data and session metadata.
    *
-   * The IP address is optional and can be extracted from request headers by
-   * the backend if not provided. The href and referrer are mandatory for
-   * proper audit trail generation and security context recording. Upon
-   * successful authentication, the system returns
-   * IDiscussionBoardModerator.IAuthorized containing JWT tokens and moderator
-   * identity information, enabling all subsequent authenticated requests to
-   * moderation endpoints.
-   *
-   * Security considerations: Passwords are transmitted in plain text only
-   * over HTTPS connections and hashed immediately upon receipt using
-   * industry-standard algorithms. Failed login attempts (>5 in 15 minutes)
-   * trigger temporary account lockout. Password reset functionality is
-   * available for forgotten credentials.
+   * The operation creates a new record in the discussion_board_moderators
+   * table with timestamps created_at and updated_at set to the current time,
+   * enabling the newly registered moderator to access moderation features
+   * immediately.
    */
-  export type ILogin = {
+  export type ICreate = {
     /**
-     * Moderator's registered email address used for authentication. Must
-     * match exactly with the email field stored in
-     * discussion_board_moderators table. Email is case-insensitive for
-     * login purposes but stored as provided in database.
+     * Moderator email address used for authentication and communication.
+     * Must be unique across all moderator accounts in the system. Used as
+     * the primary contact identifier for the moderator.
      */
     email: string & tags.Format<"email">;
 
     /**
-     * Plain text password for moderator authentication. Backend verifies
-     * against password_hash stored in discussion_board_moderators table
-     * using secure hashing algorithm (bcrypt, scrypt, or argon2). Minimum 8
-     * characters containing uppercase, lowercase, and numbers. Never
-     * transmitted or stored in plain text after authentication.
+     * Unique moderator username for authentication and identification. Must
+     * be unique across all moderator accounts. 3-30 characters,
+     * alphanumeric with underscore and hyphen. Used for login credentials
+     * and displaying moderator identity in audit logs and moderation
+     * actions.
      */
-    password: string;
+    username: string &
+      tags.MinLength<3> &
+      tags.MaxLength<30> &
+      tags.Pattern<"^[a-zA-Z0-9_-]+$">;
 
     /**
-     * Client IP address for session tracking and security auditing.
-     * OPTIONAL - server can extract from request headers, but client may
-     * provide for SSR or special cases. Used to detect suspicious login
-     * locations or unauthorized access attempts. Stored in
-     * discussion_board_moderator_sessions for connection context.
+     * Plain text password for the moderator account. The backend securely
+     * hashes this password using bcrypt with minimum 12 rounds before
+     * storing in the password_hash field. Clients must transmit only plain
+     * text passwords; hashing is the backend's responsibility.
      */
-    ip?: string | null | undefined;
+    password: string & tags.MinLength<8>;
 
     /**
-     * Current page URL (connection origin) where moderator initiated login.
-     * MANDATORY - client must provide the URL of the page where login form
-     * was submitted. Used for session context tracking and security logging
-     * in discussion_board_moderator_sessions. Examples:
-     * 'https://admin.example.com/login' or
-     * 'https://app.example.com/admin/dashboard'.
+     * Display name for the moderator that appears in audit logs, moderation
+     * actions, and administrative interfaces. This human-readable name
+     * helps identify the moderator performing moderation tasks.
      */
-    href: string & tags.Format<"uri">;
-
-    /**
-     * HTTP referrer URL indicating page moderator came from before visiting
-     * login page. MANDATORY - client must provide referrer information for
-     * audit trail. Used to track how moderator accessed the login interface
-     * and for security analytics. Can be empty string for direct
-     * navigation.
-     */
-    referrer: string & tags.Format<"uri">;
+    display_name: string & tags.MinLength<1> & tags.MaxLength<100>;
   };
 
   /**
-   * Successful moderator authentication response containing moderator
-   * identity and JWT authentication tokens.
+   * Successful moderator authorization response containing authenticated
+   * moderator information and JWT credentials.
    *
-   * This DTO is returned upon successful moderator registration (join
-   * endpoint) or token refresh, providing the authenticated moderator with
-   * necessary credentials and identity information to access administrative
-   * features.
+   * Returned after successful login or token refresh, providing access and
+   * refresh tokens needed for authenticated API requests. Includes moderator
+   * summary details (display name, account status) for client-side
+   * identification and session tracking information to identify which session
+   * the tokens correspond to.
    *
-   * The response includes the moderator's unique identifier, email address,
-   * account lifecycle timestamps (creation and modification), current account
-   * status reflecting access restrictions, and complete JWT token information
-   * (access token, refresh token, and expiration timestamps). The permissions
-   * array specifies which administrative actions the moderator is authorized
-   * to perform, including content moderation, user management, and audit log
-   * access.
-   *
-   * The access token should be included in the Authorization header (Bearer
-   * scheme) for all subsequent requests to protected moderation endpoints.
-   * The refresh token enables the moderator to extend their session by
-   * obtaining new access tokens when the current token approaches expiration,
-   * without requiring password re-entry.
-   *
-   * Moderators receive full moderation permissions enabling them to: view all
-   * articles and comments regardless of author, edit or delete any content,
-   * suspend or ban user accounts, access moderation dashboards, view audit
-   * logs, and perform all administrative enforcement actions. Moderator
-   * accounts are separate from regular member accounts to maintain clear
-   * separation of administrative privileges.
+   * The token field contains access_token for API authentication and
+   * refresh_token for future token renewal without requiring password
+   * re-entry.
    */
   export type IAuthorized = {
     /**
-     * Unique identifier of the authenticated moderator. System-generated
-     * UUID from discussion_board_moderators.id. Used to identify the
-     * moderator throughout the system and in all subsequent authenticated
-     * requests. Included in JWT token claims for request validation.
+     * Unique identifier of the authenticated moderator. Used to identify
+     * the moderator in the system and correlate with moderator account
+     * records.
      */
     id: string & tags.Format<"uuid">;
-
-    /**
-     * Moderator's email address as stored in the
-     * discussion_board_moderators table. Used for display and
-     * identification of the authenticated moderator. Included in JWT token
-     * claims. Email is unique constraint in the moderators table ensuring
-     * no duplicate emails across administrative accounts.
-     */
-    email: string & tags.Format<"email">;
-
-    /**
-     * Timestamp when the moderator account was created in ISO 8601 UTC
-     * format. System-generated at account creation and immutable
-     * thereafter. Tracks when moderator access was granted to the system.
-     */
-    created_at: string & tags.Format<"date-time">;
-
-    /**
-     * Timestamp when the moderator account was last modified in ISO 8601
-     * UTC format. Updated when moderator details change such as password
-     * resets or permission modifications. Tracks the most recent account
-     * modification for audit purposes.
-     */
-    updated_at: string & tags.Format<"date-time">;
-
-    /**
-     * Current status of moderator account indicating whether the moderator
-     * can access administrative features. Valid values: 'active'
-     * (performing moderation duties), 'inactive' (access suspended),
-     * 'removed' (access permanently revoked). Controls whether moderator
-     * can authenticate and access admin features.
-     */
-    account_status: "active" | "inactive" | "removed";
 
     /** JWT token information for authentication */
     token: IAuthorizationToken;
 
     /**
-     * Array of permission strings indicating what administrative actions
-     * this moderator can perform. Typical permissions include:
-     * 'article:view:all', 'article:edit:any', 'article:delete:any',
-     * 'comment:view:all', 'comment:edit:any', 'comment:delete:any',
-     * 'user:view:all', 'user:suspend', 'user:ban', 'moderation:view:logs',
-     * 'moderation:create:log'. Permissions determine access to moderation
-     * dashboard features and content management operations. All moderators
-     * have full moderation permissions in current implementation.
+     * Summary information about the authenticated moderator including
+     * display name and current account status.
      */
-    permissions: string[];
+    moderator: IDiscussionBoardModerator.ISummary;
   };
 
   /**
-   * Moderator account registration request containing email, password, and
-   * session context information.
-   *
-   * This DTO captures the necessary information for creating new moderator
-   * administrator accounts. Unlike member registration which may be open,
-   * moderator account creation is administratively restricted and may require
-   * special authorization to prevent unauthorized privilege escalation.
-   *
-   * The registration accepts email address and plain-text password which the
-   * backend hashes using industry-standard algorithms before storage. Session
-   * context fields (ip, href, referrer) are captured during the registration
-   * request for audit trail and security tracking purposes.
-   *
-   * Email must be unique across all existing moderator accounts; registration
-   * fails if email is already registered. Password must meet security
-   * requirements (minimum 8 characters including uppercase, lowercase, and
-   * numbers) to ensure adequate authentication strength.
-   *
-   * Session context information enables the system to track where moderators
-   * registered from, detect suspicious registration patterns (multiple
-   * registrations from different IPs in short timeframe), and maintain
-   * security audit logs of administrative access points.
+   * Moderator login credentials and session context for authentication.
+   * Enables existing moderators to authenticate using either email or
+   * username with password credentials. The login operation creates a new
+   * session in discussion_board_moderator_sessions table capturing IP, href,
+   * and referrer context for security monitoring. The plain text password is
+   * validated against the stored password_hash in the
+   * discussion_board_moderators table. Successful authentication returns
+   * IDiscussionBoardModerator.IAuthorized with JWT tokens.
    */
-  export type IJoin = {
+  export type ILogin = {
     /**
-     * Moderator's email address used for authentication and administrative
-     * account management. Must be unique across all moderators. Used for
-     * moderator login, password recovery, and administrative notifications.
-     * Email is case-insensitive and must be in valid email format
-     * (user@domain.com).
+     * Moderator's email address for login authentication. Must be a valid
+     * email format matching unique email constraint in
+     * discussion_board_moderators table. Case-insensitive. Either email or
+     * username must be provided for authentication.
      */
-    email: string & tags.Format<"email">;
+    email?: (string & tags.Format<"email">) | undefined;
 
     /**
-     * Moderator password in plain text for account creation. Will be hashed
-     * using industry-standard algorithms (bcrypt, scrypt, or argon2) before
-     * storage. Minimum 8 characters required, must include at least one
-     * uppercase letter, one lowercase letter, and one number for adequate
-     * security. Never stored in plaintext. Client sends plain text during
-     * registration; server hashes and stores in password_hash field.
+     * Moderator's username for login authentication. Case-insensitive
+     * unique constraint, 3-30 characters alphanumeric with
+     * underscore/hyphen. Either email or username must be provided for
+     * authentication.
      */
-    password: string & tags.MinLength<8>;
+    username?:
+      | (string &
+          tags.MinLength<3> &
+          tags.MaxLength<30> &
+          tags.Pattern<"^[a-zA-Z0-9_-]+$">)
+      | undefined;
 
     /**
-     * Client IP address of the connection where moderator initiated
-     * registration or authentication. Captured for security auditing and
-     * anomaly detection. Stored in moderator_sessions table to track login
-     * locations and identify suspicious registration patterns. Used to flag
-     * registrations from multiple IPs in short timeframe.
+     * Plain text password for moderator authentication. Validated against
+     * stored password_hash in discussion_board_moderators table using
+     * bcrypt verification. Never stored in plain text, hashed immediately
+     * by backend.
      */
-    ip: string;
+    password: string;
 
     /**
-     * URL of the registration page or authentication endpoint where
-     * moderator initiated the account creation process. Provides context
-     * about moderator's entry point into the administrative interface.
-     * Stored in moderator_sessions table as part of session tracking and
-     * security audit trail.
+     * Client IP address (IPv4 or IPv6) from which moderator login
+     * originates. Optional - server can extract from request headers for
+     * standard HTTP requests, but clients may provide for server-side
+     * rendering or proxy scenarios. Used for session security tracking and
+     * audit logging.
+     */
+    ip?: string | null | undefined;
+
+    /**
+     * Full URL/URI where moderator login occurred. Captures the entry point
+     * for moderation dashboard access. Mandatory for audit trail and
+     * understanding moderator access patterns. Current page URL from
+     * client.
      */
     href: string & tags.Format<"uri">;
 
     /**
-     * HTTP referrer URL indicating where moderator came from before
-     * accessing the registration interface. Tracks traffic sources and
-     * moderator navigation patterns. Stored in moderator_sessions table to
-     * understand administrative user journeys and identify external
-     * referral sources to administrative registration.
+     * HTTP Referrer header value when moderator login occurred. Indicates
+     * source of authentication request. Mandatory for security context. May
+     * be empty string if no referrer available.
      */
     referrer: string & tags.Format<"uri">;
   };
 
   /**
-   * Moderator token refresh request containing refresh token for obtaining
-   * new access credentials.
-   *
-   * This DTO enables moderators to extend their authenticated sessions by
-   * exchanging a valid refresh token for a new access token. The operation
-   * does not require the moderator to re-enter their password, allowing
-   * seamless session continuation when access tokens approach expiration.
-   *
-   * The refresh token must be a valid JWT token previously issued during
-   * moderator authentication (login or previous refresh) and stored in the
-   * moderator_sessions table. The system validates that the refresh token has
-   * not expired (checking expired_at timestamp is null or in the future), the
-   * associated moderator account still exists and is active (account_status =
-   * 'active'), and no password resets have invalidated the token.
-   *
-   * Upon successful validation, the system generates a new access token with
-   * 15-minute expiration and optionally a new refresh token with 7-day
-   * expiration. If the refresh token is expired, invalid, or the moderator
-   * account has been suspended or deleted, the operation fails with
-   * appropriate error message prompting the moderator to authenticate again.
-   *
-   * Refresh operations are logged for audit trail tracking to monitor token
-   * renewal patterns and detect potential token theft scenarios where
-   * excessive rapid refresh attempts occur.
+   * Request body for refreshing moderator authentication tokens. Contains the
+   * refresh token from a previous login or token refresh operation, used to
+   * validate the session and issue new access/refresh token pair without
+   * requiring password re-entry.
    */
   export type IRefresh = {
     /**
-     * Valid refresh token issued during previous moderator authentication
-     * or token refresh. Used to generate new access token without requiring
-     * password re-entry. Must match a refresh token in
-     * discussion_board_moderator_sessions table that has not expired
-     * (expired_at is null) and is associated with an active moderator
-     * account (account_status = 'active'). Refresh tokens have 7-day
-     * expiration window.
+     * Valid refresh token previously issued during moderator login or token
+     * refresh. Used to validate the session and obtain new access and
+     * refresh tokens. Must correspond to an active session in
+     * discussion_board_moderator_sessions table.
      */
     refresh_token: string;
+  };
+
+  /**
+   * Lightweight summary representation of a moderator for reference in
+   * moderation actions and audit trails.
+   *
+   * Includes only essential identification and status information needed when
+   * displaying moderator involvement in moderation decisions. Used when
+   * showing who performed a moderation action without exposing sensitive
+   * administrative details like email or password hash.
+   *
+   * The summary provides sufficient context for audit logs and user-facing
+   * moderation history while maintaining security by excluding authentication
+   * credentials.
+   */
+  export type ISummary = {
+    /**
+     * Unique identifier for the moderator. Immutable UUID generated when
+     * moderator account is created.
+     */
+    id: string & tags.Format<"uuid">;
+
+    /**
+     * Moderator's display name for identification in audit logs and
+     * moderation history. Shows publicly in moderation actions (e.g.,
+     * 'Comment removed by [display_name]'). 1-50 characters.
+     */
+    display_name: string & tags.MinLength<1> & tags.MaxLength<50>;
+
+    /**
+     * Current moderator account status controlling access and privileges.
+     *
+     * Values represent:
+     *
+     * - Active: Moderator has full privileges and can perform all moderation
+     *   actions
+     * - Inactive: Temporarily suspended from moderating, no moderation access
+     *   allowed
+     * - Terminated: Permanently revoked moderator status, account access
+     *   removed
+     *
+     * Default status is 'active' when moderator is first created.
+     */
+    account_status: "active" | "inactive" | "terminated";
+  };
+
+  /**
+   * Request body for validating a moderator's authentication token and active
+   * session.
+   *
+   * This DTO is used when a moderator wants to verify that their current
+   * access token is still valid and their associated session remains active.
+   * The token is validated against the moderator's session records to ensure
+   * the session has not been terminated or expired beyond the 7-day window.
+   *
+   * The moderator typically sends this token as part of their regular API
+   * requests to determine if session refresh is needed or to maintain session
+   * continuity across protected resources.
+   */
+  export type IValidateToken = {
+    /**
+     * The moderator's access token in JWT format for validation. This is
+     * the Bearer token provided in the Authorization header without the
+     * 'Bearer ' prefix. Used to verify the moderator's authentication
+     * status and active session.
+     */
+    token: string;
+  };
+
+  /**
+   * Response body containing the result of a moderator token validation check
+   * and associated session details.
+   *
+   * Returned when a moderator validates their authentication token to verify
+   * it is still valid and their session remains active. The response includes
+   * comprehensive token and session information that allows the client to
+   * determine whether the moderator needs to refresh their session or
+   * re-authenticate.
+   *
+   * Validation Process: The system performs the following checks: (1) JWT
+   * signature verification using the configured signing secret, (2) token
+   * expiration check by comparing the exp claim against current time, (3)
+   * session existence verification in discussion_board_moderator_sessions
+   * table, (4) session status verification (expired_at must be null), and (5)
+   * moderator account status verification in discussion_board_moderators
+   * table (must be 'active').
+   *
+   * Response Behavior Based on Validation Result:
+   *
+   * - When is_valid is true: All fields contain complete and current
+   *   information. The moderator's session is active and valid within the
+   *   7-day window. All moderator details, session information, and token
+   *   timestamps are fully populated and reliable.
+   * - When is_valid is false: Some fields are null as extraction failed. The
+   *   moderator_id, username, display_name, email, email_verified,
+   *   session_id, session_created_at, token_issued_at, and token_expires_at
+   *   fields are null because validation failed before full data could be
+   *   retrieved. Only the role field is always populated as 'moderator'. This
+   *   allows clients to distinguish between validation success and failure
+   *   states.
+   */
+  export type ITokenValidation = {
+    /**
+     * Indicates whether the moderator's access token and associated session
+     * are currently active and valid. Returns true if the token signature
+     * is valid, not expired, and the corresponding session exists and has
+     * not been terminated. Returns false if any validation check fails.
+     *
+     * When is_valid is true, all other fields in the response contain
+     * complete and current moderator and session information. When is_valid
+     * is false, the remaining fields may be null or contain incomplete
+     * information, as validation failed before full session data could be
+     * retrieved.
+     */
+    is_valid: boolean;
+
+    /**
+     * Unique identifier of the moderator whose token was validated. This is
+     * extracted from the JWT claims (userId field) when the token signature
+     * and claims are valid. If validation fails (is_valid is false), this
+     * field is null because the moderator identity cannot be confirmed from
+     * an invalid token.
+     */
+    moderator_id?: (string & tags.Format<"uuid">) | null | undefined;
+
+    /**
+     * Username of the authenticated moderator. Extracted from the JWT token
+     * claims (username field) and identifies the moderator by their login
+     * username. Only populated when the token validation succeeds (is_valid
+     * is true). Returns null if validation fails.
+     */
+    username?: string | null | undefined;
+
+    /**
+     * Display name of the moderator. Extracted from the JWT token claims
+     * (displayName field) when validation succeeds. This is the name
+     * displayed in the moderation interface and audit logs. Returns null if
+     * validation fails (is_valid is false).
+     */
+    display_name?: string | null | undefined;
+
+    /**
+     * Email address of the authenticated moderator. Extracted from the JWT
+     * token claims when validation succeeds. Used for communication and as
+     * part of the moderator's identity in the system. Returns null if
+     * validation fails (is_valid is false).
+     */
+    email?: (string & tags.Format<"email">) | null | undefined;
+
+    /**
+     * Authorization role of the authenticated user. Always 'moderator' for
+     * this validation endpoint. Indicates that this token belongs to a
+     * moderator with elevated permissions for content moderation and user
+     * management.
+     */
+    role: "moderator";
+
+    /**
+     * Indicates whether the moderator's email address has been verified.
+     * Extracted from the JWT token claims (emailVerified field) when
+     * validation succeeds. Shows the email verification status at the time
+     * the token was issued. Returns null if validation fails (is_valid is
+     * false).
+     */
+    email_verified?: boolean | null | undefined;
+
+    /**
+     * Current account status of the moderator in the
+     * discussion_board_moderators table. Shows whether the moderator
+     * account is active, suspended, or permanently terminated. Only
+     * 'active' status allows validation to succeed. If the status is not
+     * 'active', the validation fails even if the token appears valid.
+     * Returns null if validation fails (is_valid is false).
+     */
+    account_status?: "active" | "suspended" | "terminated" | null | undefined;
+
+    /**
+     * Unique identifier of the active moderator session associated with the
+     * token. This session must exist in the
+     * discussion_board_moderator_sessions table with a null expired_at
+     * value (indicating an active, non-terminated session). Returns null if
+     * no active session exists or if validation fails (is_valid is false).
+     */
+    session_id?: (string & tags.Format<"uuid">) | null | undefined;
+
+    /**
+     * Timestamp when the validated session was created. Stored in
+     * discussion_board_moderator_sessions.created_at. Used to verify the
+     * session is within the 7-day expiration window. Returns null if
+     * validation fails or session cannot be retrieved (is_valid is false).
+     */
+    session_created_at?: (string & tags.Format<"date-time">) | null | undefined;
+
+    /**
+     * Timestamp when the access token was issued (iat claim in JWT).
+     * Indicates when the moderator authenticated and obtained this token.
+     * Returns null if token validation fails (is_valid is false).
+     */
+    token_issued_at?: (string & tags.Format<"date-time">) | null | undefined;
+
+    /**
+     * Timestamp when the access token will expire (exp claim in JWT). After
+     * this time, the token becomes invalid and the moderator must refresh
+     * or re-authenticate. Returns null if token validation fails (is_valid
+     * is false).
+     */
+    token_expires_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
 }

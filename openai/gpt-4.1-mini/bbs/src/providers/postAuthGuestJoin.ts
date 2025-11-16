@@ -7,68 +7,95 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IGuest";
-import { IDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardGuest";
+import { IEconPolDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardGuest";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { GuestPayload } from "../decorators/payload/GuestPayload";
 
 export async function postAuthGuestJoin(props: {
-  body: IGuest.IJoin;
-}): Promise<IDiscussionBoardGuest.IAuthorized> {
-  // Generate UUIDs for guest id and session id
-  const guestId: string & tags.Format<"uuid"> = v4();
-  const sessionId: string & tags.Format<"uuid"> = v4();
+  guest: GuestPayload;
+  body: IEconPolDiscussionBoardGuest.ICreate;
+}): Promise<IEconPolDiscussionBoardGuest.IAuthorized> {
+  const existing =
+    await MyGlobal.prisma.econ_pol_discussion_board_guests.findFirst({
+      where: { username: props.body.username },
+    });
 
-  // Current timestamp in ISO 8601 format
+  if (existing !== null) {
+    throw new HttpException("Username already exists", 409);
+  }
+
   const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const guestId: string & tags.Format<"uuid"> = v4();
 
-  // Access token expiry timestamp (1 hour from now)
-  const expiredAt: string & tags.Format<"date-time"> = toISOStringSafe(
+  const guest = await MyGlobal.prisma.econ_pol_discussion_board_guests.create({
+    data: {
+      id: guestId,
+      username: props.body.username,
+      created_at: now,
+      updated_at: now,
+    },
+  });
+
+  const accessExpireDate: string & tags.Format<"date-time"> = toISOStringSafe(
     new Date(Date.now() + 60 * 60 * 1000),
   );
-
-  // Refresh token expiry timestamp (7 days from now)
-  const refreshableUntil: string & tags.Format<"date-time"> = toISOStringSafe(
+  const refreshExpireDate: string & tags.Format<"date-time"> = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
+  const sessionId: string & tags.Format<"uuid"> = v4();
 
-  // Create JWT access token
-  const access = jwt.sign(
-    {
-      type: "guest",
-      id: guestId,
-      session_id: sessionId,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
+  const session =
+    await MyGlobal.prisma.econ_pol_discussion_board_guest_sessions.create({
+      data: {
+        id: sessionId,
+        econ_pol_discussion_board_guest_id: guestId,
+        href: props.body.href satisfies string as string,
+        referrer: props.body.referrer satisfies string as string,
+        created_at: now,
+        expired_at: accessExpireDate,
+        ip: (props.body.ip ?? "") satisfies string,
+      },
+    });
 
-  // Create JWT refresh token
-  const refresh = jwt.sign(
-    {
-      type: "guest",
-      id: guestId,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: "guest",
+        id: guest.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "guest",
+        id: guest.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpireDate,
+    refreshable_until: refreshExpireDate,
+  };
 
   return {
-    id: guestId,
-    token: {
-      access,
-      refresh,
-      expired_at: expiredAt,
-      refreshable_until: refreshableUntil,
-    },
+    id: guest.id,
+    username: guest.username,
+    ip: props.body.ip ?? undefined,
+    user_agent: props.body.user_agent ?? undefined,
+    created_at: toISOStringSafe(guest.created_at),
+    updated_at: toISOStringSafe(guest.updated_at),
+    token,
   };
 }

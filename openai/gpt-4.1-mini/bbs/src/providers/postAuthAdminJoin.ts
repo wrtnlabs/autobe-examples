@@ -7,62 +7,70 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IDiscussionBoardAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminSession";
+import { IEconPolDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPolDiscussionBoardAdmin";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 
 export async function postAuthAdminJoin(props: {
   admin: AdminPayload;
-  body: IDiscussionBoardAdmin.IJoin;
-}): Promise<IDiscussionBoardAdmin.IAuthorized> {
-  const existingAdmin = await MyGlobal.prisma.discussion_board_admins.findFirst(
-    {
-      where: { email: props.body.email },
-    },
-  );
+  body: IEconPolDiscussionBoardAdmin.IJoin;
+}): Promise<IEconPolDiscussionBoardAdmin.IAuthorized> {
+  const { username, email, password } = props.body;
+
+  const existingAdmin =
+    await MyGlobal.prisma.econ_pol_discussion_board_admins.findFirst({
+      where: {
+        OR: [{ username }, { email }],
+      },
+    });
 
   if (existingAdmin !== null) {
-    throw new HttpException("Email already registered", 409);
+    throw new HttpException("Username or email already registered.", 409);
   }
 
-  const hashedPassword = await PasswordUtil.hash(props.body.password);
+  const passwordHash = await PasswordUtil.hash(password);
 
   const now = toISOStringSafe(new Date());
-  const adminId = v4();
-  const sessionId = v4();
 
-  const admin = await MyGlobal.prisma.discussion_board_admins.create({
-    data: {
-      id: adminId,
-      email: props.body.email,
-      password_hash: hashedPassword,
-      created_at: now,
-      updated_at: now,
-    },
-  });
+  const adminRecord =
+    await MyGlobal.prisma.econ_pol_discussion_board_admins.create({
+      data: {
+        id: v4(),
+        username,
+        email,
+        password_hash: passwordHash,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+    });
 
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpiredAt = toISOStringSafe(
+    new Date(Date.now() + 1000 * 60 * 60),
+  );
+  const refreshExpiredAt = toISOStringSafe(
+    new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+  );
 
-  const session = await MyGlobal.prisma.discussion_board_admin_sessions.create({
-    data: {
-      id: sessionId,
-      discussion_board_admin_id: adminId,
-      ip: "",
-      href: "",
-      referrer: "",
-      created_at: now,
-      expired_at: toISOStringSafe(accessExpires),
-    },
-  });
+  const sessionRecord =
+    await MyGlobal.prisma.econ_pol_discussion_board_admin_sessions.create({
+      data: {
+        id: v4(),
+        econ_pol_discussion_board_admin_id: adminRecord.id,
+        created_at: now,
+        expired_at: accessExpiredAt,
+        ip: "",
+        href: "",
+        referrer: "",
+      },
+    });
 
   const token = {
     access: jwt.sign(
       {
         type: "admin",
-        id: admin.id,
-        session_id: session.id,
+        id: adminRecord.id,
+        session_id: sessionRecord.id,
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
@@ -71,25 +79,30 @@ export async function postAuthAdminJoin(props: {
     refresh: jwt.sign(
       {
         type: "admin",
-        id: admin.id,
-        session_id: session.id,
+        id: adminRecord.id,
+        session_id: sessionRecord.id,
         tokenType: "refresh",
         created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpiredAt,
+    refreshable_until: refreshExpiredAt,
   };
 
   return {
-    id: admin.id,
-    email: admin.email,
-    password_hash: admin.password_hash,
-    created_at: now,
-    updated_at: now,
-    deleted_at: null,
+    adminUsername: adminRecord.username,
+    email: adminRecord.email,
+    created_at: toISOStringSafe(new Date(adminRecord.created_at)),
+    updated_at: toISOStringSafe(new Date(adminRecord.updated_at)),
+    deleted_at:
+      adminRecord.deleted_at !== null && adminRecord.deleted_at !== undefined
+        ? toISOStringSafe(new Date(adminRecord.deleted_at))
+        : null,
+    role: "admin",
+    is_active: true,
+    id: adminRecord.id,
     token,
   };
 }

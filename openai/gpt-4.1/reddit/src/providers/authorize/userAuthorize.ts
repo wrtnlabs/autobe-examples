@@ -5,9 +5,8 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
 /**
- * Authentication provider for the 'user' role. Verifies JWT and ensures active user.
- * @param request Incoming HTTP request containing Authorization header
- * @returns Authenticated user payload
+ * Authenticates a standard platform user based on JWT token and session validity.
+ * Verifies token payload, user status, session ownership, and soft-deletion.
  */
 export async function userAuthorize(request: {
   headers: {
@@ -20,16 +19,21 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // 'payload.id' is the top-level community_platform_users.id
-  const user = await MyGlobal.prisma.community_platform_users.findFirst({
+  // Validate user existence, state, and active session
+  const session = await MyGlobal.prisma.community_platform_user_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null
+      id: payload.session_id,
+      community_platform_user_id: payload.id,
+      expired_at: null,
+      user: {
+        deleted_at: null,
+        status: "active",
+      },
     },
   });
 
-  if (user === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (!session) {
+    throw new ForbiddenException("You're not enrolled or session invalid.");
   }
 
   return payload;

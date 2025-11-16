@@ -1,0 +1,81 @@
+/// Main entity for article management in the discussion board.
+///
+/// Users can create, edit, and delete their own articles. The system tracks
+/// creation and modification timestamps, and supports soft deletion to
+/// maintain audit trails. Each article can have multiple comments.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Title of the article created by the user.
+  title String
+  
+  /// Main content of the article.
+  content String
+  
+  /// Timestamp when the article was created.
+  created_at DateTime
+  
+  /// Timestamp when the article was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the article was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_comments discussion_board_comments[]
+  discussion_board_attachments discussion_board_attachments[]
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  
+  @@index([created_at])
+}
+
+/// Entity for managing comments on articles.
+///
+/// Users can comment on articles, and these comments are tracked with
+/// creation and modification timestamps. The system supports soft deletion
+/// of comments to maintain audit trails.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing the article this comment belongs to.
+  article_id String
+  
+  /// Content of the comment.
+  content String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  discussion_board_moderation_actions discussion_board_moderation_actions[]
+  discussion_board_content_reports discussion_board_content_reports[]
+  
+  @@index([article_id, created_at])
+}

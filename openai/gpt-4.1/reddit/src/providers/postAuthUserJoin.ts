@@ -13,59 +13,99 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthUserJoin(props: {
   body: ICommunityPlatformUser.IJoin;
 }): Promise<ICommunityPlatformUser.IAuthorized> {
-  // 1. Check for duplicate email
+  // 1. Check for existing user by email (even if soft-deleted)
   const existing = await MyGlobal.prisma.community_platform_users.findFirst({
-    where: { email: props.body.email },
+    where: {
+      email: props.body.email,
+    },
   });
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
 
-  // 2. Securely hash the password
+  // 2. Hash password
   const password_hash = await PasswordUtil.hash(props.body.password);
 
-  // 3. Create user in database
+  // 3. Prepare values
+  const now = toISOStringSafe(new Date());
+  const user_id = v4();
+
+  // 4. Create user
   const user = await MyGlobal.prisma.community_platform_users.create({
     data: {
-      id: v4(),
+      id: user_id,
       email: props.body.email,
       password_hash,
-      display_name: props.body.display_name,
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      status: "pending",
+      business_status: null,
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
     },
   });
 
-  // 4. Create verification token (24h expiry)
-  const expires_at = toISOStringSafe(
-    new Date(Date.now() + 24 * 60 * 60 * 1000),
+  // 5. Create session
+  const session_id = v4();
+  const access_expired = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refresh_expired = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
-  await MyGlobal.prisma.community_platform_user_verification_tokens.create({
-    data: {
-      id: v4(),
-      community_platform_user_id: user.id,
-      token: v4(),
-      expires_at,
-      consumed: false,
-      created_at: toISOStringSafe(new Date()),
-      consumed_at: null,
+  const session = await MyGlobal.prisma.community_platform_user_sessions.create(
+    {
+      data: {
+        id: session_id,
+        community_platform_user_id: user.id,
+        ip: "",
+        href: "",
+        referrer: "",
+        created_at: now,
+        expired_at: access_expired,
+      },
     },
-  });
+  );
 
-  // 5. Return authorized DTO with dummy token structure
+  // 6. JWT tokens
+  const token = {
+    access: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "user",
+        id: user.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: access_expired,
+    refreshable_until: refresh_expired,
+  };
+
   return {
     id: user.id,
     email: user.email,
-    display_name: user.display_name,
+    status: user.status,
+    business_status: user.business_status,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
-    deleted_at: null,
-    token: {
-      access: "",
-      refresh: "",
-      expired_at: expires_at,
-      refreshable_until: expires_at,
-    },
+    deleted_at:
+      user.deleted_at === null ? null : toISOStringSafe(user.deleted_at),
+    token,
   };
 }

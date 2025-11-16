@@ -1,7 +1,15 @@
-/// User accounts for the Todo application. Each user represents an
-/// individual who can create and manage their personal todo items. Users
-/// authenticate with email and password to access their todo dashboard.
-/// {@link todo_app_user_sessions.id}
+/// User accounts for the Todo application with authentication credentials.
+///
+/// Stores user registration information including email, password hash, and
+/// account status. Each user has their own private todo list and can manage
+/// their personal tasks independently.
+///
+/// Users are authenticated through email/password combination and can have
+/// multiple active sessions across different devices. Account status tracks
+/// whether the user is active, pending verification, or suspended.
+///
+/// User data is isolated from other users' data, maintaining strict privacy
+/// and security boundaries.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -20,8 +28,7 @@ model todo_app_users {
   /// text.
   password_hash String
   
-  /// Current status of the user account. Possible values: 'active',
-  /// 'inactive', 'suspended'.
+  /// Current account status. Valid values: pending, active, suspended.
   status String
   
   /// Timestamp when the user account was created.
@@ -30,8 +37,7 @@ model todo_app_users {
   /// Timestamp when the user account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the user account was soft deleted. Null if account is
-  /// active.
+  /// Timestamp when the user account was soft deleted. Null if active.
   deleted_at DateTime?
   
   //----
@@ -41,13 +47,22 @@ model todo_app_users {
   todo_app_todos todo_app_todos[]
   
   @@unique([email])
-  @@index([status])
+  @@index([status, created_at])
   @@index([created_at])
 }
 
-/// User session records for authentication tracking. Each session represents
-/// an active login instance for a user. Used for audit tracing of user
-/// actions and secure session management. {@link todo_app_users.id}
+/// User authentication sessions for tracking login activity.
+///
+/// Stores session information for authenticated users including connection
+/// context and timestamps. Each session represents a single login instance
+/// and is used for audit tracing of user actions.
+///
+/// Sessions are managed through identity flows and are automatically expired
+/// after a period of inactivity. Multiple concurrent sessions are supported
+/// per user across different devices.
+///
+/// Connection context includes IP address, URL, and referrer information for
+/// security monitoring and audit purposes.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -61,26 +76,27 @@ model todo_app_user_sessions {
   /// Belonged user's {@link todo_app_users.id}.
   todo_app_user_id String
   
-  /// IP address from which the session was established.
+  /// IP address of the connection that created this session.
   ip String
   
-  /// Connection URL where the session was initiated.
+  /// Connection URL where the session was created.
   href String
   
-  /// Referrer URL that directed the user to the application.
+  /// Referrer URL that directed to the session creation.
   referrer String
   
   /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when the session expired or was terminated. Null if session is
-  /// still active.
+  /// Timestamp when the session expired. Null if still active.
   expired_at DateTime?
   
   //----
   // RELATIONS
   //----
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  todo_app_todos todo_app_todos[]
   
   @@index([todo_app_user_id, created_at])
 }

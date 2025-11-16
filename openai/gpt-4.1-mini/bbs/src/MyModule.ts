@@ -3,28 +3,44 @@ import { Module } from "@nestjs/common";
 import { AuthGuestController } from "./controllers/auth/guest/AuthGuestController";
 import { AuthMemberController } from "./controllers/auth/member/AuthMemberController";
 import { AuthAdminController } from "./controllers/auth/admin/AuthAdminController";
-import { DiscussionboardDiscussionboardarticlesController } from "./controllers/discussionBoard/discussionBoardArticles/DiscussionboardDiscussionboardarticlesController";
-import { DiscussionboardMemberDiscussionboardarticlesController } from "./controllers/discussionBoard/member/discussionBoardArticles/DiscussionboardMemberDiscussionboardarticlesController";
-import { DiscussionboardAdminDiscussionboardarticlesController } from "./controllers/discussionBoard/admin/discussionBoardArticles/DiscussionboardAdminDiscussionboardarticlesController";
-import { DiscussionboardMemberDiscussionboardarticlesDiscussionboardattachmentsController } from "./controllers/discussionBoard/member/discussionBoardArticles/discussionBoardAttachments/DiscussionboardMemberDiscussionboardarticlesDiscussionboardattachmentsController";
-import { DiscussionboardAdminDiscussionboardarticlesDiscussionboardattachmentsController } from "./controllers/discussionBoard/admin/discussionBoardArticles/discussionBoardAttachments/DiscussionboardAdminDiscussionboardarticlesDiscussionboardattachmentsController";
-import { DiscussionboardAdminDiscussionboardmembersController } from "./controllers/discussionBoard/admin/discussionBoardMembers/DiscussionboardAdminDiscussionboardmembersController";
-import { DiscussionboardMemberDiscussionboardmembersController } from "./controllers/discussionBoard/member/discussionBoardMembers/DiscussionboardMemberDiscussionboardmembersController";
-import { DiscussionboardAdminDiscussionboardadminsController } from "./controllers/discussionBoard/admin/discussionBoardAdmins/DiscussionboardAdminDiscussionboardadminsController";
+import { EconpoldiscussionboardEconpoldiscussionboardguestsController } from "./controllers/econPolDiscussionBoard/econPolDiscussionBoardGuests/EconpoldiscussionboardEconpoldiscussionboardguestsController";
+import { EconpoldiscussionboardAdminEconpoldiscussionboardguestsController } from "./controllers/econPolDiscussionBoard/admin/econPolDiscussionBoardGuests/EconpoldiscussionboardAdminEconpoldiscussionboardguestsController";
+import { EconpoldiscussionboardAdminEconpoldiscussionboardguestsSessionsController } from "./controllers/econPolDiscussionBoard/admin/econPolDiscussionBoardGuests/sessions/EconpoldiscussionboardAdminEconpoldiscussionboardguestsSessionsController";
+import { EconpoldiscussionboardEconpoldiscussionboardguestsSessionsController } from "./controllers/econPolDiscussionBoard/econPolDiscussionBoardGuests/sessions/EconpoldiscussionboardEconpoldiscussionboardguestsSessionsController";
+import { EconpoldiscussionboardGuestEconpoldiscussionboardguestsSessionsController } from "./controllers/econPolDiscussionBoard/guest/econPolDiscussionBoardGuests/sessions/EconpoldiscussionboardGuestEconpoldiscussionboardguestsSessionsController";
+import { EconpoldiscussionboardAdminEconpoldiscussionboardmembersController } from "./controllers/econPolDiscussionBoard/admin/econPolDiscussionBoardMembers/EconpoldiscussionboardAdminEconpoldiscussionboardmembersController";
+import { EconpoldiscussionboardEconpoldiscussionboardmembersController } from "./controllers/econPolDiscussionBoard/econPolDiscussionBoardMembers/EconpoldiscussionboardEconpoldiscussionboardmembersController";
+import { EconpoldiscussionboardAdminEconpoldiscussionboardmembersSessionsController } from "./controllers/econPolDiscussionBoard/admin/econPolDiscussionBoardMembers/sessions/EconpoldiscussionboardAdminEconpoldiscussionboardmembersSessionsController";
+import { EconpoldiscussionboardMemberEconpoldiscussionboardmembersSessionsController } from "./controllers/econPolDiscussionBoard/member/econPolDiscussionBoardMembers/sessions/EconpoldiscussionboardMemberEconpoldiscussionboardmembersSessionsController";
+import { EconpoldiscussionboardAdminEconpoldiscussionboardadminsController } from "./controllers/econPolDiscussionBoard/admin/econPolDiscussionBoardAdmins/EconpoldiscussionboardAdminEconpoldiscussionboardadminsController";
+import { EconpoldiscussionboardAdminEconpoldiscussionboardadminsSessionsController } from "./controllers/econPolDiscussionBoard/admin/econPolDiscussionBoardAdmins/sessions/EconpoldiscussionboardAdminEconpoldiscussionboardadminsSessionsController";
+import { EconpoldiscussionboardArticlesController } from "./controllers/econPolDiscussionBoard/articles/EconpoldiscussionboardArticlesController";
+import { EconpoldiscussionboardMemberArticlesController } from "./controllers/econPolDiscussionBoard/member/articles/EconpoldiscussionboardMemberArticlesController";
+import { EconpoldiscussionboardMemberArticlesAttachmentsController } from "./controllers/econPolDiscussionBoard/member/articles/attachments/EconpoldiscussionboardMemberArticlesAttachmentsController";
+import { EconpoldiscussionboardMemberAttachmentsController } from "./controllers/econPolDiscussionBoard/member/attachments/EconpoldiscussionboardMemberAttachmentsController";
+import { EconpoldiscussionboardMemberEconpoldiscussionboardCommentsController } from "./controllers/econPolDiscussionBoard/member/econPolDiscussionBoard/comments/EconpoldiscussionboardMemberEconpoldiscussionboardCommentsController";
 
 @Module({
   controllers: [
     AuthGuestController,
     AuthMemberController,
     AuthAdminController,
-    DiscussionboardDiscussionboardarticlesController,
-    DiscussionboardMemberDiscussionboardarticlesController,
-    DiscussionboardAdminDiscussionboardarticlesController,
-    DiscussionboardMemberDiscussionboardarticlesDiscussionboardattachmentsController,
-    DiscussionboardAdminDiscussionboardarticlesDiscussionboardattachmentsController,
-    DiscussionboardAdminDiscussionboardmembersController,
-    DiscussionboardMemberDiscussionboardmembersController,
-    DiscussionboardAdminDiscussionboardadminsController,
+    EconpoldiscussionboardEconpoldiscussionboardguestsController,
+    EconpoldiscussionboardAdminEconpoldiscussionboardguestsController,
+    EconpoldiscussionboardAdminEconpoldiscussionboardguestsSessionsController,
+    EconpoldiscussionboardEconpoldiscussionboardguestsSessionsController,
+    EconpoldiscussionboardGuestEconpoldiscussionboardguestsSessionsController,
+    EconpoldiscussionboardAdminEconpoldiscussionboardmembersController,
+    EconpoldiscussionboardEconpoldiscussionboardmembersController,
+    EconpoldiscussionboardAdminEconpoldiscussionboardmembersSessionsController,
+    EconpoldiscussionboardMemberEconpoldiscussionboardmembersSessionsController,
+    EconpoldiscussionboardAdminEconpoldiscussionboardadminsController,
+    EconpoldiscussionboardAdminEconpoldiscussionboardadminsSessionsController,
+    EconpoldiscussionboardArticlesController,
+    EconpoldiscussionboardMemberArticlesController,
+    EconpoldiscussionboardMemberArticlesAttachmentsController,
+    EconpoldiscussionboardMemberAttachmentsController,
+    EconpoldiscussionboardMemberEconpoldiscussionboardCommentsController,
   ],
 })
 export class MyModule {}

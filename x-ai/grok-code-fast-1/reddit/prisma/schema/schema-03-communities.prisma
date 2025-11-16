@@ -1,0 +1,123 @@
+/// Community entities where users can post and engage with shared interests.
+///
+/// Represents dedicated spaces for topic-focused discussions and content
+/// sharing, supporting user-created communities with configurable access
+/// controls and moderation tools. Each community serves as a self-governing
+/// space with an owner who sets rules, and members who participate through
+/// posting, voting, and commenting. Communities range from public forums
+/// with broad participation to private groups requiring membership approval.
+///
+/// Communities include categories for discovery, visibility settings to
+/// control access, and activity tracking for engagement monitoring. The
+/// platform supports diverse community models while maintaining
+/// relationships to user creators, subscribers, and content categories.
+/// Critical for building engaged user communities around shared interests
+/// and facilitating meaningful interactions.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner of the community. {@link community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Classification category of the community. {@link
+  /// community_platform_community_categories.id}
+  community_platform_community_category_id String?
+  
+  /// Unique identifying name for the community, used in URLs and display.
+  name String
+  
+  /// Detailed description of the community's purpose, rules, and target
+  /// audience.
+  description String
+  
+  /// Access control level for the community. Valid values: public (anyone can
+  /// view and join), private (invite-only with approval), restricted
+  /// (discovery enabled but membership controlled).
+  visibility String
+  
+  /// Timestamp when the community was first created.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to community settings or metadata.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for archived or removed communities.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  owner community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  category community_platform_community_categories? @relation(fields: [community_platform_community_category_id], references: [id], onDelete: Cascade)
+  
+  community_platform_subscriptions community_platform_subscriptions[]
+  community_platform_posts community_platform_posts[]
+  
+  @@index([community_platform_user_id])
+  
+  @@unique([name])
+  @@index([visibility])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_category_id], map: "community_platform_communities_community_platform_comm_e48822b1")
+}
+
+/// User subscriptions linking users to communities for personalized content
+/// delivery.
+///
+/// Tracks which communities each user has chosen to subscribe to, enabling
+/// personalized feeds and notification delivery. Subscriptions can be active
+/// or inactive based on user preference, supporting flexible discovery and
+/// participation. Subscriptions include timestamps for analytics and
+/// relationship maintenance.
+///
+/// Subscriptions form the core user-community relationships, supporting
+/// recommendation algorithms and personalized experiences. Activity tracking
+/// helps maintain engagement metrics while respecting user privacy and
+/// subscription management needs. Essential for delivering relevant content
+/// feeds and community notifications.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who subscribed to the community. {@link community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Community that was subscribed to. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Timestamp when the subscription was created.
+  created_at DateTime
+  
+  /// Timestamp of the last subscription activity or status change.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for terminated subscriptions.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  subscriber community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_id, community_platform_community_id], map: "community_platform_subscriptions_community_platform_us_bb5712f6")
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_subscriptions_community_platform_co_1b9a6f7b")
+}

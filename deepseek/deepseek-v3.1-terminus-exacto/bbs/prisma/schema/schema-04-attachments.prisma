@@ -1,0 +1,183 @@
+/// Central repository for all file attachments uploaded to the discussion
+/// board.
+///
+/// Stores metadata and properties for files attached to articles and
+/// comments, including file information, upload details, and security
+/// validation status. Each attachment can be referenced by multiple articles
+/// or comments through junction tables.
+///
+/// Attachments undergo security scanning and validation before being made
+/// available for use. The system supports various file types including
+/// images (JPG, PNG, GIF) and documents (PDF, DOC, TXT) with size limits
+/// enforced during upload.
+///
+/// Soft deletion is supported to maintain audit trails while allowing
+/// content moderation.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original filename of the uploaded attachment.
+  file_name String
+  
+  /// Size of the file in bytes.
+  file_size Int
+  
+  /// MIME type of the uploaded file.
+  mime_type String
+  
+  /// SHA-256 hash of the file content for duplicate detection.
+  file_hash String
+  
+  /// Path to the file in the storage system.
+  storage_path String
+  
+  /// Security validation status (pending, approved, rejected).
+  security_status String
+  
+  /// Timestamp when the attachment was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when the attachment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the attachment was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  discussion_board_article_attachments discussion_board_article_attachments[]
+  discussion_board_comment_attachments discussion_board_comment_attachments[]
+  
+  @@unique([file_hash])
+  @@index([created_at])
+  @@index([mime_type])
+  @@index([security_status])
+}
+
+/// Junction table managing the many-to-many relationship between articles
+/// and attachments.
+///
+/// Links discussion board articles to their associated file attachments,
+/// allowing multiple attachments per article and multiple articles to
+/// reference the same attachment. This junction table enables flexible
+/// attachment sharing while maintaining proper referential integrity.
+///
+/// Each relationship includes metadata about when the attachment was added
+/// to the article and optional description text for context. The system
+/// tracks attachment usage across articles for proper lifecycle management.
+///
+/// Managed through parent article operations with no independent API
+/// endpoints required.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Target attachment's {@link discussion_board_attachments.id}.
+  discussion_board_attachment_id String
+  
+  /// Optional description of the attachment's relevance to the article.
+  description String?
+  
+  /// Order in which attachments should be displayed for the article.
+  display_order Int
+  
+  /// Timestamp when the attachment was linked to the article.
+  created_at DateTime
+  
+  /// Timestamp when the relationship was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the relationship was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  attachment discussion_board_attachments @relation(fields: [discussion_board_attachment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id, discussion_board_attachment_id], map: "discussion_board_article_attachments_discussion_board__ff7d570b")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id], map: "discussion_board_article_attachments_discussion_board__7a24ba63")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_attachment_id], map: "discussion_board_article_attachments_discussion_board__c1c7651c")
+  @@index([display_order])
+}
+
+/// Junction table managing the many-to-many relationship between comments
+/// and attachments.
+///
+/// Links discussion board comments to their associated file attachments,
+/// supporting multiple attachments per comment and attachment reuse across
+/// comments. This design enables rich comment content with supporting
+/// evidence while maintaining data integrity.
+///
+/// Each relationship includes metadata about attachment usage context and
+/// display ordering. The system ensures proper attachment lifecycle
+/// management when comments are modified or deleted.
+///
+/// Managed through parent comment operations with no independent user-facing
+/// functionality.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target comment's {@link discussion_board_comments.id}.
+  discussion_board_comment_id String
+  
+  /// Target attachment's {@link discussion_board_attachments.id}.
+  discussion_board_attachment_id String
+  
+  /// Optional description of the attachment's relevance to the comment.
+  description String?
+  
+  /// Order in which attachments should be displayed for the comment.
+  display_order Int
+  
+  /// Timestamp when the attachment was linked to the comment.
+  created_at DateTime
+  
+  /// Timestamp when the relationship was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the relationship was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  attachment discussion_board_attachments @relation(fields: [discussion_board_attachment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_id, discussion_board_attachment_id], map: "discussion_board_comment_attachments_discussion_board__d6629b5c")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id], map: "discussion_board_comment_attachments_discussion_board__e4f2a788")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_attachment_id], map: "discussion_board_comment_attachments_discussion_board__454f3843")
+  @@index([display_order])
+}

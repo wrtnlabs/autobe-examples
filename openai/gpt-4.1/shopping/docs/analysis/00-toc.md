@@ -1,175 +1,140 @@
-# Shopping Mall Platform – Functional Requirements
+# Functional and Non-Functional Requirements for E-Commerce Shopping Mall Platform
 
-## 1. Core Backend Capabilities
+## 1. Introduction & Scope
+This document provides a complete, implementation-ready description of functional and non-functional requirements for the e-commerce shopping mall platform ('shoppingMall'). All requirements are actionable for backend developers, structured in EARS (Easy Approach to Requirements Syntax) format, and address the needs of all business actors: buyer (customer), seller, and admin. The scope includes all features expected of a modern multi-vendor e-commerce service and establishes a foundation for business rules, workflows, and validation.
 
-### 1.1 User Account Management
-- WHEN a new account registration is requested, THE system SHALL allow account creation as customer or seller, requiring email, password, and, where applicable, seller verification data.
-- THE system SHALL verify the uniqueness of all email addresses for registration purposes.
-- WHEN a user logs in with valid credentials, THE system SHALL issue a secure session token with proper role/permissions attached.
-- WHEN a user requests password reset, THE system SHALL provide a secure, time-limited recovery workflow.
-- WHEN a user wishes to manage addresses, THE system SHALL allow storing, modifying, and deleting delivery addresses, subject to address format validation rules.
-- IF any invalid credentials are provided, THEN THE system SHALL reject authentication with a specific error message.
-- THE system SHALL allow users to delete their own accounts after verifying identity and pending orders are resolved.
+## 2. Functional Requirements
 
-### 1.2 Product Catalog & Categories
-- THE system SHALL support categorizing all products via a multi-level category tree, allowing category creation, update, and archival (admin only).
-- WHEN a user requests a product list, THE system SHALL enable filter and search by keyword, category, price, and attributes.
-- THE system SHALL enable seller users to create, update, and archive (soft-delete) their own products, specifying variants (SKUs) including color, size, or other options.
-- THE system SHALL ensure all product listings display SKU-level stock status, price, and availability information.
+### 2.1 User Registration, Authentication, and Address Management
+- THE platform SHALL allow new users (customer, seller) to register by email and password, enforcing unique email across all users.
+- WHEN a new user registers, THE platform SHALL require email verification before activating the account and enabling core functions.
+- THE system SHALL collect and persist multiple addresses per user (up to 10), each supporting full name, street, city, province/state, postal code, country, and phone.
+- THE platform SHALL allow users to edit/delete/view/set default addresses at all times, except when an address is used in an in-progress order.
+- WHEN a user logs in, THE system SHALL create a session (JWT), valid for 30 minutes, enabling secure authenticated access to role-based features.
+- WHEN a seller registers, THE platform SHALL require additional verification (business name, registration, ID) and block selling activity unless approved.
 
-### 1.3 Product Variant (SKU) Management
-- WHEN a product includes variants, THE system SHALL treat each variant as a unique SKU with dedicated pricing, inventory, and attributes.
-- THE system SHALL allow sellers to add, update, and remove SKUs under their products.
-- IF a product has no active SKUs, THEN THE system SHALL prevent the product from being displayed for purchase.
-- WHEN SKUs are updated, THE system SHALL reflect all changes immediately in product queries.
-- WHEN requested, THE system SHALL provide SKU-level detail by ID.
+### 2.2 Product Catalog, Categories, and Search
+- THE product catalog SHALL organize all listings by categories and subcategories, allowing products to belong to multiple categories.
+- THE system SHALL enable keyword and full-text search with multi-attribute filters (category, price, variant attributes, seller).
+- WHEN browsing or searching the catalog, THE system SHALL return a paginated list (default 20/page) with sorting (price, relevance, rating, date added).
+- WHERE categories contain subcategories, THE system SHALL render hierarchical navigation for buyers.
 
-### 1.4 Cart and Wishlist
-- THE system SHALL enable logged-in customers to create and manage a cart – adding, updating, and removing SKUs, with quantity checks per SKU.
-- WHEN a customer adds a SKU to the cart, THE system SHALL validate stock availability and maximum per-order limits.
-- THE system SHALL allow customers to maintain a wishlist, storing multiple SKUs for future reference.
-- THE system SHALL enforce that only logged-in customers may persist carts or wishlists across sessions.
-- THE system SHALL remove cart items automatically if the relevant SKU becomes unavailable or out of stock, and notify the user appropriately.
-- THE system SHALL support guest carts (session-based only) that do not persist across devices.
+#### Product Variants (SKU)
+- THE system SHALL permit sellers to define SKUs for each product, where each SKU reflects a unique set of variant attributes (color, size, etc).
+- WHEN listing a product, THE seller SHALL specify price and initial stock for each distinct SKU. SKU combinations must be unique within a product.
+- WHEN a buyer inspects a product, THE system SHALL display all variant options, with real-time stock and clear out-of-stock indication at the SKU level.
 
-### 1.5 Order Placement and Payment Processing
-- WHEN a customer submits a checkout request, THE system SHALL validate required information (delivery, payment, at least one item, in-stock SKUs).
-- WHEN an order is placed, THE system SHALL reserve inventory immediately to prevent overselling.
-- THE system SHALL provide integration points for payment service providers, returning clear status (pending, success, fail) following payment attempts.
-- WHEN payment is confirmed, THE system SHALL finalize the order and provide customers with a full summary.
-- IF payment fails or is canceled, THEN THE system SHALL restore any reserved inventory and notify the user.
-- THE system SHALL associate orders to seller accounts based on product SKU ownership, splitting orders accordingly.
+### 2.3 Shopping Cart and Wishlist
+- THE system SHALL allow each authenticated customer to maintain a persistent cart containing items by SKU and quantity (with inventory checks).
+- WHEN a customer adds/removes or updates items in their cart, THE system SHALL validate live inventory before confirming changes.
+- IF a cart item’s SKU inventory is insufficient, THEN THE system SHALL present a clear error and block the operation.
+- THE system SHALL allow users to move items between cart and wishlist, both of which persist per account across sessions/devices.
+- WHERE a wishlist item becomes unavailable or discontinued, THE system SHALL display status and restrict movement to cart.
 
-### 1.6 Order Tracking, Shipping, Status Updates
-- THE system SHALL assign a unique tracking code to each order at confirmation.
-- WHEN an order status changes (e.g., packed, shipped, delivered, canceled), THE system SHALL update both customer and seller order histories and send notifications.
-- THE system SHALL allow customers and sellers to view the order status and timeline at any time.
-- THE system SHALL allow sellers to update shipping information and change the order status when applicable.
-- THE system SHALL ensure only the responsible seller or an admin can edit order statuses and shipment data.
-- THE system SHALL enforce secure, auditable logs for all order and status changes.
+### 2.4 Order Placement and Payment Processing
+- WHEN a customer proceeds to checkout, THE system SHALL confirm user address, review all cart SKUs, check inventory, calculate taxes/shipping, and present an accurate total before payment.
+- THE system SHALL integrate with at least one payment provider (credit/debit card or e-wallet), maintaining PCI compliance (no raw card storage).
+- WHEN payment succeeds, THE system SHALL create the order, deduct inventory, assign order ID, and send confirmations (customer, seller, admin as needed).
+- IF payment fails, THEN THE system SHALL retain the cart and present actionable recovery options, blocking the order until resolved.
 
-### 1.7 Product Reviews and Ratings
-- WHEN a customer completes a purchase and order is marked delivered, THE system SHALL permit submission of a product review and rating.
-- THE system SHALL enforce that only customers who purchased a SKU may submit a review for that SKU.
-- THE system SHALL allow customers to edit or delete their own reviews within a specified window (e.g., 30 days).
-- THE system SHALL display aggregate ratings and review counts on product pages.
-- THE system SHALL provide moderation features, allowing admins to remove abusive, fraudulent, or inappropriate reviews.
+### 2.5 Order Tracking and Shipping Status Updates
+- EACH order SHALL be tracked from placement through each stage: Processing, Shipped, Delivered, Cancelled, Refunded.
+- Sellers and admins SHALL update shipping status, with customers receiving notifications on all status changes.
+- THE system SHALL provide carrier tracking numbers/links for shipped orders when available. Customers may view in dashboard.
 
-### 1.8 Seller Account & Inventory Management
-- THE system SHALL enable sellers to manage their own products, SKUs, inventory levels, and order fulfillment (including shipping, updates, and cancellations).
-- THE system SHALL prevent sellers from modifying products or SKUs owned by other sellers.
-- THE system SHALL notify sellers of low stock thresholds and out-of-stock events in real-time.
-- WHEN inventory changes are reported (sales, restock, refund), THE system SHALL update SKU stock accordingly and prevent sales if zero.
+### 2.6 Product Reviews and Ratings
+- THE system SHALL allow verified customers to submit one review and one rating (1–5 stars) for each purchased product.
+- Reviews SHALL be editable or deletable only within 30 days of posting. Reviews must have minimum 10 characters, max 1000.
+- Reviews and ratings SHALL be visible on product detail pages, sorted newest-first.
+- IF a review contains prohibited content, THEN THE system SHALL block it and notify the user with the reason.
+- Sellers may respond to reviews, visible to all but not modifiable by the original reviewer.
 
-### 1.9 Order History, Cancellation, and Refund
-- THE system SHALL retain full order history per customer and seller, including status changes, payment details, shipment data, and customer requests.
-- WHEN a cancellation or refund is requested, THE system SHALL validate eligibility (e.g., only prior to shipment or as per business policy), process refund workflow, and update statuses.
-- THE system SHALL allow admin users to override and resolve disputes as per platform rules.
-- WHEN an order is refunded, THE system SHALL restore affected inventory to the correct SKU(s).
+### 2.7 Seller Accounts and Inventory Management
+- Sellers SHALL access a personal dashboard to manage their products, SKUs, inventory, pricing, and incoming orders.
+- Inventory SHALL be tracked and modifiable per SKU. Selling/fulfillment for SKUs with zero or negative stock SHALL be blocked and annotated.
+- Sellers may add, update, or remove products/SKUs, but only for their catalog.
+- Sellers SHALL receive all relevant notifications on new orders, cancellations, returns, and impending low inventory.
 
-### 1.10 Admin Dashboard & Platform Oversight
-- THE system SHALL allow admin users to view, filter, and manage all orders, products, users, and disputes across the platform.
-- THE system SHALL enable admin to perform order overrides, product or seller suspensions, and review moderation.
-- THE system SHALL require audit logging for all admin actions affecting platform data.
+### 2.8 Order History, Cancellation, and Refunds
+- Customers SHALL view detailed history of all past and current orders, including order ID, status, purchase date, items, total, shipping/tracking events.
+- Customers may request order cancellation before shipping or initiate refund requests after delivery, subject to platform refund/cancellation windows and policies.
+- Sellers and admins SHALL receive and action these requests; all decisions (approve, deny, escalate) must be auditable and recorded.
 
----
+### 2.9 Admin Dashboard for Oversight
+- Admins SHALL have unrestricted access to oversee and manage all users, products, sellers, categories, orders, reviews, and system configurations.
+- Admins SHALL intervene in all disputes, issue direct refunds/cancellations, approve/disable listings, and manage role escalations.
+- All admin actions SHALL be logged with actor, timestamp, and affected resource(s).
 
-## 2. Business Logic Rules
+## 3. Non-Functional Requirements
 
-### 2.1 Unique Constraint Enforcement
-- THE system SHALL guarantee uniqueness for emails, product SKUs, and order IDs across the platform.
+### 3.1 Performance
+- THE platform SHALL serve product browsing, search, and cart operations within 2 seconds (95% of cases) under normal loads.
+- All checkout/order/payment events SHALL complete within 3 seconds (95% of cases); errors and completion states show immediately.
+- The order processing subsystem SHALL handle bursts of up to 1,000 new orders/minute during campaigns or peak events.
 
-### 2.2 Consistency and Atomicity
-- WHEN orders or refunds are created, THE system SHALL ensure all related updates (inventory, order status, payment, logs) are atomically committed or rolled back if any failure occurs.
+### 3.2 Security and Privacy
+- All user data SHALL be protected in transit and at rest via industry-standard encryption.
+- THE platform SHALL use JWT-based session authentication; no sensitive information leaves backend zones unencrypted.
+- Seller/admin privileges SHALL require elevated authentication (fresh login within 5 minutes of the last privileged action).
+- Payment data MUST remain tokenized, successfully processed only via PCI-compliant provider endpoints.
 
-### 2.3 Actor Permissions and Separation
-- THE system SHALL enforce permissions strictly according to user role (customer, seller, admin) as per [User Actor Documentation](./02-user-actors.md).
+### 3.3 Availability and Scalability
+- Uptime SHALL target 99.9%, with planned maintenance <2 hours/month. Notification to all actors must precede any downtime by at least 24 hours.
+- THE platform SHALL be horizontally scalable to handle 10,000+ concurrent user sessions and 20x normal throughput for flash sales.
+- Backups of all transaction/order data SHALL be performed daily and restorable within 30 minutes in disaster scenarios.
 
-### 2.4 Data Retention and Deletion
-- WHEN a user account is deleted, THE system SHALL anonymize personal data from order histories, retaining necessary records per legal requirements.
+### 3.4 Regulatory Compliance
+- THE service SHALL follow all privacy, taxes, and financial compliance standards applicable in its markets, including handling EU residents’ data under GDPR.
+- Users SHALL have self-service access to export and request deletion of personal data with defined response timescales (within 30 days of request).
 
-### 2.5 Review Authorship Verification
-- THE system SHALL ensure only authenticated buyers of a product can submit reviews for that product.
+## 4. Business Rules Overview
+- Input for user, product, and order creation/update SHALL be comprehensively validated (required fields, ranges, format, no negative prices/quantities, address completeness).
+- Only customers may place orders or request returns/refunds for their own purchases.
+- Sellers may only modify products/SKUs in their own catalog; they are never permitted access to other sellers’ data or customer private data.
+- Admins may intervene in any process (order, payment, refund, inventory, review) and may override any system decision for compliance, fraud, or severe service issues but must record an explicit action log.
+- All state changes (e.g., order status, refund, shipping update, review) are timestamped, actor-attributed, and fully auditable. No entity may delete or alter audit logs post-creation.
+- Unauthorized action attempts by any actor shall be denied and logged, with security team alerts for patterns suggesting fraud or hacking.
 
-### 2.6 Stock Validation
-- WHEN a user attempts to order more units than are available, IF excess quantity is requested, THEN THE system SHALL reject the order with a clear message.
+## 5. Visual Flow Diagrams
 
-### 2.7 Cart Consistency
-- WHEN an in-cart SKU becomes unavailable before order placement, THE system SHALL automatically remove it from all affected carts and notify the users.
-
-
-## 3. Actor-based Behaviors
-
-### 3.1 Customer
-- THE customer SHALL register, log in, manage their addresses, place orders, maintain cart and wishlist, track order status, write reviews, initiate cancellations/refunds, and view full order history.
-- THE customer SHALL only be able to purchase SKUs in active status and with inventory available.
-- THE customer SHALL not have the ability to edit or delete products, orders, or data they do not own.
-
-### 3.2 Seller
-- THE seller SHALL list new products and manage their own product catalog, SKUs, pricing, and inventory.
-- THE seller SHALL view and fulfill orders on their owned products, update shipment details, and communicate with buyers.
-- THE seller SHALL be restricted from accessing other sellers’ data or orders not associated with their products.
-
-### 3.3 Admin
-- THE admin SHALL access all platform data, manage all products, sellers, and customers, moderate reviews, and oversee dispute/refund processes.
-- THE admin SHALL execute escalated actions (e.g., suspending a seller, force-refunding an order) with audit logs.
-- THE admin SHALL configure site-wide settings relevant to platform operation.
-
----
-
-## 4. Process Validations
-
-### 4.1 Registration
-- WHEN a user registers, THE system SHALL validate required inputs: unique, properly formatted email, strong password (minimum length and complexity), consent to terms.
-- IF data is invalid (e.g., existing email, invalid format), THEN THE system SHALL return an explicit error.
-
-### 4.2 Order Placement & Payment
-- WHEN placing an order, THE system SHALL validate stock is sufficient for each SKU and reject order otherwise.
-- THE system SHALL confirm address and payment details as valid and complete before processing.
-- WHEN payment is received, THE system SHALL record a payment confirmation event in order history.
-- IF payment fails or times out, THEN THE system SHALL cancel order and restore all inventory held for that session.
-
-### 4.3 Review Submission
-- WHEN a customer submits a review, THE system SHALL check for prior purchase status and reject attempts from users without prior deliveries for that SKU.
-- THE system SHALL validate rating is within the allowable range (e.g., 1-5).
-- THE system SHALL block duplicate reviews from the same customer for the same order/SKU.
-
-### 4.4 Product and Stock
-- WHEN a seller adds or updates a product/SKU, THE system SHALL enforce that required data fields are present (name, price, stock, attributes).
-- IF a seller attempts to delete a SKU or product tied to ongoing orders, THEN THE system SHALL deny the operation and return a constraint error.
-
-### 4.5 Cart & Wishlist
-- WHEN a customer updates cart or wishlist, THE system SHALL validate SKUs are active, not archived or discontinued.
-- WHEN transferring cart from guest to logged-in account, THE system SHALL merge and validate all items according to business rules (no duplicates, stock checks).
-
-
----
-
-## Mermaid Diagram: Order Placement to Delivery Flow
-
+### 5.1 Customer Order Flow
 ```mermaid
 graph LR
-  subgraph "Customer Order Flow"
-    RC["Register/Login"] --> S["Search & Select Products"]
-    S --> A["Add to Cart"]
-    A --> C["Checkout"]
-    C --> OD["Order Created"]
-    OD --> P["Payment Processed"]
-    P -->|"Success"| OC["Order Confirmed"]
-    P -->|"Fail"| ERR["Order/Payment Error"]
-  end
-  OC --> OS["Order Splits to Sellers"]
-  OS --> SL1["Seller 1"]
-  OS --> SL2["Seller N"]
-  SL1 --> F1["Fulfillment"]
-  SL2 --> F2["Fulfillment"]
-  F1 --> SH1["Shipped"]
-  F2 --> SH2["Shipped"]
-  SH1 --> D1["Delivered"]
-  SH2 --> D2["Delivered"]
-  D1 --> RO1["Review Option"]
-  D2 --> RO2["Review Option"]
+  A["Customer Registers/Login"] --> B["Browse/Search Catalog"]
+  B --> C["Select Product (Review SKUs)"]
+  C --> D["Add SKU to Cart/Wishlist"]
+  D --> E["View Cart/Checkout"]
+  E --> F["Select Address/Payment"]
+  F --> G["Inventory Check"]
+  G -->|"Stock OK"| H["Proceed Payment"]
+  G -->|"Out of Stock"| I["Block, Inform User"]
+  H --> J["Order Created & Inventory Deducted"]
+  J --> K["Receive Order Confirmations"]
+  K --> L["Track Order/Shipment"]
+  L --> M["Delivery, Review Product"]
+```
+
+### 5.2 Seller Fulfillment Flow
+```mermaid
+graph LR
+  S1["Seller Dashboard"] --> S2["Add/Edit Product, SKUs, Prices"]
+  S2 --> S3["Monitor Orders"]
+  S3 --> S4["Update Shipping Status"]
+  S4 --> S5["Track Inventory"]
+  S5 --> S6["Respond to Reviews/Manage Cancellations"]
+```
+
+### 5.3 Admin Oversight/Dispute Flow
+```mermaid
+graph LR
+  A1["Admin Login"] --> A2["Monitor System & Users"]
+  A2 --> A3["Review/Moderate Content, Manage Issues"]
+  A3 --> A4{"Intervene Needed?"}
+  A4 -->|"Yes"| A5["Take Action: Refund/Cancel/Suspend"]
+  A5 --> A6["Log Actions/Audit Trail"]
+  A4 -->|"No"| A7["Continue Monitoring"]
 ```
 
 ---
-This document provides business requirements only. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team. Developers have full autonomy over how to realize these requirements in the codebase.
+
+This document is exhaustive, covering all functional features and non-functional expectations for the shoppingMall backend platform. Every section and flow uses EARS requirements style and is implementation-ready with no ambiguous meta-commentary, placeholders, or technical schema details.

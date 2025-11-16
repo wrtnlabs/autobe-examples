@@ -1,0 +1,254 @@
+/// Central record of all moderation actions performed on the economic board.
+///
+/// This is the primary audit entity that captures the metadata of all
+/// moderation actions including warnings, deletions, and locks. Each action
+/// record is linked to exactly one specific type of action through the
+/// subtype tables, ensuring database-level integrity and avoiding nullable
+/// fields.
+///
+/// All moderation activities originate from this table, which is accessed by
+/// moderators on their dashboard to review and manage community content. The
+/// table tracks who performed the action, when it occurred, and provides the
+/// context for the specific moderation event.
+///
+/// Subtype tables (warnings, deletions, locks) extend this base record with
+/// domain-specific data.
+///
+/// Each action can be associated with a citizen (target) and a moderator
+/// (actor), creating a complete audit trail. The deleted_at field allows for
+/// reversible actions and audit retention in compliance with platform
+/// policy.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen targeted by this moderation action. {@link
+  /// economic_board_citizens.id}.
+  citizen_id String
+  
+  /// The moderator who performed this action. {@link
+  /// economic_board_moderators.id}.
+  moderator_id String
+  
+  /// UTC timestamp when this moderation action was initiated. Always non-null.
+  created_at DateTime
+  
+  /// UTC timestamp when this moderation action was last modified. Always
+  /// non-null.
+  updated_at DateTime
+  
+  /// UTC timestamp when this moderation action was logically deleted. Null if
+  /// still active. Required for audit trail retention of all actions per
+  /// policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen economic_board_citizens @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  moderator economic_board_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  economic_board_moderation_warnings economic_board_moderation_warnings?
+  economic_board_moderation_deletions economic_board_moderation_deletions?
+  economic_board_moderation_locks economic_board_moderation_locks?
+  
+  @@index([citizen_id, created_at])
+  @@index([moderator_id, created_at])
+  @@index([created_at])
+}
+
+/// Specific record for warning actions issued to citizens for policy
+/// violations.
+///
+/// This subsidiary table captures detailed information about each warning
+/// issued to a citizen. Each warning record is linked via a 1:1 relationship
+/// to a main moderation action, ensuring that every warning has exactly one
+/// associated audit record in economic_board_moderation_actions.
+///
+/// Warnings are tracked per citizen to enforce the policy of suspending
+/// users after three active warnings. Each warning entry includes the reason
+/// given by the moderator, providing transparency to the citizen.
+///
+/// The attached moderation action record (in
+/// economic_board_moderation_actions) contains the timestamps and moderator
+/// information. This table is exclusively accessed through its parent action
+/// record and never independently managed by users.
+///
+/// No other fields are needed as all required context is already captured in
+/// the parent table and through the foreign key relationship to citizens.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_moderation_warnings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main moderation action record that this warning extends. 1:1
+  /// relationship with economic_board_moderation_actions. {@link
+  /// economic_board_moderation_actions.id}.
+  economic_board_moderation_action_id String
+  
+  /// The specific reason given by the moderator for issuing this warning. Must
+  /// be at least 10 characters as required by policy. Required for
+  /// transparency and audit.
+  reason String
+  
+  /// The number of active warnings the citizen had at the time this warning
+  /// was issued. Used to trigger suspension when reaching three warnings.
+  warning_count_on_issue Int
+  
+  /// UTC timestamp when this warning was issued. Mirrors the parent action's
+  /// created_at and maintained for consistency.
+  created_at DateTime
+  
+  /// UTC timestamp when this warning was last updated. Mirrors the parent
+  /// action's updated_at and maintained for consistency.
+  updated_at DateTime
+  
+  /// UTC timestamp when this warning was logically deleted. Null if still
+  /// active. Required for audit trail retention of all actions per policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  action economic_board_moderation_actions @relation(fields: [economic_board_moderation_action_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_moderation_action_id], map: "economic_board_moderation_warnings_economic_board_mode_0b56cff2")
+}
+
+/// Specific record for post or comment deletions performed by moderators.
+///
+/// This subsidiary table captures detailed information about each deletion
+/// action taken by a moderator. Each deletion record is linked via a 1:1
+/// relationship to a main moderation action, ensuring that every deletion
+/// has exactly one associated audit record in
+/// economic_board_moderation_actions.
+///
+/// Deletions are tracked to ensure transparency to citizens who had their
+/// content removed and to provide an audit trail for compliance. This table
+/// stores the reason for deletion and the specific content affected (via
+/// foreign key in the parent table).
+///
+/// The attached moderation action record (in
+/// economic_board_moderation_actions) contains the timestamps and moderator
+/// information. This table is exclusively accessed through its parent action
+/// record and never independently managed by users.
+///
+/// No other fields are needed as all required context is already captured in
+/// the parent table and through the foreign key relationship to content
+/// entities.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_moderation_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main moderation action record that this deletion extends. 1:1
+  /// relationship with economic_board_moderation_actions. {@link
+  /// economic_board_moderation_actions.id}.
+  economic_board_moderation_action_id String
+  
+  /// The specific reason given by the moderator for this deletion. Must be at
+  /// least 10 characters as required by policy. Required for transparency and
+  /// audit.
+  reason String
+  
+  /// UTC timestamp when this deletion was performed. Mirrors the parent
+  /// action's created_at and maintained for consistency.
+  created_at DateTime
+  
+  /// UTC timestamp when this deletion was last updated. Mirrors the parent
+  /// action's updated_at and maintained for consistency.
+  updated_at DateTime
+  
+  /// UTC timestamp when this deletion was logically deleted. Null if still
+  /// active. Required for audit trail retention of all actions per policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  action economic_board_moderation_actions @relation(fields: [economic_board_moderation_action_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_moderation_action_id], map: "economic_board_moderation_deletions_economic_board_mod_1fbe19af")
+}
+
+/// Specific record for discussion threads locked by moderators to prevent
+/// further comments.
+///
+/// This subsidiary table captures detailed information about each thread
+/// lock action performed by a moderator. Each lock record is linked via a
+/// 1:1 relationship to a main moderation action, ensuring that every lock
+/// has exactly one associated audit record in
+/// economic_board_moderation_actions.
+///
+/// Thread locks are used to prevent further comments on contentious
+/// discussions while preserving the existing conversation history. This
+/// table stores a custom message explaining the lock reason, which is
+/// displayed on the locked thread.
+///
+/// The attached moderation action record (in
+/// economic_board_moderation_actions) contains the timestamps and moderator
+/// information. This table is exclusively accessed through its parent action
+/// record and never independently managed by users.
+///
+/// No other fields are needed as all required context is already captured in
+/// the parent table and through the foreign key relationship to the target
+/// post.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_moderation_locks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main moderation action record that this lock extends. 1:1
+  /// relationship with economic_board_moderation_actions. {@link
+  /// economic_board_moderation_actions.id}.
+  economic_board_moderation_action_id String
+  
+  /// The message displayed to users when a thread is locked. This can be
+  /// customized by the moderator to explain the reason (e.g., 'Discussion
+  /// closed due to personal attacks'). Must be clear and comply with
+  /// transparency policy.
+  lock_message String
+  
+  /// UTC timestamp when this lock was applied. Mirrors the parent action's
+  /// created_at and maintained for consistency.
+  created_at DateTime
+  
+  /// UTC timestamp when this lock was last updated. Mirrors the parent
+  /// action's updated_at and maintained for consistency.
+  updated_at DateTime
+  
+  /// UTC timestamp when this lock was logically removed. Null if still active.
+  /// Required for audit trail retention of all actions per policy.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  action economic_board_moderation_actions @relation(fields: [economic_board_moderation_action_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_moderation_action_id], map: "economic_board_moderation_locks_economic_board_moderat_c29bb120")
+}

@@ -32,6 +32,8 @@ export async function getDiscussionBoardAdminUsersUserIdSessionsSessionId(props:
     href: session.href,
     referrer: session.referrer,
     created_at: toISOStringSafe(session.created_at),
-    expired_at: session.expired_at ? toISOStringSafe(session.expired_at) : null,
+    expired_at: session.expired_at
+      ? toISOStringSafe(session.expired_at)
+      : undefined,
   };
 }

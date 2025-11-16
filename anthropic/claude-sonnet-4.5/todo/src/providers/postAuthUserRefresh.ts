@@ -13,11 +13,10 @@ import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IA
 export async function postAuthUserRefresh(props: {
   body: ITodoListUser.IRefresh;
 }): Promise<ITodoListUser.IAuthorized> {
-  // Step 1: Verify and decode the refresh token
   let decoded: {
     id: string;
     session_id: string;
-    type: string;
+    type: "user";
   };
 
   try {
@@ -28,18 +27,16 @@ export async function postAuthUserRefresh(props: {
     ) as {
       id: string;
       session_id: string;
-      type: string;
+      type: "user";
     };
   } catch (error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
 
-  // Step 2: Validate type matches expected actor type
   if (decoded.type !== "user") {
     throw new HttpException("Invalid token type", 403);
   }
 
-  // Step 3: Validate session exists and user is active
   const session = await MyGlobal.prisma.todo_list_user_sessions.findFirst({
     where: {
       id: decoded.session_id,
@@ -58,68 +55,63 @@ export async function postAuthUserRefresh(props: {
     throw new HttpException("Account has been deleted", 403);
   }
 
-  // Step 4: Generate new tokens with SAME session_id
-  const nowTimestamp = Date.now();
-  const accessExpiresMs = nowTimestamp + 60 * 60 * 1000;
-  const refreshExpiresMs = nowTimestamp + 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const accessExpiresMs = now + 60 * 60 * 1000;
+  const refreshExpiresMs = now + 7 * 24 * 60 * 60 * 1000;
+  const accessExpiresStr = toISOStringSafe(new Date(accessExpiresMs));
+  const refreshExpiresStr = toISOStringSafe(new Date(refreshExpiresMs));
 
-  const nowIso = toISOStringSafe(new Date(nowTimestamp));
-  const accessExpiresIso = toISOStringSafe(new Date(accessExpiresMs));
-  const refreshExpiresIso = toISOStringSafe(new Date(refreshExpiresMs));
+  const token = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpiresStr,
+    refreshable_until: refreshExpiresStr,
+  };
 
-  const accessToken = jwt.sign(
-    {
-      type: "user",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: nowIso,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "1h",
-      issuer: "autobe",
-    },
-  );
-
-  const refreshToken = jwt.sign(
-    {
-      type: "user",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: nowIso,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-      issuer: "autobe",
-    },
-  );
-
-  // Step 5: Update session expiration time
   await MyGlobal.prisma.todo_list_user_sessions.update({
     where: {
       id: decoded.session_id,
     },
     data: {
-      expired_at: toISOStringSafe(new Date(refreshExpiresMs)),
+      expired_at: new Date(refreshExpiresMs),
     },
   });
 
-  // Step 6: Return user profile with new tokens
   return {
     id: session.user.id,
     email: session.user.email,
     created_at: toISOStringSafe(session.user.created_at),
     updated_at: toISOStringSafe(session.user.updated_at),
-    deleted_at: session.user.deleted_at
-      ? toISOStringSafe(session.user.deleted_at)
-      : undefined,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiresIso,
-      refreshable_until: refreshExpiresIso,
-    },
+    email_verified: session.user.email_verified,
+    deleted_at:
+      session.user.deleted_at === null
+        ? undefined
+        : toISOStringSafe(session.user.deleted_at),
+    token,
   };
 }

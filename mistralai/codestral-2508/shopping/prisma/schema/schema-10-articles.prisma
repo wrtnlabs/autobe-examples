@@ -1,0 +1,129 @@
+/// Articles published on the shopping mall platform.
+///
+/// Stores article content including title, body, and metadata. Each article
+/// belongs to a specific channel and section, and is associated with a
+/// customer who created it. Articles support soft deletion to maintain audit
+/// trails while allowing content moderation.
+///
+/// Articles are the primary content type for the platform's BBS (Bulletin
+/// Board System) functionality, allowing customers to share information, ask
+/// questions, and engage with the community.
+///
+/// The article content includes title and body fields for structured content
+/// formatting. Soft deletion is supported to maintain audit trails while
+/// allowing content moderation.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Channel where the article is published. {@link shopping_mall_channels.id}
+  shopping_mall_channel_id String
+  
+  /// Section where the article is published. {@link shopping_mall_sections.id}
+  shopping_mall_section_id String
+  
+  /// Customer who created the article. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Session used to create the article. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Title of the article.
+  title String
+  
+  /// Content of the article.
+  body String
+  
+  /// When the article was created.
+  created_at DateTime
+  
+  /// When the article was last updated.
+  updated_at DateTime
+  
+  /// When the article was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
+  section shopping_mall_sections @relation(fields: [shopping_mall_section_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_article_comments shopping_mall_article_comments[]
+  
+  @@index([shopping_mall_section_id])
+  @@index([shopping_mall_customer_id])
+  @@index([shopping_mall_customer_session_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_channel_id, shopping_mall_section_id], map: "shopping_mall_articles_shopping_mall_channel_id_shoppi_cc01ad7c")
+}
+
+/// Comments on articles published on the shopping mall platform.
+///
+/// Stores comment content including body and metadata. Each comment belongs
+/// to a specific article and is associated with a customer who created it.
+/// Comments support soft deletion to maintain audit trails while allowing
+/// content moderation.
+///
+/// Comments are the primary interaction type for the platform's BBS
+/// (Bulletin Board System) functionality, allowing customers to engage with
+/// article content and each other.
+///
+/// The comment content includes body field for structured content
+/// formatting. Soft deletion is supported to maintain audit trails while
+/// allowing content moderation.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_article_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article that the comment belongs to. {@link shopping_mall_articles.id}
+  shopping_mall_article_id String
+  
+  /// Customer who created the comment. {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Session used to create the comment. {@link
+  /// shopping_mall_customer_sessions.id}
+  shopping_mall_customer_session_id String
+  
+  /// Content of the comment.
+  body String
+  
+  /// When the comment was created.
+  created_at DateTime
+  
+  /// When the comment was last updated.
+  updated_at DateTime
+  
+  /// When the comment was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article shopping_mall_articles @relation(fields: [shopping_mall_article_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_article_comments_shopping_mall_customer__243c03d7")
+  
+  @@index([shopping_mall_article_id])
+}

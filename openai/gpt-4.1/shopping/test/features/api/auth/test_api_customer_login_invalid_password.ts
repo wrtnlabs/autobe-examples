@@ -3,48 +3,64 @@ import { IConnection } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
-import type { IShoppingAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingAuthorizationToken";
-import type { IShoppingCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingCustomer";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 
 /**
- * Verify failed login for customer when password is invalid.
+ * Test invalid password during customer login authentication.
  *
- * 1. Register a new customer with random valid credentials
- * 2. Attempt to login using the same email but with an incorrect password
- * 3. Assert that an authentication error is thrown (login fails)
- * 4. Confirm that no JWT token is issued in response
+ * This scenario registers a new customer and then attempts login with the
+ * correct email and an incorrect password to ensure authentication does not
+ * succeed. The test validates secure password checking and appropriate error
+ * error handling. Steps:
+ *
+ * 1. Register a new random customer to obtain a valid email and correct password.
+ * 2. Attempt to login with the correct email but an invalid password, keeping same
+ *    format constraints.
+ * 3. Verify that login fails and the API raises an error, matching business and
+ *    security expectations.
  */
 export async function test_api_customer_login_invalid_password(
   connection: api.IConnection,
 ) {
   // 1. Register a new customer
-  const validEmail: string & tags.Format<"email"> = typia.random<
-    string & tags.Format<"email">
-  >();
-  const validPassword: string & tags.MinLength<8> & tags.MaxLength<128> =
-    typia.random<string & tags.MinLength<8> & tags.MaxLength<128>>();
-  const customer = await api.functional.auth.customer.join(connection, {
-    body: {
-      email: validEmail,
-      password: validPassword,
-      name: RandomGenerator.name(),
-      phone: RandomGenerator.mobile(),
-      href: "https://www.example.com/register",
-      referrer: "https://www.example.com/landing",
-    } satisfies IShoppingCustomer.ICreate,
-  });
-  typia.assert(customer);
+  const customerEmail = typia.random<string & tags.Format<"email">>();
+  const customerPassword = RandomGenerator.alphaNumeric(12);
+  const customerName = RandomGenerator.name();
+  const customerPhone = RandomGenerator.mobile();
+  const registrationInput = {
+    email: customerEmail,
+    password: customerPassword satisfies string,
+    name: customerName,
+    phone: customerPhone,
+  } satisfies IShoppingMallCustomer.ICreate;
 
-  // 2. Attempt to login using the same email but with an incorrect password
-  const invalidPassword = validPassword + "!wrong"; // ensure difference
-  await TestValidator.error("login fails with invalid password", async () => {
-    await api.functional.auth.customer.login(connection, {
-      body: {
-        email: validEmail,
-        password: invalidPassword,
-        href: "https://www.example.com/login",
-        referrer: "https://www.example.com/landing",
-      } satisfies IShoppingCustomer.ILogin,
-    });
+  const registered = await api.functional.auth.customer.join(connection, {
+    body: registrationInput,
   });
+  typia.assert(registered);
+  TestValidator.equals(
+    "registered email matches",
+    registered.email,
+    customerEmail,
+  );
+
+  // 2. Attempt login with correct email but wrong password
+  const wrongPassword = customerPassword + "wrong";
+  const loginInput = {
+    email: customerEmail,
+    password: wrongPassword,
+    href: "https://mall.example.com/login",
+    referrer: "https://mall.example.com/welcome",
+  } satisfies IShoppingMallCustomer.ILogin;
+
+  // 3. Validates authentication fails and returns an error
+  await TestValidator.error(
+    "login should fail with invalid password",
+    async () => {
+      await api.functional.auth.customer.login(connection, {
+        body: loginInput,
+      });
+    },
+  );
 }

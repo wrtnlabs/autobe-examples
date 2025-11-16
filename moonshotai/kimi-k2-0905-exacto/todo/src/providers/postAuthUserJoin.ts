@@ -7,14 +7,14 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 
 export async function postAuthUserJoin(props: {
-  body: ITodoUser.IJoin;
-}): Promise<ITodoUser.IAuthorized> {
+  body: ITodoAppUser.IJoin;
+}): Promise<ITodoAppUser.IAuthorized> {
   // Check for duplicate email
-  const existing = await MyGlobal.prisma.todo_users.findFirst({
+  const existing = await MyGlobal.prisma.todo_app_users.findFirst({
     where: { email: props.body.email },
   });
 
@@ -25,41 +25,39 @@ export async function postAuthUserJoin(props: {
   // Hash password
   const hashedPassword = await PasswordUtil.hash(props.body.password);
 
-  // Create user with proper ID generation (schema has no @default)
-  const user = await MyGlobal.prisma.todo_users.create({
+  // Create user record
+  const user = await MyGlobal.prisma.todo_app_users.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
       email: props.body.email,
       password_hash: hashedPassword,
-      mfa_enabled: false,
-      failed_login_attempts: 0,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
     },
   });
 
-  // Create session for authentication
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  // Create session record
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  const session = await MyGlobal.prisma.todo_user_sessions.create({
+  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      todo_user_id: user.id,
-      ip: "", // Will be populated from request context - implementation dependent
-      href: "", // Will be populated from request context
-      referrer: "", // Will be populated from request context
-      created_at: new Date(),
-      expired_at: accessExpires,
+      user_id: user.id,
+      ip: props.body.ip ?? "",
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: toISOStringSafe(new Date()),
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
 
-  // Generate JWT tokens with proper payload structure
+  // Generate JWT tokens
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "user",
-        id: user.id, // Actor ID, not session ID
+        id: user.id,
         session_id: session.id,
         created_at: toISOStringSafe(new Date()),
       },
@@ -87,23 +85,11 @@ export async function postAuthUserJoin(props: {
     refreshable_until: toISOStringSafe(refreshExpires),
   };
 
-  // Count tasks for new user (will be 0)
-  const tasksCount = await MyGlobal.prisma.todo_tasks.count({
-    where: { todo_user_id: user.id },
-  });
-
-  // Return formatted response with proper type handling
   return {
-    id: user.id as string & tags.Format<"uuid">,
+    id: user.id,
     email: user.email,
     created_at: toISOStringSafe(user.created_at),
     updated_at: toISOStringSafe(user.updated_at),
-    mfa_enabled: user.mfa_enabled,
-    failed_login_attempts: user.failed_login_attempts as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    locked_until: user.locked_until ? toISOStringSafe(user.locked_until) : null,
-    tasks_count: tasksCount as number & tags.Type<"int32"> & tags.Minimum<0>,
     token,
   };
 }

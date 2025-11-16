@@ -1,0 +1,94 @@
+/// Articles posted by members on the econPolDiscussionBoard.
+///
+/// This table stores plain-text articles created by authenticated members.
+/// Each article includes an author reference to the member who created it,
+/// ensuring accountability and traceability. Articles are timestamped upon
+/// creation and update to support audit trails and order listings by
+/// recency.
+///
+/// Attachments are stored separately in the attachments table to avoid
+/// nullable fields and maintain normalization. This design supports multiple
+/// attachments per article, enriching content with images or documents.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_pol_discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who authored the article. {@link
+  /// econ_pol_discussion_board_members.id}.
+  econ_pol_discussion_board_member_id String
+  
+  /// Title of the article, summarizing its content.
+  title String
+  
+  /// Plain-text content body of the article.
+  content String
+  
+  /// Timestamp when the article was created.
+  created_at DateTime
+  
+  /// Timestamp when the article was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member econ_pol_discussion_board_members @relation(fields: [econ_pol_discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  econ_pol_discussion_board_attachments econ_pol_discussion_board_attachments[]
+  econ_pol_discussion_board_comments econ_pol_discussion_board_comments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([econ_pol_discussion_board_member_id, created_at], map: "econ_pol_discussion_board_articles_econ_pol_discussion_109dbdab")
+}
+
+/// Attachments associated with articles on the econPolDiscussionBoard.
+///
+/// This table stores metadata for files and images attached to articles.
+/// Each attachment links to a single article and includes detailed
+/// information such as type (image or file), URL location, original
+/// filename, and upload timestamp.
+///
+/// Attachments enhance articles by allowing multimedia content and document
+/// references, supporting the core value proposition of rich content in a
+/// focused discussion board. Attachments are non-editable and depend on
+/// their parent article lifecycle.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model econ_pol_discussion_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent article. {@link
+  /// econ_pol_discussion_board_articles.id}.
+  econ_pol_discussion_board_article_id String
+  
+  /// Type of attachment, either 'image' or 'file'.
+  type String
+  
+  /// URL location where the attachment file is stored.
+  url String
+  
+  /// Original filename of the attachment.
+  file_name String
+  
+  /// Timestamp when the attachment was uploaded.
+  uploaded_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article econ_pol_discussion_board_articles @relation(fields: [econ_pol_discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([econ_pol_discussion_board_article_id], map: "econ_pol_discussion_board_attachments_econ_pol_discuss_41dddc27")
+}

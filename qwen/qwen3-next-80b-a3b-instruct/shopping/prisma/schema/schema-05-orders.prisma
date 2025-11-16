@@ -1,0 +1,1174 @@
+/// Core order entity representing a confirmed purchase transaction.
+///
+/// Captures the immutable state of an order at the time of payment
+/// confirmation. This table serves as the root record for all order-related
+/// events and is referenced by every other order table.
+///
+/// Each order has a unique status sequence tracked in
+/// shopping_mall_order_statuses, payment details in
+/// shopping_mall_order_payments, shipping information in
+/// shopping_mall_order_shippings, and may be subject to cancellation or
+/// refund events.
+///
+/// Orders are owned by customers and linked via customer_id to
+/// shopping_mall_customer. Order total includes product prices locked at
+/// time of purchase, shipping fees, and calculated taxes.
+///
+/// This table enforces business rules: order cancellations are allowed only
+/// within 2 hours and refund requests require admin approval.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed the order. {@link shopping_mall_customer.id}.
+  customer_id String
+  
+  /// Unique order identifier in format 'ORD-YYYYMMDD-XXXXXXXX' where XXXXXXXX
+  /// is 8 hex characters. Guaranteed globally unique.
+  order_number String
+  
+  /// Sum of product prices (from order_items) at time of purchase, before tax
+  /// and shipping. Locked at order creation.
+  subtotal Float
+  
+  /// Shipping fee calculated based on shipping address and method at time of
+  /// checkout.
+  shipping_cost Float
+  
+  /// Sales tax calculated based on shipping address jurisdiction at time of
+  /// checkout.
+  tax_amount Float
+  
+  /// Final order amount: subtotal + shipping_cost + tax_amount. Locked at time
+  /// of payment confirmation.
+  total_amount Float
+  
+  /// Currency code (e.g., 'USD') in which the order was processed, matching
+  /// shopping_mall_currencies.code.
+  currency String
+  
+  /// Current status of the order: 'Processing', 'Shipped', 'Out for Delivery',
+  /// 'Delivered', 'Cancelled'. Selected from ordered statuses in
+  /// shopping_mall_order_statuses.
+  status String
+  
+  /// Payment status: 'Pending Payment', 'Payment Processing', 'Paid', 'Payment
+  /// Declined', 'Payment Failed', 'Refunded', 'Chargeback Initiated'. Reflects
+  /// integration with payment gateway.
+  payment_status String
+  
+  /// Timestamp when the order was created in system. Immutable.
+  created_at DateTime
+  
+  /// Timestamp of last update to order state (e.g., status change).
+  updated_at DateTime
+  
+  /// Soft delete timestamp; if null, order is still active. Used for legal
+  /// compliance and order history persistence.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_items shopping_mall_order_items[]
+  shopping_mall_order_payments shopping_mall_order_payments?
+  shopping_mall_order_shippings shopping_mall_order_shippings?
+  shopping_mall_order_statuses shopping_mall_order_statuses[]
+  shopping_mall_order_cancellations shopping_mall_order_cancellations?
+  shopping_mall_order_refunds shopping_mall_order_refunds?
+  shopping_mall_order_notes shopping_mall_order_notes[]
+  
+  @@index([customer_id])
+  @@index([order_number])
+  @@index([created_at])
+  @@index([status])
+  @@index([payment_status])
+}
+
+/// Individual line items within an order, representing specific product
+/// variants (SKUs) purchased.
+///
+/// Each order item corresponds to one product variant with a specific
+/// quantity, price, and attribute selection at the time of purchase. Prices
+/// are locked at order creation and do not change with product updates.
+///
+/// This table supports vendor aggregation: one order may contain items from
+/// multiple sellers via product variant ownership.
+///
+/// Items are never removed, even if product is deleted — they remain
+/// historical records for refunds and disputes. No duplicate items per order
+/// ID + variant ID combination is allowed.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order to which this item belongs. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// The product variant (SKU) purchased. {@link
+  /// shopping_mall_product_variants.id}.
+  product_variant_id String
+  
+  /// Number of units of this product variant in this order. Must be >= 1.
+  quantity Int
+  
+  /// Price per unit of this variant at time of order. Locked to prevent change
+  /// after purchase.
+  unit_price Float
+  
+  /// Quantity multiplied by unit_price. Calculated at time of order creation
+  /// but stored for integrity.
+  total_price Float
+  
+  /// JSON string describing the selected attributes for this variant (e.g.,
+  /// {"color": "Red", "size": "Large"}). Created from
+  /// shopping_mall_product_attributes and
+  /// shopping_mall_product_attribute_values.
+  variant_attributes String
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@unique([order_id, product_variant_id])
+  @@index([order_id])
+  @@index([product_variant_id])
+}
+
+/// Records payment attempts and settlement details for each order.
+///
+/// Each order has exactly one payment record that stores payment method,
+/// transaction ID, amount, and status returned by the payment gateway.
+///
+/// Payment data is never stored raw — only tokenized references and
+/// gateways' response data are stored. This table is the single source of
+/// truth for payment success/failure and refund eligibility.
+///
+/// Payment_Status in shopping_mall_orders is derived from this table's
+/// status but stored for quick querying.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this payment belongs to. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// The payment provider used (e.g., Stripe, PayPal). {@link
+  /// shopping_mall_payment_gateways.id}.
+  payment_gateway_id String
+  
+  /// Amount paid in order's currency. Should equal
+  /// shopping_mall_orders.total_amount.
+  amount Float
+  
+  /// Currency code of the payment. Must match order's currency.
+  currency String
+  
+  /// Type of payment: 'credit_card', 'apple_pay', 'google_pay', 'paypal',
+  /// 'affirm', 'klarna'.
+  payment_method String
+  
+  /// Unique transaction ID provided by the payment gateway (e.g.,
+  /// 'ch_123456789').
+  payment_gateway_ref_id String
+  
+  /// Status from payment gateway: 'pending', 'succeeded', 'failed',
+  /// 'declined', 'refund_initiated', 'chargeback_initiated'.
+  status String
+  
+  /// Human-readable reason for failure if status = 'failed' or 'declined'
+  /// (e.g., 'insufficient_funds', 'expired_card').
+  failure_reason String?
+  
+  /// Timestamp when payment was processed by the gateway.
+  transaction_date DateTime
+  
+  /// Timestamp when this payment record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when payment state was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  paymentGateway shopping_mall_payment_gateways @relation(fields: [payment_gateway_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_refunds shopping_mall_order_refunds[]
+  
+  @@index([payment_gateway_id])
+  
+  @@unique([order_id])
+  @@unique([payment_gateway_ref_id])
+}
+
+/// Stores shipping configuration and destination details for each order.
+///
+/// Contains the shipping address, method chosen, and carrier-specific
+/// settings at time of order confirmation.
+///
+/// This table determines tax calculation accuracy and estimated delivery time.
+///
+/// The address is saved as a snapshot and cannot be modified after order
+/// payment is captured (per business rule).
+///
+/// Links to shopping_mall_zones for shipping rate calculation and
+/// shopping_mall_countries for address validation.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_shippings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this shipping belongs to. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// Geographic shipping zone used to calculate rates. {@link
+  /// shopping_mall_zones.id}.
+  zone_id String
+  
+  /// Full name of the recipient (first + last).
+  recipient_name String
+  
+  /// Primary street address (e.g., '123 Main Street').
+  address_line1 String
+  
+  /// Secondary address (e.g., apartment, unit, floor). Optional.
+  address_line2 String?
+  
+  /// City or town name.
+  city String
+  
+  /// State, province, or region name.
+  state_province String
+  
+  /// Postal or ZIP code.
+  postal_code String
+  
+  /// ISO 3166-1 alpha-2 country code (e.g., 'US', 'JP').
+  country_code String
+  
+  /// Phone number of recipient in E.164 international format (e.g.,
+  /// '+1234567890').
+  phone String?
+  
+  /// Selected delivery option (e.g., 'Standard', 'Expedited', 'Same-Day').
+  shipping_method String
+  
+  /// Logistics carrier providing service (e.g., 'FedEx', 'UPS', 'DHL',
+  /// 'LocalCourier').
+  carrier String
+  
+  /// Timestamp when shipping details were configured at checkout.
+  created_at DateTime
+  
+  /// Timestamp if shipping details are modified by admin before shipment.
+  updated_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  zone shopping_mall_zones @relation(fields: [zone_id], references: [id], onDelete: Cascade)
+  
+  shopping_mall_order_tracking_numbers shopping_mall_order_tracking_numbers?
+  
+  @@index([zone_id])
+  
+  @@unique([order_id])
+}
+
+/// Historical audit trail of status changes for orders.
+///
+/// Each status transition results in a new row, immutable upon creation.
+/// This table preserves the complete history of order lifecycle stages:
+/// Processing → Shipped → Out for Delivery → Delivered → Cancelled.
+///
+/// No updates are permitted on existing records — only insertions of new
+/// status entries. Sequential order is preserved by created_at.
+///
+/// Status transitions are auto-triggered by system events (e.g., payment
+/// success, carrier scan). Admins may manually override status for exception
+/// handling.
+///
+/// This table implements a snapshot architecture principle: re-construcing
+/// an order's state at any point in time requires sequencing from this
+/// table.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this status change belongs to. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// The status value applied (e.g., 'Processing', 'Shipped'). Must be one of:
+  /// 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'.
+  status String
+  
+  /// Optional reason or context for the status change (e.g., 'System initiated
+  /// after payment confirmation', 'Admin overrode due to customer request').
+  notes String?
+  
+  /// Timestamp when this status change was recorded. Used to sequence history.
+  created_at DateTime
+  
+  /// Always equals created_at; no updates permitted on snapshot records.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  
+  @@index([order_id, created_at])
+  @@index([status])
+}
+
+/// Tracks carrier-provided tracking numbers associated with shipped orders.
+///
+/// Each shipping can have only one tracking number per carrier instance.
+///
+/// Tracking numbers are validated against carrier format (e.g., 12-digit
+/// numeric for FedEx, alphanumeric for DHL) upon entry.
+///
+/// The tracking number triggers automatic status updates via external
+/// carrier APIs (when 'Shipped' → 'Out for Delivery' → 'Delivered').
+///
+/// This table stores tracking URLs to link to external carrier tracking pages.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_tracking_numbers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shipping record this tracking number belongs to. {@link
+  /// shopping_mall_order_shippings.id}.
+  order_shipping_id String
+  
+  /// Carrier-provided tracking identifier (e.g., '9400110898608891367704').
+  /// Must validate against carrier format.
+  tracking_number String
+  
+  /// Direct URL to track this package on the carrier's website (e.g.,
+  /// 'https://www.fedex.com/tracking?track=9400110898608891367704').
+  tracking_url String
+  
+  /// Carrier name matching the shipping record (e.g., 'FedEx', 'UPS', 'DHL').
+  /// Must be consistent with shopping_mall_order_shippings.carrier.
+  carrier String
+  
+  /// Timestamp when tracking number was added to the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderShipping shopping_mall_order_shippings @relation(fields: [order_shipping_id], references: [id], onDelete: Cascade)
+  
+  @@unique([order_shipping_id])
+  @@unique([tracking_number])
+}
+
+/// Audit trail of cancellations for orders.
+///
+/// Only administrator-initiated cancellations are recorded here.
+/// Customer-initiated cancellation requests are handled separately via
+/// shopping_mall_order_refunds.
+///
+/// Cancellation is permanent and only allowed before shipment. After
+/// shipment, refunds must be issued instead.
+///
+/// All cancellations must have a reason and are mediated by admin.
+///
+/// This table ensures immutable audit trail for regulatory compliance and
+/// fraud detection.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_cancellations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order that was cancelled. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// Admin who approved or initiated the cancellation. {@link
+  /// shopping_mall_admin.id}.
+  canceled_by String
+  
+  /// Code for cancellation reason (e.g., 'customer_request',
+  /// 'payment_failure', 'inventory_unavailable').
+  reason_code String
+  
+  /// Detailed description of why the cancellation was processed.
+  reason_text String?
+  
+  /// Timestamp when cancellation was confirmed and processed.
+  cancelled_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin @relation(fields: [canceled_by], references: [id], onDelete: Cascade)
+  
+  @@unique([order_id])
+  @@index([canceled_by])
+  @@index([cancelled_at])
+  @@index([reason_code])
+}
+
+/// Audit trail of refund transactions initiated for orders.
+///
+/// Refunds are post-payment reversals approved by admin, typically for
+/// cancellations after shipment or defective items.
+///
+/// Refunds are always recorded as a precise amount against the original
+/// payment record.
+///
+/// The refund process is not automatic; requires admin verification.
+///
+/// This table records who authorized the refund, when, and the financial
+/// impact on the seller's earnings.
+///
+/// Refunds may be partial or full, and can include return shipping
+/// reimbursement.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this refund applies to. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// The original payment record being refunded. {@link
+  /// shopping_mall_order_payments.id}.
+  payment_id String
+  
+  /// Admin who authorized the refund. {@link shopping_mall_admin.id}.
+  refunded_by String
+  
+  /// Amount refunded in order's currency.
+  amount Float
+  
+  /// Currency code of the refund (must match order currency).
+  currency String
+  
+  /// Type of refund: 'full', 'partial', 'return_shipping'.
+  refund_type String
+  
+  /// Code for refund reason (e.g., 'customer_request', 'item_defective',
+  /// 'wrong_item_shipped').
+  reason_code String
+  
+  /// Detailed description of refund reason provided by customer and approved
+  /// by admin.
+  reason_text String?
+  
+  /// Unique refund transaction ID returned by payment gateway.
+  refund_gateway_ref_id String?
+  
+  /// Refund status: 'requested', 'approved', 'processing', 'completed',
+  /// 'failed'.
+  status String
+  
+  /// Timestamp when the refund was processed by the payment gateway.
+  processed_at DateTime?
+  
+  /// Timestamp when refund was requested (admin-approved).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  payment shopping_mall_order_payments @relation(fields: [payment_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin @relation(fields: [refunded_by], references: [id], onDelete: Cascade)
+  
+  @@unique([order_id])
+  @@unique([refund_gateway_ref_id])
+  @@index([payment_id])
+  @@index([refunded_by])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Internal notes added by admin or support staff regarding an order.
+///
+/// Used for communication between team members, documenting special
+/// requests, system errors, or customer service interactions.
+///
+/// Notes are not visible to customers and are purely for internal audit and
+/// coordination.
+///
+/// Each note is immutable once created. No edits or deletions are allowed —
+/// only new entries are appended for additional context.
+///
+/// This table supports full-text search for internal investigations and
+/// compliance auditing.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_notes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this note relates to. {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// Admin user who added the note. {@link shopping_mall_admin.id}.
+  note_by String
+  
+  /// Free-form text note content documenting the context. Must be under 2000
+  /// characters.
+  content String
+  
+  /// Timestamp when the note was added by the admin.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin @relation(fields: [note_by], references: [id], onDelete: Cascade)
+  
+  @@index([order_id])
+  @@index([note_by])
+  @@index([created_at])
+}
+
+/// Core order entity representing a confirmed purchase transaction.
+///
+/// Captures the immutable state of an order at the time of payment
+/// confirmation. This table serves as the root record for all order-related
+/// events and is referenced by every other order table.
+///
+/// Each order has a unique status sequence tracked in order_statuses,
+/// payment details in order_payments, shipping information in
+/// order_shippings, and may be subject to cancellation or refund events.
+///
+/// Orders are owned by customers and linked via customer_id to
+/// shopping_mall_customer. Order total includes product prices locked at
+/// time of purchase, shipping fees, and calculated taxes.
+///
+/// This table enforces business rules: order cancellations are allowed only
+/// within 2 hours and refund requests require admin approval.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed the order. {@link shopping_mall_customer.id}.
+  customer_id String
+  
+  /// Unique order identifier in format 'ORD-YYYYMMDD-XXXXXXXX' where XXXXXXXX
+  /// is 8 hex characters. Guaranteed globally unique.
+  order_number String
+  
+  /// Sum of product prices (from order_items) at time of purchase, before tax
+  /// and shipping. Locked at order creation.
+  subtotal Float
+  
+  /// Shipping fee calculated based on shipping address and method at time of
+  /// checkout.
+  shipping_cost Float
+  
+  /// Sales tax calculated based on shipping address jurisdiction at time of
+  /// checkout.
+  tax_amount Float
+  
+  /// Final order amount: subtotal + shipping_cost + tax_amount. Locked at time
+  /// of payment confirmation.
+  total_amount Float
+  
+  /// Currency code (e.g., 'USD') in which the order was processed, matching
+  /// shopping_mall_currencies.code.
+  currency String
+  
+  /// Current status of the order: 'Processing', 'Shipped', 'Out for Delivery',
+  /// 'Delivered', 'Cancelled'. Selected from ordered statuses in
+  /// order_statuses.
+  status String
+  
+  /// Payment status: 'Pending Payment', 'Payment Processing', 'Paid', 'Payment
+  /// Declined', 'Payment Failed', 'Refunded', 'Chargeback Initiated'. Reflects
+  /// integration with payment gateway.
+  payment_status String
+  
+  /// Timestamp when the order was created in system. Immutable.
+  created_at DateTime
+  
+  /// Timestamp of last update to order state (e.g., status change).
+  updated_at DateTime
+  
+  /// Soft delete timestamp; if null, order is still active. Used for legal
+  /// compliance and order history persistence.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  order_items order_items[]
+  order_payments order_payments?
+  order_shippings order_shippings?
+  order_statuses order_statuses[]
+  order_cancellations order_cancellations?
+  order_refunds order_refunds?
+  order_notes order_notes[]
+  
+  @@index([customer_id])
+  @@index([order_number])
+  @@index([created_at])
+  @@index([status])
+  @@index([payment_status])
+}
+
+/// Individual line items within an order, representing specific product
+/// variants (SKUs) purchased.
+///
+/// Each order item corresponds to one product variant with a specific
+/// quantity, price, and attribute selection at the time of purchase. Prices
+/// are locked at order creation and do not change with product updates.
+///
+/// This table supports vendor aggregation: one order may contain items from
+/// multiple sellers via product variant ownership.
+///
+/// Items are never removed, even if product is deleted — they remain
+/// historical records for refunds and disputes. No duplicate items per order
+/// ID + variant ID combination is allowed.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order to which this item belongs. {@link orders.id}.
+  order_id String
+  
+  /// The product variant (SKU) purchased. {@link
+  /// shopping_mall_product_variants.id}.
+  product_variant_id String
+  
+  /// Number of units of this product variant in this order. Must be >= 1.
+  quantity Int
+  
+  /// Price per unit of this variant at time of order. Locked to prevent change
+  /// after purchase.
+  unit_price Float
+  
+  /// Quantity multiplied by unit_price. Calculated at time of order creation
+  /// but stored for integrity.
+  total_price Float
+  
+  /// JSON string describing the selected attributes for this variant (e.g.,
+  /// {"color": "Red", "size": "Large"}). Created from
+  /// shopping_mall_product_attributes and
+  /// shopping_mall_product_attribute_values.
+  variant_attributes String
+  
+  //----
+  // RELATIONS
+  //----
+  order orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@unique([order_id, product_variant_id])
+  @@index([order_id])
+  @@index([product_variant_id])
+}
+
+/// Records payment attempts and settlement details for each order.
+///
+/// Each order has exactly one payment record that stores payment method,
+/// transaction ID, amount, and status returned by the payment gateway.
+///
+/// Payment data is never stored raw — only tokenized references and
+/// gateways' response data are stored. This table is the single source of
+/// truth for payment success/failure and refund eligibility.
+///
+/// Payment_Status in orders is derived from this table's status but stored
+/// for quick querying.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model order_payments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this payment belongs to. {@link orders.id}.
+  order_id String
+  
+  /// The payment provider used (e.g., Stripe, PayPal). {@link
+  /// shopping_mall_payment_gateways.id}.
+  payment_gateway_id String
+  
+  /// Amount paid in order's currency. Should equal orders.total_amount.
+  amount Float
+  
+  /// Currency code of the payment. Must match order's currency.
+  currency String
+  
+  /// Type of payment: 'credit_card', 'apple_pay', 'google_pay', 'paypal',
+  /// 'affirm', 'klarna'.
+  payment_method String
+  
+  /// Unique transaction ID provided by the payment gateway (e.g.,
+  /// 'ch_123456789').
+  payment_gateway_ref_id String
+  
+  /// Status from payment gateway: 'pending', 'succeeded', 'failed',
+  /// 'declined', 'refund_initiated', 'chargeback_initiated'.
+  status String
+  
+  /// Human-readable reason for failure if status = 'failed' or 'declined'
+  /// (e.g., 'insufficient_funds', 'expired_card').
+  failure_reason String?
+  
+  /// Timestamp when payment was processed by the gateway.
+  transaction_date DateTime
+  
+  /// Timestamp when this payment record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when payment state was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  paymentGateway shopping_mall_payment_gateways @relation(fields: [payment_gateway_id], references: [id], onDelete: Cascade)
+  
+  order_refunds order_refunds[]
+  
+  @@index([payment_gateway_id])
+  
+  @@unique([order_id])
+  @@unique([payment_gateway_ref_id])
+  @@index([status])
+  @@index([transaction_date])
+}
+
+/// Stores shipping configuration and destination details for each order.
+///
+/// Contains the shipping address, method chosen, and carrier-specific
+/// settings at time of order confirmation.
+///
+/// This table determines tax calculation accuracy and estimated delivery time.
+///
+/// The address is saved as a snapshot and cannot be modified after order
+/// payment is captured (per business rule).
+///
+/// Links to shopping_mall_zones for shipping rate calculation and
+/// shopping_mall_countries for address validation.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model order_shippings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this shipping belongs to. {@link orders.id}.
+  order_id String
+  
+  /// Geographic shipping zone used to calculate rates. {@link
+  /// shopping_mall_zones.id}.
+  zone_id String
+  
+  /// Full name of the recipient (first + last).
+  recipient_name String
+  
+  /// Primary street address (e.g., '123 Main Street').
+  address_line1 String
+  
+  /// Secondary address (e.g., apartment, unit, floor). Optional.
+  address_line2 String?
+  
+  /// City or town name.
+  city String
+  
+  /// State, province, or region name.
+  state_province String
+  
+  /// Postal or ZIP code.
+  postal_code String
+  
+  /// ISO 3166-1 alpha-2 country code (e.g., 'US', 'JP').
+  country_code String
+  
+  /// Phone number of recipient in E.164 international format (e.g.,
+  /// '+1234567890').
+  phone String?
+  
+  /// Selected delivery option (e.g., 'Standard', 'Expedited', 'Same-Day').
+  shipping_method String
+  
+  /// Logistics carrier providing service (e.g., 'FedEx', 'UPS', 'DHL',
+  /// 'LocalCourier').
+  carrier String
+  
+  /// Timestamp when shipping details were configured at checkout.
+  created_at DateTime
+  
+  /// Timestamp if shipping details are modified by admin before shipment.
+  updated_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  zone shopping_mall_zones @relation(fields: [zone_id], references: [id], onDelete: Cascade)
+  
+  order_tracking_numbers order_tracking_numbers?
+  
+  @@index([zone_id])
+  
+  @@unique([order_id])
+  @@index([country_code])
+  @@index([postal_code])
+}
+
+/// Historical audit trail of status changes for orders.
+///
+/// Each status transition results in a new row, immutable upon creation.
+/// This table preserves the complete history of order lifecycle stages:
+/// Processing → Shipped → Out for Delivery → Delivered → Cancelled.
+///
+/// No updates are permitted on existing records — only insertions of new
+/// status entries. Sequential order is preserved by created_at.
+///
+/// Status transitions are auto-triggered by system events (e.g., payment
+/// success, carrier scan). Admins may manually override status for exception
+/// handling.
+///
+/// This table implements a snapshot architecture principle: re-construcing
+/// an order's state at any point in time requires sequencing from this
+/// table.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model order_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this status change belongs to. {@link orders.id}.
+  order_id String
+  
+  /// The status value applied (e.g., 'Processing', 'Shipped'). Must be one of:
+  /// 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'.
+  status String
+  
+  /// Optional reason or context for the status change (e.g., 'System initiated
+  /// after payment confirmation', 'Admin overrode due to customer request').
+  notes String?
+  
+  /// Timestamp when this status change was recorded. Used to sequence history.
+  created_at DateTime
+  
+  /// Always equals created_at; no updates permitted on snapshot records.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  
+  @@index([order_id, created_at])
+  @@index([status])
+}
+
+/// Tracks carrier-provided tracking numbers associated with shipped orders.
+///
+/// Each shipping can have only one tracking number per carrier instance.
+///
+/// Tracking numbers are validated against carrier format (e.g., 12-digit
+/// numeric for FedEx, alphanumeric for DHL) upon entry.
+///
+/// The tracking number triggers automatic status updates via external
+/// carrier APIs (when 'Shipped' → 'Out for Delivery' → 'Delivered').
+///
+/// This table stores tracking URLs to link to external carrier tracking pages.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model order_tracking_numbers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shipping record this tracking number belongs to. {@link
+  /// order_shippings.id}.
+  order_shipping_id String
+  
+  /// Carrier-provided tracking identifier (e.g., '9400110898608891367704').
+  /// Must validate against carrier format.
+  tracking_number String
+  
+  /// Direct URL to track this package on the carrier's website (e.g.,
+  /// 'https://www.fedex.com/tracking?track=9400110898608891367704').
+  tracking_url String
+  
+  /// Carrier name matching the shipping record (e.g., 'FedEx', 'UPS', 'DHL').
+  /// Must be consistent with order_shippings.carrier.
+  carrier String
+  
+  /// Timestamp when tracking number was added to the system.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderShipping order_shippings @relation(fields: [order_shipping_id], references: [id], onDelete: Cascade)
+  
+  @@unique([order_shipping_id])
+  @@unique([tracking_number])
+  @@index([carrier])
+}
+
+/// Audit trail of cancellations for orders.
+///
+/// Only administrator-initiated cancellations are recorded here.
+/// Customer-initiated cancellation requests are handled separately via
+/// order_refunds.
+///
+/// Cancellation is permanent and only allowed before shipment. After
+/// shipment, refunds must be issued instead.
+///
+/// All cancellations must have a reason and are mediated by admin.
+///
+/// This table ensures immutable audit trail for regulatory compliance and
+/// fraud detection.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model order_cancellations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order that was cancelled. {@link orders.id}.
+  order_id String
+  
+  /// Admin who approved or initiated the cancellation. {@link
+  /// shopping_mall_admin.id}.
+  canceled_by String
+  
+  /// Code for cancellation reason (e.g., 'customer_request',
+  /// 'payment_failure', 'inventory_unavailable').
+  reason_code String
+  
+  /// Detailed description of why the cancellation was processed.
+  reason_text String?
+  
+  /// Timestamp when cancellation was confirmed and processed.
+  cancelled_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin @relation(fields: [canceled_by], references: [id], onDelete: Cascade)
+  
+  @@unique([order_id])
+  @@index([canceled_by])
+  @@index([cancelled_at])
+  @@index([reason_code])
+}
+
+/// Audit trail of refund transactions initiated for orders.
+///
+/// Refunds are post-payment reversals approved by admin, typically for
+/// cancellations after shipment or defective items.
+///
+/// Refunds are always recorded as a precise amount against the original
+/// payment record.
+///
+/// The refund process is not automatic; requires admin verification.
+///
+/// This table records who authorized the refund, when, and the financial
+/// impact on the seller's earnings.
+///
+/// Refunds may be partial or full, and can include return shipping
+/// reimbursement.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model order_refunds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this refund applies to. {@link orders.id}.
+  order_id String
+  
+  /// The original payment record being refunded. {@link order_payments.id}.
+  payment_id String
+  
+  /// Admin who authorized the refund. {@link shopping_mall_admin.id}.
+  refunded_by String
+  
+  /// Amount refunded in order's currency.
+  amount Float
+  
+  /// Currency code of the refund (must match order currency).
+  currency String
+  
+  /// Type of refund: 'full', 'partial', 'return_shipping'.
+  refund_type String
+  
+  /// Code for refund reason (e.g., 'customer_request', 'item_defective',
+  /// 'wrong_item_shipped').
+  reason_code String
+  
+  /// Detailed description of refund reason provided by customer and approved
+  /// by admin.
+  reason_text String?
+  
+  /// Unique refund transaction ID returned by payment gateway.
+  refund_gateway_ref_id String?
+  
+  /// Refund status: 'requested', 'approved', 'processing', 'completed',
+  /// 'failed'.
+  status String
+  
+  /// Timestamp when the refund was processed by the payment gateway.
+  processed_at DateTime?
+  
+  /// Timestamp when refund was requested (admin-approved).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  payment order_payments @relation(fields: [payment_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin @relation(fields: [refunded_by], references: [id], onDelete: Cascade)
+  
+  @@unique([order_id])
+  @@unique([refund_gateway_ref_id])
+  @@index([payment_id])
+  @@index([refunded_by])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Internal notes added by admin or support staff regarding an order.
+///
+/// Used for communication between team members, documenting special
+/// requests, system errors, or customer service interactions.
+///
+/// Notes are not visible to customers and are purely for internal audit and
+/// coordination.
+///
+/// Each note is immutable once created. No edits or deletions are allowed —
+/// only new entries are appended for additional context.
+///
+/// This table supports full-text search for internal investigations and
+/// compliance auditing.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model order_notes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order this note relates to. {@link orders.id}.
+  order_id String
+  
+  /// Admin user who added the note. {@link shopping_mall_admin.id}.
+  note_by String
+  
+  /// Free-form text note content documenting the context. Must be under 2000
+  /// characters.
+  content String
+  
+  /// Timestamp when the note was added by the admin.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  order orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  admin shopping_mall_admin @relation(fields: [note_by], references: [id], onDelete: Cascade)
+  
+  @@index([order_id])
+  @@index([note_by])
+  @@index([created_at])
+}

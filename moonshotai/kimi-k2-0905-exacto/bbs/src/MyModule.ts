@@ -1,60 +1,94 @@
 import { Module } from "@nestjs/common";
 
-import { AuthVisitorController } from "./controllers/auth/visitor/AuthVisitorController";
-import { AuthMembersController } from "./controllers/auth/members/AuthMembersController";
+import { AuthGuestController } from "./controllers/auth/guest/AuthGuestController";
+import { AuthMemberController } from "./controllers/auth/member/AuthMemberController";
 import { AuthModeratorController } from "./controllers/auth/moderator/AuthModeratorController";
-import { AuthModeratorMeController } from "./controllers/auth/moderator/me/AuthModeratorMeController";
-import { AuthModeratorPasswordController } from "./controllers/auth/moderator/password/AuthModeratorPasswordController";
-import { PoliticsbbsCategoriesController } from "./controllers/politicsBbs/categories/PoliticsbbsCategoriesController";
-import { PoliticsbbsModeratorCategoriesController } from "./controllers/politicsBbs/moderator/categories/PoliticsbbsModeratorCategoriesController";
-import { PoliticsbbsArticlesController } from "./controllers/politicsBbs/articles/PoliticsbbsArticlesController";
-import { PoliticsbbsMemberArticlesController } from "./controllers/politicsBbs/member/articles/PoliticsbbsMemberArticlesController";
-import { PoliticsbbsArticlesSnapshotsController } from "./controllers/politicsBbs/articles/snapshots/PoliticsbbsArticlesSnapshotsController";
-import { PoliticsbbsArticlesCommentsController } from "./controllers/politicsBbs/articles/comments/PoliticsbbsArticlesCommentsController";
-import { PoliticsbbsCommentsController } from "./controllers/politicsBbs/comments/PoliticsbbsCommentsController";
-import { PoliticsbbsMemberArticlesCommentsController } from "./controllers/politicsBbs/member/articles/comments/PoliticsbbsMemberArticlesCommentsController";
-import { PoliticsbbsMemberCommentsController } from "./controllers/politicsBbs/member/comments/PoliticsbbsMemberCommentsController";
-import { PoliticsbbsModeratorModeratorContentReviewController } from "./controllers/politicsBbs/moderator/moderator/content/review/PoliticsbbsModeratorModeratorContentReviewController";
-import { PoliticsbbsModeratorModeratorContentApproveController } from "./controllers/politicsBbs/moderator/moderator/content/approve/PoliticsbbsModeratorModeratorContentApproveController";
-import { PoliticsbbsModeratorContentReviewController } from "./controllers/politicsBbs/moderator/content/review/PoliticsbbsModeratorContentReviewController";
-import { PoliticsbbsModeratorContentApproveController } from "./controllers/politicsBbs/moderator/content/approve/PoliticsbbsModeratorContentApproveController";
-import { PoliticsbbsModeratorModeratorContentController } from "./controllers/politicsBbs/moderator/moderator/content/reject/PoliticsbbsModeratorModeratorContentController";
-import { PoliticsbbsMemberMembersMeArticlesController } from "./controllers/politicsBbs/member/members/me/articles/PoliticsbbsMemberMembersMeArticlesController";
-import { PoliticsbbsStatisticsPopularController } from "./controllers/politicsBbs/statistics/popular/PoliticsbbsStatisticsPopularController";
-import { PoliticsbbsSearchArticlesController } from "./controllers/politicsBbs/search/articles/PoliticsbbsSearchArticlesController";
-import { PoliticsbbsSearchUnifiedController } from "./controllers/politicsBbs/search/unified/PoliticsbbsSearchUnifiedController";
-import { PoliticsbbsMemberUploadsController } from "./controllers/politicsBbs/member/uploads/PoliticsbbsMemberUploadsController";
-import { PoliticsbbsModeratorUploadsController } from "./controllers/politicsBbs/moderator/uploads/PoliticsbbsModeratorUploadsController";
-import { PoliticsbbsUploadsController } from "./controllers/politicsBbs/uploads/PoliticsbbsUploadsController";
+import { EconomicdiscussionModeratorSystem_settingsController } from "./controllers/economicDiscussion/moderator/system-settings/EconomicdiscussionModeratorSystem_settingsController";
+import { EconomicdiscussionModeratorGuestsController } from "./controllers/economicDiscussion/moderator/guests/EconomicdiscussionModeratorGuestsController";
+import { EconomicdiscussionGuestsSessionsController } from "./controllers/economicDiscussion/guests/sessions/EconomicdiscussionGuestsSessionsController";
+import { EconomicdiscussionModeratorGuestsSessionsController } from "./controllers/economicDiscussion/moderator/guests/sessions/EconomicdiscussionModeratorGuestsSessionsController";
+import { EconomicdiscussionModeratorMembersController } from "./controllers/economicDiscussion/moderator/members/EconomicdiscussionModeratorMembersController";
+import { EconomicdiscussionMemberMembersController } from "./controllers/economicDiscussion/member/members/EconomicdiscussionMemberMembersController";
+import { EconomicdiscussionMemberMembersSessionsController } from "./controllers/economicDiscussion/member/members/sessions/EconomicdiscussionMemberMembersSessionsController";
+import { EconomicdiscussionModeratorModeratorsController } from "./controllers/economicDiscussion/moderator/moderators/EconomicdiscussionModeratorModeratorsController";
+import { EconomicdiscussionModeratorModeratorsSessionsController } from "./controllers/economicDiscussion/moderator/moderators/sessions/EconomicdiscussionModeratorModeratorsSessionsController";
+import { EconomicdiscussionArticlesController } from "./controllers/economicDiscussion/articles/EconomicdiscussionArticlesController";
+import { EconomicdiscussionMemberArticlesController } from "./controllers/economicDiscussion/member/articles/EconomicdiscussionMemberArticlesController";
+import { EconomicdiscussionModeratorArticlesController } from "./controllers/economicDiscussion/moderator/articles/EconomicdiscussionModeratorArticlesController";
+import { EconomicdiscussionMemberArticlesVersionsController } from "./controllers/economicDiscussion/member/articles/versions/EconomicdiscussionMemberArticlesVersionsController";
+import { EconomicdiscussionCategoriesController } from "./controllers/economicDiscussion/categories/EconomicdiscussionCategoriesController";
+import { EconomicdiscussionModeratorCategoriesController } from "./controllers/economicDiscussion/moderator/categories/EconomicdiscussionModeratorCategoriesController";
+import { EconomicdiscussionMemberArticlesCategoriesController } from "./controllers/economicDiscussion/member/articles/categories/EconomicdiscussionMemberArticlesCategoriesController";
+import { EconomicdiscussionModeratorArticlesCategoriesController } from "./controllers/economicDiscussion/moderator/articles/categories/EconomicdiscussionModeratorArticlesCategoriesController";
+import { EconomicdiscussionMemberArticlesAttachmentfilesController } from "./controllers/economicDiscussion/member/articles/attachmentFiles/EconomicdiscussionMemberArticlesAttachmentfilesController";
+import { EconomicdiscussionArticlesCommentsController } from "./controllers/economicDiscussion/articles/comments/EconomicdiscussionArticlesCommentsController";
+import { EconomicdiscussionMemberArticlesCommentsController } from "./controllers/economicDiscussion/member/articles/comments/EconomicdiscussionMemberArticlesCommentsController";
+import { EconomicdiscussionModeratorArticlesCommentsController } from "./controllers/economicDiscussion/moderator/articles/comments/EconomicdiscussionModeratorArticlesCommentsController";
+import { EconomicdiscussionArticlesAttachmentsController } from "./controllers/economicDiscussion/articles/attachments/EconomicdiscussionArticlesAttachmentsController";
+import { EconomicdiscussionMemberArticlesAttachmentsController } from "./controllers/economicDiscussion/member/articles/attachments/EconomicdiscussionMemberArticlesAttachmentsController";
+import { EconomicdiscussionModeratorArticlesAttachmentsController } from "./controllers/economicDiscussion/moderator/articles/attachments/EconomicdiscussionModeratorArticlesAttachmentsController";
+import { EconomicdiscussionGuestSearchGlobalController } from "./controllers/economicDiscussion/guest/search/global/EconomicdiscussionGuestSearchGlobalController";
+import { EconomicdiscussionMemberSearchGlobalController } from "./controllers/economicDiscussion/member/search/global/EconomicdiscussionMemberSearchGlobalController";
+import { EconomicdiscussionModeratorSearchGlobalController } from "./controllers/economicDiscussion/moderator/search/global/EconomicdiscussionModeratorSearchGlobalController";
+import { EconomicdiscussionSearchArticlesController } from "./controllers/economicDiscussion/search/articles/EconomicdiscussionSearchArticlesController";
+import { EconomicdiscussionSearchCommentsController } from "./controllers/economicDiscussion/search/comments/EconomicdiscussionSearchCommentsController";
+import { EconomicdiscussionMemberSearchCategoriesController } from "./controllers/economicDiscussion/member/search/categories/EconomicdiscussionMemberSearchCategoriesController";
+import { EconomicdiscussionMemberSearchQueriesPopularController } from "./controllers/economicDiscussion/member/search/queries/popular/EconomicdiscussionMemberSearchQueriesPopularController";
+import { EconomicdiscussionMemberSearchHistoryController } from "./controllers/economicDiscussion/member/search/history/EconomicdiscussionMemberSearchHistoryController";
+import { EconomicdiscussionModeratorSearchAnalyticsController } from "./controllers/economicDiscussion/moderator/search/analytics/EconomicdiscussionModeratorSearchAnalyticsController";
+import { EconomicdiscussionDiscoveryController } from "./controllers/economicDiscussion/discovery/trending/EconomicdiscussionDiscoveryController";
+import { EconomicdiscussionMemberDiscoveryRecommendationsController } from "./controllers/economicDiscussion/member/discovery/recommendations/EconomicdiscussionMemberDiscoveryRecommendationsController";
+import { EconomicdiscussionModeratorDiscoveryRecommendationsController } from "./controllers/economicDiscussion/moderator/discovery/recommendations/EconomicdiscussionModeratorDiscoveryRecommendationsController";
+import { EconomicdiscussionDiscoveryPopular_tagsController } from "./controllers/economicDiscussion/discovery/popular-tags/EconomicdiscussionDiscoveryPopular_tagsController";
+import { EconomicdiscussionMemberDiscoveryRecently_viewedController } from "./controllers/economicDiscussion/member/discovery/recently-viewed/EconomicdiscussionMemberDiscoveryRecently_viewedController";
+import { EconomicdiscussionGuestDiscoveryRecently_viewedController } from "./controllers/economicDiscussion/guest/discovery/recently-viewed/EconomicdiscussionGuestDiscoveryRecently_viewedController";
+import { EconomicdiscussionDiscoveryRecently_viewedController } from "./controllers/economicDiscussion/discovery/recently-viewed/EconomicdiscussionDiscoveryRecently_viewedController";
 
 @Module({
   controllers: [
-    AuthVisitorController,
-    AuthMembersController,
+    AuthGuestController,
+    AuthMemberController,
     AuthModeratorController,
-    AuthModeratorMeController,
-    AuthModeratorPasswordController,
-    PoliticsbbsCategoriesController,
-    PoliticsbbsModeratorCategoriesController,
-    PoliticsbbsArticlesController,
-    PoliticsbbsMemberArticlesController,
-    PoliticsbbsArticlesSnapshotsController,
-    PoliticsbbsArticlesCommentsController,
-    PoliticsbbsCommentsController,
-    PoliticsbbsMemberArticlesCommentsController,
-    PoliticsbbsMemberCommentsController,
-    PoliticsbbsModeratorModeratorContentReviewController,
-    PoliticsbbsModeratorModeratorContentApproveController,
-    PoliticsbbsModeratorContentReviewController,
-    PoliticsbbsModeratorContentApproveController,
-    PoliticsbbsModeratorModeratorContentController,
-    PoliticsbbsMemberMembersMeArticlesController,
-    PoliticsbbsStatisticsPopularController,
-    PoliticsbbsSearchArticlesController,
-    PoliticsbbsSearchUnifiedController,
-    PoliticsbbsMemberUploadsController,
-    PoliticsbbsModeratorUploadsController,
-    PoliticsbbsUploadsController,
+    EconomicdiscussionModeratorSystem_settingsController,
+    EconomicdiscussionModeratorGuestsController,
+    EconomicdiscussionGuestsSessionsController,
+    EconomicdiscussionModeratorGuestsSessionsController,
+    EconomicdiscussionModeratorMembersController,
+    EconomicdiscussionMemberMembersController,
+    EconomicdiscussionMemberMembersSessionsController,
+    EconomicdiscussionModeratorModeratorsController,
+    EconomicdiscussionModeratorModeratorsSessionsController,
+    EconomicdiscussionArticlesController,
+    EconomicdiscussionMemberArticlesController,
+    EconomicdiscussionModeratorArticlesController,
+    EconomicdiscussionMemberArticlesVersionsController,
+    EconomicdiscussionCategoriesController,
+    EconomicdiscussionModeratorCategoriesController,
+    EconomicdiscussionMemberArticlesCategoriesController,
+    EconomicdiscussionModeratorArticlesCategoriesController,
+    EconomicdiscussionMemberArticlesAttachmentfilesController,
+    EconomicdiscussionArticlesCommentsController,
+    EconomicdiscussionMemberArticlesCommentsController,
+    EconomicdiscussionModeratorArticlesCommentsController,
+    EconomicdiscussionArticlesAttachmentsController,
+    EconomicdiscussionMemberArticlesAttachmentsController,
+    EconomicdiscussionModeratorArticlesAttachmentsController,
+    EconomicdiscussionGuestSearchGlobalController,
+    EconomicdiscussionMemberSearchGlobalController,
+    EconomicdiscussionModeratorSearchGlobalController,
+    EconomicdiscussionSearchArticlesController,
+    EconomicdiscussionSearchCommentsController,
+    EconomicdiscussionMemberSearchCategoriesController,
+    EconomicdiscussionMemberSearchQueriesPopularController,
+    EconomicdiscussionMemberSearchHistoryController,
+    EconomicdiscussionModeratorSearchAnalyticsController,
+    EconomicdiscussionDiscoveryController,
+    EconomicdiscussionMemberDiscoveryRecommendationsController,
+    EconomicdiscussionModeratorDiscoveryRecommendationsController,
+    EconomicdiscussionDiscoveryPopular_tagsController,
+    EconomicdiscussionMemberDiscoveryRecently_viewedController,
+    EconomicdiscussionGuestDiscoveryRecently_viewedController,
+    EconomicdiscussionDiscoveryRecently_viewedController,
   ],
 })
 export class MyModule {}

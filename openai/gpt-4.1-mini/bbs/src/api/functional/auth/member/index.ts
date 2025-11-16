@@ -3,22 +3,29 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 
-import { IDiscussionBoardMember } from "../../../structures/IDiscussionBoardMember";
+import { IEconPolDiscussionBoardMember } from "../../../structures/IEconPolDiscussionBoardMember";
 
 /**
- * Creates a new discussion board member account and issues JWT tokens.
+ * Register a new authenticated member account
+ * (econ_pol_discussion_board_members).
  *
- * Creates a new member account by registering the user's email and password.
- * This process involves securely storing the password hash in the
- * discussion_board_members table. The operation ensures the uniqueness of the
- * email to maintain user account integrity. Upon successful creation, the
- * system issues JWT tokens for authenticated session management. This operation
- * is public and does not require prior authentication, allowing new users to
- * join the discussion board platform.
+ * This API endpoint allows new members to register an account on the
+ * econPolDiscussionBoard service. The member entity consists of fields such as
+ * username, email, and password_hash representing credentials and contact
+ * information essential for authentication. The member's password is securely
+ * hashed and stored to protect account security.
+ *
+ * Upon success, the endpoint returns JWT tokens authorizing the member's access
+ * to protected resources.
+ *
+ * Only unauthenticated users can access this endpoint to create new accounts.
+ *
+ * Related operations include login for active members and refresh to renew
+ * expired tokens.
  *
  * @param props.connection
- * @param props.body Member registration credentials including email and
- *   password.
+ * @param props.body Join request body containing new member credentials and
+ *   information.
  * @setHeader token.access Authorization
  *
  * @path /auth/member/join
@@ -53,11 +60,11 @@ export async function join(
 }
 export namespace join {
   export type Props = {
-    /** Member registration credentials including email and password. */
-    body: IDiscussionBoardMember.ICreate;
+    /** Join request body containing new member credentials and information. */
+    body: IEconPolDiscussionBoardMember.ICreate;
   };
-  export type Body = IDiscussionBoardMember.ICreate;
-  export type Response = IDiscussionBoardMember.IAuthorized;
+  export type Body = IEconPolDiscussionBoardMember.ICreate;
+  export type Response = IEconPolDiscussionBoardMember.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -73,8 +80,8 @@ export namespace join {
   } as const;
 
   export const path = () => "/auth/member/join";
-  export const random = (): IDiscussionBoardMember.IAuthorized =>
-    typia.random<IDiscussionBoardMember.IAuthorized>();
+  export const random = (): IEconPolDiscussionBoardMember.IAuthorized =>
+    typia.random<IEconPolDiscussionBoardMember.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: join.Props,
@@ -101,17 +108,22 @@ export namespace join {
 }
 
 /**
- * Authenticates member and returns JWT tokens.
+ * Authenticate member and issue JWT access tokens
+ * (econ_pol_discussion_board_members).
  *
- * Authenticates a member user by verifying their email and password. Uses the
- * password_hash stored in discussion_board_members. If credentials match an
- * active member account (deleted_at is null), this operation returns access and
- * refresh JWT tokens encapsulated in the IDiscussionBoardMember.IAuthorized
- * response type. The operation is public and intended for member login
- * purposes.
+ * This endpoint performs member login, validating credentials against stored
+ * username/email and hashed password in econ_pol_discussion_board_members.
+ * Successful login returns JWT tokens authorizing member access.
+ *
+ * Only unauthenticated users should call this endpoint with correct
+ * credentials.
+ *
+ * This operation works together with join for account creation and refresh for
+ * renewing tokens.
  *
  * @param props.connection
- * @param props.body Member login credentials including email and password.
+ * @param props.body Login request body containing member credentials
+ *   (username/email and password).
  * @setHeader token.access Authorization
  *
  * @path /auth/member/login
@@ -146,11 +158,14 @@ export async function login(
 }
 export namespace login {
   export type Props = {
-    /** Member login credentials including email and password. */
-    body: IDiscussionBoardMember.ILogin;
+    /**
+     * Login request body containing member credentials (username/email and
+     * password).
+     */
+    body: IEconPolDiscussionBoardMember.ILogin;
   };
-  export type Body = IDiscussionBoardMember.ILogin;
-  export type Response = IDiscussionBoardMember.IAuthorized;
+  export type Body = IEconPolDiscussionBoardMember.ILogin;
+  export type Response = IEconPolDiscussionBoardMember.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -166,8 +181,8 @@ export namespace login {
   } as const;
 
   export const path = () => "/auth/member/login";
-  export const random = (): IDiscussionBoardMember.IAuthorized =>
-    typia.random<IDiscussionBoardMember.IAuthorized>();
+  export const random = (): IEconPolDiscussionBoardMember.IAuthorized =>
+    typia.random<IEconPolDiscussionBoardMember.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: login.Props,
@@ -194,16 +209,19 @@ export namespace login {
 }
 
 /**
- * Refreshes member JWT token.
+ * Refresh JWT tokens for member sessions (econ_pol_discussion_board_members).
  *
- * Refreshes the JWT token for a member user to extend session validity without
- * requiring re-login. Uses a valid refresh token to issue new access and
- * refresh tokens. The operation ensures the account exists and is active in
- * discussion_board_members. Returns updated JWT tokens in the
- * IDiscussionBoardMember.IAuthorized response type.
+ * This endpoint refreshes JWT access tokens for authenticated members on
+ * econPolDiscussionBoard. Clients provide valid refresh tokens to obtain new
+ * access tokens without re-entering credentials.
+ *
+ * This helps maintain persistent sessions for members.
+ *
+ * Related operations include login to authenticate and join to register new
+ * members.
  *
  * @param props.connection
- * @param props.body Refresh token for obtaining new JWT tokens.
+ * @param props.body Refresh request body containing refresh token information.
  * @setHeader token.access Authorization
  *
  * @path /auth/member/refresh
@@ -238,11 +256,11 @@ export async function refresh(
 }
 export namespace refresh {
   export type Props = {
-    /** Refresh token for obtaining new JWT tokens. */
-    body: IDiscussionBoardMember.IRefresh;
+    /** Refresh request body containing refresh token information. */
+    body: IEconPolDiscussionBoardMember.IRefresh;
   };
-  export type Body = IDiscussionBoardMember.IRefresh;
-  export type Response = IDiscussionBoardMember.IAuthorized;
+  export type Body = IEconPolDiscussionBoardMember.IRefresh;
+  export type Response = IEconPolDiscussionBoardMember.IAuthorized;
 
   export const METADATA = {
     method: "POST",
@@ -258,8 +276,8 @@ export namespace refresh {
   } as const;
 
   export const path = () => "/auth/member/refresh";
-  export const random = (): IDiscussionBoardMember.IAuthorized =>
-    typia.random<IDiscussionBoardMember.IAuthorized>();
+  export const random = (): IEconPolDiscussionBoardMember.IAuthorized =>
+    typia.random<IEconPolDiscussionBoardMember.IAuthorized>();
   export const simulate = (
     connection: IConnection,
     props: refresh.Props,

@@ -4,112 +4,103 @@ import typia, { tags } from "typia";
 
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ITodoTask } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoTask";
-import type { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import type { ITodoAppTask } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTask";
+import type { ITodoAppTaskDescription } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTaskDescription";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 
 /**
- * Test retrieving a specific task by ID for the authenticated user.
+ * Test that authenticated users can successfully retrieve their own todo tasks
+ * by ID.
  *
- * This test validates the complete workflow from user registration through task
- * creation and detailed retrieval. It ensures users can only access their own
- * tasks and receive complete task information including description, completion
- * status, business workflow status, and timestamps. The test verifies the
- * security boundary that prevents users from accessing tasks belonging to other
- * users.
- *
- * Test flow:
- *
- * 1. Register a new user account via /auth/user/join
- * 2. Create a task for the authenticated user via /todo/user/user-tasks
- * 3. Retrieve the created task by ID via /todo/user/user-tasks/{id}
- * 4. Validate that all task properties are correctly returned
- * 5. Test security by attempting to access non-existent tasks
- * 6. Verify task ownership and complete data structure
+ * This test validates that users can access complete task details including
+ * title, description, status, completion timestamp, and creation metadata. The
+ * test also verifies proper authorization checks ensuring users can only access
+ * their own tasks, and confirms that the response contains all expected task
+ * fields.
  */
 export async function test_api_task_retrieval_by_owner(
   connection: api.IConnection,
 ) {
-  // Register a new user account
+  // Step 1: Create a new user account to establish authentication context
   const userEmail = typia.random<string & tags.Format<"email">>();
-  const user = await api.functional.auth.user.join(connection, {
-    body: {
-      email: userEmail,
-      password: RandomGenerator.alphaNumeric(12),
-    } satisfies ITodoUser.IJoin,
-  });
-  typia.assert(user);
-
-  // Create a task for the authenticated user
-  const taskDescription = RandomGenerator.paragraph({ sentences: 3 });
-  const createdTask = await api.functional.todo.user.user_tasks.create(
-    connection,
-    {
+  const createdUser: ITodoAppUser.IAuthorized =
+    await api.functional.auth.user.join(connection, {
       body: {
-        description: taskDescription,
-        href: "https://todo.example.com/dashboard",
-        referrer: "https://todo.example.com/login",
-      } satisfies ITodoTask.ICreate,
-    },
-  );
+        email: userEmail,
+        password: "password123",
+        href: "https://todo-app.com/register",
+        referrer: "https://todo-app.com",
+      } satisfies ITodoAppUser.IJoin,
+    });
+  typia.assert(createdUser);
+
+  // Step 2: Create a todo task for the authenticated user
+  const taskTitle = RandomGenerator.name();
+  const taskDescription: string | undefined = RandomGenerator.content({
+    paragraphs: 1,
+    sentenceMin: 2,
+    sentenceMax: 4,
+    wordMin: 4,
+    wordMax: 8,
+  });
+
+  const createdTask: ITodoAppTask =
+    await api.functional.todoApp.user.tasks.create(connection, {
+      body: {
+        title: taskTitle,
+        description: {
+          type: "full",
+          content: taskDescription,
+        },
+      } satisfies ITodoAppTask.ICreate,
+    });
   typia.assert(createdTask);
 
-  // Retrieve the task by ID
-  const retrievedTask = await api.functional.todo.user.user_tasks.at(
-    connection,
-    {
-      id: createdTask.id,
-    },
-  );
+  // Step 3: Retrieve the specific task by ID
+  const retrievedTask: ITodoAppTask =
+    await api.functional.todoApp.user.tasks.at(connection, {
+      taskId: createdTask.id,
+    });
   typia.assert(retrievedTask);
 
-  // Validate task properties match
+  // Step 4: Verify all task details are correctly returned
   TestValidator.equals("task id matches", retrievedTask.id, createdTask.id);
+  TestValidator.equals("task title matches", retrievedTask.title, taskTitle);
   TestValidator.equals(
     "task description matches",
     retrievedTask.description,
-    createdTask.description,
+    taskDescription,
   );
   TestValidator.equals(
-    "task completion status",
-    retrievedTask.completed,
-    false,
-  );
-  TestValidator.equals(
-    "task business status defaults to pending",
-    retrievedTask.business_status,
+    "task status is pending",
+    retrievedTask.status,
     "pending",
   );
-  TestValidator.equals("task user id matches", retrievedTask.user.id, user.id);
   TestValidator.equals(
-    "task user email matches",
+    "task owner id matches",
+    retrievedTask.user.id,
+    createdUser.id,
+  );
+  TestValidator.equals(
+    "task owner email matches",
     retrievedTask.user.email,
-    user.email,
+    userEmail,
   );
 
-  // Validate timestamps are present and valid - flexible ISO 8601 format
-  TestValidator.predicate(
-    "created_at is valid ISO date",
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/.test(
-      retrievedTask.created_at,
-    ),
-  );
-  TestValidator.predicate(
-    "updated_at is valid ISO date",
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/.test(
-      retrievedTask.updated_at,
-    ),
-  );
+  // Step 5: Verify authorization - task should not be accessible without authentication
+  // Create unauthenticated connection for authorization test
+  const unauthConn: api.IConnection = { ...connection, headers: {} };
+
+  await TestValidator.error("unauthorized access should fail", async () => {
+    await api.functional.todoApp.user.tasks.at(unauthConn, {
+      taskId: createdTask.id,
+    });
+  });
+
+  // Verify that the completed_at field is null for pending tasks
   TestValidator.equals(
     "completed_at is null for pending task",
     retrievedTask.completed_at,
     null,
   );
-
-  // Test security boundary - attempt to access task with invalid ID
-  const invalidTaskId = typia.random<string & tags.Format<"uuid">>();
-  await TestValidator.error("cannot access non-existent task", async () => {
-    await api.functional.todo.user.user_tasks.at(connection, {
-      id: invalidTaskId,
-    });
-  });
 }

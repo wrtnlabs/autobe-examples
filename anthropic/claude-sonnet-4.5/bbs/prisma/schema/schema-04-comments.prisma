@@ -1,9 +1,23 @@
-/// User comments on articles in the discussion board. Comments enable
-/// discussion and engagement on economic and political topics. Supports
-/// single-level threading where comments can be top-level (direct responses
-/// to articles) or replies to other top-level comments. Comments can be
-/// created by both members and moderators, with authorship tracked through
-/// author_type discriminator and corresponding foreign keys.
+/// User comments on discussion board articles.
+///
+/// Stores community member comments and discussions on published articles.
+/// Each comment is created by an authenticated member and associated with a
+/// specific article. Comments enable engagement and conversation around
+/// economic and political topics.
+///
+/// Comments support independent management operations including
+/// cross-article search for user activity tracking, moderation workflows for
+/// content review, and direct edit or delete actions by comment authors or
+/// moderators.
+///
+/// The comment content is limited to 2000 characters as specified in
+/// requirements. Comments are displayed chronologically by creation time to
+/// maintain discussion flow.
+///
+/// Soft deletion is supported through the deleted_at field to preserve
+/// discussion context while allowing content moderation. Moderators can
+/// remove inappropriate comments while maintaining the overall discussion
+/// thread integrity.
 ///
 /// @namespace Comments
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -14,98 +28,39 @@ model discussion_board_comments {
   /// Primary Key.
   id String @id
   
-  /// Parent article this comment belongs to. {@link
-  /// discussion_board_articles.id}
+  /// The article this comment belongs to. {@link discussion_board_articles.id}.
   discussion_board_article_id String
   
-  /// Parent comment for single-level reply threading. Null for top-level
-  /// comments, references another top-level comment for replies. {@link
-  /// discussion_board_comments.id}
-  discussion_board_parent_comment_id String?
+  /// The member who created this comment. {@link discussion_board_members.id}.
+  discussion_board_member_id String
   
-  /// Member author if comment was created by a member. Mutually exclusive with
-  /// discussion_board_moderator_id. {@link discussion_board_members.id}
-  discussion_board_member_id String?
-  
-  /// Moderator author if comment was created by a moderator. Mutually
-  /// exclusive with discussion_board_member_id. {@link
-  /// discussion_board_moderators.id}
-  discussion_board_moderator_id String?
-  
-  /// Discriminator indicating author type. Valid values are member or
-  /// moderator. Determines which author foreign key is populated.
-  author_type String
-  
-  /// Comment text content. User-submitted comment on the article or reply to
-  /// another comment. Length between 1 and 5000 characters as per
-  /// requirements.
+  /// Comment text content. Contains the member's written response or
+  /// discussion contribution to the article. Limited to 2000 characters as per
+  /// requirements. Supports line breaks and basic text formatting.
   content String
   
-  /// Timestamp when the comment was originally created.
+  /// Timestamp when the comment was created. Used for chronological ordering
+  /// of comments within article discussions.
   created_at DateTime
   
-  /// Timestamp when the comment was last modified. Updated on edits.
+  /// Timestamp when the comment was last modified. Updated whenever the
+  /// comment content is edited by the author or moderator.
   updated_at DateTime
   
-  /// Soft delete timestamp. Null if comment is active, set to deletion time if
-  /// comment was deleted. Enables comment recovery and audit trail.
+  /// Soft deletion timestamp. When set, indicates the comment has been removed
+  /// by the author or moderator. Supports content moderation while preserving
+  /// discussion context.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
-  parentComment discussion_board_comments? @relation("recursive", fields: [discussion_board_parent_comment_id], references: [id], onDelete: Cascade)
-  memberAuthor discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
-  moderatorAuthor discussion_board_moderators? @relation(fields: [discussion_board_moderator_id], references: [id], onDelete: Cascade)
-  
-  recursive discussion_board_comments[] @relation("recursive")
-  discussion_board_comment_snapshots discussion_board_comment_snapshots[]
-  discussion_board_reports discussion_board_reports[]
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
   // spellchecker: ignore-next-line
   @@index([discussion_board_member_id, created_at], map: "discussion_board_comments_discussion_board_member_id_c_c3eff834")
-  // spellchecker: ignore-next-line
-  @@index([discussion_board_moderator_id, created_at], map: "discussion_board_comments_discussion_board_moderator_i_8998e260")
-  // spellchecker: ignore-next-line
-  @@index([discussion_board_parent_comment_id], map: "discussion_board_comments_discussion_board_parent_comm_878e33c2")
-  @@index([author_type])
-}
-
-/// Historical snapshots of comment edits for audit trail and version
-/// control. Each snapshot captures the comment state at a specific point in
-/// time, enabling comment edit history tracking and potential rollback.
-/// Snapshots are append-only and never modified after creation.
-///
-/// @namespace Comments
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_comment_snapshots {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Comment this snapshot belongs to. Multiple snapshots track edit history.
-  /// {@link discussion_board_comments.id}
-  discussion_board_comment_id String
-  
-  /// Denormalized snapshot of comment content at the time of this snapshot
-  /// creation. Preserves historical content even if parent comment is later
-  /// modified or deleted.
-  content String
-  
-  /// Timestamp when this snapshot was created. Represents the point in time
-  /// this version of the comment existed.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_snapshots_discussion_board_co_67d99e69")
+  @@index([deleted_at])
 }

@@ -4,9 +4,9 @@ export interface UserPayload {
   /** Top-level user table ID (the fundamental user identifier in the system). */
   id: string & tags.Format<"uuid">;
 
-  /** Session ID for the current authentication session. */
+  /** Session ID associated with the user session. */
   session_id: string & tags.Format<"uuid">;
 
-  /** Discriminator for the discriminated union type. */
+  /** Discriminator for user role type. */
   type: "user";
 }

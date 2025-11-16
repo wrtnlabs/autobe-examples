@@ -5,8 +5,9 @@ import { Singleton } from "tstl";
 import { adminAuthorize } from "../providers/authorize/adminAuthorize";
 
 /**
- * Decorator for Admin authentication/authorization via Bearer token.
- * Adds Bearer security for Swagger and injects AdminPayload parameter.
+ * Parameter decorator for authenticating Shopping Mall Admin.
+ * Adds bearer token security to Swagger/OpenAPI docs.
+ * Injects AdminPayload for the current authenticated admin.
  */
 export const AdminAuth =
   (): ParameterDecorator =>
@@ -17,9 +18,7 @@ export const AdminAuth =
   ): void => {
     SwaggerCustomizer((props) => {
       props.route.security ??= [];
-      props.route.security.push({
-        bearer: [],
-      });
+      props.route.security.push({ bearer: [] });
     })(target, propertyKey as string, undefined!);
     singleton.get()(target, propertyKey, parameterIndex);
   };

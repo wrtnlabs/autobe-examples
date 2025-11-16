@@ -1,172 +1,48 @@
-# Functional Requirements Specification for Community Platform
+# Table of Contents: Reddit-like Community Platform Documentation
 
-## 1. Introduction
-The community platform enables registered users to create, join, and participate in topic-driven communities (akin to subreddits on Reddit). Users interact by posting content, voting, commenting, and reporting, all underpinned by a karma and reputation system. These requirements are structured to eliminate ambiguity and are written to be immediately actionable by backend engineers.
+## Introduction
+Welcome to the documentation set for the Reddit-like Community Platform. This master table of contents serves as your primary navigation tool for all business requirements and architectural planning documents. Each section below provides a direct link to a more detailed business or functional requirements document, ensuring every stakeholder and developer can find the information they need, precisely when they need it.
 
----
+## Service Vision and Business Model
+For the mission statement, target user profiles, key objectives, market positioning, and business model—including value differentiation and revenue strategy—refer to the [Service Overview Document](./01-service-overview.md).
 
-## 2. User Registration and Login
+## Problem and Opportunity Statement
+For insights into market needs, user pain points, competitive landscape, and opportunities for new value creation, refer to the [Problem and Opportunity Statement](./02-problem-opportunity.md).
 
-### Registration
-- WHEN a new user wants to participate, THE communityPlatform SHALL allow registration using a valid, unique email and password combination.
-- THE communityPlatform SHALL verify that email addresses are unique across all accounts.
-- WHEN a user submits registration, THE communityPlatform SHALL send a verification email with a unique token.
-- IF the user fails to provide a valid token within 24 hours, THEN THE communityPlatform SHALL invalidate the registration attempt and delete the unverified account.
+## Core Value Proposition
+For a breakdown of the unique benefits delivered to users, moderators, and administrators—and a comparison with market alternatives—refer to the [Core Value Proposition](./03-value-proposition.md).
 
-### Login
-- WHEN a user enters their email and password, THE communityPlatform SHALL validate credentials and establish a new authenticated session upon correctness.
-- IF authentication fails, THEN THE communityPlatform SHALL present a clear error indicating invalid credentials, allowing retry.
-- THE communityPlatform SHALL lock an account after 5 consecutive failed login attempts within 10 minutes, displaying a message and requiring password reset or a waiting period.
+## Service Operations Overview
+For detailed summaries and diagrams outlining how communities are created and managed, the lifecycle of posts and comments, voting and karma logic, subscription flows, and reporting, see the [Service Operations Overview](./04-service-operation.md).
 
-### Password and Session Management
-- THE communityPlatform SHALL allow users to initiate password reset via email at any time.
-- WHEN a user changes their password, THE communityPlatform SHALL immediately revoke all existing sessions but the current.
-- THE communityPlatform SHALL issue JWT tokens upon successful login, with access tokens expiring in 30 minutes and refresh tokens valid for 14 days.
-- THE communityPlatform SHALL store authentication tokens securely according to industry best practices.
+## User Actors and Permissions
+For authentication flows, complete business actor definitions, a full permission matrix, detailed actor workflows, and JWT/session management rules, review the [User Actors and Permissions Documentation](./05-user-actors.md).
 
-## 3. Community (Subreddit) Management
+## Primary User Journeys
+For step-by-step major user scenarios—from registration and onboarding through subscription, posting, voting, commenting, and core flows—see the [Primary User Journeys Document](./06-primary-user-journeys.md).
 
-### Creation
-- WHEN an authenticated user submits a valid community name and description, THE communityPlatform SHALL create a new community unless an existing one matches case-insensitively.
-- IF the name is less than 3 or more than 50 characters, THEN THE communityPlatform SHALL reject creation with an error message.
-- IF the description is empty or exceeds 250 characters, THEN THE communityPlatform SHALL reject creation.
-- WHERE a community already exists with a similar name (ignoring case and symbols), THE communityPlatform SHALL prevent duplication.
+## Secondary and Exceptional Scenarios
+For less common but important business scenarios, such as content reporting and escalation, user profile management, voting boundaries, moderator workflows, and account states, refer to the [Secondary and Exceptional Scenarios Document](./07-secondary-exceptional-scenarios.md).
 
-### Membership and Moderation
-- WHEN a user creates a community, THE communityPlatform SHALL automatically assign them as the initial moderator.
-- THE communityPlatform SHALL allow the addition of other moderators by invitation.
-- WHEN a user is removed as a moderator, IF they are the last moderator, THEN THE communityPlatform SHALL prevent their removal.
+## Karma and Voting Rules
+For business logic and validation requirements around user karma calculation, upvoting/downvoting, post and comment ranking, sorting, and abuse prevention, see the [Karma and Voting Rules Documentation](./08-karma-voting-rules.md).
 
-### Editing & Deletion
-- WHEN a moderator edits the community, THE communityPlatform SHALL validate changes and record timestamps and editor identity.
-- WHEN a community is deleted by a moderator, THE communityPlatform SHALL archive the community and all its posts/comments for at least 30 days before permanent deletion.
+## Sorting and Discovery
+For business rules defining how posts and communities are sorted (hot, new, top, controversial), community discovery and recommendation, and search rules, refer to the [Sorting and Discovery Documentation](./09-sorting-discovery.md).
 
-## 4. Posting (Text, Link, Image)
+## Security, Privacy, and Compliance
+For business requirements around user data protection, privacy standards, content moderation workflows, abuse prevention, and compliance, see the [Security, Privacy, and Compliance Documentation](./10-security-privacy-compliance.md).
 
-### Submission
-- WHEN an authenticated user submits a post to a community, THE communityPlatform SHALL accept the following content types: text (up to 10,000 characters), link (validated URL), or image (JPEG/PNG <= 10MB).
-- IF a post is submitted without any content or with both link and image, THEN THE communityPlatform SHALL reject the post and show an error message.
-- WHERE an image is uploaded, THE communityPlatform SHALL store it in a secure location and verify its integrity and format.
-- WHEN a post contains a link, THE communityPlatform SHALL validate that it is a well-formed, non-malicious URL.
+## Performance and Scalability Requirements
+For targeted performance benchmarks, business-driven scalability needs, and reliability rules, as well as disaster recovery expectations, refer to the [Performance and Scalability Requirements](./11-performance-scalability.md).
 
-### Editing & Deletion
-- WHEN a user edits their own post, THE communityPlatform SHALL retain the original content for audit history.
-- WHERE a post is deleted, THE communityPlatform SHALL remove it from public view and archive it for 30 days.
-- IF a post is deleted, THEN all comments remain but are attached to a placeholder post indicating removal.
+## Business Rules and Validation Logic
+For a comprehensive capture of core business rules, input/output validation logic, scenario flows, and actor-specific validations, see the business rules section in each dedicated requirements document.
 
-### Display & Pagination
-- THE communityPlatform SHALL display posts in pages, with a default of 20 posts per page.
-- Posts SHALL be sortable by hot, new, top, and controversial algorithms (see "Voting System").
-- WHERE there are no posts in a community, THE communityPlatform SHALL show an appropriate message.
+## Error Handling and Content Moderation
+For business expectations about reporting, automated and manual moderation, error messaging, and recovery conditions for user-facing scenarios, refer to the [Secondary and Exceptional Scenarios Document](./07-secondary-exceptional-scenarios.md) and [Security, Privacy, and Compliance Documentation](./10-security-privacy-compliance.md).
 
-## 5. Voting System (Upvote/Downvote)
+## External Integrations and Notifications
+For future extensions and integrations such as notification systems (email, push), analytics, or third-party authentications, consult future updates to this documentation set.
 
-### Post Voting
-- WHEN an authenticated user upvotes or downvotes a post, THE communityPlatform SHALL record the vote and adjust the post’s score and author’s karma accordingly.
-- IF a user votes a second time in the same direction, THEN THE communityPlatform SHALL remove their vote, toggling their score impact.
-- Users SHALL only be allowed to vote once per post or comment; duplicate votes SHALL be disregarded.
-- THE communityPlatform SHALL prevent users from voting on their own posts or comments.
-
-### Algorithm
-- THE communityPlatform SHALL calculate a post's "hot" score using upvotes, downvotes, and time since posting.
-- THE communityPlatform SHALL calculate "top" by total upvotes minus downvotes.
-- "Controversial" SHALL favor posts/comments with near-equal high upvotes and downvotes.
-
-### Error Handling
-- IF the voting action fails (e.g., session expired), THEN THE communityPlatform SHALL notify the user and require re-authentication.
-
-## 6. Nested Commenting
-
-### Structure
-- WHEN viewing a post, THE communityPlatform SHALL display comments in a nested fashion up to 5 levels deep.
-- Each comment SHALL support text content up to 2,000 characters.
-- WHEN a user submits a comment, THE communityPlatform SHALL validate input and immediately render the comment or return an actionable error message.
-- WHEN a comment is deleted, THE communityPlatform SHALL flag it as removed but maintain child comments.
-
-### Replies
-- Users SHALL reply to comments, creating a hierarchy linked by parent/child relationships to a maximum of 5 levels.
-
-### Editing
-- Users SHALL be allowed to edit their own comments for up to 30 minutes after creation; edits beyond this period SHALL be prohibited.
-- Edit history SHALL be maintained and visible to moderators and admins.
-
-## 7. Karma Calculations
-
-### User Karma
-- WHEN a user's post or comment receives an upvote, THE communityPlatform SHALL increase their karma by +1; each downvote SHALL decrease karma by -1.
-- Karma SHALL not change for votes on the user's own content or by self-votes (prohibited).
-- THE communityPlatform SHALL update visible karma scores within 5 seconds of a vote being registered.
-- IF a vote is retracted, THEN the corresponding karma point SHALL be reversed.
-
-### Karma Impact
-- WHERE a user's karma falls below 0, THE communityPlatform SHALL restrict the ability to create new communities and may throttle posting.
-
-## 8. Subscription Mechanics
-
-### Subscribing
-- WHEN a logged-in user subscribes to a community, THE communityPlatform SHALL add that community to their subscription list.
-- THE communityPlatform SHALL allow unsubscribing at any time.
-- THE communityPlatform SHALL notify users of new posts/events in their subscribed communities by default (user-configurable).
-- IF a user is banned from a community, THEN THE communityPlatform SHALL automatically remove the subscription and prevent re-subscription until the ban is lifted.
-
-## 9. Profile Display
-
-### User Content
-- WHEN viewing a user profile, THE communityPlatform SHALL show all non-deleted posts and comments made by the user, sorted by newest first.
-- THE communityPlatform SHALL paginate profile content, showing 20 items per page.
-- WHERE a user views their own profile, THE communityPlatform SHALL include community subscriptions and current karma.
-- WHERE another user views the profile, THE communityPlatform SHALL show only public posts, comments, join date, and total karma.
-
-## 10. Content Reporting
-
-### Reporting Mechanism
-- WHEN a user views a post or comment, THE communityPlatform SHALL offer a "Report" action.
-- WHEN a report is submitted, THE communityPlatform SHALL require a category (spam, abuse, etc.) and optional description.
-- THE communityPlatform SHALL log reports with timestamp, reporter identity, and target content reference.
-- WHERE the number of valid reports on a post or comment exceeds a system-configurable threshold, THE communityPlatform SHALL automatically hide the content from public view pending moderator review.
-- WHERE a user files more than 5 reports in an hour, THE communityPlatform SHALL flag their account for potential abuse of the reporting function.
-
----
-
-## 11. Cross-Functional Considerations (Performance, Measurability)
-- THE communityPlatform SHALL process all user-visible actions (login, posting, voting, commenting, reporting) within 2 seconds in normal conditions and 5 seconds under peak loads.
-- All user actions SHALL be logged for audit purposes, with sensitive data protected in accordance with published privacy requirements.
-
----
-
-## 12. Mermaid Diagrams of Key Flows
-
-### User Registration and Login Flow
-```mermaid
-graph LR
-    A["User Registration"] --> B["Email Verification"]
-    B --> C{"Verification Success?"}
-    C -->|"Yes"| D["Create Account (Active)"]
-    C -->|"No"| E["Delete Unverified Account"]
-    D --> F["User Login"]
-    F --> G{"Credentials Valid?"}
-    G -->|"Yes"| H["Grant Session (JWT, Tokens)"]
-    G -->|"No"| I["Login Error Message"]
-```
-
-### Vote and Karma Update Flow
-```mermaid
-graph LR
-    A["User Votes on Post/Comment"] --> B{"Already Voted?"}
-    B -->|"No"| C["Save Vote"]
-    C --> D["Adjust Karma"]
-    B -->|"Yes, Same Direction"| E["Remove Vote"]
-    E --> F["Update Karma"]
-    B -->|"Yes, Opposite Direction"| G["Toggle Vote Direction"]
-    G --> H["Update Karma"]
-```
-
-### Content Reporting Flow
-```mermaid
-graph LR
-    A["User Submits Report"] --> B["Specify Reason"]
-    B --> C["Log Report"]
-    C --> D{"Reports Exceed Threshold?"}
-    D -->|"Yes"| E["Hide Content"]
-    D -->|"No"| F["Await Moderator Review"]
-```
+> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
